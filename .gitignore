@@ -1,0 +1,36 @@
+# Godot
+.godot/
+.import/
+.mono/
+exports/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
+venv/
+
+# Local tools and agent state
+.godot-mcp/
+.superpowers/
+.claude/settings.local.json
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Generated output
+build/
+dist/

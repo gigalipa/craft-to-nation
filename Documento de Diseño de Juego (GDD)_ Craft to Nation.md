@@ -1,0 +1,183 @@
+# **Documento de Diseño de Juego (GDD): Craft to Nation**
+
+**Eslogan:** *From first block to living nation.* / *Del primer bloque a una nación viva.*
+**Frase de campaña:** Survive. Craft. Automate. Lead.
+
+**Versión del Documento:** 3.3 (Renombrado del proyecto de "CityCraft" a "Craft to Nation"; agregada la regla de Altura Mínima por Piso, los objetos multi-celda puerta/cama, y cambiado el requisito de Almacenamiento Individual de emparejamiento 1 a 1 a conteo total por edificio, en la Sección 5, todo verificado en `PoC_3/`)  
+**Género:** City Builder, Supervivencia en Primera Persona, Estrategia Militar en Tiempo Real (RTS), Gestión y Logística de Fábricas.  
+**Inspiraciones Clave:** SimCity, Age of Empires, Minecraft, Mindustry.  
+**Público Objetivo:** Jugadores apasionados por la simulación compleja, la gestión macroeconómica, el combate táctico y la inmersión en mundos abiertos procedimentales.
+
+## **1\. Resumen Ejecutivo y Pilares de Diseño**
+
+Craft to Nation es un videojuego híbrido de simulación y estrategia que fusiona la microgestión e inmersión visceral de los títulos de supervivencia en primera persona con la visión macroscópica de los simuladores urbanos y de estrategia en tiempo real. El jugador inicia su periplo como un avatar solitario en un entorno hostil y procedimental, y a través de la recolección manual, el diseño arquitectónico reglamentado, la delimitación de distritos funcionales y la optimización de complejas redes de transporte, evoluciona su campamento primario hasta convertirlo en una metrópolis industrial fortificada.  
+Los pilares fundamentales de diseño que sustentan el proyecto son:
+
+> * **Dualidad de Perspectiva (Micro vs. Macro):** Capacidad de alternar fluidamente entre la acción visceral en primera persona (intervención manual, combate codo a codo) y la vista aérea táctica (planificación urbana, emisión de órdenes colectivas).  
+> * **Modularidad y Automatización por Plantillas (Blueprints):** Superación del desgaste repetitivo de la construcción bloque a bloque mediante la parametrización de edificios diseñados libremente por el jugador y validados por el motor de juego.  
+> * **Zonificación Estratégica y Logística Integral:** Estructuración del territorio en zonas residenciales/científicas, polígonos industriales/militares y puestos remotos de extracción conectados por carreteras, trenes, cintas y tuberías.  
+> * **Economía Orgánica y Demográfica:** La población es una fuerza laboral activa donde la alimentación actúa como energía metabólica diferenciada según la exigencia física del rol asignado.  
+> * **Soberanía Portátil y Núcleos Balanceados en Multijugador:** Transporte selectivo del núcleo urbano central y las plantillas constructivas a partidas multijugador procedurales, garantizando un balance competitivo riguroso.
+
+## **2\. Ciclo de Juego (Game Loop) y Fases de Progresión**
+
+La experiencia de juego se estructura en cuatro fases complementarias que se retroalimentan a lo largo de la partida:
+
+> 1. **Fase 1: Génesis y Supervivencia (1ra Persona):** El avatar aparece en un bioma procedural virgen. Recolecta madera y alimentos de recolección silvestre para saciar su hambre inicial (tasa de 5/h). Fabrica sus primeras herramientas y construye su refugio, el cual podrá ser expandido a lo largo del juego, para funcionar como núcleo urbano y acomodar los logros (trofeos) y objetos especiales recolectados durante las partidas (incluidos aquellos de partidas multijugador), lo que será un aporte a la moral de la población. Cuando se marca dicho refugio como núcleo urbano, se crea el área de influencia.  
+> 2. **Fase 2: Asentamiento y Fundación Urbana:** El jugador construye un refugio hermético reglamentario (cumpliendo los requisitos para ser determinado como tal) dentro del área de influencia, con esto se valida la primera plantilla residencial y la primera zona residencial. Se activa la cámara libre cenital (Modo City Builder) y comienzan a llegar los primeros colonos atraídos por la disponibilidad de camas.  
+> 3. **Fase 3: Zonificación, Logística e Industrialización:** El jugador delimita, dentro del área de influencia, las zonas residenciales/de investigación y las zonas industriales/militares, dentro de estas zonas sólo se podrán construir edificios pertenecientes a estas categorías respectivas. El jugador puede instalar puestos remotos en la periferia (minas, aserraderos, puestos botánicos, puestos de vigilancia) para recolección de materias primas. Y puede tender carreteras, vías férreas, tuberías y cintas transportadoras para procesar recursos en plantas intermedias y avanzadas (Tipo 2 y Tipo 3\) de la zona industrial, así como conectar las industrias con fábricas para la creación de bienes, objetos y tropas.  
+> 4. **Fase 4: Expansión Bélica y Multijugador:** Producción en masa de equipamiento bélico y reclutamiento de soldados. El jugador lidera asedios contra campamentos de bandidos y fortalezas enemigas de la IA o lleva su núcleo central a escenarios competitivos multijugador para luchar contra otros jugadores humanos, en estas partidas se pueden ganar trofeos que luego se pueden exponer en el núcleo urbano para mejorar la moral de la población.
+
+## **3\. Modelo de Zonificación Urbana y Puestos de Extracción Remota**
+
+Para organizar armónicamente el crecimiento urbano y permitir el despliegue balanceado en el multijugador, el mundo se divide en tres distritos territoriales con reglas de construcción excluyentes:
+
+| Distrito Territorial | Delimitación Espacial | Edificaciones Permitidas | Restricciones y Reglas de Juego   |
+| :---- | :---- | :---- | :---- |
+| **Zona Residencial y de Investigación (Núcleo A)** | Perímetro cívico central continuo alrededor del ayuntamiento o núcleo urbano. | Plantillas residenciales habitables, centros comunitarios, plazas, laboratorios científicos, observatorios e institutos de desarrollo. | Prohibida la construcción de viviendas fuera de esta zona. Concentra la población civil, garantizando seguridad y facilitando el reparto de alimentos. |
+| **Zona Industrial y Militar (Núcleo B)** | Polígono industrial continuo, delimitado junto al Núcleo A o como distrito contiguo fortificado. | Hornos de fundición, forjas de armamento, plantas mecánicas y productivas Tipo 2, refinerías y fábricas automatizadas Tipo 3, cuarteles, academias militares y armerías. | Prohibido emplazar instalaciones pesadas de manufactura o cuarteles militares en la periferia silvestre. Centraliza la logística de defensa y munición. |
+| **Periferia y Puestos de Extracción Remota** | Cualquier bioma exterior explorado del mundo procedimental, sobre depósitos de materias primas. | Minas a cielo abierto y subterráneas, aserraderos madereros, refugios de cazadores, almacenes de recolección vegetal (bayas, frutas y hierbas), puestos de vigilancia. | Prohibida la construcción de casas o fábricas de armamento. La materia recolectada puede ser transportada por las unidades o en vehículos, pero estos requieren conexiones viales o transportadoras continuas hacia el Núcleo Central. |
+
+### **Radio de Acción Ciudadano y Defensa de Puestos Periféricos**
+
+> * **Radio de Acción Limitado:** Antes de construir puestos periféricos, el jugador puede asignar ciudadanos a la recolección manual de recursos cercanos, pero estos no pueden alejarse más allá de un radio máximo desde el núcleo urbano o desde el almacén habilitado más cercano dentro del área de influencia.  
+> * **Puestos Periféricos como Extensión del Radio:** Al construir un puesto periférico, los ciudadanos asignados a él pueden transitar entre el puesto y el núcleo urbano (o el almacén más cercano), extendiendo efectivamente el alcance operativo de la ciudad.  
+> * **Vulnerabilidad Deliberada:** Los puestos periféricos están, por diseño, expuestos a bandidos y fauna hostil. El jugador decide su nivel de protección: dejarlos desprotegidos y reaccionar enviando tropas ante un ataque, asignarles unidades militares de guarnición, o construir un puesto de vigilancia (única edificación militar permitida en la periferia).  
+> * **Alerta Temprana:** Un puesto de vigilancia activo emite una señal visual y sonora en la cámara cenital al detectar hostiles cerca de un puesto periférico, dando al jugador tiempo de reacción antes de la pérdida del puesto. Sin un puesto de vigilancia, la pérdida de un puesto puede ocurrir sin aviso previo, como riesgo asumido de expandirse sin invertir en defensa.
+
+## 
+
+## **4\. Infraestructura de Transporte y Redes Logísticas**
+
+La separación entre los puestos remotos de materias primas y los centros de procesamiento usa una red de transporte multicapa inspirada en la eficiencia industrial de Mindustry y la planificación urbana de SimCity. Cualquiera de estas rutas transporta energía, de manera que las instalaciones de la periferia no requieran generadores propios. Considerando que al principio, las instalaciones más básicas no requieren energía externa, pero instalaciones más avanzadas y eficientes sí. Del mismo modo, la construcción de sistemas de transporte conectando los edificios residenciales con los de investigación y los de fabricación, mejora el rendimiento de estos, disminuyendo los tiempos de producción.
+
+| Medio de Transporte | Recurso o Elemento Trasladado | Capacidad y Rendimiento | Impacto Táctico y Jugabilidad   |
+| :---- | :---- | :---- | :---- |
+| **Calles y Carreteras Pavimentadas** | Ciudadanos a pie, soldados, carretas mercantiles y vehículos de tracción. | Incremento de velocidad de desplazamiento entre \+35% (tierra afirmada) y \+60% (adoquín/asfalto). | Despliegue rápido de refuerzos bélicos hacia murallas o puestos fronterizos; canalización de rutas comerciales hacia aliados en multijugador. |
+| **Vías Férreas y Convoyes de Trenes** | Grandes volúmenes de carga pesada y contingentes militares completos. | Alta capacidad masiva por viaje programado; velocidad interregional superior. | Conecta yacimientos mineros muy distantes con la Zona B. Permite emboscadas a trenes de suministros por parte de tropas enemigas. |
+| **Cintas Transportadoras Automatizadas** | Flujo continuo de sólidos: carbón, hierro, piedra, madera bruta y lingotes. | Caudal continuo ininterrumpido (10 a 30 ítems/segundo según nivel tecnológico). Más efectivas en longitudes cortas, conectando estaciones de tren o almacenes con refinerías, o refinerías con fábricas o ensambladoras. | Elimina la necesidad de acarrear materiales manualmente; altamente vulnerables a bombardeos o asedios enemigos. |
+| **Redes de Tuberías y Conductos** | Fluidos y gases: agua potable, regadío agrícola, vapor a presión y combustibles. | Flujo presurizado constante sujeto a pérdidas por distancia o roturas. | Suministra energía a calderas y plantas químicas avanzadas; vital para sostener invernaderos de alta densidad urbana. |
+
+## **5\. Mecánica de Plantillas y Construcción Asistida**
+
+El jugador es el diseñador del código arquitectónico de su civilización mediante el sistema de Blueprints serializables:
+
+### **Criterios de Validación Estructural**
+
+> * **Cerramiento Estructural Hermético:** Perímetro continuo de bloques sólidos sin huecos exteriores imprevistos, suelo consolidado y tejado que cubre la totalidad de la huella del edificio. Si el edificio no es rectangular, las esquinas deben tener un bloque que una las dos paredes.  
+> * **Altura Mínima por Piso:** cada piso/historia del edificio ocupa como mínimo 4 celdas verticales: 1 de suelo, 3 de interior libre y 1 de techo (que además sirve de suelo del piso superior, si lo hay; el piso base puede estar en valores de Y negativos, es decir, bajo tierra, sin ninguna restricción adicional). Esta altura mínima existe para que los objetos de 2 celdas quepan siempre: la puerta (2 celdas apiladas verticalmente, no se puede colocar si falta ese espacio) y la cama (ver más abajo) con margen de sobra.  
+> * **Aberturas Reglamentarias:** Mínimo una puerta transitable instalada y al menos una ventana (bloque traslúcido o enrejado) hacia el exterior por habitación. La puerta es un objeto de 2 celdas apiladas verticalmente (no una sola celda) — su colocación exige que ambas celdas estén libres.  
+> * **Volumen Vital y Camas:** Al menos una cama colocada. La cama es un objeto de 2 celdas colindantes horizontalmente, orientado en el sentido de la mirada del jugador al colocarla; su colocación exige que ambas celdas estén libres. Cada cama requiere además un volumen libre de 2 bloques de altura despejada por encima (sumado a la celda que ya ocupa, completa los 3 bloques de interior del piso) y una casilla lateral accesible. Se admiten diseños multinivel (rascacielos de viviendas o complejos departamentales). La altura habitable del edificio será limitada según el nivel de la ciudad, es decir: en nivel 0 solo son habitables el nivel del suelo y el piso superior, en nivel 1 se agregan dos pisos más, y así consecutivamente. De esta manera la ciudad puede crecer en densidad a medida que avanza de nivel. Si disminuye de nivel, la población de los pisos superiores será desahuciada, disminuyendo la habitabilidad, la moral y la población disponible como fuerza laboral.  
+> * **Almacenamiento Individual:** El edificio debe tener, en total, al menos un baúl o casillero por cada cama que contenga, para pertenencias cívicas — sin exigir que cada cama tenga "su" baúl emparejado por posición. Esto da libertad de diseño: por ejemplo, un barracón puede agrupar varias camas juntas y tener una sola sección de casilleros ("lockers") en otro punto del edificio, siempre que la cantidad total de baúles alcance.  
+> * **Etiquetado de Zona:** La plantilla generada recibe obligatoriamente la etiqueta territorial zona\_permitida: "residencial\_investigacion", invalidando su emplazamiento en polígonos militares o en la periferia.  
+> * **Evolución de edificaciones:** Los edificios residenciales construidos con plantillas iniciales podrán ser sustituidos por nuevas versiones o diseños, pero únicamente si la nueva versión ocupa la misma huella de área. Esto permite cambiar los primeros edificios de uno o dos pisos por versiones con más pisos. Considerando que la huella superior no debe, en ningún momento, superar o sobrepasar la huella de la base del edificio.  
+> * **Personalización de construcciones:** El jugador es libre de personalizar las construcciones prediseñadas que el juego ofrece (es decir, plantillas de edificios de investigación, edificios industriales, edificios militares, edificios de extracción/recolección de recursos, almacenes, etc.), siempre que no modifique características clave como la huella, la cantidad de conexiones (entradas y salidas de bienes/objetos), entre otras.  
+> * **Plantillas de producción:** Dado que los edificios productivos son prediseñados, el jugador no necesita diseñarlos por sí mismo, sin embargo, puede diseñar módulos de producción, compuestos por un grupo de edificios y vías de transporte que los interconectan. Estos módulos pueden colocarse completos para crear toda una cadena productiva, por ejemplo: un módulo que contiene una estación de tren, una refinadora de mineral de hierro, una fábrica de armamento y un almacén, todo conectado entre sí por cintas transportadoras, y carreteras que permiten la comunicación con la zona residencial.
+
+### **Fórmula de Construcción Asistida**
+
+*Tiempo de Construcción \= (Suma del Coste de Bloques / Tasa Base de Edificación) / Número de Obreros Asignados*
+
+## **6\. Gestión Demográfica y la Comida como Energía Metabólica**
+
+La fuerza laboral no es una cifra estática. Cada ciudadano quema unidades de comida en función directa del desgaste calórico que demanda su rol:
+
+| Rol de Población | Consumo (Uds/h) | Ubicación de Desempeño | Impacto en la Planificación Económica   |
+| :---- | :---- | :---- | :---- |
+| **Jóvenes** | 2 / h | Zona Residencial (Núcleo A) | Mantenimiento pasivo; inversión para relevo generacional y crecimiento de mano de obra. |
+| **Trabajadores Tipo 1** | 5 / h | Periferia y Núcleo A (fuerza bruta) | Taladores manuales y canteros. Gasto calórico muy alto que obliga a mecanizar la producción rápidamente. |
+| **Trabajadores Tipo 2** | 4 / h | Zona de Fabricación (Núcleo B) | Operarios de hornos de lingotes, aserraderos mecánicos y talleres de forja primaria. |
+| **Trabajadores Tipo 3** | 3 / h | Zona de Fabricación (Núcleo B) | Especialistas en plantas químicas y cadenas de ensamblaje. Máxima eficiencia que reduce la demanda de alimentos. |
+| **Investigadores** | 2 / h | Zona de Investigación (Núcleo A) | Desarrollan patentes, tecnologías y nuevos planos. Consumo calórico bajo con alto coste edilicio. |
+| **Guerreros / Soldados** | 4 / h | Zona Militar (Núcleo B) y Carreteras | Infantería, arqueros y dotaciones de asedio. Mantener grandes ejércitos genera un enorme estrés sobre los graneros. |
+| **Ancianos** | 2 / h | Zona Residencial (Núcleo A) | Ciudadanos retirados. Otorgan bonificaciones cívicas a la moral a cambio de soporte asistencial. |
+
+### **Variedad de Fuentes Alimentarias y Bono de Moral Dinámico**
+
+> * **Comida como Recurso Genérico:** Toda fuente de alimento (sembradíos, granjas de producción animal, puestos de recolección y caza, centros hidropónicos, barcos pesqueros, fábricas de alimento sintético Tipo 3) produce el mismo recurso genérico "comida", cada una a una tasa/hora distinta según su tecnología.  
+> * **Bono por Diversidad Activa:** La moral recibe un bono adicional proporcional a la cantidad de categorías de fuentes de comida que estén **activas y en producción** en un momento dado, no a cuántas existan construidas. Si el jugador desmantela o desactiva una categoría (por ejemplo, al migrar hacia fábricas sintéticas Tipo 3 más eficientes), el bono decae de forma gradual en vez de desaparecer de golpe, manteniendo viva la decisión estratégica entre eficiencia (menos fuentes, más rendimiento) y variedad (más fuentes, mejor moral) durante toda la partida.
+
+### **Satisfacción, Moral y Crisis Demográficas**
+
+> * **Superávit Alimentario y Variedad (Moral \> 80%):** Bonificación del \+15% en velocidad de trabajo y tenacidad bélica (+25% resistencia al pánico).  
+> * **Déficit Temporal (Moral 30% \- 50%):** Huelgas espontáneas en fábricas Tipo 2 y 3, negativa a acudir a obras en la periferia y aumento de delitos cívicos.  
+> * **Inanición y Escasez Severa (Moral \< 20%):** Deserciones militares, formación de facciones bandidas internas y migración activa de familias completas fuera del mapa.
+
+## **7\. Modelo Dinámico de Nivel de Ciudad y Consumo del Avatar**
+
+El nivel de la ciudad es un índice dinámico basado en la sofisticación relativa de las instalaciones activas en el Núcleo B:
+
+*Índice \= \[(Instalaciones Tipo 1 \* 1\) \+ (Instalaciones Tipo 2 \* 2\) \+ (Instalaciones Tipo 3 \* 3)\] / Total Instalaciones*
+
+| Nivel Urbano | Criterio Algorítmico | Consumo del Avatar | Condición Física y Rol del Avatar   |
+| :---- | :---- | :---- | :---- |
+| **Nivel 1: Asentamiento Rudimentario** | Índice \< 1.7 o urbe sin industria especializada. | **5 / h** | El jugador realiza trabajo manual extenuante (tala, acarreo físico, minado inicial). Desgaste metabólico máximo. |
+| **Nivel 2: Asentamiento Productivo** | 1.7 \<= Índice \< 2.5 y mínimo 3 plantas Tipo 2\. | **4 / h** | Supervisión técnica de hornos y forjas mecánicas. Disminuye la demanda física directa del personaje. |
+| **Nivel 3: Metrópolis Tecnificada** | Índice \>= 2.5 y mínimo 3 refinerías Tipo 3\. | **3 / h** (2 / h en ayuntamientos) | Comando estratégico, logístico y táctico militar superior. La automatización alivia casi todo esfuerzo físico. |
+
+### **Vulnerabilidad por Destrucción Bélica**
+
+Si durante un asedio el enemigo bombardea o demuele las plantas Tipo 3, el promedio de sofisticación cae inmediatamente a Nivel 1 o 2\. Esto dispara el hambre del avatar a 5/h y paraliza las tecnologías avanzadas hasta reconstruir las instalaciones afectadas.
+
+### **Investigación de Nivel: Requisito de Activación**
+
+El ratio de instalaciones por sí solo (tabla anterior) determina si la ciudad **puede** subir de nivel, pero no lo hace automáticamente. Subir de nivel requiere además investigar y pagar el costo de una tecnología de activación única en el laboratorio, similar al avance de eras de Age of Empires:
+
+> * **Nivel 1 → 2:** Requiere el ratio de instalaciones ya definido (≥3 plantas Tipo 2\) **y** completar la investigación "Metalurgia Aplicada" (costo en hierro, madera y tiempo de investigador asignado).  
+> * **Nivel 2 → 3:** Requiere el ratio de instalaciones ya definido (≥3 refinerías Tipo 3\) **y** completar la investigación "Automatización Industrial" (costo mayor de recursos, requiere múltiples investigadores asignados simultáneamente).  
+> * Mientras la investigación de activación no se haya completado, las instalaciones de nivel superior cuentan para el cálculo del índice de sofisticación, pero permanecen bloqueadas en capacidad de producción de Nivel 1 (ver Sección 9 para su aplicación en balance multijugador).
+
+
+
+## **8\. Modos de Cámara y Sistema de Combate Táctico Híbrido**
+
+> * **Cámara Cenital (Modo RTS / City Builder):** Selección masiva de tropas mediante recuadros de arrastre, programación de rutas de patrulla a lo largo de carreteras, trazado de cintas y vías, e inspección panorámica del frente de batalla.  
+> * **Cámara en Primera Persona (Modo Acción / Supervivencia):** Posesión directa del avatar para combatir en el frente con armas a distancia o cuerpo a cuerpo, defender brechas en las murallas o explorar túneles subterráneos.  
+> * **Comando Híbrido entre Vistas:** El cambio de cámara es libre en todo momento, incluso en pleno combate o durante la construcción/gestión. Sin embargo, ciertas acciones sólo están disponibles desde una vista específica: el diseño y personalización de edificios (Blueprints) requiere la vista en primera persona, mientras que distribuir la ciudad, emplazar edificios nuevos y seleccionar grupos de tropas requiere la vista cenital. Esto habilita mecánicas como: seleccionar una tropa desde la cámara cenital, volver a la primera persona y comandarla mediante órdenes de acceso directo apuntando con la mirada hacia el objetivo o punto deseado.  
+> * **Aura de Liderazgo Bélico:** Combatir en primera persona junto al ejército otorga un aura de moral activa a las tropas circundantes (+20% resistencia al pánico y \+10% cadencia de disparo a los soldados cercanos).  
+> * **Pausa Táctica (solo un jugador):** En partidas de un solo jugador, entrar en la cámara cenital durante combate activa una ralentización táctica del tiempo (no una pausa total), dando margen para reasignar tropas sin que el enemigo avance a máxima velocidad. Esta ralentización **no está disponible en partidas multijugador**, ya que cada jugador puede estar en una vista distinta en el mismo instante y detener o ralentizar el tiempo para uno afectaría injustamente a los demás.
+
+## **9\. Mortalidad del Avatar y Sucesión Ciudadana**
+
+> * **Sin Ciudadanos (Game Over):** Si el avatar muere antes de tener al menos un ciudadano bajo su mando, la partida termina y debe iniciarse una nueva.  
+> * **Respawn por Sucesión:** Si el jugador cuenta con al menos un ciudadano, la muerte del avatar no termina la partida. Un ciudadano pasa a convertirse en el nuevo avatar del jugador (reduciendo el censo en 1) y reaparece en el núcleo urbano. La muerte conlleva la pérdida del inventario que el avatar llevaba encima al morir.  
+> * **Elegibilidad Militar:** Únicamente ciudadanos con rol de soldado/militar son elegibles para suceder al avatar. El jugador elige, entre los soldados disponibles, cuál sucede al avatar; no es una selección aleatoria.  
+> * **Período de Elecciones:** Con una ciudad en funcionamiento, la sucesión provoca una caída temporal en el rendimiento de la ciudad (el "período de elecciones") durante el tiempo de respawn, reflejando la interrupción de liderazgo mientras el nuevo avatar asume el mando.
+
+## **10\. Arquitectura Multijugador: Núcleos Portátiles y Competencia Equitativa**
+
+El modo multijugador resuelve el histórico desbalance de los RTS mediante un sistema de núcleos urbanos portátiles con reglas de importación selectiva:
+
+> * **Transporte Selectivo del Núcleo Central:** Al unirse a una partida (LAN o Servidor Dedicado), el motor únicamente exporta el Núcleo A (Residencial/Investigación) y el Núcleo B (Fabricación/Militar) del jugador.  
+> * **Persistencia Total de Plantillas (Blueprints):** Todos los planos arquitectónicos validados en la partida en solitario viajan con el jugador. Esto permite levantar de inmediato módulos conocidos de viviendas, módulos productivos y murallas sin tener que rediseñarlos desde cero.  
+> * **Exclusión Estricta de la Periferia:** Las minas, campamentos madereros y puestos periféricos del modo individual no se transfieren. Todos los jugadores aterrizan en un bioma procedural nuevo donde deben explorar, competir territorialmente y conectar las minas mediante nuevas carreteras y vías de tren.  
+> * **Nivelación Equitativa en Partidas LAN:** Al iniciar una partida multijugador (pensada primordialmente para grupos pequeños en LAN), todos los jugadores comienzan en Nivel 1 con la misma cantidad de recursos iniciales, sin importar el nivel de su ciudad en solitario. Las instalaciones Tipo 2 y Tipo 3 importadas cuentan para el ratio del índice de sofisticación, pero permanecen bloqueadas en capacidad de producción de Nivel 1 hasta completar las investigaciones de activación correspondientes (ver Sección 7). Los pisos residenciales por encima del Nivel 1 quedan bloqueados, y las redes de transporte de Nivel 2 y 3 quedan limitadas, hasta que cada jugador investigue su propio avance dentro de la partida.  
+> * **Logística Compartida y Guerra de Suministros:** Los jugadores pueden conectar sus carreteras para coordinar refuerzos militares o comerciar excedentes, así como tender emboscadas para cortar las cintas transportadoras que alimentan la zona de fabricación del rival.  
+> * **Economía de Sesión Cerrada:** Los recursos obtenidos o destruidos en multijugador aplican exclusivamente a la sesión en curso; el inventario permanente de la ciudad en solitario queda a salvo de pérdidas irreversibles.
+
+## **11\. Hoja de Ruta Técnica y Plan de Desarrollo**
+
+### **Estilo Gráfico y Estrategia de Assets**
+
+> * **Motor:** Godot Engine.  
+> * **Entorno y bloques:** Estética voxel con texturas, usando el nodo nativo `GridMap` de Godot en vez de un motor de vóxeles infinito propio — la ciudad tiene un tamaño acotado, no requiere generación de mundo tipo Minecraft real. Las texturas de Minecraft de Mojang **no se pueden usar** (propiedad registrada). Se usarán texturas PBR (albedo/normal/roughness/AO) de **[Poly Haven](https://polyhaven.com/textures)** (CC0, sin registro ni atribución) sobre `StandardMaterial3D`, complementadas con **[3dtextures.me](https://3dtextures.me/)** si falta algún material — dan un acabado realista sobre geometría de bloque simple, sin necesitar ray tracing por hardware (RTX), que Godot no soporta de forma nativa como Unreal Engine 5.  
+> * **Unidades y personajes:** Fase 1-2 con packs CC0 gratuitos — **[Quaternius](https://poly.pizza/)** (personajes/edificios low-poly con evolución por etapas) y **[KayKit](https://kaylousberg.itch.io/city-builder-bits)** (ya integrado en la Godot Asset Library, fricción de importación mínima). A partir de Fase 3 (cuando se necesiten tropas/unidades definitivas), evaluar la compra de un pack **[Synty POLYGON](https://syntystore.com/products/polygon-city-pack)** (de pago) para un acabado low-poly con shading PBR de mayor calidad (reflejos y emisión en ventanas, iluminación nocturna).
+
+Las fases siguientes están ordenadas de menor a mayor esfuerzo de desarrollo, agrupando las Pruebas de Concepto (PoCs) originales dentro de etapas más amplias:
+
+| Fase | Objetivo Tecnológico | Esfuerzo | Arte Requerido | Métricas de Éxito |
+| :---- | :---- | :---- | :---- | :---- |
+| **Fase 0 (Completada): Lógica Pura** | PoC 1 (motor de recursos/demografía en Python) extendido con investigación por nivel, fuentes de comida activas y elegibilidad militar de sucesión; PoC 2 (serialización JSON y validación de plantillas/zonas). Cada PoC se documenta como proyecto independiente en su propia carpeta (`PoC_1/`, `PoC_2/`) con fases de Ideación, Planeación y Desarrollo. | Muy bajo | Ninguno (sin render) | Ciclos de reloj estables, consumo diferenciado por oficio, degradación de nivel por infraestructura, y algoritmo que verifica cerramiento/volumen vital y rechaza planos fuera de zona. **Cumplido:** ambas PoCs completas con pruebas unitarias pasando (6 asserts en PoC 1, 8 asserts en PoC 2). |
+| **Fase 1 (Verificada, incluyendo GridMap, detección de edificios y objetos multi-celda): Prototipo Visual Mínimo** | PoC 3 (ver `PoC_3/`): avatar en 1ra persona con raycast para minar/colocar bloques sobre `GridMap` + `MeshLibrary` nativos; puerto de 6 reglas de validación de PoC 2 a GDScript; mira (crosshair) mínima en pantalla; mecanismo de "declarar edificio" — flood-fill 3D sobre bloques del jugador (tecla `B` apuntando a una puerta) que arma un Blueprint a partir de lo construido libremente y lo valida con las mismas reglas; puerta (2 celdas verticales) y cama (2 celdas horizontales orientadas a la mirada) como objetos multi-celda con verificación de espacio y minado en cascada; bloque `baul` placeholder de 1 celda, sin interacción todavía pero ya contabilizado en la validación (mínimo 1 baúl por cada cama del edificio, sin emparejamiento por posición). | Bajo-medio | Bloques de color plano en la `MeshLibrary` (`assets/BlockLibrary.res`) como placeholder — texturas PBR de Poly Haven pendientes de integrar sobre los mismos ítems | Avatar capaz de minar y posicionar bloques 3D con físicas y raycast preciso; colocación de blueprint dispara la misma validación que en Python; una estructura construida libremente (incluyendo habitaciones cerradas con puerta propia y una cama) se detecta como una sola unidad y se valida correctamente, mientras que el piso de tierra generado por el mundo es rechazado como base; puerta y cama rechazan su colocación si falta el espacio de 2 celdas que requieren (ver Sección 5, Altura Mínima por Piso). **Verificado con Godot 4.7 (Steam)** vía MCP e interacción manual; 6 bugs encontrados y corregidos en total (carga, identificador global duplicado, inferencia de tipos). **Pendiente:** mira contextual, interacción real del baúl (hoy es un placeholder que no se puede abrir ni almacena nada, solo cuenta para la regla de mínimo 1 por cama), portar tests de evolución/personalización de PoC 2, flujo de "construir" desde vista cenital (requiere PoC 5), validación programática de la altura mínima por piso (documentada, no forzada aún en código), texturas PBR — ver Próximos Pasos de `PoC_3/`. |
+| **Fase 2: Ciudad y Demografía Visibles** | Integración de `Ciudad`/`Avatar` como autoload de Godot con HUD (comida, moral, nivel urbano); zonificación pintada sobre el grid con bloqueo de construcción fuera de zona; colonos como NPCs simples sin pathfinding avanzado. | Medio | Mismos bloques con textura + UI simple + modelo low-poly genérico de colono | Estado de la ciudad (recursos, moral, nivel) visible y consistente con la lógica de Fase 0; zonificación aplicada en tiempo real. |
+| **Fase 3: Cámara Dual y Selección de Tropas** | PoC 5 (transición 1ra persona ↔ cenital, selección por arrastre); mecánica de comando híbrido (seleccionar en cenital, ordenar apuntando con la mirada en 1ra persona); pausa táctica en un jugador. | Medio-alto | Unidades low-poly (tropas/soldados) | Cambio suave entre cámaras; cuadro de selección por arrastre; una tropa seleccionada en cenital recibe órdenes precisas desde la vista en primera persona. |
+| **Fase 4: Logística y Pathfinding** | PoC 4 (navegación A\* ponderada por carreteras usando `NavigationServer3D` nativo); PoC 6 (cintas transportadoras y tuberías, empezando por tramos rectos antes de curvas/cruces). | Alto | Bloques de calle/vía/cinta con textura (sin unidades nuevas) | NPCs priorizan calles automáticamente y sortean murallas dinámicas; movimiento secuencial continuo de ítems entre puestos periféricos y almacenes sin intervención manual. |
+| **Fase 5: Combate, Asedios e IA** | IA de bandidos/facciones (patrulla, ataque a puestos periféricos, asedio al núcleo); alerta temprana de puestos de vigilancia; aura de moral; flujo completo de sucesión del avatar (selección de sucesor militar y período de elecciones). | Alto | Unidades enemigas low-poly + efectos de combate simples | Asedios funcionales con IA reactiva; sucesión de avatar operativa de punta a punta con UI de selección. |
+| **Fase 6: Multijugador LAN** | Sincronización de estado económico con modelo autoritativo (host corre la simulación de `Ciudad`, clientes envían inputs); nivelación equitativa (bloqueo de capacidad Tipo 2/3 hasta investigar); exportación/importación de núcleos portátiles y blueprints reusando el formato JSON de PoC 2, sobre la API de alto nivel de multijugador de Godot (ENet). | El más alto | Sin novedades de arte (reusa lo anterior) | Partida LAN de varios jugadores con niveles iniciales equitativos, estado de ciudad sincronizado sin desincronización perceptible, y transporte de núcleos/blueprints funcional. |
+
+## **12\. Próximos Pasos Inmediatos**
+
+> 1. ~~Fase 0 — Extender PoC 1 con investigación por nivel, fuentes de comida activas y elegibilidad militar de sucesión.~~ **Completado** (ver `PoC_1/`).  
+> 2. ~~Fase 0 — Diseño de la Estructura JSON para PoC 2 con restricciones de zona.~~ **Completado** (ver `PoC_2/`).  
+> 3. ~~Selección de Pack de Assets.~~ **Completado:** Poly Haven/3dtextures.me para texturas PBR de bloques; Quaternius/KayKit (gratis) para unidades en Fase 1-2, con opción de compra de Synty POLYGON en Fase 3\.  
+> 4. **Fase 1 — Prototipo en Godot:** Configurar el `GridMap` con el pack de texturas elegido y el controlador en 1ra persona con raycast de minado/colocación, portando la validación de PoC 2 a GDScript.

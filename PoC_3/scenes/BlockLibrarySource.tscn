@@ -1,0 +1,116 @@
+[gd_scene load_steps=25 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Mat_pared"]
+albedo_color = Color(0.55, 0.55, 0.55, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_pared"]
+material = SubResource("Mat_pared")
+
+[sub_resource type="BoxShape3D" id="Shape_pared"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_puerta_inferior"]
+albedo_color = Color(0.45, 0.28, 0.12, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_puerta_inferior"]
+material = SubResource("Mat_puerta_inferior")
+
+[sub_resource type="BoxShape3D" id="Shape_puerta_inferior"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_puerta_superior"]
+albedo_color = Color(0.6, 0.4, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_puerta_superior"]
+material = SubResource("Mat_puerta_superior")
+
+[sub_resource type="BoxShape3D" id="Shape_puerta_superior"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_ventana"]
+albedo_color = Color(0.6, 0.8, 1.0, 0.5)
+transparency = 1
+
+[sub_resource type="BoxMesh" id="Mesh_ventana"]
+material = SubResource("Mat_ventana")
+
+[sub_resource type="BoxShape3D" id="Shape_ventana"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_piso"]
+albedo_color = Color(0.35, 0.6, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_piso"]
+material = SubResource("Mat_piso")
+
+[sub_resource type="BoxShape3D" id="Shape_piso"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_cama_cabecera"]
+albedo_color = Color(0.8, 0.2, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_cama_cabecera"]
+material = SubResource("Mat_cama_cabecera")
+
+[sub_resource type="BoxShape3D" id="Shape_cama_cabecera"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_cama_pies"]
+albedo_color = Color(0.9, 0.6, 0.65, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_cama_pies"]
+material = SubResource("Mat_cama_pies")
+
+[sub_resource type="BoxShape3D" id="Shape_cama_pies"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_baul"]
+albedo_color = Color(0.5, 0.35, 0.1, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_baul"]
+material = SubResource("Mat_baul")
+
+[sub_resource type="BoxShape3D" id="Shape_baul"]
+
+[node name="BlockLibrarySource" type="Node3D"]
+
+[node name="pared" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_pared")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="pared"]
+shape = SubResource("Shape_pared")
+
+[node name="puerta_inferior" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_puerta_inferior")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="puerta_inferior"]
+shape = SubResource("Shape_puerta_inferior")
+
+[node name="puerta_superior" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_puerta_superior")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="puerta_superior"]
+shape = SubResource("Shape_puerta_superior")
+
+[node name="ventana" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_ventana")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ventana"]
+shape = SubResource("Shape_ventana")
+
+[node name="piso" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_piso")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="piso"]
+shape = SubResource("Shape_piso")
+
+[node name="cama_cabecera" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_cama_cabecera")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cama_cabecera"]
+shape = SubResource("Shape_cama_cabecera")
+
+[node name="cama_pies" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_cama_pies")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cama_pies"]
+shape = SubResource("Shape_cama_pies")
+
+[node name="baul" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_baul")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="baul"]
+shape = SubResource("Shape_baul")

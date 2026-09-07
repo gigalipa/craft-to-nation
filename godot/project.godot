@@ -21,6 +21,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 [autoload]
 
 Ciudad="*res://scripts/Ciudad.gd"
+Zonificacion="*res://scripts/Zonificacion.gd"
 
 [physics]
 

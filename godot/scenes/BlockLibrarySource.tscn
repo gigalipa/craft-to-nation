@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3]
+[gd_scene load_steps=31 format=3]
 
 [sub_resource type="StandardMaterial3D" id="Mat_pared"]
 albedo_color = Color(0.55, 0.55, 0.55, 1)
@@ -65,6 +65,22 @@ material = SubResource("Mat_baul")
 
 [sub_resource type="BoxShape3D" id="Shape_baul"]
 
+[sub_resource type="StandardMaterial3D" id="Mat_tierra"]
+albedo_color = Color(0.45, 0.3, 0.15, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_tierra"]
+material = SubResource("Mat_tierra")
+
+[sub_resource type="BoxShape3D" id="Shape_tierra"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_piedra"]
+albedo_color = Color(0.45, 0.45, 0.48, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_piedra"]
+material = SubResource("Mat_piedra")
+
+[sub_resource type="BoxShape3D" id="Shape_piedra"]
+
 [node name="BlockLibrarySource" type="Node3D"]
 
 [node name="pared" type="MeshInstance3D" parent="."]
@@ -114,3 +130,15 @@ mesh = SubResource("Mesh_baul")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="baul"]
 shape = SubResource("Shape_baul")
+
+[node name="tierra" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_tierra")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="tierra"]
+shape = SubResource("Shape_tierra")
+
+[node name="piedra" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_piedra")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="piedra"]
+shape = SubResource("Shape_piedra")

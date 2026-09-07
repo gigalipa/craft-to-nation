@@ -27,6 +27,8 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if not camara.current:
+		return
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
 		if tecla.pressed and tecla.keycode == KEY_ESCAPE:

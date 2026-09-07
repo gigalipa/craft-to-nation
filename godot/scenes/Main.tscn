@@ -1,10 +1,12 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1"]
 [ext_resource type="Script" path="res://scripts/VoxelWorld.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/Main.gd" id="3"]
 [ext_resource type="MeshLibrary" path="res://assets/BlockLibrary.res" id="4"]
 [ext_resource type="Script" path="res://scripts/HUD.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/CamaraCenital.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/ZonaOverlay.gd" id="7"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("3")
@@ -16,6 +18,14 @@ cell_size = Vector3(1, 1, 1)
 
 [node name="Player" parent="." instance=ExtResource("1")]
 position = Vector3(0, 1, 0)
+
+[node name="CamaraCenital" type="Camera3D" parent="."]
+current = false
+script = ExtResource("6")
+
+[node name="ZonaOverlay" type="Node3D" parent="."]
+visible = false
+script = ExtResource("7")
 
 [node name="Luz" type="DirectionalLight3D" parent="."]
 position = Vector3(0, 5, 0)

@@ -11,6 +11,10 @@ const COLOR_POR_ZONA := {
 	"fabricacion_militar": Color(1.0, 0.5, 0.1, 0.4),
 }
 
+const ALTURA_SOBRE_SUPERFICIE := 0.05
+
+@onready var mundo: Node = get_node("../VoxelWorld")
+
 
 func reconstruir() -> void:
 	for hijo in get_children():
@@ -28,8 +32,14 @@ func reconstruir() -> void:
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		material.albedo_color = color
 
+		# La altura de la superficie varía con el relieve real del mundo (ver
+		# GeneradorMundo/VoxelWorld._generar_terreno()) — un y fijo dejaba el
+		# overlay enterrado bajo el terreno en casi toda el área, invisible
+		# desde la cámara cenital.
+		var altura_superficie: int = mundo.generador.altura_en(celda.x, celda.y)
+
 		var plano := MeshInstance3D.new()
 		plano.mesh = malla
 		plano.material_override = material
-		plano.position = Vector3(celda.x, 0.05, celda.y)
+		plano.position = Vector3(celda.x, altura_superficie + ALTURA_SOBRE_SUPERFICIE, celda.y)
 		add_child(plano)

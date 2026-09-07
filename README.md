@@ -29,8 +29,8 @@ El documento [GDD](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20
 ## Ejecutar el prototipo
 
 1. Instala Godot 4.7.
-2. Importa `PoC_3/project.godot`.
-3. Ejecuta el proyecto con **F5**. Para correr las pruebas, abre `PoC_3/scenes/Test.tscn` y usa **F6**.
+2. Importa `godot/project.godot` (proyecto Godot compartido, usado por PoC_3 en adelante).
+3. Ejecuta el proyecto con **F5**. Para correr las pruebas, abre `godot/scenes/Test.tscn` y usa **F6**.
 
 Las verificaciones del sitio solo requieren Python 3:
 

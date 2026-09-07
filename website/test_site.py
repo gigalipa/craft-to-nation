@@ -72,6 +72,13 @@ class CraftToNationSiteTests(unittest.TestCase):
         self.assertEqual("Quiero apoyar Craft to Nation", email_query["subject"][0])
         self.assertEqual(expected_message, email_query["body"][0])
 
+    def test_enlace_al_repositorio(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn(
+            '<a href="https://github.com/gigalipa/craft-to-nation" target="_blank" rel="noopener noreferrer">Ver repositorio en GitHub</a>',
+            html,
+        )
+
     def test_estado_del_desarrollo(self):
         content = " ".join(self.site.text)
         expected_statuses = {

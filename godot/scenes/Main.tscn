@@ -1,0 +1,79 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/VoxelWorld.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/Main.gd" id="3"]
+[ext_resource type="MeshLibrary" path="res://assets/BlockLibrary.res" id="4"]
+[ext_resource type="Script" path="res://scripts/HUD.gd" id="5"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("3")
+
+[node name="VoxelWorld" type="GridMap" parent="."]
+script = ExtResource("2")
+mesh_library = ExtResource("4")
+cell_size = Vector3(1, 1, 1)
+
+[node name="Player" parent="." instance=ExtResource("1")]
+position = Vector3(0, 1, 0)
+
+[node name="Luz" type="DirectionalLight3D" parent="."]
+position = Vector3(0, 5, 0)
+rotation_degrees = Vector3(-45, -30, 0)
+shadow_enabled = true
+
+[node name="MiraUI" type="CanvasLayer" parent="."]
+
+[node name="Mira" type="ColorRect" parent="MiraUI"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = 2.0
+color = Color(1, 1, 1, 0.8)
+mouse_filter = 2
+
+[node name="HUDLayer" type="CanvasLayer" parent="."]
+script = ExtResource("5")
+
+[node name="HUD" type="VBoxContainer" parent="HUDLayer"]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 260.0
+offset_bottom = 140.0
+
+[node name="NivelLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "Nivel: 1 (potencial: 1)"
+
+[node name="PoblacionLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "Población: 0 / 0"
+
+[node name="MoralLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "Moral (variedad): 0.0"
+
+[node name="ComidaStockLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "  Comida: 0 / 0"
+
+[node name="ComidaTasaLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "  +0.0 /tick"
+
+[node name="CriticoNombreLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "Recurso crítico: -"
+
+[node name="CriticoStockLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "  - : 0 / 0"
+
+[node name="CriticoTasaLabel" type="Label" parent="HUDLayer/HUD"]
+layout_mode = 2
+text = "  +0.0 /tick"

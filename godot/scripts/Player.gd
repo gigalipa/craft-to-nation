@@ -1,11 +1,14 @@
 extends CharacterBody3D
 class_name Player
 
+const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")  # TEMP: ver nota de verificación tras mover el proyecto a godot/
+
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
 
 const VELOCIDAD := 5.0
 const GRAVEDAD := 9.8
+const VELOCIDAD_SALTO := 5.5
 const SENSIBILIDAD_MOUSE := 0.003
 const ALCANCE_RAYCAST := 5.0
 
@@ -30,6 +33,8 @@ func _input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		if tecla.pressed and tecla.keycode == KEY_B:
 			_declarar_edificio()
+		if tecla.pressed and tecla.keycode == KEY_K:
+			_morir_jugador()
 		if tecla.pressed:
 			var indice: int = tecla.keycode - KEY_1
 			if indice >= 0 and indice < tipos_disponibles.size():
@@ -67,6 +72,8 @@ func _physics_process(delta: float) -> void:
 	velocity.z = direccion.z * VELOCIDAD
 	if not is_on_floor():
 		velocity.y -= GRAVEDAD * delta
+	elif Input.is_key_pressed(KEY_SPACE):
+		velocity.y = VELOCIDAD_SALTO
 	else:
 		velocity.y = 0.0
 
@@ -135,3 +142,21 @@ func _declarar_edificio() -> void:
 	var blueprint := BlueprintValidator.estructura_a_blueprint(celdas)
 	var resultado := BlueprintValidator.validar_blueprint(blueprint)
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
+	if resultado["valido"]:
+		var total_camas := 0
+		for piso in blueprint["pisos"]:
+			total_camas += (piso.get("camas", []) as Array).size()
+		Ciudad.registrar_edificio_residencial(total_camas)
+		print("Camas registradas en Ciudad: ", total_camas, " (total construido: ", Ciudad.capacidad_camas_construida, ")")
+
+
+## Tecla de prueba (K): simula la muerte del jugador para poder probar la
+## sucesión del Avatar en vivo. No hay salud/combate real todavía (ver
+## PoC_4/); esta PoC no modela ninguna causa de muerte física.
+func _morir_jugador() -> void:
+	var resultado: String = Ciudad.suceder_avatar()
+	print("Muerte del jugador -> Sucesión: ", resultado)
+	if resultado == "sucesion_exitosa":
+		global_position = Vector3(0, 1, 0)
+		velocity = Vector3.ZERO
+		print("Sucesor al mando. Jugador reaparece en el punto de partida.")

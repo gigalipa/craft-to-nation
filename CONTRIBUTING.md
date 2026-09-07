@@ -21,7 +21,7 @@ Para verificar el sitio:
 python -m unittest discover -s website -p "test_*.py"
 ```
 
-Las pruebas de Godot están en `PoC_3/scenes/Test.tscn` y deben ejecutarse desde Godot 4.7.
+Las pruebas de Godot están en `godot/scenes/Test.tscn` (proyecto compartido usado por PoC_3 en adelante) y deben ejecutarse desde Godot 4.7.
 
 ## Aportes asistidos por IA
 

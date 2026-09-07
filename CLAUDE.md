@@ -28,4 +28,4 @@ Craft to Nation está validando sus sistemas mediante PoC independientes. No con
 python -m unittest discover -s website -p "test_*.py"
 ```
 
-Para cambios en `PoC_3/`, ejecuta también `PoC_3/scenes/Test.tscn` con Godot 4.7 y confirma que todas las aserciones pasan.
+Para cambios en el proyecto Godot compartido (`godot/`, usado por PoC_3 en adelante), ejecuta también `godot/scenes/Test.tscn` con Godot 4.7 y confirma que todas las aserciones pasan.

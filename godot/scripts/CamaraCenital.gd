@@ -18,6 +18,7 @@ const VELOCIDAD_ORBITA := deg_to_rad(90.0)  # radianes/segundo
 const COLOR_HUELLA_VALIDA := Color(0.2, 1.0, 0.3, 0.4)
 const COLOR_HUELLA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
 const MITAD_HUELLA := 2  # (NiveladorTerreno.TAMANO_HUELLA - 1) / 2, para una huella de 5x5
+const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
@@ -182,12 +183,32 @@ func _salir_de_modo_nivelacion() -> void:
 
 
 ## Convierte una posición de pantalla en la celda de grid (X,Z) que hay
-## debajo, intersecando el rayo de la cámara con el plano y = 0.
+## debajo, mediante un raycast físico real contra la colisión del terreno
+## (la misma que usa Player.gd para minar/colocar) — no basta con
+## intersecar un plano fijo en y = 0: con relieve real (0-15 de altura) y
+## una cámara en ángulo oblicuo, un rayo que visualmente toca el terreno a
+## media altura sigue viajando mucho más lejos horizontalmente antes de
+## llegar a y = 0, desplazando la celda detectada muy lejos del cursor. Si
+## el rayo no golpea nada (apunta al cielo, fuera del mundo generado), cae
+## de vuelta a la intersección con el plano y = 0 como aproximación.
 func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 	var origen := project_ray_origin(posicion_pantalla)
 	var direccion := project_ray_normal(posicion_pantalla)
-	var distancia: float = -origen.y / direccion.y
-	var punto: Vector3 = origen + direccion * distancia
+
+	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
+	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
+
+	var punto: Vector3
+	if resultado.is_empty():
+		var distancia: float = -origen.y / direccion.y
+		punto = origen + direccion * distancia
+	else:
+		# Desplaza ligeramente hacia adentro de la cara golpeada (misma técnica
+		# que Player._celda_impactada()) para caer siempre dentro de la celda
+		# sólida y no en la vecina vacía.
+		var normal: Vector3 = resultado["normal"]
+		punto = resultado["position"] - normal * 0.5
+
 	var celda: Vector3i = mundo.local_to_map(mundo.to_local(punto))
 	return Vector2i(celda.x, celda.z)
 

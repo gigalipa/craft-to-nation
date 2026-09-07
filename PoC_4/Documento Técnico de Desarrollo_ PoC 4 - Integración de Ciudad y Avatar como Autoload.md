@@ -18,7 +18,7 @@ Esta PoC cubre ya **los 4 sub-proyectos** de la Fase 2: (1) autoload `Ciudad`/`A
 
 ### **1.1 Alcance y Objetivos de la PoC**
 
-Esta PoC cubre los **4 sub-proyectos** de la **Fase 2 del roadmap** ("Ciudad y Demografía Visibles", GDD Sección 11): el autoload de Ciudad/Avatar, un HUD básico, zonificación con bloqueo de construcción, y NPCs colonos. Se decidió diseñar e implementar cada pieza por separado.
+Esta PoC cubre los **4 sub-proyectos** de la **Fase 2 del roadmap** ("Ciudad y Demografía Visibles", GDD Sección 11): el autoload de Ciudad/Avatar, un HUD básico, el vínculo parcial de `Player.gd` con `Ciudad`, y zonificación con bloqueo de construcción. NPCs colonos queda como trabajo futuro (ver 1.2). Se decidió diseñar e implementar cada pieza por separado.
 
 **Sub-proyecto 1 — Autoload:**
 * **Puerto Fiel de PoC 1:** `Recurso`, `Ciudad` (con investigación de nivel, variedad alimentaria, sucesión de avatar) y `Avatar`, traducidos línea por línea de Python a GDScript, preservando exactamente la misma semántica y los mismos 6 casos de prueba.

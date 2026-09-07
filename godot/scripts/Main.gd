@@ -12,6 +12,8 @@ var cenital_activa := false
 
 func _ready() -> void:
 	jugador.mundo = mundo
+	var altura_spawn: int = mundo.generador.altura_en(0, 0)
+	jugador.position = Vector3(0, altura_spawn + 1, 0)
 
 
 func _input(event: InputEvent) -> void:

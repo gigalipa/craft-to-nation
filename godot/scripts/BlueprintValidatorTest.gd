@@ -1,6 +1,7 @@
 extends Node
 
 const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")  # TEMP: ver nota de verificación tras mover el proyecto a godot/
+const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 
 ## Equivalente GDScript de ejecutar_pruebas() en PoC_2 (tests 1-6), más
 ## pruebas propias de PoC 3 para "declarar edificio" (7-8, ver
@@ -94,7 +95,11 @@ func ejecutar_pruebas() -> void:
 	# conteo total. Puertas y cama se colocan con colocar_puerta()/
 	# colocar_cama(), no con colocar_bloque() directo, para ejercitar la
 	# verificación de espacio de 2 celdas (su mitad superior queda en y=2).
-	var mundo: Node = $VoxelWorld
+	# Instantiate VoxelWorld.new() to avoid auto-generation of terrain (_ready() won't be called).
+	var mundo = VoxelWorld.new()
+	mundo.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo.cell_size = Vector3.ONE * 1.0
+	mundo._indexar_biblioteca()
 	for x in range(7):
 		for z in range(3):
 			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
@@ -149,13 +154,15 @@ func ejecutar_pruebas() -> void:
 	assert(resultado["valido"])
 	assert(resultado["errores"].is_empty())
 
-	print("\n=== TEST 8: Declarar Edificio - Rechaza Piso de Tierra ===")
-	# El piso generado por VoxelWorld._generar_piso_inicial() (y=-1) nunca se
-	# marca como colocado_por_jugador, así que no puede declararse edificio.
+	print("\n=== TEST 8: Declarar Edificio - Rechaza Bloque no Marcado como Jugador ===")
+	# Un bloque colocado sin marcar como colocado_por_jugador no se detecta
+	# como estructura. Simular el escenario del terreno del mundo (_generar_terreno)
+	# que nunca marca sus bloques como colocado_por_jugador.
 	var celda_terreno := Vector3i(0, -1, 0)
+	mundo.colocar_bloque(celda_terreno, "piso", false)  # no marcado como jugador
 	assert(mundo.obtener_tipo(celda_terreno) == "piso")
 	assert(mundo.detectar_estructura(celda_terreno).is_empty())
-	print("Correcto: el piso de tierra no es detectado como estructura.")
+	print("Correcto: el bloque no marcado como jugador no es detectado como estructura.")
 
 	print("\n=== TEST 9: Puerta y Cama Rechazadas por Falta de Espacio ===")
 	var base_puerta := Vector3i(10, 0, 0)

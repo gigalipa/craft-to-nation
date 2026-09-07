@@ -7,6 +7,15 @@ extends GridMap
 
 const TAMANO_CELDA := 1.0
 
+const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
+
+const ANCHO_MUNDO := 200
+const LARGO_MUNDO := 200
+const PROFUNDIDAD_SUBSUELO := 32
+const SEMILLA_MUNDO := 12345
+
+var generador: RefCounted
+
 const VECINOS_3D: Array[Vector3i] = [
 	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
 	Vector3i(0, 1, 0), Vector3i(0, -1, 0),
@@ -31,7 +40,8 @@ var pareja: Dictionary = {}  # Vector3i -> Vector3i
 func _ready() -> void:
 	cell_size = Vector3.ONE * TAMANO_CELDA
 	_indexar_biblioteca()
-	_generar_piso_inicial()
+	generador = GeneradorMundo.new(SEMILLA_MUNDO)
+	_generar_terreno()
 
 
 func _indexar_biblioteca() -> void:
@@ -41,10 +51,20 @@ func _indexar_biblioteca() -> void:
 		_tipo_por_id[id] = nombre
 
 
-func _generar_piso_inicial() -> void:
-	for x in range(-5, 6):
-		for z in range(-5, 6):
-			colocar_bloque(Vector3i(x, -1, z), "piso")
+## Genera el mundo una única vez al arrancar la escena: para cada columna
+## (x, z) coloca la celda de superficie ("piso", reutilizando el bloque
+## caminable existente) y el subsuelo debajo (tierra cerca de la
+## superficie, piedra más profundo — ver GeneradorMundo.tipo_en_profundidad).
+## Ninguna de estas celdas se marca colocado_por_jugador: el terreno del
+## mundo nunca puede ser parte de un edificio declarado por el jugador.
+func _generar_terreno() -> void:
+	for x in range(ANCHO_MUNDO):
+		for z in range(LARGO_MUNDO):
+			var altura: int = generador.altura_en(x, z)
+			colocar_bloque(Vector3i(x, altura, z), "piso")
+			for profundidad in range(1, PROFUNDIDAD_SUBSUELO + 1):
+				var tipo: String = generador.tipo_en_profundidad(profundidad)
+				colocar_bloque(Vector3i(x, altura - profundidad, z), tipo)
 
 
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:

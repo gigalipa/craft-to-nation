@@ -9,8 +9,9 @@ Craft to Nation está validando sus sistemas mediante PoC independientes. No con
 - `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`: visión y reglas del juego.
 - `PoC_1/` y `PoC_2/`: documentos técnicos con implementaciones de referencia.
 - `PoC_3/`: prototipo actual en Godot 4.7 y pruebas GDScript.
-- `website/`: sitio estático sin dependencias.
 - `docs/`: especificaciones y planes de trabajo.
+
+`website/` (sitio de presentación) existe en disco pero no está versionado (no forma parte del desarrollo del juego) — ignorarlo.
 
 ## Reglas de trabajo
 
@@ -24,8 +25,4 @@ Craft to Nation está validando sus sistemas mediante PoC independientes. No con
 
 ## Verificación
 
-```shell
-python -m unittest discover -s website -p "test_*.py"
-```
-
-Para cambios en el proyecto Godot compartido (`godot/`, usado por PoC_3 en adelante), ejecuta también `godot/scenes/Test.tscn` con Godot 4.7 y confirma que todas las aserciones pasan.
+Para cambios en el proyecto Godot compartido (`godot/`, usado por PoC_3 en adelante), ejecuta `godot/scenes/Test.tscn` con Godot 4.7 (además de las demás escenas `*Test.tscn` afectadas) y confirma que todas las aserciones pasan.

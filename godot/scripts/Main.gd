@@ -29,6 +29,7 @@ func _alternar_camara_cenital() -> void:
 	cenital_activa = not cenital_activa
 	if cenital_activa:
 		camara_cenital.posicionar_sobre_influencia()
+		zona_overlay.reconstruir()
 	camara_cenital.current = cenital_activa
 	jugador.camara.current = not cenital_activa
 	jugador.set_physics_process(not cenital_activa)

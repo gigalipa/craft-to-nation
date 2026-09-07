@@ -18,6 +18,13 @@ const TIPOS_CELDA_SOLIDA := ["pared", "puerta", "ventana"]
 ## como estructural para esto aunque no sea válido en el borde de una planta
 ## (TIPOS_CELDA_SOLIDA es una regla distinta, sobre el perímetro 2D).
 const TIPOS_ESTRUCTURALES := ["pared", "puerta", "ventana", "piso"]
+## Relleno genérico sin significado especial a nivel de Blueprint: una celda
+## con uno de estos tipos, heredada de la plantilla de suelo/techo (ver
+## estructura_a_blueprint), siempre puede ser sobrescrita por el bloque real
+## de una capa de pared (aunque ese bloque también sea "pared" liso) — solo
+## un tipo ESPECIAL (puerta/ventana/cama/baúl) ya asignado se protege de ser
+## pisado por un "pared" posterior.
+const TIPOS_RELLENO_GENERICO := ["pared", "piso"]
 const VECINOS_ORTOGONALES := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
 
 
@@ -340,18 +347,24 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		elif hay_losa_sobre:
 			plantilla = celdas_por_capa[capa_sobre_banda].duplicate()
 
-		# ponytail: si dos capas de la misma historia difieren en una celda
-		# (p.ej. "puerta" en la capa baja, "pared" continuando el muro en la
-		# capa alta sobre la puerta), gana el tipo especial sobre "pared" —
-		# nunca se pisa una celda ya especial con un "pared" de otra capa.
-		# Si dos capas tuvieran tipos especiales DISTINTOS en la misma celda
-		# (caso raro, no debería ocurrir en una construcción real), gana el
-		# de la capa más alta procesada — no hay una regla de prioridad más
-		# fina todavía.
+		# Si dos capas de la misma historia difieren en una celda (p.ej.
+		# "puerta" en la capa baja, "pared" continuando el muro en la capa
+		# alta sobre la puerta), gana el tipo especial sobre "pared" — nunca
+		# se pisa una celda ya especial con un "pared" de otra capa. Un
+		# "pared" real de una capa de muro SÍ sobrescribe el relleno
+		# genérico heredado de la plantilla de suelo/techo (TIPOS_RELLENO_
+		# GENERICO incluye "piso": sin esto, un jugador que usa el bloque
+		# "piso" real del juego para su losa —en vez de "pared", como hacían
+		# los datos de prueba antiguos— se encontraba con "hueco en el
+		# perímetro" en casi todo el borde, porque "piso" nunca calificaba
+		# para ser sobrescrito). Si dos capas tuvieran tipos especiales
+		# DISTINTOS en la misma celda (caso raro, no debería ocurrir en una
+		# construcción real), gana el de la capa más alta procesada — no hay
+		# una regla de prioridad más fina todavía.
 		for j in range(inicio_banda, fin_banda + 1):
 			for clave in celdas_por_capa[indices_capa[j]]:
 				var tipo_capa = celdas_por_capa[indices_capa[j]][clave]
-				if not plantilla.has(clave) or plantilla[clave] == "pared" or tipo_capa != "pared":
+				if not plantilla.has(clave) or TIPOS_RELLENO_GENERICO.has(plantilla[clave]) or tipo_capa != "pared":
 					plantilla[clave] = tipo_capa
 
 		var camas: Array = []

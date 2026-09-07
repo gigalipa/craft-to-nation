@@ -340,4 +340,46 @@ func ejecutar_pruebas() -> void:
 			tiene_error_altura = true
 	assert(tiene_error_altura)
 
-	print("\n=== Las 13 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 14: Declarar Edificio - Losas de Suelo/Techo con Bloque 'piso' Real ===")
+	# Replica el bug reportado por el usuario jugando en vivo: una casa 5x6
+	# cuyo suelo y techo usan el bloque "piso" real del juego (el que el
+	# jugador tiene disponible en Player.gd), no "pared" como usaban TEST 10-13
+	# (dato de prueba que ocultaba el bug: con "pared" como relleno, la fusión
+	# de capas ya "coincidía" por accidente). Con "piso" como relleno, la
+	# fusión original nunca dejaba que un bloque de pared normal sobrescribiera
+	# el relleno heredado de la losa — casi todo el perímetro quedaba con tipo
+	# 'piso' y disparaba "hueco en el perímetro" en cascada. Coordenadas +150
+	# en X para no chocar con los bloques de tests previos.
+	const OX5 := 150
+	for x in range(OX5, OX5 + 5):
+		for z in range(6):
+			mundo.colocar_bloque(Vector3i(x, 0, z), "piso", true)  # suelo real
+			mundo.colocar_bloque(Vector3i(x, 4, z), "piso", true)  # techo real
+	for y in [1, 2, 3]:
+		for x in range(OX5, OX5 + 5):
+			for z in range(6):
+				var es_borde5: bool = x == OX5 or x == OX5 + 4 or z == 0 or z == 5
+				if es_borde5:
+					mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+	mundo.minar_bloque(Vector3i(OX5, 1, 3))
+	mundo.minar_bloque(Vector3i(OX5, 2, 3))
+	assert(mundo.colocar_puerta(Vector3i(OX5, 1, 3)))
+	mundo.minar_bloque(Vector3i(OX5 + 4, 2, 2))
+	mundo.colocar_bloque(Vector3i(OX5 + 4, 2, 2), "ventana", true)
+	assert(mundo.colocar_cama(Vector3i(OX5 + 2, 1, 1), Vector3i(0, 0, 1)))
+	mundo.colocar_bloque(Vector3i(OX5 + 1, 1, 1), "baul", true)
+
+	var estructura_piso_real: Dictionary = mundo.detectar_estructura(Vector3i(OX5, 1, 3))
+	var blueprint_piso_real := BlueprintValidator.estructura_a_blueprint(estructura_piso_real)
+	print("Pisos abstractos: ", blueprint_piso_real["pisos"].size(), " (esperados: 1)")
+	assert(blueprint_piso_real["pisos"].size() == 1)
+	assert(blueprint_piso_real["pisos"][0]["altura_capas"] == 3)
+	assert(blueprint_piso_real["pisos"][0]["suelo_completo"])
+	assert(blueprint_piso_real["pisos"][0]["techo_completo"])
+
+	resultado = BlueprintValidator.validar_blueprint(blueprint_piso_real)
+	print("Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
+	assert(resultado["valido"])
+	assert(resultado["errores"].is_empty())
+
+	print("\n=== Las 14 pruebas de BlueprintValidator pasaron correctamente ===")

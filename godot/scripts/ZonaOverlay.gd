@@ -31,6 +31,11 @@ func reconstruir() -> void:
 		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		material.albedo_color = color
+		# Sin prueba de profundidad: el relieve real puede tener bloques más
+		# altos junto a una celda pintada más baja, tapándola desde ciertos
+		# ángulos de la cámara oblicua — el overlay debe verse siempre, sin
+		# importar qué haya delante desde el punto de vista actual.
+		material.no_depth_test = true
 
 		# La altura de la superficie varía con el relieve real del mundo (ver
 		# GeneradorMundo/VoxelWorld._generar_terreno()) — un y fijo dejaba el

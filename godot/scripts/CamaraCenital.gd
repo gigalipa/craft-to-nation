@@ -30,10 +30,13 @@ var primera_esquina := Vector2i.ZERO
 ## Modo de nivelación de terreno (tecla `B`): un recuadro fantasma de
 ## NiveladorTerreno.TAMANO_HUELLA x TAMANO_HUELLA sigue la celda bajo el
 ## cursor (esa celda es el CENTRO de la huella, no la esquina) hasta que el
-## jugador hace clic para confirmar.
+## jugador hace clic para confirmar. Un mini-plano por celda, cada uno seguio
+## la altura real de su propia celda (igual que ZonaOverlay) — un solo plano
+## grande a la altura máxima quedaba enterrado bajo el relieve en las
+## celdas más bajas de la huella.
 var nivelador: RefCounted
 var modo_nivelacion := false
-var _huella_fantasma: MeshInstance3D
+var _huella_fantasma: Array[MeshInstance3D] = []
 
 ## Punto de mira sobre el plano del suelo (Y siempre 0): la cámara orbita y
 ## se desplaza alrededor de este punto, nunca se mueve directamente.
@@ -48,25 +51,32 @@ func _ready() -> void:
 	_crear_huella_fantasma()
 
 
-## Crea el recuadro fantasma de previsualización (5x5, translúcido) como
-## hijo de esta cámara con top_level = true, para poder fijar su posición
-## en coordenadas globales sin heredar la rotación/posición de la cámara.
+## Crea la cuadrícula de mini-planos fantasma (uno por celda de la huella,
+## TAMANO_HUELLA x TAMANO_HUELLA en total) como hijos de esta cámara con
+## top_level = true, para poder fijar su posición en coordenadas globales
+## sin heredar la rotación/posición de la cámara. Se crean una sola vez y
+## se reposicionan cada frame en _actualizar_huella_fantasma() — no se
+## recrean, para no generar basura de nodos en cada fotograma.
 func _crear_huella_fantasma() -> void:
-	var tamano: float = float(NiveladorTerreno.TAMANO_HUELLA)
 	var malla := PlaneMesh.new()
-	malla.size = Vector2(tamano, tamano)
+	malla.size = Vector2(1.0, 1.0)
 
-	var material := StandardMaterial3D.new()
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = COLOR_HUELLA_VALIDA
+	for i in range(NiveladorTerreno.TAMANO_HUELLA * NiveladorTerreno.TAMANO_HUELLA):
+		var material := StandardMaterial3D.new()
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.albedo_color = COLOR_HUELLA_VALIDA
+		# Igual que ZonaOverlay: sin prueba de profundidad, para que la huella
+		# nunca quede oculta por relieve o bloques cercanos más altos.
+		material.no_depth_test = true
 
-	_huella_fantasma = MeshInstance3D.new()
-	_huella_fantasma.mesh = malla
-	_huella_fantasma.material_override = material
-	_huella_fantasma.top_level = true
-	_huella_fantasma.visible = false
-	add_child(_huella_fantasma)
+		var plano := MeshInstance3D.new()
+		plano.mesh = malla
+		plano.material_override = material
+		plano.top_level = true
+		plano.visible = false
+		add_child(plano)
+		_huella_fantasma.append(plano)
 
 
 ## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
@@ -130,18 +140,28 @@ func _process(delta: float) -> void:
 		_actualizar_huella_fantasma()
 
 
-## Recalcula la posición y el color del recuadro fantasma según la celda
-## actual bajo el cursor (esa celda es el CENTRO de la huella) y si la
-## pendiente ahí es válida o no.
+## Recalcula la posición y el color de cada mini-plano de la huella según
+## la celda actual bajo el cursor (esa celda es el CENTRO de la huella) y
+## si la pendiente ahí es válida o no — cada plano sigue la altura real de
+## su propia celda, igual que ZonaOverlay, para no quedar enterrado bajo
+## el relieve de celdas vecinas más altas dentro de la misma huella.
 func _actualizar_huella_fantasma() -> void:
 	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
 	var esquina := centro - Vector2i(MITAD_HUELLA, MITAD_HUELLA)
 	var valida: bool = nivelador.verificar_pendiente(esquina)
-	var altura: int = nivelador.altura_objetivo(esquina)
+	var color: Color = COLOR_HUELLA_VALIDA if valida else COLOR_HUELLA_INVALIDA
 
-	var material: StandardMaterial3D = _huella_fantasma.material_override
-	material.albedo_color = COLOR_HUELLA_VALIDA if valida else COLOR_HUELLA_INVALIDA
-	_huella_fantasma.position = Vector3(centro.x, altura + 0.1, centro.y)
+	var i := 0
+	for dx in range(NiveladorTerreno.TAMANO_HUELLA):
+		for dz in range(NiveladorTerreno.TAMANO_HUELLA):
+			var x: int = esquina.x + dx
+			var z: int = esquina.y + dz
+			var altura_celda: int = mundo.generador.altura_en(x, z)
+			var plano: MeshInstance3D = _huella_fantasma[i]
+			var material: StandardMaterial3D = plano.material_override
+			material.albedo_color = color
+			plano.position = Vector3(x, altura_celda + 0.1, z)
+			i += 1
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -170,7 +190,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _alternar_modo_nivelacion() -> void:
 	modo_nivelacion = not modo_nivelacion
-	_huella_fantasma.visible = modo_nivelacion
+	_mostrar_huella_fantasma(modo_nivelacion)
 	if modo_nivelacion:
 		print("Modo nivelación activo: haz clic para nivelar la huella marcada (B de nuevo para cancelar).")
 	else:
@@ -179,7 +199,12 @@ func _alternar_modo_nivelacion() -> void:
 
 func _salir_de_modo_nivelacion() -> void:
 	modo_nivelacion = false
-	_huella_fantasma.visible = false
+	_mostrar_huella_fantasma(false)
+
+
+func _mostrar_huella_fantasma(visible_ahora: bool) -> void:
+	for plano in _huella_fantasma:
+		plano.visible = visible_ahora
 
 
 ## Convierte una posición de pantalla en la celda de grid (X,Z) que hay

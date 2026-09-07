@@ -14,7 +14,7 @@ func _ready() -> void:
 	jugador.mundo = mundo
 	var centro_x: int = mundo.ANCHO_MUNDO / 2
 	var centro_z: int = mundo.LARGO_MUNDO / 2
-	var altura_spawn: int = mundo.generador.altura_en(centro_x, centro_z)
+	var altura_spawn: int = mundo.altura_en(centro_x, centro_z)
 	jugador.position = Vector3(centro_x, altura_spawn + 1, centro_z)
 
 

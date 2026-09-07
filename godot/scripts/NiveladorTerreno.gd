@@ -2,19 +2,29 @@ extends RefCounted
 
 ## Lógica pura de nivelación de terreno (ver GDD Sección 5, "Nivelación de
 ## Terreno en Emplazamientos con Relieve") — sin nodos de escena, mismo
-## patrón que Zonificacion.gd/Ciudad.gd. Dado el GeneradorMundo del mundo
-## actual, calcula si una huella cuadrada de TAMANO_HUELLA celdas respeta el
-## límite de pendiente, y cuántos bloques de "tierra" hacen falta para
-## nivelarla a su punto más alto.
+## patrón que Zonificacion.gd/Ciudad.gd. Calcula si una huella cuadrada de
+## TAMANO_HUELLA celdas respeta el límite de pendiente, y cuántos bloques de
+## "tierra" hacen falta para nivelarla a su punto más alto.
+##
+## No depende de una clase concreta: solo llama a .altura_en(x, z) por duck
+## typing sobre lo que se le pase en _init(). En el juego real se le pasa
+## VoxelWorld (VoxelWorld.altura_en(), que refleja el relieve REAL —
+## minado/construcción/nivelaciones ya hechas), no GeneradorMundo
+## directamente (su altura_en() es el ruido original, nunca se actualiza).
+## Las pruebas (NiveladorTerrenoTest.gd) le pasan generadores falsos con
+## pendientes exactas y controladas, ya que GeneradorMundo real usa ruido.
 
 const TAMANO_HUELLA := 5
 const LIMITE_PENDIENTE := 2
 
-var _generador: RefCounted
+## Sin tipo estático: puede ser un RefCounted (GeneradorMundo, los
+## generadores falsos de las pruebas) o un Node (VoxelWorld real, que
+## extiende GridMap) — lo único que importa es que tenga altura_en(x, z).
+var _generador: Object
 
 
-func _init(generador: RefCounted) -> void:
-	_generador = generador
+func _init(fuente_de_altura: Object) -> void:
+	_generador = fuente_de_altura
 
 
 ## Revisa cada par de celdas horizontal/verticalmente adyacentes dentro de

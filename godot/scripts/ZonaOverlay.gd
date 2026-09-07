@@ -37,11 +37,12 @@ func reconstruir() -> void:
 		# importar qué haya delante desde el punto de vista actual.
 		material.no_depth_test = true
 
-		# La altura de la superficie varía con el relieve real del mundo (ver
-		# GeneradorMundo/VoxelWorld._generar_terreno()) — un y fijo dejaba el
-		# overlay enterrado bajo el terreno en casi toda el área, invisible
-		# desde la cámara cenital.
-		var altura_superficie: int = mundo.generador.altura_en(celda.x, celda.y)
+		# Altura REAL de la superficie (VoxelWorld.altura_en(), no
+		# GeneradorMundo.altura_en()): esta última nunca se actualiza tras
+		# minar/construir/nivelar, así que una celda ya modificada por el
+		# jugador se pintaba a una altura "fantasma" que no correspondía a
+		# ningún bloque real.
+		var altura_superficie: int = mundo.altura_en(celda.x, celda.y)
 
 		var plano := MeshInstance3D.new()
 		plano.mesh = malla

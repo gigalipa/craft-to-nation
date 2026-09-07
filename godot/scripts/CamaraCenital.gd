@@ -47,7 +47,11 @@ var angulo_orbital := 0.0
 func _ready() -> void:
 	projection = PROJECTION_PERSPECTIVE
 	fov = 60.0
-	nivelador = NiveladorTerreno.new(mundo.generador)
+	# Se le pasa VoxelWorld (mundo), no mundo.generador: NiveladorTerreno solo
+	# llama a .altura_en(x,z) por duck typing, y necesitamos la altura REAL
+	# del mundo (que sí refleja minado/construcción/nivelaciones previas), no
+	# el ruido original de GeneradorMundo — ver VoxelWorld.altura_en().
+	nivelador = NiveladorTerreno.new(mundo)
 	_crear_huella_fantasma()
 
 
@@ -156,7 +160,7 @@ func _actualizar_huella_fantasma() -> void:
 		for dz in range(NiveladorTerreno.TAMANO_HUELLA):
 			var x: int = esquina.x + dx
 			var z: int = esquina.y + dz
-			var altura_celda: int = mundo.generador.altura_en(x, z)
+			var altura_celda: int = mundo.altura_en(x, z)
 			var plano: MeshInstance3D = _huella_fantasma[i]
 			var material: StandardMaterial3D = plano.material_override
 			material.albedo_color = color
@@ -272,7 +276,7 @@ func _procesar_clic_nivelacion(posicion_pantalla: Vector2) -> void:
 	var total_bloques := 0
 	for celda_relleno in relleno:
 		var cantidad: int = relleno[celda_relleno]
-		var altura_actual: int = mundo.generador.altura_en(celda_relleno.x, celda_relleno.y)
+		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
 		for h in range(1, cantidad + 1):
 			mundo.colocar_bloque(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y), "tierra")
 		total_bloques += cantidad

@@ -14,6 +14,12 @@ const LARGO_MUNDO := 200
 const PROFUNDIDAD_SUBSUELO := 8
 const SEMILLA_MUNDO := 12345
 
+## Rango de búsqueda vertical de altura_en() (ver más abajo) — generoso para
+## cubrir cualquier construcción del jugador por encima del relieve máximo
+## (GeneradorMundo.ALTURA_MAXIMA = 15) y el subsuelo generado por debajo.
+const ALTURA_BUSQUEDA_MAX := 50
+const ALTURA_BUSQUEDA_MIN := -30
+
 var generador: RefCounted
 
 const VECINOS_3D: Array[Vector3i] = [
@@ -65,6 +71,21 @@ func _generar_terreno() -> void:
 			for profundidad in range(1, PROFUNDIDAD_SUBSUELO + 1):
 				var tipo: String = generador.tipo_en_profundidad(profundidad)
 				colocar_bloque(Vector3i(x, altura - profundidad, z), tipo)
+
+
+## Altura de la celda sólida más alta en la columna (x, z) del mundo REAL —
+## no la del ruido original de GeneradorMundo, que nunca se actualiza tras
+## minar, construir o nivelar. Usada por los overlays visuales (ZonaOverlay,
+## huella fantasma de nivelación) y por NiveladorTerreno (se le pasa esta
+## instancia de VoxelWorld en vez de "generador" para que razone sobre el
+## relieve real, no el original) — de otro modo, cualquier zona pintada u
+## huella de nivelación sobre una celda ya modificada por el jugador se veía
+## a una altura "fantasma" que no correspondía a ningún bloque real.
+func altura_en(x: int, z: int) -> int:
+	for y in range(ALTURA_BUSQUEDA_MAX, ALTURA_BUSQUEDA_MIN, -1):
+		if get_cell_item(Vector3i(x, y, z)) != GridMap.INVALID_CELL_ITEM:
+			return y
+	return generador.altura_en(x, z)  # respaldo, no debería alcanzarse nunca
 
 
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:

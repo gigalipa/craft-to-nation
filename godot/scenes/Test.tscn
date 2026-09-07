@@ -1,13 +1,6 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://scripts/BlueprintValidatorTest.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/VoxelWorld.gd" id="2"]
-[ext_resource type="MeshLibrary" path="res://assets/BlockLibrary.res" id="3"]
 
 [node name="Test" type="Node"]
 script = ExtResource("1")
-
-[node name="VoxelWorld" type="GridMap" parent="."]
-script = ExtResource("2")
-mesh_library = ExtResource("3")
-cell_size = Vector3(1, 1, 1)

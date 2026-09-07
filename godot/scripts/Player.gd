@@ -140,7 +140,27 @@ func _declarar_edificio() -> void:
 		print("Declarar edificio: esa puerta no fue colocada por el jugador.")
 		return
 	var blueprint := BlueprintValidator.estructura_a_blueprint(celdas)
-	var resultado := BlueprintValidator.validar_blueprint(blueprint)
+
+	# Huella en planta (X,Z) del edificio, sin repetir celdas — usada tanto
+	# para el bootstrap del núcleo urbano como, más adelante, para pintarla
+	# como Núcleo A. "celda" es la puerta apuntada, la misma referencia que
+	# ya usa detectar_estructura() para "dónde está" el edificio.
+	var celda_puerta_xz := Vector2i(celda.x, celda.z)
+	var huella: Array = []
+	var huella_vista: Dictionary = {}  # Vector2i -> true, para no repetir celdas
+	for pos in celdas.keys():
+		var punto_xz := Vector2i(pos.x, pos.z)
+		if not huella_vista.has(punto_xz):
+			huella_vista[punto_xz] = true
+			huella.append(punto_xz)
+
+	var resultado: Dictionary
+	if not Zonificacion.nucleo_declarado:
+		resultado = BlueprintValidator.validar_blueprint(blueprint)
+	else:
+		var zona_destino: String = Zonificacion.consultar_zona(celda_puerta_xz)
+		resultado = BlueprintValidator.validar_blueprint(blueprint, zona_destino)
+
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if resultado["valido"]:
 		var total_camas := 0
@@ -148,6 +168,10 @@ func _declarar_edificio() -> void:
 			total_camas += (piso.get("camas", []) as Array).size()
 		Ciudad.registrar_edificio_residencial(total_camas)
 		print("Camas registradas en Ciudad: ", total_camas, " (total construido: ", Ciudad.capacidad_camas_construida, ")")
+
+		if not Zonificacion.nucleo_declarado:
+			Zonificacion.declarar_nucleo(huella)
+			print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 
 ## Tecla de prueba (K): simula la muerte del jugador para poder probar la

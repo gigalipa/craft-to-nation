@@ -95,8 +95,8 @@ func ejecutar_pruebas() -> void:
 	# conteo total. Puertas y cama se colocan con colocar_puerta()/
 	# colocar_cama(), no con colocar_bloque() directo, para ejercitar la
 	# verificación de espacio de 2 celdas (su mitad superior queda en y=2).
-	# Instantiate VoxelWorld.new() to avoid auto-generation of terrain (_ready() won't be called).
-	var mundo = VoxelWorld.new()
+	# Instanciar VoxelWorld.new() para evitar la generación automática del terreno (_ready() no se llamará).
+	var mundo: Node = VoxelWorld.new()
 	mundo.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo.cell_size = Vector3.ONE * 1.0
 	mundo._indexar_biblioteca()

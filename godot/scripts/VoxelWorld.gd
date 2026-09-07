@@ -11,7 +11,7 @@ const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 
 const ANCHO_MUNDO := 200
 const LARGO_MUNDO := 200
-const PROFUNDIDAD_SUBSUELO := 32
+const PROFUNDIDAD_SUBSUELO := 8
 const SEMILLA_MUNDO := 12345
 
 var generador: RefCounted
@@ -25,8 +25,8 @@ const VECINOS_3D: Array[Vector3i] = [
 var _id_por_tipo: Dictionary = {}  # String -> int
 var _tipo_por_id: Dictionary = {}  # int -> String
 
-## Celdas colocadas por el jugador (Vector3i -> true). El piso generado por
-## _generar_piso_inicial() nunca se marca aquí, así que "declarar un edificio"
+## Celdas colocadas por el jugador (Vector3i -> true). El terreno generado por
+## _generar_terreno() nunca se marca aquí, así que "declarar un edificio"
 ## (ver Player.gd) nunca puede incluir el suelo del mundo como parte de la
 ## estructura, sin importar su tipo de bloque.
 var colocado_por_jugador: Dictionary = {}

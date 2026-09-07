@@ -10,7 +10,7 @@
 
 **✅ Verificado con Godot 4.7 (Steam) vía MCP:** `scenes/GeneradorMundoTest.tscn` corre y los 4 tests de `GeneradorMundoTest.gd` (determinismo, rango de alturas, semillas distintas, capas de subsuelo) pasan sin errores de `assert()`. `scenes/Main.tscn` carga sin errores nuevos con el mundo de 200×200 celdas generado por `GeneradorMundo` (relieve real en vez del piso plano de 11×11 anterior) y el jugador apareciendo sobre la altura real del terreno en `(0,0)`. `Test.tscn` (14 tests), `CiudadTest.tscn` (7 tests) y `ZonificacionTest.tscn` (8 tests) siguen pasando sin cambios; `Test.tscn` en particular carga en menos de 1 segundo, tras una corrección de revisión que eliminó un nodo `VoxelWorld` huérfano en la escena (ver 2.1 y 3.2).
 
-Esta PoC cubre el **primer sub-proyecto de 3** de la Fase 3 del roadmap (GDD Sección 11 v3.14): Mundo Procedural Finito. Nivelación de Terreno sobre Relieve y Puestos de Recolección quedan para sub-proyectos posteriores (ambos dependen de este).
+Esta PoC cubre el **primer sub-proyecto de 3** de la Fase 3 del roadmap (GDD Sección 11 v3.15): Mundo Procedural Finito. Nivelación de Terreno sobre Relieve y Puestos de Recolección quedan para sub-proyectos posteriores (ambos dependen de este).
 
 ---
 

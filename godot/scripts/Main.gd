@@ -32,7 +32,7 @@ func _input(event: InputEvent) -> void:
 func _alternar_camara_cenital() -> void:
 	cenital_activa = not cenital_activa
 	if cenital_activa:
-		camara_cenital.posicionar_sobre_influencia()
+		camara_cenital.posicionar_sobre(Vector2(jugador.position.x, jugador.position.z))
 		zona_overlay.reconstruir()
 	camara_cenital.current = cenital_activa
 	jugador.camara.current = not cenital_activa

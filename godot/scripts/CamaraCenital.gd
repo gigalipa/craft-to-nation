@@ -1,9 +1,16 @@
 extends Camera3D
 
-## Cámara cenital mínima para pintar zonas (ver spec:
-## docs/superpowers/specs/2026-09-07-zonificacion-design.md). Sin
-## paneo/zoom ni selección de tropas — eso es PoC 5 completo (Fase 3), esta
-## versión solo existe para poder pintar zonas desde arriba.
+## Cámara cenital con perspectiva oblicua para pintar zonas (ver spec:
+## docs/superpowers/specs/2026-09-07-zonificacion-design.md, ampliada a
+## petición del usuario tras la primera prueba en vivo: perspectiva oblicua
+## en vez de ortogonal recta, con paneo (WASD) y rotación orbital (Q/E)
+## alrededor de un punto de mira — sin zoom ni selección de tropas por
+## arrastre todavía, eso sigue siendo PoC 6/Fase 4).
+
+const DISTANCIA_CAMARA := 25.0
+const ANGULO_INCLINACION := deg_to_rad(55.0)  # inclinación fija sobre la horizontal
+const VELOCIDAD_PANEO := 20.0  # celdas/segundo
+const VELOCIDAD_ORBITA := deg_to_rad(90.0)  # radianes/segundo
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
@@ -12,23 +19,73 @@ var tipo_zona_seleccionada: String = Zonificacion.ZONAS_PINTABLES[0]
 var esperando_segunda_esquina := false
 var primera_esquina := Vector2i.ZERO
 
+## Punto de mira sobre el plano del suelo (Y siempre 0): la cámara orbita y
+## se desplaza alrededor de este punto, nunca se mueve directamente.
+var foco := Vector3.ZERO
+var angulo_orbital := 0.0
+
 
 func _ready() -> void:
-	projection = PROJECTION_ORTHOGONAL
-	size = 40.0
-	rotation_degrees = Vector3(-90, 0, 0)
+	projection = PROJECTION_PERSPECTIVE
+	fov = 60.0
 
 
-## Centra la cámara sobre la zona de influencia (o el origen, si todavía no
-## existe núcleo urbano declarado). Llamada por Main.gd al activar la
-## cámara cenital.
-func posicionar_sobre_influencia() -> void:
-	var centro: Vector2i
-	if Zonificacion.nucleo_declarado:
-		centro = (Zonificacion.influencia_min + Zonificacion.influencia_max) / 2
-	else:
-		centro = Vector2i.ZERO
-	global_position = Vector3(centro.x, 20.0, centro.y)
+## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
+## jugador en el momento de activar la cenital) y reinicia la orientación
+## orbital. Llamada por Main.gd al activar la cámara cenital.
+func posicionar_sobre(foco_xz: Vector2) -> void:
+	foco = Vector3(foco_xz.x, 0.0, foco_xz.y)
+	angulo_orbital = 0.0
+	_actualizar_transform()
+
+
+## Recalcula la posición/orientación de la cámara a partir de foco +
+## angulo_orbital, manteniendo siempre la misma distancia e inclinación
+## (órbita de cámara clásica: la cámara nunca se mueve directamente, solo
+## el punto de mira y el ángulo alrededor de él).
+func _actualizar_transform() -> void:
+	var direccion_horizontal := Vector3(sin(angulo_orbital), 0.0, cos(angulo_orbital))
+	var offset := direccion_horizontal * DISTANCIA_CAMARA * cos(ANGULO_INCLINACION)
+	offset.y = DISTANCIA_CAMARA * sin(ANGULO_INCLINACION)
+	global_position = foco + offset
+	look_at(foco, Vector3.UP)
+
+
+func _process(delta: float) -> void:
+	if not current:
+		return
+
+	var paneo := Vector2.ZERO
+	if Input.is_key_pressed(KEY_W):
+		paneo.y -= 1
+	if Input.is_key_pressed(KEY_S):
+		paneo.y += 1
+	if Input.is_key_pressed(KEY_A):
+		paneo.x -= 1
+	if Input.is_key_pressed(KEY_D):
+		paneo.x += 1
+
+	var giro := 0.0
+	if Input.is_key_pressed(KEY_Q):
+		giro -= 1.0
+	if Input.is_key_pressed(KEY_E):
+		giro += 1.0
+
+	var necesita_actualizar := false
+	if paneo != Vector2.ZERO:
+		# El paneo es relativo a la orientación actual de la cámara: "adelante"
+		# siempre aleja el punto de mira de la cámara en pantalla, sin importar
+		# el ángulo de órbita.
+		paneo = paneo.normalized() * VELOCIDAD_PANEO * delta
+		var adelante := Vector3(sin(angulo_orbital), 0.0, cos(angulo_orbital))
+		var derecha := Vector3(adelante.z, 0.0, -adelante.x)
+		foco += adelante * paneo.y + derecha * paneo.x
+		necesita_actualizar = true
+	if giro != 0.0:
+		angulo_orbital += giro * VELOCIDAD_ORBITA * delta
+		necesita_actualizar = true
+	if necesita_actualizar:
+		_actualizar_transform()
 
 
 func _unhandled_input(event: InputEvent) -> void:

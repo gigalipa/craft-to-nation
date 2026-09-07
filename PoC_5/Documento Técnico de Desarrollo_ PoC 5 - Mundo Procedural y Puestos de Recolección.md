@@ -8,9 +8,9 @@
 
 **Dependencia Técnica:** Extiende `VoxelWorld.gd` (de `PoC_3`/`PoC_4`, ahora en `godot/`), reemplazando su piso plano placeholder por terreno real generado por ruido.
 
-**✅ Verificado con Godot 4.7 (Steam) vía MCP:** `scenes/GeneradorMundoTest.tscn` corre y los 4 tests de `GeneradorMundoTest.gd` (determinismo, rango de alturas, semillas distintas, capas de subsuelo) pasan sin errores de `assert()`. `scenes/Main.tscn` carga en ~6 segundos sin errores nuevos con el mundo de 200×200 celdas generado por `GeneradorMundo` (relieve real en vez del piso plano de 11×11 anterior) y el jugador apareciendo sobre la altura real del terreno en el **centro** del mundo generado (`(ANCHO_MUNDO/2, LARGO_MUNDO/2)`, no en la esquina `(0,0)`). `Test.tscn` (14 tests), `CiudadTest.tscn` (7 tests) y `ZonificacionTest.tscn` (8 tests) siguen pasando sin cambios; `Test.tscn` en particular carga en menos de 1 segundo, tras una corrección de revisión que eliminó un nodo `VoxelWorld` huérfano en la escena (ver 2.1 y 3.2).
+**✅ Verificado con Godot 4.7 (Steam) vía MCP:** `scenes/GeneradorMundoTest.tscn` corre y los 4 tests de `GeneradorMundoTest.gd` (determinismo, rango de alturas, semillas distintas, capas de subsuelo) pasan sin errores de `assert()`. `scenes/NiveladorTerrenoTest.tscn` corre y los 4 tests de `NiveladorTerrenoTest.gd` (pendiente suave aceptada, pendiente pronunciada rechazada, terreno plano sin relleno, cálculo de relleno exacto sobre una rampa) pasan sin errores de `assert()`. `scenes/Main.tscn` carga en ~6 segundos sin errores nuevos con el mundo de 200×200 celdas generado por `GeneradorMundo` (relieve real en vez del piso plano de 11×11 anterior), el jugador apareciendo sobre la altura real del terreno en el **centro** del mundo generado, y la cámara cenital (`CamaraCenital.gd`) con perspectiva oblicua orbitable (paneo `WASD`, órbita `Q`/`E`) más el nuevo modo de nivelación de terreno (tecla `B`, huella fantasma 5×5 centrada en el cursor). `Test.tscn` (14 tests), `CiudadTest.tscn` (7 tests) y `ZonificacionTest.tscn` (8 tests) siguen pasando sin cambios.
 
-Esta PoC cubre el **primer sub-proyecto de 3** de la Fase 3 del roadmap (GDD Sección 11 v3.15): Mundo Procedural Finito. Nivelación de Terreno sobre Relieve y Puestos de Recolección quedan para sub-proyectos posteriores (ambos dependen de este).
+Esta PoC cubre los **2 primeros sub-proyectos de 3** de la Fase 3 del roadmap (GDD Sección 11 v3.17): Mundo Procedural Finito y Nivelación de Terreno sobre Relieve. Puestos de Recolección + previsualización en HUD queda para un sub-proyecto posterior.
 
 ---
 
@@ -22,14 +22,22 @@ Esta PoC cubre el **primer sub-proyecto de 3** de la Fase 3 del roadmap (GDD Sec
 * **Determinismo:** el relieve depende únicamente de una semilla — misma semilla, mismo mundo, siempre. Relevante a futuro para el balance multijugador (GDD Sección 10).
 * **Bloques de subsuelo:** dos tipos nuevos, `"tierra"` (capa superior del subsuelo) y `"piedra"` (el resto), agregados a la `MeshLibrary` existente con el mismo patrón de color plano que los demás bloques.
 
+**Sub-proyecto 2 — Nivelación de Terreno sobre Relieve (GDD Sección 5):**
+* **Modo de nivelación en la cámara cenital:** tecla `B` (solo con la cenital activa) muestra una huella fantasma de 5×5 celdas centrada en el cursor; un clic confirma.
+* **Límite de pendiente:** rechaza la nivelación si el desnivel entre celdas horizontalmente/verticalmente adyacentes de la huella supera `LIMITE_PENDIENTE = 2` bloques.
+* **Relleno al punto más alto:** si la pendiente es válida, cada celda de la huella se rellena con bloques de `"tierra"` hasta la altura máxima detectada dentro de esa huella; se imprime en consola el total de bloques usados.
+* **Cámara cenital con perspectiva oblicua orbitable (ampliación no planeada originalmente):** durante la verificación en vivo del sub-proyecto 1, el usuario reportó que la cámara ortogonal recta original no permitía recorrer el mundo para ubicar la zona de influencia. Se reemplazó por una cámara en órbita clásica (perspectiva, paneo `WASD`, rotación `Q`/`E` alrededor de un punto de mira centrado en el jugador) — ver 3.2.
+
 ### **1.2 Fuera de Alcance**
 
 * **Profundidad real de ~300 bloques:** esta pieza usa `PROFUNDIDAD_SUBSUELO = 8` (reducido desde 32 tras la revisión final — ver 3.2) — escalar a la cifra final del GDD es optimización futura (200×200×300 ≈ 12 millones de celdas sería demasiado lento de generar de una sola vez sin más trabajo de rendimiento).
 * **Biomas/variantes de superficie** (pasto, arena, nieve): evaluar cuando se aborde el sub-proyecto de Puestos de Recolección, si hace falta distinguir tipos de terreno para determinar qué se puede recolectar dónde.
 * **Cuevas/cavidades subterráneas:** GDD Sección 8 ("Túneles y Cavernas"), Visión a futuro — depende de la Fase 6 (Combate) del roadmap.
-* **Nivelación de terreno al construir sobre relieve** (GDD Sección 5): siguiente sub-proyecto de esta misma Fase — usará `GeneradorMundo.altura_en()`, pero no se implementa en esta pieza.
 * **Puestos de Recolección + previsualización en HUD** (GDD Sección 3): tercer sub-proyecto de esta Fase, depende de esta pieza.
 * **Semilla aleatoria real / selección de semilla al iniciar partida:** esta pieza usa una constante fija (`SEMILLA_MUNDO = 12345`) para desarrollo determinista.
+* **Costo de recursos por nivelar:** el GDD describe la tierra de relleno como un material con costo (Sección 5), pero hoy colocar cualquier bloque es gratuito en todo el juego (sin inventario de recursos) — decidido explícitamente con el usuario dejar la nivelación sin costo, consistente con el resto del juego, hasta que exista un sistema de costos de construcción real.
+* **Nivelación automática al emplazar un edificio completo:** el diseño final del GDD nivela automáticamente la huella de cualquier construcción que se emplace. Como hoy no existe un mecanismo de "emplazar una construcción completa" (el jugador solo coloca bloques uno por uno), esta pieza simula la mecánica con una huella fija de 5×5 activada manualmente desde la cámara cenital — conectar la nivelación real al emplazamiento de blueprints queda para cuando esa mecánica exista.
+* **`GeneradorMundo.altura_en()` no se actualiza tras nivelar:** sigue devolviendo la altura original del ruido en esa celda, no la real tras el relleno — una segunda nivelación sobre el mismo punto, o el overlay de zonas si ya había una zona pintada ahí, seguirían usando la altura vieja. Limitación conocida, aceptable para esta PoC.
 
 ---
 
@@ -107,10 +115,32 @@ Dos hallazgos de la revisión final (whole-branch review), ambos corregidos ante
 
 Verificado sin errores de carga corriendo `Main.tscn` vía MCP (headless) — el aspecto visual real del relieve (montañas/valles perceptibles, tiempo de carga aceptable en la práctica) queda pendiente de confirmación jugando en el editor real, mismo patrón que HUD/zonificación (ver `PoC_4/`).
 
+### **3.6 Sub-proyecto 2: Cámara Cenital en Órbita + Nivelación de Terreno**
+
+**Corrección de cámara (encontrada jugando en vivo, antes de empezar este sub-proyecto):** `ZonaOverlay.gd` dibujaba cada plano de zona pintada en un `y` fijo (`0.05`), heredado de cuando el mundo era un piso plano — con relieve real, el overlay quedaba enterrado bajo el terreno en casi toda el área. Corregido calculando la altura real de cada celda con `mundo.generador.altura_en(celda.x, celda.y)`.
+
+**Cámara cenital, de ortogonal recta a órbita clásica:** `CamaraCenital.gd` cambió de `PROJECTION_ORTHOGONAL` (mirando derecho hacia abajo, sin poder moverse, centrada en la zona de influencia o el origen) a `PROJECTION_PERSPECTIVE` en órbita alrededor de un punto de mira (`foco`, sobre `y = 0`): `_actualizar_transform()` recalcula la posición/rotación de la cámara a partir de `foco`, un ángulo de órbita (`angulo_orbital`) y una distancia/inclinación fijas (`DISTANCIA_CAMARA = 25.0`, `ANGULO_INCLINACION = 55°`) — la cámara nunca se mueve directamente. `posicionar_sobre(foco_xz)` centra el punto de mira sobre la posición real del jugador al activar el toggle (`Main.gd` le pasa `jugador.position.x/z`). Mientras la cenital está activa, `WASD` desplaza el punto de mira (relativo a la orientación actual, para que "adelante" siempre aleje el punto de mira de la pantalla sin importar el ángulo de órbita) y `Q`/`E` giran la órbita — ambas teclas reutilizan el input de movimiento del jugador, congelado en 1ª persona mientras tanto.
+
+**Nivelación de terreno (`NiveladorTerreno.gd`, lógica pura sin nodos de escena, mismo patrón que `Zonificacion.gd`):**
+- `TAMANO_HUELLA := 5`, `LIMITE_PENDIENTE := 2`.
+- `verificar_pendiente(esquina)`: revisa cada par de celdas adyacentes dentro de la huella 5×5 que empieza en `esquina` (la esquina de menor X/Z), rechaza si algún desnivel supera `LIMITE_PENDIENTE`.
+- `altura_objetivo(esquina)`: la altura máxima dentro de la huella.
+- `calcular_relleno(esquina)`: por cada celda de la huella, cuántos bloques de `"tierra"` faltan para llegar a `altura_objetivo` (0 si ya está al máximo — esas celdas no aparecen en el resultado).
+
+**Interacción en `CamaraCenital.gd`:** tecla `B` (solo con la cenital activa) activa el modo nivelación; un `MeshInstance3D` fantasma de 5×5 con `top_level = true` (para fijar su posición global sin heredar la rotación de la cámara) sigue la celda bajo el cursor **como el centro de la huella** (`esquina = centro - Vector2i(MITAD_HUELLA, MITAD_HUELLA)`, `MITAD_HUELLA = 2`), cambiando de verde a rojo según `verificar_pendiente()`. Un clic confirma: si la pendiente es inválida, imprime el rechazo; si es válida, coloca los bloques de `calcular_relleno()` (tipo `"tierra"`, sin marcar `colocado_por_jugador` — igual que el resto del terreno generado) e imprime el total de bloques usados. Sale del modo nivelación tras el intento, sea cual sea el resultado.
+
+**Bug de inferencia de tipo (mismo patrón recurrente del proyecto):** `var valida := nivelador.verificar_pendiente(esquina)` falló al analizar el script — `nivelador` está tipado `RefCounted` (genérico), así que Godot no puede inferir el tipo de retorno de una llamada dinámica sobre él. Corregido con `var valida: bool = ...` (tipo explícito en vez de `:=`).
+
+### **3.7 Pruebas del Sub-proyecto 2**
+
+`NiveladorTerrenoTest.gd` usa generadores de altura **falsos y deterministas** (no `GeneradorMundo` real, que usa ruido y no permite construir pendientes exactas) para verificar: una pendiente suave (1 celda de desnivel) se acepta; una pendiente pronunciada (3 celdas de desnivel) se rechaza; un terreno plano no necesita relleno; y el cálculo de relleno es exacto sobre una rampa de altura conocida (huella 5×5 con `altura_en(x,z) = z`, total esperado de 50 bloques — verificado por cálculo manual, no solo por la corrida del programa).
+
+**Cómo ejecutarlos:** abrir `scenes/NiveladorTerrenoTest.tscn` en Godot 4.7+ y presionar **F6**. El panel Output debe mostrar los 4 tests y terminar con "Las 4 pruebas de NiveladorTerreno pasaron correctamente".
+
 ---
 
 ## **Próximos Pasos de esta PoC**
 
 > 1. ~~Mundo Procedural Finito (relieve real, determinista, sin streaming).~~ **Completado:** `GeneradorMundo.gd` + integración en `VoxelWorld.gd` — ver 2.1-3.1. **Pendiente:** confirmar visualmente el relieve y el tiempo de carga real jugando en el editor (ver 3.5); escalar `PROFUNDIDAD_SUBSUELO` hacia los ~300 bloques finales del GDD (optimización futura).
-> 2. **Nivelación de Terreno en Emplazamientos con Relieve** (GDD Sección 5): nivelar un edificio al punto más alto de su huella, rellenar con tierra las celdas más bajas, y rechazar emplazamientos con pendiente excesiva — usa `GeneradorMundo.altura_en()`.
+> 2. ~~Nivelación de Terreno en Emplazamientos con Relieve (GDD Sección 5).~~ **Completado, con alcance reducido:** modo de nivelación en la cámara cenital (tecla `B`, huella fija 5×5, límite de pendiente, relleno de tierra) — ver 3.6/3.7. **Pendiente:** conectar la nivelación al emplazamiento real de una construcción completa cuando esa mecánica exista (hoy es una huella fija activada manualmente); costo de recursos por la tierra de relleno (hoy gratuito, como el resto del juego); confirmar visualmente el recuadro fantasma y el resultado del relleno jugando en el editor real.
 > 3. **Puestos de Recolección + previsualización en HUD** (GDD Sección 3): nueva categoría de edificio construible (categoría "Recolección" de la Sección 3.1), con área de acción por tipo y previsualización en vivo al emplazar.

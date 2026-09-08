@@ -546,6 +546,13 @@ func _intentar_zoom(delta_distancia: float) -> void:
 
 func _alternar_modo_nivelacion() -> void:
 	modo_nivelacion = not modo_nivelacion
+	# Los dos modos son mutuamente excluyentes: entrar en uno sale del otro.
+	# Si no, ambas banderas quedan activas a la vez, nivelación gana todas las
+	# cadenas if/elif de _process() y el disco de la mina se queda visible pero
+	# congelado en el origen, con su ficha del HUD mintiendo sobre lo que hace
+	# el clic.
+	if modo_nivelacion and modo_colocar_mina:
+		_salir_de_modo_colocar_mina()
 	_mostrar_huella_fantasma(modo_nivelacion)
 	if modo_nivelacion:
 		print("Modo nivelación activo: haz clic para nivelar la huella marcada (B de nuevo para cancelar).")
@@ -565,6 +572,9 @@ func _mostrar_huella_fantasma(visible_ahora: bool) -> void:
 
 func _alternar_modo_colocar_mina() -> void:
 	modo_colocar_mina = not modo_colocar_mina
+	# Ver el comentario equivalente en _alternar_modo_nivelacion().
+	if modo_colocar_mina and modo_nivelacion:
+		_salir_de_modo_nivelacion()
 	_mostrar_disco_mina(modo_colocar_mina)
 	if modo_colocar_mina:
 		hud.mostrar_ficha_mina()
@@ -572,6 +582,12 @@ func _alternar_modo_colocar_mina() -> void:
 	else:
 		hud.ocultar_ficha_mina()
 		print("Modo colocar mina cancelado.")
+
+
+func _salir_de_modo_colocar_mina() -> void:
+	modo_colocar_mina = false
+	_mostrar_disco_mina(false)
+	hud.ocultar_ficha_mina()
 
 
 func _mostrar_disco_mina(visible_ahora: bool) -> void:
@@ -646,9 +662,7 @@ func _procesar_clic_mina(posicion_pantalla: Vector2) -> void:
 	Recoleccion.colocar_mina(celda)
 	print("Mina colocada en (", celda.x, ", ", celda.y, ").")
 
-	modo_colocar_mina = false
-	_mostrar_disco_mina(false)
-	hud.ocultar_ficha_mina()
+	_salir_de_modo_colocar_mina()
 
 
 ## Confirma la nivelación de la huella marcada por el recuadro fantasma

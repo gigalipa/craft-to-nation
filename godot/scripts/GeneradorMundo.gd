@@ -19,6 +19,15 @@ const GROSOR_TIERRA := 4
 ## minoría frente a la piedra en la capa profunda.
 const UMBRAL_HIERRO := 0.2
 
+## Exponente de la redistribución por curva de potencia aplicada a la altura
+## (ver altura_en() y _redistribuir()) para producir picos y cuencas más
+## marcados en vez de colinas suaves — necesario para que el criterio de
+## nivel de mar (ver nivel_mar más abajo) separe tierra firme de zonas
+## inundadas de forma perceptible. Valor inicial calibrado empíricamente,
+## mismo patrón que UMBRAL_HIERRO — ajustar aquí si al probar en el editor
+## el relieve resulta demasiado suave o demasiado abrupto.
+const EXPONENTE_RELIEVE := 2.0
+
 var _ruido: FastNoiseLite
 var _ruido_mineral: FastNoiseLite
 
@@ -45,9 +54,18 @@ func _init(semilla: int) -> void:
 ## [ALTURA_MINIMA, ALTURA_MAXIMA] y se redondea a entero.
 func altura_en(x: int, z: int) -> int:
 	var valor: float = _ruido.get_noise_2d(x, z)
-	var t: float = (valor + 1.0) / 2.0
+	var valor_redistribuido: float = _redistribuir(valor, EXPONENTE_RELIEVE)
+	var t: float = (valor_redistribuido + 1.0) / 2.0
 	var altura: float = ALTURA_MINIMA + t * (ALTURA_MAXIMA - ALTURA_MINIMA)
 	return clampi(roundi(altura), ALTURA_MINIMA, ALTURA_MAXIMA)
+
+
+## Acentúa los valores cercanos a ±1 (picos/cuencas) y aplana los cercanos a
+## 0 (llanos), preservando el signo y los extremos exactos (-1, 0, 1).
+## Función estática pura (sin depender de _ruido) para poder probarla con
+## valores conocidos.
+static func _redistribuir(valor: float, exponente: float) -> float:
+	return sign(valor) * pow(abs(valor), exponente)
 
 
 ## Tipo de bloque de subsuelo en la columna/profundidad dados: "tierra" cerca

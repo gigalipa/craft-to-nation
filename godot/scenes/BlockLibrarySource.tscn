@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=34 format=3]
 
 [sub_resource type="StandardMaterial3D" id="Mat_pared"]
 albedo_color = Color(0.55, 0.55, 0.55, 1)
@@ -81,6 +81,14 @@ material = SubResource("Mat_piedra")
 
 [sub_resource type="BoxShape3D" id="Shape_piedra"]
 
+[sub_resource type="StandardMaterial3D" id="Mat_hierro"]
+albedo_color = Color(0.72, 0.42, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_hierro"]
+material = SubResource("Mat_hierro")
+
+[sub_resource type="BoxShape3D" id="Shape_hierro"]
+
 [node name="BlockLibrarySource" type="Node3D"]
 
 [node name="pared" type="MeshInstance3D" parent="."]
@@ -142,3 +150,9 @@ mesh = SubResource("Mesh_piedra")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="piedra"]
 shape = SubResource("Shape_piedra")
+
+[node name="hierro" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_hierro")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="hierro"]
+shape = SubResource("Shape_hierro")

@@ -11,7 +11,7 @@ const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 
 const ANCHO_MUNDO := 200
 const LARGO_MUNDO := 200
-const PROFUNDIDAD_SUBSUELO := 8
+const PROFUNDIDAD_SUBSUELO := 24
 const SEMILLA_MUNDO := 12345
 
 ## Rango de búsqueda vertical de altura_en() (ver más abajo) — generoso para
@@ -82,8 +82,9 @@ func _generar_terreno() -> void:
 			var altura: int = generador.altura_en(x, z)
 			colocar_bloque(Vector3i(x, altura, z), "piso")
 			for profundidad in range(1, PROFUNDIDAD_SUBSUELO + 1):
-				var tipo: String = generador.tipo_en_profundidad(profundidad)
-				colocar_bloque(Vector3i(x, altura - profundidad, z), tipo)
+				var y: int = altura - profundidad
+				var tipo: String = generador.tipo_en_profundidad(x, y, z, profundidad)
+				colocar_bloque(Vector3i(x, y, z), tipo)
 
 
 ## Altura de la celda sólida más alta en la columna (x, z) del mundo REAL —

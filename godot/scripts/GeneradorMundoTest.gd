@@ -45,12 +45,33 @@ func ejecutar_pruebas() -> void:
 	assert(hay_diferencia)
 	print("OK: al menos un punto muestreado difiere entre semilla 1 y semilla 2.")
 
-	print("\n=== TEST 4: tipo_en_profundidad() por capas ===")
+	print("\n=== TEST 4: tipo_en_profundidad() por capas (tierra/piedra) ===")
 	var gen_capas: RefCounted = GeneradorMundoScript.new(1)
 	for p in range(GeneradorMundoScript.GROSOR_TIERRA):
-		assert(gen_capas.tipo_en_profundidad(p) == "tierra")
-	assert(gen_capas.tipo_en_profundidad(GeneradorMundoScript.GROSOR_TIERRA) == "piedra")
-	assert(gen_capas.tipo_en_profundidad(GeneradorMundoScript.GROSOR_TIERRA + 10) == "piedra")
-	print("OK: tierra hasta GROSOR_TIERRA, piedra en adelante.")
+		assert(gen_capas.tipo_en_profundidad(0, 10 - p, 0, p) == "tierra")
+	var tipo_profundo: String = gen_capas.tipo_en_profundidad(0, 10 - GeneradorMundoScript.GROSOR_TIERRA, 0, GeneradorMundoScript.GROSOR_TIERRA)
+	assert(tipo_profundo == "piedra" or tipo_profundo == "hierro")
+	print("OK: tierra hasta GROSOR_TIERRA; piedra o hierro en adelante (nunca tierra).")
 
-	print("\n=== Las 4 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 5: Las vetas de hierro nunca aparecen en la capa de tierra, y sí varían la piedra ===")
+	var gen_vetas: RefCounted = GeneradorMundoScript.new(42)
+	var vio_tierra := false
+	var vio_piedra := false
+	var vio_hierro := false
+	for x in range(0, 60, 2):
+		for z in range(0, 60, 2):
+			for p in range(0, 20):
+				var tipo: String = gen_vetas.tipo_en_profundidad(x, 100 - p, z, p)
+				if p < GeneradorMundoScript.GROSOR_TIERRA:
+					assert(tipo == "tierra")
+					vio_tierra = true
+				elif tipo == "piedra":
+					vio_piedra = true
+				elif tipo == "hierro":
+					vio_hierro = true
+	assert(vio_tierra)
+	assert(vio_piedra)
+	assert(vio_hierro)
+	print("OK: capa de tierra siempre 'tierra'; capa profunda produjo tanto 'piedra' como 'hierro' en el muestreo.")
+
+	print("\n=== Las 5 pruebas de GeneradorMundo pasaron correctamente ===")

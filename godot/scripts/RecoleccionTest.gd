@@ -42,6 +42,17 @@ func ejecutar_pruebas() -> void:
 	assert(conteo.get("hierro", 0) == 2)
 	assert(conteo.get("piedra", 0) > 0)
 	assert(not conteo.has(""))
+	var piedra_antes: int = conteo.get("piedra", 0)
+
+	# Bloque de piedra en una esquina que cae DENTRO de la caja delimitadora
+	# ingenua (dx en [-6,6], dy en [0,8], dz en [-6,6]) pero FUERA de la
+	# semiesfera real (Vector3(6,-6,0).length() ≈ 8.49 > RADIO_AREA_MINA=6):
+	# si detectar_recursos() usara una caja en vez de la esfera real, este
+	# bloque se contaría de más.
+	mundo.colocar_bloque(Vector3i(6, altura_superficie - 6, 0), "piedra")
+	var conteo_esquina: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie)
+	print("Conteo piedra antes de la esquina fuera de esfera: ", piedra_antes, " / después: ", conteo_esquina.get("piedra", 0))
+	assert(conteo_esquina.get("piedra", 0) == piedra_antes)
 
 	print("\n=== TEST 2: tasas_recoleccion() reparte proporcionalmente ===")
 	var conteo_simple := {"piedra": 3, "hierro": 1}

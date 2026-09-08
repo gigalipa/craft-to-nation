@@ -6,6 +6,7 @@ extends Node
 ## no debe lanzar ningún error de assert().
 
 const GeneradorMundoScript = preload("res://scripts/GeneradorMundo.gd")
+const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 
 
 func _ready() -> void:
@@ -45,12 +46,53 @@ func ejecutar_pruebas() -> void:
 	assert(hay_diferencia)
 	print("OK: al menos un punto muestreado difiere entre semilla 1 y semilla 2.")
 
-	print("\n=== TEST 4: tipo_en_profundidad() por capas ===")
+	print("\n=== TEST 4: tipo_en_profundidad() por capas (tierra/piedra) ===")
 	var gen_capas: RefCounted = GeneradorMundoScript.new(1)
 	for p in range(GeneradorMundoScript.GROSOR_TIERRA):
-		assert(gen_capas.tipo_en_profundidad(p) == "tierra")
-	assert(gen_capas.tipo_en_profundidad(GeneradorMundoScript.GROSOR_TIERRA) == "piedra")
-	assert(gen_capas.tipo_en_profundidad(GeneradorMundoScript.GROSOR_TIERRA + 10) == "piedra")
-	print("OK: tierra hasta GROSOR_TIERRA, piedra en adelante.")
+		assert(gen_capas.tipo_en_profundidad(0, 10 - p, 0, p) == "tierra")
+	var tipo_profundo: String = gen_capas.tipo_en_profundidad(0, 10 - GeneradorMundoScript.GROSOR_TIERRA, 0, GeneradorMundoScript.GROSOR_TIERRA)
+	assert(tipo_profundo == "piedra" or tipo_profundo == "hierro")
+	print("OK: tierra hasta GROSOR_TIERRA; piedra o hierro en adelante (nunca tierra).")
 
-	print("\n=== Las 4 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 5: Las vetas de hierro nunca aparecen en la capa de tierra, y sí varían la piedra ===")
+	var gen_vetas: RefCounted = GeneradorMundoScript.new(42)
+	var vio_tierra := false
+	var vio_piedra := false
+	var vio_hierro := false
+	for x in range(0, 60, 2):
+		for z in range(0, 60, 2):
+			for p in range(0, 20):
+				var tipo: String = gen_vetas.tipo_en_profundidad(x, 100 - p, z, p)
+				if p < GeneradorMundoScript.GROSOR_TIERRA:
+					assert(tipo == "tierra")
+					vio_tierra = true
+				elif tipo == "piedra":
+					vio_piedra = true
+				elif tipo == "hierro":
+					vio_hierro = true
+	assert(vio_tierra)
+	assert(vio_piedra)
+	assert(vio_hierro)
+	print("OK: capa de tierra siempre 'tierra'; capa profunda produjo tanto 'piedra' como 'hierro' en el muestreo.")
+
+	print("\n=== TEST 6: Aparece hierro con la semilla y el rango de profundidad REALES del juego ===")
+	# Test 5 solo prueba que el hierro PUEDE existir, con una semilla/rango
+	# arbitrarios (42, y-100). Este test usa la semilla real del mundo
+	# (VoxelWorld.SEMILLA_MUNDO, así que el ruido de mineral interno usa
+	# semilla+1, ver GeneradorMundo._init()) y el rango de profundidad real
+	# ([-24, 15] dado PROFUNDIDAD_SUBSUELO=24 y ALTURA_MAXIMA=15) para
+	# confirmar que el hierro también aparece bajo los parámetros con los que
+	# el jugador de verdad juega, no solo en un muestreo fuera del mundo real.
+	var gen_real: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO)
+	var vio_hierro_real := false
+	for x in range(0, 200, 4):
+		for z in range(0, 200, 4):
+			for altura_superficie in range(0, 16, 3):
+				for p in range(GeneradorMundoScript.GROSOR_TIERRA, 21):
+					var y: int = altura_superficie - p
+					if gen_real.tipo_en_profundidad(x, y, z, p) == "hierro":
+						vio_hierro_real = true
+	assert(vio_hierro_real)
+	print("OK: 'hierro' aparece con SEMILLA_MUNDO real y el rango de profundidad real del subsuelo.")
+
+	print("\n=== Las 6 pruebas de GeneradorMundo pasaron correctamente ===")

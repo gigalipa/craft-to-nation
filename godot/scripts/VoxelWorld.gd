@@ -11,7 +11,7 @@ const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 
 const ANCHO_MUNDO := 200
 const LARGO_MUNDO := 200
-const PROFUNDIDAD_SUBSUELO := 8
+const PROFUNDIDAD_SUBSUELO := 24
 const SEMILLA_MUNDO := 12345
 
 ## Rango de búsqueda vertical de altura_en() (ver más abajo) — generoso para
@@ -73,7 +73,8 @@ func _indexar_biblioteca() -> void:
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
 ## (x, z) coloca la celda de superficie ("piso", reutilizando el bloque
 ## caminable existente) y el subsuelo debajo (tierra cerca de la
-## superficie, piedra más profundo — ver GeneradorMundo.tipo_en_profundidad).
+## superficie, piedra más profundo, o vetas de "hierro" en la capa profunda
+## — ver GeneradorMundo.tipo_en_profundidad).
 ## Ninguna de estas celdas se marca colocado_por_jugador: el terreno del
 ## mundo nunca puede ser parte de un edificio declarado por el jugador.
 func _generar_terreno() -> void:
@@ -82,8 +83,9 @@ func _generar_terreno() -> void:
 			var altura: int = generador.altura_en(x, z)
 			colocar_bloque(Vector3i(x, altura, z), "piso")
 			for profundidad in range(1, PROFUNDIDAD_SUBSUELO + 1):
-				var tipo: String = generador.tipo_en_profundidad(profundidad)
-				colocar_bloque(Vector3i(x, altura - profundidad, z), tipo)
+				var y: int = altura - profundidad
+				var tipo: String = generador.tipo_en_profundidad(x, y, z, profundidad)
+				colocar_bloque(Vector3i(x, y, z), tipo)
 
 
 ## Altura de la celda sólida más alta en la columna (x, z) del mundo REAL —

@@ -28,6 +28,10 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 ##   la cámara dentro de un bloque sólido — si el movimiento comandado
 ##   colisiona, ese movimiento simplemente no se aplica esta vez (nunca se
 ##   redirige a otro sentido distinto al que pidió el jugador).
+## - Colocación de minas (tecla `M`, ver GDD Sección 3 y
+##   docs/superpowers/specs/2026-09-08-puestos-recoleccion-minas-design.md):
+##   disco de previsualización del área de acción, ficha en vivo en el HUD,
+##   confirma solo fuera de la zona de influencia.
 ## Modo de nivelación de terreno con tecla `B` (ver GDD Sección 5) — sin
 ## selección de tropas por arrastre todavía, eso sigue siendo PoC 6/Fase 4.
 
@@ -54,6 +58,8 @@ const VELOCIDAD_ALTURA_MAX := 300.0  # celdas/segundo, a ALTURA_MAXIMA_CAMARA
 
 const COLOR_HUELLA_VALIDA := Color(0.2, 1.0, 0.3, 0.4)
 const COLOR_HUELLA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
+const COLOR_MINA_VALIDA := Color(1.0, 0.85, 0.0, 0.4)
+const COLOR_MINA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
 const MITAD_HUELLA := 2  # (NiveladorTerreno.TAMANO_HUELLA - 1) / 2, para una huella de 5x5
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
 
@@ -74,6 +80,7 @@ const ALTURA_SOBRE_SUPERFICIE := 1.01
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
+@onready var hud: CanvasLayer = get_node("../HUDLayer")
 
 var tipo_zona_seleccionada: String = Zonificacion.ZONAS_PINTABLES[0]
 var esperando_segunda_esquina := false
@@ -89,6 +96,15 @@ var primera_esquina := Vector2i.ZERO
 var nivelador: RefCounted
 var modo_nivelacion := false
 var _huella_fantasma: Array[MeshInstance3D] = []
+
+## Modo de colocación de mina (tecla `M`): un disco fantasma (radio
+## Recoleccion.RADIO_AREA_MINA, precalculado en offsets circulares) sigue la
+## celda bajo el cursor, dorado si es válida (fuera de la zona de influencia)
+## o rojo si no. Mientras el modo está activo, la ficha del HUD se actualiza
+## cada fotograma con los recursos reales detectados en esa posición.
+var modo_colocar_mina := false
+var _disco_mina: Array[MeshInstance3D] = []
+var _offsets_disco_mina: Array[Vector2i] = []
 
 ## Punto de mira: la cámara orbita y se inclina a distancia constante
 ## alrededor de este punto (posición clásica foco + offset, ver
@@ -120,6 +136,7 @@ func _ready() -> void:
 	# el ruido original de GeneradorMundo — ver VoxelWorld.altura_en().
 	nivelador = NiveladorTerreno.new(mundo)
 	_crear_huella_fantasma()
+	_crear_disco_mina()
 
 
 ## Crea la cuadrícula de mini-planos fantasma (uno por celda de la huella,
@@ -146,6 +163,35 @@ func _crear_huella_fantasma() -> void:
 		plano.visible = false
 		add_child(plano)
 		_huella_fantasma.append(plano)
+
+
+## Precalcula los offsets (dx, dz) dentro del círculo de radio
+## Recoleccion.RADIO_AREA_MINA (mismo criterio de distancia que
+## Recoleccion.detectar_recursos(), en el plano horizontal) y crea un plano
+## fantasma por offset — mismo patrón de pool reutilizable que
+## _crear_huella_fantasma(), para no generar basura de nodos cada fotograma.
+func _crear_disco_mina() -> void:
+	for dx in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
+		for dz in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
+			if Vector2(dx, dz).length() <= Recoleccion.RADIO_AREA_MINA:
+				_offsets_disco_mina.append(Vector2i(dx, dz))
+
+	var malla := PlaneMesh.new()
+	malla.size = Vector2(1.0, 1.0)
+	for i in range(_offsets_disco_mina.size()):
+		var material := StandardMaterial3D.new()
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.albedo_color = COLOR_MINA_VALIDA
+		material.no_depth_test = false
+
+		var plano := MeshInstance3D.new()
+		plano.mesh = malla
+		plano.material_override = material
+		plano.top_level = true
+		plano.visible = false
+		add_child(plano)
+		_disco_mina.append(plano)
 
 
 ## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
@@ -301,6 +347,8 @@ func _process(delta: float) -> void:
 	if paneo == Vector2.ZERO and not orbita_o_inclina and vuelo == 0.0:
 		if modo_nivelacion:
 			_actualizar_huella_fantasma()
+		elif modo_colocar_mina:
+			_actualizar_previsualizacion_mina()
 		elif esperando_segunda_esquina:
 			_actualizar_previsualizacion_zona()
 		return
@@ -384,6 +432,8 @@ func _process(delta: float) -> void:
 
 	if modo_nivelacion:
 		_actualizar_huella_fantasma()
+	elif modo_colocar_mina:
+		_actualizar_previsualizacion_mina()
 	elif esperando_segunda_esquina:
 		_actualizar_previsualizacion_zona()
 
@@ -423,6 +473,31 @@ func _actualizar_huella_fantasma() -> void:
 			i += 1
 
 
+## Recalcula la posición/color del disco de área de acción según la celda
+## bajo el cursor (dorado fuera de la zona de influencia = válida, rojo
+## dentro = inválida) y la ficha de recolección prevista en el HUD, a partir
+## de los recursos reales detectados por Recoleccion.detectar_recursos().
+func _actualizar_previsualizacion_mina() -> void:
+	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
+	var valida: bool = not Zonificacion.dentro_de_influencia(centro)
+	var color: Color = COLOR_MINA_VALIDA if valida else COLOR_MINA_INVALIDA
+
+	for i in range(_offsets_disco_mina.size()):
+		var offset: Vector2i = _offsets_disco_mina[i]
+		var x: int = centro.x + offset.x
+		var z: int = centro.y + offset.y
+		var altura_celda: int = mundo.altura_en(x, z)
+		var plano: MeshInstance3D = _disco_mina[i]
+		var material: StandardMaterial3D = plano.material_override
+		material.albedo_color = color
+		plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
+
+	var altura_superficie: int = mundo.altura_en(centro.x, centro.y)
+	var conteo: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie)
+	var tasas: Dictionary = Recoleccion.tasas_recoleccion(conteo)
+	hud.actualizar_tasas_mina(tasas)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not current:
 		return
@@ -437,12 +512,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			print("Zona seleccionada: ", tipo_zona_seleccionada)
 		elif tecla.pressed and tecla.keycode == KEY_B:
 			_alternar_modo_nivelacion()
+		elif tecla.pressed and tecla.keycode == KEY_M:
+			_alternar_modo_colocar_mina()
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
 		if boton.pressed and boton.button_index == MOUSE_BUTTON_LEFT:
 			if modo_nivelacion:
 				_procesar_clic_nivelacion(boton.position)
+			elif modo_colocar_mina:
+				_procesar_clic_mina(boton.position)
 			else:
 				_procesar_clic(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -467,6 +546,13 @@ func _intentar_zoom(delta_distancia: float) -> void:
 
 func _alternar_modo_nivelacion() -> void:
 	modo_nivelacion = not modo_nivelacion
+	# Los dos modos son mutuamente excluyentes: entrar en uno sale del otro.
+	# Si no, ambas banderas quedan activas a la vez, nivelación gana todas las
+	# cadenas if/elif de _process() y el disco de la mina se queda visible pero
+	# congelado en el origen, con su ficha del HUD mintiendo sobre lo que hace
+	# el clic.
+	if modo_nivelacion and modo_colocar_mina:
+		_salir_de_modo_colocar_mina()
 	_mostrar_huella_fantasma(modo_nivelacion)
 	if modo_nivelacion:
 		print("Modo nivelación activo: haz clic para nivelar la huella marcada (B de nuevo para cancelar).")
@@ -481,6 +567,36 @@ func _salir_de_modo_nivelacion() -> void:
 
 func _mostrar_huella_fantasma(visible_ahora: bool) -> void:
 	for plano in _huella_fantasma:
+		plano.visible = visible_ahora
+
+
+func _alternar_modo_colocar_mina() -> void:
+	modo_colocar_mina = not modo_colocar_mina
+	# Ver el comentario equivalente en _alternar_modo_nivelacion().
+	if modo_colocar_mina and modo_nivelacion:
+		_salir_de_modo_nivelacion()
+	_mostrar_disco_mina(modo_colocar_mina)
+	if modo_colocar_mina:
+		hud.mostrar_ficha_mina()
+		print("Modo colocar mina activo: haz clic fuera de la zona de influencia para confirmar (M de nuevo para cancelar).")
+	else:
+		# _salir_de_modo_colocar_mina() vuelve a poner modo_colocar_mina = false
+		# (ya lo está, redundante pero inofensivo) además de ocultar el disco y
+		# la ficha del HUD — reutilizado aquí para no duplicar esas dos líneas
+		# (mismo patrón que _alternar_modo_nivelacion() con
+		# _salir_de_modo_nivelacion()).
+		_salir_de_modo_colocar_mina()
+		print("Modo colocar mina cancelado.")
+
+
+func _salir_de_modo_colocar_mina() -> void:
+	modo_colocar_mina = false
+	_mostrar_disco_mina(false)
+	hud.ocultar_ficha_mina()
+
+
+func _mostrar_disco_mina(visible_ahora: bool) -> void:
+	for plano in _disco_mina:
 		plano.visible = visible_ahora
 
 
@@ -530,6 +646,28 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 		print("Todavía no existe una zona de influencia — declara tu primer edificio residencial primero.")
 	esperando_segunda_esquina = false
 	overlay.reconstruir()
+
+
+## Confirma la colocación de la mina en la celda bajo el cursor si está
+## fuera de la zona de influencia — si no, imprime el rechazo y SIGUE en
+## modo colocar-mina (a diferencia de la nivelación, que siempre sale del
+## modo tras un clic; aquí el jugador puede reintentar de inmediato). El
+## bloque marcador se coloca UNA celda por encima de la superficie
+## (altura_superficie + 1): la celda de superficie ya está ocupada por el
+## bloque "piso" del terreno, así que colocar el marcador ahí mismo siempre
+## fallaría (VoxelWorld.colocar_bloque() rechaza celdas ya ocupadas).
+func _procesar_clic_mina(posicion_pantalla: Vector2) -> void:
+	var celda := _celda_bajo_mouse(posicion_pantalla)
+	if Zonificacion.dentro_de_influencia(celda):
+		print("No se puede colocar una mina dentro de la zona de influencia.")
+		return
+
+	var altura_superficie: int = mundo.altura_en(celda.x, celda.y)
+	mundo.colocar_bloque(Vector3i(celda.x, altura_superficie + 1, celda.y), "mina")
+	Recoleccion.colocar_mina(celda)
+	print("Mina colocada en (", celda.x, ", ", celda.y, ").")
+
+	_salir_de_modo_colocar_mina()
 
 
 ## Confirma la nivelación de la huella marcada por el recuadro fantasma

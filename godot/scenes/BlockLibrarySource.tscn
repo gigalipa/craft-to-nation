@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3]
+[gd_scene load_steps=40 format=3]
 
 [sub_resource type="StandardMaterial3D" id="Mat_pared"]
 albedo_color = Color(0.55, 0.55, 0.55, 1)
@@ -97,6 +97,14 @@ material = SubResource("Mat_mina")
 
 [sub_resource type="BoxShape3D" id="Shape_mina"]
 
+[sub_resource type="StandardMaterial3D" id="Mat_agua"]
+albedo_color = Color(0.2, 0.45, 0.85, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_agua"]
+material = SubResource("Mat_agua")
+
+[sub_resource type="BoxShape3D" id="Shape_agua"]
+
 [node name="BlockLibrarySource" type="Node3D"]
 
 [node name="pared" type="MeshInstance3D" parent="."]
@@ -170,3 +178,9 @@ mesh = SubResource("Mesh_mina")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="mina"]
 shape = SubResource("Shape_mina")
+
+[node name="agua" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_agua")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="agua"]
+shape = SubResource("Shape_agua")

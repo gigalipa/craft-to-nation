@@ -595,6 +595,17 @@ func _salir_de_modo_colocar_mina() -> void:
 	hud.ocultar_ficha_mina()
 
 
+## Sale de cualquier modo de interacción de esta cámara (nivelación, colocar
+## mina) — llamada por Main.gd al cambiar a la cámara en 1ª persona. Sin
+## esto, la huella fantasma o el disco de la mina (hijos de esta cámara,
+## independientes de si `current` está activo) seguían visibles y
+## congelados tras salir de la vista cenital, porque su visibilidad solo
+## depende de estas banderas de modo, nunca de qué cámara está activa.
+func salir_de_todos_los_modos() -> void:
+	_salir_de_modo_nivelacion()
+	_salir_de_modo_colocar_mina()
+
+
 func _mostrar_disco_mina(visible_ahora: bool) -> void:
 	for plano in _disco_mina:
 		plano.visible = visible_ahora
@@ -674,7 +685,11 @@ func _procesar_clic_mina(posicion_pantalla: Vector2) -> void:
 ## (celda bajo el cursor = centro de la huella). Rechaza si la pendiente
 ## excede NiveladorTerreno.LIMITE_PENDIENTE; si es válida, rellena con
 ## "tierra" cada celda hasta la altura máxima de la huella e imprime el
-## total de bloques usados. Sale del modo nivelación en ambos casos.
+## total de bloques usados, y reconstruye el overlay de zonas — el relleno
+## puede subir el terreno por encima de una zona ya pintada, y esa zona
+## debe seguir mostrándose sobre la nueva superficie, no enterrada bajo
+## ella hasta el próximo repintado o cambio de cámara. Sale del modo
+## nivelación en ambos casos.
 func _procesar_clic_nivelacion(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	var esquina := centro - Vector2i(MITAD_HUELLA, MITAD_HUELLA)
@@ -694,4 +709,5 @@ func _procesar_clic_nivelacion(posicion_pantalla: Vector2) -> void:
 		total_bloques += cantidad
 
 	print("Terreno nivelado: ", total_bloques, " bloques de tierra usados.")
+	overlay.reconstruir()
 	_salir_de_modo_nivelacion()

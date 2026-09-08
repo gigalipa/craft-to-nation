@@ -84,10 +84,11 @@ func altura_en(x: int, z: int) -> int:
 	return clampi(roundi(altura), ALTURA_MINIMA, ALTURA_MAXIMA)
 
 
-## Acentúa los valores cercanos a ±1 (picos/cuencas) y aplana los cercanos a
-## 0 (llanos), preservando el signo y los extremos exactos (-1, 0, 1).
-## Función estática pura (sin depender de _ruido) para poder probarla con
-## valores conocidos.
+## Curva de potencia sign(x)*pow(abs(x), exponente): comprime o expande los
+## valores cercanos a 0 según el exponente recibido (ver EXPONENTE_RELIEVE más
+## arriba para el efecto real usado por altura_en()), preservando siempre el
+## signo y los extremos exactos (-1, 0, 1). Función estática pura (sin
+## depender de _ruido) para poder probarla con valores conocidos.
 static func _redistribuir(valor: float, exponente: float) -> float:
 	return sign(valor) * pow(abs(valor), exponente)
 

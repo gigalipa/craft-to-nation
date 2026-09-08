@@ -40,6 +40,8 @@ Esto aplana más los valores cercanos a 0 (llanos) y exagera los cercanos a ±1 
 
 `tipo_en_profundidad()` no cambia — sigue operando sobre profundidad relativa a la superficie, que ya incorpora el nuevo relieve a través de `altura_en()`.
 
+**Nota posterior (valor final, ver documento técnico):** el valor inicial `2.0` (exponente >1) resultó estar matemáticamente invertido — para `|x| < 1` un exponente mayor que 1 comprime hacia 0 en vez de acentuar los extremos. El valor final calibrado y usado en el código es `EXPONENTE_RELIEVE := 0.5` (exponente <1, que sí expande/acentúa). Esta corrección también llevó a cambiar `_calcular_nivel_mar()` de indexar un array ordenado por posición (descrito en la sección 1 de este documento) a un algoritmo de histograma/conteo acumulado sobre las 16 alturas enteras posibles — ver el documento técnico para el algoritmo real.
+
 ## 4. Relleno de agua en `VoxelWorld._generar_terreno()`
 
 Para cada columna `(x, z)`:

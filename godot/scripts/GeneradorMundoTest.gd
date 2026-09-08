@@ -95,7 +95,7 @@ func ejecutar_pruebas() -> void:
 	assert(vio_hierro_real)
 	print("OK: 'hierro' aparece con SEMILLA_MUNDO real y el rango de profundidad real del subsuelo.")
 
-	print("\n=== TEST 7: la redistribución por curva de potencia acentúa los extremos sin cambiar el signo ===")
+	print("\n=== TEST 7: la redistribución por curva de potencia preserva signo y extremos exactos ===")
 	assert(is_equal_approx(GeneradorMundoScript._redistribuir(0.0, 2.0), 0.0))
 	assert(is_equal_approx(GeneradorMundoScript._redistribuir(1.0, 2.0), 1.0))
 	assert(is_equal_approx(GeneradorMundoScript._redistribuir(-1.0, 2.0), -1.0))

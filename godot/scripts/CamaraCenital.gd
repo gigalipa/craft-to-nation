@@ -99,7 +99,7 @@ var _huella_fantasma: Array[MeshInstance3D] = []
 
 ## Modo de colocación de mina (tecla `M`): un disco fantasma (radio
 ## Recoleccion.RADIO_AREA_MINA, precalculado en offsets circulares) sigue la
-## celda bajo el cursor, verde si es válida (fuera de la zona de influencia)
+## celda bajo el cursor, dorado si es válida (fuera de la zona de influencia)
 ## o rojo si no. Mientras el modo está activo, la ficha del HUD se actualiza
 ## cada fotograma con los recursos reales detectados en esa posición.
 var modo_colocar_mina := false
@@ -474,7 +474,7 @@ func _actualizar_huella_fantasma() -> void:
 
 
 ## Recalcula la posición/color del disco de área de acción según la celda
-## bajo el cursor (verde fuera de la zona de influencia = válida, rojo
+## bajo el cursor (dorado fuera de la zona de influencia = válida, rojo
 ## dentro = inválida) y la ficha de recolección prevista en el HUD, a partir
 ## de los recursos reales detectados por Recoleccion.detectar_recursos().
 func _actualizar_previsualizacion_mina() -> void:
@@ -580,7 +580,12 @@ func _alternar_modo_colocar_mina() -> void:
 		hud.mostrar_ficha_mina()
 		print("Modo colocar mina activo: haz clic fuera de la zona de influencia para confirmar (M de nuevo para cancelar).")
 	else:
-		hud.ocultar_ficha_mina()
+		# _salir_de_modo_colocar_mina() vuelve a poner modo_colocar_mina = false
+		# (ya lo está, redundante pero inofensivo) además de ocultar el disco y
+		# la ficha del HUD — reutilizado aquí para no duplicar esas dos líneas
+		# (mismo patrón que _alternar_modo_nivelacion() con
+		# _salir_de_modo_nivelacion()).
+		_salir_de_modo_colocar_mina()
 		print("Modo colocar mina cancelado.")
 
 

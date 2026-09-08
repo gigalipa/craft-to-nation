@@ -73,7 +73,8 @@ func _indexar_biblioteca() -> void:
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
 ## (x, z) coloca la celda de superficie ("piso", reutilizando el bloque
 ## caminable existente) y el subsuelo debajo (tierra cerca de la
-## superficie, piedra más profundo — ver GeneradorMundo.tipo_en_profundidad).
+## superficie, piedra más profundo, o vetas de "hierro" en la capa profunda
+## — ver GeneradorMundo.tipo_en_profundidad).
 ## Ninguna de estas celdas se marca colocado_por_jugador: el terreno del
 ## mundo nunca puede ser parte de un edificio declarado por el jugador.
 func _generar_terreno() -> void:

@@ -4,21 +4,73 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 
 ## Cámara cenital con perspectiva oblicua para pintar zonas y nivelar
 ## terreno (ver spec: docs/superpowers/specs/2026-09-07-zonificacion-design.md,
-## ampliada a petición del usuario tras pruebas en vivo: perspectiva oblicua
-## en vez de ortogonal recta, con paneo (WASD) y rotación orbital (Q/E)
-## alrededor de un punto de mira; y modo de nivelación de terreno (tecla
-## `B`, ver GDD Sección 5) — sin zoom ni selección de tropas por arrastre
-## todavía, eso sigue siendo PoC 6/Fase 4).
+## rediseñada a petición del usuario tras varias rondas de prueba en vivo):
+## - Posición clásica de cámara orbital: global_position = foco + offset
+##   (angulo_orbital, angulo_inclinacion, distancia_camara) — ver
+##   _posicion_ideal().
+## - Paneo (WASD): traslada "foco.x/z" en un plano horizontal perfectamente
+##   liso — nunca sigue el relieve, nunca pasa por raycast.
+## - Órbita (Q/E) e inclinación (Ctrl+W/Ctrl+S): al EMPEZAR el gesto (tecla
+##   recién presionada, ver _gesto_orbital_activo), un raycast fija "foco" al
+##   bloque real bajo el centro de la vista y "distancia_camara" a la
+##   distancia real de la cámara a ese punto — ese centro/radio queda fijo
+##   mientras el gesto continúa (sin volver a hacer raycast cada fotograma),
+##   así el paneo simultáneo no lo perturba. Como la altura depende de
+##   angulo_inclinacion/distancia_camara, orbitar mantiene la altura (gira en
+##   una esfera), e inclinar SÍ cambia la altura (sube/baja por esa esfera).
+## - Zoom (rueda del ratón): cambia distancia_camara directamente — también
+##   cambia la altura, por la misma fórmula.
+## - Altura (Shift+W/Shift+S): mueve "foco.y" directamente — como el offset
+##   de altura no depende de foco.y, esto traslada la cámara verticalmente
+##   SIN tocar angulo_inclinacion. Altura mínima: la superficie real bajo la
+##   propia cámara (raycast vertical) + 1 bloque.
+## - Detector de colisiones (_posicion_libre()): ningún control puede mover
+##   la cámara dentro de un bloque sólido — si el movimiento comandado
+##   colisiona, ese movimiento simplemente no se aplica esta vez (nunca se
+##   redirige a otro sentido distinto al que pidió el jugador).
+## Modo de nivelación de terreno con tecla `B` (ver GDD Sección 5) — sin
+## selección de tropas por arrastre todavía, eso sigue siendo PoC 6/Fase 4.
 
-const DISTANCIA_CAMARA := 25.0
-const ANGULO_INCLINACION := deg_to_rad(55.0)  # inclinación fija sobre la horizontal
+const DISTANCIA_INICIAL := 25.0
+const DISTANCIA_MIN := 8.0
+const DISTANCIA_MAX := 60.0
+const VELOCIDAD_ZOOM := 2.5  # celdas por "tick" de rueda del ratón
+
+const ANGULO_INCLINACION_INICIAL := deg_to_rad(55.0)
+const ANGULO_INCLINACION_MIN := deg_to_rad(10.0)  # casi al ras del horizonte
+const ANGULO_INCLINACION_MAX := deg_to_rad(89.9)  # cenital recta
+const VELOCIDAD_INCLINACION := deg_to_rad(60.0)  # radianes/segundo
+
 const VELOCIDAD_PANEO := 20.0  # celdas/segundo
 const VELOCIDAD_ORBITA := deg_to_rad(90.0)  # radianes/segundo
+
+## Shift+W/S: tope superior de altura y velocidad de subida/bajada variable
+## — cuadrática según la altura ACTUAL de la cámara (global_position.y, no
+## foco.y), para que cambiar de altura sea lento cerca del piso y rápido en
+## las alturas máximas (ver _velocidad_altura()).
+const ALTURA_MAXIMA_CAMARA := 300.0
+const VELOCIDAD_ALTURA_MIN := 15.0  # celdas/segundo, a nivel del piso
+const VELOCIDAD_ALTURA_MAX := 300.0  # celdas/segundo, a ALTURA_MAXIMA_CAMARA
 
 const COLOR_HUELLA_VALIDA := Color(0.2, 1.0, 0.3, 0.4)
 const COLOR_HUELLA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
 const MITAD_HUELLA := 2  # (NiveladorTerreno.TAMANO_HUELLA - 1) / 2, para una huella de 5x5
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
+
+## Raycast vertical bajo la propia cámara (ver _altura_bajo_camara()), para
+## la altura mínima al bajar con Shift+S — origen bien por encima de
+## cualquier relieve/edificio posible, alcance generoso hacia abajo.
+const ORIGEN_RAYCAST_VERTICAL_Y := 100.0
+const ALCANCE_RAYCAST_VERTICAL := 150.0
+
+## Mismo desfase que ZonaOverlay.gd: GridMap.map_to_local() ubica el origen
+## de cada celda en su esquina (no en su centro), así que una celda con
+## altura_en() = Y ocupa el rango vertical [Y, Y+1] en el mundo — su cara
+## superior real está en Y+1, no en Y. DESF recentra X/Z (la esquina de
+## menor X/Z -> el centro de la celda); ALTURA_SOBRE_SUPERFICIE deja el
+## plano justo sobre la cara superior real (Y+1), con un pequeño margen.
+const DESF := 0.5
+const ALTURA_SOBRE_SUPERFICIE := 1.01
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
@@ -38,10 +90,25 @@ var nivelador: RefCounted
 var modo_nivelacion := false
 var _huella_fantasma: Array[MeshInstance3D] = []
 
-## Punto de mira sobre el plano del suelo (Y siempre 0): la cámara orbita y
-## se desplaza alrededor de este punto, nunca se mueve directamente.
+## Punto de mira: la cámara orbita y se inclina a distancia constante
+## alrededor de este punto (posición clásica foco + offset, ver
+## _posicion_ideal()). El paneo (WASD) mueve "foco.x/z" directamente, sin
+## pasar nunca por raycast. Shift+W/S mueve "foco.y" directamente (ver
+## _process()) — como el offset de altura depende solo del ángulo/
+## distancia, no de foco.y, esto traslada la cámara verticalmente sin
+## cambiar su inclinación.
 var foco := Vector3.ZERO
 var angulo_orbital := 0.0
+var angulo_inclinacion := ANGULO_INCLINACION_INICIAL
+var distancia_camara := DISTANCIA_INICIAL
+
+## true si en el fotograma anterior había alguna tecla de órbita (Q/E) o
+## inclinación (Ctrl+W/S) presionada — para detectar el fotograma exacto en
+## que EMPIEZA un gesto de este tipo (ver _process()): "foco" y
+## "distancia_camara" solo se recalculan por raycast en ese primer
+## fotograma, y quedan fijos como centro/radio del giro mientras el gesto
+## continúa, sin importar qué otro movimiento (paneo) ocurra a la vez.
+var _gesto_orbital_activo := false
 
 
 func _ready() -> void:
@@ -70,9 +137,7 @@ func _crear_huella_fantasma() -> void:
 		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		material.albedo_color = COLOR_HUELLA_VALIDA
-		# Igual que ZonaOverlay: sin prueba de profundidad, para que la huella
-		# nunca quede oculta por relieve o bloques cercanos más altos.
-		material.no_depth_test = true
+		material.no_depth_test = false
 
 		var plano := MeshInstance3D.new()
 		plano.mesh = malla
@@ -85,33 +150,123 @@ func _crear_huella_fantasma() -> void:
 
 ## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
 ## jugador en el momento de activar la cenital) y reinicia la orientación
-## orbital. Llamada por Main.gd al activar la cámara cenital.
+## orbital, la inclinación, la distancia y el estado del gesto de
+## órbita/inclinación. Llamada por Main.gd al activar la cámara cenital.
 func posicionar_sobre(foco_xz: Vector2) -> void:
-	foco = Vector3(foco_xz.x, 0.0, foco_xz.y)
+	var altura_inicial: int = mundo.altura_en(int(foco_xz.x), int(foco_xz.y))
+	foco = Vector3(foco_xz.x, altura_inicial, foco_xz.y)
 	angulo_orbital = 0.0
+	angulo_inclinacion = ANGULO_INCLINACION_INICIAL
+	distancia_camara = DISTANCIA_INICIAL
+	_gesto_orbital_activo = false
+	_actualizar_transform()
+	_refinar_foco_por_mira()
 	_actualizar_transform()
 
 
-## Recalcula la posición/orientación de la cámara a partir de foco +
-## angulo_orbital, manteniendo siempre la misma distancia e inclinación
-## (órbita de cámara clásica: la cámara nunca se mueve directamente, solo
-## el punto de mira y el ángulo alrededor de él).
-func _actualizar_transform() -> void:
+## Recalcula la posición/orientación de la cámara a partir de foco,
+## angulo_orbital, angulo_inclinacion y distancia_camara (órbita de cámara
+## clásica: la cámara nunca se mueve directamente por sí sola). Devuelve la
+## posición IDEAL resultante (sin aplicar todavía detección de colisión) —
+## quien llama decide si es segura (ver _posicion_libre()) antes de
+## comprometerse a ella.
+func _posicion_ideal() -> Vector3:
 	var direccion_horizontal := Vector3(sin(angulo_orbital), 0.0, cos(angulo_orbital))
-	var offset := direccion_horizontal * DISTANCIA_CAMARA * cos(ANGULO_INCLINACION)
-	offset.y = DISTANCIA_CAMARA * sin(ANGULO_INCLINACION)
-	global_position = foco + offset
+	var offset := direccion_horizontal * distancia_camara * cos(angulo_inclinacion)
+	offset.y = distancia_camara * sin(angulo_inclinacion)
+	return foco + offset
+
+
+## Aplica la posición/orientación actuales (foco/ángulos/distancia) a la
+## cámara de verdad. Separado de _posicion_ideal() para que _process() (ver
+## más abajo) pueda calcular la posición candidata, validarla contra
+## _posicion_libre() y solo comprometerse (llamando a esta función) si es
+## segura.
+func _actualizar_transform() -> void:
+	global_position = _posicion_ideal()
 	look_at(foco, Vector3.UP)
+
+
+## Detector de colisiones: true si "posicion" NO está dentro de ningún
+## cuerpo físico sólido (terreno o edificio) — usa una consulta de punto
+## (más directa que un raycast para "¿este punto exacto está ocupado?").
+## Quien llama a esto SIEMPRE debe conservar el estado anterior (foco/
+## ángulos/distancia) si devuelve false, nunca intentar "corregir" o
+## redirigir el movimiento — el jugador solo debe sentir que su comando se
+## ignora este fotograma, nunca que la cámara se desvía a otro lado.
+func _posicion_libre(posicion: Vector3) -> bool:
+	var consulta := PhysicsPointQueryParameters3D.new()
+	consulta.position = posicion
+	consulta.collide_with_areas = false
+	consulta.collide_with_bodies = true
+	var resultados: Array = get_world_3d().direct_space_state.intersect_point(consulta, 1)
+	return resultados.is_empty()
+
+
+## Ajusta "foco" al punto real (relieve/bloques, no un plano Y=0 asumido)
+## que la cámara tiene efectivamente en la mira — el centro exacto de la
+## pantalla, ya que _actualizar_transform() siempre apunta la cámara hacia
+## "foco" con look_at(). Requiere que la cámara YA esté posicionada con el
+## "foco" previo (llamar _actualizar_transform() antes); si el rayo no
+## golpea nada (mira al cielo), conserva el "foco" anterior sin cambios.
+## Se usa SOLO para órbita (Q/E) e inclinación (Ctrl+W/S) — el paneo y la
+## altura mueven "foco" directamente, nunca a través de este raycast (ver
+## _process()), para que esos dos controles se sientan como un
+## desplazamiento totalmente liso, jamás "enganchado" al relieve.
+func _refinar_foco_por_mira() -> void:
+	var centro := get_viewport().get_visible_rect().size / 2.0
+	var origen := project_ray_origin(centro)
+	var direccion := project_ray_normal(centro)
+	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
+	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
+	if not resultado.is_empty():
+		foco = resultado["position"]
+
+
+## Raycast físico vertical (de arriba hacia abajo) en la posición X/Z ACTUAL
+## de la cámara — para la altura mínima de Shift+S (ver _process()), no debe
+## depender de dónde está mirando la cámara, solo de qué terreno/edificio
+## tiene debajo de sí misma en este momento. Si no golpea nada, devuelve
+## -INF (sin piso mínimo real ahí, no se aplica ningún límite).
+func _altura_bajo_camara() -> float:
+	var x := global_position.x
+	var z := global_position.z
+	var origen := Vector3(x, ORIGEN_RAYCAST_VERTICAL_Y, z)
+	var destino := Vector3(x, ORIGEN_RAYCAST_VERTICAL_Y - ALCANCE_RAYCAST_VERTICAL, z)
+	var consulta := PhysicsRayQueryParameters3D.create(origen, destino)
+	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
+	if resultado.is_empty():
+		return -INF
+	return resultado["position"].y
+
+
+## Velocidad de Shift+W/S para la altura ACTUAL de la cámara — cuadrática
+## entre VELOCIDAD_ALTURA_MIN (a nivel del piso) y VELOCIDAD_ALTURA_MAX (en
+## ALTURA_MAXIMA_CAMARA): lenta cerca del suelo, rápida en las alturas
+## máximas. "altura_actual" se recorta a [0, ALTURA_MAXIMA_CAMARA] antes de
+## calcular la proporción, para que una altura fuera de rango (p. ej. 0 o
+## negativa cerca del piso) no distorsione la curva.
+func _velocidad_altura(altura_actual: float) -> float:
+	var proporcion: float = clampf(altura_actual / ALTURA_MAXIMA_CAMARA, 0.0, 1.0)
+	return lerp(VELOCIDAD_ALTURA_MIN, VELOCIDAD_ALTURA_MAX, proporcion * proporcion)
 
 
 func _process(delta: float) -> void:
 	if not current:
 		return
 
+	# Shift+W/S ajustan la altura directamente; Ctrl+W/S inclinan la cámara
+	# sobre el punto de mira — ambos se comprueban antes que el paneo para
+	# que W/S no hagan dos cosas a la vez mientras Shift o Ctrl están
+	# presionados.
+	var con_mayus: bool = Input.is_key_pressed(KEY_SHIFT)
+	var con_ctrl: bool = Input.is_key_pressed(KEY_CTRL)
+	var modificador_activo := con_mayus or con_ctrl
+
 	var paneo := Vector2.ZERO
-	if Input.is_key_pressed(KEY_W):
+	if not modificador_activo and Input.is_key_pressed(KEY_W):
 		paneo.y -= 1
-	if Input.is_key_pressed(KEY_S):
+	if not modificador_activo and Input.is_key_pressed(KEY_S):
 		paneo.y += 1
 	if Input.is_key_pressed(KEY_A):
 		paneo.x -= 1
@@ -124,24 +279,124 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_E):
 		giro += 1.0
 
-	var necesita_actualizar := false
+	var cabeceo := 0.0
+	if con_ctrl and Input.is_key_pressed(KEY_W):
+		cabeceo += 1.0
+	if con_ctrl and Input.is_key_pressed(KEY_S):
+		cabeceo -= 1.0
+
+	var vuelo := 0.0
+	if con_mayus and Input.is_key_pressed(KEY_W):
+		vuelo += 1.0
+	if con_mayus and Input.is_key_pressed(KEY_S):
+		vuelo -= 1.0
+
+	# Detecta el fotograma exacto en que EMPIEZA un gesto de órbita/
+	# inclinación (transición de "ninguna tecla" a "alguna tecla" de este
+	# grupo) — ver _gesto_orbital_activo.
+	var orbita_o_inclina := giro != 0.0 or cabeceo != 0.0
+	var inicia_gesto := orbita_o_inclina and not _gesto_orbital_activo
+	_gesto_orbital_activo = orbita_o_inclina
+
+	if paneo == Vector2.ZERO and not orbita_o_inclina and vuelo == 0.0:
+		if modo_nivelacion:
+			_actualizar_huella_fantasma()
+		elif esperando_segunda_esquina:
+			_actualizar_previsualizacion_zona()
+		return
+
+	# Estado tentativo: se aplican todos los controles activos este
+	# fotograma sobre COPIAS locales, y solo se comprometen (se asignan a
+	# las variables reales) si la posición resultante no colisiona — así
+	# el jugador nunca ve la cámara "meterse" en un bloque sólido, ni
+	# tampoco la ve desviarse a un sentido distinto al que comandó: si hay
+	# colisión, el movimiento de este fotograma simplemente no ocurre.
+	var foco_nuevo := foco
+	var angulo_orbital_nuevo := angulo_orbital
+	var angulo_inclinacion_nuevo := angulo_inclinacion
+	var distancia_camara_nueva := distancia_camara
+
+	# Solo en el PRIMER fotograma del gesto: fija "foco" al bloque real bajo
+	# la mira (raycast) y la distancia real actual entre la cámara y ese
+	# punto como radio del giro. Mientras el gesto continúe (tecla
+	# mantenida), NO se vuelve a hacer raycast — foco/distancia quedan fijos
+	# como centro/radio, así la órbita/inclinación no tiembla ni salta,
+	# aunque el paneo siga moviendo foco.x/z simultáneamente.
+	if inicia_gesto:
+		_refinar_foco_por_mira()
+		foco_nuevo = foco
+		distancia_camara_nueva = clampf(global_position.distance_to(foco), DISTANCIA_MIN, DISTANCIA_MAX)
+
 	if paneo != Vector2.ZERO:
 		# El paneo es relativo a la orientación actual de la cámara: "adelante"
 		# siempre aleja el punto de mira de la cámara en pantalla, sin importar
-		# el ángulo de órbita.
-		paneo = paneo.normalized() * VELOCIDAD_PANEO * delta
+		# el ángulo de órbita. Nunca toca foco.y: el paneo es un plano
+		# horizontal perfectamente liso.
+		var paneo_norm := paneo.normalized() * VELOCIDAD_PANEO * delta
 		var adelante := Vector3(sin(angulo_orbital), 0.0, cos(angulo_orbital))
 		var derecha := Vector3(adelante.z, 0.0, -adelante.x)
-		foco += adelante * paneo.y + derecha * paneo.x
-		necesita_actualizar = true
+		foco_nuevo += adelante * paneo_norm.y + derecha * paneo_norm.x
 	if giro != 0.0:
-		angulo_orbital += giro * VELOCIDAD_ORBITA * delta
-		necesita_actualizar = true
-	if necesita_actualizar:
+		angulo_orbital_nuevo += giro * VELOCIDAD_ORBITA * delta
+	if cabeceo != 0.0:
+		angulo_inclinacion_nuevo = clampf(
+			angulo_inclinacion_nuevo + cabeceo * VELOCIDAD_INCLINACION * delta,
+			ANGULO_INCLINACION_MIN,
+			ANGULO_INCLINACION_MAX
+		)
+	if vuelo != 0.0:
+		# Shift+W/S mueve foco.y directamente — el offset de altura
+		# (distancia*sin(inclinación)) no depende de foco.y, así que esto
+		# traslada la cámara verticalmente SIN cambiar angulo_inclinacion.
+		# Velocidad cuadrática según la altura ACTUAL (antes de este cambio):
+		# lenta cerca del piso, rápida en las alturas máximas. Altura mínima:
+		# la superficie real bajo la propia cámara (raycast vertical, no el
+		# punto de mira) + 1 bloque de margen. Altura máxima: ALTURA_MAXIMA_
+		# CAMARA.
+		var offset_y: float = distancia_camara_nueva * sin(angulo_inclinacion_nuevo)
+		var velocidad: float = _velocidad_altura(global_position.y)
+		var altura_deseada: float = foco_nuevo.y + vuelo * velocidad * delta + offset_y
+		var altura_minima: float = _altura_bajo_camara() + 1.0
+		altura_deseada = clampf(altura_deseada, altura_minima, ALTURA_MAXIMA_CAMARA)
+		foco_nuevo.y = altura_deseada - offset_y
+
+	# Calcula la posición candidata con el estado tentativo (sin
+	# comprometerlo todavía) y valida colisión antes de aplicar nada.
+	var foco_previo := foco
+	var angulo_orbital_previo := angulo_orbital
+	var angulo_inclinacion_previo := angulo_inclinacion
+	var distancia_camara_previa := distancia_camara
+	foco = foco_nuevo
+	angulo_orbital = angulo_orbital_nuevo
+	angulo_inclinacion = angulo_inclinacion_nuevo
+	distancia_camara = distancia_camara_nueva
+	var candidata := _posicion_ideal()
+	if _posicion_libre(candidata):
 		_actualizar_transform()
+	else:
+		# Colisión: se descarta TODO el movimiento tentativo de este
+		# fotograma (no se intenta aplicar parcialmente ni redirigir) — la
+		# cámara se queda exactamente donde estaba.
+		foco = foco_previo
+		angulo_orbital = angulo_orbital_previo
+		angulo_inclinacion = angulo_inclinacion_previo
+		distancia_camara = distancia_camara_previa
 
 	if modo_nivelacion:
 		_actualizar_huella_fantasma()
+	elif esperando_segunda_esquina:
+		_actualizar_previsualizacion_zona()
+
+
+## Previsualización en vivo de la zona a pintar: mientras se espera la
+## segunda esquina (tras el primer click), el rectángulo entre
+## "primera_esquina" y la celda actual bajo el cursor se dibuja en
+## ZonaOverlay con el color de "tipo_zona_seleccionada", sin escribir nada
+## todavía en Zonificacion.zonas — la escritura real ocurre recién en el
+## segundo click (ver _procesar_clic()).
+func _actualizar_previsualizacion_zona() -> void:
+	var celda := _celda_bajo_mouse(get_viewport().get_mouse_position())
+	overlay.previsualizar(primera_esquina, celda, tipo_zona_seleccionada)
 
 
 ## Recalcula la posición y el color de cada mini-plano de la huella según
@@ -164,7 +419,7 @@ func _actualizar_huella_fantasma() -> void:
 			var plano: MeshInstance3D = _huella_fantasma[i]
 			var material: StandardMaterial3D = plano.material_override
 			material.albedo_color = color
-			plano.position = Vector3(x, altura_celda + 0.1, z)
+			plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
 			i += 1
 
 
@@ -190,6 +445,24 @@ func _unhandled_input(event: InputEvent) -> void:
 				_procesar_clic_nivelacion(boton.position)
 			else:
 				_procesar_clic(boton.position)
+		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_intentar_zoom(-VELOCIDAD_ZOOM)
+		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_intentar_zoom(VELOCIDAD_ZOOM)
+
+
+## Igual que el resto de controles: aplica el zoom tentativamente, y solo
+## lo compromete (y mueve la cámara) si la posición resultante no
+## colisiona — si colisiona, la distancia de zoom no cambia (nunca se
+## "fuerza" a una distancia distinta a la pedida).
+func _intentar_zoom(delta_distancia: float) -> void:
+	var distancia_previa := distancia_camara
+	distancia_camara = clampf(distancia_camara + delta_distancia, DISTANCIA_MIN, DISTANCIA_MAX)
+	var candidata := _posicion_ideal()
+	if _posicion_libre(candidata):
+		_actualizar_transform()
+	else:
+		distancia_camara = distancia_previa
 
 
 func _alternar_modo_nivelacion() -> void:
@@ -248,6 +521,7 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 		primera_esquina = celda
 		esperando_segunda_esquina = true
 		print("Primera esquina de la zona: ", primera_esquina)
+		overlay.previsualizar(primera_esquina, primera_esquina, tipo_zona_seleccionada)
 		return
 
 	var pintadas: int = Zonificacion.pintar_zona(primera_esquina, celda, tipo_zona_seleccionada)

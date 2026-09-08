@@ -1,40 +1,38 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://d11r235yhedr4"]
 
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1"]
-[ext_resource type="Script" path="res://scripts/VoxelWorld.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/Main.gd" id="3"]
+[ext_resource type="Script" uid="uid://bljafw3iua3x0" path="res://scripts/VoxelWorld.gd" id="2"]
+[ext_resource type="Script" uid="uid://djo58ryeofic5" path="res://scripts/Main.gd" id="3"]
 [ext_resource type="MeshLibrary" path="res://assets/BlockLibrary.res" id="4"]
-[ext_resource type="Script" path="res://scripts/HUD.gd" id="5"]
-[ext_resource type="Script" path="res://scripts/CamaraCenital.gd" id="6"]
-[ext_resource type="Script" path="res://scripts/ZonaOverlay.gd" id="7"]
+[ext_resource type="Script" uid="uid://dyx7ud7wfqpeg" path="res://scripts/HUD.gd" id="5"]
+[ext_resource type="Script" uid="uid://dv3grllxpedej" path="res://scripts/CamaraCenital.gd" id="6"]
+[ext_resource type="Script" uid="uid://b3dtjvjivtjbv" path="res://scripts/ZonaOverlay.gd" id="7"]
 
-[node name="Main" type="Node3D"]
+[node name="Main" type="Node3D" unique_id=1572763968]
 script = ExtResource("3")
 
-[node name="VoxelWorld" type="GridMap" parent="."]
-script = ExtResource("2")
+[node name="VoxelWorld" type="GridMap" parent="." unique_id=167466244]
 mesh_library = ExtResource("4")
 cell_size = Vector3(1, 1, 1)
+script = ExtResource("2")
 
-[node name="Player" parent="." instance=ExtResource("1")]
-position = Vector3(0, 1, 0)
+[node name="Player" parent="." unique_id=1891965274 instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
-[node name="CamaraCenital" type="Camera3D" parent="."]
-current = false
+[node name="CamaraCenital" type="Camera3D" parent="." unique_id=1685240235]
 script = ExtResource("6")
 
-[node name="ZonaOverlay" type="Node3D" parent="."]
+[node name="ZonaOverlay" type="Node3D" parent="." unique_id=124459786]
 visible = false
 script = ExtResource("7")
 
-[node name="Luz" type="DirectionalLight3D" parent="."]
-position = Vector3(0, 5, 0)
-rotation_degrees = Vector3(-45, -30, 0)
+[node name="Luz" type="DirectionalLight3D" parent="." unique_id=1480571523]
+transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 5, 0)
 shadow_enabled = true
 
-[node name="MiraUI" type="CanvasLayer" parent="."]
+[node name="MiraUI" type="CanvasLayer" parent="." unique_id=1463271242]
 
-[node name="Mira" type="ColorRect" parent="MiraUI"]
+[node name="Mira" type="ColorRect" parent="MiraUI" unique_id=712885376]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -44,46 +42,46 @@ offset_left = -2.0
 offset_top = -2.0
 offset_right = 2.0
 offset_bottom = 2.0
-color = Color(1, 1, 1, 0.8)
 mouse_filter = 2
+color = Color(1, 1, 1, 0.8)
 
-[node name="HUDLayer" type="CanvasLayer" parent="."]
+[node name="HUDLayer" type="CanvasLayer" parent="." unique_id=157629340]
 script = ExtResource("5")
 
-[node name="HUD" type="VBoxContainer" parent="HUDLayer"]
+[node name="HUD" type="VBoxContainer" parent="HUDLayer" unique_id=814452454]
 offset_left = 12.0
 offset_top = 12.0
 offset_right = 260.0
 offset_bottom = 140.0
 
-[node name="NivelLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="NivelLabel" type="Label" parent="HUDLayer/HUD" unique_id=2052434221]
 layout_mode = 2
 text = "Nivel: 1 (potencial: 1)"
 
-[node name="PoblacionLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="PoblacionLabel" type="Label" parent="HUDLayer/HUD" unique_id=1287543733]
 layout_mode = 2
 text = "Población: 0 / 0"
 
-[node name="MoralLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="MoralLabel" type="Label" parent="HUDLayer/HUD" unique_id=155013072]
 layout_mode = 2
 text = "Moral (variedad): 0.0"
 
-[node name="ComidaStockLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="ComidaStockLabel" type="Label" parent="HUDLayer/HUD" unique_id=203043215]
 layout_mode = 2
 text = "  Comida: 0 / 0"
 
-[node name="ComidaTasaLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="ComidaTasaLabel" type="Label" parent="HUDLayer/HUD" unique_id=755754761]
 layout_mode = 2
 text = "  +0.0 /tick"
 
-[node name="CriticoNombreLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="CriticoNombreLabel" type="Label" parent="HUDLayer/HUD" unique_id=401294872]
 layout_mode = 2
 text = "Recurso crítico: -"
 
-[node name="CriticoStockLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="CriticoStockLabel" type="Label" parent="HUDLayer/HUD" unique_id=1870068988]
 layout_mode = 2
 text = "  - : 0 / 0"
 
-[node name="CriticoTasaLabel" type="Label" parent="HUDLayer/HUD"]
+[node name="CriticoTasaLabel" type="Label" parent="HUDLayer/HUD" unique_id=848394072]
 layout_mode = 2
 text = "  +0.0 /tick"

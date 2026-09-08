@@ -11,8 +11,12 @@ const ALTURA_MAXIMA := 15
 const GROSOR_TIERRA := 4
 
 ## Umbral de get_noise_3d() (rango [-1, 1]) por encima del cual una celda de
-## piedra se convierte en hierro — ver tipo_en_profundidad(). Calibrado para
-## que el hierro sea claramente minoritario frente a la piedra.
+## piedra se convierte en hierro — ver tipo_en_profundidad(). El rango teórico
+## es [-1, 1], pero para esta semilla/frecuencia el rango observado de
+## get_noise_3d() no se acerca a esos extremos (tope real ~0.37-0.4) — un
+## umbral de 0.55 (o incluso 0.4) nunca se alcanza y nunca produciría hierro.
+## Recalibrado empíricamente a 0.2, que sigue dejando al hierro como clara
+## minoría frente a la piedra en la capa profunda.
 const UMBRAL_HIERRO := 0.2
 
 var _ruido: FastNoiseLite

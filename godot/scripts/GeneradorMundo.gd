@@ -28,11 +28,24 @@ const UMBRAL_HIERRO := 0.2
 ## el relieve resulta demasiado suave o demasiado abrupto.
 const EXPONENTE_RELIEVE := 2.0
 
+## Percentil (sobre la distribución real de altura_en() en todo el grid) que
+## define nivel_mar — ver _calcular_nivel_mar(). Fijo por ahora; en un
+## desarrollo futuro dependerá del "tipo de mundo" elegido (archipiélago,
+## continental, etc.) — ver spec docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md.
+const PERCENTIL_NIVEL_MAR := 0.15
+
+## Altura por debajo de la cual una columna se considera inundada (ver
+## es_agua_en()). Calculada una vez en _init() a partir de
+## PERCENTIL_NIVEL_MAR sobre la distribución real del grid (ancho_mundo x
+## largo_mundo) — no es un valor fijo, para ser robusta a cambios de
+## semilla, frecuencia de ruido o EXPONENTE_RELIEVE.
+var nivel_mar: int
+
 var _ruido: FastNoiseLite
 var _ruido_mineral: FastNoiseLite
 
 
-func _init(semilla: int) -> void:
+func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	_ruido = FastNoiseLite.new()
 	_ruido.seed = semilla
 	_ruido.noise_type = FastNoiseLite.TYPE_PERLIN
@@ -47,6 +60,8 @@ func _init(semilla: int) -> void:
 	# Frecuencia baja a propósito (más baja que _ruido) para producir vetas/
 	# grumos grandes y deformes en vez de ruido puntual disperso celda a celda.
 	_ruido_mineral.frequency = 0.05
+
+	nivel_mar = _calcular_nivel_mar(ancho_mundo, largo_mundo)
 
 
 ## Altura de la superficie en (x, z), determinista para (semilla, x, z).
@@ -83,3 +98,24 @@ func tipo_en_profundidad(x: int, y: int, z: int, profundidad_bajo_superficie: in
 	if _ruido_mineral.get_noise_3d(x, y, z) > UMBRAL_HIERRO:
 		return "hierro"
 	return "piedra"
+
+
+## Altura correspondiente al percentil PERCENTIL_NIVEL_MAR de la
+## distribución real de altura_en() sobre el grid (ancho_mundo x
+## largo_mundo) — ver nivel_mar.
+func _calcular_nivel_mar(ancho_mundo: int, largo_mundo: int) -> int:
+	var alturas: Array = []
+	for x in range(ancho_mundo):
+		for z in range(largo_mundo):
+			alturas.append(altura_en(x, z))
+	alturas.sort()
+	var indice: int = clampi(int(alturas.size() * PERCENTIL_NIVEL_MAR), 0, alturas.size() - 1)
+	return alturas[indice]
+
+
+## Verdadero si la columna (x, z) queda por debajo del nivel de mar. Usada
+## por VoxelWorld para rellenar de agua (ver Task 4), y pensada para que
+## sub-proyectos futuros (adyacencia de puestos de caza/pesca, obstáculos
+## para puentes de PoC 9) la consulten sin repetir este cálculo.
+func es_agua_en(x: int, z: int) -> bool:
+	return altura_en(x, z) < nivel_mar

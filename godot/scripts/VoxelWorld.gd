@@ -59,7 +59,7 @@ var pareja: Dictionary = {}  # Vector3i -> Vector3i
 func _ready() -> void:
 	cell_size = Vector3.ONE * TAMANO_CELDA
 	_indexar_biblioteca()
-	generador = GeneradorMundo.new(SEMILLA_MUNDO)
+	generador = GeneradorMundo.new(SEMILLA_MUNDO, ANCHO_MUNDO, LARGO_MUNDO)
 	_generar_terreno()
 
 

@@ -74,7 +74,9 @@ func _indexar_biblioteca() -> void:
 ## (x, z) coloca la celda de superficie ("piso", reutilizando el bloque
 ## caminable existente) y el subsuelo debajo (tierra cerca de la
 ## superficie, piedra más profundo, o vetas de "hierro" en la capa profunda
-## — ver GeneradorMundo.tipo_en_profundidad).
+## — ver GeneradorMundo.tipo_en_profundidad), y si la columna queda por
+## debajo del nivel de mar, agrega bloques "agua" encima de la superficie
+## hasta ese nivel (ver GeneradorMundo.es_agua_en/nivel_mar).
 ## Ninguna de estas celdas se marca colocado_por_jugador: el terreno del
 ## mundo nunca puede ser parte de un edificio declarado por el jugador.
 func _generar_terreno() -> void:
@@ -86,6 +88,9 @@ func _generar_terreno() -> void:
 				var y: int = altura - profundidad
 				var tipo: String = generador.tipo_en_profundidad(x, y, z, profundidad)
 				colocar_bloque(Vector3i(x, y, z), tipo)
+			if generador.es_agua_en(x, z):
+				for y_agua in range(altura + 1, generador.nivel_mar + 1):
+					colocar_bloque(Vector3i(x, y_agua, z), "agua")
 
 
 ## Altura de la celda sólida más alta en la columna (x, z) del mundo REAL —

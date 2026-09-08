@@ -127,17 +127,16 @@ func ejecutar_pruebas() -> void:
 			if gen_pct.es_agua_en(x, z):
 				inundadas += 1
 	var fraccion: float = float(inundadas) / float(total)
-	# Tolerancia ampliada a ±0.12 (no ±0.05): _calcular_nivel_mar() indexa un
-	# array ORDENADO de alturas, pero solo hay 16 alturas enteras posibles, y
-	# la distribución redistribuida por EXPONENTE_RELIEVE concentra la mayoría
-	# de las columnas en unas pocas alturas centrales. Con esta semilla/grid,
-	# nivel_mar cae justo en una altura con un empate masivo (nivel_mar == 7,
-	# con ~387/10000 columnas estrictamente por debajo pero muchas más
-	# iguales a 7), así que la fracción ESTRICTAMENTE menor que nivel_mar
-	# (criterio de es_agua_en) se desvía del 15% nominal más de lo que
-	# explicaría solo el muestreo. Esto es un efecto de discretización
-	# anticipado en el diseño, no un bug de _calcular_nivel_mar/es_agua_en.
-	assert(abs(fraccion - GeneradorMundoScript.PERCENTIL_NIVEL_MAR) < 0.12)
-	print("OK: fracción inundada %.3f está dentro de ±0.12 del percentil configurado (%.2f)." % [fraccion, GeneradorMundoScript.PERCENTIL_NIVEL_MAR])
+	# Tolerancia ±0.03 (no ±0.05 exacto): con EXPONENTE_RELIEVE=0.5 (ver Task
+	# 2 — corrige el exponente >1 original, que comprimía el relieve hacia
+	# el centro en vez de acentuar picos/cuencas) y _calcular_nivel_mar()
+	# eligiendo la altura cuyo conteo acumulado real se acerca más al índice
+	# objetivo (no solo la posición ordinal), la fracción medida para esta
+	# semilla/grid es 0.161 (a 0.011 del 15% nominal) — y 0.1596 con los
+	# parámetros reales del mundo (SEMILLA_MUNDO/ANCHO_MUNDO/LARGO_MUNDO).
+	# ±0.03 deja margen sobre esa desviación medida sin ocultar una futura
+	# regresión real del criterio de nivel de mar.
+	assert(abs(fraccion - GeneradorMundoScript.PERCENTIL_NIVEL_MAR) < 0.03)
+	print("OK: fracción inundada %.3f está dentro de ±0.03 del percentil configurado (%.2f)." % [fraccion, GeneradorMundoScript.PERCENTIL_NIVEL_MAR])
 
 	print("\n=== Las 10 pruebas de GeneradorMundo pasaron correctamente ===")

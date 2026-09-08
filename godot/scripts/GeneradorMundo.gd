@@ -23,10 +23,19 @@ const UMBRAL_HIERRO := 0.2
 ## (ver altura_en() y _redistribuir()) para producir picos y cuencas más
 ## marcados en vez de colinas suaves — necesario para que el criterio de
 ## nivel de mar (ver nivel_mar más abajo) separe tierra firme de zonas
-## inundadas de forma perceptible. Valor inicial calibrado empíricamente,
-## mismo patrón que UMBRAL_HIERRO — ajustar aquí si al probar en el editor
-## el relieve resulta demasiado suave o demasiado abrupto.
-const EXPONENTE_RELIEVE := 2.0
+## inundadas de forma perceptible.
+## sign(x) * pow(abs(x), exponente): un exponente >1 (el valor original,
+## 2.0, era un error) COMPRIME |x|<1 hacia 0 (0.5 -> 0.25, más cerca del
+## centro, no más lejos) — aplana TODO el relieve hacia el centro en vez de
+## acentuar picos/cuencas, y por eso el mundo real terminaba con ~92% de las
+## columnas concentradas en solo 2 alturas centrales (ver Task 2, medido con
+## SEMILLA_MUNDO/ANCHO_MUNDO/LARGO_MUNDO). Un exponente <1 EXPANDE |x|<1
+## alejándolo de 0 (0.5 -> 0.71 con exponente 0.5), lo que sí acentúa picos y
+## cuencas reales. Calibrado empíricamente entre 0.5 y 0.7 (ver Task 2); 0.5
+## dio la distribución de alturas más pareja de las probadas — ajustar aquí
+## si al probar en el editor el relieve resulta demasiado suave o demasiado
+## abrupto, siempre con un valor <1.
+const EXPONENTE_RELIEVE := 0.5
 
 ## Percentil (sobre la distribución real de altura_en() en todo el grid) que
 ## define nivel_mar — ver _calcular_nivel_mar(). Fijo por ahora; en un
@@ -103,14 +112,39 @@ func tipo_en_profundidad(x: int, y: int, z: int, profundidad_bajo_superficie: in
 ## Altura correspondiente al percentil PERCENTIL_NIVEL_MAR de la
 ## distribución real de altura_en() sobre el grid (ancho_mundo x
 ## largo_mundo) — ver nivel_mar.
+## Usa un histograma (solo hay ALTURA_MAXIMA - ALTURA_MINIMA + 1 = 16
+## alturas enteras posibles, así que es barato) en vez de indexar un array
+## ordenado por posición ordinal: con solo 16 alturas posibles, el índice
+## objetivo (int(total * PERCENTIL_NIVEL_MAR)) casi nunca cae justo en el
+## borde de un grupo de alturas — recorremos las alturas en orden ascendente
+## y, en el grupo donde cae el objetivo, elegimos la altura h cuyo conteo
+## ACUMULADO de alturas < h (antes o después de sumar el grupo de esa
+## altura) queda más cerca del índice objetivo — así nivel_mar aproxima el
+## percentil real en vez de quedar atado a cualquier lado del grupo.
 func _calcular_nivel_mar(ancho_mundo: int, largo_mundo: int) -> int:
-	var alturas: Array = []
+	var conteo_por_altura: Array = []
+	conteo_por_altura.resize(ALTURA_MAXIMA - ALTURA_MINIMA + 1)
+	conteo_por_altura.fill(0)
+	var total := 0
 	for x in range(ancho_mundo):
 		for z in range(largo_mundo):
-			alturas.append(altura_en(x, z))
-	alturas.sort()
-	var indice: int = clampi(int(alturas.size() * PERCENTIL_NIVEL_MAR), 0, alturas.size() - 1)
-	return alturas[indice]
+			var h: int = altura_en(x, z)
+			conteo_por_altura[h - ALTURA_MINIMA] += 1
+			total += 1
+
+	var objetivo: int = int(total * PERCENTIL_NIVEL_MAR)
+	var acumulado := 0
+	for h in range(ALTURA_MINIMA, ALTURA_MAXIMA + 1):
+		if acumulado >= objetivo:
+			return h
+		var siguiente: int = acumulado + conteo_por_altura[h - ALTURA_MINIMA]
+		if siguiente >= objetivo:
+			if objetivo - acumulado <= siguiente - objetivo:
+				return h
+			acumulado = siguiente
+			continue
+		acumulado = siguiente
+	return ALTURA_MAXIMA
 
 
 ## Verdadero si la columna (x, z) queda por debajo del nivel de mar. Usada

@@ -13,18 +13,24 @@ class_name BlueprintValidator
 const ZONAS_VALIDAS := ["residencial_investigacion", "fabricacion_militar", "periferia"]
 const TIPOS_CELDA_SOLIDA := ["pared", "puerta", "ventana"]
 ## Bloques "estructurales" (material de construcción: paredes, puertas,
-## ventanas, piso) vs. mobiliario (cama, baúl). Se usa para reconocer losas
-## de suelo/techo (ver _es_losa_parcial/_es_losa_completa): "piso" cuenta
-## como estructural para esto aunque no sea válido en el borde de una planta
-## (TIPOS_CELDA_SOLIDA es una regla distinta, sobre el perímetro 2D).
-const TIPOS_ESTRUCTURALES := ["pared", "puerta", "ventana", "piso"]
+## ventanas) vs. mobiliario (cama, baúl) vs. relleno de terreno ("piso").
+## Se usa para reconocer losas de suelo/techo (ver
+## _es_losa_parcial/_es_losa_completa). "piso" NUNCA es estructural, ni
+## siquiera para una losa de suelo/techo: es material de terreno/relleno
+## (ver VoxelWorld.TIPOS_ESTRUCTURA y _generar_terreno/nivelación), nunca un
+## material de construcción — para la PoC el único material estructural es
+## "pared" (más adelante: madera, piedra, metal, vidrio). Coincide, por
+## tanto, con TIPOS_CELDA_SOLIDA (regla de perímetro 2D).
+const TIPOS_ESTRUCTURALES := ["pared", "puerta", "ventana"]
 ## Relleno genérico sin significado especial a nivel de Blueprint: una celda
-## con uno de estos tipos, heredada de la plantilla de suelo/techo (ver
+## con este tipo, heredada de la plantilla de suelo/techo (ver
 ## estructura_a_blueprint), siempre puede ser sobrescrita por el bloque real
 ## de una capa de pared (aunque ese bloque también sea "pared" liso) — solo
 ## un tipo ESPECIAL (puerta/ventana/cama/baúl) ya asignado se protege de ser
-## pisado por un "pared" posterior.
-const TIPOS_RELLENO_GENERICO := ["pared", "piso"]
+## pisado por un "pared" posterior. "piso" ya no puede aparecer aquí (nunca
+## es estructural), pero VoxelWorld.detectar_estructura() ya excluye "piso"
+## del flood-fill, así que este caso ni siquiera llega a estructura_a_blueprint().
+const TIPOS_RELLENO_GENERICO := ["pared"]
 const VECINOS_ORTOGONALES := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
 
 

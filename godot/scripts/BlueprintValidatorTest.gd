@@ -12,8 +12,10 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## de un techo abierto (11, ver validar_techo_y_suelo()), un edificio de 2
 ## pisos con hueco de escalera en la losa intermedia (12, ver
 ## _es_losa_parcial()), y el rechazo de un piso con altura insuficiente (13,
-## ver validar_altura_piso()). Correr esta escena (Test.tscn) con F6 en el
-## editor de Godot y revisar el panel "Output": debe imprimir los 13 tests
+## ver validar_altura_piso()), y que "piso" nunca es material estructural,
+## ni siquiera como relleno de terreno tocando la losa de un edificio (14,
+## ver VoxelWorld.TIPOS_ESTRUCTURA). Correr esta escena (Test.tscn) con F6 en
+## el editor de Godot y revisar el panel "Output": debe imprimir los 14 tests
 ## y no debe lanzar ningún error de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -116,7 +118,7 @@ func ejecutar_pruebas() -> void:
 		Vector3i(0, 1, 0): "pared", Vector3i(1, 1, 0): "pared", Vector3i(2, 1, 0): "pared",
 		Vector3i(3, 1, 0): "pared", Vector3i(4, 1, 0): "pared", Vector3i(5, 1, 0): "pared",
 		Vector3i(6, 1, 0): "pared",
-		Vector3i(4, 1, 1): "piso", Vector3i(5, 1, 1): "baul", Vector3i(6, 1, 1): "ventana",
+		Vector3i(4, 1, 1): "pared", Vector3i(5, 1, 1): "baul", Vector3i(6, 1, 1): "ventana",
 		Vector3i(0, 1, 2): "pared", Vector3i(1, 1, 2): "pared", Vector3i(2, 1, 2): "pared",
 		Vector3i(3, 1, 2): "pared", Vector3i(4, 1, 2): "pared", Vector3i(5, 1, 2): "pared",
 		Vector3i(6, 1, 2): "pared",
@@ -347,21 +349,24 @@ func ejecutar_pruebas() -> void:
 			tiene_error_altura = true
 	assert(tiene_error_altura)
 
-	print("\n=== TEST 14: Declarar Edificio - Losas de Suelo/Techo con Bloque 'piso' Real ===")
-	# Replica el bug reportado por el usuario jugando en vivo: una casa 5x6
-	# cuyo suelo y techo usan el bloque "piso" real del juego (el que el
-	# jugador tiene disponible en Player.gd), no "pared" como usaban TEST 10-13
-	# (dato de prueba que ocultaba el bug: con "pared" como relleno, la fusión
-	# de capas ya "coincidía" por accidente). Con "piso" como relleno, la
-	# fusión original nunca dejaba que un bloque de pared normal sobrescribiera
-	# el relleno heredado de la losa — casi todo el perímetro quedaba con tipo
-	# 'piso' y disparaba "hueco en el perímetro" en cascada. Coordenadas +150
-	# en X para no chocar con los bloques de tests previos.
+	print("\n=== TEST 14: Declarar Edificio - 'piso' NUNCA es Estructural (ni en losas) ===")
+	# Reemplaza el TEST 14 original (que validaba que "piso" SÍ podía ser una
+	# losa de suelo/techo real). Bug reportado por el usuario jugando en vivo:
+	# si el jugador coloca un bloque de "piso" para rellenar terreno bajo la
+	# losa de suelo de un edificio (hecha con "pared"), el flood-fill lo
+	# reconocía como parte del edificio. Decisión de diseño confirmada: "piso"
+	# deja de ser material estructural en absoluto — ni en muros, ni en losas
+	# de suelo/techo. Los materiales estructurales válidos para la PoC son
+	# solo "pared" (más adelante: madera, piedra, metal, vidrio).
+	# Casa 5x6 con suelo/techo/muros de "pared" (como TEST 10), más un bloque
+	# de "piso" colocado_por_jugador=true justo debajo de la losa de suelo,
+	# simulando el relleno de terreno del reporte del bug. Coordenadas +150 en
+	# X para no chocar con los bloques de tests previos.
 	const OX5 := 150
 	for x in range(OX5, OX5 + 5):
 		for z in range(6):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "piso", true)  # suelo real
-			mundo.colocar_bloque(Vector3i(x, 4, z), "piso", true)  # techo real
+			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)  # techo
 	for y in [1, 2, 3]:
 		for x in range(OX5, OX5 + 5):
 			for z in range(6):
@@ -376,7 +381,20 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.colocar_cama(Vector3i(OX5 + 2, 1, 1), Vector3i(0, 0, 1)))
 	mundo.colocar_bloque(Vector3i(OX5 + 1, 1, 1), "baul", true)
 
+	# Relleno de terreno: un bloque de "piso" colocado por el jugador, tocando
+	# físicamente la losa de suelo del edificio (y=-1, justo debajo de y=0).
+	var celda_relleno := Vector3i(OX5 + 2, -1, 3)
+	mundo.colocar_bloque(celda_relleno, "piso", true)
+
 	var estructura_piso_real: Dictionary = mundo.detectar_estructura(Vector3i(OX5, 1, 3))
+	assert(not estructura_piso_real.has(celda_relleno))
+	print("Correcto: el relleno de 'piso' no se incluyó en la estructura detectada.")
+
+	# El bloque de relleno tampoco puede servir de ORIGEN para declarar un
+	# edificio: "piso" nunca es estructural, así que detectar_estructura()
+	# devuelve vacío aunque esté colocado_por_jugador.
+	assert(mundo.detectar_estructura(celda_relleno).is_empty())
+
 	var blueprint_piso_real := BlueprintValidator.estructura_a_blueprint(estructura_piso_real)
 	print("Pisos abstractos: ", blueprint_piso_real["pisos"].size(), " (esperados: 1)")
 	assert(blueprint_piso_real["pisos"].size() == 1)

@@ -22,6 +22,19 @@ const ALTURA_BUSQUEDA_MIN := -30
 
 var generador: RefCounted
 
+## Tipos de bloque que pueden formar parte de un edificio declarado (ver
+## detectar_estructura()). "piso" queda deliberadamente fuera: es un
+## material de terreno/relleno (ver _generar_terreno() y el modo de
+## nivelación de CamaraCenital), nunca un material de construcción — para
+## la PoC, el único material estructural es "pared" (más adelante: madera,
+## piedra, metal, vidrio). Si el jugador usa "piso" para rellenar un hueco
+## de terreno bajo su edificio, ese relleno no debe "pegarse" a la
+## estructura declarada ni distorsionar su huella.
+const TIPOS_ESTRUCTURA := [
+	"pared", "puerta_inferior", "puerta_superior", "ventana",
+	"cama_cabecera", "cama_pies", "baul",
+]
+
 const VECINOS_3D: Array[Vector3i] = [
 	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
 	Vector3i(0, 1, 0), Vector3i(0, -1, 0),
@@ -150,20 +163,24 @@ func colocar_cama(base: Vector3i, direccion: Vector3i) -> bool:
 	return true
 
 
-## Flood-fill 3D (6-conectividad) sobre bloques sólidos colocados por el
-## jugador, partiendo de "origen". No razona sobre espacio/aire transitable:
-## dos habitaciones con puertas propias, cada una cerrada, quedan igualmente
-## unidas si sus paredes se tocan físicamente con el pasillo que las conecta.
-## Devuelve {} si "origen" no fue colocado por el jugador (p.ej. es terreno).
+## Flood-fill 3D (6-conectividad) sobre bloques ESTRUCTURALES (ver
+## TIPOS_ESTRUCTURA) colocados por el jugador, partiendo de "origen". No
+## razona sobre espacio/aire transitable: dos habitaciones con puertas
+## propias, cada una cerrada, quedan igualmente unidas si sus paredes se
+## tocan físicamente con el pasillo que las conecta. Un bloque de "piso"
+## colocado por el jugador (p.ej. relleno de terreno bajo el edificio) ni se
+## incluye ni propaga el flood-fill, aunque sea colocado_por_jugador.
+## Devuelve {} si "origen" no es un bloque estructural colocado por el
+## jugador (p.ej. es terreno, o es "piso").
 func detectar_estructura(origen: Vector3i) -> Dictionary:
-	if not colocado_por_jugador.get(origen, false):
+	if not es_celda_estructural(origen):
 		return {}
 
 	var visitados: Dictionary = {}  # Vector3i -> String (tipo)
 	var pendientes: Array = [origen]
 	while not pendientes.is_empty():
 		var actual: Vector3i = pendientes.pop_back()
-		if visitados.has(actual) or not colocado_por_jugador.get(actual, false):
+		if visitados.has(actual) or not es_celda_estructural(actual):
 			continue
 		visitados[actual] = obtener_tipo(actual)
 		for delta in VECINOS_3D:
@@ -171,3 +188,11 @@ func detectar_estructura(origen: Vector3i) -> Dictionary:
 			if not visitados.has(vecino):
 				pendientes.append(vecino)
 	return visitados
+
+
+## Pública (no solo para detectar_estructura): también la usa ZonaOverlay.gd
+## para no pintar el overlay de zona sobre el techo de un edificio — un
+## bloque "piso" de relleno de terreno (nunca estructural, ver TIPOS_
+## ESTRUCTURA) sigue contando como parte del terreno para esto.
+func es_celda_estructural(celda: Vector3i) -> bool:
+	return colocado_por_jugador.get(celda, false) and TIPOS_ESTRUCTURA.has(obtener_tipo(celda))

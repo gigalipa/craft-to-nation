@@ -37,6 +37,7 @@ dist/
 
 # Worktrees aislados para desarrollo con subagentes (superpowers:using-git-worktrees)
 .worktrees/
+.claude/worktrees/
 
 # Sitio web de presentación: no forma parte del desarrollo del juego,
 # se deja fuera del control de versiones a petición del usuario.

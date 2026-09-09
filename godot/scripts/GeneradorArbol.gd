@@ -74,13 +74,13 @@ func obtener_arbol_de(celda: Vector3i) -> int:
 func celdas_de(id: int) -> Array:
 	if not _arboles.has(id):
 		return []
-	return _arboles[id]["celdas"]
+	return _arboles[id]["celdas"].duplicate()
 
 
 ## Resta "dano" a la salud del árbol "id". Devuelve true si la salud quedó
 ## en 0 o menos (árbol completamente talado) — no borra bloques ni el
 ## registro, eso es responsabilidad del llamador (ver VoxelWorld.
-## talar_bloque_de_arbol(), Task 5).
+## talar_bloque_de_arbol()).
 func danar(id: int, dano: int) -> bool:
 	if not _arboles.has(id):
 		return false

@@ -59,6 +59,8 @@ var nivel_mar: int
 
 var _ruido: FastNoiseLite
 var _ruido_mineral: FastNoiseLite
+var _ruido_fauna: FastNoiseLite
+var _ruido_frutal: FastNoiseLite
 
 
 func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
@@ -76,6 +78,20 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	# Frecuencia baja a propósito (más baja que _ruido) para producir vetas/
 	# grumos grandes y deformes en vez de ruido puntual disperso celda a celda.
 	_ruido_mineral.frequency = 0.05
+
+	# Semillas derivadas distintas de _ruido (base) y _ruido_mineral
+	# (semilla + 1) para que fauna y frutal no queden correlacionadas entre
+	# sí ni con el relieve/minerales — igual de deterministas: misma
+	# semilla de entrada, mismas señales siempre.
+	_ruido_fauna = FastNoiseLite.new()
+	_ruido_fauna.seed = semilla + 2
+	_ruido_fauna.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_fauna.frequency = 0.05
+
+	_ruido_frutal = FastNoiseLite.new()
+	_ruido_frutal.seed = semilla + 3
+	_ruido_frutal.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_frutal.frequency = 0.05
 
 	nivel_mar = _calcular_nivel_mar(ancho_mundo, largo_mundo)
 
@@ -173,3 +189,25 @@ func es_bioma_en(x: int, z: int) -> bool:
 	if es_agua_en(x, z):
 		return false
 	return altura_en(x, z) <= nivel_mar + BANDA_BIOMA
+
+
+## Densidad de fauna en la columna (x, z), en [0, 1] — 0.0 si la columna no
+## es bioma (ver es_bioma_en()). Un sistema futuro multiplicará esta
+## fracción por área para decidir cuántos NPCs de fauna generar; no tiene
+## efecto de bloque ni visual todavía.
+func densidad_fauna_en(x: int, z: int) -> float:
+	if not es_bioma_en(x, z):
+		return 0.0
+	var valor: float = _ruido_fauna.get_noise_2d(x, z)
+	return (valor + 1.0) / 2.0
+
+
+## Densidad de recursos "frutal" en la columna (x, z), en [0, 1] — 0.0 si la
+## columna no es bioma (ver es_bioma_en()). Un sistema futuro multiplicará
+## esta fracción por área para decidir cuántos objetos "frutal" generar; no
+## tiene efecto de bloque ni visual todavía.
+func densidad_frutal_en(x: int, z: int) -> float:
+	if not es_bioma_en(x, z):
+		return 0.0
+	var valor: float = _ruido_frutal.get_noise_2d(x, z)
+	return (valor + 1.0) / 2.0

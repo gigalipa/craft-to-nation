@@ -148,4 +148,41 @@ func ejecutar_pruebas() -> void:
 			assert(gen_bioma.es_bioma_en(x, z) == esperado)
 	print("OK: es_bioma_en() coincide con 'tierra firme y altura <= nivel_mar + BANDA_BIOMA' en todos los puntos muestreados.")
 
-	print("\n=== Las 11 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 12: densidad_fauna_en y densidad_frutal_en son deterministas y están en [0,1] ===")
+	var gen_dens_a: RefCounted = GeneradorMundoScript.new(444, 60, 60)
+	var gen_dens_b: RefCounted = GeneradorMundoScript.new(444, 60, 60)
+	for x in range(0, 60, 3):
+		for z in range(0, 60, 3):
+			var fauna_a: float = gen_dens_a.densidad_fauna_en(x, z)
+			var fauna_b: float = gen_dens_b.densidad_fauna_en(x, z)
+			assert(is_equal_approx(fauna_a, fauna_b))
+			assert(fauna_a >= 0.0 and fauna_a <= 1.0)
+			var frutal_a: float = gen_dens_a.densidad_frutal_en(x, z)
+			var frutal_b: float = gen_dens_b.densidad_frutal_en(x, z)
+			assert(is_equal_approx(frutal_a, frutal_b))
+			assert(frutal_a >= 0.0 and frutal_a <= 1.0)
+	print("OK: ambas densidades son deterministas para la misma semilla/grid y quedan siempre en [0,1].")
+
+	print("\n=== TEST 13: densidad_fauna_en y densidad_frutal_en son 0.0 fuera del bioma ===")
+	var gen_fuera: RefCounted = GeneradorMundoScript.new(888, 80, 80)
+	var vio_fuera_de_bioma := false
+	for x in range(0, 80, 2):
+		for z in range(0, 80, 2):
+			if not gen_fuera.es_bioma_en(x, z):
+				vio_fuera_de_bioma = true
+				assert(gen_fuera.densidad_fauna_en(x, z) == 0.0)
+				assert(gen_fuera.densidad_frutal_en(x, z) == 0.0)
+	assert(vio_fuera_de_bioma)
+	print("OK: ambas densidades son exactamente 0.0 en toda columna fuera del bioma (al menos una encontrada en el muestreo).")
+
+	print("\n=== TEST 14: las señales de bioma funcionan con los parámetros reales del mundo ===")
+	var gen_real_bioma: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	for x in range(0, 200, 10):
+		for z in range(0, 200, 10):
+			var f: float = gen_real_bioma.densidad_fauna_en(x, z)
+			var r: float = gen_real_bioma.densidad_frutal_en(x, z)
+			assert(f >= 0.0 and f <= 1.0)
+			assert(r >= 0.0 and r <= 1.0)
+	print("OK: es_bioma_en/densidad_fauna_en/densidad_frutal_en no rompen con SEMILLA_MUNDO/ANCHO_MUNDO/LARGO_MUNDO reales.")
+
+	print("\n=== Las 14 pruebas de GeneradorMundo pasaron correctamente ===")

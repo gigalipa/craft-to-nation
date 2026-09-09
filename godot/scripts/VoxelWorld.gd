@@ -22,9 +22,21 @@ const SEMILLA_MUNDO := 12345
 ## denso o demasiado escaso.
 const UMBRAL_ARBOL := 0.5
 
-## Distancia horizontal mínima (en celdas) entre las bases de dos árboles,
-## para que sus copas no se superpongan — ver _generar_arboles().
-const ESPACIADO_MINIMO_ARBOL := 3
+## Celdas vacías mínimas que deben quedar entre los cuadrados de tronco de
+## dos árboles distintos — ver _generar_arboles()/_demasiado_cerca_de_otro_
+## arbol(). Garantiza que los troncos nunca queden pegados, para que el
+## jugador y los NPCs puedan caminar entre los árboles del bosque. Valor
+## inicial calibrado empíricamente (feedback jugando en el editor real):
+## ajustar aquí si el pasillo entre troncos resulta demasiado angosto.
+const GAP_MINIMO_TRONCOS := 2
+
+## Cuántas celdas pueden solaparse como máximo las copas de follaje de dos
+## árboles distintos — ver _demasiado_cerca_de_otro_arbol(). A diferencia
+## de GAP_MINIMO_TRONCOS (que nunca debe violarse, por transitabilidad),
+## esto es puramente estético y a futuro dependerá del tipo de bioma (una
+## selva húmeda tolera copas más solapadas que una sabana). Valor inicial
+## calibrado empíricamente.
+const SOLAPE_MAXIMO_COPAS := 1
 
 ## Rango de búsqueda vertical de altura_en() (ver más abajo) — generoso para
 ## cubrir cualquier construcción del jugador por encima del relieve máximo
@@ -221,27 +233,33 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 
 
 ## Coloca árboles reales en las columnas de bioma cuya densidad supera
-## UMBRAL_ARBOL, respetando ESPACIADO_MINIMO_ARBOL entre bases para que
-## las copas no se superpongan — ver spec:
+## UMBRAL_ARBOL. Antes de generar cada árbol, mide su tamaño real
+## (arboles.medir_pisada()) para decidir si cabe sin violar
+## GAP_MINIMO_TRONCOS/SOLAPE_MAXIMO_COPAS respecto a los árboles ya
+## colocados — ver spec:
 ## docs/superpowers/specs/2026-09-09-arboles-procedurales-design.md.
 func _generar_arboles() -> void:
-	var bases_colocadas: Array[Vector2i] = []
+	var arboles_colocados: Array[Dictionary] = []
 	for x in range(ANCHO_MUNDO):
 		for z in range(LARGO_MUNDO):
 			if generador.densidad_arbol_en(x, z) <= UMBRAL_ARBOL:
 				continue
-			var demasiado_cerca := false
-			for base_previa in bases_colocadas:
-				var dx: int = x - base_previa.x
-				var dz: int = z - base_previa.y
-				if dx * dx + dz * dz <= ESPACIADO_MINIMO_ARBOL * ESPACIADO_MINIMO_ARBOL:
-					demasiado_cerca = true
-					break
-			if demasiado_cerca:
+			var semilla_arbol: int = SEMILLA_MUNDO + x * LARGO_MUNDO + z
+			var medida: Dictionary = arboles.medir_pisada(semilla_arbol)
+			var lado_tronco: int = medida["lado_tronco"]
+			var radio_follaje: int = medida["radio_follaje"]
+			@warning_ignore("integer_division")
+			var centro_offset: int = (lado_tronco - 1) / 2
+			var candidato: Dictionary = {
+				"x_min": x, "x_max": x + lado_tronco - 1,
+				"z_min": z, "z_max": z + lado_tronco - 1,
+				"centro_x": x + centro_offset, "centro_z": z + centro_offset,
+				"radio_follaje": radio_follaje,
+			}
+			if _demasiado_cerca_de_otro_arbol(candidato, arboles_colocados):
 				continue
 			var altura: int = generador.altura_en(x, z)
 			var base := Vector3i(x, altura + 1, z)
-			var semilla_arbol: int = SEMILLA_MUNDO + x * LARGO_MUNDO + z
 			var forma: Dictionary = arboles.generar_forma_aleatoria(semilla_arbol)
 			var celdas_mundiales: Array = []
 			var salud := 0
@@ -254,7 +272,29 @@ func _generar_arboles() -> void:
 						salud += 1
 			if salud > 0:
 				arboles.registrar(celdas_mundiales, salud)
-			bases_colocadas.append(Vector2i(x, z))
+			arboles_colocados.append(candidato)
+
+
+## Verdadero si "candidato" quedaría demasiado cerca de algún árbol ya
+## colocado en "colocados": sus cuadrados de tronco no dejarían
+## GAP_MINIMO_TRONCOS celdas vacías entre sí (chequeo de cajas expandidas,
+## correcto también para pares de árboles colocados en diagonal — un
+## chequeo de sola distancia entre centros no lo sería, dos cuadrados
+## pueden tocarse en una esquina/borde sin que sus centros estén cerca),
+## o sus copas de follaje se solaparían más de SOLAPE_MAXIMO_COPAS celdas.
+func _demasiado_cerca_de_otro_arbol(candidato: Dictionary, colocados: Array[Dictionary]) -> bool:
+	for otro in colocados:
+		var cerca_en_x: bool = candidato["x_min"] - GAP_MINIMO_TRONCOS <= otro["x_max"] and candidato["x_max"] + GAP_MINIMO_TRONCOS >= otro["x_min"]
+		var cerca_en_z: bool = candidato["z_min"] - GAP_MINIMO_TRONCOS <= otro["z_max"] and candidato["z_max"] + GAP_MINIMO_TRONCOS >= otro["z_min"]
+		if cerca_en_x and cerca_en_z:
+			return true
+		var dx: float = candidato["centro_x"] - otro["centro_x"]
+		var dz: float = candidato["centro_z"] - otro["centro_z"]
+		var distancia_centros: float = sqrt(dx * dx + dz * dz)
+		var solape_copas: float = (candidato["radio_follaje"] + otro["radio_follaje"]) - distancia_centros
+		if solape_copas > SOLAPE_MAXIMO_COPAS:
+			return true
+	return false
 
 
 ## Busca el árbol dueño de "celda"; si no hay ninguno, no hace nada y

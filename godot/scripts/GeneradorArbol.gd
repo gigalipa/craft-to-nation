@@ -19,6 +19,30 @@ var _arboles: Dictionary = {}  # int -> {"celdas": Array, "salud": int}
 var _celda_a_arbol: Dictionary = {}  # Vector3i -> int
 
 
+## Elige (altura_tronco, lado_tronco, radio_follaje) deterministamente a
+## partir de semilla_arbol — usado tanto por generar_forma_aleatoria() como
+## por medir_pisada(), para que ambas coincidan siempre en el mismo árbol
+## (mismo orden de llamadas a RandomNumberGenerator, así que el mismo
+## semilla_arbol produce siempre los mismos tres valores en ambas).
+func _elegir_parametros(semilla_arbol: int) -> Dictionary:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = semilla_arbol
+	return {
+		"altura_tronco": rng.randi_range(ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX),
+		"lado_tronco": rng.randi_range(LADO_TRONCO_MIN, LADO_TRONCO_MAX),
+		"radio_follaje": rng.randi_range(RADIO_FOLLAJE_MIN, RADIO_FOLLAJE_MAX),
+	}
+
+
+## Tamaño que tendría el árbol de semilla_arbol (altura/lado de tronco,
+## radio de follaje) sin construir la forma completa — usado por
+## VoxelWorld para decidir si un árbol candidato cabe (espaciado) antes de
+## generarlo y colocarlo de verdad. Mismos valores que usará
+## generar_forma_aleatoria() para la misma semilla_arbol.
+func medir_pisada(semilla_arbol: int) -> Dictionary:
+	return _elegir_parametros(semilla_arbol)
+
+
 ## Forma procedural determinista de un árbol: tronco recto cuadrado (lado
 ## variable en columnas, no un disco euclidiano) rematado por una copa
 ## esférica de follaje. La misma semilla_arbol produce siempre la misma
@@ -27,11 +51,10 @@ var _celda_a_arbol: Dictionary = {}  # Vector3i -> int
 ## String ("tronco" o "follaje"), con offsets relativos a la base del
 ## árbol (Vector3i(0,0,0) es la esquina de la capa de tronco más baja).
 func generar_forma_aleatoria(semilla_arbol: int) -> Dictionary:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = semilla_arbol
-	var altura_tronco: int = rng.randi_range(ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX)
-	var lado_tronco: int = rng.randi_range(LADO_TRONCO_MIN, LADO_TRONCO_MAX)
-	var radio_follaje: int = rng.randi_range(RADIO_FOLLAJE_MIN, RADIO_FOLLAJE_MAX)
+	var parametros: Dictionary = _elegir_parametros(semilla_arbol)
+	var altura_tronco: int = parametros["altura_tronco"]
+	var lado_tronco: int = parametros["lado_tronco"]
+	var radio_follaje: int = parametros["radio_follaje"]
 
 	var forma: Dictionary = {}
 	for y in range(altura_tronco):

@@ -106,4 +106,20 @@ func ejecutar_pruebas() -> void:
 	assert(gen_elim.celdas_de(id_elim) == [])
 	print("OK: tras eliminar, ninguna de sus celdas ni su id siguen en el registro.")
 
-	print("\n=== Las 8 pruebas de GeneradorArbol pasaron correctamente ===")
+	print("\n=== TEST 9: medir_pisada coincide con la forma que generar_forma_aleatoria produciría para la misma semilla ===")
+	var gen_medida: RefCounted = GeneradorArbolScript.new()
+	for semilla in [1, 2, 3, 42, 999, 123456]:
+		var medida: Dictionary = gen_medida.medir_pisada(semilla)
+		var forma: Dictionary = gen_medida.generar_forma_aleatoria(semilla)
+		var altura_recuperada := 0
+		var lado_recuperado := 0
+		for offset in forma:
+			if forma[offset] == "tronco":
+				altura_recuperada = max(altura_recuperada, offset.y + 1)
+				lado_recuperado = max(lado_recuperado, offset.x + 1)
+				lado_recuperado = max(lado_recuperado, offset.z + 1)
+		assert(medida["altura_tronco"] == altura_recuperada)
+		assert(medida["lado_tronco"] == lado_recuperado)
+	print("OK: medir_pisada() predice exactamente la altura y el lado de tronco que generar_forma_aleatoria() produce para la misma semilla.")
+
+	print("\n=== Las 9 pruebas de GeneradorArbol pasaron correctamente ===")

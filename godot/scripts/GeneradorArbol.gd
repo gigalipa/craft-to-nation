@@ -14,6 +14,10 @@ const RADIO_TRONCO_MAX := 4
 const RADIO_FOLLAJE_MIN := 1
 const RADIO_FOLLAJE_MAX := 2
 
+var _siguiente_id := 0
+var _arboles: Dictionary = {}  # int -> {"celdas": Array, "salud": int}
+var _celda_a_arbol: Dictionary = {}  # Vector3i -> int
+
 
 ## Forma procedural determinista de un árbol: tronco recto (cilindro de
 ## radio variable) rematado por una copa esférica de follaje. La misma
@@ -46,3 +50,49 @@ func generar_forma_aleatoria(semilla_arbol: int) -> Dictionary:
 						forma[offset] = "follaje"
 
 	return forma
+
+
+## Registra un árbol nuevo con las celdas mundiales dadas (tronco y
+## follaje) y la salud máxima indicada (número de celdas "tronco" — ver
+## generar_forma_aleatoria()). Devuelve el id asignado.
+func registrar(celdas_mundiales: Array, salud_maxima: int) -> int:
+	var id: int = _siguiente_id
+	_siguiente_id += 1
+	_arboles[id] = {"celdas": celdas_mundiales, "salud": salud_maxima}
+	for celda in celdas_mundiales:
+		_celda_a_arbol[celda] = id
+	return id
+
+
+## -1 si la celda no pertenece a ningún árbol registrado.
+func obtener_arbol_de(celda: Vector3i) -> int:
+	return _celda_a_arbol.get(celda, -1)
+
+
+## Todas las celdas mundiales (tronco y follaje) del árbol con ese id.
+## Array vacío si el id no existe (p. ej. ya fue eliminado).
+func celdas_de(id: int) -> Array:
+	if not _arboles.has(id):
+		return []
+	return _arboles[id]["celdas"]
+
+
+## Resta "dano" a la salud del árbol "id". Devuelve true si la salud quedó
+## en 0 o menos (árbol completamente talado) — no borra bloques ni el
+## registro, eso es responsabilidad del llamador (ver VoxelWorld.
+## talar_bloque_de_arbol(), Task 5).
+func danar(id: int, dano: int) -> bool:
+	if not _arboles.has(id):
+		return false
+	_arboles[id]["salud"] -= dano
+	return _arboles[id]["salud"] <= 0
+
+
+## Limpia el registro del árbol "id": su entrada y todas sus celdas del
+## índice inverso.
+func eliminar(id: int) -> void:
+	if not _arboles.has(id):
+		return
+	for celda in _arboles[id]["celdas"]:
+		_celda_a_arbol.erase(celda)
+	_arboles.erase(id)

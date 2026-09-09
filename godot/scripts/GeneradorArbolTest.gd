@@ -63,4 +63,47 @@ func ejecutar_pruebas() -> void:
 					assert(forma_solape.get(celda, "") == "tronco")
 	print("OK: toda celda dentro del disco/altura del tronco quedó marcada 'tronco', incluso donde el follaje podría solaparse.")
 
-	print("\n=== Las 3 pruebas de GeneradorArbol pasaron correctamente ===")
+	print("\n=== TEST 4: registrar/obtener_arbol_de/celdas_de son consistentes ===")
+	var gen_reg: RefCounted = GeneradorArbolScript.new()
+	var celdas_1: Array = [Vector3i(0, 0, 0), Vector3i(0, 1, 0), Vector3i(1, 0, 0)]
+	var id_1: int = gen_reg.registrar(celdas_1, 2)
+	var celdas_2: Array = [Vector3i(10, 0, 10), Vector3i(10, 1, 10)]
+	var id_2: int = gen_reg.registrar(celdas_2, 2)
+	assert(id_1 != id_2)
+	for celda in celdas_1:
+		assert(gen_reg.obtener_arbol_de(celda) == id_1)
+	for celda in celdas_2:
+		assert(gen_reg.obtener_arbol_de(celda) == id_2)
+	assert(gen_reg.celdas_de(id_1) == celdas_1)
+	assert(gen_reg.celdas_de(id_2) == celdas_2)
+	print("OK: cada celda registrada devuelve el id correcto, y celdas_de() devuelve exactamente el conjunto original.")
+
+	print("\n=== TEST 5: obtener_arbol_de devuelve -1 para una celda nunca registrada ===")
+	assert(gen_reg.obtener_arbol_de(Vector3i(999, 999, 999)) == -1)
+	print("OK: una celda que nunca fue registrada devuelve -1.")
+
+	print("\n=== TEST 6: danar reduce la salud y solo devuelve true al agotarla ===")
+	var gen_danio: RefCounted = GeneradorArbolScript.new()
+	var id_danio: int = gen_danio.registrar([Vector3i(5, 0, 5)], 5)
+	assert(gen_danio.danar(id_danio, 2) == false)
+	assert(gen_danio.danar(id_danio, 2) == false)
+	assert(gen_danio.danar(id_danio, 2) == true)
+	print("OK: un árbol de salud 5 sigue en pie tras 2+2 de daño, y queda talado al recibir el tercer golpe de 2 (acumulado 6 >= 5).")
+
+	print("\n=== TEST 7: danar con daño mayor a la salud restante talan de inmediato ===")
+	var gen_danio_grande: RefCounted = GeneradorArbolScript.new()
+	var id_grande: int = gen_danio_grande.registrar([Vector3i(6, 0, 6)], 3)
+	assert(gen_danio_grande.danar(id_grande, 10) == true)
+	print("OK: un daño mayor a la salud restante tala el árbol en un solo golpe.")
+
+	print("\n=== TEST 8: eliminar limpia el registro por completo ===")
+	var gen_elim: RefCounted = GeneradorArbolScript.new()
+	var celdas_elim: Array = [Vector3i(7, 0, 7), Vector3i(7, 1, 7)]
+	var id_elim: int = gen_elim.registrar(celdas_elim, 2)
+	gen_elim.eliminar(id_elim)
+	for celda in celdas_elim:
+		assert(gen_elim.obtener_arbol_de(celda) == -1)
+	assert(gen_elim.celdas_de(id_elim) == [])
+	print("OK: tras eliminar, ninguna de sus celdas ni su id siguen en el registro.")
+
+	print("\n=== Las 8 pruebas de GeneradorArbol pasaron correctamente ===")

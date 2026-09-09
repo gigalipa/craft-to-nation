@@ -8,11 +8,23 @@ extends GridMap
 const TAMANO_CELDA := 1.0
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
+const GeneradorArbol = preload("res://scripts/GeneradorArbol.gd")
 
 const ANCHO_MUNDO := 200
 const LARGO_MUNDO := 200
 const PROFUNDIDAD_SUBSUELO := 24
 const SEMILLA_MUNDO := 12345
+
+## Umbral de densidad_arbol_en() (rango [0,1]) por encima del cual una
+## columna de bioma recibe un árbol real — ver _generar_arboles(). Valor
+## inicial calibrado empíricamente, mismo patrón que UMBRAL_HIERRO/
+## EXPONENTE_RELIEVE: ajustar aquí si el bosque real resulta demasiado
+## denso o demasiado escaso.
+const UMBRAL_ARBOL := 0.5
+
+## Distancia horizontal mínima (en celdas) entre las bases de dos árboles,
+## para que sus copas no se superpongan — ver _generar_arboles().
+const ESPACIADO_MINIMO_ARBOL := 3
 
 ## Rango de búsqueda vertical de altura_en() (ver más abajo) — generoso para
 ## cubrir cualquier construcción del jugador por encima del relieve máximo
@@ -21,6 +33,7 @@ const ALTURA_BUSQUEDA_MAX := 50
 const ALTURA_BUSQUEDA_MIN := -30
 
 var generador: RefCounted
+var arboles: RefCounted
 
 ## Tipos de bloque que pueden formar parte de un edificio declarado (ver
 ## detectar_estructura()). "piso" queda deliberadamente fuera: es un
@@ -60,7 +73,9 @@ func _ready() -> void:
 	cell_size = Vector3.ONE * TAMANO_CELDA
 	_indexar_biblioteca()
 	generador = GeneradorMundo.new(SEMILLA_MUNDO, ANCHO_MUNDO, LARGO_MUNDO)
+	arboles = GeneradorArbol.new()
 	_generar_terreno()
+	_generar_arboles()
 
 
 func _indexar_biblioteca() -> void:
@@ -203,3 +218,58 @@ func detectar_estructura(origen: Vector3i) -> Dictionary:
 ## ESTRUCTURA) sigue contando como parte del terreno para esto.
 func es_celda_estructural(celda: Vector3i) -> bool:
 	return colocado_por_jugador.get(celda, false) and TIPOS_ESTRUCTURA.has(obtener_tipo(celda))
+
+
+## Coloca árboles reales en las columnas de bioma cuya densidad supera
+## UMBRAL_ARBOL, respetando ESPACIADO_MINIMO_ARBOL entre bases para que
+## las copas no se superpongan — ver spec:
+## docs/superpowers/specs/2026-09-09-arboles-procedurales-design.md.
+func _generar_arboles() -> void:
+	var bases_colocadas: Array[Vector2i] = []
+	for x in range(ANCHO_MUNDO):
+		for z in range(LARGO_MUNDO):
+			if generador.densidad_arbol_en(x, z) <= UMBRAL_ARBOL:
+				continue
+			var demasiado_cerca := false
+			for base_previa in bases_colocadas:
+				var dx: int = x - base_previa.x
+				var dz: int = z - base_previa.y
+				if dx * dx + dz * dz <= ESPACIADO_MINIMO_ARBOL * ESPACIADO_MINIMO_ARBOL:
+					demasiado_cerca = true
+					break
+			if demasiado_cerca:
+				continue
+			var altura: int = generador.altura_en(x, z)
+			var base := Vector3i(x, altura + 1, z)
+			var semilla_arbol: int = SEMILLA_MUNDO + x * LARGO_MUNDO + z
+			var forma: Dictionary = arboles.generar_forma_aleatoria(semilla_arbol)
+			var celdas_mundiales: Array = []
+			var salud := 0
+			for offset in forma:
+				var celda: Vector3i = base + offset
+				var tipo: String = forma[offset]
+				if colocar_bloque(celda, tipo):
+					celdas_mundiales.append(celda)
+					if tipo == "tronco":
+						salud += 1
+			if salud > 0:
+				arboles.registrar(celdas_mundiales, salud)
+			bases_colocadas.append(Vector2i(x, z))
+
+
+## Busca el árbol dueño de "celda"; si no hay ninguno, no hace nada y
+## devuelve false. Si hay uno, aplica "dano" a su salud (ver
+## GeneradorArbol.danar()); si quedó completamente talado, borra todas sus
+## celdas del GridMap de una sola vez (mientras tiene salud restante,
+## ningún bloque del árbol se toca) y limpia su registro. Devuelve si el
+## árbol quedó completamente talado.
+func talar_bloque_de_arbol(celda: Vector3i, dano: int) -> bool:
+	var id: int = arboles.obtener_arbol_de(celda)
+	if id == -1:
+		return false
+	var talado: bool = arboles.danar(id, dano)
+	if talado:
+		for c in arboles.celdas_de(id):
+			set_cell_item(c, GridMap.INVALID_CELL_ITEM)
+		arboles.eliminar(id)
+	return talado

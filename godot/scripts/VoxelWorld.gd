@@ -60,6 +60,13 @@ const TIPOS_ESTRUCTURA := [
 	"cama_cabecera", "cama_pies", "baul",
 ]
 
+## Tipos de bloque generados por _generar_arboles() — ver altura_en() más
+## abajo. Bug reportado por el usuario jugando en vivo: altura_en()
+## contaba cualquier bloque sólido como "el suelo", así que el overlay de
+## zona (ZonaOverlay) y la colocación de minas (CamaraCenital) terminaban
+## ubicándose sobre la copa de un árbol en vez del terreno real debajo.
+const TIPOS_ARBOL := ["madera", "follaje"]
+
 const VECINOS_3D: Array[Vector3i] = [
 	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
 	Vector3i(0, 1, 0), Vector3i(0, -1, 0),
@@ -128,9 +135,14 @@ func _generar_terreno() -> void:
 ## relieve real, no el original) — de otro modo, cualquier zona pintada u
 ## huella de nivelación sobre una celda ya modificada por el jugador se veía
 ## a una altura "fantasma" que no correspondía a ningún bloque real.
+## Ignora deliberadamente los bloques de árbol (TIPOS_ARBOL): son un
+## obstáculo sobre el terreno, no el terreno mismo — sin este salto, el
+## overlay de zona y la colocación de minas aterrizaban sobre la copa de
+## un árbol en vez del suelo real debajo.
 func altura_en(x: int, z: int) -> int:
 	for y in range(ALTURA_BUSQUEDA_MAX, ALTURA_BUSQUEDA_MIN, -1):
-		if get_cell_item(Vector3i(x, y, z)) != GridMap.INVALID_CELL_ITEM:
+		var celda := Vector3i(x, y, z)
+		if get_cell_item(celda) != GridMap.INVALID_CELL_ITEM and not TIPOS_ARBOL.has(obtener_tipo(celda)):
 			return y
 	return generador.altura_en(x, z)  # respaldo, no debería alcanzarse nunca
 
@@ -268,7 +280,7 @@ func _generar_arboles() -> void:
 				var tipo: String = forma[offset]
 				if colocar_bloque(celda, tipo):
 					celdas_mundiales.append(celda)
-					if tipo == "tronco":
+					if tipo == "madera":
 						salud += 1
 			if salud > 0:
 				arboles.registrar(celdas_mundiales, salud)

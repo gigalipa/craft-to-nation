@@ -31,7 +31,7 @@ func ejecutar_pruebas() -> void:
 		var altura_recuperada := 0
 		var lado_recuperado := 0
 		for offset in forma:
-			if forma[offset] == "tronco":
+			if forma[offset] == "madera":
 				altura_recuperada = max(altura_recuperada, offset.y + 1)
 				lado_recuperado = max(lado_recuperado, offset.x + 1)
 				lado_recuperado = max(lado_recuperado, offset.z + 1)
@@ -40,11 +40,11 @@ func ejecutar_pruebas() -> void:
 		assert(lado_recuperado >= GeneradorArbolScript.LADO_TRONCO_MIN)
 		assert(lado_recuperado <= GeneradorArbolScript.LADO_TRONCO_MAX)
 		for offset in forma:
-			if forma[offset] == "tronco":
+			if forma[offset] == "madera":
 				assert(offset.y >= 0 and offset.y < altura_recuperada)
 				assert(offset.x >= 0 and offset.x < lado_recuperado)
 				assert(offset.z >= 0 and offset.z < lado_recuperado)
-	print("OK: la altura y el lado recuperados de las celdas 'tronco' quedan dentro de los rangos configurados, y ninguna celda 'tronco' cae fuera de su propio cuadrado/altura.")
+	print("OK: la altura y el lado recuperados de las celdas 'madera' quedan dentro de los rangos configurados, y ninguna celda 'madera' cae fuera de su propio cuadrado/altura.")
 
 	print("\n=== TEST 3: el follaje nunca sobrescribe una celda de tronco ===")
 	var gen_solape: RefCounted = GeneradorArbolScript.new()
@@ -52,7 +52,7 @@ func ejecutar_pruebas() -> void:
 	var altura_solape := 0
 	var lado_solape := 0
 	for offset in forma_solape:
-		if forma_solape[offset] == "tronco":
+		if forma_solape[offset] == "madera":
 			altura_solape = max(altura_solape, offset.y + 1)
 			lado_solape = max(lado_solape, offset.x + 1)
 			lado_solape = max(lado_solape, offset.z + 1)
@@ -60,8 +60,8 @@ func ejecutar_pruebas() -> void:
 		for dx in range(lado_solape):
 			for dz in range(lado_solape):
 				var celda := Vector3i(dx, y, dz)
-				assert(forma_solape.get(celda, "") == "tronco")
-	print("OK: toda celda dentro del cuadrado/altura del tronco quedó marcada 'tronco', incluso donde el follaje podría solaparse.")
+				assert(forma_solape.get(celda, "") == "madera")
+	print("OK: toda celda dentro del cuadrado/altura del tronco quedó marcada 'madera', incluso donde el follaje podría solaparse.")
 
 	print("\n=== TEST 4: registrar/obtener_arbol_de/celdas_de son consistentes ===")
 	var gen_reg: RefCounted = GeneradorArbolScript.new()
@@ -114,7 +114,7 @@ func ejecutar_pruebas() -> void:
 		var altura_recuperada := 0
 		var lado_recuperado := 0
 		for offset in forma:
-			if forma[offset] == "tronco":
+			if forma[offset] == "madera":
 				altura_recuperada = max(altura_recuperada, offset.y + 1)
 				lado_recuperado = max(lado_recuperado, offset.x + 1)
 				lado_recuperado = max(lado_recuperado, offset.z + 1)

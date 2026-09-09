@@ -53,8 +53,10 @@ func medir_pisada(semilla_arbol: int) -> Dictionary:
 ## esférica de follaje. La misma semilla_arbol produce siempre la misma
 ## altura de tronco, el mismo lado de tronco, el mismo radio de follaje y
 ## exactamente los mismos offsets. Devuelve un Dictionary Vector3i ->
-## String ("tronco" o "follaje"), con offsets relativos a la base del
-## árbol (Vector3i(0,0,0) es la esquina de la capa de tronco más baja).
+## String ("madera" o "follaje" — "madera" es el tipo de bloque/recurso
+## real que ocupa el tronco; solo "madera" cuenta como recurso extraíble,
+## "follaje" es cosmético), con offsets relativos a la base del árbol
+## (Vector3i(0,0,0) es la esquina de la capa de tronco más baja).
 func generar_forma_aleatoria(semilla_arbol: int) -> Dictionary:
 	var parametros: Dictionary = _elegir_parametros(semilla_arbol)
 	var altura_tronco: int = parametros["altura_tronco"]
@@ -65,7 +67,7 @@ func generar_forma_aleatoria(semilla_arbol: int) -> Dictionary:
 	for y in range(altura_tronco):
 		for dx in range(lado_tronco):
 			for dz in range(lado_tronco):
-				forma[Vector3i(dx, y, dz)] = "tronco"
+				forma[Vector3i(dx, y, dz)] = "madera"
 
 	# Centro del cuadrado del tronco (aproximado por división entera —
 	# suficiente para un placeholder; con lado par el centro cae medio
@@ -85,7 +87,7 @@ func generar_forma_aleatoria(semilla_arbol: int) -> Dictionary:
 
 
 ## Registra un árbol nuevo con las celdas mundiales dadas (tronco y
-## follaje) y la salud máxima indicada (número de celdas "tronco" — ver
+## follaje) y la salud máxima indicada (número de celdas "madera" — ver
 ## generar_forma_aleatoria()). Devuelve el id asignado.
 func registrar(celdas_mundiales: Array, salud_maxima: int) -> int:
 	var id: int = _siguiente_id

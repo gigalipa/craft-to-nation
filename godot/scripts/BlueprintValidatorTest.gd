@@ -14,9 +14,11 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## _es_losa_parcial()), y el rechazo de un piso con altura insuficiente (13,
 ## ver validar_altura_piso()), y que "piso" nunca es material estructural,
 ## ni siquiera como relleno de terreno tocando la losa de un edificio (14,
-## ver VoxelWorld.TIPOS_ESTRUCTURA). Correr esta escena (Test.tscn) con F6 en
-## el editor de Godot y revisar el panel "Output": debe imprimir los 14 tests
-## y no debe lanzar ningún error de assert().
+## ver VoxelWorld.TIPOS_ESTRUCTURA), y que altura_en() ignora los bloques de
+## árbol al buscar la celda sólida más alta (15, ver VoxelWorld.TIPOS_ARBOL).
+## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
+## panel "Output": debe imprimir los 15 tests y no debe lanzar ningún error
+## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
 {
@@ -407,4 +409,19 @@ func ejecutar_pruebas() -> void:
 	assert(resultado["valido"])
 	assert(resultado["errores"].is_empty())
 
-	print("\n=== Las 14 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 15: altura_en() ignora bloques de árbol (madera/follaje) ===")
+	# Bug reportado por el usuario jugando en vivo: el overlay de zona y la
+	# colocación de minas usan altura_en() para ubicarse sobre "el suelo",
+	# pero esa función contaba cualquier bloque sólido como tal —
+	# incluyendo los árboles que VoxelWorld._generar_arboles() coloca sobre
+	# el terreno, así que overlay/minas terminaban aterrizando sobre la
+	# copa de un árbol en vez del terreno real debajo.
+	const OX6 := 400
+	mundo.colocar_bloque(Vector3i(OX6, 0, 0), "piso")
+	mundo.colocar_bloque(Vector3i(OX6, 1, 0), "madera")
+	mundo.colocar_bloque(Vector3i(OX6, 2, 0), "madera")
+	mundo.colocar_bloque(Vector3i(OX6, 3, 0), "follaje")
+	assert(mundo.altura_en(OX6, 0) == 0)
+	print("OK: altura_en() devuelve la altura del 'piso' real (0), no la del follaje que lo cubre (3).")
+
+	print("\n=== Las 15 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -71,4 +71,23 @@ func ejecutar_pruebas() -> void:
 	assert(Recoleccion.puestos.has(Vector2i(5, 5)))
 	assert(Recoleccion.puestos[Vector2i(5, 5)]["nivel"] == 1)
 
-	print("\n=== Las 4 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 5: detectar_recursos() ignora bloques de árbol (madera/follaje) ===")
+	var mundo_bosque: Node = VoxelWorld.new()
+	mundo_bosque.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_bosque.cell_size = Vector3.ONE * 1.0
+	mundo_bosque._indexar_biblioteca()
+	var centro_bosque := Vector2i(50, 50)
+	var altura_bosque := 10
+	mundo_bosque.colocar_bloque(Vector3i(centro_bosque.x, altura_bosque - 1, centro_bosque.y), "piedra")
+	mundo_bosque.colocar_bloque(Vector3i(centro_bosque.x + 1, altura_bosque - 1, centro_bosque.y), "hierro")
+	mundo_bosque.colocar_bloque(Vector3i(centro_bosque.x, altura_bosque, centro_bosque.y), "madera")
+	mundo_bosque.colocar_bloque(Vector3i(centro_bosque.x, altura_bosque + 1, centro_bosque.y), "follaje")
+	var conteo_bosque: Dictionary = Recoleccion.detectar_recursos(mundo_bosque, centro_bosque, altura_bosque)
+	print("Conteo detectado junto a un árbol: ", conteo_bosque)
+	assert(not conteo_bosque.has("madera"))
+	assert(not conteo_bosque.has("follaje"))
+	assert(conteo_bosque.get("piedra", 0) > 0)
+	assert(conteo_bosque.get("hierro", 0) > 0)
+	print("OK: 'madera' y 'follaje' nunca aparecen en el conteo de una mina, aunque estén dentro de su área de acción.")
+
+	print("\n=== Las 5 pruebas de Recoleccion pasaron correctamente ===")

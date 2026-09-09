@@ -10,6 +10,14 @@ const RADIO_AREA_MINA := 6
 const PROFUNDIDAD_MINA_NIVEL_1 := 8
 const TASA_BASE_POR_CIUDADANO := 2.0
 
+## Tipos de bloque que detectar_recursos() ignora explícitamente: son
+## recursos de otro dominio (madera/follaje de árboles — ver
+## GeneradorArbol.gd/VoxelWorld._generar_arboles() — pertenecen a futuros
+## puestos madereros, no a minas). Bug reportado por el usuario jugando en
+## vivo: la ficha de una mina mostraba "tronco"/"follaje" en su conteo de
+## recursos detectados.
+const TIPOS_NO_MINERALES := ["madera", "follaje"]
+
 ## Ejemplo "mina manual, Tipo 1" del GDD (Sección 3) — puramente
 ## informativo por ahora: colocar una mina no cobra nada todavía (mismo
 ## alcance reducido que la nivelación de terreno, el juego no tiene
@@ -41,7 +49,7 @@ func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: in
 					continue
 				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
 				var tipo: String = mundo.obtener_tipo(celda)
-				if tipo != "":
+				if tipo != "" and not TIPOS_NO_MINERALES.has(tipo):
 					conteo[tipo] = conteo.get(tipo, 0) + 1
 	return conteo
 

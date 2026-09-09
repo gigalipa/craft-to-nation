@@ -185,4 +185,20 @@ func ejecutar_pruebas() -> void:
 			assert(r >= 0.0 and r <= 1.0)
 	print("OK: es_bioma_en/densidad_fauna_en/densidad_frutal_en no rompen con SEMILLA_MUNDO/ANCHO_MUNDO/LARGO_MUNDO reales.")
 
-	print("\n=== Las 14 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 15: densidad_arbol_en es determinista, está en [0,1], y es 0.0 fuera del bioma ===")
+	var gen_dens_arbol_a: RefCounted = GeneradorMundoScript.new(333, 60, 60)
+	var gen_dens_arbol_b: RefCounted = GeneradorMundoScript.new(333, 60, 60)
+	var vio_fuera_arbol := false
+	for x in range(0, 60, 3):
+		for z in range(0, 60, 3):
+			var a: float = gen_dens_arbol_a.densidad_arbol_en(x, z)
+			var b: float = gen_dens_arbol_b.densidad_arbol_en(x, z)
+			assert(is_equal_approx(a, b))
+			assert(a >= 0.0 and a <= 1.0)
+			if not gen_dens_arbol_a.es_bioma_en(x, z):
+				vio_fuera_arbol = true
+				assert(a == 0.0)
+	assert(vio_fuera_arbol)
+	print("OK: densidad_arbol_en es determinista, está en [0,1], y es exactamente 0.0 fuera del bioma (al menos una columna encontrada).")
+
+	print("\n=== Las 15 pruebas de GeneradorMundo pasaron correctamente ===")

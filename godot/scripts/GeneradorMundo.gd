@@ -61,6 +61,7 @@ var _ruido: FastNoiseLite
 var _ruido_mineral: FastNoiseLite
 var _ruido_fauna: FastNoiseLite
 var _ruido_frutal: FastNoiseLite
+var _ruido_arbol: FastNoiseLite
 
 
 func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
@@ -92,6 +93,15 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	_ruido_frutal.seed = semilla + 3
 	_ruido_frutal.noise_type = FastNoiseLite.TYPE_PERLIN
 	_ruido_frutal.frequency = 0.05
+
+	# Semilla derivada distinta de _ruido, _ruido_mineral (semilla+1),
+	# _ruido_fauna (semilla+2) y _ruido_frutal (semilla+3) — igual de
+	# determinista: misma semilla de entrada, misma densidad de árboles
+	# siempre.
+	_ruido_arbol = FastNoiseLite.new()
+	_ruido_arbol.seed = semilla + 4
+	_ruido_arbol.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_arbol.frequency = 0.05
 
 	nivel_mar = _calcular_nivel_mar(ancho_mundo, largo_mundo)
 
@@ -210,4 +220,15 @@ func densidad_frutal_en(x: int, z: int) -> float:
 	if not es_bioma_en(x, z):
 		return 0.0
 	var valor: float = _ruido_frutal.get_noise_2d(x, z)
+	return (valor + 1.0) / 2.0
+
+
+## Densidad de árboles en la columna (x, z), en [0, 1] — 0.0 si la columna
+## no es bioma (ver es_bioma_en()). VoxelWorld._generar_arboles() coloca un
+## árbol real donde esta densidad supera un umbral (ver spec:
+## docs/superpowers/specs/2026-09-09-arboles-procedurales-design.md).
+func densidad_arbol_en(x: int, z: int) -> float:
+	if not es_bioma_en(x, z):
+		return 0.0
+	var valor: float = _ruido_arbol.get_noise_2d(x, z)
 	return (valor + 1.0) / 2.0

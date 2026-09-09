@@ -139,4 +139,13 @@ func ejecutar_pruebas() -> void:
 	assert(abs(fraccion - GeneradorMundoScript.PERCENTIL_NIVEL_MAR) < 0.03)
 	print("OK: fracción inundada %.3f está dentro de ±0.03 del percentil configurado (%.2f)." % [fraccion, GeneradorMundoScript.PERCENTIL_NIVEL_MAR])
 
-	print("\n=== Las 10 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 11: es_bioma_en coincide con tierra firme dentro de la banda sobre el nivel de mar ===")
+	var gen_bioma: RefCounted = GeneradorMundoScript.new(321, 80, 80)
+	for x in range(0, 80, 2):
+		for z in range(0, 80, 2):
+			var altura: int = gen_bioma.altura_en(x, z)
+			var esperado: bool = (not gen_bioma.es_agua_en(x, z)) and altura <= gen_bioma.nivel_mar + GeneradorMundoScript.BANDA_BIOMA
+			assert(gen_bioma.es_bioma_en(x, z) == esperado)
+	print("OK: es_bioma_en() coincide con 'tierra firme y altura <= nivel_mar + BANDA_BIOMA' en todos los puntos muestreados.")
+
+	print("\n=== Las 11 pruebas de GeneradorMundo pasaron correctamente ===")

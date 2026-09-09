@@ -43,6 +43,13 @@ const EXPONENTE_RELIEVE := 0.5
 ## continental, etc.) — ver spec docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md.
 const PERCENTIL_NIVEL_MAR := 0.15
 
+## Cuántas unidades de altura por encima de nivel_mar sigue habiendo bioma
+## (vegetación/fauna) antes de volverse tierra estéril — ver es_bioma_en().
+## Valor inicial calibrado empíricamente, mismo patrón que GROSOR_TIERRA/
+## UMBRAL_HIERRO/EXPONENTE_RELIEVE: ajustar aquí si en el editor real la
+## banda resulta demasiado angosta o demasiado ancha.
+const BANDA_BIOMA := 4
+
 ## Altura por debajo de la cual una columna se considera inundada (ver
 ## es_agua_en()). Calculada una vez en _init() a partir de
 ## PERCENTIL_NIVEL_MAR sobre la distribución real del grid (ancho_mundo x
@@ -154,3 +161,15 @@ func _calcular_nivel_mar(ancho_mundo: int, largo_mundo: int) -> int:
 ## para puentes de PoC 9) la consulten sin repetir este cálculo.
 func es_agua_en(x: int, z: int) -> bool:
 	return altura_en(x, z) < nivel_mar
+
+
+## Verdadero si la columna (x, z) es tierra firme dentro de la banda de
+## bioma (vegetación/fauna) sobre el nivel del mar — falso si es agua o si
+## está por encima de esa banda (cumbres estériles). Único tipo de bioma
+## por ahora (sin distinguir bosque/pradera/montaña); ver
+## densidad_fauna_en()/densidad_frutal_en() para las señales que dependen
+## de este criterio.
+func es_bioma_en(x: int, z: int) -> bool:
+	if es_agua_en(x, z):
+		return false
+	return altura_en(x, z) <= nivel_mar + BANDA_BIOMA

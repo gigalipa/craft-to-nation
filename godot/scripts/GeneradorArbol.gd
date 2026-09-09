@@ -9,8 +9,8 @@ extends RefCounted
 
 const ALTURA_TRONCO_MIN := 3
 const ALTURA_TRONCO_MAX := 8
-const RADIO_TRONCO_MIN := 1
-const RADIO_TRONCO_MAX := 4
+const LADO_TRONCO_MIN := 1
+const LADO_TRONCO_MAX := 4
 const RADIO_FOLLAJE_MIN := 1
 const RADIO_FOLLAJE_MAX := 2
 
@@ -19,28 +19,32 @@ var _arboles: Dictionary = {}  # int -> {"celdas": Array, "salud": int}
 var _celda_a_arbol: Dictionary = {}  # Vector3i -> int
 
 
-## Forma procedural determinista de un árbol: tronco recto (cilindro de
-## radio variable) rematado por una copa esférica de follaje. La misma
-## semilla_arbol produce siempre la misma altura de tronco, el mismo radio
-## de tronco, el mismo radio de follaje y exactamente los mismos offsets.
-## Devuelve un Dictionary Vector3i -> String ("tronco" o "follaje"), con
-## offsets relativos a la base del árbol (Vector3i(0,0,0) es el centro de
-## la capa de tronco más baja).
+## Forma procedural determinista de un árbol: tronco recto cuadrado (lado
+## variable en columnas, no un disco euclidiano) rematado por una copa
+## esférica de follaje. La misma semilla_arbol produce siempre la misma
+## altura de tronco, el mismo lado de tronco, el mismo radio de follaje y
+## exactamente los mismos offsets. Devuelve un Dictionary Vector3i ->
+## String ("tronco" o "follaje"), con offsets relativos a la base del
+## árbol (Vector3i(0,0,0) es la esquina de la capa de tronco más baja).
 func generar_forma_aleatoria(semilla_arbol: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla_arbol
 	var altura_tronco: int = rng.randi_range(ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX)
-	var radio_tronco: int = rng.randi_range(RADIO_TRONCO_MIN, RADIO_TRONCO_MAX)
+	var lado_tronco: int = rng.randi_range(LADO_TRONCO_MIN, LADO_TRONCO_MAX)
 	var radio_follaje: int = rng.randi_range(RADIO_FOLLAJE_MIN, RADIO_FOLLAJE_MAX)
 
 	var forma: Dictionary = {}
 	for y in range(altura_tronco):
-		for dx in range(-radio_tronco, radio_tronco + 1):
-			for dz in range(-radio_tronco, radio_tronco + 1):
-				if dx * dx + dz * dz <= radio_tronco * radio_tronco:
-					forma[Vector3i(dx, y, dz)] = "tronco"
+		for dx in range(lado_tronco):
+			for dz in range(lado_tronco):
+				forma[Vector3i(dx, y, dz)] = "tronco"
 
-	var centro_follaje := Vector3i(0, altura_tronco, 0)
+	# Centro del cuadrado del tronco (aproximado por división entera —
+	# suficiente para un placeholder; con lado par el centro cae medio
+	# bloque desviado hacia la esquina (0,0), no exactamente en el medio).
+	@warning_ignore("integer_division")
+	var centro_xz: int = (lado_tronco - 1) / 2
+	var centro_follaje := Vector3i(centro_xz, altura_tronco, centro_xz)
 	for dx in range(-radio_follaje, radio_follaje + 1):
 		for dy in range(-radio_follaje, radio_follaje + 1):
 			for dz in range(-radio_follaje, radio_follaje + 1):

@@ -24,44 +24,44 @@ func ejecutar_pruebas() -> void:
 		assert(forma_a[offset] == forma_b[offset])
 	print("OK: la misma semilla_arbol produce exactamente los mismos offsets y tipos.")
 
-	print("\n=== TEST 2: todo offset 'tronco' respeta el rango de altura y el disco de radio ===")
+	print("\n=== TEST 2: todo offset 'tronco' respeta el rango de altura y el cuadrado de lado ===")
 	var gen_rango: RefCounted = GeneradorArbolScript.new()
 	for semilla in [1, 2, 3, 42, 999]:
 		var forma: Dictionary = gen_rango.generar_forma_aleatoria(semilla)
 		var altura_recuperada := 0
-		var radio_recuperado := 0
+		var lado_recuperado := 0
 		for offset in forma:
 			if forma[offset] == "tronco":
 				altura_recuperada = max(altura_recuperada, offset.y + 1)
-				if offset.z == 0 and offset.x >= 0:
-					radio_recuperado = max(radio_recuperado, offset.x)
+				lado_recuperado = max(lado_recuperado, offset.x + 1)
+				lado_recuperado = max(lado_recuperado, offset.z + 1)
 		assert(altura_recuperada >= GeneradorArbolScript.ALTURA_TRONCO_MIN)
 		assert(altura_recuperada <= GeneradorArbolScript.ALTURA_TRONCO_MAX)
-		assert(radio_recuperado >= GeneradorArbolScript.RADIO_TRONCO_MIN)
-		assert(radio_recuperado <= GeneradorArbolScript.RADIO_TRONCO_MAX)
+		assert(lado_recuperado >= GeneradorArbolScript.LADO_TRONCO_MIN)
+		assert(lado_recuperado <= GeneradorArbolScript.LADO_TRONCO_MAX)
 		for offset in forma:
 			if forma[offset] == "tronco":
 				assert(offset.y >= 0 and offset.y < altura_recuperada)
-				assert(offset.x * offset.x + offset.z * offset.z <= radio_recuperado * radio_recuperado)
-	print("OK: la altura y el radio recuperados de las celdas 'tronco' quedan dentro de los rangos configurados, y ninguna celda 'tronco' cae fuera de su propio disco/altura.")
+				assert(offset.x >= 0 and offset.x < lado_recuperado)
+				assert(offset.z >= 0 and offset.z < lado_recuperado)
+	print("OK: la altura y el lado recuperados de las celdas 'tronco' quedan dentro de los rangos configurados, y ninguna celda 'tronco' cae fuera de su propio cuadrado/altura.")
 
 	print("\n=== TEST 3: el follaje nunca sobrescribe una celda de tronco ===")
 	var gen_solape: RefCounted = GeneradorArbolScript.new()
 	var forma_solape: Dictionary = gen_solape.generar_forma_aleatoria(7)
 	var altura_solape := 0
-	var radio_solape := 0
+	var lado_solape := 0
 	for offset in forma_solape:
 		if forma_solape[offset] == "tronco":
 			altura_solape = max(altura_solape, offset.y + 1)
-			if offset.z == 0 and offset.x >= 0:
-				radio_solape = max(radio_solape, offset.x)
+			lado_solape = max(lado_solape, offset.x + 1)
+			lado_solape = max(lado_solape, offset.z + 1)
 	for y in range(altura_solape):
-		for dx in range(-radio_solape, radio_solape + 1):
-			for dz in range(-radio_solape, radio_solape + 1):
-				if dx * dx + dz * dz <= radio_solape * radio_solape:
-					var celda := Vector3i(dx, y, dz)
-					assert(forma_solape.get(celda, "") == "tronco")
-	print("OK: toda celda dentro del disco/altura del tronco quedó marcada 'tronco', incluso donde el follaje podría solaparse.")
+		for dx in range(lado_solape):
+			for dz in range(lado_solape):
+				var celda := Vector3i(dx, y, dz)
+				assert(forma_solape.get(celda, "") == "tronco")
+	print("OK: toda celda dentro del cuadrado/altura del tronco quedó marcada 'tronco', incluso donde el follaje podría solaparse.")
 
 	print("\n=== TEST 4: registrar/obtener_arbol_de/celdas_de son consistentes ===")
 	var gen_reg: RefCounted = GeneradorArbolScript.new()

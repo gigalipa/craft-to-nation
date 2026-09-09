@@ -16,7 +16,9 @@ Contexto: GDD Sección 3.1 (categoría "Recolección": puestos madereros necesit
 
 ## Choque de escala resuelto durante el brainstorming
 
-La cifra original de "20-50 bloques de madera por árbol" asumía una forma con ramas reales (más frondosa). Con la altura máxima real del mundo (`ALTURA_MAXIMA = 15`, nivel de mar ~5, banda de bioma hasta ~9), un tronco de 20-50 bloques de alto sería varias veces más alto que la montaña más alta del mundo. Se redujo el rango de altura a `[3, 8]` bloques para esta versión, y se agregó variación de **ancho** del tronco (radio `[1, 4]`, ver Sección 1) — un tronco ancho y bajo puede acumular tanta madera como uno alto y delgado, sin necesitar una altura irreal. Las ramas reales quedan como objetivo de una versión futura.
+La cifra original de "20-50 bloques de madera por árbol" asumía una forma con ramas reales (más frondosa). Con la altura máxima real del mundo (`ALTURA_MAXIMA = 15`, nivel de mar ~5, banda de bioma hasta ~9), un tronco de 20-50 bloques de alto sería varias veces más alto que la montaña más alta del mundo. Se redujo el rango de altura a `[3, 8]` bloques para esta versión, y se agregó variación de **ancho** del tronco (lado del cuadrado en columnas, `[1, 4]`, ver Sección 1) — un tronco ancho y bajo puede acumular tanta madera como uno alto y delgado, sin necesitar una altura irreal. Las ramas reales quedan como objetivo de una versión futura.
+
+**Corrección posterior (feedback jugando en el editor real):** la primera implementación interpretó "ancho 1 a 4" como el radio de un disco euclidiano (`dx²+dz² <= radio²`), lo cual para radio 4 produce un tronco de ~9 celdas de diámetro (área ≈49) — mucho más grueso de lo previsto. La intención real era "1 a 4 columnas de lado", es decir, un tronco cuadrado de hasta 4×4 = 16 columnas. Corregido a un cuadrado (`LADO_TRONCO_MIN/MAX`, ver Sección 1) en vez de un disco.
 
 ## 1. Forma del árbol
 
@@ -27,22 +29,22 @@ Constantes:
 ```gdscript
 const ALTURA_TRONCO_MIN := 3
 const ALTURA_TRONCO_MAX := 8
-const RADIO_TRONCO_MIN := 1
-const RADIO_TRONCO_MAX := 4
+const LADO_TRONCO_MIN := 1
+const LADO_TRONCO_MAX := 4
 const RADIO_FOLLAJE_MIN := 1
 const RADIO_FOLLAJE_MAX := 2
 ```
 
 `generar_forma_aleatoria(semilla_arbol: int) -> Dictionary`:
 
-1. Usa un `RandomNumberGenerator` sembrado con `semilla_arbol` para elegir `altura_tronco` en `[ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX]`, `radio_tronco` en `[RADIO_TRONCO_MIN, RADIO_TRONCO_MAX]`, y `radio_follaje` en `[RADIO_FOLLAJE_MIN, RADIO_FOLLAJE_MAX]` (todos inclusive).
-2. El tronco ocupa, para cada `y` en `[0, altura_tronco - 1]`, todo offset `Vector3i(dx, y, dz)` cuya distancia euclidiana horizontal al eje del árbol sea `dx*dx + dz*dz <= radio_tronco*radio_tronco` — el mismo criterio de disco que usa el follaje (Sección 3, paso 3 más abajo), aplicado como sección transversal repetida en cada nivel de altura. Con `radio_tronco = 1` esto da un "más" de 5 celdas por nivel (centro + 4 vecinos ortogonales), no un tronco de una sola celda — mismo criterio de disco en todo el archivo, sin una regla aparte solo para el caso más angosto. Todos estos offsets son tipo `"tronco"`.
-3. El follaje es un blob esférico simple centrado en `Vector3i(0, altura_tronco, 0)` (justo encima del nivel más alto del tronco, sobre el eje central): todo offset `(dx, dy, dz)` cuya distancia euclidiana al centro sea `<= radio_follaje`, tipo `"follaje"`, **excluyendo** cualquier offset que ya sea tronco (no hay superposición vertical real entre los dos bloques, ya que el follaje empieza en el nivel `altura_tronco`, uno por encima del tronco más alto — la exclusión es una salvaguarda, no algo que se espere disparar en la práctica).
-4. Devuelve un `Dictionary` (`Vector3i` → `String`, `"tronco"` o `"follaje"`) con todos los offsets relativos a la base del árbol (`Vector3i(0,0,0)` es el centro de la capa de tronco más baja).
+1. Usa un `RandomNumberGenerator` sembrado con `semilla_arbol` para elegir `altura_tronco` en `[ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX]`, `lado_tronco` en `[LADO_TRONCO_MIN, LADO_TRONCO_MAX]`, y `radio_follaje` en `[RADIO_FOLLAJE_MIN, RADIO_FOLLAJE_MAX]` (todos inclusive).
+2. El tronco ocupa, para cada `y` en `[0, altura_tronco - 1]`, un cuadrado de `lado_tronco × lado_tronco` columnas: todo offset `Vector3i(dx, y, dz)` con `dx` y `dz` en `[0, lado_tronco - 1]` — un cuadrado, no un disco euclidiano (con `lado_tronco = 4` esto da 16 columnas por nivel, no las ~49 de un disco de radio 4). Todos estos offsets son tipo `"tronco"`.
+3. El follaje es un blob esférico simple centrado en `Vector3i((lado_tronco-1)/2, altura_tronco, (lado_tronco-1)/2)` (el punto medio del cuadrado del tronco, división entera — con `lado_tronco` par el centro cae medio bloque desviado hacia la esquina `(0,0)`, aproximación suficiente para un placeholder; justo encima del nivel más alto del tronco): todo offset `(dx, dy, dz)` cuya distancia euclidiana al centro sea `<= radio_follaje`, tipo `"follaje"`, **excluyendo** cualquier offset que ya sea tronco (no hay superposición vertical real entre los dos bloques, ya que el follaje empieza en el nivel `altura_tronco`, uno por encima del tronco más alto — la exclusión es una salvaguarda, no algo que se espere disparar en la práctica).
+4. Devuelve un `Dictionary` (`Vector3i` → `String`, `"tronco"` o `"follaje"`) con todos los offsets relativos a la base del árbol (`Vector3i(0,0,0)` es la esquina de la capa de tronco más baja).
 
-Completamente determinista: la misma `semilla_arbol` produce siempre la misma forma exacta (misma altura, mismo radio de tronco, mismo radio de follaje, mismos offsets).
+Completamente determinista: la misma `semilla_arbol` produce siempre la misma forma exacta (misma altura, mismo lado de tronco, mismo radio de follaje, mismos offsets).
 
-La **salud** del árbol es el número total de offsets tipo `"tronco"` generados (varía con `altura_tronco` y `radio_tronco` juntos — un tronco ancho y bajo puede tener tanta madera como uno alto y delgado). El follaje es cosmético, no rinde recurso ni cuenta hacia la salud.
+La **salud** del árbol es el número total de offsets tipo `"tronco"` generados (`altura_tronco * lado_tronco²` — varía con `altura_tronco` y `lado_tronco` juntos, un tronco ancho y bajo puede tener tanta madera como uno alto y delgado). El follaje es cosmético, no rinde recurso ni cuenta hacia la salud.
 
 ## 2. Señal de densidad y colocación en el mundo
 
@@ -85,10 +87,10 @@ Mientras la salud no llegue a `0`, ningún bloque del árbol se toca — el árb
 
 Nuevas pruebas en un archivo `GeneradorArbolTest.gd` (mismo patrón que `GeneradorMundoTest.gd`, corrido vía una escena `GeneradorArbolTest.tscn`):
 
-- `generar_forma_aleatoria` es determinista para la misma `semilla_arbol` (misma altura de tronco, mismo radio de tronco, mismo radio de follaje, mismos offsets exactos).
-- Todo offset tipo `"tronco"` tiene `y` en `[0, altura_tronco - 1]` y `dx*dx + dz*dz <= radio_tronco*radio_tronco`; no hay offsets `"tronco"` fuera de ese rango de altura ni de ese disco horizontal.
+- `generar_forma_aleatoria` es determinista para la misma `semilla_arbol` (misma altura de tronco, mismo lado de tronco, mismo radio de follaje, mismos offsets exactos).
+- Todo offset tipo `"tronco"` tiene `y` en `[0, altura_tronco - 1]`, `dx` en `[0, lado_tronco - 1]` y `dz` en `[0, lado_tronco - 1]`; no hay offsets `"tronco"` fuera de ese rango de altura ni de ese cuadrado horizontal.
 - El follaje generado nunca pisa una celda de tronco (ninguna celda es a la vez `"tronco"` y `"follaje"`).
-- La salud devuelta al registrar coincide exactamente con la cantidad de offsets tipo `"tronco"` en la forma generada (no con `altura_tronco` sola, ya que ahora depende también de `radio_tronco`).
+- La salud devuelta al registrar coincide exactamente con la cantidad de offsets tipo `"tronco"` en la forma generada (no con `altura_tronco` sola, ya que ahora depende también de `lado_tronco`).
 - `registrar`/`obtener_arbol_de`/`celdas_de` son consistentes: toda celda pasada a `registrar` devuelve el id correcto desde `obtener_arbol_de`, y `celdas_de(id)` devuelve exactamente el conjunto original.
 - `danar` reduce la salud correctamente y devuelve `true` solo cuando la salud acumulada dañada alcanza o supera la salud máxima (p. ej. un árbol de salud 5 dañado con 2 y luego con 2 debe devolver `false` la primera vez y `true` la segunda con un daño de 2 más, o `true` de inmediato con un daño de 5 o más).
 - `obtener_arbol_de` devuelve `-1` para una celda que nunca fue registrada.

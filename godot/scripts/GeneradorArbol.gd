@@ -10,9 +10,7 @@ extends RefCounted
 const ALTURA_TRONCO_MIN := 3
 const ALTURA_TRONCO_MAX := 8
 const LADO_TRONCO_MIN := 1
-const LADO_TRONCO_MAX := 4
-const RADIO_FOLLAJE_MIN := 1
-const RADIO_FOLLAJE_MAX := 2
+const LADO_TRONCO_MAX := 2
 
 var _siguiente_id := 0
 var _arboles: Dictionary = {}  # int -> {"celdas": Array, "salud": int}
@@ -27,10 +25,17 @@ var _celda_a_arbol: Dictionary = {}  # Vector3i -> int
 func _elegir_parametros(semilla_arbol: int) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla_arbol
+	var altura_tronco: int = rng.randi_range(ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX)
+	var lado_tronco: int = rng.randi_range(LADO_TRONCO_MIN, LADO_TRONCO_MAX)
+	# El radio de follaje es proporcional al lado del tronco (no un rango
+	# propio independiente) para que la copa nunca quede más angosta que
+	# el tronco que la sostiene — placeholder simple; a futuro esta
+	# relación podrá variar por tipo de bioma (selva húmeda vs. sabana).
+	var radio_follaje: int = lado_tronco
 	return {
-		"altura_tronco": rng.randi_range(ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX),
-		"lado_tronco": rng.randi_range(LADO_TRONCO_MIN, LADO_TRONCO_MAX),
-		"radio_follaje": rng.randi_range(RADIO_FOLLAJE_MIN, RADIO_FOLLAJE_MAX),
+		"altura_tronco": altura_tronco,
+		"lado_tronco": lado_tronco,
+		"radio_follaje": radio_follaje,
 	}
 
 

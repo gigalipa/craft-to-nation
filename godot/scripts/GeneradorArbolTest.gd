@@ -122,4 +122,11 @@ func ejecutar_pruebas() -> void:
 		assert(medida["lado_tronco"] == lado_recuperado)
 	print("OK: medir_pisada() predice exactamente la altura y el lado de tronco que generar_forma_aleatoria() produce para la misma semilla.")
 
-	print("\n=== Las 9 pruebas de GeneradorArbol pasaron correctamente ===")
+	print("\n=== TEST 10: el radio de follaje es proporcional al lado del tronco (nunca más angosto) ===")
+	var gen_proporcion: RefCounted = GeneradorArbolScript.new()
+	for semilla in [1, 2, 3, 42, 999, 123456]:
+		var medida: Dictionary = gen_proporcion.medir_pisada(semilla)
+		assert(medida["radio_follaje"] == medida["lado_tronco"])
+	print("OK: radio_follaje == lado_tronco en todas las semillas muestreadas — la copa nunca queda más angosta que el tronco.")
+
+	print("\n=== Las 10 pruebas de GeneradorArbol pasaron correctamente ===")

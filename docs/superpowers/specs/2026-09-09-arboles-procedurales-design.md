@@ -16,7 +16,7 @@ Contexto: GDD Sección 3.1 (categoría "Recolección": puestos madereros necesit
 
 ## Choque de escala resuelto durante el brainstorming
 
-La cifra original de "20-50 bloques de madera por árbol" asumía una forma con ramas reales (más frondosa). Con la altura máxima real del mundo (`ALTURA_MAXIMA = 15`, nivel de mar ~5, banda de bioma hasta ~9), un tronco de 20-50 bloques de alto sería varias veces más alto que la montaña más alta del mundo. Se redujo el rango de altura a `[3, 8]` bloques para esta versión, y se agregó variación de **ancho** del tronco (lado del cuadrado en columnas, `[1, 4]`, ver Sección 1) — un tronco ancho y bajo puede acumular tanta madera como uno alto y delgado, sin necesitar una altura irreal. Las ramas reales quedan como objetivo de una versión futura.
+La cifra original de "20-50 bloques de madera por árbol" asumía una forma con ramas reales (más frondosa). Con la altura máxima real del mundo (`ALTURA_MAXIMA = 15`, nivel de mar ~5, banda de bioma hasta ~9), un tronco de 20-50 bloques de alto sería varias veces más alto que la montaña más alta del mundo. Se redujo el rango de altura a `[3, 8]` bloques para esta versión, y se agregó variación de **ancho** del tronco (lado del cuadrado en columnas, `[1, 2]` — reducido desde `[1, 4]` tras feedback visual, ver Sección 1) — un tronco ancho y bajo puede acumular tanta madera como uno alto y delgado, sin necesitar una altura irreal. Las ramas reales quedan como objetivo de una versión futura.
 
 **Corrección posterior (feedback jugando en el editor real):** la primera implementación interpretó "ancho 1 a 4" como el radio de un disco euclidiano (`dx²+dz² <= radio²`), lo cual para radio 4 produce un tronco de ~9 celdas de diámetro (área ≈49) — mucho más grueso de lo previsto. La intención real era "1 a 4 columnas de lado", es decir, un tronco cuadrado de hasta 4×4 = 16 columnas. Corregido a un cuadrado (`LADO_TRONCO_MIN/MAX`, ver Sección 1) en vez de un disco.
 
@@ -30,14 +30,12 @@ Constantes:
 const ALTURA_TRONCO_MIN := 3
 const ALTURA_TRONCO_MAX := 8
 const LADO_TRONCO_MIN := 1
-const LADO_TRONCO_MAX := 4
-const RADIO_FOLLAJE_MIN := 1
-const RADIO_FOLLAJE_MAX := 2
+const LADO_TRONCO_MAX := 2
 ```
 
 `generar_forma_aleatoria(semilla_arbol: int) -> Dictionary`:
 
-1. Usa un `RandomNumberGenerator` sembrado con `semilla_arbol` para elegir `altura_tronco` en `[ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX]`, `lado_tronco` en `[LADO_TRONCO_MIN, LADO_TRONCO_MAX]`, y `radio_follaje` en `[RADIO_FOLLAJE_MIN, RADIO_FOLLAJE_MAX]` (todos inclusive).
+1. Usa un `RandomNumberGenerator` sembrado con `semilla_arbol` para elegir `altura_tronco` en `[ALTURA_TRONCO_MIN, ALTURA_TRONCO_MAX]` y `lado_tronco` en `[LADO_TRONCO_MIN, LADO_TRONCO_MAX]` (ambos inclusive). `radio_follaje` no tiene rango propio: es `radio_follaje = lado_tronco` (proporcional al tronco, para que la copa nunca quede más angosta que el tronco que la sostiene — corregido tras feedback visual; placeholder simple, a futuro esta relación podrá variar por tipo de bioma).
 2. El tronco ocupa, para cada `y` en `[0, altura_tronco - 1]`, un cuadrado de `lado_tronco × lado_tronco` columnas: todo offset `Vector3i(dx, y, dz)` con `dx` y `dz` en `[0, lado_tronco - 1]` — un cuadrado, no un disco euclidiano (con `lado_tronco = 4` esto da 16 columnas por nivel, no las ~49 de un disco de radio 4). Todos estos offsets son tipo `"tronco"`.
 3. El follaje es un blob esférico simple centrado en `Vector3i((lado_tronco-1)/2, altura_tronco, (lado_tronco-1)/2)` (el punto medio del cuadrado del tronco, división entera — con `lado_tronco` par el centro cae medio bloque desviado hacia la esquina `(0,0)`, aproximación suficiente para un placeholder; justo encima del nivel más alto del tronco): todo offset `(dx, dy, dz)` cuya distancia euclidiana al centro sea `<= radio_follaje`, tipo `"follaje"`, **excluyendo** cualquier offset que ya sea tronco (no hay superposición vertical real entre los dos bloques, ya que el follaje empieza en el nivel `altura_tronco`, uno por encima del tronco más alto — la exclusión es una salvaguarda, no algo que se espere disparar en la práctica).
 4. Devuelve un `Dictionary` (`Vector3i` → `String`, `"tronco"` o `"follaje"`) con todos los offsets relativos a la base del árbol (`Vector3i(0,0,0)` es la esquina de la capa de tronco más baja).
@@ -102,6 +100,7 @@ Nuevas pruebas en un archivo `GeneradorArbolTest.gd` (mismo patrón que `Generad
 - `danar` reduce la salud correctamente y devuelve `true` solo cuando la salud acumulada dañada alcanza o supera la salud máxima (p. ej. un árbol de salud 5 dañado con 2 y luego con 2 debe devolver `false` la primera vez y `true` la segunda con un daño de 2 más, o `true` de inmediato con un daño de 5 o más).
 - `obtener_arbol_de` devuelve `-1` para una celda que nunca fue registrada.
 - `medir_pisada(semilla_arbol)` predice exactamente la misma `altura_tronco`/`lado_tronco` que produce `generar_forma_aleatoria(semilla_arbol)` para la misma semilla.
+- `radio_follaje == lado_tronco` en toda semilla muestreada (la copa nunca queda más angosta que el tronco).
 
 Pruebas nuevas en `GeneradorMundoTest.gd` (continuando la numeración desde el Test 14 existente):
 

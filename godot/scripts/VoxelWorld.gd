@@ -256,6 +256,30 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 	return colocado_por_jugador.get(celda, false) and TIPOS_ESTRUCTURA.has(obtener_tipo(celda))
 
 
+## Revisa cada columna (x, z) de la huella ancho×alto con esquina "esquina":
+## examina el bloque inmediatamente sobre el terreno real (altura_en(x, z) +
+## 1). "madera" (tronco de árbol) o cualquier bloque estructural de un
+## edificio del jugador (es_celda_estructural()) invalida la huella
+## completa. "follaje" no invalida — se acumula en follaje_a_eliminar para
+## que el llamador lo borre al confirmar la colocación (es cosmético, no un
+## recurso — ver GDD Sección 3, "Emplazamiento Dentro de un Bosque"). Usada
+## por la validación de choques de los puestos periféricos (CamaraCenital.gd)
+## — no conoce Recoleccion.puestos, solo bloques reales del GridMap.
+func verificar_huella_libre(esquina: Vector2i, ancho: int, alto: int) -> Dictionary:
+	var valida := true
+	var follaje_a_eliminar: Array[Vector3i] = []
+	for x in range(esquina.x, esquina.x + ancho):
+		for z in range(esquina.y, esquina.y + alto):
+			var y: int = altura_en(x, z) + 1
+			var celda := Vector3i(x, y, z)
+			var tipo: String = obtener_tipo(celda)
+			if tipo == "madera" or es_celda_estructural(celda):
+				valida = false
+			elif tipo == "follaje":
+				follaje_a_eliminar.append(celda)
+	return {"valida": valida, "follaje_a_eliminar": follaje_a_eliminar}
+
+
 ## Coloca árboles reales en las columnas de bioma cuya densidad supera
 ## UMBRAL_ARBOL. Antes de generar cada árbol, mide su tamaño real
 ## (arboles.medir_pisada()) para decidir si cabe sin violar

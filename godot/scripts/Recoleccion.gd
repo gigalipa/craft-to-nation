@@ -9,6 +9,8 @@ extends Node
 const RADIO_AREA_MINA := 6
 const PROFUNDIDAD_MINA_NIVEL_1 := 8
 const TASA_BASE_POR_CIUDADANO := 2.0
+const ANCHO_HUELLA_MINA := 5
+const ALTO_HUELLA_MINA := 5
 
 ## Tipos de bloque que detectar_recursos() ignora explícitamente: son
 ## recursos de otro dominio (madera/follaje de árboles — ver
@@ -26,11 +28,35 @@ const COSTO_CONSTRUCCION := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO := 3
 const CAPACIDAD_ALMACENAMIENTO := 100
 
+## Documentada para el puesto maderero (GDD Sección 3) — sin puesto jugable
+## todavía, solo fija la convención de tamaño junto a las demás huellas.
+const ANCHO_HUELLA_MADERERO := 3
+const ALTO_HUELLA_MADERERO := 4
+
+## Vector2i (esquina de la huella, celda de menor X/Z) -> {"tipo": String,
+## "ancho": int, "alto": int, "nivel": int}. Antes solo guardaba minas
+## indexadas por su único bloque marcador; ahora guarda cualquier puesto
+## periférico por la esquina de su huella real, para poder validar choques
+## entre puestos de cualquier tipo (ver celda_dentro_de_algun_puesto()).
 var puestos: Dictionary = {}  # Vector2i (celda de superficie) -> {"nivel": int}
 
 
-func colocar_mina(celda: Vector2i) -> void:
-	puestos[celda] = {"nivel": 1}
+func colocar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int) -> void:
+	puestos[esquina] = {"tipo": tipo, "ancho": ancho, "alto": alto, "nivel": 1}
+
+
+## true si "celda" cae dentro de la huella de algún puesto ya colocado (de
+## cualquier tipo) — usada al previsualizar una nueva colocación, para
+## rechazarla si se solapa con un puesto existente (ver CamaraCenital.gd).
+func celda_dentro_de_algun_puesto(celda: Vector2i) -> bool:
+	for esquina in puestos:
+		var datos: Dictionary = puestos[esquina]
+		var ancho: int = datos["ancho"]
+		var alto: int = datos["alto"]
+		if celda.x >= esquina.x and celda.x < esquina.x + ancho \
+				and celda.y >= esquina.y and celda.y < esquina.y + alto:
+			return true
+	return false
 
 
 ## Cuenta los tipos de bloque REALES dentro de la semiesfera de acción

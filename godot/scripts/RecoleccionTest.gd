@@ -65,10 +65,12 @@ func ejecutar_pruebas() -> void:
 	var tasas_vacias: Dictionary = Recoleccion.tasas_recoleccion({})
 	assert(tasas_vacias.is_empty())
 
-	print("\n=== TEST 4: colocar_mina() registra el puesto ===")
+	print("\n=== TEST 4: colocar_puesto() registra el puesto por su huella ===")
 	Recoleccion.puestos.clear()  # aislar de otras pruebas que compartan el autoload
-	Recoleccion.colocar_mina(Vector2i(5, 5))
+	Recoleccion.colocar_puesto(Vector2i(5, 5), "mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 	assert(Recoleccion.puestos.has(Vector2i(5, 5)))
+	assert(Recoleccion.puestos[Vector2i(5, 5)]["tipo"] == "mina")
+	assert(Recoleccion.puestos[Vector2i(5, 5)]["ancho"] == 5)
 	assert(Recoleccion.puestos[Vector2i(5, 5)]["nivel"] == 1)
 
 	print("\n=== TEST 5: detectar_recursos() ignora bloques de árbol (madera/follaje) ===")
@@ -90,4 +92,14 @@ func ejecutar_pruebas() -> void:
 	assert(conteo_bosque.get("hierro", 0) > 0)
 	print("OK: 'madera' y 'follaje' nunca aparecen en el conteo de una mina, aunque estén dentro de su área de acción.")
 
-	print("\n=== Las 5 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 6: celda_dentro_de_algun_puesto() detecta solapamiento entre puestos de cualquier tipo ===")
+	Recoleccion.puestos.clear()
+	Recoleccion.colocar_puesto(Vector2i(0, 0), "mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
+	assert(Recoleccion.celda_dentro_de_algun_puesto(Vector2i(2, 2)))       # dentro de la huella 5x5 de (0,0): 0..4
+	assert(not Recoleccion.celda_dentro_de_algun_puesto(Vector2i(5, 5)))   # justo fuera de esa huella
+	Recoleccion.colocar_puesto(Vector2i(20, 20), "caza_recoleccion", 4, 4)
+	assert(Recoleccion.celda_dentro_de_algun_puesto(Vector2i(22, 22)))     # dentro del segundo puesto
+	assert(not Recoleccion.celda_dentro_de_algun_puesto(Vector2i(24, 24))) # huella 4x4 de (20,20): 20..23
+	print("OK: celda_dentro_de_algun_puesto() detecta el puesto correcto sin importar su tipo.")
+
+	print("\n=== Las 6 pruebas de Recoleccion pasaron correctamente ===")

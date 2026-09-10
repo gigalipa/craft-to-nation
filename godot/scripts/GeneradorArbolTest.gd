@@ -129,4 +129,18 @@ func ejecutar_pruebas() -> void:
 		assert(medida["radio_follaje"] == medida["lado_tronco"])
 	print("OK: radio_follaje == lado_tronco en todas las semillas muestreadas — la copa nunca queda más angosta que el tronco.")
 
-	print("\n=== Las 10 pruebas de GeneradorArbol pasaron correctamente ===")
+	print("\n=== TEST 11: eliminar_celda quita solo una celda, sin talar el árbol, y talar_bloque_de_arbol()/danar() siguen funcionando después ===")
+	var gen_celda: RefCounted = GeneradorArbolScript.new()
+	var celdas_follaje: Array = [Vector3i(8, 0, 8), Vector3i(8, 1, 8), Vector3i(8, 2, 8)]
+	var id_follaje: int = gen_celda.registrar(celdas_follaje, 2)
+	gen_celda.eliminar_celda(id_follaje, Vector3i(8, 2, 8))
+	assert(gen_celda.celdas_de(id_follaje).size() == 2)
+	assert(not gen_celda.celdas_de(id_follaje).has(Vector3i(8, 2, 8)))
+	assert(gen_celda.obtener_arbol_de(Vector3i(8, 2, 8)) == -1)
+	# Las celdas restantes (y la salud) del árbol siguen intactas.
+	assert(gen_celda.obtener_arbol_de(Vector3i(8, 0, 8)) == id_follaje)
+	assert(gen_celda.danar(id_follaje, 1) == false)
+	assert(gen_celda.danar(id_follaje, 1) == true)
+	print("OK: eliminar_celda() deja registrado al árbol con una celda menos, sin talarlo, y danar() sigue funcionando normalmente después.")
+
+	print("\n=== Las 11 pruebas de GeneradorArbol pasaron correctamente ===")

@@ -73,7 +73,17 @@ func ejecutar_pruebas() -> void:
 	assert(not nivelador_pronunciado.verificar_pendiente(Vector2i(0, 0), 4, 3))
 
 	print("\n=== TEST 6: llamar sin ancho/alto sigue siendo la huella cuadrada de siempre ===")
+	# Caso donde ambos lados dan true: no basta con comparar los dos lados
+	# entre sí (también pasaría si ambos dieran false por un bug), así que se
+	# fija además el valor esperado real.
+	assert(nivelador_suave.verificar_pendiente(Vector2i(0, 0), NiveladorTerreno.TAMANO_HUELLA, NiveladorTerreno.TAMANO_HUELLA) == true)
 	assert(nivelador_suave.verificar_pendiente(Vector2i(0, 0)) \
 			== nivelador_suave.verificar_pendiente(Vector2i(0, 0), NiveladorTerreno.TAMANO_HUELLA, NiveladorTerreno.TAMANO_HUELLA))
+	# Caso donde ambos lados dan false, con la fixture de rampa pronunciada —
+	# prueba la equivalencia default-vs-explícito también para el resultado
+	# negativo, no solo el positivo.
+	assert(nivelador_pronunciado.verificar_pendiente(Vector2i(0, 0), NiveladorTerreno.TAMANO_HUELLA, NiveladorTerreno.TAMANO_HUELLA) == false)
+	assert(nivelador_pronunciado.verificar_pendiente(Vector2i(0, 0)) \
+			== nivelador_pronunciado.verificar_pendiente(Vector2i(0, 0), NiveladorTerreno.TAMANO_HUELLA, NiveladorTerreno.TAMANO_HUELLA))
 
 	print("\n=== Las 6 pruebas de NiveladorTerreno pasaron correctamente ===")

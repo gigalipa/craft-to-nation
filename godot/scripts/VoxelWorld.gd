@@ -368,3 +368,16 @@ func talar_bloque_de_arbol(celda: Vector3i, dano: int) -> bool:
 			set_cell_item(c, GridMap.INVALID_CELL_ITEM)
 		arboles.eliminar(id)
 	return talado
+
+
+## Elimina un bloque de follaje suelto (cosmético, no un recurso — ver GDD
+## Sección 3, "Emplazamiento Dentro de un Bosque") y lo desregistra del árbol
+## al que pertenece, si alguno, para no dejar a GeneradorArbol apuntando a
+## una celda ya vacía (mismo tipo de desincronización que talar_bloque_de_arbol()
+## ya evita). Usada al confirmar la colocación de un puesto periférico cuya
+## huella chocó solo con follaje (VoxelWorld.verificar_huella_libre()).
+func eliminar_follaje(celda: Vector3i) -> void:
+	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+	var id: int = arboles.obtener_arbol_de(celda)
+	if id != -1:
+		arboles.eliminar_celda(id, celda)

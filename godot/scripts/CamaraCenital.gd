@@ -124,7 +124,6 @@ var modo_colocar_puesto := false
 var _tipo_puesto_activo := ""  # "mina" | "caza_recoleccion"
 var _ancho_puesto_activo := 0
 var _alto_puesto_activo := 0
-var _huella_rotada := false
 var _huella_puesto: Array[MeshInstance3D] = []
 
 ## Punto de mira: la cámara orbita y se inclina a distancia constante
@@ -508,6 +507,7 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i) -> bool:
 ## genérica sobre _tipo_puesto_activo/_ancho_puesto_activo/_alto_puesto_activo.
 func _actualizar_previsualizacion_puesto() -> void:
 	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
+	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
 
 	var fuera_de_influencia: bool = not Zonificacion.dentro_de_influencia(centro)
@@ -598,9 +598,9 @@ func _alternar_modo_nivelacion() -> void:
 	modo_nivelacion = not modo_nivelacion
 	# Los dos modos son mutuamente excluyentes: entrar en uno sale del otro.
 	# Si no, ambas banderas quedan activas a la vez, nivelación gana todas las
-	# cadenas if/elif de _process() y el disco de la mina se queda visible pero
-	# congelado en el origen, con su ficha del HUD mintiendo sobre lo que hace
-	# el clic.
+	# cadenas if/elif de _process() y la huella del puesto se queda visible
+	# pero congelada en el origen, con su ficha del HUD mintiendo sobre lo que
+	# hace el clic.
 	if modo_nivelacion and modo_colocar_puesto:
 		_salir_de_modo_colocar_puesto()
 	_mostrar_huella_fantasma(modo_nivelacion)
@@ -622,10 +622,9 @@ func _mostrar_huella_fantasma(visible_ahora: bool) -> void:
 
 ## Activa el modo de colocación del puesto "tipo" (huella ancho x alto). Si
 ## ya estaba activo ESE MISMO tipo, lo cancela (mismo toggle que antes tenía
-## _alternar_modo_colocar_mina()); si estaba activo otro tipo, cambia
-## directamente al nuevo sin necesidad de cancelar primero. Reemplaza
-## _alternar_modo_colocar_mina() — M y H llaman a esta misma función con su
-## tipo/huella respectivos (ver _unhandled_input()).
+## _alternar_modo_colocar_puesto()); si estaba activo otro tipo, cambia
+## directamente al nuevo sin necesidad de cancelar primero. M y H llaman a
+## esta misma función con su tipo/huella respectivos (ver _unhandled_input()).
 func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	if modo_colocar_puesto and _tipo_puesto_activo == tipo:
 		_salir_de_modo_colocar_puesto()
@@ -637,11 +636,11 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 		_salir_de_modo_nivelacion()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
+	assert(ancho <= MAX_ANCHO_HUELLA_PUESTO and alto <= MAX_ALTO_HUELLA_PUESTO, "Huella de puesto excede el pool fijo de planos fantasma")
 	modo_colocar_puesto = true
 	_tipo_puesto_activo = tipo
 	_ancho_puesto_activo = ancho
 	_alto_puesto_activo = alto
-	_huella_rotada = false
 	_mostrar_huella_puesto(true)
 	if tipo == "mina":
 		hud.mostrar_ficha_mina()
@@ -663,7 +662,6 @@ func _salir_de_modo_colocar_puesto() -> void:
 ## (5x5) ni caza/recolección (4x4) — ambas cuadradas — hasta que exista un
 ## puesto con huella no cuadrada (p. ej. un futuro maderero, 3x4).
 func _rotar_huella_puesto() -> void:
-	_huella_rotada = not _huella_rotada
 	var ancho_previo := _ancho_puesto_activo
 	_ancho_puesto_activo = _alto_puesto_activo
 	_alto_puesto_activo = ancho_previo
@@ -671,10 +669,10 @@ func _rotar_huella_puesto() -> void:
 
 
 ## Sale de cualquier modo de interacción de esta cámara (nivelación, colocar
-## mina) — llamada por Main.gd al cambiar a la cámara en 1ª persona. Sin
-## esto, la huella fantasma o el disco de la mina (hijos de esta cámara,
+## puesto) — llamada por Main.gd al cambiar a la cámara en 1ª persona. Sin
+## esto, la huella fantasma o la huella del puesto (hijos de esta cámara,
 ## independientes de si `current` está activo) seguían visibles y
-## congelados tras salir de la vista cenital, porque su visibilidad solo
+## congeladas tras salir de la vista cenital, porque su visibilidad solo
 ## depende de estas banderas de modo, nunca de qué cámara está activa.
 func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_nivelacion()
@@ -741,8 +739,6 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 	overlay.reconstruir()
 
 
-## Confirma la colocación de la mina en la celda bajo el cursor si está
-## fuera de la zona de influencia — si no, imprime el rechazo y SIGUE en
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si
 ## las 4 validaciones (zona de influencia, relieve, huella libre, sin choque
 ## con otro puesto) pasan — si no, imprime el motivo y PERMANECE en modo
@@ -754,6 +750,7 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 ## rechaza celdas ya ocupadas (la de superficie ya tiene "piso").
 func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
+	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
 
 	if Zonificacion.dentro_de_influencia(centro):
@@ -771,7 +768,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 		return
 
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
-		mundo.set_cell_item(celda_follaje, GridMap.INVALID_CELL_ITEM)
+		mundo.eliminar_follaje(celda_follaje)
 
 	var bloque_marcador: String = "mina" if _tipo_puesto_activo == "mina" else "puesto_caza"
 	for dx in range(_ancho_puesto_activo):

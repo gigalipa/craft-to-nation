@@ -17,6 +17,11 @@ const NOMBRES_RECURSO := {
 	"hierro": "Hierro",
 }
 
+const NOMBRES_CAZA_RECOLECCION := {
+	"caza": "caza",
+	"recoleccion": "recolección",
+}
+
 @onready var nivel_label: Label = $HUD/NivelLabel
 @onready var poblacion_label: Label = $HUD/PoblacionLabel
 @onready var moral_label: Label = $HUD/MoralLabel
@@ -115,10 +120,9 @@ func actualizar_tasas_caza(tasas: Dictionary) -> void:
 	if tasas.get("caza", 0.0) <= 0.0 and tasas.get("recoleccion", 0.0) <= 0.0:
 		caza_tasas_label.text = "Recolección prevista: sin fauna ni fruta detectada"
 		return
-	var nombres := {"caza": "caza", "recoleccion": "recolección"}
 	var lineas: Array = []
 	for tipo in tasas:
-		lineas.append("%.1f comida/h por %s" % [tasas[tipo], nombres.get(tipo, tipo)])
+		lineas.append("%.1f comida/h por %s" % [tasas[tipo], NOMBRES_CAZA_RECOLECCION.get(tipo, tipo)])
 	caza_tasas_label.text = "Recolección prevista por ciudadano:\n  " + "\n  ".join(lineas)
 
 

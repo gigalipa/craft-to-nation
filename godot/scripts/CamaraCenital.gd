@@ -9,10 +9,10 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 ## evalúen el terreno REAL bajo un puesto, no la superficie del agua — el
 ## agua bajo la huella se drena de todos modos al confirmar (ver
 ## VoxelWorld.drenar_agua()), así que la pendiente y el relleno deben verse
-## contra lo que quedará después de drenar, no contra el nivel del mar. El
-## modo manual de nivelación (tecla `B`) sigue usando "nivelador" (más
-## abajo), sin este envoltorio — no se le pidió tratar el agua de forma
-## especial.
+## contra lo que quedará después de drenar, no contra el nivel del mar. La
+## tecla `B` ya no activa nivelación manual (ver _alternar_modo_colocar_
+## blueprint() más abajo, Task 7) — "nivelador" (más abajo, sin este
+## envoltorio) no tiene ningún llamador restante en este archivo.
 class _AlturaSinAgua:
 	var _mundo: Object
 
@@ -166,6 +166,18 @@ var _huella_puesto: Array[MeshInstance3D] = []
 var _offsets_area_accion: Array[Vector2i] = []
 var _area_accion: Array[MeshInstance3D] = []
 
+## Modo de colocación de blueprint (tecla `B`) — reemplaza la antigua
+## nivelación standalone. Sigue el mismo patrón visual que el modo de
+## colocación de puestos (huella verde/rojo), pero el TAMAÑO de la huella
+## varía según el blueprint activo (blueprint["ancho"]/["profundidad"]), así
+## que el pool de planos se crea de nuevo cada vez que se activa el modo
+## (_crear_huella_blueprint()) en vez de tener un tamaño fijo — solo existe
+## un blueprint (residencial) por ahora, activarse no es un evento
+## frecuente por fotograma.
+var modo_colocar_blueprint := false
+var _blueprint_activo: Dictionary = {}
+var _huella_blueprint: Array[MeshInstance3D] = []
+
 ## Punto de mira: la cámara orbita y se inclina a distancia constante
 ## alrededor de este punto (posición clásica foco + offset, ver
 ## _posicion_ideal()). El paneo (WASD) mueve "foco.x/z" directamente, sin
@@ -253,6 +265,39 @@ func _crear_area_accion() -> void:
 		plano.visible = false
 		add_child(plano)
 		_area_accion.append(plano)
+
+
+## (Re)crea el pool de planos fantasma para la huella del blueprint activo,
+## de tamaño EXACTO ancho x alto (a diferencia de _crear_huella_puesto(),
+## que usa un pool fijo reutilizado por varios tipos — aquí solo hay un
+## blueprint activo a la vez, así que no hace falta sobredimensionar).
+## Libera los planos de una activación anterior antes de crear los nuevos.
+func _crear_huella_blueprint(ancho: int, alto: int) -> void:
+	for plano in _huella_blueprint:
+		plano.queue_free()
+	_huella_blueprint.clear()
+
+	var malla := PlaneMesh.new()
+	malla.size = Vector2(1.0, 1.0)
+	for i in range(ancho * alto):
+		var material := StandardMaterial3D.new()
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.albedo_color = COLOR_PUESTO_VALIDO
+		material.no_depth_test = false
+
+		var plano := MeshInstance3D.new()
+		plano.mesh = malla
+		plano.material_override = material
+		plano.top_level = true
+		plano.visible = true
+		add_child(plano)
+		_huella_blueprint.append(plano)
+
+
+func _mostrar_huella_blueprint(visible_ahora: bool) -> void:
+	for plano in _huella_blueprint:
+		plano.visible = visible_ahora
 
 
 ## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
@@ -406,7 +451,9 @@ func _process(delta: float) -> void:
 	_gesto_orbital_activo = orbita_o_inclina
 
 	if paneo == Vector2.ZERO and not orbita_o_inclina and vuelo == 0.0:
-		if modo_colocar_puesto:
+		if modo_colocar_blueprint:
+			_actualizar_previsualizacion_blueprint()
+		elif modo_colocar_puesto:
 			_actualizar_previsualizacion_puesto()
 		elif esperando_segunda_esquina:
 			_actualizar_previsualizacion_zona()
@@ -489,7 +536,9 @@ func _process(delta: float) -> void:
 		angulo_inclinacion = angulo_inclinacion_previo
 		distancia_camara = distancia_camara_previa
 
-	if modo_colocar_puesto:
+	if modo_colocar_blueprint:
+		_actualizar_previsualizacion_blueprint()
+	elif modo_colocar_puesto:
 		_actualizar_previsualizacion_puesto()
 	elif esperando_segunda_esquina:
 		_actualizar_previsualizacion_zona()
@@ -546,6 +595,39 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i, ancho: int, alto: int) -> 
 	return false
 
 
+## Grupos de conversión, en el orden en que se surten (ver spec: relleno de
+## tierra -> piso -> paredes/puertas/ventanas -> mobiliario). El relleno de
+## tierra no aparece aquí: se calcula y antepone aparte en
+## _procesar_clic_blueprint(), antes de estas celdas del blueprint mismo.
+const ORDEN_GRUPOS_CONSTRUCCION := [
+	["piso"],
+	["pared", "puerta_inferior", "puerta_superior", "ventana"],
+	["cama_cabecera", "cama_pies", "baul"],
+]
+
+
+## Devuelve las celdas de "celdas_mundo" (Vector3i real -> tipo) ordenadas
+## para conversión: por grupo (ver ORDEN_GRUPOS_CONSTRUCCION, en ese orden),
+## y dentro de cada grupo por (y, x, z) para que el orden sea determinista
+## y no dependa del orden de iteración del Dictionary de Godot.
+func _ordenar_celdas_construccion(celdas_mundo: Dictionary) -> Array:
+	var orden: Array[Vector3i] = []
+	for grupo in ORDEN_GRUPOS_CONSTRUCCION:
+		var celdas_grupo: Array[Vector3i] = []
+		for celda in celdas_mundo:
+			if grupo.has(celdas_mundo[celda]):
+				celdas_grupo.append(celda)
+		celdas_grupo.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
+			if a.y != b.y:
+				return a.y < b.y
+			if a.x != b.x:
+				return a.x < b.x
+			return a.z < b.z
+		)
+		orden.append_array(celdas_grupo)
+	return orden
+
+
 ## Recalcula la posición/color de la huella activa según la celda bajo el
 ## cursor (esa celda es su CENTRO) y la ficha del HUD correspondiente al
 ## tipo activo. Reemplaza _actualizar_previsualizacion_mina() — ahora
@@ -588,6 +670,39 @@ func _actualizar_previsualizacion_puesto() -> void:
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
 
 
+## Recalcula la posición/color de la huella del blueprint activo según la
+## celda bajo el cursor (esa celda es su CENTRO, igual que los puestos).
+## A diferencia de los puestos (regla: fuera de la zona de influencia),
+## aquí la regla de zona es la opuesta: la celda debe caer DENTRO de una
+## zona pintada que coincida con blueprint["zona_permitida"].
+func _actualizar_previsualizacion_blueprint() -> void:
+	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
+	var ancho: int = _blueprint_activo["ancho"]
+	var alto: int = _blueprint_activo["profundidad"]
+	@warning_ignore("integer_division")
+	var esquina := centro - Vector2i(ancho / 2, alto / 2)
+
+	var zona_correcta: bool = Zonificacion.consultar_zona(centro) == _blueprint_activo["zona_permitida"]
+	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, ancho, alto)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto)
+	var valida: bool = zona_correcta and relieve_valido and resultado_huella["valida"] \
+			and not _huella_choca_con_otro_puesto(esquina, ancho, alto) \
+			and _huella_tiene_esquina_en_tierra(esquina, ancho, alto)
+	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
+
+	var i := 0
+	for dx in range(ancho):
+		for dz in range(alto):
+			var x: int = esquina.x + dx
+			var z: int = esquina.y + dz
+			var altura_celda: int = mundo.altura_en(x, z, true)
+			var plano: MeshInstance3D = _huella_blueprint[i]
+			var material: StandardMaterial3D = plano.material_override
+			material.albedo_color = color
+			plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
+			i += 1
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not current:
 		return
@@ -604,11 +719,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_alternar_modo_colocar_puesto("mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 		elif tecla.pressed and tecla.keycode == KEY_H:
 			_alternar_modo_colocar_puesto("caza_recoleccion", Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
+		elif tecla.pressed and tecla.keycode == KEY_B:
+			_alternar_modo_colocar_blueprint()
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
 		if boton.pressed and boton.button_index == MOUSE_BUTTON_LEFT:
-			if modo_colocar_puesto:
+			if modo_colocar_blueprint:
+				_procesar_clic_blueprint(boton.position)
+			elif modo_colocar_puesto:
 				_procesar_clic_puesto(boton.position)
 			else:
 				_procesar_clic(boton.position)
@@ -648,6 +767,10 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 		_salir_de_modo_colocar_puesto()
 		print("Modo colocar %s cancelado." % tipo)
 		return
+	# Ver el comentario equivalente en _alternar_modo_colocar_blueprint(): los
+	# modos son mutuamente excluyentes.
+	if modo_colocar_blueprint:
+		_salir_de_modo_colocar_blueprint()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
 	assert(ancho <= MAX_ANCHO_HUELLA_PUESTO and alto <= MAX_ALTO_HUELLA_PUESTO, "Huella de puesto excede el pool fijo de planos fantasma")
@@ -683,13 +806,43 @@ func _rotar_huella_puesto() -> void:
 	_mostrar_huella_puesto(true)
 
 
-## Sale de cualquier modo de interacción de esta cámara (nivelación, colocar
-## puesto) — llamada por Main.gd al cambiar a la cámara en 1ª persona. Sin
-## esto, la huella fantasma o la huella del puesto (hijos de esta cámara,
-## independientes de si `current` está activo) seguían visibles y
-## congeladas tras salir de la vista cenital, porque su visibilidad solo
-## depende de estas banderas de modo, nunca de qué cámara está activa.
+## Activa/cancela el modo de colocación de blueprint (toggle simple, un solo
+## blueprint posible a la vez — a diferencia de _alternar_modo_colocar_puesto(),
+## no recibe tipo/ancho/alto porque hoy solo existe un blueprint guardado,
+## el de "residencial_investigacion"). Si no hay ningún blueprint guardado
+## todavía, avisa y no entra al modo.
+func _alternar_modo_colocar_blueprint() -> void:
+	if modo_colocar_blueprint:
+		_salir_de_modo_colocar_blueprint()
+		print("Modo colocar blueprint cancelado.")
+		return
+	var blueprint: Dictionary = Blueprints.obtener("residencial_investigacion")
+	if blueprint.is_empty():
+		print("No hay ningún blueprint guardado todavía — declara un edificio primero.")
+		return
+	if modo_colocar_puesto:
+		_salir_de_modo_colocar_puesto()
+	_blueprint_activo = blueprint
+	_crear_huella_blueprint(blueprint["ancho"], blueprint["profundidad"])
+	modo_colocar_blueprint = true
+	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar).")
+
+
+func _salir_de_modo_colocar_blueprint() -> void:
+	modo_colocar_blueprint = false
+	_mostrar_huella_blueprint(false)
+	_blueprint_activo = {}
+
+
+## Sale de cualquier modo de interacción de esta cámara (colocar blueprint,
+## colocar puesto, pintar zona) — llamada por Main.gd al cambiar a la cámara
+## en 1ª persona. Sin esto, la huella fantasma del blueprint o la huella del
+## puesto (hijos de esta cámara, independientes de si `current` está activo)
+## seguirían visibles y congeladas tras salir de la vista cenital, porque su
+## visibilidad solo depende de estas banderas de modo, nunca de qué cámara
+## está activa.
 func salir_de_todos_los_modos() -> void:
+	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
 
 
@@ -780,18 +933,17 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si
 ## las 5 validaciones (zona de influencia, relieve, huella libre, sin choque
 ## con otro puesto, al menos una esquina en tierra firme) pasan — si no,
-## imprime el motivo y PERMANECE en modo colocar-puesto (a diferencia de la
-## nivelación, que siempre sale tras un clic; aquí el jugador puede
-## reintentar de inmediato, igual que la mina original). El follaje
-## detectado se elimina; luego se drena el agua bajo la huella
+## imprime el motivo y PERMANECE en modo colocar-puesto (el jugador puede
+## reintentar de inmediato, igual que la mina original; mismo comportamiento
+## que _procesar_clic_blueprint() con el modo de colocación de blueprint). El
+## follaje detectado se elimina; luego se drena el agua bajo la huella
 ## (VoxelWorld.drenar_agua()) y se nivela al punto más alto del terreno REAL
-## resultante (mismo mecanismo que el modo manual de nivelación, tecla `B`,
-## pero contra "nivelador_puesto" — que ignora el agua, ver _AlturaSinAgua —
-## en vez de "nivelador") antes de colocar el marcador, así la
-## "construcción" siempre queda sobre terreno plano y seco, nunca sobre o
-## bajo el agua. La validación de pendiente (verificar_pendiente(), arriba)
-## ya usa ese mismo terreno sin agua — es la que decide si la huella es
-## demasiado empinada para nivelarse de forma razonable.
+## resultante contra "nivelador_puesto" — que ignora el agua, ver
+## _AlturaSinAgua — antes de colocar el marcador, así la "construcción"
+## siempre queda sobre terreno plano y seco, nunca sobre o bajo el agua. La
+## validación de pendiente (verificar_pendiente(), arriba) ya usa ese mismo
+## terreno sin agua — es la que decide si la huella es demasiado empinada
+## para nivelarse de forma razonable.
 func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	@warning_ignore("integer_division")
@@ -845,3 +997,90 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])
 
 	_salir_de_modo_colocar_puesto()
+
+
+## Confirma la colocación del blueprint activo en la celda bajo el cursor
+## si las 5 validaciones (zona correcta, relieve, huella libre, sin choque,
+## esquina en tierra firme) pasan — si no, imprime el motivo y PERMANECE en
+## modo colocar-blueprint. A diferencia de _procesar_clic_puesto() (que
+## coloca el marcador de inmediato), esto NO completa nada: drena el agua,
+## calcula el relleno de nivelación, reubica blueprint["celdas_3d"] en el
+## mundo, arma el orden de conversión (relleno de tierra primero, luego
+## piso/paredes-puertas-ventanas/mobiliario — ver _ordenar_celdas_construccion())
+## e inicia la construcción fantasma (VoxelWorld.iniciar_construccion_fantasma()) —
+## la finalización real ocurre después, celda por celda, cuando el jugador
+## la surte (ver Player._minar()/_completar_construccion()).
+func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
+	var centro := _celda_bajo_mouse(posicion_pantalla)
+	var ancho: int = _blueprint_activo["ancho"]
+	var alto: int = _blueprint_activo["profundidad"]
+	@warning_ignore("integer_division")
+	var esquina := centro - Vector2i(ancho / 2, alto / 2)
+
+	if Zonificacion.consultar_zona(centro) != _blueprint_activo["zona_permitida"]:
+		print("Colocación rechazada: esta zona no acepta este blueprint.")
+		return
+	if not nivelador_puesto.verificar_pendiente(esquina, ancho, alto):
+		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
+		return
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto)
+	if not resultado_huella["valida"]:
+		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
+		return
+	if _huella_choca_con_otro_puesto(esquina, ancho, alto):
+		print("Colocación rechazada: la huella choca con un puesto o construcción ya colocada.")
+		return
+	if not _huella_tiene_esquina_en_tierra(esquina, ancho, alto):
+		print("Colocación rechazada: la huella necesita al menos una esquina sobre tierra firme.")
+		return
+
+	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
+		mundo.eliminar_follaje(celda_follaje)
+
+	var total_drenado := 0
+	for dx in range(ancho):
+		for dz in range(alto):
+			total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+	if total_drenado > 0:
+		print("Agua drenada bajo la construcción: ", total_drenado, " bloques reemplazados por tierra.")
+
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, ancho, alto)
+	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, ancho, alto)
+	var relleno_orden: Array[Vector3i] = []
+	for celda_relleno in relleno:
+		var cantidad: int = relleno[celda_relleno]
+		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
+		for h in range(1, cantidad + 1):
+			relleno_orden.append(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y))
+
+	var celdas_mundo: Dictionary = {}  # Vector3i real -> tipo
+	for rel in _blueprint_activo["celdas_3d"]:
+		var real := Vector3i(esquina.x + rel.x, objetivo + 1 + rel.y, esquina.y + rel.z)
+		celdas_mundo[real] = _blueprint_activo["celdas_3d"][rel]
+
+	var orden: Array = relleno_orden + _ordenar_celdas_construccion(celdas_mundo)
+	var tipos: Dictionary = {}
+	for celda_r in relleno_orden:
+		tipos[celda_r] = "tierra"
+	for celda in celdas_mundo:
+		tipos[celda] = celdas_mundo[celda]
+
+	var huella_xz: Array = []
+	var vistos_xz: Dictionary = {}
+	for celda in celdas_mundo:
+		var xz := Vector2i(celda.x, celda.z)
+		if not vistos_xz.has(xz):
+			vistos_xz[xz] = true
+			huella_xz.append(xz)
+
+	var metadata := {
+		"blueprint": _blueprint_activo,
+		"huella_xz": huella_xz,
+		"esquina": esquina,
+		"ancho": ancho,
+		"profundidad": alto,
+	}
+	mundo.iniciar_construccion_fantasma(orden, tipos, metadata)
+	print("Construcción fantasma iniciada en (", esquina.x, ", ", esquina.y, ") — surtir para completarla.")
+
+	_salir_de_modo_colocar_blueprint()

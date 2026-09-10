@@ -2,6 +2,26 @@ extends Camera3D
 
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 
+## Envoltorio para NiveladorTerreno: siempre llama a altura_en(x, z, true)
+## (ignora agua). NiveladorTerreno solo necesita .altura_en(x, z) por duck
+## typing (mismo patrón que el propio VoxelWorld), así que este envoltorio
+## basta para que verificar_pendiente()/calcular_relleno()/altura_objetivo()
+## evalúen el terreno REAL bajo un puesto, no la superficie del agua — el
+## agua bajo la huella se drena de todos modos al confirmar (ver
+## VoxelWorld.drenar_agua()), así que la pendiente y el relleno deben verse
+## contra lo que quedará después de drenar, no contra el nivel del mar. El
+## modo manual de nivelación (tecla `B`) sigue usando "nivelador" (más
+## abajo), sin este envoltorio — no se le pidió tratar el agua de forma
+## especial.
+class _AlturaSinAgua:
+	var _mundo: Object
+
+	func _init(mundo: Object) -> void:
+		_mundo = mundo
+
+	func altura_en(x: int, z: int) -> int:
+		return _mundo.altura_en(x, z, true)
+
 ## Cámara cenital con perspectiva oblicua para pintar zonas y nivelar
 ## terreno (ver spec: docs/superpowers/specs/2026-09-07-zonificacion-design.md,
 ## rediseñada a petición del usuario tras varias rondas de prueba en vivo):
@@ -32,13 +52,15 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 ##   caza y recolección: tecla `H`; ver GDD Sección 3 y
 ##   docs/superpowers/specs/2026-09-10-puestos-huella-real-caza-recoleccion-design.md):
 ##   huella fantasma de N×M celdas, rotable 90° con Ctrl+rueda del mouse,
-##   ficha en vivo en el HUD, confirma solo si pasan las 4 validaciones
+##   ficha en vivo en el HUD, confirma solo si pasan las 5 validaciones
 ##   (zona de influencia, relieve, huella libre de madera/estructura, sin
-##   choque con otro puesto). Junto a la huella se dibuja un círculo
-##   informativo del área de acción real del tipo (radio distinto de la
-##   huella — ver _actualizar_area_accion()), y al confirmar la colocación
-##   se nivela automáticamente el terreno bajo la huella (mismo mecanismo
-##   que la tecla `B`) antes de colocar el marcador.
+##   choque con otro puesto, al menos una esquina en tierra firme). Junto a
+##   la huella se dibuja un círculo informativo del área de acción real del
+##   tipo (radio distinto de la huella — ver _actualizar_area_accion()), y
+##   al confirmar la colocación se drena el agua bajo la huella (ver
+##   VoxelWorld.drenar_agua()) y se nivela automáticamente el terreno real
+##   resultante (mismo mecanismo que la tecla `B`, pero ignorando el agua —
+##   ver _AlturaSinAgua/nivelador_puesto) antes de colocar el marcador.
 ## Modo de nivelación de terreno con tecla `B` (ver GDD Sección 5) — sin
 ## selección de tropas por arrastre todavía, eso sigue siendo PoC 6/Fase 4.
 
@@ -131,6 +153,7 @@ var primera_esquina := Vector2i.ZERO
 ## grande a la altura máxima quedaba enterrado bajo el relieve en las
 ## celdas más bajas de la huella.
 var nivelador: RefCounted
+var nivelador_puesto: RefCounted
 var modo_nivelacion := false
 var _huella_fantasma: Array[MeshInstance3D] = []
 
@@ -188,6 +211,7 @@ func _ready() -> void:
 	# del mundo (que sí refleja minado/construcción/nivelaciones previas), no
 	# el ruido original de GeneradorMundo — ver VoxelWorld.altura_en().
 	nivelador = NiveladorTerreno.new(mundo)
+	nivelador_puesto = NiveladorTerreno.new(_AlturaSinAgua.new(mundo))
 	_crear_huella_fantasma()
 	_crear_huella_puesto()
 	_crear_area_accion()
@@ -557,6 +581,25 @@ func _actualizar_huella_fantasma() -> void:
 ## "esquina") cae dentro de un puesto ya colocado — recorre la huella
 ## completa contra Recoleccion.celda_dentro_de_algun_puesto() (no basta
 ## revisar solo las esquinas, sería incorrecto para un rectángulo genérico).
+## true si la huella (esquina, ancho x alto) tiene AL MENOS una esquina en
+## tierra firme (no sobre agua) — evita construir puestos enteramente
+## flotando en medio de un lago. Basta con revisar las 4 esquinas reales de
+## la huella, no la huella completa: alcanza con una esquina firme para
+## anclar la construcción, y el resto del agua bajo la huella se drena al
+## confirmar (ver VoxelWorld.drenar_agua()).
+func _huella_tiene_esquina_en_tierra(esquina: Vector2i, ancho: int, alto: int) -> bool:
+	var esquinas := [
+		esquina,
+		Vector2i(esquina.x + ancho - 1, esquina.y),
+		Vector2i(esquina.x, esquina.y + alto - 1),
+		Vector2i(esquina.x + ancho - 1, esquina.y + alto - 1),
+	]
+	for e in esquinas:
+		if mundo.obtener_tipo(Vector3i(e.x, mundo.altura_en(e.x, e.y), e.y)) != "agua":
+			return true
+	return false
+
+
 func _huella_choca_con_otro_puesto(esquina: Vector2i) -> bool:
 	for dx in range(_ancho_puesto_activo):
 		for dz in range(_alto_puesto_activo):
@@ -575,10 +618,11 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
 
 	var fuera_de_influencia: bool = not Zonificacion.dentro_de_influencia(centro)
-	var relieve_valido: bool = nivelador.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 	var valida: bool = fuera_de_influencia and relieve_valido and resultado_huella["valida"] \
-			and not _huella_choca_con_otro_puesto(esquina)
+			and not _huella_choca_con_otro_puesto(esquina) \
+			and _huella_tiene_esquina_en_tierra(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
 	var i := 0
@@ -831,17 +875,19 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 
 
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si
-## las 4 validaciones (zona de influencia, relieve, huella libre, sin choque
-## con otro puesto) pasan — si no, imprime el motivo y PERMANECE en modo
-## colocar-puesto (a diferencia de la nivelación, que siempre sale tras un
-## clic; aquí el jugador puede reintentar de inmediato, igual que la mina
-## original). El follaje detectado se elimina; luego la huella se nivela al
-## punto más alto (mismo mecanismo que el modo manual de nivelación, tecla
-## `B` — NiveladorTerreno.calcular_relleno(), ya generalizado a huellas no
-## cuadradas) antes de colocar el marcador, así la "construcción" siempre
-## queda sobre terreno plano en vez de seguir el relieve original celda por
-## celda. Solo la validación de pendiente (verificar_pendiente(), arriba)
-## sigue viendo el relieve sin nivelar — es la que decide si la huella es
+## las 5 validaciones (zona de influencia, relieve, huella libre, sin choque
+## con otro puesto, al menos una esquina en tierra firme) pasan — si no,
+## imprime el motivo y PERMANECE en modo colocar-puesto (a diferencia de la
+## nivelación, que siempre sale tras un clic; aquí el jugador puede
+## reintentar de inmediato, igual que la mina original). El follaje
+## detectado se elimina; luego se drena el agua bajo la huella
+## (VoxelWorld.drenar_agua()) y se nivela al punto más alto del terreno REAL
+## resultante (mismo mecanismo que el modo manual de nivelación, tecla `B`,
+## pero contra "nivelador_puesto" — que ignora el agua, ver _AlturaSinAgua —
+## en vez de "nivelador") antes de colocar el marcador, así la
+## "construcción" siempre queda sobre terreno plano y seco, nunca sobre o
+## bajo el agua. La validación de pendiente (verificar_pendiente(), arriba)
+## ya usa ese mismo terreno sin agua — es la que decide si la huella es
 ## demasiado empinada para nivelarse de forma razonable.
 func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
@@ -851,7 +897,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if Zonificacion.dentro_de_influencia(centro):
 		print("No se puede colocar un puesto dentro de la zona de influencia.")
 		return
-	if not nivelador.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo):
+	if not nivelador_puesto.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo):
 		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
 		return
 	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, _ancho_puesto_activo, _alto_puesto_activo)
@@ -861,12 +907,22 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if _huella_choca_con_otro_puesto(esquina):
 		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
 		return
+	if not _huella_tiene_esquina_en_tierra(esquina, _ancho_puesto_activo, _alto_puesto_activo):
+		print("Colocación rechazada: la huella necesita al menos una esquina sobre tierra firme.")
+		return
 
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 
-	var objetivo: int = nivelador.altura_objetivo(esquina, _ancho_puesto_activo, _alto_puesto_activo)
-	var relleno: Dictionary = nivelador.calcular_relleno(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var total_drenado := 0
+	for dx in range(_ancho_puesto_activo):
+		for dz in range(_alto_puesto_activo):
+			total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+	if total_drenado > 0:
+		print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
+
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 	var total_relleno := 0
 	for celda_relleno in relleno:
 		var cantidad: int = relleno[celda_relleno]

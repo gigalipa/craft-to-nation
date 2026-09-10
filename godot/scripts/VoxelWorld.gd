@@ -311,6 +311,8 @@ func _generar_arboles() -> void:
 				"centro_x": x + centro_offset, "centro_z": z + centro_offset,
 				"radio_follaje": radio_follaje,
 			}
+			if _tronco_toca_agua(candidato):
+				continue
 			if _demasiado_cerca_de_otro_arbol(candidato, arboles_colocados):
 				continue
 			var altura: int = generador.altura_en(x, z)
@@ -328,6 +330,22 @@ func _generar_arboles() -> void:
 			if salud > 0:
 				arboles.registrar(celdas_mundiales, salud)
 			arboles_colocados.append(candidato)
+
+
+## true si alguna columna del cuadrado de tronco de "candidato" (no solo la
+## celda semilla x,z, que es la única que es_bioma_en()/densidad_arbol_en()
+## ya garantizan que no es agua) está sobre agua — con lado_tronco > 1, otra
+## esquina del tronco puede caer sobre agua cerca de la orilla aunque la
+## semilla sea tierra firme. El árbol entero se coloca con una única altura
+## base (ver más abajo), así que un tronco parcialmente sobre agua no se
+## puede "hundir" celda por celda sin rehacer su forma — más simple y
+## robusto: no generar ese árbol.
+func _tronco_toca_agua(candidato: Dictionary) -> bool:
+	for cx in range(candidato["x_min"], candidato["x_max"] + 1):
+		for cz in range(candidato["z_min"], candidato["z_max"] + 1):
+			if generador.es_agua_en(cx, cz):
+				return true
+	return false
 
 
 ## Verdadero si "candidato" quedaría demasiado cerca de algún árbol ya
@@ -381,3 +399,21 @@ func eliminar_follaje(celda: Vector3i) -> void:
 	var id: int = arboles.obtener_arbol_de(celda)
 	if id != -1:
 		arboles.eliminar_celda(id, celda)
+
+
+## Reemplaza cada bloque "agua" de la columna (x, z) por "tierra", desde la
+## altura real del terreno (altura_en(x, z, true), que ignora el agua) hasta
+## la superficie de agua actual. Usada al confirmar un puesto periférico
+## cuya huella pisa el agua (ver CamaraCenital.gd) — la construcción "seca"
+## la columna bajo de sí en vez de flotar sobre el agua. set_cell_item()
+## directo (no colocar_bloque(), que rechaza celdas ya ocupadas): el agua ya
+## ocupa esas celdas. Devuelve cuántos bloques de agua se reemplazaron (0 si
+## la columna no tenía agua).
+func drenar_agua(x: int, z: int) -> int:
+	var y: int = altura_en(x, z, true) + 1
+	var reemplazados := 0
+	while obtener_tipo(Vector3i(x, y, z)) == "agua":
+		set_cell_item(Vector3i(x, y, z), _id_por_tipo["tierra"])
+		y += 1
+		reemplazados += 1
+	return reemplazados

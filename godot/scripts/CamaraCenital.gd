@@ -11,8 +11,7 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 ## VoxelWorld.drenar_agua()), así que la pendiente y el relleno deben verse
 ## contra lo que quedará después de drenar, no contra el nivel del mar. La
 ## tecla `B` ya no activa nivelación manual (ver _alternar_modo_colocar_
-## blueprint() más abajo, Task 7) — "nivelador" (más abajo, sin este
-## envoltorio) no tiene ningún llamador restante en este archivo.
+## blueprint() más abajo, Task 7).
 class _AlturaSinAgua:
 	var _mundo: Object
 
@@ -139,7 +138,6 @@ var tipo_zona_seleccionada: String = Zonificacion.ZONAS_PINTABLES[0]
 var esperando_segunda_esquina := false
 var primera_esquina := Vector2i.ZERO
 
-var nivelador: RefCounted
 var nivelador_puesto: RefCounted
 
 ## Modo de colocación de puesto periférico (mina: tecla `M`; caza y
@@ -207,7 +205,6 @@ func _ready() -> void:
 	# llama a .altura_en(x,z) por duck typing, y necesitamos la altura REAL
 	# del mundo (que sí refleja minado/construcción/nivelaciones previas), no
 	# el ruido original de GeneradorMundo — ver VoxelWorld.altura_en().
-	nivelador = NiveladorTerreno.new(mundo)
 	nivelador_puesto = NiveladorTerreno.new(_AlturaSinAgua.new(mundo))
 	_crear_huella_puesto()
 	_crear_area_accion()
@@ -600,6 +597,12 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i, ancho: int, alto: int) -> 
 ## tierra -> piso -> paredes/puertas/ventanas -> mobiliario). El relleno de
 ## tierra no aparece aquí: se calcula y antepone aparte en
 ## _procesar_clic_blueprint(), antes de estas celdas del blueprint mismo.
+## El grupo ["piso"] está hoy siempre vacío en la práctica: "celdas_3d"
+## (BlueprintValidator.estructura_a_blueprint()) nunca contiene celdas
+## "piso", porque VoxelWorld.detectar_estructura() las excluye a propósito
+## (el relleno de piso/terreno nunca forma parte de una estructura
+## declarada). Se conserva el grupo de todos modos, por si eso cambia —
+## no es código muerto por accidente.
 const ORDEN_GRUPOS_CONSTRUCCION := [
 	["piso"],
 	["pared", "puerta_inferior", "puerta_superior", "ventana"],
@@ -671,6 +674,19 @@ func _actualizar_previsualizacion_puesto() -> void:
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
 
 
+## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves
+## de "celdas_3d" (offsets Vector3i relativos), más 1 — usada para que
+## verificar_huella_libre() revise todos los niveles que ocupará el
+## blueprint al colocarse, no solo el nivel superficie+1 (suficiente para
+## los puestos de un solo bloque, insuficiente para un edificio de varios
+## pisos).
+func _altura_blueprint(blueprint: Dictionary) -> int:
+	var max_y := 0
+	for rel: Vector3i in blueprint["celdas_3d"]:
+		max_y = max(max_y, rel.y)
+	return max_y + 1
+
+
 ## Recalcula la posición/color de la huella del blueprint activo según la
 ## celda bajo el cursor (esa celda es su CENTRO, igual que los puestos).
 ## A diferencia de los puestos (regla: fuera de la zona de influencia),
@@ -685,7 +701,8 @@ func _actualizar_previsualizacion_blueprint() -> void:
 
 	var zona_correcta: bool = Zonificacion.consultar_zona(centro) == _blueprint_activo["zona_permitida"]
 	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, ancho, alto)
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto)
+	var altura_blueprint: int = _altura_blueprint(_blueprint_activo)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto, altura_blueprint)
 	var valida: bool = zona_correcta and relieve_valido and resultado_huella["valida"] \
 			and not _huella_choca_con_otro_puesto(esquina, ancho, alto) \
 			and _huella_tiene_esquina_en_tierra(esquina, ancho, alto)
@@ -1024,7 +1041,8 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	if not nivelador_puesto.verificar_pendiente(esquina, ancho, alto):
 		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
 		return
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto)
+	var altura_blueprint: int = _altura_blueprint(_blueprint_activo)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto, altura_blueprint)
 	if not resultado_huella["valida"]:
 		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
 		return

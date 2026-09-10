@@ -21,9 +21,12 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## conserva la forma 3D real en celdas_3d (17, ver BlueprintValidator.celdas_3d),
 ## y que iniciar_construccion_fantasma()/surtir_construccion() colocan y
 ## convierten bloques "fantasma" en orden fijo y reemparejan puertas/camas al
-## completarse (18, ver VoxelWorld.iniciar_construccion_fantasma()).
+## completarse (18, ver VoxelWorld.iniciar_construccion_fantasma()), y que
+## altura_en() también salta "fantasma" (como los árboles) y que
+## verificar_huella_libre() revisa varios niveles Y cuando se le pasa
+## "altura" > 1 (19, ver VoxelWorld.altura_en()/verificar_huella_libre()).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
-## panel "Output": debe imprimir los 18 tests y no debe lanzar ningún error
+## panel "Output": debe imprimir los 19 tests y no debe lanzar ningún error
 ## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -532,4 +535,23 @@ func ejecutar_pruebas() -> void:
 	assert(s3.is_empty())
 	print("OK: la construcción fantasma se surte en orden fijo, se reempareja al completarse, y no puede volver a surtirse.")
 
-	print("\n=== Las 18 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 19: altura_en() salta 'fantasma', verificar_huella_libre() revisa varios niveles ===")
+	const OX9 := 700
+	for dx in range(2):
+		for dz in range(2):
+			mundo.colocar_bloque(Vector3i(OX9 + dx, 0, OX9 + dz), "piso")
+	mundo.colocar_bloque(Vector3i(OX9, 1, OX9), "fantasma")
+	assert(mundo.altura_en(OX9, OX9) == 0)  # salta el fantasma, ve el piso real debajo
+
+	# Una celda "madera" flotando en y=2 (con un hueco vacío en y=1, sobre el
+	# "piso" real en y=0) debe rechazar una huella de altura >= 2 que la
+	# alcance, aunque la huella de altura 1 (comportamiento por defecto,
+	# como usan los puestos) no llegue tan alto y no la vea.
+	mundo.colocar_bloque(Vector3i(OX9 + 1, 2, OX9), "madera")
+	var resultado_baja: Dictionary = mundo.verificar_huella_libre(Vector2i(OX9, OX9), 2, 2)
+	assert(resultado_baja["valida"])  # altura por defecto (1): no llega al madera en y=2
+	var resultado_alta: Dictionary = mundo.verificar_huella_libre(Vector2i(OX9, OX9), 2, 2, 2)
+	assert(not resultado_alta["valida"])  # altura 2: sí llega al madera en y=2, rechaza
+	print("OK: altura_en() ignora 'fantasma', verificar_huella_libre() revisa 'altura' niveles hacia arriba.")
+
+	print("\n=== Las 19 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -23,7 +23,7 @@ Esta PoC cubre los **4 sub-proyectos** de la Fase 3 del roadmap (GDD Sección 11
 * **Bloques de subsuelo:** dos tipos nuevos, `"tierra"` (capa superior del subsuelo) y `"piedra"` (el resto), agregados a la `MeshLibrary` existente con el mismo patrón de color plano que los demás bloques.
 
 **Sub-proyecto 2 — Nivelación de Terreno sobre Relieve (GDD Sección 5):**
-* **Modo de nivelación en la cámara cenital:** tecla `B` (solo con la cenital activa) muestra una huella fantasma de 5×5 celdas centrada en el cursor; un clic confirma.
+* ~~**Modo de nivelación en la cámara cenital:** tecla `B` (solo con la cenital activa) muestra una huella fantasma de 5×5 celdas centrada en el cursor; un clic confirma.~~ **(reemplazado, ver sub-proyecto "Blueprints Reutilizables + Construcción Fantasma" más abajo: la tecla `B` se repropuso para colocar blueprints y este modo de nivelación manual standalone se eliminó.)**
 * **Límite de pendiente:** rechaza la nivelación si el desnivel entre celdas horizontalmente/verticalmente adyacentes de la huella supera `LIMITE_PENDIENTE = 2` bloques.
 * **Relleno al punto más alto:** si la pendiente es válida, cada celda de la huella se rellena con bloques de `"tierra"` hasta la altura máxima detectada dentro de esa huella; se imprime en consola el total de bloques usados.
 * **Cámara cenital con perspectiva oblicua orbitable (ampliación no planeada originalmente):** durante la verificación en vivo del sub-proyecto 1, el usuario reportó que la cámara ortogonal recta original no permitía recorrer el mundo para ubicar la zona de influencia. Se reemplazó por una cámara en órbita clásica (perspectiva, paneo `WASD`, rotación `Q`/`E` alrededor de un punto de mira centrado en el jugador) — ver 3.2.

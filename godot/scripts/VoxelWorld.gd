@@ -139,6 +139,12 @@ func _generar_terreno() -> void:
 ## obstáculo sobre el terreno, no el terreno mismo — sin este salto, el
 ## overlay de zona y la colocación de minas aterrizaban sobre la copa de
 ## un árbol en vez del suelo real debajo.
+## Por la misma razón, ignora siempre las celdas "fantasma" (placeholder de
+## construcción en curso): un fantasma es un obstáculo sobre el terreno,
+## nunca el terreno mismo, igual que un árbol — sin este salto,
+## _huella_choca_con_otro_puesto() (CamaraCenital) nunca detectaba la
+## superposición de un fantasma existente, porque altura_en() devolvía el
+## tope del propio fantasma en vez del suelo real debajo.
 ## "ignorar_agua" (solo para overlays puramente visuales: ZonaOverlay, huella
 ## fantasma de nivelación, disco de mina) también salta el bloque "agua" para
 ## que el plano se dibuje al nivel del terreno real, por debajo de la
@@ -152,6 +158,8 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 			continue
 		var tipo: String = obtener_tipo(celda)
 		if TIPOS_ARBOL.has(tipo):
+			continue
+		if tipo == "fantasma":
 			continue
 		if ignorar_agua and tipo == "agua":
 			continue
@@ -257,19 +265,26 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 
 
 ## Revisa cada columna (x, z) de la huella ancho×alto con esquina "esquina".
-## altura_en() no salta bloques estructurales (solo TIPOS_ARBOL), así que un
-## muro colocado sobre "piso" se convierte en la propia superficie que
-## altura_en() devuelve — por eso el chequeo de estructura se hace SOBRE esa
-## superficie (altura_en(x,z)), no una celda encima. "madera"/"follaje", en
-## cambio, sí se buscan una celda por ENCIMA de la superficie
-## (altura_en(x,z)+1), porque altura_en() salta los árboles al calcularla y
-## por lo tanto la superficie real queda justo debajo del árbol.
+## altura_en() no salta bloques estructurales (solo TIPOS_ARBOL y "fantasma"),
+## así que un muro colocado sobre "piso" se convierte en la propia superficie
+## que altura_en() devuelve — por eso el chequeo de estructura se hace SOBRE
+## esa superficie (altura_en(x,z)), no una celda encima. "madera"/"follaje",
+## en cambio, sí se buscan por ENCIMA de la superficie, porque altura_en()
+## salta los árboles al calcularla y por lo tanto la superficie real queda
+## justo debajo del árbol.
+## "altura" (por defecto 1) es cuántos niveles Y por encima de la superficie
+## se revisan en busca de madera/follaje — de superficie+1 a superficie+altura
+## inclusive. El valor por defecto basta para los puestos (siempre marcadores
+## de un solo bloque de alto); un blueprint de varios pisos debe pasar su
+## altura real, para que un tronco o pared que sobresalga por encima de
+## superficie+1 también se detecte.
 ## "madera" o cualquier bloque estructural invalida la huella completa;
-## "follaje" se acumula en follaje_a_eliminar sin invalidar (se borra al
-## confirmar la colocación — ver GDD Sección 3, "Emplazamiento Dentro de un
-## Bosque"). Usada por la validación de choques de los puestos periféricos
-## (CamaraCenital.gd) — no conoce Recoleccion.puestos, solo bloques reales.
-func verificar_huella_libre(esquina: Vector2i, ancho: int, alto: int) -> Dictionary:
+## "follaje" se acumula en follaje_a_eliminar (en cualquiera de los niveles
+## revisados) sin invalidar (se borra al confirmar la colocación — ver GDD
+## Sección 3, "Emplazamiento Dentro de un Bosque"). Usada por la validación
+## de choques de los puestos periféricos y blueprints (CamaraCenital.gd) —
+## no conoce Recoleccion.puestos, solo bloques reales.
+func verificar_huella_libre(esquina: Vector2i, ancho: int, alto: int, altura: int = 1) -> Dictionary:
 	var valida := true
 	var follaje_a_eliminar: Array[Vector3i] = []
 	for x in range(esquina.x, esquina.x + ancho):
@@ -278,12 +293,13 @@ func verificar_huella_libre(esquina: Vector2i, ancho: int, alto: int) -> Diction
 			if es_celda_estructural(Vector3i(x, superficie, z)):
 				valida = false
 				continue
-			var celda := Vector3i(x, superficie + 1, z)
-			var tipo: String = obtener_tipo(celda)
-			if tipo == "madera":
-				valida = false
-			elif tipo == "follaje":
-				follaje_a_eliminar.append(celda)
+			for dy in range(1, altura + 1):
+				var celda := Vector3i(x, superficie + dy, z)
+				var tipo: String = obtener_tipo(celda)
+				if tipo == "madera":
+					valida = false
+				elif tipo == "follaje":
+					follaje_a_eliminar.append(celda)
 	return {"valida": valida, "follaje_a_eliminar": follaje_a_eliminar}
 
 

@@ -130,3 +130,17 @@ func eliminar(id: int) -> void:
 	for celda in _arboles[id]["celdas"]:
 		_celda_a_arbol.erase(celda)
 	_arboles.erase(id)
+
+
+## Quita solo "celda" de la lista de celdas del árbol "id" (y del índice
+## inverso) sin tocar su salud ni borrar el árbol — a diferencia de
+## eliminar(), que borra el árbol completo. Usada cuando se elimina una
+## celda de follaje suelta (cosmética, no cuenta para la salud) sin que eso
+## implique talar el árbol al que pertenecía (ver VoxelWorld.
+## eliminar_follaje()). Sin efecto si "id" no existe o "celda" no le
+## pertenece.
+func eliminar_celda(id: int, celda: Vector3i) -> void:
+	if not _arboles.has(id):
+		return
+	_arboles[id]["celdas"].erase(celda)
+	_celda_a_arbol.erase(celda)

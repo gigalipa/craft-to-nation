@@ -256,6 +256,37 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 	return colocado_por_jugador.get(celda, false) and TIPOS_ESTRUCTURA.has(obtener_tipo(celda))
 
 
+## Revisa cada columna (x, z) de la huella ancho×alto con esquina "esquina".
+## altura_en() no salta bloques estructurales (solo TIPOS_ARBOL), así que un
+## muro colocado sobre "piso" se convierte en la propia superficie que
+## altura_en() devuelve — por eso el chequeo de estructura se hace SOBRE esa
+## superficie (altura_en(x,z)), no una celda encima. "madera"/"follaje", en
+## cambio, sí se buscan una celda por ENCIMA de la superficie
+## (altura_en(x,z)+1), porque altura_en() salta los árboles al calcularla y
+## por lo tanto la superficie real queda justo debajo del árbol.
+## "madera" o cualquier bloque estructural invalida la huella completa;
+## "follaje" se acumula en follaje_a_eliminar sin invalidar (se borra al
+## confirmar la colocación — ver GDD Sección 3, "Emplazamiento Dentro de un
+## Bosque"). Usada por la validación de choques de los puestos periféricos
+## (CamaraCenital.gd) — no conoce Recoleccion.puestos, solo bloques reales.
+func verificar_huella_libre(esquina: Vector2i, ancho: int, alto: int) -> Dictionary:
+	var valida := true
+	var follaje_a_eliminar: Array[Vector3i] = []
+	for x in range(esquina.x, esquina.x + ancho):
+		for z in range(esquina.y, esquina.y + alto):
+			var superficie: int = altura_en(x, z)
+			if es_celda_estructural(Vector3i(x, superficie, z)):
+				valida = false
+				continue
+			var celda := Vector3i(x, superficie + 1, z)
+			var tipo: String = obtener_tipo(celda)
+			if tipo == "madera":
+				valida = false
+			elif tipo == "follaje":
+				follaje_a_eliminar.append(celda)
+	return {"valida": valida, "follaje_a_eliminar": follaje_a_eliminar}
+
+
 ## Coloca árboles reales en las columnas de bioma cuya densidad supera
 ## UMBRAL_ARBOL. Antes de generar cada árbol, mide su tamaño real
 ## (arboles.medir_pisada()) para decidir si cabe sin violar
@@ -337,3 +368,16 @@ func talar_bloque_de_arbol(celda: Vector3i, dano: int) -> bool:
 			set_cell_item(c, GridMap.INVALID_CELL_ITEM)
 		arboles.eliminar(id)
 	return talado
+
+
+## Elimina un bloque de follaje suelto (cosmético, no un recurso — ver GDD
+## Sección 3, "Emplazamiento Dentro de un Bosque") y lo desregistra del árbol
+## al que pertenece, si alguno, para no dejar a GeneradorArbol apuntando a
+## una celda ya vacía (mismo tipo de desincronización que talar_bloque_de_arbol()
+## ya evita). Usada al confirmar la colocación de un puesto periférico cuya
+## huella chocó solo con follaje (VoxelWorld.verificar_huella_libre()).
+func eliminar_follaje(celda: Vector3i) -> void:
+	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+	var id: int = arboles.obtener_arbol_de(celda)
+	if id != -1:
+		arboles.eliminar_celda(id, celda)

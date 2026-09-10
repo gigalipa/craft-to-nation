@@ -14,10 +14,12 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## _es_losa_parcial()), y el rechazo de un piso con altura insuficiente (13,
 ## ver validar_altura_piso()), y que "piso" nunca es material estructural,
 ## ni siquiera como relleno de terreno tocando la losa de un edificio (14,
-## ver VoxelWorld.TIPOS_ESTRUCTURA), y que altura_en() ignora los bloques de
-## árbol al buscar la celda sólida más alta (15, ver VoxelWorld.TIPOS_ARBOL).
+## ver VoxelWorld.TIPOS_ESTRUCTURA), que altura_en() ignora los bloques de
+## árbol al buscar la celda sólida más alta (15, ver VoxelWorld.TIPOS_ARBOL),
+## y que verificar_huella_libre() detecta madera, follaje y estructura (16,
+## ver VoxelWorld.verificar_huella_libre()).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
-## panel "Output": debe imprimir los 15 tests y no debe lanzar ningún error
+## panel "Output": debe imprimir los 16 tests y no debe lanzar ningún error
 ## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -424,4 +426,46 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.altura_en(OX6, 0) == 0)
 	print("OK: altura_en() devuelve la altura del 'piso' real (0), no la del follaje que lo cubre (3).")
 
-	print("\n=== Las 15 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 16: verificar_huella_libre() detecta madera, follaje y estructura ===")
+	const OX7 := 500
+
+	# Huella A: "madera" invalida la huella completa.
+	for dx in range(4):
+		for dz in range(4):
+			mundo.colocar_bloque(Vector3i(OX7 + dx, 0, OX7 + dz), "piso")
+	mundo.colocar_bloque(Vector3i(OX7, 1, OX7), "madera")
+	var resultado_madera: Dictionary = mundo.verificar_huella_libre(Vector2i(OX7, OX7), 4, 4)
+	assert(not resultado_madera["valida"])
+
+	# Huella B: "follaje" no invalida, se acumula para eliminar.
+	var base_b := OX7 + 20
+	for dx in range(4):
+		for dz in range(4):
+			mundo.colocar_bloque(Vector3i(base_b + dx, 0, OX7 + dz), "piso")
+	mundo.colocar_bloque(Vector3i(base_b + 1, 1, OX7), "follaje")
+	var resultado_follaje: Dictionary = mundo.verificar_huella_libre(Vector2i(base_b, OX7), 4, 4)
+	assert(resultado_follaje["valida"])
+	assert(resultado_follaje["follaje_a_eliminar"].size() == 1)
+	assert(resultado_follaje["follaje_a_eliminar"][0] == Vector3i(base_b + 1, 1, OX7))
+
+	# Huella C: un bloque estructural del jugador ("pared") invalida la huella.
+	var base_c := OX7 + 40
+	for dx in range(4):
+		for dz in range(4):
+			mundo.colocar_bloque(Vector3i(base_c + dx, 0, OX7 + dz), "piso")
+	mundo.colocar_bloque(Vector3i(base_c + 2, 1, OX7), "pared", true)
+	var resultado_estructura: Dictionary = mundo.verificar_huella_libre(Vector2i(base_c, OX7), 4, 4)
+	assert(not resultado_estructura["valida"])
+
+	# Huella D: sin nada encima — válida, sin follaje que eliminar.
+	var base_d := OX7 + 60
+	for dx in range(4):
+		for dz in range(4):
+			mundo.colocar_bloque(Vector3i(base_d + dx, 0, OX7 + dz), "piso")
+	var resultado_libre: Dictionary = mundo.verificar_huella_libre(Vector2i(base_d, OX7), 4, 4)
+	assert(resultado_libre["valida"])
+	assert(resultado_libre["follaje_a_eliminar"].is_empty())
+
+	print("OK: madera/estructura invalidan la huella, follaje se acumula sin invalidar, huella limpia queda válida.")
+
+	print("\n=== Las 16 pruebas de BlueprintValidator pasaron correctamente ===")

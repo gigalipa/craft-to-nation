@@ -28,10 +28,13 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 ##   la cámara dentro de un bloque sólido — si el movimiento comandado
 ##   colisiona, ese movimiento simplemente no se aplica esta vez (nunca se
 ##   redirige a otro sentido distinto al que pidió el jugador).
-## - Colocación de minas (tecla `M`, ver GDD Sección 3 y
-##   docs/superpowers/specs/2026-09-08-puestos-recoleccion-minas-design.md):
-##   disco de previsualización del área de acción, ficha en vivo en el HUD,
-##   confirma solo fuera de la zona de influencia.
+## - Colocación de puestos periféricos con huella real (mina: tecla `M`;
+##   caza y recolección: tecla `H`; ver GDD Sección 3 y
+##   docs/superpowers/specs/2026-09-10-puestos-huella-real-caza-recoleccion-design.md):
+##   huella fantasma de N×M celdas, rotable 90° con Ctrl+rueda del mouse,
+##   ficha en vivo en el HUD, confirma solo si pasan las 4 validaciones
+##   (zona de influencia, relieve, huella libre de madera/estructura, sin
+##   choque con otro puesto).
 ## Modo de nivelación de terreno con tecla `B` (ver GDD Sección 5) — sin
 ## selección de tropas por arrastre todavía, eso sigue siendo PoC 6/Fase 4.
 
@@ -58,9 +61,20 @@ const VELOCIDAD_ALTURA_MAX := 300.0  # celdas/segundo, a ALTURA_MAXIMA_CAMARA
 
 const COLOR_HUELLA_VALIDA := Color(0.2, 1.0, 0.3, 0.4)
 const COLOR_HUELLA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
-const COLOR_MINA_VALIDA := Color(1.0, 0.85, 0.0, 0.4)
-const COLOR_MINA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
+const COLOR_PUESTO_VALIDO := Color(1.0, 0.85, 0.0, 0.4)
+const COLOR_PUESTO_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
+
+## Sigue usada SOLO por la huella fantasma del modo de nivelación manual
+## (_actualizar_huella_fantasma(), sin cambios en esta tarea) — el modo de
+## colocación de puestos ya NO la usa, calcula su propio centrado con
+## _ancho_puesto_activo/_alto_puesto_activo (ver _actualizar_previsualizacion_puesto()).
 const MITAD_HUELLA := 2  # (NiveladorTerreno.TAMANO_HUELLA - 1) / 2, para una huella de 5x5
+
+## El mayor ancho/alto entre los tipos de puesto existentes (mina 5x5, caza
+## y recolección 4x4) — tamaño del pool de planos fantasma reutilizable
+## entre cualquier tipo (ver _crear_huella_puesto()).
+const MAX_ANCHO_HUELLA_PUESTO := 5
+const MAX_ALTO_HUELLA_PUESTO := 5
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
 
 ## Raycast vertical bajo la propia cámara (ver _altura_bajo_camara()), para
@@ -97,14 +111,20 @@ var nivelador: RefCounted
 var modo_nivelacion := false
 var _huella_fantasma: Array[MeshInstance3D] = []
 
-## Modo de colocación de mina (tecla `M`): un disco fantasma (radio
-## Recoleccion.RADIO_AREA_MINA, precalculado en offsets circulares) sigue la
-## celda bajo el cursor, dorado si es válida (fuera de la zona de influencia)
-## o rojo si no. Mientras el modo está activo, la ficha del HUD se actualiza
-## cada fotograma con los recursos reales detectados en esa posición.
-var modo_colocar_mina := false
-var _disco_mina: Array[MeshInstance3D] = []
-var _offsets_disco_mina: Array[Vector2i] = []
+## Modo de colocación de puesto periférico (mina: tecla `M`; caza y
+## recolección: tecla `H`) — un rectángulo fantasma de
+## _ancho_puesto_activo x _alto_puesto_activo celdas sigue la celda bajo el
+## cursor (esa celda es su CENTRO, igual que la huella de nivelación),
+## dorado si las 3 validaciones (zona de influencia, relieve, huella libre +
+## sin choque con otro puesto) pasan, o rojo si alguna falla. `Ctrl` + rueda
+## del mouse rota la huella 90° (intercambia ancho/alto) — ver
+## _rotar_huella_puesto(). Mientras el modo está activo, la ficha del HUD
+## correspondiente al tipo se actualiza cada fotograma.
+var modo_colocar_puesto := false
+var _tipo_puesto_activo := ""  # "mina" | "caza_recoleccion"
+var _ancho_puesto_activo := 0
+var _alto_puesto_activo := 0
+var _huella_puesto: Array[MeshInstance3D] = []
 
 ## Punto de mira: la cámara orbita y se inclina a distancia constante
 ## alrededor de este punto (posición clásica foco + offset, ver
@@ -136,7 +156,7 @@ func _ready() -> void:
 	# el ruido original de GeneradorMundo — ver VoxelWorld.altura_en().
 	nivelador = NiveladorTerreno.new(mundo)
 	_crear_huella_fantasma()
-	_crear_disco_mina()
+	_crear_huella_puesto()
 
 
 ## Crea la cuadrícula de mini-planos fantasma (uno por celda de la huella,
@@ -165,24 +185,20 @@ func _crear_huella_fantasma() -> void:
 		_huella_fantasma.append(plano)
 
 
-## Precalcula los offsets (dx, dz) dentro del círculo de radio
-## Recoleccion.RADIO_AREA_MINA (mismo criterio de distancia que
-## Recoleccion.detectar_recursos(), en el plano horizontal) y crea un plano
-## fantasma por offset — mismo patrón de pool reutilizable que
-## _crear_huella_fantasma(), para no generar basura de nodos cada fotograma.
-func _crear_disco_mina() -> void:
-	for dx in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
-		for dz in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
-			if Vector2(dx, dz).length() <= Recoleccion.RADIO_AREA_MINA:
-				_offsets_disco_mina.append(Vector2i(dx, dz))
-
+## Pool de planos fantasma de tamaño fijo (MAX_ANCHO_HUELLA_PUESTO x
+## MAX_ALTO_HUELLA_PUESTO), reutilizado por cualquier tipo de puesto — mismo
+## patrón de pool que _crear_huella_fantasma(), para no generar basura de
+## nodos cada fotograma. Solo se muestran/reposicionan los primeros
+## ancho*alto planos de la huella activa (ver _mostrar_huella_puesto()); el
+## resto del pool queda oculto.
+func _crear_huella_puesto() -> void:
 	var malla := PlaneMesh.new()
 	malla.size = Vector2(1.0, 1.0)
-	for i in range(_offsets_disco_mina.size()):
+	for i in range(MAX_ANCHO_HUELLA_PUESTO * MAX_ALTO_HUELLA_PUESTO):
 		var material := StandardMaterial3D.new()
 		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.albedo_color = COLOR_MINA_VALIDA
+		material.albedo_color = COLOR_PUESTO_VALIDO
 		material.no_depth_test = false
 
 		var plano := MeshInstance3D.new()
@@ -191,7 +207,7 @@ func _crear_disco_mina() -> void:
 		plano.top_level = true
 		plano.visible = false
 		add_child(plano)
-		_disco_mina.append(plano)
+		_huella_puesto.append(plano)
 
 
 ## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
@@ -347,8 +363,8 @@ func _process(delta: float) -> void:
 	if paneo == Vector2.ZERO and not orbita_o_inclina and vuelo == 0.0:
 		if modo_nivelacion:
 			_actualizar_huella_fantasma()
-		elif modo_colocar_mina:
-			_actualizar_previsualizacion_mina()
+		elif modo_colocar_puesto:
+			_actualizar_previsualizacion_puesto()
 		elif esperando_segunda_esquina:
 			_actualizar_previsualizacion_zona()
 		return
@@ -432,8 +448,8 @@ func _process(delta: float) -> void:
 
 	if modo_nivelacion:
 		_actualizar_huella_fantasma()
-	elif modo_colocar_mina:
-		_actualizar_previsualizacion_mina()
+	elif modo_colocar_puesto:
+		_actualizar_previsualizacion_puesto()
 	elif esperando_segunda_esquina:
 		_actualizar_previsualizacion_zona()
 
@@ -473,29 +489,55 @@ func _actualizar_huella_fantasma() -> void:
 			i += 1
 
 
-## Recalcula la posición/color del disco de área de acción según la celda
-## bajo el cursor (dorado fuera de la zona de influencia = válida, rojo
-## dentro = inválida) y la ficha de recolección prevista en el HUD, a partir
-## de los recursos reales detectados por Recoleccion.detectar_recursos().
-func _actualizar_previsualizacion_mina() -> void:
+## true si algún punto de la huella (ancho x alto activos, esquina
+## "esquina") cae dentro de un puesto ya colocado — recorre la huella
+## completa contra Recoleccion.celda_dentro_de_algun_puesto() (no basta
+## revisar solo las esquinas, sería incorrecto para un rectángulo genérico).
+func _huella_choca_con_otro_puesto(esquina: Vector2i) -> bool:
+	for dx in range(_ancho_puesto_activo):
+		for dz in range(_alto_puesto_activo):
+			if Recoleccion.celda_dentro_de_algun_puesto(Vector2i(esquina.x + dx, esquina.y + dz)):
+				return true
+	return false
+
+
+## Recalcula la posición/color de la huella activa según la celda bajo el
+## cursor (esa celda es su CENTRO) y la ficha del HUD correspondiente al
+## tipo activo. Reemplaza _actualizar_previsualizacion_mina() — ahora
+## genérica sobre _tipo_puesto_activo/_ancho_puesto_activo/_alto_puesto_activo.
+func _actualizar_previsualizacion_puesto() -> void:
 	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
-	var valida: bool = not Zonificacion.dentro_de_influencia(centro)
-	var color: Color = COLOR_MINA_VALIDA if valida else COLOR_MINA_INVALIDA
+	@warning_ignore("integer_division")
+	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
 
-	for i in range(_offsets_disco_mina.size()):
-		var offset: Vector2i = _offsets_disco_mina[i]
-		var x: int = centro.x + offset.x
-		var z: int = centro.y + offset.y
-		var altura_celda: int = mundo.altura_en(x, z, true)
-		var plano: MeshInstance3D = _disco_mina[i]
-		var material: StandardMaterial3D = plano.material_override
-		material.albedo_color = color
-		plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
+	var fuera_de_influencia: bool = not Zonificacion.dentro_de_influencia(centro)
+	var relieve_valido: bool = nivelador.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var valida: bool = fuera_de_influencia and relieve_valido and resultado_huella["valida"] \
+			and not _huella_choca_con_otro_puesto(esquina)
+	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
-	var altura_superficie: int = mundo.altura_en(centro.x, centro.y)
-	var conteo: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie)
-	var tasas: Dictionary = Recoleccion.tasas_recoleccion(conteo)
-	hud.actualizar_tasas_mina(tasas)
+	var i := 0
+	for dx in range(_ancho_puesto_activo):
+		for dz in range(_alto_puesto_activo):
+			var x: int = esquina.x + dx
+			var z: int = esquina.y + dz
+			var altura_celda: int = mundo.altura_en(x, z, true)
+			var plano: MeshInstance3D = _huella_puesto[i]
+			var material: StandardMaterial3D = plano.material_override
+			material.albedo_color = color
+			plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
+			i += 1
+
+	if _tipo_puesto_activo == "mina":
+		var altura_superficie: int = mundo.altura_en(centro.x, centro.y)
+		var conteo: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie)
+		var tasas: Dictionary = Recoleccion.tasas_recoleccion(conteo)
+		hud.actualizar_tasas_mina(tasas)
+	else:
+		var promedios: Dictionary = Recoleccion.detectar_fauna_frutal(mundo.generador, centro)
+		var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion(promedios)
+		hud.actualizar_tasas_caza(tasas_caza)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -513,21 +555,29 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif tecla.pressed and tecla.keycode == KEY_B:
 			_alternar_modo_nivelacion()
 		elif tecla.pressed and tecla.keycode == KEY_M:
-			_alternar_modo_colocar_mina()
+			_alternar_modo_colocar_puesto("mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
+		elif tecla.pressed and tecla.keycode == KEY_H:
+			_alternar_modo_colocar_puesto("caza_recoleccion", Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
 		if boton.pressed and boton.button_index == MOUSE_BUTTON_LEFT:
 			if modo_nivelacion:
 				_procesar_clic_nivelacion(boton.position)
-			elif modo_colocar_mina:
-				_procesar_clic_mina(boton.position)
+			elif modo_colocar_puesto:
+				_procesar_clic_puesto(boton.position)
 			else:
 				_procesar_clic(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_intentar_zoom(-VELOCIDAD_ZOOM)
+			if modo_colocar_puesto and Input.is_key_pressed(KEY_CTRL):
+				_rotar_huella_puesto()
+			else:
+				_intentar_zoom(-VELOCIDAD_ZOOM)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_intentar_zoom(VELOCIDAD_ZOOM)
+			if modo_colocar_puesto and Input.is_key_pressed(KEY_CTRL):
+				_rotar_huella_puesto()
+			else:
+				_intentar_zoom(VELOCIDAD_ZOOM)
 
 
 ## Igual que el resto de controles: aplica el zoom tentativamente, y solo
@@ -548,11 +598,11 @@ func _alternar_modo_nivelacion() -> void:
 	modo_nivelacion = not modo_nivelacion
 	# Los dos modos son mutuamente excluyentes: entrar en uno sale del otro.
 	# Si no, ambas banderas quedan activas a la vez, nivelación gana todas las
-	# cadenas if/elif de _process() y el disco de la mina se queda visible pero
-	# congelado en el origen, con su ficha del HUD mintiendo sobre lo que hace
-	# el clic.
-	if modo_nivelacion and modo_colocar_mina:
-		_salir_de_modo_colocar_mina()
+	# cadenas if/elif de _process() y la huella del puesto se queda visible
+	# pero congelada en el origen, con su ficha del HUD mintiendo sobre lo que
+	# hace el clic.
+	if modo_nivelacion and modo_colocar_puesto:
+		_salir_de_modo_colocar_puesto()
 	_mostrar_huella_fantasma(modo_nivelacion)
 	if modo_nivelacion:
 		print("Modo nivelación activo: haz clic para nivelar la huella marcada (B de nuevo para cancelar).")
@@ -570,45 +620,75 @@ func _mostrar_huella_fantasma(visible_ahora: bool) -> void:
 		plano.visible = visible_ahora
 
 
-func _alternar_modo_colocar_mina() -> void:
-	modo_colocar_mina = not modo_colocar_mina
-	# Ver el comentario equivalente en _alternar_modo_nivelacion().
-	if modo_colocar_mina and modo_nivelacion:
+## Activa el modo de colocación del puesto "tipo" (huella ancho x alto). Si
+## ya estaba activo ESE MISMO tipo, lo cancela (mismo toggle que antes tenía
+## _alternar_modo_colocar_puesto()); si estaba activo otro tipo, cambia
+## directamente al nuevo sin necesidad de cancelar primero. M y H llaman a
+## esta misma función con su tipo/huella respectivos (ver _unhandled_input()).
+func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
+	if modo_colocar_puesto and _tipo_puesto_activo == tipo:
+		_salir_de_modo_colocar_puesto()
+		print("Modo colocar %s cancelado." % tipo)
+		return
+	# Ver el comentario equivalente en _alternar_modo_nivelacion(): los modos
+	# son mutuamente excluyentes.
+	if modo_nivelacion:
 		_salir_de_modo_nivelacion()
-	_mostrar_disco_mina(modo_colocar_mina)
-	if modo_colocar_mina:
-		hud.mostrar_ficha_mina()
-		print("Modo colocar mina activo: haz clic fuera de la zona de influencia para confirmar (M de nuevo para cancelar).")
-	else:
-		# _salir_de_modo_colocar_mina() vuelve a poner modo_colocar_mina = false
-		# (ya lo está, redundante pero inofensivo) además de ocultar el disco y
-		# la ficha del HUD — reutilizado aquí para no duplicar esas dos líneas
-		# (mismo patrón que _alternar_modo_nivelacion() con
-		# _salir_de_modo_nivelacion()).
-		_salir_de_modo_colocar_mina()
-		print("Modo colocar mina cancelado.")
-
-
-func _salir_de_modo_colocar_mina() -> void:
-	modo_colocar_mina = false
-	_mostrar_disco_mina(false)
 	hud.ocultar_ficha_mina()
+	hud.ocultar_ficha_caza()
+	assert(ancho <= MAX_ANCHO_HUELLA_PUESTO and alto <= MAX_ALTO_HUELLA_PUESTO, "Huella de puesto excede el pool fijo de planos fantasma")
+	modo_colocar_puesto = true
+	_tipo_puesto_activo = tipo
+	_ancho_puesto_activo = ancho
+	_alto_puesto_activo = alto
+	_mostrar_huella_puesto(true)
+	if tipo == "mina":
+		hud.mostrar_ficha_mina()
+	else:
+		hud.mostrar_ficha_caza()
+	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
+
+
+func _salir_de_modo_colocar_puesto() -> void:
+	modo_colocar_puesto = false
+	_mostrar_huella_puesto(false)
+	hud.ocultar_ficha_mina()
+	hud.ocultar_ficha_caza()
+	_tipo_puesto_activo = ""
+
+
+## Ctrl + rueda del mouse, solo con un puesto en modo colocación: rota la
+## huella activa 90° (intercambia ancho/alto). Sin efecto visible en mina
+## (5x5) ni caza/recolección (4x4) — ambas cuadradas — hasta que exista un
+## puesto con huella no cuadrada (p. ej. un futuro maderero, 3x4).
+func _rotar_huella_puesto() -> void:
+	var ancho_previo := _ancho_puesto_activo
+	_ancho_puesto_activo = _alto_puesto_activo
+	_alto_puesto_activo = ancho_previo
+	_mostrar_huella_puesto(true)
 
 
 ## Sale de cualquier modo de interacción de esta cámara (nivelación, colocar
-## mina) — llamada por Main.gd al cambiar a la cámara en 1ª persona. Sin
-## esto, la huella fantasma o el disco de la mina (hijos de esta cámara,
+## puesto) — llamada por Main.gd al cambiar a la cámara en 1ª persona. Sin
+## esto, la huella fantasma o la huella del puesto (hijos de esta cámara,
 ## independientes de si `current` está activo) seguían visibles y
-## congelados tras salir de la vista cenital, porque su visibilidad solo
+## congeladas tras salir de la vista cenital, porque su visibilidad solo
 ## depende de estas banderas de modo, nunca de qué cámara está activa.
 func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_nivelacion()
-	_salir_de_modo_colocar_mina()
+	_salir_de_modo_colocar_puesto()
 
 
-func _mostrar_disco_mina(visible_ahora: bool) -> void:
-	for plano in _disco_mina:
-		plano.visible = visible_ahora
+## Muestra los primeros _ancho_puesto_activo * _alto_puesto_activo planos
+## del pool (ver _crear_huella_puesto()) y oculta el resto; con
+## visible_ahora=false oculta todo el pool.
+func _mostrar_huella_puesto(visible_ahora: bool) -> void:
+	for plano in _huella_puesto:
+		plano.visible = false
+	if not visible_ahora:
+		return
+	for i in range(_ancho_puesto_activo * _alto_puesto_activo):
+		_huella_puesto[i].visible = true
 
 
 ## Convierte una posición de pantalla en la celda de grid (X,Z) que hay
@@ -659,26 +739,49 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 	overlay.reconstruir()
 
 
-## Confirma la colocación de la mina en la celda bajo el cursor si está
-## fuera de la zona de influencia — si no, imprime el rechazo y SIGUE en
-## modo colocar-mina (a diferencia de la nivelación, que siempre sale del
-## modo tras un clic; aquí el jugador puede reintentar de inmediato). El
-## bloque marcador se coloca UNA celda por encima de la superficie
-## (altura_superficie + 1): la celda de superficie ya está ocupada por el
-## bloque "piso" del terreno, así que colocar el marcador ahí mismo siempre
-## fallaría (VoxelWorld.colocar_bloque() rechaza celdas ya ocupadas).
-func _procesar_clic_mina(posicion_pantalla: Vector2) -> void:
-	var celda := _celda_bajo_mouse(posicion_pantalla)
-	if Zonificacion.dentro_de_influencia(celda):
-		print("No se puede colocar una mina dentro de la zona de influencia.")
+## Confirma la colocación del puesto activo en la celda bajo el cursor si
+## las 4 validaciones (zona de influencia, relieve, huella libre, sin choque
+## con otro puesto) pasan — si no, imprime el motivo y PERMANECE en modo
+## colocar-puesto (a diferencia de la nivelación, que siempre sale tras un
+## clic; aquí el jugador puede reintentar de inmediato, igual que la mina
+## original). El follaje detectado se elimina, y el marcador se coloca en
+## cada celda de la huella A SU PROPIA altura real (no una altura uniforme
+## — mismo criterio por-celda que ZonaOverlay), porque colocar_bloque()
+## rechaza celdas ya ocupadas (la de superficie ya tiene "piso").
+func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
+	var centro := _celda_bajo_mouse(posicion_pantalla)
+	@warning_ignore("integer_division")
+	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
+
+	if Zonificacion.dentro_de_influencia(centro):
+		print("No se puede colocar un puesto dentro de la zona de influencia.")
+		return
+	if not nivelador.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo):
+		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
+		return
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	if not resultado_huella["valida"]:
+		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
+		return
+	if _huella_choca_con_otro_puesto(esquina):
+		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
 		return
 
-	var altura_superficie: int = mundo.altura_en(celda.x, celda.y)
-	mundo.colocar_bloque(Vector3i(celda.x, altura_superficie + 1, celda.y), "mina")
-	Recoleccion.colocar_mina(celda)
-	print("Mina colocada en (", celda.x, ", ", celda.y, ").")
+	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
+		mundo.eliminar_follaje(celda_follaje)
 
-	_salir_de_modo_colocar_mina()
+	var bloque_marcador: String = "mina" if _tipo_puesto_activo == "mina" else "puesto_caza"
+	for dx in range(_ancho_puesto_activo):
+		for dz in range(_alto_puesto_activo):
+			var x: int = esquina.x + dx
+			var z: int = esquina.y + dz
+			var altura_local: int = mundo.altura_en(x, z)
+			mundo.colocar_bloque(Vector3i(x, altura_local + 1, z), bloque_marcador)
+
+	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)
+	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])
+
+	_salir_de_modo_colocar_puesto()
 
 
 ## Confirma la nivelación de la huella marcada por el recuadro fantasma

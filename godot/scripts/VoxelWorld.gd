@@ -460,15 +460,23 @@ func iniciar_construccion_fantasma(orden: Array, tipos: Dictionary, metadata: Di
 
 
 ## Convierte la siguiente celda pendiente de la construcción a la que
-## pertenece "celda_fantasma" (que puede ser cualquier celda fantasma de esa
-## construcción, no necesariamente la que se va a convertir — ver
-## Construccion.avanzar()). Devuelve {} si no había ninguna construcción en
-## esa celda; si no, {"completa": bool, "metadata": Dictionary} — el
-## llamador (Player.gd) decide qué hacer al completarse (registrar en
-## Ciudad, etc.) usando "metadata". Al completarse, reempareja puertas/camas
-## de la construcción antes de devolver (ver reemparejar_construccion()).
-func surtir_construccion(celda_fantasma: Vector3i) -> Dictionary:
-	var id: int = Construccion.construccion_de(celda_fantasma)
+## pertenece "celda" (que puede ser CUALQUIER celda de esa construcción, no
+## necesariamente la que se va a convertir ni necesariamente todavía de tipo
+## "fantasma" — Construccion._celda_a_construccion mantiene registradas
+## TODAS las celdas del "orden" original, incluso las ya convertidas a su
+## tipo real, hasta que la construcción entera se completa; ver
+## Construccion.avanzar()). Esto permite que Player._colocar() intente
+## surtir con cualquier celda apuntada del edificio, incluida una pared
+## exterior ya construida, para seguir alcanzando mobiliario interior
+## (cama, baúl) aunque haya quedado encerrado y ya no sea visible con la
+## mira. Devuelve {} si "celda" no pertenece a ninguna construcción
+## incompleta (nunca perteneció a una, o la suya ya se completó); si no,
+## {"completa": bool, "metadata": Dictionary} — el llamador (Player.gd)
+## decide qué hacer al completarse (registrar en Ciudad, etc.) usando
+## "metadata". Al completarse, reempareja puertas/camas de la construcción
+## antes de devolver (ver reemparejar_construccion()).
+func surtir_construccion(celda: Vector3i) -> Dictionary:
+	var id: int = Construccion.construccion_de(celda)
 	if id == -1:
 		return {}
 	var resultado: Dictionary = Construccion.avanzar(id)

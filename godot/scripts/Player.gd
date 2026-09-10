@@ -145,21 +145,35 @@ func _direccion_cardinal() -> Vector3i:
 	return Vector3i(0, 0, sign(adelante.z))
 
 
-## Antes de intentar colocar un bloque nuevo, revisa si se está apuntando a
-## una celda fantasma (construcción en curso, ver CamaraCenital._procesar_clic_blueprint())
-## y en ese caso la surte en vez de colocar — reutiliza el click derecho
-## (colocar) en vez del izquierdo (minar) porque conceptualmente "surtir"
-## es aportar material, no destruir. Antes usaba minar() con el mismo botón
-## que minar bloques reales, lo que causaba un bug: al mantener presionado,
-## el primer click convertía la celda fantasma en bloque real, y el
-## SIGUIENTE click (todavía sostenido) la minaba de inmediato por ser ahora
-## un bloque real cualquiera.
+## Antes de intentar colocar un bloque nuevo, intenta surtir la celda
+## apuntada como parte de una construcción en curso (ver
+## CamaraCenital._procesar_clic_blueprint() / VoxelWorld.surtir_construccion()).
+## Se intenta sin importar el TIPO actual de la celda (fantasma o ya
+## convertida a bloque real): mientras la construcción a la que pertenece
+## siga incompleta, surtir_construccion() encuentra su id igual por
+## cualquiera de sus celdas y avanza la cola — así el jugador puede seguir
+## suministrando mobiliario interior (cama, baúl) apuntando a una pared
+## exterior ya construida, aunque el interior haya quedado encerrado y ya
+## no sea alcanzable con la mira. Antes se exigía que la celda apuntada
+## fuera literalmente "fantasma", lo que causaba dos bugs: 1) una vez
+## cerrada la estructura exterior, el mobiliario interior pendiente
+## quedaba fuera de alcance y el edificio nunca se completaba; 2) al
+## mantener el click sostenido, la celda fantasma se convertía en bloque
+## real en el primer tick y el SIGUIENTE tick (mismo click) ya no
+## encontraba una celda fantasma, así que caía a colocar un bloque nuevo
+## no solicitado contra el edificio.
+## Reutiliza el click derecho (colocar) en vez del izquierdo (minar)
+## porque conceptualmente "surtir" es aportar material, no destruir.
+## Una vez completa la construcción, surtir_construccion() ya no encuentra
+## ningún id (Construccion limpia su registro) y esta función cae al flujo
+## normal de colocar un bloque nuevo contra la cara apuntada — igual que
+## contra cualquier otra superficie del edificio ya terminado.
 func _colocar() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
 	var celda := _celda_impactada()
-	if mundo.obtener_tipo(celda) == "fantasma":
-		var resultado: Dictionary = mundo.surtir_construccion(celda)
+	var resultado: Dictionary = mundo.surtir_construccion(celda)
+	if not resultado.is_empty():
 		if resultado.get("completa", false):
 			_completar_construccion(resultado["metadata"])
 		return

@@ -42,3 +42,6 @@ dist/
 # Sitio web de presentación: no forma parte del desarrollo del juego,
 # se deja fuera del control de versiones a petición del usuario.
 website/
+
+# Local Netlify folder
+.netlify

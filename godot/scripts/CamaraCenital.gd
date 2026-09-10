@@ -34,7 +34,11 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 ##   huella fantasma de N×M celdas, rotable 90° con Ctrl+rueda del mouse,
 ##   ficha en vivo en el HUD, confirma solo si pasan las 4 validaciones
 ##   (zona de influencia, relieve, huella libre de madera/estructura, sin
-##   choque con otro puesto).
+##   choque con otro puesto). Junto a la huella se dibuja un círculo
+##   informativo del área de acción real del tipo (radio distinto de la
+##   huella — ver _actualizar_area_accion()), y al confirmar la colocación
+##   se nivela automáticamente el terreno bajo la huella (mismo mecanismo
+##   que la tecla `B`) antes de colocar el marcador.
 ## Modo de nivelación de terreno con tecla `B` (ver GDD Sección 5) — sin
 ## selección de tropas por arrastre todavía, eso sigue siendo PoC 6/Fase 4.
 
@@ -64,6 +68,10 @@ const COLOR_HUELLA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
 const COLOR_PUESTO_VALIDO := Color(1.0, 0.85, 0.0, 0.4)
 const COLOR_PUESTO_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
 
+## Color fijo (no codifica validez, eso ya lo hace la huella) del círculo
+## informativo de área de acción — ver _crear_area_accion().
+const COLOR_AREA_ACCION := Color(0.3, 0.7, 1.0, 0.15)
+
 ## Sigue usada SOLO por la huella fantasma del modo de nivelación manual
 ## (_actualizar_huella_fantasma(), sin cambios en esta tarea) — el modo de
 ## colocación de puestos ya NO la usa, calcula su propio centrado con
@@ -75,6 +83,13 @@ const MITAD_HUELLA := 2  # (NiveladorTerreno.TAMANO_HUELLA - 1) / 2, para una hu
 ## entre cualquier tipo (ver _crear_huella_puesto()).
 const MAX_ANCHO_HUELLA_PUESTO := 5
 const MAX_ALTO_HUELLA_PUESTO := 5
+
+## El mayor radio de área de acción entre los tipos de puesto existentes
+## (Recoleccion.RADIO_AREA_MINA = 6, RADIO_AREA_CAZA_RECOLECCION = 12) —
+## mismo criterio que MAX_ANCHO/ALTO_HUELLA_PUESTO: tamaño del pool de
+## planos del círculo informativo, reutilizado por cualquier tipo (ver
+## _crear_area_accion()).
+const RADIO_AREA_ACCION_MAX := 12
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
 
 ## Raycast vertical bajo la propia cámara (ver _altura_bajo_camara()), para
@@ -91,6 +106,14 @@ const ALCANCE_RAYCAST_VERTICAL := 150.0
 ## plano justo sobre la cara superior real (Y+1), con un pequeño margen.
 const DESF := 0.5
 const ALTURA_SOBRE_SUPERFICIE := 1.01
+
+## Margen menor que ALTURA_SOBRE_SUPERFICIE a propósito: el círculo de área
+## de acción y la huella comparten celdas cerca del centro (el área siempre
+## es igual o más grande que la huella), y con la prueba de profundidad
+## normal (no_depth_test = false) el plano más alto ocluye al más bajo —
+## así la huella (más alta) queda visible sobre el círculo en las celdas
+## donde se solapan, y el círculo solo se ve como un halo alrededor.
+const ALTURA_SOBRE_SUPERFICIE_AREA_ACCION := 1.001
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
@@ -126,6 +149,16 @@ var _ancho_puesto_activo := 0
 var _alto_puesto_activo := 0
 var _huella_puesto: Array[MeshInstance3D] = []
 
+## Círculo informativo del área de acción del puesto activo (radio real
+## según el tipo — Recoleccion.RADIO_AREA_MINA o RADIO_AREA_CAZA_RECOLECCION
+## — no RADIO_AREA_ACCION_MAX, que solo dimensiona el pool), mostrado JUNTO
+## a la huella, no en su lugar: la huella marca dónde se construye, el
+## círculo hasta dónde recolecta una vez construido. Precalculado para el
+## radio máximo existente y filtrado en vivo al radio real del tipo activo
+## (ver _actualizar_area_accion()), sin necesitar un pool por tipo.
+var _offsets_area_accion: Array[Vector2i] = []
+var _area_accion: Array[MeshInstance3D] = []
+
 ## Punto de mira: la cámara orbita y se inclina a distancia constante
 ## alrededor de este punto (posición clásica foco + offset, ver
 ## _posicion_ideal()). El paneo (WASD) mueve "foco.x/z" directamente, sin
@@ -157,6 +190,7 @@ func _ready() -> void:
 	nivelador = NiveladorTerreno.new(mundo)
 	_crear_huella_fantasma()
 	_crear_huella_puesto()
+	_crear_area_accion()
 
 
 ## Crea la cuadrícula de mini-planos fantasma (uno por celda de la huella,
@@ -208,6 +242,36 @@ func _crear_huella_puesto() -> void:
 		plano.visible = false
 		add_child(plano)
 		_huella_puesto.append(plano)
+
+
+## Precalcula los offsets (dx, dz) dentro del círculo de radio
+## RADIO_AREA_ACCION_MAX (el mayor radio existente) y crea un plano fantasma
+## por offset — mismo patrón de pool que _crear_huella_puesto(). Cada
+## fotograma solo se muestran los offsets dentro del radio REAL del tipo
+## activo (ver _actualizar_area_accion()), así que un solo pool sirve para
+## cualquier tipo de puesto sin importar su radio.
+func _crear_area_accion() -> void:
+	for dx in range(-RADIO_AREA_ACCION_MAX, RADIO_AREA_ACCION_MAX + 1):
+		for dz in range(-RADIO_AREA_ACCION_MAX, RADIO_AREA_ACCION_MAX + 1):
+			if Vector2(dx, dz).length() <= RADIO_AREA_ACCION_MAX:
+				_offsets_area_accion.append(Vector2i(dx, dz))
+
+	var malla := PlaneMesh.new()
+	malla.size = Vector2(1.0, 1.0)
+	for i in range(_offsets_area_accion.size()):
+		var material := StandardMaterial3D.new()
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.albedo_color = COLOR_AREA_ACCION
+		material.no_depth_test = false
+
+		var plano := MeshInstance3D.new()
+		plano.mesh = malla
+		plano.material_override = material
+		plano.top_level = true
+		plano.visible = false
+		add_child(plano)
+		_area_accion.append(plano)
 
 
 ## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
@@ -534,10 +598,12 @@ func _actualizar_previsualizacion_puesto() -> void:
 		var conteo: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie)
 		var tasas: Dictionary = Recoleccion.tasas_recoleccion(conteo)
 		hud.actualizar_tasas_mina(tasas)
+		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MINA)
 	else:
 		var promedios: Dictionary = Recoleccion.detectar_fauna_frutal(mundo.generador, centro)
 		var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion(promedios)
 		hud.actualizar_tasas_caza(tasas_caza)
+		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -652,6 +718,7 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 func _salir_de_modo_colocar_puesto() -> void:
 	modo_colocar_puesto = false
 	_mostrar_huella_puesto(false)
+	_ocultar_area_accion()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
 	_tipo_puesto_activo = ""
@@ -689,6 +756,30 @@ func _mostrar_huella_puesto(visible_ahora: bool) -> void:
 		return
 	for i in range(_ancho_puesto_activo * _alto_puesto_activo):
 		_huella_puesto[i].visible = true
+
+
+## Muestra, centrados en "centro", los planos del pool de _area_accion cuyo
+## offset cae dentro de "radio" (a la altura real de su propia celda,
+## ignorando agua — mismo criterio visual que la huella) y oculta el resto
+## del pool. Se filtra por longitud en cada llamada (no por un rango fijo
+## del pool) porque el radio real cambia según el tipo de puesto activo.
+func _actualizar_area_accion(centro: Vector2i, radio: int) -> void:
+	for i in range(_offsets_area_accion.size()):
+		var offset: Vector2i = _offsets_area_accion[i]
+		var plano: MeshInstance3D = _area_accion[i]
+		if offset.length() > radio:
+			plano.visible = false
+			continue
+		var x: int = centro.x + offset.x
+		var z: int = centro.y + offset.y
+		var altura_celda: int = mundo.altura_en(x, z, true)
+		plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE_AREA_ACCION, z + DESF)
+		plano.visible = true
+
+
+func _ocultar_area_accion() -> void:
+	for plano in _area_accion:
+		plano.visible = false
 
 
 ## Convierte una posición de pantalla en la celda de grid (X,Z) que hay
@@ -744,10 +835,14 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 ## con otro puesto) pasan — si no, imprime el motivo y PERMANECE en modo
 ## colocar-puesto (a diferencia de la nivelación, que siempre sale tras un
 ## clic; aquí el jugador puede reintentar de inmediato, igual que la mina
-## original). El follaje detectado se elimina, y el marcador se coloca en
-## cada celda de la huella A SU PROPIA altura real (no una altura uniforme
-## — mismo criterio por-celda que ZonaOverlay), porque colocar_bloque()
-## rechaza celdas ya ocupadas (la de superficie ya tiene "piso").
+## original). El follaje detectado se elimina; luego la huella se nivela al
+## punto más alto (mismo mecanismo que el modo manual de nivelación, tecla
+## `B` — NiveladorTerreno.calcular_relleno(), ya generalizado a huellas no
+## cuadradas) antes de colocar el marcador, así la "construcción" siempre
+## queda sobre terreno plano en vez de seguir el relieve original celda por
+## celda. Solo la validación de pendiente (verificar_pendiente(), arriba)
+## sigue viendo el relieve sin nivelar — es la que decide si la huella es
+## demasiado empinada para nivelarse de forma razonable.
 func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	@warning_ignore("integer_division")
@@ -770,13 +865,22 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 
+	var objetivo: int = nivelador.altura_objetivo(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var relleno: Dictionary = nivelador.calcular_relleno(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var total_relleno := 0
+	for celda_relleno in relleno:
+		var cantidad: int = relleno[celda_relleno]
+		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
+		for h in range(1, cantidad + 1):
+			mundo.colocar_bloque(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y), "tierra")
+		total_relleno += cantidad
+	if total_relleno > 0:
+		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques de tierra usados.")
+
 	var bloque_marcador: String = "mina" if _tipo_puesto_activo == "mina" else "puesto_caza"
 	for dx in range(_ancho_puesto_activo):
 		for dz in range(_alto_puesto_activo):
-			var x: int = esquina.x + dx
-			var z: int = esquina.y + dz
-			var altura_local: int = mundo.altura_en(x, z)
-			mundo.colocar_bloque(Vector3i(x, altura_local + 1, z), bloque_marcador)
+			mundo.colocar_bloque(Vector3i(esquina.x + dx, objetivo + 1, esquina.y + dz), bloque_marcador)
 
 	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)
 	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])

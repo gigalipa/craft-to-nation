@@ -24,6 +24,7 @@ Ciudad="*res://scripts/Ciudad.gd"
 Zonificacion="*res://scripts/Zonificacion.gd"
 Recoleccion="*res://scripts/Recoleccion.gd"
 Blueprints="*res://scripts/Blueprints.gd"
+Construccion="*res://scripts/Construccion.gd"
 
 [physics]
 

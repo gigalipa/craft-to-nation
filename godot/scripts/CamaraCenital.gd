@@ -1021,9 +1021,13 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques de tierra usados.")
 
 	var bloque_marcador: String = "mina" if _tipo_puesto_activo == "mina" else "puesto_caza"
+	var celdas_puesto: Array = []
 	for dx in range(_ancho_puesto_activo):
 		for dz in range(_alto_puesto_activo):
-			mundo.colocar_bloque(Vector3i(esquina.x + dx, objetivo + 1, esquina.y + dz), bloque_marcador)
+			var celda_marcador := Vector3i(esquina.x + dx, objetivo + 1, esquina.y + dz)
+			mundo.colocar_bloque(celda_marcador, bloque_marcador)
+			celdas_puesto.append(celda_marcador)
+	mundo.registrar_edificio(celdas_puesto)
 
 	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)
 	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])

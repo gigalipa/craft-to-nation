@@ -218,6 +218,7 @@ func _declarar_edificio() -> void:
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if resultado["valido"]:
 		Blueprints.guardar(blueprint)
+		mundo.registrar_edificio(celdas.keys())
 		var total_camas := 0
 		for piso in blueprint["pisos"]:
 			total_camas += (piso.get("camas", []) as Array).size()

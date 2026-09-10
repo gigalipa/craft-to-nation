@@ -387,11 +387,27 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 			"altura_capas": fin_banda - inicio_banda + 1,
 		})
 
+	# celdas_3d conserva la forma real completa (puerta_inferior/
+	# puerta_superior, cama_cabecera/cama_pies, ventana, etc. en su altura
+	# exacta), normalizada al mismo origen (x_min, y_min, z_min) que ya usa
+	# el resto de la función — a diferencia de "pisos", que aplana estas
+	# celdas a un template 2D por piso para poder validar reglas de
+	# perímetro/esquina, esto es lo que permite RECONSTRUIR el edificio
+	# exacto al emplazar una copia (ver Construccion.gd). Se construye a
+	# partir de "celdas" (el parámetro original, SIN el remapeo de
+	# puerta_superior->pared que ya sufrió "celdas_relevantes" más arriba).
+	var celdas_3d: Dictionary = {}  # Vector3i (normalizado) -> tipo original
+	for pos in celdas.keys():
+		celdas_3d[pos - Vector3i(x_min, y_min, z_min)] = celdas[pos]
+
 	return {
 		"nombre": "Estructura_Detectada",
 		"tipo": "residencial",
 		"zona_permitida": "residencial_investigacion",
 		"pisos": pisos,
+		"celdas_3d": celdas_3d,
+		"ancho": x_max + 1,       # x_max ya es (máximo - x_min), ver arriba
+		"profundidad": z_max + 1,
 	}
 
 

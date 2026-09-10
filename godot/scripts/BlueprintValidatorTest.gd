@@ -16,10 +16,11 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## ni siquiera como relleno de terreno tocando la losa de un edificio (14,
 ## ver VoxelWorld.TIPOS_ESTRUCTURA), que altura_en() ignora los bloques de
 ## árbol al buscar la celda sólida más alta (15, ver VoxelWorld.TIPOS_ARBOL),
-## y que verificar_huella_libre() detecta madera, follaje y estructura (16,
-## ver VoxelWorld.verificar_huella_libre()).
+## que verificar_huella_libre() detecta madera, follaje y estructura (16,
+## ver VoxelWorld.verificar_huella_libre()), y que estructura_a_blueprint()
+## conserva la forma 3D real en celdas_3d (17, ver BlueprintValidator.celdas_3d).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
-## panel "Output": debe imprimir los 16 tests y no debe lanzar ningún error
+## panel "Output": debe imprimir los 17 tests y no debe lanzar ningún error
 ## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -225,6 +226,34 @@ func ejecutar_pruebas() -> void:
 	print("Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	assert(resultado["valido"])
 	assert(resultado["errores"].is_empty())
+
+	print("\n=== TEST 17: estructura_a_blueprint() conserva la forma 3D real en celdas_3d ===")
+	# Misma casa de TEST 10: reconstruir celdas_3d normalizado a mano y
+	# comparar contra la estructura original (también normalizada) — debe
+	# conservar los tipos SIN aplanar (puerta_inferior/superior distintos,
+	# no colapsados a "puerta"/"pared" como hace "pisos").
+	assert(blueprint_casa["ancho"] == 4)
+	assert(blueprint_casa["profundidad"] == 5)
+	var celdas_3d_casa: Dictionary = blueprint_casa["celdas_3d"]
+	assert(celdas_3d_casa.size() == estructura_casa.size())
+	var y_min_casa: int = estructura_casa.keys()[0].y
+	var x_min_casa: int = estructura_casa.keys()[0].x
+	var z_min_casa: int = estructura_casa.keys()[0].z
+	for pos in estructura_casa.keys():
+		y_min_casa = min(y_min_casa, pos.y)
+		x_min_casa = min(x_min_casa, pos.x)
+		z_min_casa = min(z_min_casa, pos.z)
+	for pos in estructura_casa.keys():
+		var normalizado: Vector3i = pos - Vector3i(x_min_casa, y_min_casa, z_min_casa)
+		assert(celdas_3d_casa.has(normalizado))
+		assert(celdas_3d_casa[normalizado] == estructura_casa[pos])
+	# La puerta principal debe seguir apareciendo como 2 celdas distintas
+	# (puerta_inferior/puerta_superior en Y consecutiva), no colapsada.
+	var puerta_inferior_normalizada := Vector3i(OX, 1, 2) - Vector3i(x_min_casa, y_min_casa, z_min_casa)
+	var puerta_superior_normalizada := puerta_inferior_normalizada + Vector3i(0, 1, 0)
+	assert(celdas_3d_casa[puerta_inferior_normalizada] == "puerta_inferior")
+	assert(celdas_3d_casa[puerta_superior_normalizada] == "puerta_superior")
+	print("OK: celdas_3d conserva la forma real completa, ancho/profundidad correctos.")
 
 	print("\n=== TEST 11: Declarar Edificio - Rechaza Techo Abierto ===")
 	# Misma casa que TEST 10 (suelo + 3 capas de pared, puerta y ventana),
@@ -468,4 +497,4 @@ func ejecutar_pruebas() -> void:
 
 	print("OK: madera/estructura invalidan la huella, follaje se acumula sin invalidar, huella limpia queda válida.")
 
-	print("\n=== Las 16 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== Las 17 pruebas de BlueprintValidator pasaron correctamente ===")

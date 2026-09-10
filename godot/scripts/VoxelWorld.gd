@@ -274,10 +274,13 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 ## justo debajo del árbol.
 ## "altura" (por defecto 1) es cuántos niveles Y por encima de la superficie
 ## se revisan en busca de madera/follaje — de superficie+1 a superficie+altura
-## inclusive. El valor por defecto basta para los puestos (siempre marcadores
-## de un solo bloque de alto); un blueprint de varios pisos debe pasar su
-## altura real, para que un tronco o pared que sobresalga por encima de
-## superficie+1 también se detecte.
+## inclusive. El valor por defecto basta para los puestos POR AHORA (en esta
+## PoC son un marcador de un solo bloque, alcance reducido — en el diseño
+## real son construcciones como cualquier otra, con su propia altura, que
+## podría variar incluso por era tecnológica, ver GDD Sección 7); cuando un
+## puesto deje de ser un marcador de 1 bloque, deberá pasar su altura real
+## igual que ya hace un blueprint de varios pisos, para que un tronco o
+## pared que sobresalga por encima de superficie+1 también se detecte.
 ## "madera" o cualquier bloque estructural invalida la huella completa;
 ## "follaje" se acumula en follaje_a_eliminar (en cualquiera de los niveles
 ## revisados) sin invalidar (se borra al confirmar la colocación — ver GDD

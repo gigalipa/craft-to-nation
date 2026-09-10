@@ -24,9 +24,12 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## completarse (18, ver VoxelWorld.iniciar_construccion_fantasma()), y que
 ## altura_en() también salta "fantasma" (como los árboles) y que
 ## verificar_huella_libre() revisa varios niveles Y cuando se le pasa
-## "altura" > 1 (19, ver VoxelWorld.altura_en()/verificar_huella_libre()).
+## "altura" > 1 (19, ver VoxelWorld.altura_en()/verificar_huella_libre()), y
+## que registrar_edificio() vuelve inmunes al minado las celdas, tanto en
+## fantasmas como en bloques reales (20, ver VoxelWorld.registrar_edificio()/
+## minar_bloque()).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
-## panel "Output": debe imprimir los 19 tests y no debe lanzar ningún error
+## panel "Output": debe imprimir los 20 tests y no debe lanzar ningún error
 ## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -554,4 +557,40 @@ func ejecutar_pruebas() -> void:
 	assert(not resultado_alta["valida"])  # altura 2: sí llega al madera en y=2, rechaza
 	print("OK: altura_en() ignora 'fantasma', verificar_huella_libre() revisa 'altura' niveles hacia arriba.")
 
-	print("\n=== Las 19 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 20: registrar_edificio() vuelve inmune al minado ===")
+
+	# Celda normal, no registrada: sigue minándose igual que siempre.
+	var celda_normal := Vector3i(800, 50, 800)
+	mundo.colocar_bloque(celda_normal, "pared", true)
+	var mineo_normal: bool = mundo.minar_bloque(celda_normal)
+	assert(mineo_normal, "Una celda normal, no registrada, debe poder minarse")
+	assert(mundo.obtener_tipo(celda_normal) == "", "La celda normal minada debe quedar vacía")
+
+	# Celda registrada directamente (simula un puesto o un núcleo declarado):
+	# no debe poder minarse.
+	var celda_edificio := Vector3i(801, 50, 800)
+	mundo.colocar_bloque(celda_edificio, "pared", true)
+	mundo.registrar_edificio([celda_edificio])
+	var mineo_edificio: bool = mundo.minar_bloque(celda_edificio)
+	assert(not mineo_edificio, "Una celda registrada como parte de un edificio no debe poder minarse")
+	assert(mundo.obtener_tipo(celda_edificio) == "pared", "La celda registrada debe seguir intacta tras intentar minarla")
+
+	# Fantasma en curso: inmune desde que se inicia, antes de surtir nada.
+	var celda_fantasma := Vector3i(802, 50, 800)
+	var orden_fantasma: Array[Vector3i] = [celda_fantasma]
+	var tipos_fantasma := {celda_fantasma: "pared"}
+	mundo.iniciar_construccion_fantasma(orden_fantasma, tipos_fantasma)
+	var mineo_fantasma: bool = mundo.minar_bloque(celda_fantasma)
+	assert(not mineo_fantasma, "Una celda fantasma en curso no debe poder minarse")
+	assert(mundo.obtener_tipo(celda_fantasma) == "fantasma", "La celda fantasma debe seguir intacta tras intentar minarla")
+
+	# Se completa surtiendo la única celda pendiente: debe seguir inmune
+	# después de convertirse en bloque real.
+	mundo.surtir_construccion(celda_fantasma)
+	var mineo_fantasma_completo: bool = mundo.minar_bloque(celda_fantasma)
+	assert(not mineo_fantasma_completo, "Una celda de un edificio ya terminado (vía fantasma) no debe poder minarse")
+	assert(mundo.obtener_tipo(celda_fantasma) == "pared", "La celda debe haberse convertido a su tipo real")
+
+	print("OK: minar_bloque() ignora cualquier celda registrada con registrar_edificio(), sea directa, fantasma en curso, o fantasma completada.")
+
+	print("\n=== Las 20 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -87,6 +87,29 @@ var colocado_por_jugador: Dictionary = {}
 ## cualquiera de las dos celdas borra ambas — ver minar_bloque().
 var pareja: Dictionary = {}  # Vector3i -> Vector3i
 
+## Celda -> id de edificio al que pertenece (fantasma en curso, terminado,
+## o puesto periférico). minar_bloque() consulta este registro para negarse
+## a minar cualquier celda que forme parte de un edificio: un edificio se
+## comporta como un objeto completo, no como un grupo de bloques sueltos
+## (igual que ya hacen los árboles vía TIPOS_ARBOL/talar_bloque_de_arbol()).
+## No se borra nunca al completarse una construcción fantasma (a diferencia
+## de Construccion._celda_a_construccion, que sí se limpia): la inmunidad
+## debe seguir vigente después de terminado el edificio.
+var celda_a_edificio: Dictionary = {}  # Vector3i -> int
+var _siguiente_id_edificio := 1
+
+
+## Asigna un id de edificio nuevo y registra cada celda de "celdas" bajo
+## ese id. Devuelve el id asignado (no se usa hoy para nada más que
+## depuración/tests, pero deja la puerta abierta a operar sobre "todas las
+## celdas de este edificio" en el futuro — p. ej. rotación).
+func registrar_edificio(celdas: Array) -> int:
+	var id := _siguiente_id_edificio
+	_siguiente_id_edificio += 1
+	for celda in celdas:
+		celda_a_edificio[celda] = id
+	return id
+
 
 func _ready() -> void:
 	cell_size = Vector3.ONE * TAMANO_CELDA
@@ -179,6 +202,8 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 
 
 func minar_bloque(celda: Vector3i) -> bool:
+	if celda_a_edificio.has(celda):
+		return false
 	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
 		return false
 	if pareja.has(celda):
@@ -430,6 +455,7 @@ func eliminar_follaje(celda: Vector3i) -> void:
 func iniciar_construccion_fantasma(orden: Array, tipos: Dictionary, metadata: Dictionary = {}) -> int:
 	for celda in orden:
 		colocar_bloque(celda, "fantasma")
+	registrar_edificio(orden)
 	return Construccion.iniciar(orden, tipos, metadata)
 
 

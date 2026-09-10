@@ -61,8 +61,9 @@ class _AlturaSinAgua:
 ##   VoxelWorld.drenar_agua()) y se nivela automáticamente el terreno real
 ##   resultante (mismo mecanismo que la tecla `B`, pero ignorando el agua —
 ##   ver _AlturaSinAgua/nivelador_puesto) antes de colocar el marcador.
-## Modo de nivelación de terreno con tecla `B` (ver GDD Sección 5) — sin
-## selección de tropas por arrastre todavía, eso sigue siendo PoC 6/Fase 4.
+## - Colocación de blueprint (tecla `B`, ver Task 7 de este plan) reemplaza
+##   la antigua nivelación standalone — sin selección de tropas por
+##   arrastre todavía, eso sigue siendo PoC 6/Fase 4.
 
 const DISTANCIA_INICIAL := 25.0
 const DISTANCIA_MIN := 8.0
@@ -85,20 +86,12 @@ const ALTURA_MAXIMA_CAMARA := 300.0
 const VELOCIDAD_ALTURA_MIN := 15.0  # celdas/segundo, a nivel del piso
 const VELOCIDAD_ALTURA_MAX := 300.0  # celdas/segundo, a ALTURA_MAXIMA_CAMARA
 
-const COLOR_HUELLA_VALIDA := Color(0.2, 1.0, 0.3, 0.4)
-const COLOR_HUELLA_INVALIDA := Color(1.0, 0.2, 0.2, 0.4)
 const COLOR_PUESTO_VALIDO := Color(1.0, 0.85, 0.0, 0.4)
 const COLOR_PUESTO_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
 
 ## Color fijo (no codifica validez, eso ya lo hace la huella) del círculo
 ## informativo de área de acción — ver _crear_area_accion().
 const COLOR_AREA_ACCION := Color(0.3, 0.7, 1.0, 0.15)
-
-## Sigue usada SOLO por la huella fantasma del modo de nivelación manual
-## (_actualizar_huella_fantasma(), sin cambios en esta tarea) — el modo de
-## colocación de puestos ya NO la usa, calcula su propio centrado con
-## _ancho_puesto_activo/_alto_puesto_activo (ver _actualizar_previsualizacion_puesto()).
-const MITAD_HUELLA := 2  # (NiveladorTerreno.TAMANO_HUELLA - 1) / 2, para una huella de 5x5
 
 ## El mayor ancho/alto entre los tipos de puesto existentes (mina 5x5, caza
 ## y recolección 4x4) — tamaño del pool de planos fantasma reutilizable
@@ -145,17 +138,8 @@ var tipo_zona_seleccionada: String = Zonificacion.ZONAS_PINTABLES[0]
 var esperando_segunda_esquina := false
 var primera_esquina := Vector2i.ZERO
 
-## Modo de nivelación de terreno (tecla `B`): un recuadro fantasma de
-## NiveladorTerreno.TAMANO_HUELLA x TAMANO_HUELLA sigue la celda bajo el
-## cursor (esa celda es el CENTRO de la huella, no la esquina) hasta que el
-## jugador hace clic para confirmar. Un mini-plano por celda, cada uno seguio
-## la altura real de su propia celda (igual que ZonaOverlay) — un solo plano
-## grande a la altura máxima quedaba enterrado bajo el relieve en las
-## celdas más bajas de la huella.
 var nivelador: RefCounted
 var nivelador_puesto: RefCounted
-var modo_nivelacion := false
-var _huella_fantasma: Array[MeshInstance3D] = []
 
 ## Modo de colocación de puesto periférico (mina: tecla `M`; caza y
 ## recolección: tecla `H`) — un rectángulo fantasma de
@@ -212,40 +196,13 @@ func _ready() -> void:
 	# el ruido original de GeneradorMundo — ver VoxelWorld.altura_en().
 	nivelador = NiveladorTerreno.new(mundo)
 	nivelador_puesto = NiveladorTerreno.new(_AlturaSinAgua.new(mundo))
-	_crear_huella_fantasma()
 	_crear_huella_puesto()
 	_crear_area_accion()
 
 
-## Crea la cuadrícula de mini-planos fantasma (uno por celda de la huella,
-## TAMANO_HUELLA x TAMANO_HUELLA en total) como hijos de esta cámara con
-## top_level = true, para poder fijar su posición en coordenadas globales
-## sin heredar la rotación/posición de la cámara. Se crean una sola vez y
-## se reposicionan cada frame en _actualizar_huella_fantasma() — no se
-## recrean, para no generar basura de nodos en cada fotograma.
-func _crear_huella_fantasma() -> void:
-	var malla := PlaneMesh.new()
-	malla.size = Vector2(1.0, 1.0)
-
-	for i in range(NiveladorTerreno.TAMANO_HUELLA * NiveladorTerreno.TAMANO_HUELLA):
-		var material := StandardMaterial3D.new()
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.albedo_color = COLOR_HUELLA_VALIDA
-		material.no_depth_test = false
-
-		var plano := MeshInstance3D.new()
-		plano.mesh = malla
-		plano.material_override = material
-		plano.top_level = true
-		plano.visible = false
-		add_child(plano)
-		_huella_fantasma.append(plano)
-
-
 ## Pool de planos fantasma de tamaño fijo (MAX_ANCHO_HUELLA_PUESTO x
 ## MAX_ALTO_HUELLA_PUESTO), reutilizado por cualquier tipo de puesto — mismo
-## patrón de pool que _crear_huella_fantasma(), para no generar basura de
+## patrón de pool que _crear_huella_puesto(), para no generar basura de
 ## nodos cada fotograma. Solo se muestran/reposicionan los primeros
 ## ancho*alto planos de la huella activa (ver _mostrar_huella_puesto()); el
 ## resto del pool queda oculto.
@@ -449,9 +406,7 @@ func _process(delta: float) -> void:
 	_gesto_orbital_activo = orbita_o_inclina
 
 	if paneo == Vector2.ZERO and not orbita_o_inclina and vuelo == 0.0:
-		if modo_nivelacion:
-			_actualizar_huella_fantasma()
-		elif modo_colocar_puesto:
+		if modo_colocar_puesto:
 			_actualizar_previsualizacion_puesto()
 		elif esperando_segunda_esquina:
 			_actualizar_previsualizacion_zona()
@@ -534,9 +489,7 @@ func _process(delta: float) -> void:
 		angulo_inclinacion = angulo_inclinacion_previo
 		distancia_camara = distancia_camara_previa
 
-	if modo_nivelacion:
-		_actualizar_huella_fantasma()
-	elif modo_colocar_puesto:
+	if modo_colocar_puesto:
 		_actualizar_previsualizacion_puesto()
 	elif esperando_segunda_esquina:
 		_actualizar_previsualizacion_zona()
@@ -553,34 +506,6 @@ func _actualizar_previsualizacion_zona() -> void:
 	overlay.previsualizar(primera_esquina, celda, tipo_zona_seleccionada)
 
 
-## Recalcula la posición y el color de cada mini-plano de la huella según
-## la celda actual bajo el cursor (esa celda es el CENTRO de la huella) y
-## si la pendiente ahí es válida o no — cada plano sigue la altura real de
-## su propia celda, igual que ZonaOverlay, para no quedar enterrado bajo
-## el relieve de celdas vecinas más altas dentro de la misma huella.
-func _actualizar_huella_fantasma() -> void:
-	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
-	var esquina := centro - Vector2i(MITAD_HUELLA, MITAD_HUELLA)
-	var valida: bool = nivelador.verificar_pendiente(esquina)
-	var color: Color = COLOR_HUELLA_VALIDA if valida else COLOR_HUELLA_INVALIDA
-
-	var i := 0
-	for dx in range(NiveladorTerreno.TAMANO_HUELLA):
-		for dz in range(NiveladorTerreno.TAMANO_HUELLA):
-			var x: int = esquina.x + dx
-			var z: int = esquina.y + dz
-			var altura_celda: int = mundo.altura_en(x, z, true)
-			var plano: MeshInstance3D = _huella_fantasma[i]
-			var material: StandardMaterial3D = plano.material_override
-			material.albedo_color = color
-			plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
-			i += 1
-
-
-## true si algún punto de la huella (ancho x alto activos, esquina
-## "esquina") cae dentro de un puesto ya colocado — recorre la huella
-## completa contra Recoleccion.celda_dentro_de_algun_puesto() (no basta
-## revisar solo las esquinas, sería incorrecto para un rectángulo genérico).
 ## true si la huella (esquina, ancho x alto) tiene AL MENOS una esquina en
 ## tierra firme (no sobre agua) — evita construir puestos enteramente
 ## flotando en medio de un lago. Basta con revisar las 4 esquinas reales de
@@ -600,10 +525,23 @@ func _huella_tiene_esquina_en_tierra(esquina: Vector2i, ancho: int, alto: int) -
 	return false
 
 
-func _huella_choca_con_otro_puesto(esquina: Vector2i) -> bool:
-	for dx in range(_ancho_puesto_activo):
-		for dz in range(_alto_puesto_activo):
-			if Recoleccion.celda_dentro_de_algun_puesto(Vector2i(esquina.x + dx, esquina.y + dz)):
+## true si algún punto de la huella (esquina, ancho x alto) cae dentro de
+## un puesto ya colocado (Recoleccion.puestos, cualquier tipo — mina, caza/
+## recolección, o "blueprint") o de una construcción fantasma activa (una
+## celda todavía en curso de ser surtida, ver Construccion.gd) — recorre la
+## huella completa, no basta revisar solo las esquinas, sería incorrecto
+## para un rectángulo genérico. Antes tomaba solo "esquina" y leía
+## _ancho_puesto_activo/_alto_puesto_activo — ahora recibe ancho/alto
+## explícitos para poder reutilizarse también desde el modo de colocación
+## de blueprint (Task 7), que tiene su propio ancho/alto.
+func _huella_choca_con_otro_puesto(esquina: Vector2i, ancho: int, alto: int) -> bool:
+	for dx in range(ancho):
+		for dz in range(alto):
+			var xz := Vector2i(esquina.x + dx, esquina.y + dz)
+			if Recoleccion.celda_dentro_de_algun_puesto(xz):
+				return true
+			var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
+			if Construccion.construccion_de(celda_superficie) != -1:
 				return true
 	return false
 
@@ -621,7 +559,7 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 	var valida: bool = fuera_de_influencia and relieve_valido and resultado_huella["valida"] \
-			and not _huella_choca_con_otro_puesto(esquina) \
+			and not _huella_choca_con_otro_puesto(esquina, _ancho_puesto_activo, _alto_puesto_activo) \
 			and _huella_tiene_esquina_en_tierra(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
@@ -662,8 +600,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif tecla.pressed and tecla.keycode == KEY_2:
 			tipo_zona_seleccionada = Zonificacion.ZONAS_PINTABLES[1]
 			print("Zona seleccionada: ", tipo_zona_seleccionada)
-		elif tecla.pressed and tecla.keycode == KEY_B:
-			_alternar_modo_nivelacion()
 		elif tecla.pressed and tecla.keycode == KEY_M:
 			_alternar_modo_colocar_puesto("mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 		elif tecla.pressed and tecla.keycode == KEY_H:
@@ -672,9 +608,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
 		if boton.pressed and boton.button_index == MOUSE_BUTTON_LEFT:
-			if modo_nivelacion:
-				_procesar_clic_nivelacion(boton.position)
-			elif modo_colocar_puesto:
+			if modo_colocar_puesto:
 				_procesar_clic_puesto(boton.position)
 			else:
 				_procesar_clic(boton.position)
@@ -704,32 +638,6 @@ func _intentar_zoom(delta_distancia: float) -> void:
 		distancia_camara = distancia_previa
 
 
-func _alternar_modo_nivelacion() -> void:
-	modo_nivelacion = not modo_nivelacion
-	# Los dos modos son mutuamente excluyentes: entrar en uno sale del otro.
-	# Si no, ambas banderas quedan activas a la vez, nivelación gana todas las
-	# cadenas if/elif de _process() y la huella del puesto se queda visible
-	# pero congelada en el origen, con su ficha del HUD mintiendo sobre lo que
-	# hace el clic.
-	if modo_nivelacion and modo_colocar_puesto:
-		_salir_de_modo_colocar_puesto()
-	_mostrar_huella_fantasma(modo_nivelacion)
-	if modo_nivelacion:
-		print("Modo nivelación activo: haz clic para nivelar la huella marcada (B de nuevo para cancelar).")
-	else:
-		print("Modo nivelación cancelado.")
-
-
-func _salir_de_modo_nivelacion() -> void:
-	modo_nivelacion = false
-	_mostrar_huella_fantasma(false)
-
-
-func _mostrar_huella_fantasma(visible_ahora: bool) -> void:
-	for plano in _huella_fantasma:
-		plano.visible = visible_ahora
-
-
 ## Activa el modo de colocación del puesto "tipo" (huella ancho x alto). Si
 ## ya estaba activo ESE MISMO tipo, lo cancela (mismo toggle que antes tenía
 ## _alternar_modo_colocar_puesto()); si estaba activo otro tipo, cambia
@@ -740,10 +648,6 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 		_salir_de_modo_colocar_puesto()
 		print("Modo colocar %s cancelado." % tipo)
 		return
-	# Ver el comentario equivalente en _alternar_modo_nivelacion(): los modos
-	# son mutuamente excluyentes.
-	if modo_nivelacion:
-		_salir_de_modo_nivelacion()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
 	assert(ancho <= MAX_ANCHO_HUELLA_PUESTO and alto <= MAX_ALTO_HUELLA_PUESTO, "Huella de puesto excede el pool fijo de planos fantasma")
@@ -786,7 +690,6 @@ func _rotar_huella_puesto() -> void:
 ## congeladas tras salir de la vista cenital, porque su visibilidad solo
 ## depende de estas banderas de modo, nunca de qué cámara está activa.
 func salir_de_todos_los_modos() -> void:
-	_salir_de_modo_nivelacion()
 	_salir_de_modo_colocar_puesto()
 
 
@@ -904,7 +807,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if not resultado_huella["valida"]:
 		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
 		return
-	if _huella_choca_con_otro_puesto(esquina):
+	if _huella_choca_con_otro_puesto(esquina, _ancho_puesto_activo, _alto_puesto_activo):
 		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
 		return
 	if not _huella_tiene_esquina_en_tierra(esquina, _ancho_puesto_activo, _alto_puesto_activo):
@@ -942,35 +845,3 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])
 
 	_salir_de_modo_colocar_puesto()
-
-
-## Confirma la nivelación de la huella marcada por el recuadro fantasma
-## (celda bajo el cursor = centro de la huella). Rechaza si la pendiente
-## excede NiveladorTerreno.LIMITE_PENDIENTE; si es válida, rellena con
-## "tierra" cada celda hasta la altura máxima de la huella e imprime el
-## total de bloques usados, y reconstruye el overlay de zonas — el relleno
-## puede subir el terreno por encima de una zona ya pintada, y esa zona
-## debe seguir mostrándose sobre la nueva superficie, no enterrada bajo
-## ella hasta el próximo repintado o cambio de cámara. Sale del modo
-## nivelación en ambos casos.
-func _procesar_clic_nivelacion(posicion_pantalla: Vector2) -> void:
-	var centro := _celda_bajo_mouse(posicion_pantalla)
-	var esquina := centro - Vector2i(MITAD_HUELLA, MITAD_HUELLA)
-
-	if not nivelador.verificar_pendiente(esquina):
-		print("Nivelación rechazada: la pendiente de esta huella supera el límite permitido (", NiveladorTerreno.LIMITE_PENDIENTE, " bloques por celda).")
-		_salir_de_modo_nivelacion()
-		return
-
-	var relleno: Dictionary = nivelador.calcular_relleno(esquina)
-	var total_bloques := 0
-	for celda_relleno in relleno:
-		var cantidad: int = relleno[celda_relleno]
-		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
-		for h in range(1, cantidad + 1):
-			mundo.colocar_bloque(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y), "tierra")
-		total_bloques += cantidad
-
-	print("Terreno nivelado: ", total_bloques, " bloques de tierra usados.")
-	overlay.reconstruir()
-	_salir_de_modo_nivelacion()

@@ -59,8 +59,9 @@ class _AlturaSinAgua:
 ##   tipo (radio distinto de la huella — ver _actualizar_area_accion()), y
 ##   al confirmar la colocación se drena el agua bajo la huella (ver
 ##   VoxelWorld.drenar_agua()) y se nivela automáticamente el terreno real
-##   resultante (mismo mecanismo que la tecla `B`, pero ignorando el agua —
-##   ver _AlturaSinAgua/nivelador_puesto) antes de colocar el marcador.
+##   resultante (mismo mecanismo de nivelación que usa el modo de colocación
+##   de blueprint, tecla `B` — ver _AlturaSinAgua/nivelador_puesto — pero
+##   ignorando el agua) antes de colocar el marcador.
 ## - Colocación de blueprint (tecla `B`, ver Task 7 de este plan) reemplaza
 ##   la antigua nivelación standalone — sin selección de tropas por
 ##   arrastre todavía, eso sigue siendo PoC 6/Fase 4.

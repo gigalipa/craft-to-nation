@@ -8,6 +8,18 @@ extends Node
 
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 
+## Generador falso: densidad de fauna/frutal constante dentro de un
+## "bioma" cuadrado (|x|<=12, |z|<=12), 0.0 fuera — mismo patrón de
+## generador falso determinista que NiveladorTerrenoTest.gd, para poder
+## verificar el promedio con precisión (GeneradorMundo real usa ruido).
+## Nota: bioma es ±12 para que todos los puntos dentro del círculo de radio 12
+## caigan dentro del bioma, permitiendo que el promedio sea exacto.
+class GeneradorBiomaFalso:
+	func densidad_fauna_en(x: int, z: int) -> float:
+		return 0.8 if abs(x) <= 12 and abs(z) <= 12 else 0.0
+	func densidad_frutal_en(x: int, z: int) -> float:
+		return 0.4 if abs(x) <= 12 and abs(z) <= 12 else 0.0
+
 
 func _ready() -> void:
 	ejecutar_pruebas()
@@ -102,4 +114,21 @@ func ejecutar_pruebas() -> void:
 	assert(not Recoleccion.celda_dentro_de_algun_puesto(Vector2i(24, 24))) # huella 4x4 de (20,20): 20..23
 	print("OK: celda_dentro_de_algun_puesto() detecta el puesto correcto sin importar su tipo.")
 
-	print("\n=== Las 6 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 7: detectar_fauna_frutal() promedia dentro del radio ===")
+	var generador_bioma := GeneradorBiomaFalso.new()
+	var promedios: Dictionary = Recoleccion.detectar_fauna_frutal(generador_bioma, Vector2i(0, 0))
+	print("Promedios (centro del bioma): ", promedios)
+	assert(is_equal_approx(promedios["fauna"], 0.8))
+	assert(is_equal_approx(promedios["frutal"], 0.4))
+
+	print("\n=== TEST 8: detectar_fauna_frutal() fuera del bioma da 0.0/0.0 ===")
+	var promedios_fuera: Dictionary = Recoleccion.detectar_fauna_frutal(generador_bioma, Vector2i(1000, 1000))
+	assert(is_equal_approx(promedios_fuera["fauna"], 0.0))
+	assert(is_equal_approx(promedios_fuera["frutal"], 0.0))
+
+	print("\n=== TEST 9: tasas_caza_recoleccion() multiplica cada señal por su tasa base ===")
+	var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.5, "frutal": 0.25})
+	assert(is_equal_approx(tasas_caza["caza"], 0.5 * Recoleccion.TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_caza["recoleccion"], 0.25 * Recoleccion.TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO))
+
+	print("\n=== Las 9 pruebas de Recoleccion pasaron correctamente ===")

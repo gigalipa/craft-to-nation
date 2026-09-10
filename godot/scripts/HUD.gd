@@ -32,6 +32,12 @@ const NOMBRES_RECURSO := {
 @onready var mina_almacenamiento_label: Label = $MinaFicha/AlmacenamientoLabel
 @onready var mina_tasas_label: Label = $MinaFicha/TasasLabel
 
+@onready var caza_ficha: VBoxContainer = $CazaFicha
+@onready var caza_costo_label: Label = $CazaFicha/CostoLabel
+@onready var caza_personal_label: Label = $CazaFicha/PersonalLabel
+@onready var caza_almacenamiento_label: Label = $CazaFicha/AlmacenamientoLabel
+@onready var caza_tasas_label: Label = $CazaFicha/TasasLabel
+
 
 func _process(_delta: float) -> void:
 	nivel_label.text = "Nivel: %d (potencial: %d)" % [Ciudad.nivel, Ciudad.nivel_potencial]
@@ -84,3 +90,37 @@ func actualizar_tasas_mina(tasas: Dictionary) -> void:
 
 func ocultar_ficha_mina() -> void:
 	mina_ficha.visible = false
+
+
+## Mismo patrón que mostrar_ficha_mina(): valores FIJOS al activar el modo
+## (no cambian según la posición del cursor); las tasas sí varían — ver
+## actualizar_tasas_caza().
+func mostrar_ficha_caza() -> void:
+	var partes_costo: Array = []
+	for tipo in Recoleccion.COSTO_CONSTRUCCION_CAZA_RECOLECCION:
+		partes_costo.append("%d %s" % [Recoleccion.COSTO_CONSTRUCCION_CAZA_RECOLECCION[tipo], tipo])
+	caza_costo_label.text = "Costo: %s" % ", ".join(partes_costo)
+	caza_personal_label.text = "Personal máximo: %d" % Recoleccion.PERSONAL_MAXIMO_CAZA_RECOLECCION
+	caza_almacenamiento_label.text = "Almacenamiento: %d" % Recoleccion.CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION
+	caza_tasas_label.text = "Recolección prevista: -"
+	caza_ficha.visible = true
+
+
+## Recalculada en vivo cada fotograma mientras el modo colocar-puesto (tipo
+## "caza_recoleccion") está activo, a partir de
+## Recoleccion.tasas_caza_recoleccion(). "tasas" siempre tiene ambas claves
+## ("caza"/"recoleccion", ver Recoleccion.gd) — el caso "sin nada detectado"
+## se distingue por ambos valores en 0.0, no por un diccionario vacío.
+func actualizar_tasas_caza(tasas: Dictionary) -> void:
+	if tasas.get("caza", 0.0) <= 0.0 and tasas.get("recoleccion", 0.0) <= 0.0:
+		caza_tasas_label.text = "Recolección prevista: sin fauna ni fruta detectada"
+		return
+	var nombres := {"caza": "caza", "recoleccion": "recolección"}
+	var lineas: Array = []
+	for tipo in tasas:
+		lineas.append("%.1f comida/h por %s" % [tasas[tipo], nombres.get(tipo, tipo)])
+	caza_tasas_label.text = "Recolección prevista por ciudadano:\n  " + "\n  ".join(lineas)
+
+
+func ocultar_ficha_caza() -> void:
+	caza_ficha.visible = false

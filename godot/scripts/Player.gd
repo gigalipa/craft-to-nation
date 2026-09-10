@@ -130,7 +130,11 @@ func _minar() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
 	var celda := _celda_impactada()
-	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
+	if mundo.obtener_tipo(celda) == "fantasma":
+		var resultado: Dictionary = mundo.surtir_construccion(celda)
+		if resultado.get("completa", false):
+			_completar_construccion(resultado["metadata"])
+	elif mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
 		mundo.talar_bloque_de_arbol(celda, DANO_TALA)
 	else:
 		mundo.minar_bloque(celda)
@@ -225,3 +229,26 @@ func _morir_jugador() -> void:
 		global_position = Vector3(0, 1, 0)
 		velocity = Vector3.ZERO
 		print("Sucesor al mando. Jugador reaparece en el punto de partida.")
+
+
+## Se llama cuando VoxelWorld.surtir_construccion() indica que una
+## construcción fantasma quedó completa. "metadata" es la que se pasó a
+## VoxelWorld.iniciar_construccion_fantasma() al colocarla (ver
+## CamaraCenital._procesar_clic_blueprint()) — hoy siempre un edificio; un
+## puesto periférico completado (sub-proyecto B, futuro) no pasaría por
+## este registro de Ciudad/Zonificacion (metadata vacía o de otra forma).
+func _completar_construccion(metadata: Dictionary) -> void:
+	if metadata.is_empty():
+		return
+	var blueprint: Dictionary = metadata["blueprint"]
+	var total_camas := 0
+	for piso in blueprint["pisos"]:
+		total_camas += (piso.get("camas", []) as Array).size()
+	Ciudad.registrar_edificio_residencial(total_camas)
+	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (total construido: ", Ciudad.capacidad_camas_construida, ")")
+
+	if not Zonificacion.nucleo_declarado:
+		Zonificacion.declarar_nucleo(metadata["huella_xz"])
+		print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
+
+	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])

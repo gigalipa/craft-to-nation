@@ -1,8 +1,9 @@
 extends Node
 
-## Autoload "Recoleccion": estado puro de los puestos de recolección
-## colocados (solo minas por ahora, ver spec:
-## docs/superpowers/specs/2026-09-08-puestos-recoleccion-minas-design.md).
+## Autoload "Recoleccion": estado puro de los puestos periféricos
+## colocados (minas, caza/recolección, y futuros tipos); registra cada puesto
+## por la esquina de su huella real (ancho × alto), permitiendo validar
+## solapamientos entre puestos de cualquier tipo.
 ## Sin class_name (mismo motivo que Zonificacion.gd/Ciudad.gd: evitar el bug
 ## de caché de clases globales de Godot).
 
@@ -38,7 +39,7 @@ const ALTO_HUELLA_MADERERO := 4
 ## indexadas por su único bloque marcador; ahora guarda cualquier puesto
 ## periférico por la esquina de su huella real, para poder validar choques
 ## entre puestos de cualquier tipo (ver celda_dentro_de_algun_puesto()).
-var puestos: Dictionary = {}  # Vector2i (celda de superficie) -> {"nivel": int}
+var puestos: Dictionary = {}
 
 
 func colocar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int) -> void:

@@ -64,4 +64,16 @@ func ejecutar_pruebas() -> void:
 	assert(relleno_rampa[Vector2i(0, 0)] == 4)
 	assert(not relleno_rampa.has(Vector2i(0, 4)))  # ya está a la altura máxima
 
-	print("\n=== Las 4 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 5: verificar_pendiente() con ancho/alto explícitos (huella 4x3, no cuadrada) ===")
+	# Rampa suave: altura_en(x,z) = z. Huella ancho=4, alto=3 desde (0,0): z
+	# va de 0 a 2 (pendiente de 1 por celda, dentro del límite de 2) -> válida.
+	assert(nivelador_suave.verificar_pendiente(Vector2i(0, 0), 4, 3))
+	# Rampa pronunciada (altura_en = z*3): cualquier huella con alto>=2 sigue
+	# rechazándose.
+	assert(not nivelador_pronunciado.verificar_pendiente(Vector2i(0, 0), 4, 3))
+
+	print("\n=== TEST 6: llamar sin ancho/alto sigue siendo la huella cuadrada de siempre ===")
+	assert(nivelador_suave.verificar_pendiente(Vector2i(0, 0)) \
+			== nivelador_suave.verificar_pendiente(Vector2i(0, 0), NiveladorTerreno.TAMANO_HUELLA, NiveladorTerreno.TAMANO_HUELLA))
+
+	print("\n=== Las 6 pruebas de NiveladorTerreno pasaron correctamente ===")

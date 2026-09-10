@@ -490,10 +490,6 @@ func _actualizar_huella_fantasma() -> void:
 			i += 1
 
 
-## Recalcula la posición/color del disco de área de acción según la celda
-## bajo el cursor (dorado fuera de la zona de influencia = válida, rojo
-## dentro = inválida) y la ficha de recolección prevista en el HUD, a partir
-## de los recursos reales detectados por Recoleccion.detectar_recursos().
 ## true si algún punto de la huella (ancho x alto activos, esquina
 ## "esquina") cae dentro de un puesto ya colocado — recorre la huella
 ## completa contra Recoleccion.celda_dentro_de_algun_puesto() (no basta
@@ -526,7 +522,7 @@ func _actualizar_previsualizacion_puesto() -> void:
 		for dz in range(_alto_puesto_activo):
 			var x: int = esquina.x + dx
 			var z: int = esquina.y + dz
-			var altura_celda: int = mundo.altura_en(x, z)
+			var altura_celda: int = mundo.altura_en(x, z, true)
 			var plano: MeshInstance3D = _huella_puesto[i]
 			var material: StandardMaterial3D = plano.material_override
 			material.albedo_color = color
@@ -747,12 +743,6 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 
 ## Confirma la colocación de la mina en la celda bajo el cursor si está
 ## fuera de la zona de influencia — si no, imprime el rechazo y SIGUE en
-## modo colocar-mina (a diferencia de la nivelación, que siempre sale del
-## modo tras un clic; aquí el jugador puede reintentar de inmediato). El
-## bloque marcador se coloca UNA celda por encima de la superficie
-## (altura_superficie + 1): la celda de superficie ya está ocupada por el
-## bloque "piso" del terreno, así que colocar el marcador ahí mismo siempre
-## fallaría (VoxelWorld.colocar_bloque() rechaza celdas ya ocupadas).
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si
 ## las 4 validaciones (zona de influencia, relieve, huella libre, sin choque
 ## con otro puesto) pasan — si no, imprime el motivo y PERMANECE en modo

@@ -18,9 +18,12 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## árbol al buscar la celda sólida más alta (15, ver VoxelWorld.TIPOS_ARBOL),
 ## que verificar_huella_libre() detecta madera, follaje y estructura (16,
 ## ver VoxelWorld.verificar_huella_libre()), y que estructura_a_blueprint()
-## conserva la forma 3D real en celdas_3d (17, ver BlueprintValidator.celdas_3d).
+## conserva la forma 3D real en celdas_3d (17, ver BlueprintValidator.celdas_3d),
+## y que iniciar_construccion_fantasma()/surtir_construccion() colocan y
+## convierten bloques "fantasma" en orden fijo y reemparejan puertas/camas al
+## completarse (18, ver VoxelWorld.iniciar_construccion_fantasma()).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
-## panel "Output": debe imprimir los 17 tests y no debe lanzar ningún error
+## panel "Output": debe imprimir los 18 tests y no debe lanzar ningún error
 ## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -497,4 +500,36 @@ func ejecutar_pruebas() -> void:
 
 	print("OK: madera/estructura invalidan la huella, follaje se acumula sin invalidar, huella limpia queda válida.")
 
-	print("\n=== Las 17 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 18: iniciar_construccion_fantasma()/surtir_construccion() ===")
+	const OX8 := 600
+	for dx in range(2):
+		for dz in range(2):
+			mundo.colocar_bloque(Vector3i(OX8 + dx, 0, OX8 + dz), "piso")
+	var orden_18: Array[Vector3i] = [
+		Vector3i(OX8, 1, OX8), Vector3i(OX8 + 1, 1, OX8),
+	]
+	var tipos_18 := {
+		Vector3i(OX8, 1, OX8): "puerta_inferior",
+		Vector3i(OX8 + 1, 1, OX8): "pared",
+	}
+	mundo.colocar_bloque(Vector3i(OX8, 2, OX8), "puerta_superior")  # ya real, no fantasma: completa el par de la puerta
+	mundo.iniciar_construccion_fantasma(orden_18, tipos_18)
+	assert(mundo.obtener_tipo(Vector3i(OX8, 1, OX8)) == "fantasma")
+	assert(mundo.obtener_tipo(Vector3i(OX8 + 1, 1, OX8)) == "fantasma")
+
+	var s1: Dictionary = mundo.surtir_construccion(Vector3i(OX8 + 1, 1, OX8))  # apunta a la 2da, pero convierte la 1ra (orden fijo)
+	assert(mundo.obtener_tipo(Vector3i(OX8, 1, OX8)) == "puerta_inferior")
+	assert(mundo.obtener_tipo(Vector3i(OX8 + 1, 1, OX8)) == "fantasma")
+	assert(not s1.get("completa", true))
+
+	var s2: Dictionary = mundo.surtir_construccion(Vector3i(OX8 + 1, 1, OX8))
+	assert(mundo.obtener_tipo(Vector3i(OX8 + 1, 1, OX8)) == "pared")
+	assert(s2["completa"])
+	assert(mundo.pareja.get(Vector3i(OX8, 1, OX8)) == Vector3i(OX8, 2, OX8))  # reemparejada al completarse
+	assert(mundo.pareja.get(Vector3i(OX8, 2, OX8)) == Vector3i(OX8, 1, OX8))
+
+	var s3: Dictionary = mundo.surtir_construccion(Vector3i(OX8, 1, OX8))  # ya no es una celda fantasma
+	assert(s3.is_empty())
+	print("OK: la construcción fantasma se surte en orden fijo, se reempareja al completarse, y no puede volver a surtirse.")
+
+	print("\n=== Las 18 pruebas de BlueprintValidator pasaron correctamente ===")

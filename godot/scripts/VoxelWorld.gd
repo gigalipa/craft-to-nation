@@ -401,6 +401,67 @@ func eliminar_follaje(celda: Vector3i) -> void:
 		arboles.eliminar_celda(id, celda)
 
 
+## Coloca el bloque placeholder "fantasma" en cada celda de "orden" (en el
+## mundo real, con colisión) y registra la construcción en Construccion.gd.
+## "tipos" mapea cada celda de "orden" a su tipo real de destino, "metadata"
+## se guarda intacta para cuando la construcción se complete (ver
+## Construccion.iniciar()). No marca colocado_por_jugador todavía: estas
+## celdas no son estructura real hasta que se conviertan (ver
+## surtir_construccion()).
+func iniciar_construccion_fantasma(orden: Array, tipos: Dictionary, metadata: Dictionary = {}) -> int:
+	for celda in orden:
+		colocar_bloque(celda, "fantasma")
+	return Construccion.iniciar(orden, tipos, metadata)
+
+
+## Convierte la siguiente celda pendiente de la construcción a la que
+## pertenece "celda_fantasma" (que puede ser cualquier celda fantasma de esa
+## construcción, no necesariamente la que se va a convertir — ver
+## Construccion.avanzar()). Devuelve {} si no había ninguna construcción en
+## esa celda; si no, {"completa": bool, "metadata": Dictionary} — el
+## llamador (Player.gd) decide qué hacer al completarse (registrar en
+## Ciudad, etc.) usando "metadata". Al completarse, reempareja puertas/camas
+## de la construcción antes de devolver (ver reemparejar_construccion()).
+func surtir_construccion(celda_fantasma: Vector3i) -> Dictionary:
+	var id: int = Construccion.construccion_de(celda_fantasma)
+	if id == -1:
+		return {}
+	var resultado: Dictionary = Construccion.avanzar(id)
+	if resultado.is_empty():
+		return {}
+	set_cell_item(resultado["celda"], GridMap.INVALID_CELL_ITEM)
+	colocar_bloque(resultado["celda"], resultado["tipo"], true)
+	if resultado["completa"]:
+		reemparejar_construccion(resultado["orden"])
+	return {"completa": resultado["completa"], "metadata": resultado["metadata"]}
+
+
+## Reconstruye "pareja" para las celdas de una construcción recién
+## completada (puertas y camas colocadas por surtir_construccion() una a
+## una, sin pasar por colocar_puerta()/colocar_cama(), así que no registran
+## "pareja" automáticamente al construirse). Empareja cada "puerta_inferior"
+## con la celda justo encima si es "puerta_superior", y cada
+## "cama_cabecera" con un vecino horizontal (X o Z) que sea "cama_pies" —
+## mismo criterio geométrico que colocar_puerta()/colocar_cama() ya usan al
+## construir a mano. Sin esto, minar una puerta/cama de una construcción
+## terminada no borraría su mitad opuesta (ver minar_bloque()).
+func reemparejar_construccion(celdas: Array) -> void:
+	for celda in celdas:
+		var tipo: String = obtener_tipo(celda)
+		if tipo == "puerta_inferior":
+			var arriba: Vector3i = celda + Vector3i(0, 1, 0)
+			if obtener_tipo(arriba) == "puerta_superior":
+				pareja[celda] = arriba
+				pareja[arriba] = celda
+		elif tipo == "cama_cabecera":
+			for direccion in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+				var vecino: Vector3i = celda + direccion
+				if obtener_tipo(vecino) == "cama_pies":
+					pareja[celda] = vecino
+					pareja[vecino] = celda
+					break
+
+
 ## Reemplaza cada bloque "agua" de la columna (x, z) por "tierra", desde la
 ## altura real del terreno (altura_en(x, z, true), que ignora el agua) hasta
 ## la superficie de agua actual. Usada al confirmar un puesto periférico

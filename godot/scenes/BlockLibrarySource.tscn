@@ -1,4 +1,4 @@
-[gd_scene load_steps=46 format=3]
+[gd_scene format=3]
 
 [sub_resource type="StandardMaterial3D" id="Mat_pared"]
 albedo_color = Color(0.55, 0.55, 0.55, 1)
@@ -25,8 +25,8 @@ material = SubResource("Mat_puerta_superior")
 [sub_resource type="BoxShape3D" id="Shape_puerta_superior"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_ventana"]
-albedo_color = Color(0.6, 0.8, 1.0, 0.5)
 transparency = 1
+albedo_color = Color(0.6, 0.8, 1, 0.5)
 
 [sub_resource type="BoxMesh" id="Mesh_ventana"]
 material = SubResource("Mat_ventana")
@@ -90,12 +90,20 @@ material = SubResource("Mat_hierro")
 [sub_resource type="BoxShape3D" id="Shape_hierro"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_mina"]
-albedo_color = Color(1.0, 0.85, 0.0, 1)
+albedo_color = Color(1, 0.85, 0, 1)
 
 [sub_resource type="BoxMesh" id="Mesh_mina"]
 material = SubResource("Mat_mina")
 
 [sub_resource type="BoxShape3D" id="Shape_mina"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_puesto_caza"]
+albedo_color = Color(0.55, 0.5, 0.15, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_puesto_caza"]
+material = SubResource("Mat_puesto_caza")
+
+[sub_resource type="BoxShape3D" id="Shape_puesto_caza"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_agua"]
 albedo_color = Color(0.2, 0.45, 0.85, 1)
@@ -121,94 +129,100 @@ material = SubResource("Mat_follaje")
 
 [sub_resource type="BoxShape3D" id="Shape_follaje"]
 
-[node name="BlockLibrarySource" type="Node3D"]
+[node name="BlockLibrarySource" type="Node3D" unique_id=221191729]
 
-[node name="pared" type="MeshInstance3D" parent="."]
+[node name="pared" type="MeshInstance3D" parent="." unique_id=1472954888]
 mesh = SubResource("Mesh_pared")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="pared"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="pared" unique_id=1182273984]
 shape = SubResource("Shape_pared")
 
-[node name="puerta_inferior" type="MeshInstance3D" parent="."]
+[node name="puerta_inferior" type="MeshInstance3D" parent="." unique_id=747288938]
 mesh = SubResource("Mesh_puerta_inferior")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="puerta_inferior"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="puerta_inferior" unique_id=1772427594]
 shape = SubResource("Shape_puerta_inferior")
 
-[node name="puerta_superior" type="MeshInstance3D" parent="."]
+[node name="puerta_superior" type="MeshInstance3D" parent="." unique_id=1284672937]
 mesh = SubResource("Mesh_puerta_superior")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="puerta_superior"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="puerta_superior" unique_id=53841975]
 shape = SubResource("Shape_puerta_superior")
 
-[node name="ventana" type="MeshInstance3D" parent="."]
+[node name="ventana" type="MeshInstance3D" parent="." unique_id=350918201]
 mesh = SubResource("Mesh_ventana")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="ventana"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ventana" unique_id=276942756]
 shape = SubResource("Shape_ventana")
 
-[node name="piso" type="MeshInstance3D" parent="."]
+[node name="piso" type="MeshInstance3D" parent="." unique_id=469729591]
 mesh = SubResource("Mesh_piso")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="piso"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="piso" unique_id=591710566]
 shape = SubResource("Shape_piso")
 
-[node name="cama_cabecera" type="MeshInstance3D" parent="."]
+[node name="cama_cabecera" type="MeshInstance3D" parent="." unique_id=128196847]
 mesh = SubResource("Mesh_cama_cabecera")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="cama_cabecera"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cama_cabecera" unique_id=1854462077]
 shape = SubResource("Shape_cama_cabecera")
 
-[node name="cama_pies" type="MeshInstance3D" parent="."]
+[node name="cama_pies" type="MeshInstance3D" parent="." unique_id=1328362582]
 mesh = SubResource("Mesh_cama_pies")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="cama_pies"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cama_pies" unique_id=1236191212]
 shape = SubResource("Shape_cama_pies")
 
-[node name="baul" type="MeshInstance3D" parent="."]
+[node name="baul" type="MeshInstance3D" parent="." unique_id=203564831]
 mesh = SubResource("Mesh_baul")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="baul"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="baul" unique_id=1813623830]
 shape = SubResource("Shape_baul")
 
-[node name="tierra" type="MeshInstance3D" parent="."]
+[node name="tierra" type="MeshInstance3D" parent="." unique_id=1182777025]
 mesh = SubResource("Mesh_tierra")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="tierra"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="tierra" unique_id=221350207]
 shape = SubResource("Shape_tierra")
 
-[node name="piedra" type="MeshInstance3D" parent="."]
+[node name="piedra" type="MeshInstance3D" parent="." unique_id=137583712]
 mesh = SubResource("Mesh_piedra")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="piedra"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="piedra" unique_id=1985252832]
 shape = SubResource("Shape_piedra")
 
-[node name="hierro" type="MeshInstance3D" parent="."]
+[node name="hierro" type="MeshInstance3D" parent="." unique_id=1271321511]
 mesh = SubResource("Mesh_hierro")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="hierro"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="hierro" unique_id=194053609]
 shape = SubResource("Shape_hierro")
 
-[node name="mina" type="MeshInstance3D" parent="."]
+[node name="mina" type="MeshInstance3D" parent="." unique_id=2068785627]
 mesh = SubResource("Mesh_mina")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="mina"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="mina" unique_id=1058764599]
 shape = SubResource("Shape_mina")
 
-[node name="agua" type="MeshInstance3D" parent="."]
+[node name="puesto_caza" type="MeshInstance3D" parent="." unique_id=1337153577]
+mesh = SubResource("Mesh_puesto_caza")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="puesto_caza" unique_id=2111030022]
+shape = SubResource("Shape_puesto_caza")
+
+[node name="agua" type="MeshInstance3D" parent="." unique_id=978208009]
 mesh = SubResource("Mesh_agua")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="agua"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="agua" unique_id=1047196555]
 shape = SubResource("Shape_agua")
 
-[node name="madera" type="MeshInstance3D" parent="."]
+[node name="madera" type="MeshInstance3D" parent="." unique_id=129975591]
 mesh = SubResource("Mesh_madera")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="madera"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="madera" unique_id=3419657]
 shape = SubResource("Shape_madera")
 
-[node name="follaje" type="MeshInstance3D" parent="."]
+[node name="follaje" type="MeshInstance3D" parent="." unique_id=304598473]
 mesh = SubResource("Mesh_follaje")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="follaje"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="follaje" unique_id=334056746]
 shape = SubResource("Shape_follaje")

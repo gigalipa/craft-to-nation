@@ -84,7 +84,7 @@ func _agregar_plano(celda: Vector2i, color: Color) -> MeshInstance3D:
 	# minar/construir/nivelar, así que una celda ya modificada por el
 	# jugador se pintaba a una altura "fantasma" que no correspondía a
 	# ningún bloque real.
-	var altura_superficie: int = mundo.altura_en(celda.x, celda.y)
+	var altura_superficie: int = mundo.altura_en(celda.x, celda.y, true)
 
 	# El overlay de zona es SOLO para el terreno — nunca debe "pintar" el
 	# techo/pared superior de un edificio (celda estructural colocada por el

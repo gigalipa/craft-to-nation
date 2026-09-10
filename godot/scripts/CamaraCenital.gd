@@ -465,7 +465,7 @@ func _actualizar_huella_fantasma() -> void:
 		for dz in range(NiveladorTerreno.TAMANO_HUELLA):
 			var x: int = esquina.x + dx
 			var z: int = esquina.y + dz
-			var altura_celda: int = mundo.altura_en(x, z)
+			var altura_celda: int = mundo.altura_en(x, z, true)
 			var plano: MeshInstance3D = _huella_fantasma[i]
 			var material: StandardMaterial3D = plano.material_override
 			material.albedo_color = color
@@ -486,7 +486,7 @@ func _actualizar_previsualizacion_mina() -> void:
 		var offset: Vector2i = _offsets_disco_mina[i]
 		var x: int = centro.x + offset.x
 		var z: int = centro.y + offset.y
-		var altura_celda: int = mundo.altura_en(x, z)
+		var altura_celda: int = mundo.altura_en(x, z, true)
 		var plano: MeshInstance3D = _disco_mina[i]
 		var material: StandardMaterial3D = plano.material_override
 		material.albedo_color = color

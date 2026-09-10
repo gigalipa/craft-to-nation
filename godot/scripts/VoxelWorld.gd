@@ -139,11 +139,23 @@ func _generar_terreno() -> void:
 ## obstáculo sobre el terreno, no el terreno mismo — sin este salto, el
 ## overlay de zona y la colocación de minas aterrizaban sobre la copa de
 ## un árbol en vez del suelo real debajo.
-func altura_en(x: int, z: int) -> int:
+## "ignorar_agua" (solo para overlays puramente visuales: ZonaOverlay, huella
+## fantasma de nivelación, disco de mina) también salta el bloque "agua" para
+## que el plano se dibuje al nivel del terreno real, por debajo de la
+## superficie del agua — no cambia ningún cálculo de juego real (colocación
+## de mina/relleno de nivelación, altura de spawn), que deben seguir viendo
+## el agua como la superficie caminable/sólida que es hoy.
+func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 	for y in range(ALTURA_BUSQUEDA_MAX, ALTURA_BUSQUEDA_MIN, -1):
 		var celda := Vector3i(x, y, z)
-		if get_cell_item(celda) != GridMap.INVALID_CELL_ITEM and not TIPOS_ARBOL.has(obtener_tipo(celda)):
-			return y
+		if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
+			continue
+		var tipo: String = obtener_tipo(celda)
+		if TIPOS_ARBOL.has(tipo):
+			continue
+		if ignorar_agua and tipo == "agua":
+			continue
+		return y
 	return generador.altura_en(x, z)  # respaldo, no debería alcanzarse nunca
 
 

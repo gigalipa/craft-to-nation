@@ -130,11 +130,7 @@ func _minar() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
 	var celda := _celda_impactada()
-	if mundo.obtener_tipo(celda) == "fantasma":
-		var resultado: Dictionary = mundo.surtir_construccion(celda)
-		if resultado.get("completa", false):
-			_completar_construccion(resultado["metadata"])
-	elif mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
+	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
 		mundo.talar_bloque_de_arbol(celda, DANO_TALA)
 	else:
 		mundo.minar_bloque(celda)
@@ -149,10 +145,24 @@ func _direccion_cardinal() -> Vector3i:
 	return Vector3i(0, 0, sign(adelante.z))
 
 
+## Antes de intentar colocar un bloque nuevo, revisa si se está apuntando a
+## una celda fantasma (construcción en curso, ver CamaraCenital._procesar_clic_blueprint())
+## y en ese caso la surte en vez de colocar — reutiliza el click derecho
+## (colocar) en vez del izquierdo (minar) porque conceptualmente "surtir"
+## es aportar material, no destruir. Antes usaba minar() con el mismo botón
+## que minar bloques reales, lo que causaba un bug: al mantener presionado,
+## el primer click convertía la celda fantasma en bloque real, y el
+## SIGUIENTE click (todavía sostenido) la minaba de inmediato por ser ahora
+## un bloque real cualquiera.
 func _colocar() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
 	var celda := _celda_impactada()
+	if mundo.obtener_tipo(celda) == "fantasma":
+		var resultado: Dictionary = mundo.surtir_construccion(celda)
+		if resultado.get("completa", false):
+			_completar_construccion(resultado["metadata"])
+		return
 	var normal := raycast.get_collision_normal()
 	var celda_destino := celda + Vector3i(round(normal.x), round(normal.y), round(normal.z))
 	var tipo: String = tipos_disponibles[tipo_seleccionado]

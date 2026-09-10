@@ -166,16 +166,19 @@ var _offsets_area_accion: Array[Vector2i] = []
 var _area_accion: Array[MeshInstance3D] = []
 
 ## Modo de colocación de blueprint (tecla `B`) — reemplaza la antigua
-## nivelación standalone. Sigue el mismo patrón visual que el modo de
-## colocación de puestos (huella verde/rojo), pero el TAMAÑO de la huella
-## varía según el blueprint activo (blueprint["ancho"]/["profundidad"]), así
-## que el pool de planos se crea de nuevo cada vez que se activa el modo
-## (_crear_huella_blueprint()) en vez de tener un tamaño fijo — solo existe
-## un blueprint (residencial) por ahora, activarse no es un evento
-## frecuente por fotograma.
+## nivelación standalone. A diferencia de la huella plana de los puestos
+## (un rectángulo verde/rojo que solo marca "dónde"), aquí se previsualiza
+## una copia translúcida en 3D de la forma REAL del blueprint (una caja por
+## celda de blueprint["celdas_3d"]) — "qué" se va a construir, en la
+## posición exacta donde quedará tras nivelar. El TAMAÑO (cantidad de
+## cajas) varía según el blueprint activo, así que el pool se crea de
+## nuevo cada vez que se activa el modo (_crear_huella_blueprint()) en vez
+## de tener un tamaño fijo — solo existe un blueprint (residencial) por
+## ahora, activarse no es un evento frecuente por fotograma.
 var modo_colocar_blueprint := false
 var _blueprint_activo: Dictionary = {}
 var _huella_blueprint: Array[MeshInstance3D] = []
+var _offsets_huella_blueprint: Array[Vector3i] = []
 
 ## Punto de mira: la cámara orbita y se inclina a distancia constante
 ## alrededor de este punto (posición clásica foco + offset, ver
@@ -265,32 +268,39 @@ func _crear_area_accion() -> void:
 		_area_accion.append(plano)
 
 
-## (Re)crea el pool de planos fantasma para la huella del blueprint activo,
-## de tamaño EXACTO ancho x alto (a diferencia de _crear_huella_puesto(),
-## que usa un pool fijo reutilizado por varios tipos — aquí solo hay un
-## blueprint activo a la vez, así que no hace falta sobredimensionar).
-## Libera los planos de una activación anterior antes de crear los nuevos.
-func _crear_huella_blueprint(ancho: int, alto: int) -> void:
-	for plano in _huella_blueprint:
-		plano.queue_free()
+## (Re)crea el pool de cajas fantasma para la previsualización 3D del
+## blueprint activo, UNA POR CELDA de "celdas_3d" (a diferencia de
+## _crear_huella_puesto(), que usa planos y un pool fijo reutilizado por
+## varios tipos — aquí solo hay un blueprint activo a la vez, así que no
+## hace falta sobredimensionar). "_offsets_huella_blueprint" guarda el
+## offset relativo de cada caja, en el mismo orden que _huella_blueprint,
+## para poder reposicionarlas en _actualizar_previsualizacion_blueprint()
+## sin depender del orden de iteración del Dictionary en cada fotograma.
+## Libera las cajas de una activación anterior antes de crear las nuevas.
+func _crear_huella_blueprint(celdas_3d: Dictionary) -> void:
+	for caja in _huella_blueprint:
+		caja.queue_free()
 	_huella_blueprint.clear()
+	_offsets_huella_blueprint.clear()
 
-	var malla := PlaneMesh.new()
-	malla.size = Vector2(1.0, 1.0)
-	for i in range(ancho * alto):
+	var malla := BoxMesh.new()
+	malla.size = Vector3.ONE
+	for rel: Vector3i in celdas_3d:
+		_offsets_huella_blueprint.append(rel)
+
 		var material := StandardMaterial3D.new()
 		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		material.albedo_color = COLOR_PUESTO_VALIDO
 		material.no_depth_test = false
 
-		var plano := MeshInstance3D.new()
-		plano.mesh = malla
-		plano.material_override = material
-		plano.top_level = true
-		plano.visible = true
-		add_child(plano)
-		_huella_blueprint.append(plano)
+		var caja := MeshInstance3D.new()
+		caja.mesh = malla
+		caja.material_override = material
+		caja.top_level = true
+		caja.visible = true
+		add_child(caja)
+		_huella_blueprint.append(caja)
 
 
 func _mostrar_huella_blueprint(visible_ahora: bool) -> void:
@@ -687,11 +697,16 @@ func _altura_blueprint(blueprint: Dictionary) -> int:
 	return max_y + 1
 
 
-## Recalcula la posición/color de la huella del blueprint activo según la
-## celda bajo el cursor (esa celda es su CENTRO, igual que los puestos).
-## A diferencia de los puestos (regla: fuera de la zona de influencia),
-## aquí la regla de zona es la opuesta: la celda debe caer DENTRO de una
-## zona pintada que coincida con blueprint["zona_permitida"].
+## Recalcula la posición/color de la previsualización 3D del blueprint
+## activo según la celda bajo el cursor (esa celda es su CENTRO, igual que
+## los puestos). A diferencia de los puestos (regla: fuera de la zona de
+## influencia), aquí la regla de zona es la opuesta: la celda debe caer
+## DENTRO de una zona pintada que coincida con blueprint["zona_permitida"].
+## Cada caja se posiciona en la misma coordenada exacta donde quedaría el
+## bloque real si se confirmara ahora mismo (mismo cálculo que
+## _procesar_clic_blueprint(): esquina + rel, apoyado sobre "objetivo" —
+## la altura a la que quedaría nivelado el terreno), así la previsualización
+## no miente sobre dónde va a caer la construcción.
 func _actualizar_previsualizacion_blueprint() -> void:
 	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
 	var ancho: int = _blueprint_activo["ancho"]
@@ -708,17 +723,16 @@ func _actualizar_previsualizacion_blueprint() -> void:
 			and _huella_tiene_esquina_en_tierra(esquina, ancho, alto)
 	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
-	var i := 0
-	for dx in range(ancho):
-		for dz in range(alto):
-			var x: int = esquina.x + dx
-			var z: int = esquina.y + dz
-			var altura_celda: int = mundo.altura_en(x, z, true)
-			var plano: MeshInstance3D = _huella_blueprint[i]
-			var material: StandardMaterial3D = plano.material_override
-			material.albedo_color = color
-			plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
-			i += 1
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, ancho, alto)
+	for i in range(_offsets_huella_blueprint.size()):
+		var rel: Vector3i = _offsets_huella_blueprint[i]
+		var x: int = esquina.x + rel.x
+		var y: int = objetivo + 1 + rel.y
+		var z: int = esquina.y + rel.z
+		var caja: MeshInstance3D = _huella_blueprint[i]
+		var material: StandardMaterial3D = caja.material_override
+		material.albedo_color = color
+		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -841,7 +855,7 @@ func _alternar_modo_colocar_blueprint() -> void:
 	if modo_colocar_puesto:
 		_salir_de_modo_colocar_puesto()
 	_blueprint_activo = blueprint
-	_crear_huella_blueprint(blueprint["ancho"], blueprint["profundidad"])
+	_crear_huella_blueprint(blueprint["celdas_3d"])
 	modo_colocar_blueprint = true
 	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar).")
 

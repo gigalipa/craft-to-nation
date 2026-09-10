@@ -18,6 +18,9 @@ Evaluadas en dificultad técnica / originalidad / jugabilidad y confirmadas por 
 
 **Ajuste del roadmap (2026-09-08, GDD v3.20):** agregado el sistema de puentes (Sección 4) — no reordena ninguna Fase existente, solo agrega PoC 9 al final de Fase 5 y un sub-proyecto 4 a PoC 5 (Fase 3) para la generación de agua que ambas piezas necesitan.
 
+- **Eras Tecnológicas:** GDD, Sección 7 (subsección "Eras Tecnológicas: Marco Narrativo") — etiquetada **Visión a futuro, sin implementar todavía**. Se superpone al sistema de Nivel Urbano/Índice de sofisticación ya implementado (`Ciudad.gd`, PoC 4) sin reemplazarlo — la Sección 7 abre con una nota de equivalencia explícita para que no se confunda con el sistema real. Puntero cruzado agregado en 7.3 (investigación de activación futura de 4 opciones), 3.1 (cadenas de mejoramiento que terminarían en 3 variantes por rama) y 10 (la rama viaja con el núcleo portátil). Sin PoC ni Fase propia asignada — la Sección 11 (roadmap) tiene una nota de terminología explícita señalando esto, para que no se confunda con la Fase 2/PoC 4 donde vive el sistema real de niveles. Ubicada el 2026-09-10, GDD v3.23.
+- **Servidor MMO por planetas:** GDD, Sección 10 (subsección "Servidor MMO por Planetas") — etiquetada **Visión a muy largo plazo, sin PoC ni Fase asignada**. Distinto del multijugador LAN sincrónico ya descrito en la Sección 10; la pieza central es la simulación persistente de ciudad offline (producción, comercio por acuerdo, defensa automática) mientras el jugador está desconectado. Las mecánicas de automatización que la sostienen (recolección, creación de unidades, reparación automática) quedan explícitamente sin resolver. Ubicada el 2026-09-10, GDD v3.23.
+
 ## Pendientes de revisión
 
 (Ninguna por ahora — todas las ideas registradas hasta el momento ya se evaluaron y trasladaron al GDD.)

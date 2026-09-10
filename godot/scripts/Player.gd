@@ -11,6 +11,13 @@ const GRAVEDAD := 9.8
 const VELOCIDAD_SALTO := 5.5
 const SENSIBILIDAD_MOUSE := 0.003
 const ALCANCE_RAYCAST := 5.0
+const DANO_TALA := 1
+
+## Intervalo entre repeticiones de minar/colocar mientras se mantiene el
+## click presionado. Placeholder único para todo tipo de bloque/herramienta
+## — a futuro cada bloque tendrá su propia "vida"/tiempo de minado (como
+## Minecraft) y esto dependerá también de la herramienta equipada.
+const INTERVALO_ACCION_REPETIDA := 0.20
 
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
@@ -19,6 +26,10 @@ var tipos_disponibles := ["pared", "puerta", "ventana", "piso", "cama", "baul"]
 var tipo_seleccionado := 0
 
 var mundo: Node  # asignada por Main.gd al iniciar la escena
+
+var _minando := false
+var _colocando := false
+var _temporizador_accion := 0.0
 
 
 func _ready() -> void:
@@ -51,14 +62,37 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
-		if boton.pressed:
-			if boton.button_index == MOUSE_BUTTON_LEFT:
+		if boton.button_index == MOUSE_BUTTON_LEFT:
+			_minando = boton.pressed
+			if boton.pressed:
+				_temporizador_accion = 0.0
 				_minar()
-			elif boton.button_index == MOUSE_BUTTON_RIGHT:
+		elif boton.button_index == MOUSE_BUTTON_RIGHT:
+			_colocando = boton.pressed
+			if boton.pressed:
+				_temporizador_accion = 0.0
 				_colocar()
 
 
+## Mientras el jugador mantiene el click, repite minar/colocar cada
+## INTERVALO_ACCION_REPETIDA — un solo temporizador compartido porque nunca
+## se puede minar y colocar al mismo tiempo (son botones distintos, pero la
+## intención del jugador en un instante dado es una sola acción).
+func _procesar_accion_repetida(delta: float) -> void:
+	if not _minando and not _colocando:
+		return
+	_temporizador_accion += delta
+	if _temporizador_accion < INTERVALO_ACCION_REPETIDA:
+		return
+	_temporizador_accion = 0.0
+	if _minando:
+		_minar()
+	elif _colocando:
+		_colocar()
+
+
 func _physics_process(delta: float) -> void:
+	_procesar_accion_repetida(delta)
 	var direccion := Vector3.ZERO
 	if Input.is_key_pressed(KEY_W):
 		direccion -= transform.basis.z
@@ -95,7 +129,11 @@ func _celda_impactada() -> Vector3i:
 func _minar() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
-	mundo.minar_bloque(_celda_impactada())
+	var celda := _celda_impactada()
+	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
+		mundo.talar_bloque_de_arbol(celda, DANO_TALA)
+	else:
+		mundo.minar_bloque(celda)
 
 
 ## Redondea hacia dónde mira el cuerpo (solo yaw, sin el pitch de la cámara,

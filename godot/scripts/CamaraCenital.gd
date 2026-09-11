@@ -1093,6 +1093,15 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
 		return
 
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
+	var celdas_mundo: Dictionary = {}  # Vector3i real -> tipo
+	for rel in _blueprint_activo["celdas_3d"]:
+		var real := Vector3i(esquina.x + rel.x, objetivo + 1 + rel.y, esquina.y + rel.z)
+		celdas_mundo[real] = _blueprint_activo["celdas_3d"][rel]
+	if not mundo.verificar_despejes(celdas_mundo):
+		print("Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio.")
+		return
+
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 
@@ -1102,7 +1111,6 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	if total_drenado > 0:
 		print("Agua drenada bajo la construcción: ", total_drenado, " bloques reemplazados por tierra.")
 
-	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, columnas)
 	var relleno_orden: Array[Vector3i] = []
 	for celda_relleno in relleno:
@@ -1114,10 +1122,6 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	for celda_r in relleno_orden:
 		tipos_relleno[celda_r] = "tierra"
 
-	var celdas_mundo: Dictionary = {}  # Vector3i real -> tipo
-	for rel in _blueprint_activo["celdas_3d"]:
-		var real := Vector3i(esquina.x + rel.x, objetivo + 1 + rel.y, esquina.y + rel.z)
-		celdas_mundo[real] = _blueprint_activo["celdas_3d"][rel]
 	var orden_estructura: Array = mundo.ordenar_celdas_edificio(celdas_mundo)
 
 	var huella_xz: Array = []

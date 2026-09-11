@@ -43,6 +43,8 @@ const NOMBRES_CAZA_RECOLECCION := {
 @onready var caza_almacenamiento_label: Label = $CazaFicha/AlmacenamientoLabel
 @onready var caza_tasas_label: Label = $CazaFicha/TasasLabel
 
+@onready var modo_deconstruccion_label: Label = $ModoDeconstruccionLabel
+
 
 func _process(_delta: float) -> void:
 	nivel_label.text = "Nivel: %d (potencial: %d)" % [Ciudad.nivel, Ciudad.nivel_potencial]
@@ -128,3 +130,13 @@ func actualizar_tasas_caza(tasas: Dictionary) -> void:
 
 func ocultar_ficha_caza() -> void:
 	caza_ficha.visible = false
+
+
+## Muestra/oculta el aviso de que el modo deconstrucción está activo (ver
+## Player.gd::_alternar_modo_deconstruccion(), tecla G).
+func mostrar_modo_deconstruccion() -> void:
+	modo_deconstruccion_label.visible = true
+
+
+func ocultar_modo_deconstruccion() -> void:
+	modo_deconstruccion_label.visible = false

@@ -629,48 +629,9 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i])
 		if Recoleccion.celda_dentro_de_algun_puesto(xz):
 			return true
 		var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
-		if Construccion.construccion_de(celda_superficie) != -1:
+		if mundo.id_de_edificio(celda_superficie) != -1:
 			return true
 	return false
-
-
-## Grupos de conversión, en el orden en que se surten (ver spec: relleno de
-## tierra -> piso -> paredes/puertas/ventanas -> mobiliario). El relleno de
-## tierra no aparece aquí: se calcula y antepone aparte en
-## _procesar_clic_blueprint(), antes de estas celdas del blueprint mismo.
-## El grupo ["piso"] está hoy siempre vacío en la práctica: "celdas_3d"
-## (BlueprintValidator.estructura_a_blueprint()) nunca contiene celdas
-## "piso", porque VoxelWorld.detectar_estructura() las excluye a propósito
-## (el relleno de piso/terreno nunca forma parte de una estructura
-## declarada). Se conserva el grupo de todos modos, por si eso cambia —
-## no es código muerto por accidente.
-const ORDEN_GRUPOS_CONSTRUCCION := [
-	["piso"],
-	["pared", "puerta_inferior", "puerta_superior", "ventana"],
-	["cama_cabecera", "cama_pies", "baul"],
-]
-
-
-## Devuelve las celdas de "celdas_mundo" (Vector3i real -> tipo) ordenadas
-## para conversión: por grupo (ver ORDEN_GRUPOS_CONSTRUCCION, en ese orden),
-## y dentro de cada grupo por (y, x, z) para que el orden sea determinista
-## y no dependa del orden de iteración del Dictionary de Godot.
-func _ordenar_celdas_construccion(celdas_mundo: Dictionary) -> Array:
-	var orden: Array[Vector3i] = []
-	for grupo in ORDEN_GRUPOS_CONSTRUCCION:
-		var celdas_grupo: Array[Vector3i] = []
-		for celda in celdas_mundo:
-			if grupo.has(celdas_mundo[celda]):
-				celdas_grupo.append(celda)
-		celdas_grupo.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
-			if a.y != b.y:
-				return a.y < b.y
-			if a.x != b.x:
-				return a.x < b.x
-			return a.z < b.z
-		)
-		orden.append_array(celdas_grupo)
-	return orden
 
 
 ## Recalcula la posición/color de la huella activa según la celda bajo el
@@ -1100,7 +1061,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 ## coloca el marcador de inmediato), esto NO completa nada: drena el agua,
 ## calcula el relleno de nivelación, reubica blueprint["celdas_3d"] en el
 ## mundo, arma el orden de conversión (relleno de tierra primero, luego
-## piso/paredes-puertas-ventanas/mobiliario — ver _ordenar_celdas_construccion())
+## piso/paredes-puertas-ventanas/mobiliario — ver VoxelWorld.ordenar_celdas_edificio())
 ## e inicia la construcción fantasma (VoxelWorld.iniciar_construccion_fantasma()) —
 ## la finalización real ocurre después, celda por celda, cuando el jugador
 ## la surte (ver Player._minar()/_completar_construccion()).
@@ -1147,18 +1108,15 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
 		for h in range(1, cantidad + 1):
 			relleno_orden.append(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y))
+	var tipos_relleno: Dictionary = {}
+	for celda_r in relleno_orden:
+		tipos_relleno[celda_r] = "tierra"
 
 	var celdas_mundo: Dictionary = {}  # Vector3i real -> tipo
 	for rel in _blueprint_activo["celdas_3d"]:
 		var real := Vector3i(esquina.x + rel.x, objetivo + 1 + rel.y, esquina.y + rel.z)
 		celdas_mundo[real] = _blueprint_activo["celdas_3d"][rel]
-
-	var orden: Array = relleno_orden + _ordenar_celdas_construccion(celdas_mundo)
-	var tipos: Dictionary = {}
-	for celda_r in relleno_orden:
-		tipos[celda_r] = "tierra"
-	for celda in celdas_mundo:
-		tipos[celda] = celdas_mundo[celda]
+	var orden_estructura: Array = mundo.ordenar_celdas_edificio(celdas_mundo)
 
 	var huella_xz: Array = []
 	var vistos_xz: Dictionary = {}
@@ -1175,7 +1133,7 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		"ancho": ancho,
 		"profundidad": alto,
 	}
-	var id_edificio: int = mundo.iniciar_construccion_fantasma(orden, tipos, celdas_mundo.keys(), metadata)
+	var id_edificio: int = mundo.iniciar_construccion_fantasma(relleno_orden, tipos_relleno, orden_estructura, celdas_mundo, metadata)
 	metadata["id_edificio"] = id_edificio
 	print("Construcción fantasma iniciada en (", esquina.x, ", ", esquina.y, ") — surtir para completarla.")
 

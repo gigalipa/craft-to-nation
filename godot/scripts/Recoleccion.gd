@@ -58,6 +58,16 @@ func colocar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int) -> v
 	puestos[esquina] = {"tipo": tipo, "ancho": ancho, "alto": alto, "nivel": 1}
 
 
+## Libera la reserva de un puesto/edificio en "esquina" — usada al
+## completarse la deconstrucción total de un edificio (ver
+## VoxelWorld.eliminar_edificio()/Player.gd) para que su footprint vuelva a
+## estar disponible para una nueva construcción. No-op si no había nada
+## registrado en esa esquina (p. ej. un edificio declarado a mano, que
+## nunca pasa por colocar_puesto()).
+func quitar_puesto(esquina: Vector2i) -> void:
+	puestos.erase(esquina)
+
+
 ## true si "celda" cae dentro de la huella de algún puesto ya colocado (de
 ## cualquier tipo) — usada al previsualizar una nueva colocación, para
 ## rechazarla si se solapa con un puesto existente (ver CamaraCenital.gd).

@@ -131,4 +131,13 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(tasas_caza["caza"], 0.5 * Recoleccion.TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO))
 	assert(is_equal_approx(tasas_caza["recoleccion"], 0.25 * Recoleccion.TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO))
 
-	print("\n=== Las 9 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 10: quitar_puesto() libera la reserva ===")
+	Recoleccion.puestos.clear()
+	Recoleccion.colocar_puesto(Vector2i(50, 50), "blueprint", 5, 5)
+	assert(Recoleccion.celda_dentro_de_algun_puesto(Vector2i(52, 52)))
+	Recoleccion.quitar_puesto(Vector2i(50, 50))
+	assert(not Recoleccion.celda_dentro_de_algun_puesto(Vector2i(52, 52)))
+	Recoleccion.quitar_puesto(Vector2i(999, 999))  # no existía, no debe fallar
+	print("OK: quitar_puesto() libera la reserva; quitar una esquina sin nada registrado no falla.")
+
+	print("\n=== Las 10 pruebas de Recoleccion pasaron correctamente ===")

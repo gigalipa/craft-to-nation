@@ -40,6 +40,11 @@ salta sin ningún caso especial.
 - El núcleo urbano (el primer edificio, `Zonificacion.nucleo_declarado`)
   **no se puede deconstruir** — tiene rol estructural (ancla la zona de
   influencia) y a futuro será el monumento personalizable del jugador.
+- La tierra de relleno de nivelación de un blueprint NUNCA es parte del
+  edificio a efectos de inmunidad/deconstrucción (ver Diseño, punto 2.5) —
+  siempre se comporta como terreno normal, incluso mientras el edificio
+  está a medio construir. Deconstruir un edificio nunca la toca; queda el
+  terreno nivelado donde antes había un edificio.
 - Los puestos periféricos (mina, caza/recolección) no pasan por este
   sistema — no tienen fantasma, siguen colocándose e — por ahora — sin
   poder demolerse (sub-proyecto B: migrarlos a fantasma+suministro, ya
@@ -261,6 +266,54 @@ func eliminar_edificio(id: int) -> Vector2i:
 	return esquina
 ```
 
+### 2.5. Aislar la tierra de relleno de la parte estructural
+
+Hoy `iniciar_construccion_fantasma(orden, tipos, metadata)` registra TODO
+`orden` (relleno de tierra incluido) como inmune al minado —
+`CamaraCenital._procesar_clic_blueprint()` construye `orden` como
+`relleno_orden + _ordenar_celdas_construccion(celdas_mundo)`. Esto hace que
+la tierra de nivelación se comporte como parte del edificio: inmune
+mientras existe, y (si no se corrigiera esto) parte de la deconstrucción.
+El usuario prefiere que la tierra de nivelación sea siempre terreno normal,
+aislada de la parte estructural — nunca inmune, nunca parte de la
+deconstrucción, ni siquiera mientras el edificio está a medio construir.
+
+`iniciar_construccion_fantasma()` gana un parámetro nuevo,
+`celdas_estructurales` — el subconjunto de `orden` que SÍ debe registrarse
+como parte del edificio (todo excepto el relleno):
+
+```gdscript
+## "celdas_estructurales" es el subconjunto de "orden" que representa al
+## edificio en sí (paredes, puertas, ventanas, piso, mobiliario) — nunca
+## incluye el relleno de nivelación. Solo esas celdas se registran como
+## inmunes al minado / parte de la deconstrucción (ver registrar_edificio());
+## el relleno de tierra queda fuera desde el primer instante, así que se
+## comporta como terreno normal (minable, no participa en deconstruir el
+## edificio) incluso mientras el edificio sigue a medio construir.
+func iniciar_construccion_fantasma(orden: Array, tipos: Dictionary, celdas_estructurales: Array, metadata: Dictionary = {}) -> int:
+	for celda in orden:
+		colocar_bloque(celda, "fantasma")
+	registrar_edificio(celdas_estructurales)
+	return Construccion.iniciar(orden, tipos, metadata)
+```
+
+`CamaraCenital._procesar_clic_blueprint()` pasa `celdas_mundo.keys()`
+(las celdas derivadas de `celdas_3d`, que nunca incluyen relleno) como
+`celdas_estructurales`:
+
+```gdscript
+mundo.iniciar_construccion_fantasma(orden, tipos, celdas_mundo.keys(), metadata)
+```
+
+Efecto práctico: una celda de relleno que sigue siendo "fantasma" (sin
+surtir todavía) puede minarse con click izquierdo como cualquier otro
+bloque — deja un hueco temporal que se rellena solo cuando le toque su
+turno de ser surtida (el pedido en `Construccion.gd` no se corrompe: sigue
+pendiente igual, solo que su placeholder visual desapareció un momento
+antes). Una vez surtida (convertida en "tierra" real), es un bloque más de
+terreno colocado por el jugador, minable como cualquier otro — nunca vuelve
+a ser inmune ni forma parte de ningún edificio.
+
 ### 3. `Recoleccion.gd`: liberar la reserva de un edificio demolido
 
 ```gdscript
@@ -274,25 +327,52 @@ func quitar_puesto(esquina: Vector2i) -> void:
 	puestos.erase(esquina)
 ```
 
-### 4. `Zonificacion.gd`: zona de influencia reducible
+### 4. `Zonificacion.gd`: zona de influencia reducible, con radio por categoría
 
 Hoy `influencia_min`/`influencia_max` solo pueden crecer (`ampliar_influencia()`,
-ver spec anterior) — nunca se recuerda QUÉ edificio aportó qué parte del
-área, así que no hay forma de "quitar" la contribución de uno sin perder
-las demás. Se agrega un registro de contribuciones por id de edificio (el
-mismo id de `VoxelWorld.registrar_edificio()`) y la zona se recalcula desde
-cero cada vez que algo cambia.
+ver spec anterior), y todos los edificios usan el mismo margen
+(`MARGEN_ZONA_INFLUENCIA = 15`, el mismo que el núcleo). El usuario pidió
+dos cosas nuevas: (a) poder REDUCIR la zona al demoler, y (b) que el radio
+dependa de la categoría del edificio — el núcleo sigue en 15, pero
+residencial aporta 6, investigación e industrial 10, y militar 12. Nunca se
+recuerda QUÉ edificio aportó qué parte del área con qué margen, así que no
+hay forma de "quitar" la contribución de uno sin perder las demás. Se
+agrega un registro de contribuciones por id de edificio (el mismo id de
+`VoxelWorld.registrar_edificio()`), cada una con su propio margen, y la
+zona se recalcula desde cero cada vez que algo cambia.
 
 ```gdscript
+## Margen del núcleo urbano — sin cambios, sigue siendo especial (no tiene
+## "categoria", es el único ancla fija de la zona de influencia).
+const MARGEN_ZONA_INFLUENCIA := 15
+
+## Margen de ampliación de la zona de influencia por categoría de edificio
+## (ver BlueprintValidator.estructura_a_blueprint(), campo "categoria") —
+## GDD: residencial aporta menos alcance que investigación/industrial, y
+## militar el mayor de los cuatro (después del núcleo). Categorías todavía
+## no declarables en esta PoC (investigacion/industrial/militar: no existe
+## ningún blueprint de esos tipos, "categoria" siempre vale "residencial"
+## por ahora) quedan definidas igual, listas para cuando existan.
+const MARGEN_POR_CATEGORIA := {
+	"residencial": 6,
+	"investigacion": 10,
+	"industrial": 10,
+	"militar": 12,
+}
+## Margen de respaldo si "categoria" no coincide con ninguna clave conocida
+## — nunca debería ocurrir con blueprints reales (estructura_a_blueprint()
+## siempre asigna una categoría válida), defensivo por si acaso.
+const MARGEN_CATEGORIA_DEFECTO := 6
+
 ## Huella del núcleo urbano (fija desde declarar_nucleo(), nunca se quita —
-## el núcleo no es deconstruible, ver spec de deconstrucción) y huella de
-## cada edificio que ha ampliado la zona desde entonces, por su id de
-## VoxelWorld.registrar_edificio() — juntas son la base para recalcular
-## influencia_min/influencia_max desde cero en _recalcular_influencia(),
-## cada vez que se agrega (ampliar_influencia()) o se quita
-## (retirar_contribucion()) una.
+## el núcleo no es deconstruible, ver spec de deconstrucción) y, por cada
+## edificio que ha ampliado la zona desde entonces, su huella Y su margen
+## (según su categoría en el momento de ampliar) — juntas son la base para
+## recalcular influencia_min/influencia_max desde cero en
+## _recalcular_influencia(), cada vez que se agrega (ampliar_influencia())
+## o se quita (retirar_contribucion()) una.
 var _huella_nucleo: Array = []
-var _contribuciones: Dictionary = {}  # int (id de edificio) -> Array (huella)
+var _contribuciones: Dictionary = {}  # int (id de edificio) -> {"huella": Array, "margen": int}
 ```
 
 `declarar_nucleo()` cambia de calcular `influencia_min`/`influencia_max`
@@ -311,20 +391,22 @@ func declarar_nucleo(huella: Array) -> void:
 ```
 
 `ampliar_influencia()` cambia de firma — ahora recibe también el id del
-edificio que amplía, para poder registrarlo como contribución:
+edificio que amplía y su categoría (para elegir el margen):
 
 ```gdscript
-## Registra la huella de "id" como contribución a la zona de influencia y
-## recalcula influencia_min/influencia_max desde cero (ver
-## _recalcular_influencia()) — reemplaza el crecimiento incremental por
-## uno recalculado siempre desde la base, para que retirar_contribucion()
-## pueda reducir la zona correctamente más adelante. No-op si el núcleo
-## todavía no fue declarado. "id" es el mismo que devuelve
-## VoxelWorld.registrar_edificio() para ese edificio.
-func ampliar_influencia(id: int, huella: Array) -> void:
+## Registra la huella de "id" (con el margen correspondiente a "categoria")
+## como contribución a la zona de influencia y recalcula influencia_min/
+## influencia_max desde cero (ver _recalcular_influencia()) — reemplaza el
+## crecimiento incremental por uno recalculado siempre desde la base, para
+## que retirar_contribucion() pueda reducir la zona correctamente más
+## adelante. No-op si el núcleo todavía no fue declarado. "id" es el mismo
+## que devuelve VoxelWorld.registrar_edificio() para ese edificio;
+## "categoria" es blueprint["categoria"].
+func ampliar_influencia(id: int, huella: Array, categoria: String) -> void:
 	if not nucleo_declarado:
 		return
-	_contribuciones[id] = huella.duplicate()
+	var margen: int = MARGEN_POR_CATEGORIA.get(categoria, MARGEN_CATEGORIA_DEFECTO)
+	_contribuciones[id] = {"huella": huella.duplicate(), "margen": margen}
 	_recalcular_influencia()
 
 
@@ -341,35 +423,44 @@ func retirar_contribucion(id: int) -> void:
 	_recalcular_influencia()
 
 
-## Recalcula influencia_min/influencia_max como la caja delimitadora de
-## _huella_nucleo + todas las _contribuciones vigentes, más el margen
-## MARGEN_ZONA_INFLUENCIA — misma fórmula que ya usaban declarar_nucleo()/
+## Recalcula influencia_min/influencia_max como la unión de: la caja
+## delimitadora de _huella_nucleo expandida por MARGEN_ZONA_INFLUENCIA, y
+## la de cada contribución vigente expandida por SU PROPIO margen (no un
+## margen único al final — cada edificio "empuja" la zona hasta su propio
+## alcance, no el de otro). Misma fórmula que ya usaban declarar_nucleo()/
 ## ampliar_influencia() por separado, unificada en un solo lugar para que
 ## crecer y reducir usen exactamente el mismo cálculo.
 func _recalcular_influencia() -> void:
-	var x_min: int = _huella_nucleo[0].x
-	var x_max: int = _huella_nucleo[0].x
-	var z_min: int = _huella_nucleo[0].y
-	var z_max: int = _huella_nucleo[0].y
+	var min_x: int = _huella_nucleo[0].x - MARGEN_ZONA_INFLUENCIA
+	var max_x: int = _huella_nucleo[0].x + MARGEN_ZONA_INFLUENCIA
+	var min_z: int = _huella_nucleo[0].y - MARGEN_ZONA_INFLUENCIA
+	var max_z: int = _huella_nucleo[0].y + MARGEN_ZONA_INFLUENCIA
 	for celda in _huella_nucleo:
-		x_min = min(x_min, celda.x)
-		x_max = max(x_max, celda.x)
-		z_min = min(z_min, celda.y)
-		z_max = max(z_max, celda.y)
-	for huella in _contribuciones.values():
-		for celda in huella:
-			x_min = min(x_min, celda.x)
-			x_max = max(x_max, celda.x)
-			z_min = min(z_min, celda.y)
-			z_max = max(z_max, celda.y)
-	influencia_min = Vector2i(x_min - MARGEN_ZONA_INFLUENCIA, z_min - MARGEN_ZONA_INFLUENCIA)
-	influencia_max = Vector2i(x_max + MARGEN_ZONA_INFLUENCIA, z_max + MARGEN_ZONA_INFLUENCIA)
+		min_x = min(min_x, celda.x - MARGEN_ZONA_INFLUENCIA)
+		max_x = max(max_x, celda.x + MARGEN_ZONA_INFLUENCIA)
+		min_z = min(min_z, celda.y - MARGEN_ZONA_INFLUENCIA)
+		max_z = max(max_z, celda.y + MARGEN_ZONA_INFLUENCIA)
+	for contribucion in _contribuciones.values():
+		var margen: int = contribucion["margen"]
+		for celda in contribucion["huella"]:
+			min_x = min(min_x, celda.x - margen)
+			max_x = max(max_x, celda.x + margen)
+			min_z = min(min_z, celda.y - margen)
+			max_z = max(max_z, celda.y + margen)
+	influencia_min = Vector2i(min_x, min_z)
+	influencia_max = Vector2i(max_x, max_z)
 ```
 
 Los dos sitios existentes que llaman `Zonificacion.ampliar_influencia(huella)`
 (`Player._declarar_edificio()`/`Player._completar_construccion()`) pasan a
-llamar `Zonificacion.ampliar_influencia(id, huella)`, usando el id que ya
-devuelve `mundo.registrar_edificio()` en ese mismo punto.
+llamar `Zonificacion.ampliar_influencia(id, huella, blueprint["categoria"])`,
+usando el id que ya devuelve `mundo.registrar_edificio()` y la categoría
+del blueprint declarado/completado en ese mismo punto.
+
+`BlueprintValidator.estructura_a_blueprint()` gana un campo nuevo en el
+dict devuelto: `"categoria": "residencial"` (fijo por ahora — es la única
+categoría real declarable en esta PoC; cuando existan blueprints de
+investigación/industrial/militar, ese campo se ajustará según corresponda).
 
 ### 5. `Player.gd`: tecla `G`, modo deconstrucción, y el ciclo de interacción
 
@@ -539,20 +630,26 @@ func ocultar_modo_deconstruccion() -> void:
   registra un edificio, lo retira, confirma que el contador vuelve a 0; y
   que nunca baja de 0 (retirar más de lo registrado se clampa).
 - **`BlueprintValidatorTest.gd`** (continúa la numeración, ya usa `mundo`
-  real): dos casos nuevos — (a) declarar un edificio con blueprint,
+  real): tres casos nuevos — (a) declarar un edificio con blueprint,
   completarlo vía fantasma, deconstruirlo por completo bloque a bloque
   (orden inverso correcto: mobiliario antes que paredes, paredes antes que
-  piso/relleno) y confirmar que `eliminar_edificio()` borra todas sus
-  celdas y libera `celda_a_edificio`; (b) iniciar un edificio fantasma a
-  medio construir (algunas celdas ya reales, otras todavía fantasma),
+  piso) y confirmar que `eliminar_edificio()` borra todas sus celdas y
+  libera `celda_a_edificio`; (b) iniciar un edificio fantasma a medio
+  construir (algunas celdas ya reales, otras todavía fantasma),
   deconstruirlo, y confirmar que las celdas YA fantasma nunca se "revierten"
-  (no aparecen en el orden calculado) — solo las reales.
-- **`ZonificacionTest.gd`**: actualizar las 3 llamadas existentes a
-  `ampliar_influencia()` (TEST 9) para pasar un id explícito. Nuevo caso:
-  ampliar la influencia con dos ids distintos, retirar la contribución de
-  uno, confirmar que la zona se reduce correctamente a lo que aporta el
-  núcleo + la contribución restante (nunca menos que eso, aunque el
-  edificio retirado la hubiera ampliado más en su momento).
+  (no aparecen en el orden calculado) — solo las reales; (c) confirmar que
+  una celda de RELLENO (pasada en `orden` pero no en `celdas_estructurales`
+  al llamar `iniciar_construccion_fantasma()`) nunca queda registrada en
+  `celda_a_edificio` — es minable de inmediato aunque siga siendo
+  "fantasma", y no aparece en `edificio_a_celdas[id]`.
+- **`ZonificacionTest.gd`**: actualizar las 4 llamadas existentes a
+  `ampliar_influencia()` (TEST 9) para pasar un id y una categoría
+  explícitos. Nuevo caso: ampliar la influencia con dos edificios de
+  categorías distintas (p. ej. "residencial" margen 6 y "militar" margen
+  12) y confirmar que cada uno expande la zona según SU PROPIO margen, no
+  el del otro; retirar la contribución del de mayor margen y confirmar que
+  la zona se reduce correctamente a lo que aporta el núcleo + el edificio
+  restante (nunca menos que eso).
 - **`RecoleccionTest.gd`** (usa el autoload real): nuevo caso para
   `quitar_puesto()` — coloca un puesto, confirma que
   `celda_dentro_de_algun_puesto()` lo detecta, lo quita, confirma que ya
@@ -577,10 +674,16 @@ Manual en el editor:
    deben requerir ninguna acción extra.
 3. Confirmar que el núcleo urbano NO se puede deconstruir (mensaje en
    consola, ninguna celda se revierte).
-4. Colocar un segundo edificio que amplíe la zona de influencia,
+4. Colocar un segundo edificio que amplíe la zona de influencia (radio
+   según su categoría — hoy siempre "residencial", margen 6),
    deconstruirlo por completo, y confirmar que la zona de influencia se
    reduce de vuelta (pero no más allá del núcleo + cualquier otro edificio
    que siga en pie).
 5. Confirmar que, tras deconstruir por completo un edificio hecho vía
    blueprint, se puede volver a construir algo nuevo exactamente en su
    antigua huella (la reserva en `Recoleccion.puestos` se liberó).
+6. Colocar un blueprint sobre terreno irregular (que exija relleno de
+   nivelación), surtirlo por completo, y confirmar que la tierra de
+   relleno es minable con click izquierdo normal (sin activar el modo
+   deconstrucción) tanto mientras el edificio existe como después de
+   deconstruirlo — nunca se comporta como parte inmune del edificio.

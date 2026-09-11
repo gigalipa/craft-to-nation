@@ -73,6 +73,14 @@ const VECINOS_3D: Array[Vector3i] = [
 	Vector3i(0, 0, 1), Vector3i(0, 0, -1),
 ]
 
+## Las 4 direcciones cardinales en el plano XZ — usadas por
+## calcular_despeje() para encontrar el lado "externo" de una celda
+## ventana/puerta (cualquier vecino XZ que no pertenezca a la huella del
+## propio edificio).
+const VECINOS_ORTOGONALES_XZ: Array[Vector2i] = [
+	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+]
+
 var _id_por_tipo: Dictionary = {}  # String -> int
 var _tipo_por_id: Dictionary = {}  # int -> String
 
@@ -123,6 +131,17 @@ var edificio_tipos: Dictionary = {}  # int -> Dictionary (Vector3i -> String)
 var edificio_progreso: Dictionary = {}  # int -> int
 var edificio_metadata: Dictionary = {}  # int -> Dictionary
 
+## Por edificio: las celdas de despeje reservadas por sus ventanas/puertas
+## (ver calcular_despeje()) y su consulta inversa — mismo patrón que
+## edificio_a_celdas/celda_a_edificio. Persiste mientras exista el id del
+## edificio, se libera por completo en eliminar_edificio() — ver
+## docs/superpowers/specs/2026-09-11-despeje-ventanas-puertas-design.md.
+## El despeje de dos edificios DISTINTOS puede solaparse libremente: solo
+## se compara celda ESTRUCTURAL nueva contra despeje ajeno
+## (verificar_despejes()), nunca despeje contra despeje.
+var edificio_despeje: Dictionary = {}  # int -> Array[Vector3i]
+var celda_a_despeje: Dictionary = {}  # Vector3i -> int
+
 
 ## Asigna un id de edificio nuevo y registra cada celda de "celdas" bajo
 ## ese id. Devuelve el id asignado — usado por el llamador para asociar
@@ -141,6 +160,65 @@ func registrar_edificio(celdas: Array) -> int:
 ## explícito (-1) en vez de acceder al Dictionary directamente.
 func id_de_edificio(celda: Vector3i) -> int:
 	return celda_a_edificio.get(celda, -1)
+
+
+## Calcula las celdas de despeje que exige "celdas_mundo" (Vector3i real ->
+## tipo, las celdas ESTRUCTURALES de un edificio — mismo formato que
+## registrar_edificio_completo()/iniciar_construccion_fantasma() ya usan).
+## Para cada celda "ventana" o "puerta_inferior"/"puerta_superior", revisa
+## sus 4 vecinos cardinales en XZ; cualquiera que NO pertenezca a la huella
+## del propio edificio (es decir, cae fuera de celdas_mundo en esa columna)
+## es una dirección "externa". En cada dirección externa se reservan 1
+## celda (ventana) o 2 celdas (puerta, en AMBOS niveles) a la misma altura
+## Y de la celda original. Devuelve un Array sin duplicados (una celda de
+## despeje puede quedar "pedida" por más de una ventana/puerta vecina).
+func calcular_despeje(celdas_mundo: Dictionary) -> Array:
+	var huella_xz: Dictionary = {}  # Vector2i -> true
+	for celda in celdas_mundo:
+		huella_xz[Vector2i(celda.x, celda.z)] = true
+
+	var despeje: Dictionary = {}  # Vector3i -> true, para deduplicar
+	for celda in celdas_mundo:
+		var tipo: String = celdas_mundo[celda]
+		var profundidad := 0
+		if tipo == "ventana":
+			profundidad = 1
+		elif tipo == "puerta_inferior" or tipo == "puerta_superior":
+			profundidad = 2
+		else:
+			continue
+
+		for direccion in VECINOS_ORTOGONALES_XZ:
+			var vecino_xz := Vector2i(celda.x, celda.z) + direccion
+			if huella_xz.has(vecino_xz):
+				continue  # vecino es parte del propio edificio, no es "externo"
+			for paso in range(1, profundidad + 1):
+				var celda_despeje := Vector3i(
+					celda.x + direccion.x * paso, celda.y, celda.z + direccion.y * paso
+				)
+				despeje[celda_despeje] = true
+	return despeje.keys()
+
+
+## Valida si "celdas_mundo" (las celdas estructurales de un edificio a
+## punto de colocarse, mismo formato que calcular_despeje()) respeta la
+## regla de despeje: (a) ninguna de sus propias celdas de despeje puede
+## estar físicamente ocupada (terreno, árbol, o cualquier estructura —
+## cualquier bloque real tiene un tipo no vacío, así que basta comparar
+## contra "" sin enumerar tipos "sólidos"), y (b) ninguna de sus celdas
+## ESTRUCTURALES puede caer dentro del despeje YA RESERVADO de otro
+## edificio (celda_a_despeje). El despeje del edificio nuevo NUNCA se
+## compara contra el despeje ajeno — dos despejes distintos pueden
+## solaparse libremente (puertas enfrentadas, ventana sobre despeje de
+## puerta ajena, etc.), ver spec punto de diseño.
+func verificar_despejes(celdas_mundo: Dictionary) -> bool:
+	for celda in celdas_mundo:
+		if celda_a_despeje.has(celda):
+			return false
+	for celda_despeje in calcular_despeje(celdas_mundo):
+		if obtener_tipo(celda_despeje) != "":
+			return false
+	return true
 
 
 func _ready() -> void:
@@ -598,6 +676,9 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_tipos.erase(id)
 	edificio_progreso.erase(id)
 	edificio_metadata.erase(id)
+	for celda_despeje in edificio_despeje.get(id, []):
+		celda_a_despeje.erase(celda_despeje)
+	edificio_despeje.erase(id)
 	return esquina
 
 
@@ -623,6 +704,10 @@ func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictiona
 	edificio_tipos[id] = tipos_estructura
 	edificio_progreso[id] = 0
 	edificio_metadata[id] = metadata
+	var despeje: Array = calcular_despeje(tipos_estructura)
+	edificio_despeje[id] = despeje
+	for celda_despeje in despeje:
+		celda_a_despeje[celda_despeje] = id
 	return id
 
 
@@ -640,6 +725,10 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 	edificio_tipos[id] = celdas_mundo
 	edificio_progreso[id] = orden.size()
 	edificio_metadata[id] = metadata
+	var despeje: Array = calcular_despeje(celdas_mundo)
+	edificio_despeje[id] = despeje
+	for celda_despeje in despeje:
+		celda_a_despeje[celda_despeje] = id
 	return id
 
 

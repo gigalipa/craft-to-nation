@@ -166,16 +166,18 @@ orden/tipos independientes, en vez de un solo `orden` mezclado:
 
 ```gdscript
 ## Arranca un edificio fantasma. "orden_relleno"/"tipos_relleno" son las
-## celdas de nivelación de terreno (si las hay) — siguen su propio proceso
-## de un solo sentido en Construccion.gd, nunca se registran como parte
-## del edificio (igual que el spec anterior, punto 2.5). "orden_estructura"
-## (ya en el orden canónico de _ordenar_celdas_edificio()) y "tipos_estructura"
-## son las celdas del edificio en sí — se registran en
-## edificio_orden/edificio_tipos/edificio_progreso (progreso arranca en 0,
-## todas fantasma) en vez de en Construccion.gd. Devuelve el id nuevo.
+## celdas de nivelación de terreno (si las hay) — siguen pasando por
+## "fantasma" y su propia cola de un solo sentido en Construccion.gd,
+## exactamente igual que antes de este rediseño (nunca se registran como
+## parte del edificio, ver spec anterior punto 2.5). "orden_estructura" (ya
+## en el orden canónico de _ordenar_celdas_edificio()) y "tipos_estructura"
+## son las celdas del edificio en sí — esas NO pasan por Construccion.gd:
+## se registran directamente en edificio_orden/edificio_tipos/
+## edificio_progreso (progreso arranca en 0, todas fantasma). Devuelve el
+## id nuevo.
 func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictionary, orden_estructura: Array, tipos_estructura: Dictionary, metadata: Dictionary = {}) -> int:
 	for celda in orden_relleno:
-		colocar_bloque(celda, "tierra")
+		colocar_bloque(celda, "fantasma")
 	if not orden_relleno.is_empty():
 		Construccion.iniciar(orden_relleno, tipos_relleno)
 	for celda in orden_estructura:
@@ -188,11 +190,12 @@ func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictiona
 	return id
 ```
 
-Nota: el relleno ya NO pasa por "fantasma" — se coloca directamente como
-`"tierra"` real y avanza por su propia cola de `Construccion.gd` igual que
-antes (sigue siendo terreno normal, minable, ver spec anterior punto 2.5).
-Esto es idéntico al comportamiento previo del relleno; lo único que cambia
-es que ya no comparte el mismo `orden`/`tipos` que la estructura.
+Nota: el relleno sigue el mismo camino de siempre (fantasma ->
+`Construccion.iniciar()`/`avanzar()`) — lo único que cambia respecto al
+comportamiento previo es que ya NO comparte el mismo `orden`/`tipos` que la
+estructura (dos colas independientes en vez de una mezclada), así que
+`surtir_construccion()` debe saber avanzar cualquiera de las dos (ver punto
+5, corregido para no perder esta rama).
 
 ### 4. `VoxelWorld.gd`: `registrar_edificio_completo()` para edificios ya terminados
 
@@ -222,14 +225,26 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 ### 5. `VoxelWorld.gd`: `surtir_construccion()` reescrita
 
 ```gdscript
-## Avanza el progreso de un edificio en construcción apuntando a "celda".
-## Encuentra el edificio por id_de_edificio() (no por pertenecer a una cola
-## de Construccion.gd, ya no existe tal cosa para estructura) — así que,
-## igual que antes, sirve apuntar a CUALQUIER celda del edificio (p. ej.
-## una pared exterior ya real) para surtir la SIGUIENTE celda pendiente en
-## orden, sin importar si "celda" en sí ya es real. No-op ({}) si "celda"
-## no pertenece a ningún edificio o el edificio ya está completo.
+## Avanza, según a qué pertenezca "celda": si todavía es parte de una cola
+## de RELLENO activa en Construccion.gd, avanza esa cola (comportamiento
+## sin cambios respecto a antes de este rediseño) y devuelve un resultado
+## sin "completa" (el relleno nunca dispara _completar_construccion()). En
+## cualquier otro caso, busca el edificio por id_de_edificio() — sirve
+## apuntar a CUALQUIER celda del edificio (p. ej. una pared exterior ya
+## real) para surtir la SIGUIENTE celda pendiente en edificio_orden, sin
+## importar si "celda" en sí ya es real. No-op ({}) si "celda" no
+## pertenece a ningún relleno pendiente NI a ningún edificio con progreso
+## incompleto.
 func surtir_construccion(celda: Vector3i) -> Dictionary:
+	var id_relleno: int = Construccion.construccion_de(celda)
+	if id_relleno != -1:
+		var resultado_relleno: Dictionary = Construccion.avanzar(id_relleno)
+		if resultado_relleno.is_empty():
+			return {}
+		set_cell_item(resultado_relleno["celda"], GridMap.INVALID_CELL_ITEM)
+		colocar_bloque(resultado_relleno["celda"], resultado_relleno["tipo"], true)
+		return {"completa": false, "metadata": {}}
+
 	var id: int = id_de_edificio(celda)
 	if id == -1 or not edificio_orden.has(id):
 		return {}

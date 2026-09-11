@@ -55,7 +55,10 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## como una celda estructural nueva que invade el despeje ajeno (31), que
 ## los despejes de dos edificios distintos pueden solaparse libremente sin
 ## rechazo (32), y que eliminar_edificio() libera la reserva de despeje de
-## inmediato (33).
+## inmediato (33), y que cuando el despeje de dos edificios se solapa,
+## deconstruir uno de ellos no libera por error la reserva del vecino que
+## sigue en pie, y solo se libera del todo cuando ambos dueños desaparecen
+## (34, ver VoxelWorld.celda_a_despeje).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
 ## panel "Output": debe imprimir los 34 tests y no debe lanzar ningún error
 ## de assert().
@@ -974,5 +977,36 @@ func ejecutar_pruebas() -> void:
 	mundo.eliminar_edificio(id_33)
 	assert(mundo.verificar_despejes(celdas_mundo_33b), "Tras eliminar el edificio, su despeje debe liberarse de inmediato")
 	print("OK: eliminar_edificio() libera por completo la reserva de despeje del edificio eliminado.")
+
+	print("\n=== TEST 34: al deconstruir un edificio, el despeje compartido con un vecino que sigue en pie NO se libera ===")
+	const OX22 := 1070
+	# Mismo patrón que TEST 32: dos puertas enfrentadas separadas por 2
+	# celdas -- sus despejes se solapan exactamente en el hueco del medio.
+	var celda_puerta_a_34 := Vector3i(OX22, 1, OX22)
+	var celda_puerta_b_34 := Vector3i(OX22 + 3, 1, OX22)
+	mundo.colocar_bloque(celda_puerta_a_34, "puerta_inferior", true)
+	mundo.colocar_bloque(celda_puerta_a_34 + Vector3i(0, 1, 0), "puerta_superior", true)
+	var celdas_mundo_34a := {
+		celda_puerta_a_34: "puerta_inferior",
+		celda_puerta_a_34 + Vector3i(0, 1, 0): "puerta_superior",
+	}
+	var id_a_34: int = mundo.registrar_edificio_completo(celdas_mundo_34a)
+	mundo.colocar_bloque(celda_puerta_b_34, "puerta_inferior", true)
+	mundo.colocar_bloque(celda_puerta_b_34 + Vector3i(0, 1, 0), "puerta_superior", true)
+	var celdas_mundo_34b := {
+		celda_puerta_b_34: "puerta_inferior",
+		celda_puerta_b_34 + Vector3i(0, 1, 0): "puerta_superior",
+	}
+	var id_b_34: int = mundo.registrar_edificio_completo(celdas_mundo_34b)
+	# Celda del hueco compartido: a 1 celda de la puerta A y 2 de la puerta
+	# B -- cae dentro del despeje (profundidad 2) de AMBAS.
+	var celda_pared_34 := Vector3i(OX22 + 1, 1, OX22)
+	var celdas_mundo_34_pared := {celda_pared_34: "pared"}
+	assert(not mundo.verificar_despejes(celdas_mundo_34_pared), "Con los dos edificios en pie, la zona compartida sigue reservada")
+	mundo.eliminar_edificio(id_a_34)
+	assert(not mundo.verificar_despejes(celdas_mundo_34_pared), "Deconstruir el edificio A no debe liberar la reserva que el edificio B (todavía en pie) tiene sobre la misma celda")
+	mundo.eliminar_edificio(id_b_34)
+	assert(mundo.verificar_despejes(celdas_mundo_34_pared), "Con ambos edificios eliminados, la zona compartida debe quedar libre")
+	print("OK: celda_a_despeje conserva la reserva del vecino en pie al deconstruir uno de dos edificios con despeje compartido, y la libera solo cuando ambos desaparecen.")
 
 	print("\n=== Las 34 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -91,9 +91,14 @@ Nuevo estado, junto a `edificio_orden`/etc.:
 ## docs/superpowers/specs/2026-09-11-despeje-ventanas-puertas-design.md.
 ## El despeje de dos edificios DISTINTOS puede solaparse libremente: solo
 ## se compara celda ESTRUCTURAL nueva contra despeje ajeno
-## (verificar_despejes()), nunca despeje contra despeje.
+## (verificar_despejes()), nunca despeje contra despeje. Por eso
+## celda_a_despeje admite VARIOS dueños por celda (id de edificio -> true):
+## si dos edificios comparten una celda de despeje (p. ej. puertas
+## enfrentadas), liberar el despeje de uno al deconstruirlo
+## (eliminar_edificio()) debe quitar solo SU reserva, nunca la del vecino
+## que sigue en pie.
 var edificio_despeje: Dictionary = {}  # int -> Array[Vector3i]
-var celda_a_despeje: Dictionary = {}  # Vector3i -> int
+var celda_a_despeje: Dictionary = {}  # Vector3i -> Dictionary (id de edificio -> true)
 ```
 
 ### 2. `VoxelWorld.gd`: `calcular_despeje()`
@@ -183,7 +188,9 @@ func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictiona
 	var despeje: Array = calcular_despeje(tipos_estructura)
 	edificio_despeje[id] = despeje
 	for celda_despeje in despeje:
-		celda_a_despeje[celda_despeje] = id
+		if not celda_a_despeje.has(celda_despeje):
+			celda_a_despeje[celda_despeje] = {}
+		celda_a_despeje[celda_despeje][id] = true
 	return id
 ```
 
@@ -200,12 +207,20 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 	var despeje: Array = calcular_despeje(celdas_mundo)
 	edificio_despeje[id] = despeje
 	for celda_despeje in despeje:
-		celda_a_despeje[celda_despeje] = id
+		if not celda_a_despeje.has(celda_despeje):
+			celda_a_despeje[celda_despeje] = {}
+		celda_a_despeje[celda_despeje][id] = true
 	return id
 ```
 
 `eliminar_edificio()` libera la reserva junto con el resto del estado del
-id:
+id — pero **solo la reserva de este edificio**: como el despeje de dos
+edificios distintos puede solaparse (punto de diseño arriba), una celda de
+`celda_a_despeje` puede tener más de un dueño, y borrar la celda entera al
+deconstruir cualquiera de ellos liberaría por error la reserva de un vecino
+que sigue en pie. Por eso solo se borra la entrada `[id]` del Dictionary
+interno, y la celda se elimina de `celda_a_despeje` únicamente cuando ya
+no le queda ningún dueño:
 
 ```gdscript
 	edificio_a_celdas.erase(id)
@@ -214,7 +229,10 @@ id:
 	edificio_progreso.erase(id)
 	edificio_metadata.erase(id)
 	for celda_despeje in edificio_despeje.get(id, []):
-		celda_a_despeje.erase(celda_despeje)
+		if celda_a_despeje.has(celda_despeje):
+			celda_a_despeje[celda_despeje].erase(id)
+			if celda_a_despeje[celda_despeje].is_empty():
+				celda_a_despeje.erase(celda_despeje)
 	edificio_despeje.erase(id)
 	return esquina
 ```

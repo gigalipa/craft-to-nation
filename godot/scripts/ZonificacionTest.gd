@@ -2,10 +2,13 @@ extends Node
 
 ## Pruebas aisladas de Zonificacion.gd (mismo patrón que CiudadTest.gd).
 ## Corre esta escena (ZonificacionTest.tscn) con F6 en el editor de Godot y
-## revisa el panel "Output": debe imprimir las 11 pruebas y no debe lanzar
+## revisa el panel "Output": debe imprimir las 12 pruebas y no debe lanzar
 ## ningún error de assert(). No usa el autoload "Zonificacion" — instancia
 ## una Zonificacion nueva vía preload, para poder correr las pruebas de
-## forma aislada y repetible (igual que CiudadTest.gd con Ciudad).
+## forma aislada y repetible (igual que CiudadTest.gd con Ciudad). TEST 9b
+## confirma que dentro_de_influencia() es la UNIÓN de la caja de cada
+## edificio, no el rectángulo delimitador influencia_min/influencia_max
+## (que solo acota el recorrido de ZonaOverlay y los mensajes de consola).
 
 const ZonificacionScript = preload("res://scripts/Zonificacion.gd")
 
@@ -90,6 +93,18 @@ func ejecutar_pruebas() -> void:
 	zona.ampliar_influencia(103, [Vector2i(300, 300)], "categoria_inexistente")
 	assert(zona.influencia_max == Vector2i(306, 306), "Categoría desconocida usa MARGEN_CATEGORIA_DEFECTO")
 
+	print("\n=== TEST 9b: dentro_de_influencia() es la UNIÓN de cajas, no el rectángulo que las contiene a todas ===")
+	# influencia_max ya vale (306, 306) por las contribuciones lejanas, pero
+	# eso es solo la caja delimitadora de TODO (para acotar el overlay/los
+	# mensajes) — dentro_de_influencia() no debe considerar "dentro" el
+	# hueco vacío entre el núcleo y esas contribuciones.
+	assert(not zona.dentro_de_influencia(Vector2i(50, 50)), "Hueco entre el núcleo y la contribución 101 -- no cae en ninguna caja individual")
+	assert(not zona.dentro_de_influencia(Vector2i(150, 150)), "Hueco entre las contribuciones 101 y 102")
+	assert(zona.dentro_de_influencia(Vector2i(0, 0)), "El núcleo sigue teniendo su propia zona, sin cambios")
+	assert(zona.dentro_de_influencia(Vector2i(100, 100)), "La contribución 101 sí cubre su propio punto")
+	assert(zona.dentro_de_influencia(Vector2i(200, 200)), "La contribución 102 sí cubre su propio punto")
+	print("OK: la zona de influencia es la unión de la caja de cada edificio, no un único rectángulo que los abarque a todos.")
+
 	print("\n=== TEST 10: retirar_contribucion() reduce la zona correctamente ===")
 	zona.retirar_contribucion(103)
 	assert(zona.influencia_max == Vector2i(212, 212), "Al quitar la contribución más lejana, vuelve a lo que aporta el militar")
@@ -114,4 +129,4 @@ func ejecutar_pruebas() -> void:
 	assert(borradas_vacio == 0, "Borrar donde no había nada pintado no cuenta celdas")
 	print("OK: despintar_zona() borra solo las celdas que tenían una zona pintada, deja el resto intacto.")
 
-	print("\n=== Las 11 pruebas de Zonificacion pasaron correctamente ===")
+	print("\n=== Las 12 pruebas de Zonificacion pasaron correctamente ===")

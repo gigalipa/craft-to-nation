@@ -54,7 +54,21 @@ var zonas: Dictionary = {}  # Vector2i(x,z) -> String
 ## _recalcular_influencia(), cada vez que se agrega (ampliar_influencia())
 ## o se quita (retirar_contribucion()) una.
 var _huella_nucleo: Array = []
-var _contribuciones: Dictionary = {}  # int (id de edificio) -> {"huella": Array, "margen": int}
+var _contribuciones: Dictionary = {}  # int (id de edificio) -> {"huella": Array, "margen": int, "caja": Dictionary}
+
+## Caja delimitadora (min/max) del núcleo, expandida por MARGEN_ZONA_
+## INFLUENCIA — calculada una sola vez en declarar_nucleo() (el núcleo no
+## cambia nunca). Junto con la "caja" de cada contribución en
+## _contribuciones, es la unidad real de la zona de influencia: cada
+## edificio aporta SU PROPIA caja, y dentro_de_influencia() prueba la UNIÓN
+## de todas, no una única caja que las contenga a todas (ver
+## dentro_de_influencia()) — así un edificio nuevo cerca del borde de la
+## zona la "abulta" hacia su propio lado, sin ensanchar toda la zona en
+## las demás direcciones. influencia_min/influencia_max siguen siendo la
+## caja delimitadora de TODO (unión de estas cajas), útil para acotar el
+## recorrido de ZonaOverlay y para los mensajes de consola, pero ya no es
+## lo que dentro_de_influencia() consulta.
+var _caja_nucleo: Dictionary = {}
 
 
 ## Bootstrap del núcleo urbano: se llama una sola vez, cuando se declara el
@@ -64,6 +78,7 @@ func declarar_nucleo(huella: Array) -> void:
 	if nucleo_declarado:
 		return
 	_huella_nucleo = huella.duplicate()
+	_caja_nucleo = _caja_expandida(_huella_nucleo, MARGEN_ZONA_INFLUENCIA)
 	nucleo_declarado = true
 	_recalcular_influencia()
 
@@ -83,7 +98,11 @@ func ampliar_influencia(id: int, huella: Array, categoria: String) -> void:
 	if not nucleo_declarado:
 		return
 	var margen: int = MARGEN_POR_CATEGORIA.get(categoria, MARGEN_CATEGORIA_DEFECTO)
-	_contribuciones[id] = {"huella": huella.duplicate(), "margen": margen}
+	_contribuciones[id] = {
+		"huella": huella.duplicate(),
+		"margen": margen,
+		"caja": _caja_expandida(huella, margen),
+	}
 	_recalcular_influencia()
 
 
@@ -100,41 +119,64 @@ func retirar_contribucion(id: int) -> void:
 	_recalcular_influencia()
 
 
-## Recalcula influencia_min/influencia_max como la unión de: la caja
-## delimitadora de _huella_nucleo expandida por MARGEN_ZONA_INFLUENCIA, y
-## la de cada contribución vigente expandida por SU PROPIO margen (no un
-## margen único al final — cada edificio "empuja" la zona hasta su propio
-## alcance, no el de otro). Misma fórmula que ya usaban declarar_nucleo()/
-## ampliar_influencia() por separado, unificada en un solo lugar para que
-## crecer y reducir usen exactamente el mismo cálculo.
+## Caja delimitadora (min/max) de "huella" expandida por "margen" en las 4
+## direcciones — unidad básica de la zona de influencia: el núcleo y cada
+## edificio aportan SU PROPIA caja (ver _caja_nucleo/_contribuciones),
+## nunca una caja compartida.
+func _caja_expandida(huella: Array, margen: int) -> Dictionary:
+	var min_x: int = huella[0].x - margen
+	var max_x: int = huella[0].x + margen
+	var min_z: int = huella[0].y - margen
+	var max_z: int = huella[0].y + margen
+	for celda in huella:
+		min_x = min(min_x, celda.x - margen)
+		max_x = max(max_x, celda.x + margen)
+		min_z = min(min_z, celda.y - margen)
+		max_z = max(max_z, celda.y + margen)
+	return {"min": Vector2i(min_x, min_z), "max": Vector2i(max_x, max_z)}
+
+
+func _celda_en_caja(celda: Vector2i, caja: Dictionary) -> bool:
+	return (
+		celda.x >= caja["min"].x and celda.x <= caja["max"].x
+		and celda.y >= caja["min"].y and celda.y <= caja["max"].y
+	)
+
+
+## Recalcula influencia_min/influencia_max como la caja delimitadora de
+## TODAS las cajas vigentes (núcleo + cada contribución) — solo sirve para
+## acotar el recorrido de ZonaOverlay y los mensajes de consola;
+## dentro_de_influencia() ya NO consulta este rectángulo (ver más abajo).
 func _recalcular_influencia() -> void:
-	var min_x: int = _huella_nucleo[0].x - MARGEN_ZONA_INFLUENCIA
-	var max_x: int = _huella_nucleo[0].x + MARGEN_ZONA_INFLUENCIA
-	var min_z: int = _huella_nucleo[0].y - MARGEN_ZONA_INFLUENCIA
-	var max_z: int = _huella_nucleo[0].y + MARGEN_ZONA_INFLUENCIA
-	for celda in _huella_nucleo:
-		min_x = min(min_x, celda.x - MARGEN_ZONA_INFLUENCIA)
-		max_x = max(max_x, celda.x + MARGEN_ZONA_INFLUENCIA)
-		min_z = min(min_z, celda.y - MARGEN_ZONA_INFLUENCIA)
-		max_z = max(max_z, celda.y + MARGEN_ZONA_INFLUENCIA)
+	var min_x: int = _caja_nucleo["min"].x
+	var max_x: int = _caja_nucleo["max"].x
+	var min_z: int = _caja_nucleo["min"].y
+	var max_z: int = _caja_nucleo["max"].y
 	for contribucion in _contribuciones.values():
-		var margen: int = contribucion["margen"]
-		for celda in contribucion["huella"]:
-			min_x = min(min_x, celda.x - margen)
-			max_x = max(max_x, celda.x + margen)
-			min_z = min(min_z, celda.y - margen)
-			max_z = max(max_z, celda.y + margen)
+		var caja: Dictionary = contribucion["caja"]
+		min_x = min(min_x, caja["min"].x)
+		max_x = max(max_x, caja["max"].x)
+		min_z = min(min_z, caja["min"].y)
+		max_z = max(max_z, caja["max"].y)
 	influencia_min = Vector2i(min_x, min_z)
 	influencia_max = Vector2i(max_x, max_z)
 
 
+## true si "celda" cae dentro de la caja expandida del núcleo O de la de
+## CUALQUIER contribución individual — la UNIÓN de las cajas, no la caja
+## que las contiene a todas (esa es influencia_min/influencia_max, que ya
+## no se usa aquí). Así, un edificio nuevo cerca del borde de la zona la
+## "abulta" hacia su propio lado sin ensanchar toda la zona en las demás
+## direcciones — la forma real puede dejar de ser rectangular.
 func dentro_de_influencia(celda: Vector2i) -> bool:
 	if not nucleo_declarado:
 		return false
-	return (
-		celda.x >= influencia_min.x and celda.x <= influencia_max.x
-		and celda.y >= influencia_min.y and celda.y <= influencia_max.y
-	)
+	if _celda_en_caja(celda, _caja_nucleo):
+		return true
+	for contribucion in _contribuciones.values():
+		if _celda_en_caja(celda, contribucion["caja"]):
+			return true
+	return false
 
 
 ## true si "celda" (X,Z) pertenece a la huella del núcleo urbano — usada

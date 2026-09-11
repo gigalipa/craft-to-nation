@@ -11,9 +11,11 @@ const COLOR_POR_ZONA := {
 	"fabricacion_militar": Color(1.0, 0.5, 0.1, 0.15),
 }
 
-## Overlay visual pinta TODA la zona de influencia (rectángulo
-## Zonificacion.influencia_min..max) en blanco, muy baja opacidad, sin
-## importar si cada celda ya tiene una zona específica pintada encima.
+## Overlay visual pinta TODA la zona de influencia real (la unión de la
+## caja de cada edificio — ver Zonificacion.dentro_de_influencia(), no
+## necesariamente el rectángulo Zonificacion.influencia_min..max completo)
+## en blanco, muy baja opacidad, sin importar si cada celda ya tiene una
+## zona específica pintada encima.
 const COLOR_ZONA_INFLUENCIA := Color(1.0, 1.0, 1.0, 0.02)
 
 ## Color de la previsualización cuando se está por BORRAR una zona (ver
@@ -41,9 +43,16 @@ func reconstruir() -> void:
 	_planos_previsualizacion.clear()
 
 	if Zonificacion.nucleo_declarado:
+		# influencia_min/max es solo la caja delimitadora de TODA la zona
+		# (para acotar este recorrido) — la forma real es la unión de la
+		# caja de cada edificio, así que cada celda se confirma por
+		# separado con dentro_de_influencia() en vez de pintar el
+		# rectángulo completo (que dejaría de reflejar la forma real).
 		for x in range(Zonificacion.influencia_min.x, Zonificacion.influencia_max.x + 1):
 			for z in range(Zonificacion.influencia_min.y, Zonificacion.influencia_max.y + 1):
-				_agregar_plano(Vector2i(x, z), COLOR_ZONA_INFLUENCIA)
+				var celda := Vector2i(x, z)
+				if Zonificacion.dentro_de_influencia(celda):
+					_agregar_plano(celda, COLOR_ZONA_INFLUENCIA)
 
 	for celda in Zonificacion.zonas:
 		var tipo: String = Zonificacion.zonas[celda]

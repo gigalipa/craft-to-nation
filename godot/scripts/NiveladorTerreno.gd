@@ -2,9 +2,11 @@ extends RefCounted
 
 ## Lógica pura de nivelación de terreno (ver GDD Sección 5, "Nivelación de
 ## Terreno en Emplazamientos con Relieve") — sin nodos de escena, mismo
-## patrón que Zonificacion.gd/Ciudad.gd. Calcula si una huella cuadrada de
-## TAMANO_HUELLA celdas respeta el límite de pendiente, y cuántos bloques de
-## "tierra" hacen falta para nivelarla a su punto más alto.
+## patrón que Zonificacion.gd/Ciudad.gd. Calcula si una huella (cualquier
+## conjunto de columnas, no necesariamente un rectángulo — ver
+## docs/superpowers/specs/2026-09-10-huellas-irregulares-design.md) respeta
+## el límite de pendiente, y cuántos bloques de "tierra" hacen falta para
+## nivelarla a su punto más alto.
 ##
 ## No depende de una clase concreta: solo llama a .altura_en(x, z) por duck
 ## typing sobre lo que se le pase en _init(). En el juego real se le pasa
@@ -14,7 +16,6 @@ extends RefCounted
 ## Las pruebas (NiveladorTerrenoTest.gd) le pasan generadores falsos con
 ## pendientes exactas y controladas, ya que GeneradorMundo real usa ruido.
 
-const TAMANO_HUELLA := 5
 const LIMITE_PENDIENTE := 2
 
 ## Sin tipo estático: puede ser un RefCounted (GeneradorMundo, los
@@ -27,46 +28,52 @@ func _init(fuente_de_altura: Object) -> void:
 	_generador = fuente_de_altura
 
 
-## Revisa cada par de celdas horizontal/verticalmente adyacentes dentro de
-## la huella (5x5 celdas, "esquina" es la esquina inferior de menor X/Z) —
-## rechaza si algún desnivel entre vecinas supera LIMITE_PENDIENTE.
-## "ancho"/"alto" por defecto son la huella cuadrada TAMANO_HUELLA del modo
-## de nivelación manual (tecla B) — quien valida el relieve de un puesto
-## periférico (ver CamaraCenital.gd) pasa su propia huella real (p. ej. 5x5
-## para una mina, 4x4 para un puesto de caza/recolección).
-func verificar_pendiente(esquina: Vector2i, ancho: int = TAMANO_HUELLA, alto: int = TAMANO_HUELLA) -> bool:
-	for x in range(esquina.x, esquina.x + ancho):
-		for z in range(esquina.y, esquina.y + alto):
-			var altura: int = _generador.altura_en(x, z)
-			if x + 1 < esquina.x + ancho:
-				if abs(altura - _generador.altura_en(x + 1, z)) > LIMITE_PENDIENTE:
-					return false
-			if z + 1 < esquina.y + alto:
-				if abs(altura - _generador.altura_en(x, z + 1)) > LIMITE_PENDIENTE:
-					return false
+## Revisa cada par de columnas horizontal/verticalmente adyacentes DENTRO de
+## "columnas" (offsets Vector2i relativos a "esquina") — rechaza si algún
+## desnivel entre dos columnas AMBAS presentes en la lista supera
+## LIMITE_PENDIENTE. Una columna vecina que no esté en "columnas" (el hueco
+## de una huella irregular, p. ej. un edificio en L) nunca se compara —
+## mismo criterio que ya usa BlueprintValidator.validar_cerramiento() para
+## decidir qué vecino cuenta. Un rectángulo es solo el caso particular de
+## pasar todas las columnas de range(ancho) x range(alto) (ver
+## CamaraCenital._columnas_rectangulo()).
+func verificar_pendiente(esquina: Vector2i, columnas: Array[Vector2i]) -> bool:
+	var presentes: Dictionary = {}
+	for rel in columnas:
+		presentes[rel] = true
+	for rel in columnas:
+		var x: int = esquina.x + rel.x
+		var z: int = esquina.y + rel.y
+		var altura: int = _generador.altura_en(x, z)
+		if presentes.has(rel + Vector2i(1, 0)):
+			if abs(altura - _generador.altura_en(x + 1, z)) > LIMITE_PENDIENTE:
+				return false
+		if presentes.has(rel + Vector2i(0, 1)):
+			if abs(altura - _generador.altura_en(x, z + 1)) > LIMITE_PENDIENTE:
+				return false
 	return true
 
 
-## Altura máxima dentro de la huella — a esta altura se nivela todo. Público
-## porque también lo usa CamaraCenital.gd para posicionar el recuadro
-## fantasma de previsualización.
-func altura_objetivo(esquina: Vector2i, ancho: int = TAMANO_HUELLA, alto: int = TAMANO_HUELLA) -> int:
+## Altura máxima entre las columnas de "columnas" — a esta altura se nivela
+## todo. Público porque también lo usa CamaraCenital.gd para posicionar el
+## recuadro fantasma de previsualización.
+func altura_objetivo(esquina: Vector2i, columnas: Array[Vector2i]) -> int:
 	var maximo: int = _generador.altura_en(esquina.x, esquina.y)
-	for x in range(esquina.x, esquina.x + ancho):
-		for z in range(esquina.y, esquina.y + alto):
-			maximo = max(maximo, _generador.altura_en(x, z))
+	for rel in columnas:
+		maximo = max(maximo, _generador.altura_en(esquina.x + rel.x, esquina.y + rel.y))
 	return maximo
 
 
-## Cuántos bloques de "tierra" hacen falta en cada celda de la huella para
-## llegar a la altura máxima de esa huella. Solo incluye celdas que
-## realmente necesitan relleno (celdas ya a la altura máxima no aparecen).
-func calcular_relleno(esquina: Vector2i, ancho: int = TAMANO_HUELLA, alto: int = TAMANO_HUELLA) -> Dictionary:
-	var objetivo: int = altura_objetivo(esquina, ancho, alto)
+## Cuántos bloques de "tierra" hacen falta en cada columna de "columnas"
+## para llegar a la altura máxima de esa huella. Solo incluye columnas que
+## realmente necesitan relleno (columnas ya a la altura máxima no aparecen).
+func calcular_relleno(esquina: Vector2i, columnas: Array[Vector2i]) -> Dictionary:
+	var objetivo: int = altura_objetivo(esquina, columnas)
 	var relleno: Dictionary = {}  # Vector2i -> int
-	for x in range(esquina.x, esquina.x + ancho):
-		for z in range(esquina.y, esquina.y + alto):
-			var faltante: int = objetivo - _generador.altura_en(x, z)
-			if faltante > 0:
-				relleno[Vector2i(x, z)] = faltante
+	for rel in columnas:
+		var x: int = esquina.x + rel.x
+		var z: int = esquina.y + rel.y
+		var faltante: int = objetivo - _generador.altura_en(x, z)
+		if faltante > 0:
+			relleno[Vector2i(x, z)] = faltante
 	return relleno

@@ -2,7 +2,7 @@ extends Node
 
 ## Pruebas aisladas de Zonificacion.gd (mismo patrón que CiudadTest.gd).
 ## Corre esta escena (ZonificacionTest.tscn) con F6 en el editor de Godot y
-## revisa el panel "Output": debe imprimir las 10 pruebas y no debe lanzar
+## revisa el panel "Output": debe imprimir las 11 pruebas y no debe lanzar
 ## ningún error de assert(). No usa el autoload "Zonificacion" — instancia
 ## una Zonificacion nueva vía preload, para poder correr las pruebas de
 ## forma aislada y repetible (igual que CiudadTest.gd con Ciudad).
@@ -101,4 +101,17 @@ func ejecutar_pruebas() -> void:
 	assert(zona.influencia_max == influencia_max_antes, "Retirar un id inexistente no debe hacer nada")
 	print("OK: cada edificio amplía la zona según su propio margen por categoría, y retirar_contribucion() la reduce correctamente.")
 
-	print("\n=== Las 10 pruebas de Zonificacion pasaron correctamente ===")
+	print("\n=== TEST 11: despintar_zona() borra solo lo que estaba pintado ===")
+	# Reutiliza el bloque de TEST 4 (fabricacion_militar, -10,-10 a -5,-5, 36 celdas).
+	var borradas: int = zona.despintar_zona(Vector2i(-10, -10), Vector2i(-7, -10))
+	print("Celdas borradas: ", borradas)
+	assert(borradas == 4)  # x: -10..-7 (4) * z: -10 (1)
+	assert(zona.consultar_zona(Vector2i(-10, -10)) == "periferia")
+	assert(zona.consultar_zona(Vector2i(-7, -10)) == "periferia")
+	assert(zona.consultar_zona(Vector2i(-5, -5)) == "fabricacion_militar", "El resto del bloque sigue pintado")
+
+	var borradas_vacio: int = zona.despintar_zona(Vector2i(1000, 1000), Vector2i(1001, 1001))
+	assert(borradas_vacio == 0, "Borrar donde no había nada pintado no cuenta celdas")
+	print("OK: despintar_zona() borra solo las celdas que tenían una zona pintada, deja el resto intacto.")
+
+	print("\n=== Las 11 pruebas de Zonificacion pasaron correctamente ===")

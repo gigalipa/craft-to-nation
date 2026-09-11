@@ -35,6 +35,12 @@ const MARGEN_CATEGORIA_DEFECTO := 6
 
 const ZONAS_PINTABLES := ["residencial_investigacion", "fabricacion_militar"]
 
+## Valor especial de "tipo_zona_seleccionada" (ver CamaraCenital.gd, tecla
+## `0`) que activa el modo BORRAR en vez de pintar — nunca aparece como
+## valor real en "zonas" (consultar_zona() nunca lo devuelve), solo se usa
+## como marcador de modo entre CamaraCenital.gd y despintar_zona().
+const MARCADOR_BORRAR := "borrar"
+
 var nucleo_declarado := false
 var influencia_min := Vector2i.ZERO
 var influencia_max := Vector2i.ZERO
@@ -164,3 +170,23 @@ func pintar_zona(esquina_a: Vector2i, esquina_b: Vector2i, tipo: String) -> int:
 
 func consultar_zona(celda: Vector2i) -> String:
 	return zonas.get(celda, "periferia")
+
+
+## Borra cualquier zona pintada dentro del rectángulo entre las dos
+## esquinas (inclusive) — inverso de pintar_zona(). Devuelve cuántas
+## celdas tenían realmente una zona pintada y se borraron (celdas que ya
+## no tenían ninguna zona no cuentan).
+func despintar_zona(esquina_a: Vector2i, esquina_b: Vector2i) -> int:
+	var x_min: int = min(esquina_a.x, esquina_b.x)
+	var x_max: int = max(esquina_a.x, esquina_b.x)
+	var z_min: int = min(esquina_a.y, esquina_b.y)
+	var z_max: int = max(esquina_a.y, esquina_b.y)
+
+	var borradas := 0
+	for x in range(x_min, x_max + 1):
+		for z in range(z_min, z_max + 1):
+			var celda := Vector2i(x, z)
+			if zonas.has(celda):
+				zonas.erase(celda)
+				borradas += 1
+	return borradas

@@ -780,6 +780,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif tecla.pressed and tecla.keycode == KEY_2:
 			tipo_zona_seleccionada = Zonificacion.ZONAS_PINTABLES[1]
 			print("Zona seleccionada: ", tipo_zona_seleccionada)
+		elif tecla.pressed and tecla.keycode == KEY_0:
+			tipo_zona_seleccionada = Zonificacion.MARCADOR_BORRAR
+			print("Modo borrar zona seleccionado.")
 		elif tecla.pressed and tecla.keycode == KEY_M:
 			_alternar_modo_colocar_puesto("mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 		elif tecla.pressed and tecla.keycode == KEY_H:
@@ -796,6 +799,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_procesar_clic_puesto(boton.position)
 			else:
 				_procesar_clic(boton.position)
+		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
+			_cancelar_pintado_zona()
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
 			if modo_colocar_puesto and Input.is_key_pressed(KEY_CTRL):
 				_rotar_huella_puesto()
@@ -909,6 +914,21 @@ func _salir_de_modo_colocar_blueprint() -> void:
 func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
+	_cancelar_pintado_zona()
+
+
+## Cancela la selección de esquinas de zona en curso (tras el primer
+## click, antes del segundo) — usada por el click derecho (ver
+## _unhandled_input()) y al salir del todo a primera persona (ver
+## salir_de_todos_los_modos()), que antes dejaba esperando_segunda_esquina
+## colgado si el jugador cambiaba de cámara a medio pintar. No-op si no
+## había nada pendiente.
+func _cancelar_pintado_zona() -> void:
+	if not esperando_segunda_esquina:
+		return
+	esperando_segunda_esquina = false
+	overlay.limpiar_previsualizacion()
+	print("Pintado de zona cancelado.")
 
 
 ## Muestra los primeros _ancho_puesto_activo * _alto_puesto_activo planos
@@ -987,10 +1007,14 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 		overlay.previsualizar(primera_esquina, primera_esquina, tipo_zona_seleccionada)
 		return
 
-	var pintadas: int = Zonificacion.pintar_zona(primera_esquina, celda, tipo_zona_seleccionada)
-	print("Zona '", tipo_zona_seleccionada, "' pintada en ", pintadas, " celda(s).")
-	if pintadas == 0 and not Zonificacion.nucleo_declarado:
-		print("Todavía no existe una zona de influencia — declara tu primer edificio residencial primero.")
+	if tipo_zona_seleccionada == Zonificacion.MARCADOR_BORRAR:
+		var borradas: int = Zonificacion.despintar_zona(primera_esquina, celda)
+		print("Zona borrada en ", borradas, " celda(s).")
+	else:
+		var pintadas: int = Zonificacion.pintar_zona(primera_esquina, celda, tipo_zona_seleccionada)
+		print("Zona '", tipo_zona_seleccionada, "' pintada en ", pintadas, " celda(s).")
+		if pintadas == 0 and not Zonificacion.nucleo_declarado:
+			print("Todavía no existe una zona de influencia — declara tu primer edificio residencial primero.")
 	esperando_segunda_esquina = false
 	overlay.reconstruir()
 

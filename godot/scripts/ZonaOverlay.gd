@@ -16,6 +16,11 @@ const COLOR_POR_ZONA := {
 ## importar si cada celda ya tiene una zona específica pintada encima.
 const COLOR_ZONA_INFLUENCIA := Color(1.0, 1.0, 1.0, 0.02)
 
+## Color de la previsualización cuando se está por BORRAR una zona (ver
+## Zonificacion.MARCADOR_BORRAR) — gris translúcido, distinto de cualquier
+## color real de zona, para que quede claro que esto quita, no pinta.
+const COLOR_BORRAR := Color(0.5, 0.5, 0.5, 0.3)
+
 const ALTURA_SOBRE_SUPERFICIE := 1.01
 const DESF := 0.5
 
@@ -52,7 +57,7 @@ func reconstruir() -> void:
 ## nada todavía. Reemplaza cualquier previsualización anterior.
 func previsualizar(esquina_a: Vector2i, esquina_b: Vector2i, tipo: String) -> void:
 	limpiar_previsualizacion()
-	var color: Color = COLOR_POR_ZONA.get(tipo, Color.WHITE)
+	var color: Color = COLOR_BORRAR if tipo == Zonificacion.MARCADOR_BORRAR else COLOR_POR_ZONA.get(tipo, Color.WHITE)
 
 	var x_min: int = min(esquina_a.x, esquina_b.x)
 	var x_max: int = max(esquina_a.x, esquina_b.x)

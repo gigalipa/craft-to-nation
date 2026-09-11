@@ -711,7 +711,7 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.obtener_tipo(celda_pies_22) == "fantasma")
 	assert(r2_22["total_camas"] == 0, "Solo cuenta en el cruce completo -> incompleto")
 
-	var r3_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
+	var _r3_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
 	assert(mundo.obtener_tipo(celda_cabecera_22) == "fantasma")
 
 	var r4_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
@@ -848,7 +848,7 @@ func ejecutar_pruebas() -> void:
 		celda_pies_27: "cama_pies",
 	}
 	var metadata_27 := {"huella_xz": [Vector2i(OX15, OX15)], "esquina": Vector2i(OX15, OX15), "ancho": 1, "profundidad": 1}
-	var id_27: int = mundo.registrar_edificio_completo(celdas_mundo_27, metadata_27)
+	var _id_27: int = mundo.registrar_edificio_completo(celdas_mundo_27, metadata_27)
 
 	# Deconstruye el mobiliario (2 celdas) y confirma que la huella SIGUE
 	# registrada (no hay "construcción fantasma" bloqueando) mientras el
@@ -861,7 +861,7 @@ func ejecutar_pruebas() -> void:
 	# Retomar y volver a completar: metadata debe seguir intacta (no se
 	# perdió al pasar por registrar_edificio_completo() en vez de
 	# iniciar_construccion_fantasma()).
-	var s1_27: Dictionary = mundo.surtir_construccion(celda_pared_27)
+	var _s1_27: Dictionary = mundo.surtir_construccion(celda_pared_27)
 	var s2_27: Dictionary = mundo.surtir_construccion(celda_pared_27)
 	assert(s2_27["completa"])
 	assert(s2_27["metadata"] == metadata_27, "La metadata pasada a registrar_edificio_completo() se conserva")

@@ -60,6 +60,14 @@ func _ready() -> void:
 	ejecutar_pruebas()
 
 
+func _rectangulo(ancho: int, alto: int) -> Array[Vector2i]:
+	var columnas: Array[Vector2i] = []
+	for x in range(ancho):
+		for z in range(alto):
+			columnas.append(Vector2i(x, z))
+	return columnas
+
+
 func ejecutar_pruebas() -> void:
 	print("=== TEST 1: Blueprint Válido (debe pasar sin errores) ===")
 	var bp_valido: Dictionary = JSON.parse_string(BLUEPRINT_VALIDO_JSON)
@@ -476,7 +484,7 @@ func ejecutar_pruebas() -> void:
 		for dz in range(4):
 			mundo.colocar_bloque(Vector3i(OX7 + dx, 0, OX7 + dz), "piso")
 	mundo.colocar_bloque(Vector3i(OX7, 1, OX7), "madera")
-	var resultado_madera: Dictionary = mundo.verificar_huella_libre(Vector2i(OX7, OX7), 4, 4)
+	var resultado_madera: Dictionary = mundo.verificar_huella_libre(Vector2i(OX7, OX7), _rectangulo(4, 4))
 	assert(not resultado_madera["valida"])
 
 	# Huella B: "follaje" no invalida, se acumula para eliminar.
@@ -485,7 +493,7 @@ func ejecutar_pruebas() -> void:
 		for dz in range(4):
 			mundo.colocar_bloque(Vector3i(base_b + dx, 0, OX7 + dz), "piso")
 	mundo.colocar_bloque(Vector3i(base_b + 1, 1, OX7), "follaje")
-	var resultado_follaje: Dictionary = mundo.verificar_huella_libre(Vector2i(base_b, OX7), 4, 4)
+	var resultado_follaje: Dictionary = mundo.verificar_huella_libre(Vector2i(base_b, OX7), _rectangulo(4, 4))
 	assert(resultado_follaje["valida"])
 	assert(resultado_follaje["follaje_a_eliminar"].size() == 1)
 	assert(resultado_follaje["follaje_a_eliminar"][0] == Vector3i(base_b + 1, 1, OX7))
@@ -496,7 +504,7 @@ func ejecutar_pruebas() -> void:
 		for dz in range(4):
 			mundo.colocar_bloque(Vector3i(base_c + dx, 0, OX7 + dz), "piso")
 	mundo.colocar_bloque(Vector3i(base_c + 2, 1, OX7), "pared", true)
-	var resultado_estructura: Dictionary = mundo.verificar_huella_libre(Vector2i(base_c, OX7), 4, 4)
+	var resultado_estructura: Dictionary = mundo.verificar_huella_libre(Vector2i(base_c, OX7), _rectangulo(4, 4))
 	assert(not resultado_estructura["valida"])
 
 	# Huella D: sin nada encima — válida, sin follaje que eliminar.
@@ -504,7 +512,7 @@ func ejecutar_pruebas() -> void:
 	for dx in range(4):
 		for dz in range(4):
 			mundo.colocar_bloque(Vector3i(base_d + dx, 0, OX7 + dz), "piso")
-	var resultado_libre: Dictionary = mundo.verificar_huella_libre(Vector2i(base_d, OX7), 4, 4)
+	var resultado_libre: Dictionary = mundo.verificar_huella_libre(Vector2i(base_d, OX7), _rectangulo(4, 4))
 	assert(resultado_libre["valida"])
 	assert(resultado_libre["follaje_a_eliminar"].is_empty())
 
@@ -555,9 +563,9 @@ func ejecutar_pruebas() -> void:
 	# alcance, aunque la huella de altura 1 (comportamiento por defecto,
 	# como usan los puestos) no llegue tan alto y no la vea.
 	mundo.colocar_bloque(Vector3i(OX9 + 1, 2, OX9), "madera")
-	var resultado_baja: Dictionary = mundo.verificar_huella_libre(Vector2i(OX9, OX9), 2, 2)
+	var resultado_baja: Dictionary = mundo.verificar_huella_libre(Vector2i(OX9, OX9), _rectangulo(2, 2))
 	assert(resultado_baja["valida"])  # altura por defecto (1): no llega al madera en y=2
-	var resultado_alta: Dictionary = mundo.verificar_huella_libre(Vector2i(OX9, OX9), 2, 2, 2)
+	var resultado_alta: Dictionary = mundo.verificar_huella_libre(Vector2i(OX9, OX9), _rectangulo(2, 2), 2)
 	assert(not resultado_alta["valida"])  # altura 2: sí llega al madera en y=2, rechaza
 	print("OK: altura_en() ignora 'fantasma', verificar_huella_libre() revisa 'altura' niveles hacia arriba.")
 

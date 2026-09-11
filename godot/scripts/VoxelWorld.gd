@@ -289,7 +289,10 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 	return colocado_por_jugador.get(celda, false) and TIPOS_ESTRUCTURA.has(obtener_tipo(celda))
 
 
-## Revisa cada columna (x, z) de la huella ancho×alto con esquina "esquina".
+## Revisa cada columna de "columnas" (offsets Vector2i relativos a
+## "esquina" — ver docs/superpowers/specs/2026-09-10-huellas-irregulares-design.md;
+## un rectángulo es solo el caso particular de pasar range(ancho) x
+## range(alto), ver CamaraCenital._columnas_rectangulo()).
 ## altura_en() no salta bloques estructurales (solo TIPOS_ARBOL y "fantasma"),
 ## así que un muro colocado sobre "piso" se convierte en la propia superficie
 ## que altura_en() devuelve — por eso el chequeo de estructura se hace SOBRE
@@ -312,22 +315,23 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 ## Sección 3, "Emplazamiento Dentro de un Bosque"). Usada por la validación
 ## de choques de los puestos periféricos y blueprints (CamaraCenital.gd) —
 ## no conoce Recoleccion.puestos, solo bloques reales.
-func verificar_huella_libre(esquina: Vector2i, ancho: int, alto: int, altura: int = 1) -> Dictionary:
+func verificar_huella_libre(esquina: Vector2i, columnas: Array[Vector2i], altura: int = 1) -> Dictionary:
 	var valida := true
 	var follaje_a_eliminar: Array[Vector3i] = []
-	for x in range(esquina.x, esquina.x + ancho):
-		for z in range(esquina.y, esquina.y + alto):
-			var superficie: int = altura_en(x, z)
-			if es_celda_estructural(Vector3i(x, superficie, z)):
+	for rel in columnas:
+		var x: int = esquina.x + rel.x
+		var z: int = esquina.y + rel.y
+		var superficie: int = altura_en(x, z)
+		if es_celda_estructural(Vector3i(x, superficie, z)):
+			valida = false
+			continue
+		for dy in range(1, altura + 1):
+			var celda := Vector3i(x, superficie + dy, z)
+			var tipo: String = obtener_tipo(celda)
+			if tipo == "madera":
 				valida = false
-				continue
-			for dy in range(1, altura + 1):
-				var celda := Vector3i(x, superficie + dy, z)
-				var tipo: String = obtener_tipo(celda)
-				if tipo == "madera":
-					valida = false
-				elif tipo == "follaje":
-					follaje_a_eliminar.append(celda)
+			elif tipo == "follaje":
+				follaje_a_eliminar.append(celda)
 	return {"valida": valida, "follaje_a_eliminar": follaje_a_eliminar}
 
 

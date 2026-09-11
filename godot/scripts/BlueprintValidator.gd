@@ -195,42 +195,57 @@ static func validar_personalizacion_produccion(blueprint_modificado: Dictionary,
 
 
 ## Una capa de Y es una "losa completa" (suelo base o techo exterior) si
-## TODAS las celdas de su huella x/z (según el rango global del edificio)
-## están presentes y son de un tipo ESTRUCTURAL (pared/puerta/ventana/piso).
-## Se exige solo para la losa más baja (cimiento) y la más alta (techo
+## TODAS las columnas de la huella real (ver estructura_a_blueprint(), NO
+## la caja delimitadora completa — un edificio en L no llena su caja) están
+## presentes y son de un tipo ESTRUCTURAL (pared/puerta/ventana/piso). Se
+## exige solo para la losa más baja (cimiento) y la más alta (techo
 ## exterior) del edificio completo — nunca deben tener huecos.
-static func _es_losa_completa(capa: Dictionary, x_max: int, z_max: int) -> bool:
-	for lx in range(x_max + 1):
-		for lz in range(z_max + 1):
-			var tipo = capa.get("%d,%d" % [lx, lz])
-			if tipo == null or not TIPOS_ESTRUCTURALES.has(tipo):
-				return false
+static func _es_losa_completa(capa: Dictionary, huella_real: Dictionary) -> bool:
+	for clave in huella_real:
+		var tipo = capa.get(clave)
+		if tipo == null or not TIPOS_ESTRUCTURALES.has(tipo):
+			return false
+	return true
+
+
+## Una columna de la huella real es "interior" si sus 4 vecinos ortogonales
+## (VECINOS_ORTOGONALES) también pertenecen a la huella real — mismo
+## criterio que ya usa validar_cerramiento() para decidir qué celda es
+## borde. Generaliza "no está en el anillo perimetral de la caja
+## delimitadora" (válido solo para un rectángulo) a cualquier forma.
+static func _es_columna_interior(pos: Vector2i, huella_real: Dictionary) -> bool:
+	for delta in VECINOS_ORTOGONALES:
+		var vecino: Vector2i = pos + delta
+		if not huella_real.has("%d,%d" % [vecino.x, vecino.y]):
+			return false
 	return true
 
 
 ## Una capa de Y es una "losa parcial" (borde entre dos historias, puede
-## tener un hueco de escalera) si más de la mitad de sus celdas INTERIORES
-## (excluyendo el anillo de paredes perimetrales, que está presente tanto en
-## una losa como en una capa de pared normal) son de tipo estructural. Una
-## capa de pared normal tiene el interior mayormente vacío (aire transitable,
-## a lo sumo con mobiliario disperso: cama, baúl, que NO cuentan como
-## estructurales), mientras que una losa de piso con hueco de escalera solo
-## tiene un hueco pequeño en, por lo demás, una superficie sólida.
-## Caso límite: si el edificio no tiene ninguna celda interior (huella
-## demasiado angosta), no hay forma de distinguir por interior — se cae a
-## exigir la losa completa.
-static func _es_losa_parcial(capa: Dictionary, x_max: int, z_max: int) -> bool:
-	if x_max < 2 or z_max < 2:
-		return _es_losa_completa(capa, x_max, z_max)
-	var total_interior := 0
+## tener un hueco de escalera) si más de la mitad de sus columnas
+## INTERIORES de la huella real (ver _es_columna_interior(), generaliza
+## "excluyendo el anillo perimetral de la caja delimitadora" a cualquier
+## forma) son de tipo estructural. Una capa de pared normal tiene el
+## interior mayormente vacío (aire transitable, a lo sumo con mobiliario
+## disperso: cama, baúl, que NO cuentan como estructurales), mientras que
+## una losa de piso con hueco de escalera solo tiene un hueco pequeño en,
+## por lo demás, una superficie sólida.
+## Caso límite: si la huella real no tiene ninguna columna interior (huella
+## demasiado angosta, en cualquier forma), no hay forma de distinguir por
+## interior — se cae a exigir la losa completa.
+static func _es_losa_parcial(capa: Dictionary, huella_real: Dictionary) -> bool:
+	var interiores: Array = []
+	for clave in huella_real:
+		if _es_columna_interior(_parsear_celda(clave), huella_real):
+			interiores.append(clave)
+	if interiores.is_empty():
+		return _es_losa_completa(capa, huella_real)
 	var total_estructural := 0
-	for lx in range(1, x_max):
-		for lz in range(1, z_max):
-			total_interior += 1
-			var tipo = capa.get("%d,%d" % [lx, lz])
-			if tipo != null and TIPOS_ESTRUCTURALES.has(tipo):
-				total_estructural += 1
-	return float(total_estructural) / float(total_interior) > 0.5
+	for clave in interiores:
+		var tipo = capa.get(clave)
+		if tipo != null and TIPOS_ESTRUCTURALES.has(tipo):
+			total_estructural += 1
+	return float(total_estructural) / float(interiores.size()) > 0.5
 
 
 ## Convierte el resultado de VoxelWorld.detectar_estructura() (Vector3i -> tipo)
@@ -295,6 +310,7 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	z_max -= z_min
 
 	var celdas_por_capa: Dictionary = {}  # int (capa de Y) -> Dictionary ("x,z" -> tipo)
+	var huella_real: Dictionary = {}  # "x,z" -> true, unión de columnas del edificio en cualquier capa
 	for pos in celdas_relevantes.keys():
 		var capa: int = pos.y - y_min
 		var clave := "%d,%d" % [pos.x - x_min, pos.z - z_min]
@@ -304,12 +320,13 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		if not celdas_por_capa.has(capa):
 			celdas_por_capa[capa] = {}
 		celdas_por_capa[capa][clave] = tipo
+		huella_real[clave] = true
 
 	var indices_capa: Array = celdas_por_capa.keys()
 	indices_capa.sort()
 	var es_losa: Dictionary = {}  # int -> bool ("losa parcial": límite entre historias)
 	for capa in indices_capa:
-		es_losa[capa] = _es_losa_parcial(celdas_por_capa[capa], x_max, z_max)
+		es_losa[capa] = _es_losa_parcial(celdas_por_capa[capa], huella_real)
 
 	# Primera pasada: encontrar las bandas (historias) sin construirlas
 	# todavía, para saber cuál es la más baja y cuál la más alta del
@@ -341,10 +358,10 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		var hay_losa_bajo: bool = es_losa.get(capa_bajo_banda, false)
 		var hay_losa_sobre: bool = es_losa.get(capa_sobre_banda, false)
 		var suelo_ok: bool = hay_losa_bajo and (
-			not es_piso_mas_bajo or _es_losa_completa(celdas_por_capa[capa_bajo_banda], x_max, z_max)
+			not es_piso_mas_bajo or _es_losa_completa(celdas_por_capa[capa_bajo_banda], huella_real)
 		)
 		var techo_ok: bool = hay_losa_sobre and (
-			not es_piso_mas_alto or _es_losa_completa(celdas_por_capa[capa_sobre_banda], x_max, z_max)
+			not es_piso_mas_alto or _es_losa_completa(celdas_por_capa[capa_sobre_banda], huella_real)
 		)
 
 		var plantilla: Dictionary = {}
@@ -400,6 +417,10 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	for pos in celdas.keys():
 		celdas_3d[pos - Vector3i(x_min, y_min, z_min)] = celdas[pos]
 
+	var huella_relativa: Array[Vector2i] = []
+	for clave in huella_real:
+		huella_relativa.append(_parsear_celda(clave))
+
 	return {
 		"nombre": "Estructura_Detectada",
 		"tipo": "residencial",
@@ -408,6 +429,7 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		"celdas_3d": celdas_3d,
 		"ancho": x_max + 1,       # x_max ya es (máximo - x_min), ver arriba
 		"profundidad": z_max + 1,
+		"huella_relativa": huella_relativa,
 	}
 
 

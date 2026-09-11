@@ -27,9 +27,13 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## "altura" > 1 (19, ver VoxelWorld.altura_en()/verificar_huella_libre()), y
 ## que registrar_edificio() vuelve inmunes al minado las celdas, tanto en
 ## fantasmas como en bloques reales (20, ver VoxelWorld.registrar_edificio()/
-## minar_bloque()).
+## minar_bloque()), y que estructura_a_blueprint() reconoce una huella
+## irregular (un edificio en L) sin exigir que su caja delimitadora
+## completa tenga suelo/techo, y calcula "huella_relativa" con solo las
+## columnas reales (21, ver BlueprintValidator._es_losa_completa()/
+## _es_losa_parcial()).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
-## panel "Output": debe imprimir los 20 tests y no debe lanzar ningún error
+## panel "Output": debe imprimir los 21 tests y no debe lanzar ningún error
 ## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -593,4 +597,57 @@ func ejecutar_pruebas() -> void:
 
 	print("OK: minar_bloque() ignora cualquier celda registrada con registrar_edificio(), sea directa, fantasma en curso, o fantasma completada.")
 
-	print("\n=== Las 20 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 21: estructura_a_blueprint() reconoce una huella en L ===")
+	# Construye "celdas" (Vector3i -> tipo físico) a mano, sin pasar por
+	# VoxelWorld: un edificio en L (cuadrado de 5x5 menos un cuadrado de 2x2
+	# en una esquina, 21 columnas reales en vez de las 25 de la caja
+	# delimitadora). Antes del fix, _es_losa_completa()/_es_losa_parcial()
+	# exigían las 25 columnas completas y esta construcción se rechazaba con
+	# "falta un suelo/techo sólido" pese a estar perfectamente cerrada.
+	var interiores_l: Array[Vector2i] = [
+		Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1),
+		Vector2i(1, 2), Vector2i(2, 2), Vector2i(1, 3),
+	]
+	var notch_l: Array[Vector2i] = [Vector2i(3, 3), Vector2i(3, 4), Vector2i(4, 3), Vector2i(4, 4)]
+
+	var celdas_l: Dictionary = {}
+	for x in range(5):
+		for z in range(5):
+			if notch_l.has(Vector2i(x, z)):
+				continue
+			celdas_l[Vector3i(x, 0, z)] = "pared"  # suelo
+			celdas_l[Vector3i(x, 4, z)] = "pared"  # techo
+	for y in range(1, 4):
+		for x in range(5):
+			for z in range(5):
+				var col := Vector2i(x, z)
+				if notch_l.has(col) or interiores_l.has(col):
+					continue
+				if x == 1 and z == 0:
+					continue  # puerta principal, se coloca aparte
+				if x == 0 and z == 2 and y == 2:
+					continue  # ventana, se coloca aparte
+				celdas_l[Vector3i(x, y, z)] = "pared"
+	celdas_l[Vector3i(1, 1, 0)] = "puerta_inferior"
+	celdas_l[Vector3i(1, 2, 0)] = "puerta_superior"
+	celdas_l[Vector3i(1, 3, 0)] = "pared"  # pared sobre la puerta
+	celdas_l[Vector3i(0, 2, 2)] = "ventana"
+	celdas_l[Vector3i(1, 1, 1)] = "cama_cabecera"
+	celdas_l[Vector3i(2, 1, 1)] = "cama_pies"
+	celdas_l[Vector3i(2, 1, 2)] = "baul"
+
+	var blueprint_l := BlueprintValidator.estructura_a_blueprint(celdas_l)
+	print("Columnas de la huella real: ", blueprint_l["huella_relativa"].size(), " (esperadas: 21, no 25 = 5x5 completo)")
+	assert(blueprint_l["huella_relativa"].size() == 21)
+	assert(blueprint_l["ancho"] == 5)
+	assert(blueprint_l["profundidad"] == 5)
+	for celda_notch in notch_l:
+		assert(not blueprint_l["huella_relativa"].has(celda_notch), "El hueco de la L no debe aparecer en huella_relativa")
+
+	var resultado_l: Dictionary = BlueprintValidator.validar_blueprint(blueprint_l)
+	print("Válido: ", resultado_l["valido"], " | Errores: ", resultado_l["errores"])
+	assert(resultado_l["valido"])
+	assert(resultado_l["errores"].is_empty())
+	print("OK: estructura_a_blueprint() reconoce la huella en L y validar_blueprint() la acepta.")
+
+	print("\n=== Las 21 pruebas de BlueprintValidator pasaron correctamente ===")

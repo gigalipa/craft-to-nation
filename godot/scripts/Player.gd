@@ -288,12 +288,17 @@ func _declarar_edificio() -> void:
 	# Huella en planta (X,Z) del edificio, sin repetir celdas — usada tanto
 	# para el bootstrap del núcleo urbano como, más adelante, para pintarla
 	# como Núcleo A. "celda" es la puerta apuntada, la misma referencia que
-	# ya usa detectar_estructura() para "dónde está" el edificio.
+	# ya usa detectar_estructura() para "dónde está" el edificio. "esquina"
+	# (mínimo x, mínimo z) se calcula en la misma pasada, para pasarla a
+	# _completar_construccion() vía metadata igual que un blueprint.
 	var celda_puerta_xz := Vector2i(celda.x, celda.z)
 	var huella: Array = []
 	var huella_vista: Dictionary = {}  # Vector2i -> true, para no repetir celdas
+	var esquina := celda_puerta_xz
 	for pos in celdas.keys():
 		var punto_xz := Vector2i(pos.x, pos.z)
+		esquina.x = min(esquina.x, punto_xz.x)
+		esquina.y = min(esquina.y, punto_xz.y)
 		if not huella_vista.has(punto_xz):
 			huella_vista[punto_xz] = true
 			huella.append(punto_xz)
@@ -306,21 +311,25 @@ func _declarar_edificio() -> void:
 		resultado = BlueprintValidator.validar_blueprint(blueprint, zona_destino)
 
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
-	if resultado["valido"]:
-		Blueprints.guardar(blueprint)
-		var id_edificio: int = mundo.registrar_edificio(celdas.keys())
-		var total_camas := 0
-		for piso in blueprint["pisos"]:
-			total_camas += (piso.get("camas", []) as Array).size()
-		Ciudad.registrar_edificio_residencial(total_camas)
-		print("Camas registradas en Ciudad: ", total_camas, " (total construido: ", Ciudad.capacidad_camas_construida, ")")
+	if not resultado["valido"]:
+		return
 
-		if not Zonificacion.nucleo_declarado:
-			Zonificacion.declarar_nucleo(huella)
-			print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
-		else:
-			Zonificacion.ampliar_influencia(id_edificio, huella, blueprint["categoria"])
-			print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
+	Blueprints.guardar(blueprint)
+	# Delega en _completar_construccion() (mismo camino que un edificio
+	# terminado vía blueprint) para que un edificio declarado a mano quede
+	# con el mismo edificio_orden/edificio_progreso — deconstruirlo y
+	# volver a completarlo funciona igual que cualquier otro, sin perder
+	# sus camas/zona/puesto (ver spec de rediseño, punto 11).
+	var metadata := {
+		"blueprint": blueprint,
+		"huella_xz": huella,
+		"esquina": esquina,
+		"ancho": blueprint["ancho"],
+		"profundidad": blueprint["profundidad"],
+	}
+	var id_edificio: int = mundo.registrar_edificio_completo(celdas, metadata)
+	metadata["id_edificio"] = id_edificio
+	_completar_construccion(metadata)
 
 
 ## Tecla de prueba (K): simula la muerte del jugador para poder probar la

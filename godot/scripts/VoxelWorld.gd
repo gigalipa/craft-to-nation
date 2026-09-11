@@ -94,21 +94,36 @@ var pareja: Dictionary = {}  # Vector3i -> Vector3i
 ## (igual que ya hacen los árboles vía TIPOS_ARBOL/talar_bloque_de_arbol()).
 ## No se borra nunca al completarse una construcción fantasma (a diferencia
 ## de Construccion._celda_a_construccion, que sí se limpia): la inmunidad
-## debe seguir vigente después de terminado el edificio.
+## debe seguir vigente después de terminado el edificio, hasta que se
+## deconstruya por completo (ver eliminar_edificio()).
 var celda_a_edificio: Dictionary = {}  # Vector3i -> int
 var _siguiente_id_edificio := 1
 
+## id de edificio -> Array[Vector3i] de sus celdas registradas (ver
+## registrar_edificio()). Permite, dado un id, recuperar TODAS sus celdas
+## sin recorrer celda_a_edificio entero — usado por la deconstrucción
+## (procesar_deconstruccion()/eliminar_edificio()) para saber qué queda por
+## revertir y qué borrar al final.
+var edificio_a_celdas: Dictionary = {}  # int -> Array[Vector3i]
+
 
 ## Asigna un id de edificio nuevo y registra cada celda de "celdas" bajo
-## ese id. Devuelve el id asignado (no se usa hoy para nada más que
-## depuración/tests, pero deja la puerta abierta a operar sobre "todas las
-## celdas de este edificio" en el futuro — p. ej. rotación).
+## ese id. Devuelve el id asignado — usado por el llamador para asociar
+## este edificio con su zona de influencia (Zonificacion.ampliar_influencia())
+## y, más adelante, para deconstruirlo (ver procesar_deconstruccion()).
 func registrar_edificio(celdas: Array) -> int:
 	var id := _siguiente_id_edificio
 	_siguiente_id_edificio += 1
 	for celda in celdas:
 		celda_a_edificio[celda] = id
+	edificio_a_celdas[id] = celdas.duplicate()
 	return id
+
+
+## Consulta puntual de celda_a_edificio con un valor de "no pertenece"
+## explícito (-1) en vez de acceder al Dictionary directamente.
+func id_de_edificio(celda: Vector3i) -> int:
+	return celda_a_edificio.get(celda, -1)
 
 
 func _ready() -> void:
@@ -449,6 +464,154 @@ func eliminar_follaje(celda: Vector3i) -> void:
 		arboles.eliminar_celda(id, celda)
 
 
+## Grupos de reversión, en el orden en que se deconstruye — inverso al de
+## construcción (ver CamaraCenital.ORDEN_GRUPOS_CONSTRUCCION: relleno de
+## tierra -> piso -> paredes/puertas/ventanas -> mobiliario). Se duplica
+## deliberadamente en vez de compartirse con CamaraCenital.gd: mismo
+## criterio de capas que ya usa este archivo (VoxelWorld.gd no depende de
+## CamaraCenital.gd). "tierra" solo aparece aquí por completitud — en la
+## práctica nunca llega a _ordenar_celdas_deconstruccion() porque el
+## relleno nunca se registra como parte del edificio (ver
+## iniciar_construccion_fantasma()).
+const ORDEN_GRUPOS_DECONSTRUCCION := [
+	["cama_cabecera", "cama_pies", "baul"],
+	["pared", "puerta_inferior", "puerta_superior", "ventana"],
+	["piso"],
+	["tierra"],
+]
+
+
+## Agrupa y ordena "celdas_mundo" (Vector3i real -> tipo) según
+## ORDEN_GRUPOS_DECONSTRUCCION, y dentro de cada grupo por (y, x, z) —
+## mismo patrón exacto que CamaraCenital._ordenar_celdas_construccion(),
+## con el orden de grupos invertido.
+func _ordenar_celdas_deconstruccion(celdas_mundo: Dictionary) -> Array:
+	var orden: Array[Vector3i] = []
+	for grupo in ORDEN_GRUPOS_DECONSTRUCCION:
+		var celdas_grupo: Array[Vector3i] = []
+		for celda in celdas_mundo:
+			if grupo.has(celdas_mundo[celda]):
+				celdas_grupo.append(celda)
+		celdas_grupo.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
+			if a.y != b.y:
+				return a.y < b.y
+			if a.x != b.x:
+				return a.x < b.x
+			return a.z < b.z
+		)
+		orden.append_array(celdas_grupo)
+	return orden
+
+
+## Procesa un intento de deconstrucción apuntando a "celda". Devuelve {} si
+## "celda" no pertenece a ningún edificio registrado. Si pertenece:
+##
+## - Si ya hay una cola de reversión activa que incluye "celda" (o
+##   cualquier otra celda del mismo edificio — Construccion.gd, mismo
+##   patrón "avanza siempre la primera pendiente" que surtir_construccion(),
+##   en reversa), la avanza: revierte la siguiente celda real pendiente a
+##   "fantasma".
+## - Si no hay cola activa: calcula las celdas REALES actuales del edificio
+##   (ignora las que ya son "fantasma" — un edificio a medio construir
+##   simplemente no las incluye, no hace falta "revertirlas"). Si no queda
+##   ninguna celda real, el edificio ya está listo para remoción final (ver
+##   eliminar_edificio()) — devuelve eso sin iniciar nada. Si quedan celdas
+##   reales, las ordena con _ordenar_celdas_deconstruccion() y arranca la
+##   cola con Construccion.iniciar(), revirtiendo también la PRIMERA celda
+##   en la misma llamada (a diferencia de iniciar_construccion_fantasma(),
+##   que solo coloca los fantasmas sin convertir nada todavía, aquí no
+##   hace falta un paso de "colocación" previo — el edificio ya existe).
+##
+## Devuelve {"id": int, "completa_reversion": bool,
+## "lista_para_remocion": bool, "total_camas": int} — "total_camas" es el
+## número de "cama_cabecera" que tenía el edificio en el momento de esta
+## llamada, PERO SOLO tiene sentido la primera vez que se llama para un
+## edificio (cuando arranca la cola); en cualquier otra llamada vale 0 (el
+## llamador ya lo usó y no debe volver a aplicarlo). "lista_para_remocion"
+## es true tanto si la reversión se acaba de completar en esta MISMA
+## llamada como si el edificio ya estaba 100% fantasma antes de llamar.
+func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
+	var id: int = id_de_edificio(celda)
+	if id == -1:
+		return {}
+
+	var id_cola: int = Construccion.construccion_de(celda)
+	if id_cola != -1:
+		var resultado: Dictionary = Construccion.avanzar(id_cola)
+		if resultado.is_empty():
+			return {}
+		_revertir_celda(resultado["celda"])
+		return {
+			"id": id,
+			"completa_reversion": resultado["completa"],
+			"lista_para_remocion": resultado["completa"],
+			"total_camas": 0,
+		}
+
+	var celdas_reales: Dictionary = {}  # Vector3i -> tipo
+	var total_camas := 0
+	for c in edificio_a_celdas[id]:
+		var tipo: String = obtener_tipo(c)
+		if tipo == "fantasma":
+			continue
+		celdas_reales[c] = tipo
+		if tipo == "cama_cabecera":
+			total_camas += 1
+
+	if celdas_reales.is_empty():
+		return {"id": id, "completa_reversion": true, "lista_para_remocion": true, "total_camas": 0}
+
+	var orden: Array = _ordenar_celdas_deconstruccion(celdas_reales)
+	var tipos: Dictionary = {}
+	for c in orden:
+		tipos[c] = "fantasma"
+	Construccion.iniciar(orden, tipos)
+
+	var resultado: Dictionary = Construccion.avanzar(Construccion.construccion_de(celda))
+	_revertir_celda(resultado["celda"])
+	return {
+		"id": id,
+		"completa_reversion": resultado["completa"],
+		"lista_para_remocion": resultado["completa"],
+		"total_camas": total_camas,
+	}
+
+
+## Convierte "celda" (una celda real) de vuelta a "fantasma" — no marca
+## colocado_por_jugador (igual que iniciar_construccion_fantasma()) y
+## limpia cualquier entrada previa de esa celda en colocado_por_jugador
+## (ya no es estructura real). No toca "pareja": una celda revertida sigue
+## inmune al minado (celda_a_edificio no se borra hasta eliminar_edificio()),
+## así que minar_bloque() nunca llega a consultar "pareja" para ella
+## mientras dure la deconstrucción.
+func _revertir_celda(celda: Vector3i) -> void:
+	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+	colocado_por_jugador.erase(celda)
+	colocar_bloque(celda, "fantasma")
+
+
+## Elimina por completo un edificio ya reducido a fantasma vacío (ver
+## procesar_deconstruccion(), "lista_para_remocion" == true): borra todas
+## sus celdas del GridMap y limpia celda_a_edificio/edificio_a_celdas — deja
+## de ser inmune al minado porque deja de existir. Devuelve la esquina
+## (mínimo x, mínimo z entre sus celdas) para que el llamador pueda avisar
+## a Recoleccion (quitar_puesto()) — esta función no conoce Recoleccion ni
+## Zonificacion, solo el mundo físico. No-op (devuelve Vector2i.ZERO) si
+## "id" no existe.
+func eliminar_edificio(id: int) -> Vector2i:
+	if not edificio_a_celdas.has(id):
+		return Vector2i.ZERO
+	var celdas: Array = edificio_a_celdas[id]
+	var esquina := Vector2i(celdas[0].x, celdas[0].z)
+	for celda in celdas:
+		esquina.x = min(esquina.x, celda.x)
+		esquina.y = min(esquina.y, celda.z)
+		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+		celda_a_edificio.erase(celda)
+	edificio_a_celdas.erase(id)
+	return esquina
+
+
 ## Coloca el bloque placeholder "fantasma" en cada celda de "orden" (en el
 ## mundo real, con colisión) y registra la construcción en Construccion.gd.
 ## "tipos" mapea cada celda de "orden" a su tipo real de destino, "metadata"
@@ -456,11 +619,26 @@ func eliminar_follaje(celda: Vector3i) -> void:
 ## Construccion.iniciar()). No marca colocado_por_jugador todavía: estas
 ## celdas no son estructura real hasta que se conviertan (ver
 ## surtir_construccion()).
-func iniciar_construccion_fantasma(orden: Array, tipos: Dictionary, metadata: Dictionary = {}) -> int:
+## "celdas_estructurales" es el subconjunto de "orden" que representa al
+## edificio en sí (paredes, puertas, ventanas, piso, mobiliario) — NUNCA
+## incluye el relleno de nivelación. Solo esas celdas se registran como
+## inmunes al minado / parte de la deconstrucción (ver registrar_edificio());
+## el relleno de tierra queda fuera desde el primer instante, así que se
+## comporta como terreno normal (minable, no participa en deconstruir el
+## edificio) incluso mientras el edificio sigue a medio construir — ver
+## docs/superpowers/specs/2026-09-11-deconstruccion-edificios-design.md.
+## Devuelve el id de EDIFICIO (el de registrar_edificio(), no el de
+## Construccion.iniciar() — ningún llamador usaba ese valor de retorno
+## hasta ahora, así que este cambio es seguro) para que el llamador
+## (CamaraCenital._procesar_clic_blueprint()) lo guarde en "metadata" y
+## Player._completar_construccion() pueda usarlo directamente al ampliar
+## la zona de influencia, sin tener que volver a buscarlo por celda.
+func iniciar_construccion_fantasma(orden: Array, tipos: Dictionary, celdas_estructurales: Array, metadata: Dictionary = {}) -> int:
 	for celda in orden:
 		colocar_bloque(celda, "fantasma")
-	registrar_edificio(orden)
-	return Construccion.iniciar(orden, tipos, metadata)
+	var id_edificio: int = registrar_edificio(celdas_estructurales)
+	Construccion.iniciar(orden, tipos, metadata)
+	return id_edificio
 
 
 ## Convierte la siguiente celda pendiente de la construcción a la que

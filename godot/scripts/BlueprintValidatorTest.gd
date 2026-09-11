@@ -31,9 +31,15 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## irregular (un edificio en L) sin exigir que su caja delimitadora
 ## completa tenga suelo/techo, y calcula "huella_relativa" con solo las
 ## columnas reales (21, ver BlueprintValidator._es_losa_completa()/
-## _es_losa_parcial()).
+## _es_losa_parcial()), y que procesar_deconstruccion()/eliminar_edificio()
+## revierten un edificio en orden inverso al de construcción, mobiliario
+## primero y piso al final (22, ver VoxelWorld.procesar_deconstruccion()),
+## que un edificio a medio construir salta las celdas ya fantasma al
+## deconstruirse (23), y que iniciar_construccion_fantasma() nunca registra
+## el relleno de nivelación como parte del edificio (24, ver
+## VoxelWorld.iniciar_construccion_fantasma()).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
-## panel "Output": debe imprimir los 21 tests y no debe lanzar ningún error
+## panel "Output": debe imprimir los 25 tests y no debe lanzar ningún error
 ## de assert().
 
 const BLUEPRINT_VALIDO_JSON := """
@@ -532,7 +538,7 @@ func ejecutar_pruebas() -> void:
 		Vector3i(OX8 + 1, 1, OX8): "pared",
 	}
 	mundo.colocar_bloque(Vector3i(OX8, 2, OX8), "puerta_superior")  # ya real, no fantasma: completa el par de la puerta
-	mundo.iniciar_construccion_fantasma(orden_18, tipos_18)
+	mundo.iniciar_construccion_fantasma(orden_18, tipos_18, orden_18)
 	assert(mundo.obtener_tipo(Vector3i(OX8, 1, OX8)) == "fantasma")
 	assert(mundo.obtener_tipo(Vector3i(OX8 + 1, 1, OX8)) == "fantasma")
 
@@ -592,7 +598,7 @@ func ejecutar_pruebas() -> void:
 	var celda_fantasma := Vector3i(802, 50, 800)
 	var orden_fantasma: Array[Vector3i] = [celda_fantasma]
 	var tipos_fantasma := {celda_fantasma: "pared"}
-	mundo.iniciar_construccion_fantasma(orden_fantasma, tipos_fantasma)
+	mundo.iniciar_construccion_fantasma(orden_fantasma, tipos_fantasma, orden_fantasma)
 	var mineo_fantasma: bool = mundo.minar_bloque(celda_fantasma)
 	assert(not mineo_fantasma, "Una celda fantasma en curso no debe poder minarse")
 	assert(mundo.obtener_tipo(celda_fantasma) == "fantasma", "La celda fantasma debe seguir intacta tras intentar minarla")
@@ -659,4 +665,89 @@ func ejecutar_pruebas() -> void:
 	assert(resultado_l["errores"].is_empty())
 	print("OK: estructura_a_blueprint() reconoce la huella en L y validar_blueprint() la acepta.")
 
-	print("\n=== Las 21 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 22: procesar_deconstruccion()/eliminar_edificio() revierten en orden inverso ===")
+	const OX10 := 900
+	var celda_piso_22 := Vector3i(OX10, 0, OX10)
+	var celda_pared_22 := Vector3i(OX10, 1, OX10)
+	var celda_cabecera_22 := Vector3i(OX10 + 1, 1, OX10)
+	var celda_pies_22 := Vector3i(OX10 + 2, 1, OX10)
+	var celda_baul_22 := Vector3i(OX10 + 3, 1, OX10)
+	mundo.colocar_bloque(celda_piso_22, "piso", true)
+	mundo.colocar_bloque(celda_pared_22, "pared", true)
+	mundo.colocar_bloque(celda_cabecera_22, "cama_cabecera", true)
+	mundo.colocar_bloque(celda_pies_22, "cama_pies", true)
+	mundo.colocar_bloque(celda_baul_22, "baul", true)
+	var id_22: int = mundo.registrar_edificio([celda_piso_22, celda_pared_22, celda_cabecera_22, celda_pies_22, celda_baul_22])
+
+	# Primer intento: arranca la cola y revierte la PRIMERA celda del orden
+	# inverso (mobiliario primero, ordenado por x: cabecera antes que pies
+	# antes que baúl) — aunque el jugador haya apuntado a la pared.
+	var r1_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
+	assert(r1_22["id"] == id_22)
+	assert(r1_22["total_camas"] == 1, "Debe contar 1 cama_cabecera al iniciar")
+	assert(mundo.obtener_tipo(celda_cabecera_22) == "fantasma")
+	assert(mundo.obtener_tipo(celda_pies_22) == "cama_pies", "Todavía no le toca")
+	assert(not r1_22["completa_reversion"])
+
+	var r2_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
+	assert(mundo.obtener_tipo(celda_pies_22) == "fantasma")
+	assert(r2_22["total_camas"] == 0, "Solo cuenta la primera vez que arranca la cola")
+
+	var r3_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
+	assert(mundo.obtener_tipo(celda_baul_22) == "fantasma")
+
+	var r4_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
+	assert(mundo.obtener_tipo(celda_pared_22) == "fantasma", "Estructura después del mobiliario")
+	assert(not r4_22["completa_reversion"])
+
+	var r5_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
+	assert(mundo.obtener_tipo(celda_piso_22) == "fantasma", "Piso al final")
+	assert(r5_22["completa_reversion"] and r5_22["lista_para_remocion"])
+
+	var r6_22: Dictionary = mundo.procesar_deconstruccion(celda_pared_22)
+	assert(r6_22["lista_para_remocion"])
+
+	var esquina_22: Vector2i = mundo.eliminar_edificio(id_22)
+	assert(esquina_22 == Vector2i(OX10, OX10))
+	for c_22 in [celda_piso_22, celda_pared_22, celda_cabecera_22, celda_pies_22, celda_baul_22]:
+		assert(mundo.obtener_tipo(c_22) == "")
+		assert(mundo.id_de_edificio(c_22) == -1)
+	print("OK: procesar_deconstruccion() revierte en orden inverso (mobiliario -> estructura -> piso), cuenta camas solo al iniciar, y eliminar_edificio() borra todo.")
+
+	print("\n=== TEST 23: deconstruir un edificio a medio construir salta las celdas ya fantasma ===")
+	const OX11 := 950
+	var celda_piso_23 := Vector3i(OX11, 0, OX11)
+	var celda_pared_real_23 := Vector3i(OX11, 1, OX11)
+	var celda_pared_fantasma_23 := Vector3i(OX11 + 1, 1, OX11)
+	mundo.colocar_bloque(celda_piso_23, "piso", true)
+	mundo.colocar_bloque(celda_pared_real_23, "pared", true)
+	mundo.colocar_bloque(celda_pared_fantasma_23, "fantasma")  # todavía sin surtir
+	mundo.registrar_edificio([celda_piso_23, celda_pared_real_23, celda_pared_fantasma_23])
+
+	var r1_23: Dictionary = mundo.procesar_deconstruccion(celda_pared_real_23)
+	assert(mundo.obtener_tipo(celda_pared_real_23) == "fantasma", "La única pared real se revierte")
+	assert(mundo.obtener_tipo(celda_pared_fantasma_23) == "fantasma", "Ya lo era, sin cambios")
+	assert(not r1_23["completa_reversion"])
+
+	var r2_23: Dictionary = mundo.procesar_deconstruccion(celda_pared_real_23)
+	assert(mundo.obtener_tipo(celda_piso_23) == "fantasma")
+	assert(r2_23["completa_reversion"] and r2_23["lista_para_remocion"])
+	print("OK: las celdas ya fantasma de un edificio a medio construir no necesitan revertirse.")
+
+	print("\n=== TEST 24: iniciar_construccion_fantasma() no registra el relleno como parte del edificio ===")
+	const OX12 := 970
+	var celda_relleno_24 := Vector3i(OX12, 1, OX12)
+	var celda_estructural_24 := Vector3i(OX12 + 1, 1, OX12)
+	var orden_24: Array[Vector3i] = [celda_relleno_24, celda_estructural_24]
+	var tipos_24 := {celda_relleno_24: "tierra", celda_estructural_24: "pared"}
+	mundo.iniciar_construccion_fantasma(orden_24, tipos_24, [celda_estructural_24])
+	assert(mundo.id_de_edificio(celda_relleno_24) == -1, "El relleno nunca se registra, aunque esté en 'orden'")
+	assert(mundo.id_de_edificio(celda_estructural_24) != -1, "La celda estructural sí se registra")
+	var mineo_relleno_24: bool = mundo.minar_bloque(celda_relleno_24)
+	assert(mineo_relleno_24, "El relleno, aunque siga siendo fantasma, es minable de inmediato (no es inmune)")
+	assert(mundo.obtener_tipo(celda_relleno_24) == "", "Se minó de verdad")
+	var mineo_estructural_24: bool = mundo.minar_bloque(celda_estructural_24)
+	assert(not mineo_estructural_24, "La celda estructural sigue inmune")
+	print("OK: el relleno de nivelación nunca queda registrado como parte del edificio, aunque comparta 'orden' con las celdas estructurales.")
+
+	print("\n=== Las 25 pruebas de BlueprintValidator pasaron correctamente ===")

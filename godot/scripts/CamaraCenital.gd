@@ -1151,7 +1151,8 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		"ancho": ancho,
 		"profundidad": alto,
 	}
-	mundo.iniciar_construccion_fantasma(orden, tipos, metadata)
+	var id_edificio: int = mundo.iniciar_construccion_fantasma(orden, tipos, celdas_mundo.keys(), metadata)
+	metadata["id_edificio"] = id_edificio
 	print("Construcción fantasma iniciada en (", esquina.x, ", ", esquina.y, ") — surtir para completarla.")
 
 	_salir_de_modo_colocar_blueprint()

@@ -785,14 +785,26 @@ func ejecutar_pruebas() -> void:
 	assert(not mineo_estructural_24, "La celda estructural sigue inmune")
 	print("OK: el relleno de nivelación nunca queda registrado como parte del edificio, aunque comparta 'orden' con las celdas estructurales.")
 
-	print("\n=== TEST 24b: surtir_construccion() no debe quedar atrapada en una cola de relleno huérfana que comparte celda con una estructura (regresión Fix 2) ===")
+	print("\n=== TEST 24b: surtir_construccion() completa primero el relleno del grupo, sin importar a qué celda del grupo apunte el jugador ===")
 	const OX12B := 975
-	var celda_compartida_24b := Vector3i(OX12B, 1, OX12B)
-	mundo.iniciar_construccion_fantasma([celda_compartida_24b], {celda_compartida_24b: "tierra"}, [celda_compartida_24b], {celda_compartida_24b: "pared"})
-	var s_estructural_24b: Dictionary = mundo.surtir_construccion(celda_compartida_24b)
-	assert(s_estructural_24b.get("completa", false), "La celda estructural debe completarse normalmente, sin que una cola de relleno que comparte su celda la bloquee")
-	assert(mundo.obtener_tipo(celda_compartida_24b) == "pared", "Debe convertirse a su tipo real de estructura, no quedar atrapada surtiendo el relleno")
-	print("OK: surtir_construccion() prioriza la estructura sobre una cola de relleno huérfana registrada en la misma celda.")
+	var celda_relleno_24b := Vector3i(OX12B, 1, OX12B)
+	var celda_estructural_24b := Vector3i(OX12B + 1, 1, OX12B)
+	mundo.iniciar_construccion_fantasma([celda_relleno_24b], {celda_relleno_24b: "tierra"}, [celda_estructural_24b], {celda_estructural_24b: "pared"})
+
+	# Apunta a la celda ESTRUCTURAL, pero como el relleno del grupo sigue
+	# pendiente, debe avanzar el relleno en su lugar -- la estructura no se
+	# toca todavía.
+	var s1_24b: Dictionary = mundo.surtir_construccion(celda_estructural_24b)
+	assert(not s1_24b.get("completa", false), "El relleno nunca dispara 'completa' del grupo")
+	assert(mundo.obtener_tipo(celda_relleno_24b) == "tierra", "El relleno se surtió aunque se apuntó a la celda estructural")
+	assert(mundo.obtener_tipo(celda_estructural_24b) == "fantasma", "La estructura no avanza mientras quede relleno pendiente")
+
+	# Con el relleno agotado, el mismo click (a cualquier celda del grupo)
+	# ahora sí avanza la estructura.
+	var s2_24b: Dictionary = mundo.surtir_construccion(celda_estructural_24b)
+	assert(s2_24b["completa"], "Con el relleno completo, la estructura se completa normalmente")
+	assert(mundo.obtener_tipo(celda_estructural_24b) == "pared", "Se convierte a su tipo real de estructura")
+	print("OK: surtir_construccion() surte primero el relleno del grupo completo antes de avanzar la estructura, sin importar a qué celda del grupo se apunte.")
 
 	print("\n=== TEST 25: pausar una construcción, deconstruir parte, y retomarla — el progreso es el mismo índice en ambos sentidos ===")
 	const OX13 := 990

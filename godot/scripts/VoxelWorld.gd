@@ -131,6 +131,18 @@ var edificio_tipos: Dictionary = {}  # int -> Dictionary (Vector3i -> String)
 var edificio_progreso: Dictionary = {}  # int -> int
 var edificio_metadata: Dictionary = {}  # int -> Dictionary
 
+## id de edificio -> id de la cola de Construccion.gd que rellena su
+## nivelación de terreno (solo si el blueprint necesitó relleno — ver
+## iniciar_construccion_fantasma()). Mientras un edificio tenga entrada
+## aquí, surtir_construccion() avanza SIEMPRE esta cola primero, sin
+## importar a qué celda del grupo (relleno o estructura) haya apuntado el
+## jugador — el relleno debe completarse antes de que la estructura
+## empiece a surtirse, para que el jugador interactúe con "el grupo"
+## edificio+relleno como una sola unidad. Se borra en cuanto la cola se
+## agota (surtir_construccion()) o si el edificio se elimina antes de
+## completar su relleno (eliminar_edificio()).
+var edificio_relleno_cola: Dictionary = {}  # int -> int
+
 ## Por edificio: las celdas de despeje reservadas por sus ventanas/puertas
 ## (ver calcular_despeje()) y su consulta inversa — mismo patrón que
 ## edificio_a_celdas/celda_a_edificio. Persiste mientras exista el id del
@@ -681,6 +693,7 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_tipos.erase(id)
 	edificio_progreso.erase(id)
 	edificio_metadata.erase(id)
+	edificio_relleno_cola.erase(id)
 	for celda_despeje in edificio_despeje.get(id, []):
 		if celda_a_despeje.has(celda_despeje):
 			celda_a_despeje[celda_despeje].erase(id)
@@ -703,11 +716,11 @@ func eliminar_edificio(id: int) -> Vector2i:
 func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictionary, orden_estructura: Array, tipos_estructura: Dictionary, metadata: Dictionary = {}) -> int:
 	for celda in orden_relleno:
 		colocar_bloque(celda, "fantasma")
-	if not orden_relleno.is_empty():
-		Construccion.iniciar(orden_relleno, tipos_relleno)
 	for celda in orden_estructura:
 		colocar_bloque(celda, "fantasma")
 	var id: int = registrar_edificio(orden_estructura)
+	if not orden_relleno.is_empty():
+		edificio_relleno_cola[id] = Construccion.iniciar(orden_relleno, tipos_relleno)
 	edificio_orden[id] = orden_estructura
 	edificio_tipos[id] = tipos_estructura
 	edificio_progreso[id] = 0
@@ -745,19 +758,24 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 
 
 ## Avanza, según a qué pertenezca "celda": si todavía es parte de una cola
-## de RELLENO activa en Construccion.gd, avanza esa cola (comportamiento
-## sin cambios respecto a antes de este rediseño) y devuelve un resultado
-## sin "completa" (el relleno nunca dispara _completar_construccion()). En
-## cualquier otro caso, busca el edificio por id_de_edificio() — sirve
-## apuntar a CUALQUIER celda del edificio (p. ej. una pared exterior ya
-## real) para surtir la SIGUIENTE celda pendiente en edificio_orden, sin
-## importar si "celda" en sí ya es real. No-op ({}) si "celda" no
-## pertenece a ningún relleno pendiente NI a ningún edificio con progreso
-## incompleto.
+## de RELLENO activa en Construccion.gd sin dueño (una celda de nivelación
+## suelta, de un edificio ya eliminado — ver eliminar_edificio()), avanza
+## esa cola directamente. En cualquier otro caso, busca el edificio por
+## id_de_edificio() — sirve apuntar a CUALQUIER celda del GRUPO (relleno o
+## estructura) para avanzarlo. Mientras ese edificio tenga una cola de
+## relleno pendiente en edificio_relleno_cola, SIEMPRE se avanza esa cola
+## primero, sin importar a qué celda del grupo se haya apuntado — el
+## jugador interactúa con "el grupo" edificio+relleno como una sola
+## unidad, y el relleno debe completarse antes de que la estructura
+## empiece a surtirse. Una vez agotada la cola de relleno (o si el
+## edificio nunca tuvo relleno), avanza la SIGUIENTE celda pendiente en
+## edificio_orden, sin importar si "celda" en sí ya es real. No-op ({}) si
+## "celda" no pertenece a ningún relleno huérfano NI a ningún edificio con
+## progreso incompleto.
 func surtir_construccion(celda: Vector3i) -> Dictionary:
-	var id_relleno: int = Construccion.construccion_de(celda)
-	if id_relleno != -1 and id_de_edificio(celda) == -1:
-		var resultado_relleno: Dictionary = Construccion.avanzar(id_relleno)
+	var id_relleno_huerfano: int = Construccion.construccion_de(celda)
+	if id_relleno_huerfano != -1 and id_de_edificio(celda) == -1:
+		var resultado_relleno: Dictionary = Construccion.avanzar(id_relleno_huerfano)
 		if resultado_relleno.is_empty():
 			return {}
 		set_cell_item(resultado_relleno["celda"], GridMap.INVALID_CELL_ITEM)
@@ -765,7 +783,21 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 		return {"completa": false, "metadata": {}}
 
 	var id: int = id_de_edificio(celda)
-	if id == -1 or not edificio_orden.has(id):
+	if id == -1:
+		return {}
+
+	if edificio_relleno_cola.has(id):
+		var id_cola_relleno: int = edificio_relleno_cola[id]
+		var resultado_grupo: Dictionary = Construccion.avanzar(id_cola_relleno)
+		if not resultado_grupo.is_empty():
+			set_cell_item(resultado_grupo["celda"], GridMap.INVALID_CELL_ITEM)
+			colocar_bloque(resultado_grupo["celda"], resultado_grupo["tipo"], true)
+			if resultado_grupo["completa"]:
+				edificio_relleno_cola.erase(id)
+			return {"completa": false, "metadata": {}}
+		edificio_relleno_cola.erase(id)
+
+	if not edificio_orden.has(id):
 		return {}
 	var orden: Array = edificio_orden[id]
 	var progreso: int = edificio_progreso[id]

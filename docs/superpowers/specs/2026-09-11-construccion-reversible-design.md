@@ -266,6 +266,22 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 `reemparejar_construccion()` no cambia (sigue operando sobre un `Array` de
 celdas, que `orden` sigue siendo).
 
+**Actualización posterior (fix acotado, sin spec propio)**: en la práctica,
+dejar el relleno y la estructura como colas totalmente independientes
+obligaba al jugador a interactuar con cada una por separado, sin un orden
+definido, para completar una construcción. Se agregó `edificio_relleno_cola:
+Dictionary` (id de edificio -> id de la cola de `Construccion.gd` de su
+relleno, solo si tuvo relleno). Mientras esa entrada exista,
+`surtir_construccion()` avanza SIEMPRE la cola de relleno primero, sin
+importar a qué celda del grupo (relleno o estructura) haya apuntado el
+jugador — el relleno debe completarse antes de que la estructura empiece a
+surtirse, para que el jugador interactúe con "el grupo" edificio+relleno
+como una sola unidad. La entrada se borra al agotarse la cola, o en
+`eliminar_edificio()` si el edificio se elimina antes de completar su
+relleno. `procesar_deconstruccion()` no cambia: el relleno nunca se revierte
+al deconstruir (ver punto 2.5 del spec de deconstrucción), sin importar si
+ya se completó o no.
+
 ### 6. `VoxelWorld.gd`: `procesar_deconstruccion()` reescrita
 
 ```gdscript

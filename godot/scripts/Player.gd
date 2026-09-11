@@ -26,10 +26,21 @@ var tipos_disponibles := ["pared", "puerta", "ventana", "piso", "cama", "baul"]
 var tipo_seleccionado := 0
 
 var mundo: Node  # asignada por Main.gd al iniciar la escena
+@onready var hud: CanvasLayer = get_node("../HUDLayer")
 
 var _minando := false
 var _colocando := false
 var _temporizador_accion := 0.0
+
+var modo_deconstruccion := false
+var _id_listo_para_remocion := -1
+var _ticks_listo_para_remocion := 0
+
+## Cuántos "ticks" de acción repetida (INTERVALO_ACCION_REPETIDA, 0.2s)
+## seguidos apuntando al MISMO edificio ya reducido a fantasma vacío hacen
+## falta para eliminarlo del todo — demora deliberada (~1s) para evitar
+## borrados accidentales al mantener el click presionado.
+const TICKS_REMOCION_FINAL := 5
 
 
 func _ready() -> void:
@@ -46,6 +57,8 @@ func _input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		if tecla.pressed and tecla.keycode == KEY_B:
 			_declarar_edificio()
+		if tecla.pressed and tecla.keycode == KEY_G:
+			_alternar_modo_deconstruccion()
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
 		if tecla.pressed:
@@ -126,14 +139,75 @@ func _celda_impactada() -> Vector3i:
 	return mundo.local_to_map(mundo.to_local(punto - normal * 0.5))
 
 
+## Activa/desactiva el modo deconstrucción — muestra/oculta el aviso en el
+## HUD. Al desactivarse, también se olvida cualquier progreso de "sostener
+## para remoción final" (ver _procesar_deconstruccion()) — si el jugador
+## sale del modo a medio sostener el click, no debe contar para la próxima
+## vez que lo reactive.
+func _alternar_modo_deconstruccion() -> void:
+	modo_deconstruccion = not modo_deconstruccion
+	if modo_deconstruccion:
+		hud.mostrar_modo_deconstruccion()
+	else:
+		hud.ocultar_modo_deconstruccion()
+	_id_listo_para_remocion = -1
+	_ticks_listo_para_remocion = 0
+
+
 func _minar() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
 	var celda := _celda_impactada()
+	if modo_deconstruccion:
+		_procesar_deconstruccion(celda)
+		return
 	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
 		mundo.talar_bloque_de_arbol(celda, DANO_TALA)
 	else:
 		mundo.minar_bloque(celda)
+
+
+## Se llama en cada click/repetición de _minar() mientras modo_deconstruccion
+## está activo. Delega toda la lógica de "qué revertir" en
+## VoxelWorld.procesar_deconstruccion() — aquí solo se maneja lo que le
+## corresponde al jugador/Ciudad/Zonificacion/Recoleccion: negarse sobre el
+## núcleo urbano (exento), retirar camas la primera vez, y contar
+## TICKS_REMOCION_FINAL intentos consecutivos sobre el MISMO edificio ya
+## listo para remoción antes de eliminarlo del todo.
+func _procesar_deconstruccion(celda: Vector3i) -> void:
+	if Zonificacion.celda_es_del_nucleo(Vector2i(celda.x, celda.z)):
+		print("El núcleo urbano no se puede deconstruir.")
+		return
+
+	var resultado: Dictionary = mundo.procesar_deconstruccion(celda)
+	if resultado.is_empty():
+		_id_listo_para_remocion = -1
+		_ticks_listo_para_remocion = 0
+		return
+
+	if resultado["total_camas"] > 0:
+		Ciudad.retirar_edificio_residencial(resultado["total_camas"])
+		print("Deconstrucción iniciada: ", resultado["total_camas"], " cama(s) retiradas de Ciudad.")
+
+	if not resultado["lista_para_remocion"]:
+		_id_listo_para_remocion = -1
+		_ticks_listo_para_remocion = 0
+		return
+
+	var id: int = resultado["id"]
+	if _id_listo_para_remocion == id:
+		_ticks_listo_para_remocion += 1
+	else:
+		_id_listo_para_remocion = id
+		_ticks_listo_para_remocion = 1
+
+	if _ticks_listo_para_remocion >= TICKS_REMOCION_FINAL:
+		var esquina: Vector2i = mundo.eliminar_edificio(id)
+		Zonificacion.retirar_contribucion(id)
+		Recoleccion.quitar_puesto(esquina)
+		print("Edificio deconstruido por completo.")
+		_id_listo_para_remocion = -1
+		_ticks_listo_para_remocion = 0
 
 
 ## Redondea hacia dónde mira el cuerpo (solo yaw, sin el pitch de la cámara,
@@ -232,7 +306,7 @@ func _declarar_edificio() -> void:
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if resultado["valido"]:
 		Blueprints.guardar(blueprint)
-		mundo.registrar_edificio(celdas.keys())
+		var id_edificio: int = mundo.registrar_edificio(celdas.keys())
 		var total_camas := 0
 		for piso in blueprint["pisos"]:
 			total_camas += (piso.get("camas", []) as Array).size()
@@ -243,7 +317,7 @@ func _declarar_edificio() -> void:
 			Zonificacion.declarar_nucleo(huella)
 			print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 		else:
-			Zonificacion.ampliar_influencia(huella)
+			Zonificacion.ampliar_influencia(id_edificio, huella, blueprint["categoria"])
 			print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 
@@ -279,7 +353,7 @@ func _completar_construccion(metadata: Dictionary) -> void:
 		Zonificacion.declarar_nucleo(metadata["huella_xz"])
 		print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 	else:
-		Zonificacion.ampliar_influencia(metadata["huella_xz"])
+		Zonificacion.ampliar_influencia(metadata["id_edificio"], metadata["huella_xz"], blueprint["categoria"])
 		print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])

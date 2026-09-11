@@ -200,6 +200,10 @@ static func validar_personalizacion_produccion(blueprint_modificado: Dictionary,
 ## presentes y son de un tipo ESTRUCTURAL (pared/puerta/ventana/piso). Se
 ## exige solo para la losa más baja (cimiento) y la más alta (techo
 ## exterior) del edificio completo — nunca deben tener huecos.
+## "Huella real" es la UNIÓN de todas las capas del edificio, no solo las de
+## esta capa — un piso superior más angosto que la base sigue exigiendo que
+## el techo cubra toda la huella real, igual que antes con la caja
+## delimitadora).
 static func _es_losa_completa(capa: Dictionary, huella_real: Dictionary) -> bool:
 	for clave in huella_real:
 		var tipo = capa.get(clave)

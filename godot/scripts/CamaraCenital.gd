@@ -1029,7 +1029,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
 		return
 	if not _huella_tiene_columna_en_tierra(esquina, columnas):
-		print("Colocación rechazada: la huella necesita al menos una esquina sobre tierra firme.")
+		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
 		return
 
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
@@ -1103,7 +1103,7 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		print("Colocación rechazada: la huella choca con un puesto o construcción ya colocada.")
 		return
 	if not _huella_tiene_columna_en_tierra(esquina, columnas):
-		print("Colocación rechazada: la huella necesita al menos una esquina sobre tierra firme.")
+		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
 		return
 
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:

@@ -58,7 +58,7 @@ func verificar_pendiente(esquina: Vector2i, columnas: Array[Vector2i]) -> bool:
 ## todo. Público porque también lo usa CamaraCenital.gd para posicionar el
 ## recuadro fantasma de previsualización.
 func altura_objetivo(esquina: Vector2i, columnas: Array[Vector2i]) -> int:
-	var maximo: int = _generador.altura_en(esquina.x, esquina.y)
+	var maximo: int = _generador.altura_en(esquina.x + columnas[0].x, esquina.y + columnas[0].y)
 	for rel in columnas:
 		maximo = max(maximo, _generador.altura_en(esquina.x + rel.x, esquina.y + rel.y))
 	return maximo

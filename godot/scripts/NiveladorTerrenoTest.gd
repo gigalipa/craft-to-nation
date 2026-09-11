@@ -2,7 +2,7 @@ extends Node
 
 ## Pruebas aisladas de NiveladorTerreno.gd (mismo patrón que
 ## ZonificacionTest.gd). Corre esta escena (NiveladorTerrenoTest.tscn) con
-## F6 y revisa el panel "Output": debe imprimir las 7 pruebas y no debe
+## F6 y revisa el panel "Output": debe imprimir las 8 pruebas y no debe
 ## lanzar ningún error de assert(). Usa un generador de alturas falso y
 ## determinista (no GeneradorMundo real, que usa ruido) para poder construir
 ## pendientes exactas y verificar el cálculo de relleno con precisión.
@@ -122,4 +122,18 @@ func ejecutar_pruebas() -> void:
 	print("Relleno de la huella en L (acantilado excluido): ", relleno_l.size(), " celdas (esperadas: 0)")
 	assert(relleno_l.is_empty())
 
-	print("\n=== Las 7 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 8: altura_objetivo() no debe leer una columna fuera de la lista (regresión) ===")
+	# Mismo generador de TEST 6/7 (acantilado en altura 100 en la columna
+	# (2,2)), pero ahora la columna EXCLUIDA es la que coincide con el
+	# offset relativo (0,0) — exactamente la que altura_objetivo() leía por
+	# error antes del fix (sembraba el máximo desde "esquina" directamente,
+	# sin pasar por la lista de columnas). Con esquina=(2,2), el offset
+	# (0,0) mapea al mundo (2,2), el acantilado — si altura_objetivo()
+	# todavía leyera esa celda "gratis", devolvería 100 en vez de 3.
+	var columnas_sin_origen: Array[Vector2i] = _rectangulo(3, 3)
+	columnas_sin_origen.erase(Vector2i(0, 0))
+	assert(columnas_sin_origen.size() == 8)
+	assert(nivelador_acantilado.altura_objetivo(Vector2i(2, 2), columnas_sin_origen) == 3)
+	print("OK: altura_objetivo() solo lee columnas de la lista, nunca el offset (0,0) por defecto.")
+
+	print("\n=== Las 8 pruebas de NiveladorTerreno pasaron correctamente ===")

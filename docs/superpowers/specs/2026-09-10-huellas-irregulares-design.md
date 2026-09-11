@@ -57,6 +57,16 @@ respetando su forma real, no su caja delimitadora (punto 2).
   forma ortogonal conexa, pero no se contempla un anillo con un agujero en
   medio (no surge de `detectar_estructura()` en la práctica: requeriría un
   edificio con un patio central sin techo ni piso en ningún nivel).
+- Un edificio irregular ya terminado sigue registrando su HUELLA COMPLETA
+  DELIMITADORA (no sus columnas reales) en `Recoleccion.puestos` (ver
+  `Player._completar_construccion()` -> `Recoleccion.colocar_puesto(...,
+  metadata["ancho"], metadata["profundidad"])`) — el hueco de una L ya
+  construida queda "ocupado" para siempre a efectos de choque con un
+  futuro puesto o blueprint, aunque ahí no haya nada real. Falla de forma
+  conservadora (nunca permite un solape ilegal, solo es más estricto de lo
+  necesario) — pendiente de una futura generalización de `Recoleccion.gd`
+  para registrar columnas reales en vez de un rectángulo, fuera de las 4
+  tareas de este plan.
 
 ## Diseño
 

@@ -314,6 +314,9 @@ func _declarar_edificio() -> void:
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if not resultado["valido"]:
 		return
+	if not mundo.verificar_despejes(celdas):
+		print("Declarar edificio: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio.")
+		return
 
 	Blueprints.guardar(blueprint)
 	# Delega en _completar_construccion() (mismo camino que un edificio

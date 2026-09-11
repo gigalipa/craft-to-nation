@@ -106,6 +106,13 @@ var _siguiente_id_edificio := 1
 ## revertir y qué borrar al final.
 var edificio_a_celdas: Dictionary = {}  # int -> Array[Vector3i]
 
+## id de edificio -> id de la cola de Construccion.gd que representa SU
+## deconstrucción (no su construcción original — ambas viven en el mismo
+## autoload Construccion.gd, que no distingue "tipo de cola", así que
+## VoxelWorld debe llevar la cuenta de cuál es cuál). Ver
+## procesar_deconstruccion().
+var _cola_decon: Dictionary = {}  # int (id edificio) -> int (id cola)
+
 
 ## Asigna un id de edificio nuevo y registra cada celda de "celdas" bajo
 ## ese id. Devuelve el id asignado — usado por el llamador para asociar
@@ -506,21 +513,27 @@ func _ordenar_celdas_deconstruccion(celdas_mundo: Dictionary) -> Array:
 ## Procesa un intento de deconstrucción apuntando a "celda". Devuelve {} si
 ## "celda" no pertenece a ningún edificio registrado. Si pertenece:
 ##
-## - Si ya hay una cola de reversión activa que incluye "celda" (o
-##   cualquier otra celda del mismo edificio — Construccion.gd, mismo
-##   patrón "avanza siempre la primera pendiente" que surtir_construccion(),
-##   en reversa), la avanza: revierte la siguiente celda real pendiente a
-##   "fantasma".
-## - Si no hay cola activa: calcula las celdas REALES actuales del edificio
-##   (ignora las que ya son "fantasma" — un edificio a medio construir
-##   simplemente no las incluye, no hace falta "revertirlas"). Si no queda
-##   ninguna celda real, el edificio ya está listo para remoción final (ver
+## - Si ya hay una cola de DECONSTRUCCIÓN propia activa para este edificio
+##   (registrada en _cola_decon — nunca se confunde con una cola de
+##   CONSTRUCCIÓN activa del mismo edificio, aunque ambas vivan en el mismo
+##   autoload Construccion.gd, que no distingue "tipo de cola"), la avanza:
+##   revierte la siguiente celda real pendiente a "fantasma".
+## - Si no hay cola de deconstrucción activa: si el edificio TODAVÍA tiene
+##   una cola de CONSTRUCCIÓN activa (a medio construir), se cancela primero
+##   (Construccion.cancelar()) — deconstruir tiene prioridad sobre seguir
+##   construyendo; cualquier celda de relleno de nivelación pendiente que
+##   quedara a medio colocar se borra en vez de dejarla como fantasma
+##   huérfano. Luego calcula las celdas REALES actuales del edificio (ignora
+##   las que ya son "fantasma" — un edificio a medio construir simplemente
+##   no las incluye, no hace falta "revertirlas"). Si no queda ninguna celda
+##   real, el edificio ya está listo para remoción final (ver
 ##   eliminar_edificio()) — devuelve eso sin iniciar nada. Si quedan celdas
-##   reales, las ordena con _ordenar_celdas_deconstruccion() y arranca la
-##   cola con Construccion.iniciar(), revirtiendo también la PRIMERA celda
-##   en la misma llamada (a diferencia de iniciar_construccion_fantasma(),
-##   que solo coloca los fantasmas sin convertir nada todavía, aquí no
-##   hace falta un paso de "colocación" previo — el edificio ya existe).
+##   reales, las ordena con _ordenar_celdas_deconstruccion() y arranca una
+##   cola nueva con Construccion.iniciar() (etiquetada en _cola_decon),
+##   revirtiendo también la PRIMERA celda en la misma llamada (a diferencia
+##   de iniciar_construccion_fantasma(), que solo coloca los fantasmas sin
+##   convertir nada todavía, aquí no hace falta un paso de "colocación"
+##   previo — el edificio ya existe).
 ##
 ## Devuelve {"id": int, "completa_reversion": bool,
 ## "lista_para_remocion": bool, "total_camas": int} — "total_camas" es el
@@ -535,10 +548,11 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 	if id == -1:
 		return {}
 
-	var id_cola: int = Construccion.construccion_de(celda)
-	if id_cola != -1:
-		var resultado: Dictionary = Construccion.avanzar(id_cola)
+	var id_cola_decon: int = _cola_decon.get(id, -1)
+	if id_cola_decon != -1 and Construccion.construccion_de(celda) == id_cola_decon:
+		var resultado: Dictionary = Construccion.avanzar(id_cola_decon)
 		if resultado.is_empty():
+			_cola_decon.erase(id)
 			return {}
 		_revertir_celda(resultado["celda"])
 		return {
@@ -547,6 +561,21 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 			"lista_para_remocion": resultado["completa"],
 			"total_camas": 0,
 		}
+
+	# No hay cola de deconstrucción activa para este edificio todavía. Si
+	# el edificio TODAVÍA tiene una cola de CONSTRUCCIÓN activa (a medio
+	# construir), cancelarla primero — deconstruir tiene prioridad sobre
+	# seguir construyendo. Cualquier celda de relleno de nivelación que
+	# haya quedado a medio colocar (todavía "fantasma", nunca registrada
+	# en edificio_a_celdas porque el relleno siempre queda aislado) se
+	# borra en vez de dejarla como fantasma huérfano — coherente con que
+	# la tierra de relleno queda aislada de la parte estructural.
+	var id_cola_construccion: int = Construccion.construccion_de(celda)
+	if id_cola_construccion != -1:
+		var pendientes: Array = Construccion.cancelar(id_cola_construccion)
+		for c in pendientes:
+			if not edificio_a_celdas[id].has(c):
+				set_cell_item(c, GridMap.INVALID_CELL_ITEM)
 
 	var celdas_reales: Dictionary = {}  # Vector3i -> tipo
 	var total_camas := 0
@@ -562,12 +591,19 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 		return {"id": id, "completa_reversion": true, "lista_para_remocion": true, "total_camas": 0}
 
 	var orden: Array = _ordenar_celdas_deconstruccion(celdas_reales)
+	if orden.is_empty():
+		# Ninguna de las celdas reales es de un tipo deconstruible (p. ej.
+		# un puesto periférico: "mina"/"puesto_caza" no están en ningún
+		# grupo de ORDEN_GRUPOS_DECONSTRUCCION) — no participa en este
+		# sistema, ver spec de deconstrucción.
+		return {}
 	var tipos: Dictionary = {}
 	for c in orden:
 		tipos[c] = "fantasma"
-	Construccion.iniciar(orden, tipos)
+	var id_cola_nueva: int = Construccion.iniciar(orden, tipos)
+	_cola_decon[id] = id_cola_nueva
 
-	var resultado: Dictionary = Construccion.avanzar(Construccion.construccion_de(celda))
+	var resultado: Dictionary = Construccion.avanzar(id_cola_nueva)
 	_revertir_celda(resultado["celda"])
 	return {
 		"id": id,
@@ -606,9 +642,13 @@ func eliminar_edificio(id: int) -> Vector2i:
 	for celda in celdas:
 		esquina.x = min(esquina.x, celda.x)
 		esquina.y = min(esquina.y, celda.z)
+		if pareja.has(celda):
+			pareja.erase(pareja[celda])
+			pareja.erase(celda)
 		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 		celda_a_edificio.erase(celda)
 	edificio_a_celdas.erase(id)
+	_cola_decon.erase(id)
 	return esquina
 
 
@@ -658,6 +698,8 @@ func iniciar_construccion_fantasma(orden: Array, tipos: Dictionary, celdas_estru
 ## "metadata". Al completarse, reempareja puertas/camas de la construcción
 ## antes de devolver (ver reemparejar_construccion()).
 func surtir_construccion(celda: Vector3i) -> Dictionary:
+	if _cola_decon.values().has(Construccion.construccion_de(celda)):
+		return {}
 	var id: int = Construccion.construccion_de(celda)
 	if id == -1:
 		return {}

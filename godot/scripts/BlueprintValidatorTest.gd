@@ -37,7 +37,13 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## que un edificio a medio construir salta las celdas ya fantasma al
 ## deconstruirse (23), y que iniciar_construccion_fantasma() nunca registra
 ## el relleno de nivelación como parte del edificio (24, ver
-## VoxelWorld.iniciar_construccion_fantasma()).
+## VoxelWorld.iniciar_construccion_fantasma()), que deconstruir un edificio
+## real a medio construir (colocado con iniciar_construccion_fantasma()/
+## surtir_construccion(), no un fixture armado a mano) cancela su cola de
+## CONSTRUCCIÓN en vez de seguir avanzándola por error (25, ver
+## VoxelWorld.procesar_deconstruccion()/Construccion.cancelar()), y que
+## procesar_deconstruccion() sobre un puesto periférico (tipo de bloque no
+## deconstruible) es un no-op silencioso, nunca un error (26).
 ## Correr esta escena (Test.tscn) con F6 en el editor de Godot y revisar el
 ## panel "Output": debe imprimir los 25 tests y no debe lanzar ningún error
 ## de assert().
@@ -750,4 +756,44 @@ func ejecutar_pruebas() -> void:
 	assert(not mineo_estructural_24, "La celda estructural sigue inmune")
 	print("OK: el relleno de nivelación nunca queda registrado como parte del edificio, aunque comparta 'orden' con las celdas estructurales.")
 
-	print("\n=== Las 25 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 25: deconstruir un edificio real a medio construir (vía iniciar_construccion_fantasma/surtir_construccion) revierte, no sigue construyendo ===")
+	const OX13 := 990
+	var celda_piso_25 := Vector3i(OX13, 0, OX13)
+	var celda_pared_25 := Vector3i(OX13, 1, OX13)
+	var celda_baul_25 := Vector3i(OX13 + 1, 1, OX13)
+	var orden_25: Array[Vector3i] = [celda_piso_25, celda_pared_25, celda_baul_25]
+	var tipos_25 := {
+		celda_piso_25: "piso",
+		celda_pared_25: "pared",
+		celda_baul_25: "baul",
+	}
+	mundo.iniciar_construccion_fantasma(orden_25, tipos_25, orden_25)
+	mundo.surtir_construccion(celda_pared_25)  # convierte la PRIMERA celda pendiente del orden (piso), no la pared -- ver Construccion.avanzar()
+	assert(mundo.obtener_tipo(celda_piso_25) == "piso", "El piso fue el primero en surtirse (orden fijo, no el que se apunta)")
+	assert(mundo.obtener_tipo(celda_pared_25) == "fantasma", "La pared todavía no se ha surtido")
+	assert(mundo.obtener_tipo(celda_baul_25) == "fantasma", "El baúl todavía no se ha surtido")
+
+	# Deconstruir apuntando a la pared (todavía fantasma) -- antes del fix,
+	# esto avanzaba la cola de CONSTRUCCIÓN original (convirtiendo el baúl a
+	# real) en vez de iniciar una deconstrucción real. Como el piso es la
+	# única celda REAL que existe, debe ser la que se revierta primero
+	# (orden inverso: mobiliario -> estructura -> piso, pero solo hay una
+	# celda real: el piso).
+	var r1_25: Dictionary = mundo.procesar_deconstruccion(celda_pared_25)
+	assert(mundo.obtener_tipo(celda_piso_25) == "fantasma", "El piso (única celda real) debe revertirse, no seguir construyendo el baúl")
+	assert(mundo.obtener_tipo(celda_baul_25) == "fantasma", "El baúl sigue sin construirse -- la cola de construcción original fue cancelada, no avanzada")
+	assert(r1_25["completa_reversion"] and r1_25["lista_para_remocion"], "Con una sola celda real, la reversión se completa de inmediato")
+	print("OK: deconstruir un edificio a medio construir cancela su cola de construcción y revierte sus celdas reales, sin seguir construyéndolo por accidente.")
+
+	print("\n=== TEST 26: procesar_deconstruccion() sobre un puesto periférico no falla, es un no-op ===")
+	const OX14 := 995
+	var celda_mina_26 := Vector3i(OX14, 1, OX14)
+	mundo.colocar_bloque(celda_mina_26, "mina")
+	var id_mina_26: int = mundo.registrar_edificio([celda_mina_26])
+	var r_mina_26: Dictionary = mundo.procesar_deconstruccion(celda_mina_26)
+	assert(r_mina_26.is_empty(), "Un puesto periférico (tipo no deconstruible) debe ser un no-op silencioso, no un error")
+	assert(mundo.obtener_tipo(celda_mina_26) == "mina", "El marcador del puesto no debe alterarse")
+	assert(mundo.id_de_edificio(celda_mina_26) == id_mina_26, "El puesto sigue registrado (sigue inmune al minado) tras el intento fallido")
+	print("OK: procesar_deconstruccion() sobre un tipo de bloque no deconstruible (p. ej. un puesto periférico) es un no-op, nunca un error.")
+
+	print("\n=== Las 27 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -177,6 +177,8 @@ func _minar() -> void:
 func _procesar_deconstruccion(celda: Vector3i) -> void:
 	if Zonificacion.celda_es_del_nucleo(Vector2i(celda.x, celda.z)):
 		print("El núcleo urbano no se puede deconstruir.")
+		_id_listo_para_remocion = -1
+		_ticks_listo_para_remocion = 0
 		return
 
 	var resultado: Dictionary = mundo.procesar_deconstruccion(celda)
@@ -353,7 +355,7 @@ func _completar_construccion(metadata: Dictionary) -> void:
 		Zonificacion.declarar_nucleo(metadata["huella_xz"])
 		print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 	else:
-		Zonificacion.ampliar_influencia(metadata["id_edificio"], metadata["huella_xz"], blueprint["categoria"])
+		Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
 		print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])

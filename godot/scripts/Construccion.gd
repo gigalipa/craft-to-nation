@@ -67,3 +67,26 @@ func avanzar(id: int) -> Dictionary:
 			_celda_a_construccion.erase(c)
 		_construcciones.erase(id)
 	return {"celda": celda, "tipo": tipo, "completa": completa, "metadata": metadata, "orden": orden}
+
+
+## Cancela la construcción "id" antes de completarse — usada cuando el
+## jugador decide deconstruir un edificio que todavía estaba a medio
+## construir (ver VoxelWorld.procesar_deconstruccion()): la deconstrucción
+## tiene prioridad sobre seguir construyendo. Devuelve las celdas que
+## todavía estaban PENDIENTES (nunca llegaron a convertirse a su tipo
+## real) para que el llamador decida qué hacer con ellas — p. ej. borrar
+## el relleno de nivelación que haya quedado a medio colocar, ver
+## VoxelWorld.procesar_deconstruccion(). Limpia el registro por completo,
+## igual que al completarse normalmente. No-op (devuelve []) si "id" no
+## existe.
+func cancelar(id: int) -> Array:
+	if not _construcciones.has(id):
+		return []
+	var datos: Dictionary = _construcciones[id]
+	var orden: Array = datos["orden"]
+	var indice: int = datos["indice"]
+	var pendientes: Array = orden.slice(indice)
+	for c in orden:
+		_celda_a_construccion.erase(c)
+	_construcciones.erase(id)
+	return pendientes

@@ -95,4 +95,13 @@ func ejecutar_pruebas() -> void:
 	print("Capacidad de camas construida tras declarar 2 edificios: ", urbe.capacidad_camas_construida)
 	assert(urbe.capacidad_camas_construida == 5)
 
-	print("\n=== Las 7 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 8: retirar_edificio_residencial() ===")
+	# Ver Player.gd::_procesar_deconstruccion: al iniciar la deconstrucción
+	# de un edificio ya terminado, retira su capacidad de camas.
+	urbe.retirar_edificio_residencial(2)
+	print("Capacidad de camas construida tras retirar 2: ", urbe.capacidad_camas_construida)
+	assert(urbe.capacidad_camas_construida == 3)
+	urbe.retirar_edificio_residencial(100)  # más de lo que queda
+	assert(urbe.capacidad_camas_construida == 0, "Nunca debe bajar de 0")
+
+	print("\n=== Las 8 pruebas de Ciudad pasaron correctamente ===")

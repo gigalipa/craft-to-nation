@@ -235,6 +235,18 @@ func registrar_edificio_residencial(total_camas: int) -> void:
 	capacidad_camas_construida += total_camas
 
 
+## Retira la capacidad de camas de un edificio residencial que empieza a
+## deconstruirse (ver Player.gd::_procesar_deconstruccion) — simétrica a
+## registrar_edificio_residencial(). Se llama al INICIAR la deconstrucción
+## de un edificio ya terminado (no al completarla): un ciudadano no debería
+## poder "vivir" en una cama que ya está siendo desmontada, aunque las
+## paredes tarden más en desaparecer. clamp a 0 por seguridad (nunca debería
+## bajar de 0 si la contabilidad es correcta, pero un edificio nunca debe
+## dejar el contador en negativo).
+func retirar_edificio_residencial(total_camas: int) -> void:
+	capacidad_camas_construida = max(0, capacidad_camas_construida - total_camas)
+
+
 ## Aplica la sucesión del avatar tras su muerte (GDD Sección 9).
 func suceder_avatar() -> String:
 	if censo_total == 0:

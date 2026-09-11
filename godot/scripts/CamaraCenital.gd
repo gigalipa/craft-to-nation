@@ -563,43 +563,74 @@ func _actualizar_previsualizacion_zona() -> void:
 	overlay.previsualizar(primera_esquina, celda, tipo_zona_seleccionada)
 
 
-## true si la huella (esquina, ancho x alto) tiene AL MENOS una esquina en
-## tierra firme (no sobre agua) — evita construir puestos enteramente
-## flotando en medio de un lago. Basta con revisar las 4 esquinas reales de
-## la huella, no la huella completa: alcanza con una esquina firme para
-## anclar la construcción, y el resto del agua bajo la huella se drena al
-## confirmar (ver VoxelWorld.drenar_agua()).
-func _huella_tiene_esquina_en_tierra(esquina: Vector2i, ancho: int, alto: int) -> bool:
-	var esquinas := [
-		esquina,
-		Vector2i(esquina.x + ancho - 1, esquina.y),
-		Vector2i(esquina.x, esquina.y + alto - 1),
-		Vector2i(esquina.x + ancho - 1, esquina.y + alto - 1),
-	]
-	for e in esquinas:
-		if mundo.obtener_tipo(Vector3i(e.x, mundo.altura_en(e.x, e.y), e.y)) != "agua":
+## Genera las columnas Vector2i(dx, dz) de un rectángulo ancho x alto
+## (offsets relativos a una esquina) — usada por los puestos periféricos
+## (mina, caza/recolección), que siguen siendo rectángulos fijos, para
+## seguir pasando su huella a las funciones ya generalizadas a "columnas"
+## (ver docs/superpowers/specs/2026-09-10-huellas-irregulares-design.md).
+## Los blueprints, en cambio, usan directamente blueprint["huella_relativa"].
+func _columnas_rectangulo(ancho: int, alto: int) -> Array[Vector2i]:
+	var columnas: Array[Vector2i] = []
+	for dx in range(ancho):
+		for dz in range(alto):
+			columnas.append(Vector2i(dx, dz))
+	return columnas
+
+
+## true si AL MENOS una columna real de la huella (esquina + columnas)
+## está en tierra firme (no sobre agua) — evita construir puestos o
+## blueprints enteramente flotando en medio de un lago. Basta con una
+## columna firme para anclar la construcción, y el resto del agua bajo la
+## huella se drena al confirmar (ver VoxelWorld.drenar_agua()). Antes solo
+## revisaba las 4 esquinas del rectángulo delimitador — para una huella
+## irregular (un edificio en L) esas esquinas pueden no ser parte real del
+## edificio, así que ahora revisa TODAS las columnas reales (ver
+## docs/superpowers/specs/2026-09-10-huellas-irregulares-design.md); para
+## un rectángulo esto es un superconjunto estrictamente más permisivo que
+## antes (4 columnas -> todas), nunca rechaza un caso que antes aceptaba.
+func _huella_tiene_columna_en_tierra(esquina: Vector2i, columnas: Array[Vector2i]) -> bool:
+	for rel in columnas:
+		var x: int = esquina.x + rel.x
+		var z: int = esquina.y + rel.y
+		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
 			return true
 	return false
 
 
-## true si algún punto de la huella (esquina, ancho x alto) cae dentro de
-## un puesto ya colocado (Recoleccion.puestos, cualquier tipo — mina, caza/
-## recolección, o "blueprint") o de una construcción fantasma activa (una
-## celda todavía en curso de ser surtida, ver Construccion.gd) — recorre la
-## huella completa, no basta revisar solo las esquinas, sería incorrecto
-## para un rectángulo genérico. Antes tomaba solo "esquina" y leía
-## _ancho_puesto_activo/_alto_puesto_activo — ahora recibe ancho/alto
-## explícitos para poder reutilizarse también desde el modo de colocación
-## de blueprint (Task 7), que tiene su propio ancho/alto.
-func _huella_choca_con_otro_puesto(esquina: Vector2i, ancho: int, alto: int) -> bool:
-	for dx in range(ancho):
-		for dz in range(alto):
-			var xz := Vector2i(esquina.x + dx, esquina.y + dz)
-			if Recoleccion.celda_dentro_de_algun_puesto(xz):
-				return true
-			var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
-			if Construccion.construccion_de(celda_superficie) != -1:
-				return true
+## true si TODAS las columnas reales de la huella (esquina + columnas)
+## caen dentro de una zona pintada que coincida con "zona_permitida".
+## Antes solo se revisaba la celda central bajo el mouse — generalización
+## necesaria para una huella irregular (un edificio en L no debe poder
+## "asomar" su hueco a una zona distinta), y de paso cierra el pendiente ya
+## documentado de que la validación de zona era puntual, solo para
+## blueprints; la zona de influencia de los puestos (chequeo distinto,
+## Zonificacion.dentro_de_influencia) no se toca.
+func _huella_en_zona_correcta(esquina: Vector2i, columnas: Array[Vector2i], zona_permitida: String) -> bool:
+	for rel in columnas:
+		var xz := Vector2i(esquina.x + rel.x, esquina.y + rel.y)
+		if Zonificacion.consultar_zona(xz) != zona_permitida:
+			return false
+	return true
+
+
+## true si alguna columna real de la huella (esquina + columnas) cae dentro
+## de un puesto ya colocado (Recoleccion.puestos, cualquier tipo — mina,
+## caza/recolección, o "blueprint") o de una construcción fantasma activa
+## (una celda todavía en curso de ser surtida, ver Construccion.gd).
+## "columnas" son offsets relativos a "esquina" (ver
+## docs/superpowers/specs/2026-09-10-huellas-irregulares-design.md) — un
+## rectángulo es solo el caso particular de pasar
+## _columnas_rectangulo(ancho, alto); una huella irregular (un edificio en
+## L) pasa sus columnas reales, así que el hueco de la L nunca exige estar
+## libre.
+func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i]) -> bool:
+	for rel in columnas:
+		var xz := Vector2i(esquina.x + rel.x, esquina.y + rel.y)
+		if Recoleccion.celda_dentro_de_algun_puesto(xz):
+			return true
+		var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
+		if Construccion.construccion_de(celda_superficie) != -1:
+			return true
 	return false
 
 
@@ -650,13 +681,14 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
+	var columnas := _columnas_rectangulo(_ancho_puesto_activo, _alto_puesto_activo)
 
 	var fuera_de_influencia: bool = not Zonificacion.dentro_de_influencia(centro)
-	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo)
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, columnas)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas)
 	var valida: bool = fuera_de_influencia and relieve_valido and resultado_huella["valida"] \
-			and not _huella_choca_con_otro_puesto(esquina, _ancho_puesto_activo, _alto_puesto_activo) \
-			and _huella_tiene_esquina_en_tierra(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+			and not _huella_choca_con_otro_puesto(esquina, columnas) \
+			and _huella_tiene_columna_en_tierra(esquina, columnas)
 	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
 	var i := 0
@@ -713,17 +745,18 @@ func _actualizar_previsualizacion_blueprint() -> void:
 	var alto: int = _blueprint_activo["profundidad"]
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(ancho / 2, alto / 2)
+	var columnas: Array[Vector2i] = _blueprint_activo["huella_relativa"]
 
-	var zona_correcta: bool = Zonificacion.consultar_zona(centro) == _blueprint_activo["zona_permitida"]
-	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, ancho, alto)
+	var zona_correcta: bool = _huella_en_zona_correcta(esquina, columnas, _blueprint_activo["zona_permitida"])
+	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, columnas)
 	var altura_blueprint: int = _altura_blueprint(_blueprint_activo)
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto, altura_blueprint)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas, altura_blueprint)
 	var valida: bool = zona_correcta and relieve_valido and resultado_huella["valida"] \
-			and not _huella_choca_con_otro_puesto(esquina, ancho, alto) \
-			and _huella_tiene_esquina_en_tierra(esquina, ancho, alto)
+			and not _huella_choca_con_otro_puesto(esquina, columnas) \
+			and _huella_tiene_columna_en_tierra(esquina, columnas)
 	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
-	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, ancho, alto)
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	for i in range(_offsets_huella_blueprint.size()):
 		var rel: Vector3i = _offsets_huella_blueprint[i]
 		var x: int = esquina.x + rel.x
@@ -980,21 +1013,22 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
+	var columnas := _columnas_rectangulo(_ancho_puesto_activo, _alto_puesto_activo)
 
 	if Zonificacion.dentro_de_influencia(centro):
 		print("No se puede colocar un puesto dentro de la zona de influencia.")
 		return
-	if not nivelador_puesto.verificar_pendiente(esquina, _ancho_puesto_activo, _alto_puesto_activo):
+	if not nivelador_puesto.verificar_pendiente(esquina, columnas):
 		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
 		return
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas)
 	if not resultado_huella["valida"]:
 		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
 		return
-	if _huella_choca_con_otro_puesto(esquina, _ancho_puesto_activo, _alto_puesto_activo):
+	if _huella_choca_con_otro_puesto(esquina, columnas):
 		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
 		return
-	if not _huella_tiene_esquina_en_tierra(esquina, _ancho_puesto_activo, _alto_puesto_activo):
+	if not _huella_tiene_columna_en_tierra(esquina, columnas):
 		print("Colocación rechazada: la huella necesita al menos una esquina sobre tierra firme.")
 		return
 
@@ -1008,8 +1042,8 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if total_drenado > 0:
 		print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
 
-	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, _ancho_puesto_activo, _alto_puesto_activo)
-	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
+	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, columnas)
 	var total_relleno := 0
 	for celda_relleno in relleno:
 		var cantidad: int = relleno[celda_relleno]
@@ -1052,22 +1086,23 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var alto: int = _blueprint_activo["profundidad"]
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(ancho / 2, alto / 2)
+	var columnas: Array[Vector2i] = _blueprint_activo["huella_relativa"]
 
-	if Zonificacion.consultar_zona(centro) != _blueprint_activo["zona_permitida"]:
+	if not _huella_en_zona_correcta(esquina, columnas, _blueprint_activo["zona_permitida"]):
 		print("Colocación rechazada: esta zona no acepta este blueprint.")
 		return
-	if not nivelador_puesto.verificar_pendiente(esquina, ancho, alto):
+	if not nivelador_puesto.verificar_pendiente(esquina, columnas):
 		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
 		return
 	var altura_blueprint: int = _altura_blueprint(_blueprint_activo)
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, ancho, alto, altura_blueprint)
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas, altura_blueprint)
 	if not resultado_huella["valida"]:
 		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
 		return
-	if _huella_choca_con_otro_puesto(esquina, ancho, alto):
+	if _huella_choca_con_otro_puesto(esquina, columnas):
 		print("Colocación rechazada: la huella choca con un puesto o construcción ya colocada.")
 		return
-	if not _huella_tiene_esquina_en_tierra(esquina, ancho, alto):
+	if not _huella_tiene_columna_en_tierra(esquina, columnas):
 		print("Colocación rechazada: la huella necesita al menos una esquina sobre tierra firme.")
 		return
 
@@ -1075,14 +1110,13 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		mundo.eliminar_follaje(celda_follaje)
 
 	var total_drenado := 0
-	for dx in range(ancho):
-		for dz in range(alto):
-			total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+	for rel in columnas:
+		total_drenado += mundo.drenar_agua(esquina.x + rel.x, esquina.y + rel.y)
 	if total_drenado > 0:
 		print("Agua drenada bajo la construcción: ", total_drenado, " bloques reemplazados por tierra.")
 
-	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, ancho, alto)
-	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, ancho, alto)
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
+	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, columnas)
 	var relleno_orden: Array[Vector3i] = []
 	for celda_relleno in relleno:
 		var cantidad: int = relleno[celda_relleno]

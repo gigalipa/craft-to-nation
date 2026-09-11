@@ -255,6 +255,7 @@ func ejecutar_pruebas() -> void:
 	# no colapsados a "puerta"/"pared" como hace "pisos").
 	assert(blueprint_casa["ancho"] == 4)
 	assert(blueprint_casa["profundidad"] == 5)
+	assert(blueprint_casa["categoria"] == "residencial")
 	var celdas_3d_casa: Dictionary = blueprint_casa["celdas_3d"]
 	assert(celdas_3d_casa.size() == estructura_casa.size())
 	var y_min_casa: int = estructura_casa.keys()[0].y

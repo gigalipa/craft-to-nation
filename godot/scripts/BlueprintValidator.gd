@@ -428,6 +428,7 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	return {
 		"nombre": "Estructura_Detectada",
 		"tipo": "residencial",
+		"categoria": "residencial",  # ponytail: única categoría real declarable en esta PoC; ver Zonificacion.MARGEN_POR_CATEGORIA
 		"zona_permitida": "residencial_investigacion",
 		"pisos": pisos,
 		"celdas_3d": celdas_3d,

@@ -242,6 +242,9 @@ func _declarar_edificio() -> void:
 		if not Zonificacion.nucleo_declarado:
 			Zonificacion.declarar_nucleo(huella)
 			print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
+		else:
+			Zonificacion.ampliar_influencia(huella)
+			print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 
 ## Tecla de prueba (K): simula la muerte del jugador para poder probar la
@@ -275,5 +278,8 @@ func _completar_construccion(metadata: Dictionary) -> void:
 	if not Zonificacion.nucleo_declarado:
 		Zonificacion.declarar_nucleo(metadata["huella_xz"])
 		print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
+	else:
+		Zonificacion.ampliar_influencia(metadata["huella_xz"])
+		print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])

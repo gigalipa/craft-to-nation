@@ -44,6 +44,24 @@ func declarar_nucleo(huella: Array) -> void:
 		zonas[celda] = "residencial_investigacion"
 
 
+## Amplía la zona de influencia (nunca la reduce) para que incluya "huella"
+## más el mismo margen que ya usa declarar_nucleo() — se llama cada vez que
+## un edificio residencial o industrial nuevo termina de construirse (ver
+## Player._declarar_edificio()/Player._completar_construccion()), para que
+## la ciudad pueda crecer más allá del núcleo original. Los puestos
+## periféricos no pasan por aquí (no tienen "zona_permitida", nunca llegan
+## a este flujo). No-op si el núcleo todavía no fue declarado.
+func ampliar_influencia(huella: Array) -> void:
+	if not nucleo_declarado:
+		return
+
+	for celda in huella:
+		influencia_min.x = min(influencia_min.x, celda.x - MARGEN_ZONA_INFLUENCIA)
+		influencia_min.y = min(influencia_min.y, celda.y - MARGEN_ZONA_INFLUENCIA)
+		influencia_max.x = max(influencia_max.x, celda.x + MARGEN_ZONA_INFLUENCIA)
+		influencia_max.y = max(influencia_max.y, celda.y + MARGEN_ZONA_INFLUENCIA)
+
+
 func dentro_de_influencia(celda: Vector2i) -> bool:
 	if not nucleo_declarado:
 		return false

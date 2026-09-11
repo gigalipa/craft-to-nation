@@ -766,11 +766,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
 			if modo_colocar_puesto and Input.is_key_pressed(KEY_CTRL):
 				_rotar_huella_puesto()
+			elif modo_colocar_blueprint and Input.is_key_pressed(KEY_CTRL):
+				_rotar_blueprint()
 			else:
 				_intentar_zoom(-VELOCIDAD_ZOOM)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			if modo_colocar_puesto and Input.is_key_pressed(KEY_CTRL):
 				_rotar_huella_puesto()
+			elif modo_colocar_blueprint and Input.is_key_pressed(KEY_CTRL):
+				_rotar_blueprint()
 			else:
 				_intentar_zoom(VELOCIDAD_ZOOM)
 
@@ -838,6 +842,44 @@ func _rotar_huella_puesto() -> void:
 	_mostrar_huella_puesto(true)
 
 
+## Ctrl + rueda del mouse, con un blueprint en modo colocación: rota el
+## blueprint activo 90° en sentido horario (mismo gesto que
+## _rotar_huella_puesto(), pero un blueprint tiene estructura interna real
+## — pared/puerta/ventana/mobiliario en posiciones relativas fijas, no un
+## simple rectángulo uniforme — así que hace falta rotar cada celda de
+## "celdas_3d"/"huella_relativa", no solo intercambiar ancho/profundidad.
+## Fórmula de rotación 90° horaria para una caja de "profundidad_previa"
+## celdas de profundidad (Z): (x, z) -> (profundidad_previa - 1 - z, x);
+## la nueva caja mide "profundidad_previa" de ancho y "ancho_previo" de
+## profundidad. _blueprint_activo es un duplicado propio (ver
+## _alternar_modo_colocar_blueprint()), así que mutarlo aquí nunca toca el
+## blueprint guardado en Blueprints. Reposiciona el pool de cajas fantasma
+## ya existente (_offsets_huella_blueprint) en vez de recrearlo — la
+## cantidad de celdas no cambia, solo sus offsets.
+func _rotar_blueprint() -> void:
+	var ancho_previo: int = _blueprint_activo["ancho"]
+	var profundidad_previa: int = _blueprint_activo["profundidad"]
+
+	var celdas_rotadas: Dictionary = {}
+	for rel in _blueprint_activo["celdas_3d"]:
+		var punto_rotado := Vector3i(profundidad_previa - 1 - rel.z, rel.y, rel.x)
+		celdas_rotadas[punto_rotado] = _blueprint_activo["celdas_3d"][rel]
+	_blueprint_activo["celdas_3d"] = celdas_rotadas
+
+	var huella_rotada: Array[Vector2i] = []
+	for rel in _blueprint_activo["huella_relativa"]:
+		huella_rotada.append(Vector2i(profundidad_previa - 1 - rel.y, rel.x))
+	_blueprint_activo["huella_relativa"] = huella_rotada
+
+	_blueprint_activo["ancho"] = profundidad_previa
+	_blueprint_activo["profundidad"] = ancho_previo
+
+	for i in range(_offsets_huella_blueprint.size()):
+		var rel: Vector3i = _offsets_huella_blueprint[i]
+		_offsets_huella_blueprint[i] = Vector3i(profundidad_previa - 1 - rel.z, rel.y, rel.x)
+	_mostrar_huella_blueprint(true)
+
+
 ## Activa/cancela el modo de colocación de blueprint (toggle simple, un solo
 ## blueprint posible a la vez — a diferencia de _alternar_modo_colocar_puesto(),
 ## no recibe tipo/ancho/alto porque hoy solo existe un blueprint guardado,
@@ -854,10 +896,15 @@ func _alternar_modo_colocar_blueprint() -> void:
 		return
 	if modo_colocar_puesto:
 		_salir_de_modo_colocar_puesto()
-	_blueprint_activo = blueprint
-	_crear_huella_blueprint(blueprint["celdas_3d"])
+	# Duplicado (no la misma referencia): _rotar_blueprint() reemplaza
+	# "celdas_3d"/"huella_relativa"/"ancho"/"profundidad" en _blueprint_activo
+	# en cada rotación — sobre el dict original de Blueprints.obtener(), eso
+	# rotaría PERMANENTEMENTE el blueprint guardado (mismo objeto Dictionary
+	# por referencia), afectando toda colocación futura, no solo la actual.
+	_blueprint_activo = blueprint.duplicate()
+	_crear_huella_blueprint(_blueprint_activo["celdas_3d"])
 	modo_colocar_blueprint = true
-	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar).")
+	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar, Ctrl+rueda para rotar).")
 
 
 func _salir_de_modo_colocar_blueprint() -> void:

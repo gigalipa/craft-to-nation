@@ -615,8 +615,9 @@ func _huella_en_zona_correcta(esquina: Vector2i, columnas: Array[Vector2i], zona
 
 ## true si alguna columna real de la huella (esquina + columnas) cae dentro
 ## de un puesto ya colocado (Recoleccion.puestos, cualquier tipo — mina,
-## caza/recolección, o "blueprint") o de una construcción fantasma activa
-## (una celda todavía en curso de ser surtida, ver Construccion.gd).
+## caza/recolección, o "blueprint"), de una cola de relleno activa (una
+## celda de nivelación todavía en curso de ser surtida, ver Construccion.gd)
+## o de un edificio ya registrado (mundo.id_de_edificio()).
 ## "columnas" son offsets relativos a "esquina" (ver
 ## docs/superpowers/specs/2026-09-10-huellas-irregulares-design.md) — un
 ## rectángulo es solo el caso particular de pasar
@@ -629,7 +630,7 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i])
 		if Recoleccion.celda_dentro_de_algun_puesto(xz):
 			return true
 		var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
-		if mundo.id_de_edificio(celda_superficie) != -1:
+		if mundo.id_de_edificio(celda_superficie) != -1 or Construccion.construccion_de(celda_superficie) != -1:
 			return true
 	return false
 
@@ -1060,11 +1061,12 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 ## modo colocar-blueprint. A diferencia de _procesar_clic_puesto() (que
 ## coloca el marcador de inmediato), esto NO completa nada: drena el agua,
 ## calcula el relleno de nivelación, reubica blueprint["celdas_3d"] en el
-## mundo, arma el orden de conversión (relleno de tierra primero, luego
-## piso/paredes-puertas-ventanas/mobiliario — ver VoxelWorld.ordenar_celdas_edificio())
-## e inicia la construcción fantasma (VoxelWorld.iniciar_construccion_fantasma()) —
-## la finalización real ocurre después, celda por celda, cuando el jugador
-## la surte (ver Player._minar()/_completar_construccion()).
+## mundo e inicia dos colas INDEPENDIENTES, cada una surtible por su cuenta:
+## el relleno de tierra (Construccion.gd, vía iniciar_construccion_fantasma())
+## y el orden de la estructura del edificio (VoxelWorld.edificio_orden, ver
+## VoxelWorld.ordenar_celdas_edificio()) — la finalización real ocurre
+## después, celda por celda, cuando el jugador la surte (ver
+## Player._minar()/_completar_construccion()).
 func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	var ancho: int = _blueprint_activo["ancho"]

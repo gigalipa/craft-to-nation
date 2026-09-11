@@ -775,6 +775,15 @@ func ejecutar_pruebas() -> void:
 	assert(not mineo_estructural_24, "La celda estructural sigue inmune")
 	print("OK: el relleno de nivelación nunca queda registrado como parte del edificio, aunque comparta 'orden' con las celdas estructurales.")
 
+	print("\n=== TEST 24b: surtir_construccion() no debe quedar atrapada en una cola de relleno huérfana que comparte celda con una estructura (regresión Fix 2) ===")
+	const OX12B := 975
+	var celda_compartida_24b := Vector3i(OX12B, 1, OX12B)
+	mundo.iniciar_construccion_fantasma([celda_compartida_24b], {celda_compartida_24b: "tierra"}, [celda_compartida_24b], {celda_compartida_24b: "pared"})
+	var s_estructural_24b: Dictionary = mundo.surtir_construccion(celda_compartida_24b)
+	assert(s_estructural_24b.get("completa", false), "La celda estructural debe completarse normalmente, sin que una cola de relleno que comparte su celda la bloquee")
+	assert(mundo.obtener_tipo(celda_compartida_24b) == "pared", "Debe convertirse a su tipo real de estructura, no quedar atrapada surtiendo el relleno")
+	print("OK: surtir_construccion() prioriza la estructura sobre una cola de relleno huérfana registrada en la misma celda.")
+
 	print("\n=== TEST 25: pausar una construcción, deconstruir parte, y retomarla — el progreso es el mismo índice en ambos sentidos ===")
 	const OX13 := 990
 	var celda_piso_25 := Vector3i(OX13, 0, OX13)

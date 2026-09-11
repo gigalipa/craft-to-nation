@@ -240,10 +240,11 @@ func _direccion_cardinal() -> Vector3i:
 ## no solicitado contra el edificio.
 ## Reutiliza el click derecho (colocar) en vez del izquierdo (minar)
 ## porque conceptualmente "surtir" es aportar material, no destruir.
-## Una vez completa la construcción, surtir_construccion() ya no encuentra
-## ningún id (Construccion limpia su registro) y esta función cae al flujo
-## normal de colocar un bloque nuevo contra la cara apuntada — igual que
-## contra cualquier otra superficie del edificio ya terminado.
+## Una vez completa la construcción (edificio_progreso >= orden.size() en
+## VoxelWorld.gd), surtir_construccion() devuelve {} para esa celda y esta
+## función cae al flujo normal de colocar un bloque nuevo contra la cara
+## apuntada — igual que contra cualquier otra superficie del edificio ya
+## terminado.
 func _colocar() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return

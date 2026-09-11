@@ -101,9 +101,11 @@ var _siguiente_id_edificio := 1
 
 ## id de edificio -> Array[Vector3i] de sus celdas registradas (ver
 ## registrar_edificio()). Permite, dado un id, recuperar TODAS sus celdas
-## sin recorrer celda_a_edificio entero — usado por la deconstrucción
-## (procesar_deconstruccion()/eliminar_edificio()) para saber qué queda por
-## revertir y qué borrar al final.
+## sin recorrer celda_a_edificio entero — la deconstrucción ya no lo usa
+## (lee edificio_orden/edificio_progreso en su lugar); lo usa
+## eliminar_edificio() para borrar todo rastro del id, y cualquier otro
+## llamador que necesite "todas las celdas de un id" sin orden (p. ej. un
+## puesto, que no tiene edificio_orden).
 var edificio_a_celdas: Dictionary = {}  # int -> Array[Vector3i]
 
 ## Por edificio (id de VoxelWorld.registrar_edificio()): el orden FIJO de
@@ -653,7 +655,7 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 ## incompleto.
 func surtir_construccion(celda: Vector3i) -> Dictionary:
 	var id_relleno: int = Construccion.construccion_de(celda)
-	if id_relleno != -1:
+	if id_relleno != -1 and id_de_edificio(celda) == -1:
 		var resultado_relleno: Dictionary = Construccion.avanzar(id_relleno)
 		if resultado_relleno.is_empty():
 			return {}

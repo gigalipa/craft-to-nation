@@ -330,11 +330,15 @@ func ejecutar_pruebas() -> void:
 	# la selección de nacientes de _generar_rios() (mismo RNG sembrado en
 	# semilla+5) para poder verificar la invariante real sobre las celdas de
 	# cauce mismas, no sobre toda la franja.
-	var candidatos_t24: Array[Vector2i] = []
+	var candidatos_brutos_t24: Array[Vector2i] = []
 	for x in range(VoxelWorld.ANCHO_MUNDO):
 		for z in range(VoxelWorld.LARGO_MUNDO):
 			if gen_full_a.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
-				candidatos_t24.append(Vector2i(x, z))
+				candidatos_brutos_t24.append(Vector2i(x, z))
+	var regiones_t24: Array = GeneradorMundoScript._agrupar_regiones_elevadas(candidatos_brutos_t24)
+	var candidatos_t24: Array[Vector2i] = []
+	for region_t24 in regiones_t24:
+		candidatos_t24.append(gen_full_a._representante_de_region(region_t24))
 	var rng_t24 := RandomNumberGenerator.new()
 	rng_t24.seed = VoxelWorld.SEMILLA_MUNDO + 5
 	var revisadas_t24 := 0
@@ -440,11 +444,15 @@ func ejecutar_pruebas() -> void:
 	# como río en el mundo final, sin importar cuántos pasos haya recorrido su
 	# cauce crudo antes de quedar atrapado en una mesa/valle cerrado.
 	var gen_t28: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
-	var candidatos_t28: Array[Vector2i] = []
+	var candidatos_brutos_t28: Array[Vector2i] = []
 	for x in range(VoxelWorld.ANCHO_MUNDO):
 		for z in range(VoxelWorld.LARGO_MUNDO):
 			if gen_t28.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
-				candidatos_t28.append(Vector2i(x, z))
+				candidatos_brutos_t28.append(Vector2i(x, z))
+	var regiones_t28: Array = GeneradorMundoScript._agrupar_regiones_elevadas(candidatos_brutos_t28)
+	var candidatos_t28: Array[Vector2i] = []
+	for region_t28 in regiones_t28:
+		candidatos_t28.append(gen_t28._representante_de_region(region_t28))
 	var rng_t28 := RandomNumberGenerator.new()
 	rng_t28.seed = VoxelWorld.SEMILLA_MUNDO + 5
 	var vio_descartado_t28 := false
@@ -473,4 +481,72 @@ func ejecutar_pruebas() -> void:
 	assert(vio_sobreviviente_t28)
 	print("OK: los cauces que no llegan a agua quedan con cero celdas registradas como río; los que sí llegan siguen intactos.")
 
-	print("\n=== Las 28 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 29: _agrupar_regiones_elevadas() separa regiones desconectadas y agrupa una región en L completa ===")
+	var celdas_dos_islas: Array[Vector2i] = [
+		Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1),  # isla A (conectada)
+		Vector2i(10, 10), Vector2i(11, 10),  # isla B (conectada, lejos de A)
+	]
+	var regiones_dos_islas: Array = GeneradorMundoScript._agrupar_regiones_elevadas(celdas_dos_islas)
+	assert(regiones_dos_islas.size() == 2)
+	var tamanos_dos_islas: Array = []
+	for r in regiones_dos_islas:
+		tamanos_dos_islas.append(r.size())
+	tamanos_dos_islas.sort()
+	assert(tamanos_dos_islas == [2, 3])
+
+	# Región en L: (0,0)-(0,1)-(0,2)-(1,2) — conectada por 4-vecindad aunque
+	# no sea un rectángulo; (5,5) queda como región aparte (diagonal a (1,2)
+	# no cuenta como conectada en 4-vecindad).
+	var celdas_forma_l: Array[Vector2i] = [Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2), Vector2i(1, 2), Vector2i(5, 5)]
+	var regiones_forma_l: Array = GeneradorMundoScript._agrupar_regiones_elevadas(celdas_forma_l)
+	assert(regiones_forma_l.size() == 2)
+	var tamanos_forma_l: Array = []
+	for r in regiones_forma_l:
+		tamanos_forma_l.append(r.size())
+	tamanos_forma_l.sort()
+	assert(tamanos_forma_l == [1, 4])
+	print("OK: dos islas separadas dan dos regiones; una forma en L conectada por 4-vecindad da una sola región, sin fundirse con una celda diagonal aislada.")
+
+	print("\n=== TEST 30: _representante_de_region() elige un punto real de la cumbre, cercano a su centro ===")
+	# Busca en un mundo real una región conectada con al menos 2 celdas
+	# empatadas en la altura máxima, para que el criterio de "más cercano al
+	# centro de la cumbre" tenga más de un candidato real que decidir entre
+	# ellos (con una sola celda en la cumbre, el resultado sería trivial).
+	var gen_t30: RefCounted = GeneradorMundoScript.new(99, 80, 80)
+	var candidatos_brutos_t30: Array[Vector2i] = []
+	for x in range(80):
+		for z in range(80):
+			if gen_t30.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
+				candidatos_brutos_t30.append(Vector2i(x, z))
+	var regiones_t30: Array = GeneradorMundoScript._agrupar_regiones_elevadas(candidatos_brutos_t30)
+	var probada_t30 := false
+	for region_t30 in regiones_t30:
+		var max_altura_t30: int = gen_t30.altura_en(region_t30[0].x, region_t30[0].y)
+		for celda in region_t30:
+			max_altura_t30 = max(max_altura_t30, gen_t30.altura_en(celda.x, celda.y))
+		var cumbre_t30: Array[Vector2i] = []
+		for celda in region_t30:
+			if gen_t30.altura_en(celda.x, celda.y) == max_altura_t30:
+				cumbre_t30.append(celda)
+		if cumbre_t30.size() < 2:
+			continue
+		var representante_t30: Vector2i = gen_t30._representante_de_region(region_t30)
+		# El representante debe pertenecer a la cumbre (compartir su altura máxima)...
+		assert(gen_t30.altura_en(representante_t30.x, representante_t30.y) == max_altura_t30)
+		# ...y ser el más cercano al centro geométrico de esa cumbre, entre las
+		# celdas de la propia cumbre (no de toda la región).
+		var suma_x_t30 := 0
+		var suma_z_t30 := 0
+		for celda in cumbre_t30:
+			suma_x_t30 += celda.x
+			suma_z_t30 += celda.y
+		var centro_t30 := Vector2(float(suma_x_t30) / cumbre_t30.size(), float(suma_z_t30) / cumbre_t30.size())
+		var mejor_distancia_t30: float = Vector2(representante_t30.x, representante_t30.y).distance_to(centro_t30)
+		for celda in cumbre_t30:
+			assert(Vector2(celda.x, celda.y).distance_to(centro_t30) >= mejor_distancia_t30)
+		probada_t30 = true
+		break
+	assert(probada_t30)
+	print("OK: el representante de una región pertenece a su cumbre y es el más cercano al centro geométrico de esa cumbre.")
+
+	print("\n=== Las 30 pruebas de GeneradorMundo pasaron correctamente ===")

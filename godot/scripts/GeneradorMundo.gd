@@ -469,14 +469,84 @@ func _marcar_cascadas(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, larg
 ## truncado de cada uno. Llamada una única vez desde _init(), después de
 ## calcular nivel_mar (los cauces necesitan es_agua_en() para saber dónde
 ## terminan).
+## Agrupa "celdas" (candidatas a naciente, ya filtradas por altura) en
+## regiones conectadas por 4-vecindad — cada región es una montaña/colina
+## separada de las demás por terreno bajo el umbral. Pura función de
+## geometría de conjuntos (sin consultar altura) — testable con celdas
+## sintéticas, sin necesitar un generador real.
+static func _agrupar_regiones_elevadas(celdas: Array[Vector2i]) -> Array:
+	var pertenece: Dictionary = {}  # Vector2i -> true, lookup O(1)
+	for c in celdas:
+		pertenece[c] = true
+	var visitadas: Dictionary = {}
+	var regiones: Array = []  # Array[Array[Vector2i]]
+	for inicio in celdas:
+		if visitadas.has(inicio):
+			continue
+		var region: Array[Vector2i] = []
+		var pila: Array[Vector2i] = [inicio]
+		visitadas[inicio] = true
+		while not pila.is_empty():
+			var actual: Vector2i = pila.pop_back()
+			region.append(actual)
+			for delta in [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]:
+				var vecino: Vector2i = actual + delta
+				if pertenece.has(vecino) and not visitadas.has(vecino):
+					visitadas[vecino] = true
+					pila.append(vecino)
+		regiones.append(region)
+	return regiones
+
+
+## Punto representativo de "region" para elegir como naciente (Sección 1):
+## el punto real más cercano al centro geométrico de las celdas que
+## comparten la altura MÁXIMA de la región (la cumbre, no toda la ladera) —
+## así el naciente sale cerca del centro de la parte más alta de la
+## montaña, no de cualquier borde que apenas cruce el umbral de altura.
+func _representante_de_region(region: Array[Vector2i]) -> Vector2i:
+	var max_altura: int = altura_en(region[0].x, region[0].y)
+	for celda in region:
+		var h: int = altura_en(celda.x, celda.y)
+		if h > max_altura:
+			max_altura = h
+	var cumbre: Array[Vector2i] = []
+	for celda in region:
+		if altura_en(celda.x, celda.y) == max_altura:
+			cumbre.append(celda)
+	var suma_x := 0
+	var suma_z := 0
+	for celda in cumbre:
+		suma_x += celda.x
+		suma_z += celda.y
+	var centro := Vector2(float(suma_x) / cumbre.size(), float(suma_z) / cumbre.size())
+	var mejor: Vector2i = cumbre[0]
+	var mejor_distancia: float = Vector2(mejor.x, mejor.y).distance_to(centro)
+	for celda in cumbre:
+		var d: float = Vector2(celda.x, celda.y).distance_to(centro)
+		if d < mejor_distancia:
+			mejor_distancia = d
+			mejor = celda
+	return mejor
+
+
 func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
-	var candidatos: Array[Vector2i] = []
+	var candidatos_brutos: Array[Vector2i] = []
 	for x in range(ancho_mundo):
 		for z in range(largo_mundo):
 			if altura_en(x, z) >= ALTURA_MAXIMA - MARGEN_NACIENTE_RIO:
-				candidatos.append(Vector2i(x, z))
-	if candidatos.is_empty():
+				candidatos_brutos.append(Vector2i(x, z))
+	if candidatos_brutos.is_empty():
 		return
+
+	# Una candidata por región elevada conectada (una montaña/colina), no una
+	# por celda — decisión tomada jugando en vivo: elegir cualquier celda que
+	# cruce el umbral de altura por igual dejaba nacer ríos en el borde de
+	# una elevación, no cerca de su cumbre. _representante_de_region() elige
+	# el punto real más cercano al centro de la parte más alta de esa región.
+	var regiones: Array = _agrupar_regiones_elevadas(candidatos_brutos)
+	var candidatos: Array[Vector2i] = []
+	for region in regiones:
+		candidatos.append(_representante_de_region(region))
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla + 5

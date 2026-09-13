@@ -265,7 +265,12 @@ func ejecutar_pruebas() -> void:
 	var ultima: Vector2i = cauce_a[cauce_a.size() - 1]
 	var termino_en_agua: bool = gen_rio_a.es_agua_en(ultima.x, ultima.y)
 	# "Mesa cerrada" real: ninguna vecina ortogonal de la última celda (dentro
-	# del mundo) tiene menor altura. Comparar solo contra la celda anterior del
+	# del mundo) tiene menor altura CONTINUA (_altura_flotante(), no
+	# altura_en() entera — ver la nota en _altura_flotante(): _trazar_rio()
+	# decide su descenso sobre la altura continua para no atascarse en
+	# "mesetas" que solo existen por la cuantización a 16 alturas enteras, así
+	# que el criterio de "mesa cerrada" de esta prueba debe usar el mismo
+	# criterio real, no el entero). Comparar solo contra la celda anterior del
 	# cauce no basta: como cada paso es estrictamente descendente por
 	# construcción, esa comparación sería siempre "más baja" en cuanto el
 	# cauce avanza más de un paso, aunque la última celda sí sea un valle
@@ -275,20 +280,20 @@ func ejecutar_pruebas() -> void:
 		var vecino: Vector2i = ultima + delta
 		if vecino.x < 0 or vecino.x >= VoxelWorld.ANCHO_MUNDO or vecino.y < 0 or vecino.y >= VoxelWorld.LARGO_MUNDO:
 			continue
-		if gen_rio_a.altura_en(vecino.x, vecino.y) < gen_rio_a.altura_en(ultima.x, ultima.y):
+		if gen_rio_a._altura_flotante(vecino.x, vecino.y) < gen_rio_a._altura_flotante(ultima.x, ultima.y):
 			es_mesa_cerrada = false
 			break
 	assert(termino_en_agua or cauce_a.size() == 1 or es_mesa_cerrada)
-	print("OK: _trazar_rio() es determinista, respeta el tope de pasos, y termina en agua o en una mesa sin vecino más bajo.")
+	print("OK: _trazar_rio() es determinista, respeta el tope de pasos, y termina en agua o en una mesa sin vecino más bajo (altura continua).")
 
-	print("\n=== TEST 21: cada paso del cauce baja de altura hasta llegar a agua ===")
+	print("\n=== TEST 21: cada paso del cauce baja de altura continua hasta llegar a agua ===")
 	for i in range(cauce_a.size() - 1):
 		var actual: Vector2i = cauce_a[i]
 		if gen_rio_a.es_agua_en(actual.x, actual.y):
 			break
 		var siguiente: Vector2i = cauce_a[i + 1]
-		assert(gen_rio_a.altura_en(siguiente.x, siguiente.y) <= gen_rio_a.altura_en(actual.x, actual.y))
-	print("OK: ningún paso del cauce sube de altura antes de llegar a una celda de agua.")
+		assert(gen_rio_a._altura_flotante(siguiente.x, siguiente.y) < gen_rio_a._altura_flotante(actual.x, actual.y))
+	print("OK: ningún paso del cauce sube de altura continua antes de llegar a una celda de agua.")
 
 	print("\n=== TEST 22: la generación de ríos es determinista end-to-end ===")
 	var gen_full_a: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
@@ -315,15 +320,38 @@ func ejecutar_pruebas() -> void:
 				assert(gen_full_a.profundidad_rio_en(x, z) == 0)
 	print("OK: profundidad_rio_en() nunca sale de rango, y es 0 fuera de cualquier río.")
 
-	print("\n=== TEST 24: direccion_flujo_en() apunta a una celda de igual o menor altura ===")
+	print("\n=== TEST 24: direccion_flujo_en() en las celdas del CAUCE (no de su franja) apunta a altura continua menor ===")
+	# direccion_flujo_en() está definida sobre TODA la franja de un río (Sección
+	# 5 del spec: las celdas de franja heredan la dirección de su celda de
+	# cauce por diseño) — una celda de franja no tiene ninguna garantía propia
+	# de "cuesta abajo" en esa dirección, solo la celda de cauce que la generó
+	# sí la tiene (ver _trazar_rio(), que ahora desciende por altura CONTINUA,
+	# no entera — ver _altura_flotante()). Esta prueba reproduce exactamente
+	# la selección de nacientes de _generar_rios() (mismo RNG sembrado en
+	# semilla+5) para poder verificar la invariante real sobre las celdas de
+	# cauce mismas, no sobre toda la franja.
+	var candidatos_t24: Array[Vector2i] = []
 	for x in range(VoxelWorld.ANCHO_MUNDO):
 		for z in range(VoxelWorld.LARGO_MUNDO):
-			var direccion: Vector2i = gen_full_a.direccion_flujo_en(x, z)
-			if direccion == Vector2i.ZERO:
-				continue
-			var siguiente := Vector2i(x, z) + direccion
-			assert(gen_full_a.altura_en(siguiente.x, siguiente.y) <= gen_full_a.altura_en(x, z))
-	print("OK: toda dirección de flujo no nula apunta hacia una celda de altura igual o menor.")
+			if gen_full_a.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
+				candidatos_t24.append(Vector2i(x, z))
+	var rng_t24 := RandomNumberGenerator.new()
+	rng_t24.seed = VoxelWorld.SEMILLA_MUNDO + 5
+	var num_a_elegir_t24: int = mini(GeneradorMundoScript.NUM_RIOS, candidatos_t24.size())
+	var revisadas_t24 := 0
+	for i in range(num_a_elegir_t24):
+		var idx: int = rng_t24.randi() % candidatos_t24.size()
+		var origen: Vector2i = candidatos_t24[idx]
+		candidatos_t24.remove_at(idx)
+		rng_t24.randi_range(GeneradorMundoScript.ANCHO_MINIMO_RIO, GeneradorMundoScript.ANCHO_MAXIMO_RIO)  # consumir el mismo sorteo de ancho, aunque no se use aquí
+		var cauce_t24: Array[Vector2i] = gen_full_a._trazar_rio(origen, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+		for j in range(cauce_t24.size() - 1):
+			var actual_t24: Vector2i = cauce_t24[j]
+			var siguiente_t24: Vector2i = cauce_t24[j + 1]
+			assert(gen_full_a._altura_flotante(siguiente_t24.x, siguiente_t24.y) < gen_full_a._altura_flotante(actual_t24.x, actual_t24.y))
+			revisadas_t24 += 1
+	assert(revisadas_t24 > 0)
+	print("OK: cada paso de cauce real (%d pasos revisados en los %d ríos) baja de altura continua, sin excepción." % [revisadas_t24, num_a_elegir_t24])
 
 	print("\n=== TEST 25: toda celda de cascada es también una celda de río real ===")
 	for x in range(VoxelWorld.ANCHO_MUNDO):

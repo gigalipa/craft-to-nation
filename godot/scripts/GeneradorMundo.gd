@@ -111,11 +111,24 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 ## get_noise_2d() devuelve un valor en [-1, 1]; se remapea linealmente a
 ## [ALTURA_MINIMA, ALTURA_MAXIMA] y se redondea a entero.
 func altura_en(x: int, z: int) -> int:
+	return clampi(roundi(_altura_flotante(x, z)), ALTURA_MINIMA, ALTURA_MAXIMA)
+
+
+## Misma altura que altura_en(), sin redondear a entero — ver _trazar_rio():
+## el trazado de ríos por descenso de gradiente necesita esta versión
+## continua, no la entera. Con solo 16 alturas enteras posibles en un mundo
+## de 200x200, comparar altura_en() (entero) entre vecinos deja la mayor
+## parte del relieve como "mesetas" artificiales de igual altura entera —
+## el descenso por gradiente se atascaba casi de inmediato (bug real,
+## encontrado jugando: los 6 ríos del mundo real quedaban en 1-2 celdas de
+## longitud, sin llegar nunca al mar). Comparando la altura continua en vez
+## de la entera, el descenso solo se detiene en un mínimo local real del
+## ruido, no en un artefacto de la cuantización a 16 niveles.
+func _altura_flotante(x: int, z: int) -> float:
 	var valor: float = _ruido.get_noise_2d(x, z)
 	var valor_redistribuido: float = _redistribuir(valor, EXPONENTE_RELIEVE)
 	var t: float = (valor_redistribuido + 1.0) / 2.0
-	var altura: float = ALTURA_MINIMA + t * (ALTURA_MAXIMA - ALTURA_MINIMA)
-	return clampi(roundi(altura), ALTURA_MINIMA, ALTURA_MAXIMA)
+	return ALTURA_MINIMA + t * (ALTURA_MAXIMA - ALTURA_MINIMA)
 
 
 ## Curva de potencia sign(x)*pow(abs(x), exponente): comprime o expande los
@@ -366,13 +379,13 @@ func _trazar_rio(origen: Vector2i, ancho_mundo: int, largo_mundo: int) -> Array[
 			actual + Vector2i(-1, 0),
 		]
 		var mejor: Vector2i = actual
-		var mejor_altura: int = altura_en(actual.x, actual.y)
+		var mejor_altura: float = _altura_flotante(actual.x, actual.y)
 		for vecino in vecinos:
 			if vecino.x < 0 or vecino.x >= ancho_mundo or vecino.y < 0 or vecino.y >= largo_mundo:
 				continue
 			if visitadas.has(vecino):
 				continue
-			var h: int = altura_en(vecino.x, vecino.y)
+			var h: float = _altura_flotante(vecino.x, vecino.y)
 			if h < mejor_altura:
 				mejor_altura = h
 				mejor = vecino

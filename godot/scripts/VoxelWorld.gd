@@ -288,6 +288,15 @@ func _generar_terreno() -> void:
 	for x in range(ANCHO_MUNDO):
 		for z in range(LARGO_MUNDO):
 			var altura: int = generador.altura_en(x, z)
+			if generador.es_rio_en(x, z):
+				var profundidad_rio: int = generador.profundidad_rio_en(x, z)
+				for y_agua in range(altura - profundidad_rio + 1, altura + 1):
+					colocar_bloque(Vector3i(x, y_agua, z), "agua")
+				for profundidad in range(profundidad_rio, PROFUNDIDAD_SUBSUELO + 1):
+					var y: int = altura - profundidad
+					var tipo: String = generador.tipo_en_profundidad(x, y, z, profundidad)
+					colocar_bloque(Vector3i(x, y, z), tipo)
+				continue
 			colocar_bloque(Vector3i(x, altura, z), "piso")
 			for profundidad in range(1, PROFUNDIDAD_SUBSUELO + 1):
 				var y: int = altura - profundidad

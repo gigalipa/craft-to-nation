@@ -72,25 +72,30 @@ static func _chunk_de(celda: Vector3i) -> Vector3i:
 ##    exactamente coincidente con la propia cara opaca del sólido (que ya
 ##    cubre esa unión por completo), así que dibujarla solo produce
 ##    parpadeo/moiré (z-fighting) sin aportar nada visible.
-## 2. Para "agua" específicamente, el resto de la regla no depende del
-##    vecino en absoluto, solo de la dirección: la cara de ARRIBA se dibuja
-##    SIEMPRE (incluso contra otra celda de agua encima — a propósito: una
-##    columna profunda apila varias caras superiores reales, una por celda,
-##    y su alpha se combina al verlas desde arriba, dando la impresión de
-##    que la opacidad aumenta con la profundidad sin necesitar ningún truco
-##    de color por vértice); cualquier otra dirección (laterales y abajo)
-##    NUNCA se dibuja, ni siquiera contra aire — decisión de diseño pedida
-##    jugando en vivo (docs/superpowers/specs/2026-09-13-culling-caras-
-##    translucidas-design.md).
-## 3. Para cualquier otro tipo translúcido (p. ej. "ventana"), se mantiene
-##    la regla original: se omite solo contra el MISMO tipo (cara interna de
-##    una misma pared de ventanas); contra aire o un tipo translúcido
-##    distinto, se dibuja.
+## 2. Para "agua" específicamente, sin vecino sólido: la cara de ARRIBA se
+##    dibuja SIEMPRE, incluso contra otra celda de agua encima — a propósito:
+##    una columna profunda apila varias caras superiores reales, una por
+##    celda, y su alpha se combina al verlas desde arriba, dando la
+##    impresión de que la opacidad aumenta con la profundidad sin necesitar
+##    ningún truco de color por vértice. La cara de ABAJO nunca se dibuja
+##    (casi siempre contra el fondo sólido de todos modos). Las caras
+##    LATERALES usan la regla general (punto 3) — bug real, encontrado
+##    jugando en vivo: omitirlas siempre (incluso contra aire) rompía la
+##    continuidad visual de una cascada, que necesita su cara lateral
+##    expuesta al aire para verse como una caída real, no como pozas
+##    escalonadas.
+## 3. Regla general (cualquier tipo translúcido contra un vecino NO sólido,
+##    y las caras laterales del agua): se omite solo contra el MISMO tipo
+##    (cara interna de un mismo cuerpo de agua/pared de ventanas); contra
+##    aire o un tipo translúcido distinto, se dibuja.
 static func _cara_visible(tipo_propio: String, tipo_vecino: String, direccion: Vector3i) -> bool:
 	if tipo_vecino != "" and not VoxelWorld.TIPOS_TRANSLUCIDOS.has(tipo_vecino):
 		return false
 	if tipo_propio == "agua":
-		return direccion == ARRIBA
+		if direccion == ARRIBA:
+			return true
+		if direccion == -ARRIBA:
+			return false
 	return tipo_vecino != tipo_propio
 
 

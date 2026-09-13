@@ -337,13 +337,21 @@ func ejecutar_pruebas() -> void:
 				candidatos_t24.append(Vector2i(x, z))
 	var rng_t24 := RandomNumberGenerator.new()
 	rng_t24.seed = VoxelWorld.SEMILLA_MUNDO + 5
-	var num_a_elegir_t24: int = mini(GeneradorMundoScript.NUM_RIOS, candidatos_t24.size())
 	var revisadas_t24 := 0
-	for i in range(num_a_elegir_t24):
+	var rios_generados_t24 := 0
+	for i in range(GeneradorMundoScript.NUM_RIOS):
+		if candidatos_t24.is_empty():
+			break
 		var idx: int = rng_t24.randi() % candidatos_t24.size()
 		var origen: Vector2i = candidatos_t24[idx]
 		candidatos_t24.remove_at(idx)
 		rng_t24.randi_range(GeneradorMundoScript.ANCHO_MINIMO_RIO, GeneradorMundoScript.ANCHO_MAXIMO_RIO)  # consumir el mismo sorteo de ancho, aunque no se use aquí
+		var candidatos_lejanos_t24: Array[Vector2i] = []
+		for c in candidatos_t24:
+			if Vector2(c.x - origen.x, c.y - origen.y).length() >= GeneradorMundoScript.MIN_DISTANCIA_NACIENTES:
+				candidatos_lejanos_t24.append(c)
+		candidatos_t24 = candidatos_lejanos_t24
+		rios_generados_t24 += 1
 		var cauce_t24: Array[Vector2i] = gen_full_a._trazar_rio(origen, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
 		for j in range(cauce_t24.size() - 1):
 			var actual_t24: Vector2i = cauce_t24[j]
@@ -351,7 +359,7 @@ func ejecutar_pruebas() -> void:
 			assert(gen_full_a._altura_flotante(siguiente_t24.x, siguiente_t24.y) < gen_full_a._altura_flotante(actual_t24.x, actual_t24.y))
 			revisadas_t24 += 1
 	assert(revisadas_t24 > 0)
-	print("OK: cada paso de cauce real (%d pasos revisados en los %d ríos) baja de altura continua, sin excepción." % [revisadas_t24, num_a_elegir_t24])
+	print("OK: cada paso de cauce real (%d pasos revisados en los %d ríos) baja de altura continua, sin excepción." % [revisadas_t24, rios_generados_t24])
 
 	print("\n=== TEST 25: toda celda de cascada es también una celda de río real ===")
 	for x in range(VoxelWorld.ANCHO_MUNDO):
@@ -439,14 +447,20 @@ func ejecutar_pruebas() -> void:
 				candidatos_t28.append(Vector2i(x, z))
 	var rng_t28 := RandomNumberGenerator.new()
 	rng_t28.seed = VoxelWorld.SEMILLA_MUNDO + 5
-	var num_a_elegir_t28: int = mini(GeneradorMundoScript.NUM_RIOS, candidatos_t28.size())
 	var vio_descartado_t28 := false
 	var vio_sobreviviente_t28 := false
-	for i in range(num_a_elegir_t28):
+	for i in range(GeneradorMundoScript.NUM_RIOS):
+		if candidatos_t28.is_empty():
+			break
 		var idx: int = rng_t28.randi() % candidatos_t28.size()
 		var origen: Vector2i = candidatos_t28[idx]
 		candidatos_t28.remove_at(idx)
 		rng_t28.randi_range(GeneradorMundoScript.ANCHO_MINIMO_RIO, GeneradorMundoScript.ANCHO_MAXIMO_RIO)  # consumir el sorteo de ancho, mismo orden que _generar_rios()
+		var candidatos_lejanos_t28: Array[Vector2i] = []
+		for c in candidatos_t28:
+			if Vector2(c.x - origen.x, c.y - origen.y).length() >= GeneradorMundoScript.MIN_DISTANCIA_NACIENTES:
+				candidatos_lejanos_t28.append(c)
+		candidatos_t28 = candidatos_lejanos_t28
 		var cauce_t28: Array[Vector2i] = gen_t28._trazar_rio(origen, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
 		var ultima_t28: Vector2i = cauce_t28[cauce_t28.size() - 1]
 		if gen_t28.es_agua_en(ultima_t28.x, ultima_t28.y):

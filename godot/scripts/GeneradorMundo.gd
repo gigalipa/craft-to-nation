@@ -253,8 +253,21 @@ func densidad_arbol_en(x: int, z: int) -> float:
 const NUM_RIOS := 6
 
 ## Una columna es candidata a naciente de río si su altura está a lo sumo
-## esta distancia por debajo de ALTURA_MAXIMA (Sección 1).
-const MARGEN_NACIENTE_RIO := 3
+## esta distancia por debajo de ALTURA_MAXIMA (Sección 1). Subido de 3 a 6
+## (decisión tomada jugando en vivo): con margen 3 (altura >= 12) solo
+## calificaban las cumbres más altas del mundo; con 6 (altura >= 9) también
+## nacen ríos de colinas medias, no solo picos.
+const MARGEN_NACIENTE_RIO := 6
+
+## Distancia mínima en línea recta (celdas) entre dos nacientes elegidas —
+## evita que varios de los NUM_RIOS ríos nazcan todos de la misma montaña
+## (decisión tomada jugando en vivo, junto con MARGEN_NACIENTE_RIO arriba).
+## Se aplica como filtro tras cada elección (Sección 1): las candidatas
+## demasiado cerca de la naciente recién elegida quedan fuera del resto del
+## sorteo. Si el terreno alto está muy concentrado, esto puede dejar menos
+## de NUM_RIOS nacientes disponibles — _generar_rios() simplemente genera
+## los que alcancen, no es un error.
+const MIN_DISTANCIA_NACIENTES := 20
 
 const ANCHO_MINIMO_RIO := 2
 const ANCHO_MAXIMO_RIO := 6
@@ -469,8 +482,9 @@ func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	rng.seed = semilla + 5
 
 	var rios: Array[Dictionary] = []
-	var num_a_elegir: int = mini(NUM_RIOS, candidatos.size())
-	for i in range(num_a_elegir):
+	for i in range(NUM_RIOS):
+		if candidatos.is_empty():
+			break
 		var idx: int = rng.randi() % candidatos.size()
 		var origen: Vector2i = candidatos[idx]
 		candidatos.remove_at(idx)
@@ -482,6 +496,14 @@ func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 			"altura_nacimiento": altura_en(origen.x, origen.y),
 			"cauce_crudo": _trazar_rio(origen, ancho_mundo, largo_mundo),
 		})
+		# Filtrar candidatas demasiado cerca de la naciente recién elegida
+		# (MIN_DISTANCIA_NACIENTES) — no consume el RNG, así que no afecta el
+		# determinismo de los sorteos siguientes.
+		var candidatos_lejanos: Array[Vector2i] = []
+		for c in candidatos:
+			if Vector2(c.x - origen.x, c.y - origen.y).length() >= MIN_DISTANCIA_NACIENTES:
+				candidatos_lejanos.append(c)
+		candidatos = candidatos_lejanos
 
 	_resolver_cruces(rios)
 

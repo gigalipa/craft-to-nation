@@ -150,7 +150,7 @@ var nivelador_puesto: RefCounted
 ## _rotar_huella_puesto(). Mientras el modo está activo, la ficha del HUD
 ## correspondiente al tipo se actualiza cada fotograma.
 var modo_colocar_puesto := false
-var _tipo_puesto_activo := ""  # "mina" | "caza_recoleccion"
+var _tipo_puesto_activo := ""  # "mina" | "caza_recoleccion" | "maderero"
 var _ancho_puesto_activo := 0
 var _alto_puesto_activo := 0
 var _huella_puesto: Array[MeshInstance3D] = []
@@ -671,11 +671,16 @@ func _actualizar_previsualizacion_puesto() -> void:
 		var tasas: Dictionary = Recoleccion.tasas_recoleccion(conteo)
 		hud.actualizar_tasas_mina(tasas)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MINA)
-	else:
+	elif _tipo_puesto_activo == "caza_recoleccion":
 		var promedios: Dictionary = Recoleccion.detectar_fauna_frutal(mundo.generador, centro)
 		var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion(promedios)
 		hud.actualizar_tasas_caza(tasas_caza)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
+	else:
+		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
+		var tasas_madero: Dictionary = Recoleccion.tasa_maderero(promedio_arbol)
+		hud.actualizar_tasas_madero(tasas_madero)
+		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MADERERO)
 
 
 ## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves
@@ -749,6 +754,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_alternar_modo_colocar_puesto("mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 		elif tecla.pressed and tecla.keycode == KEY_H:
 			_alternar_modo_colocar_puesto("caza_recoleccion", Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
+		elif tecla.pressed and tecla.keycode == KEY_L:
+			_alternar_modo_colocar_puesto("maderero", Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		elif tecla.pressed and tecla.keycode == KEY_B:
 			_alternar_modo_colocar_blueprint()
 
@@ -796,7 +803,7 @@ func _intentar_zoom(delta_distancia: float) -> void:
 ## Activa el modo de colocación del puesto "tipo" (huella ancho x alto). Si
 ## ya estaba activo ESE MISMO tipo, lo cancela (mismo toggle que antes tenía
 ## _alternar_modo_colocar_puesto()); si estaba activo otro tipo, cambia
-## directamente al nuevo sin necesidad de cancelar primero. M y H llaman a
+## directamente al nuevo sin necesidad de cancelar primero. M, H y L llaman a
 ## esta misma función con su tipo/huella respectivos (ver _unhandled_input()).
 func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	if modo_colocar_puesto and _tipo_puesto_activo == tipo:
@@ -809,6 +816,7 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 		_salir_de_modo_colocar_blueprint()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
+	hud.ocultar_ficha_madero()
 	assert(ancho <= MAX_ANCHO_HUELLA_PUESTO and alto <= MAX_ALTO_HUELLA_PUESTO, "Huella de puesto excede el pool fijo de planos fantasma")
 	modo_colocar_puesto = true
 	_tipo_puesto_activo = tipo
@@ -817,8 +825,10 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_mostrar_huella_puesto(true)
 	if tipo == "mina":
 		hud.mostrar_ficha_mina()
-	else:
+	elif tipo == "caza_recoleccion":
 		hud.mostrar_ficha_caza()
+	else:
+		hud.mostrar_ficha_madero()
 	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
 
 
@@ -828,13 +838,14 @@ func _salir_de_modo_colocar_puesto() -> void:
 	_ocultar_area_accion()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
+	hud.ocultar_ficha_madero()
 	_tipo_puesto_activo = ""
 
 
 ## Ctrl + rueda del mouse, solo con un puesto en modo colocación: rota la
 ## huella activa 90° (intercambia ancho/alto). Sin efecto visible en mina
-## (5x5) ni caza/recolección (4x4) — ambas cuadradas — hasta que exista un
-## puesto con huella no cuadrada (p. ej. un futuro maderero, 3x4).
+## (5x5) ni caza/recolección (4x4) — ambas cuadradas — pero sí en el
+## maderero (3x4, no cuadrada).
 func _rotar_huella_puesto() -> void:
 	var ancho_previo := _ancho_puesto_activo
 	_ancho_puesto_activo = _alto_puesto_activo
@@ -1087,7 +1098,13 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if total_relleno > 0:
 		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques de tierra usados.")
 
-	var bloque_marcador: String = "mina" if _tipo_puesto_activo == "mina" else "puesto_caza"
+	var bloque_marcador: String
+	if _tipo_puesto_activo == "mina":
+		bloque_marcador = "mina"
+	elif _tipo_puesto_activo == "caza_recoleccion":
+		bloque_marcador = "puesto_caza"
+	else:
+		bloque_marcador = "puesto_madero"
 	var celdas_puesto: Array = []
 	for dx in range(_ancho_puesto_activo):
 		for dz in range(_alto_puesto_activo):

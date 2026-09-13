@@ -33,10 +33,18 @@ const COSTO_CONSTRUCCION := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO := 3
 const CAPACIDAD_ALMACENAMIENTO := 100
 
-## Documentada para el puesto maderero (GDD Sección 3) — sin puesto jugable
-## todavía, solo fija la convención de tamaño junto a las demás huellas.
 const ANCHO_HUELLA_MADERERO := 3
 const ALTO_HUELLA_MADERERO := 4
+
+const RADIO_AREA_MADERERO := 12
+const PASO_MUESTREO_MADERERO := 2  # mismo patrón de muestreo que caza/recolección
+const TASA_BASE_MADERERO_POR_CIUDADANO := 2.0
+
+# GDD Sección 3 — mismos valores que la mina por ahora, sin balance real
+# todavía (ver Recoleccion.COSTO_CONSTRUCCION más arriba).
+const COSTO_CONSTRUCCION_MADERERO := {"tierra": 10, "madera": 10, "piedra": 5}
+const PERSONAL_MAXIMO_MADERERO := 3
+const CAPACIDAD_ALMACENAMIENTO_MADERERO := 100
 
 const RADIO_AREA_CAZA_RECOLECCION := 12
 const PASO_MUESTREO_CAZA_RECOLECCION := 2  # cada 2 celdas, no las ~450 del área completa
@@ -154,3 +162,28 @@ func tasas_caza_recoleccion(promedios: Dictionary) -> Dictionary:
 		"caza": promedios["fauna"] * TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO,
 		"recoleccion": promedios["frutal"] * TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO,
 	}
+
+
+## Promedia densidad_arbol_en() (GeneradorMundo — duck typing, mismo patrón
+## que detectar_fauna_frutal()) muestreada cada PASO_MUESTREO_MADERERO
+## celdas dentro del círculo de radio RADIO_AREA_MADERERO centrado en
+## centro_xz. 0.0 si no hubo ninguna muestra (evita dividir por cero).
+func detectar_arbol(generador: Object, centro_xz: Vector2i) -> float:
+	var suma_arbol := 0.0
+	var muestras := 0
+	for dx in range(-RADIO_AREA_MADERERO, RADIO_AREA_MADERERO + 1, PASO_MUESTREO_MADERERO):
+		for dz in range(-RADIO_AREA_MADERERO, RADIO_AREA_MADERERO + 1, PASO_MUESTREO_MADERERO):
+			if Vector2(dx, dz).length() > RADIO_AREA_MADERERO:
+				continue
+			suma_arbol += generador.densidad_arbol_en(centro_xz.x + dx, centro_xz.y + dz)
+			muestras += 1
+	if muestras == 0:
+		return 0.0
+	return suma_arbol / muestras
+
+
+## Tasa de "madera" prevista por ciudadano, a partir de detectar_arbol() —
+## mismo patrón de retorno (Dictionary tipo -> tasa) que tasas_recoleccion()
+## y tasas_caza_recoleccion(), para que CamaraCenital/HUD los traten igual.
+func tasa_maderero(promedio_arbol: float) -> Dictionary:
+	return {"madera": promedio_arbol * TASA_BASE_MADERERO_POR_CIUDADANO}

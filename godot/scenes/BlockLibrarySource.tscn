@@ -105,6 +105,14 @@ material = SubResource("Mat_puesto_caza")
 
 [sub_resource type="BoxShape3D" id="Shape_puesto_caza"]
 
+[sub_resource type="StandardMaterial3D" id="Mat_puesto_madero"]
+albedo_color = Color(0.35, 0.22, 0.08, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_puesto_madero"]
+material = SubResource("Mat_puesto_madero")
+
+[sub_resource type="BoxShape3D" id="Shape_puesto_madero"]
+
 [sub_resource type="StandardMaterial3D" id="Mat_fantasma"]
 transparency = 1
 albedo_color = Color(0.6, 0.7, 1, 0.35)
@@ -217,6 +225,12 @@ mesh = SubResource("Mesh_puesto_caza")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="puesto_caza" unique_id=2111030022]
 shape = SubResource("Shape_puesto_caza")
+
+[node name="puesto_madero" type="MeshInstance3D" parent="." unique_id=830461927]
+mesh = SubResource("Mesh_puesto_madero")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="puesto_madero" unique_id=417295068]
+shape = SubResource("Shape_puesto_madero")
 
 [node name="fantasma" type="MeshInstance3D" parent="." unique_id=215850103]
 mesh = SubResource("Mesh_fantasma")

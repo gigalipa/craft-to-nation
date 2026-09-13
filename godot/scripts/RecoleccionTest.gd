@@ -19,6 +19,8 @@ class GeneradorBiomaFalso:
 		return 0.8 if abs(x) <= 12 and abs(z) <= 12 else 0.0
 	func densidad_frutal_en(x: int, z: int) -> float:
 		return 0.4 if abs(x) <= 12 and abs(z) <= 12 else 0.0
+	func densidad_arbol_en(x: int, z: int) -> float:
+		return 0.6 if abs(x) <= 12 and abs(z) <= 12 else 0.0
 
 
 func _ready() -> void:
@@ -204,4 +206,17 @@ func ejecutar_pruebas() -> void:
 	assert(conteo_edificio.get("piedra", 0) > 0)
 	print("OK: una mina bajo un edificio nunca reporta sus bloques estructurales como recurso minable.")
 
-	print("\n=== Las 12 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 13: detectar_arbol()/tasa_maderero() — mismo patrón que caza/recolección ===")
+	var generador_bioma_arbol := GeneradorBiomaFalso.new()
+	var promedio_arbol: float = Recoleccion.detectar_arbol(generador_bioma_arbol, Vector2i(0, 0))
+	print("Promedio de árbol (centro del bioma): ", promedio_arbol)
+	assert(is_equal_approx(promedio_arbol, 0.6))
+	var tasa_madero: Dictionary = Recoleccion.tasa_maderero(promedio_arbol)
+	assert(is_equal_approx(tasa_madero["madera"], 0.6 * Recoleccion.TASA_BASE_MADERERO_POR_CIUDADANO))
+
+	var promedio_arbol_fuera: float = Recoleccion.detectar_arbol(generador_bioma_arbol, Vector2i(1000, 1000))
+	assert(is_equal_approx(promedio_arbol_fuera, 0.0))
+	assert(is_equal_approx(Recoleccion.tasa_maderero(promedio_arbol_fuera)["madera"], 0.0))
+	print("OK: detectar_arbol()/tasa_maderero() promedian densidad_arbol_en() igual que caza/recolección con fauna/frutal.")
+
+	print("\n=== Las 13 pruebas de Recoleccion pasaron correctamente ===")

@@ -43,6 +43,12 @@ const NOMBRES_CAZA_RECOLECCION := {
 @onready var caza_almacenamiento_label: Label = $CazaFicha/AlmacenamientoLabel
 @onready var caza_tasas_label: Label = $CazaFicha/TasasLabel
 
+@onready var madero_ficha: VBoxContainer = $MaderoFicha
+@onready var madero_costo_label: Label = $MaderoFicha/CostoLabel
+@onready var madero_personal_label: Label = $MaderoFicha/PersonalLabel
+@onready var madero_almacenamiento_label: Label = $MaderoFicha/AlmacenamientoLabel
+@onready var madero_tasas_label: Label = $MaderoFicha/TasasLabel
+
 @onready var modo_deconstruccion_label: Label = $ModoDeconstruccionLabel
 
 
@@ -130,6 +136,32 @@ func actualizar_tasas_caza(tasas: Dictionary) -> void:
 
 func ocultar_ficha_caza() -> void:
 	caza_ficha.visible = false
+
+
+## Mismo patrón que mostrar_ficha_mina()/mostrar_ficha_caza(): valores FIJOS
+## al activar el modo; la tasa sí varía — ver actualizar_tasas_madero().
+func mostrar_ficha_madero() -> void:
+	var partes_costo: Array = []
+	for tipo in Recoleccion.COSTO_CONSTRUCCION_MADERERO:
+		partes_costo.append("%d %s" % [Recoleccion.COSTO_CONSTRUCCION_MADERERO[tipo], tipo])
+	madero_costo_label.text = "Costo: %s" % ", ".join(partes_costo)
+	madero_personal_label.text = "Personal máximo: %d" % Recoleccion.PERSONAL_MAXIMO_MADERERO
+	madero_almacenamiento_label.text = "Almacenamiento: %d" % Recoleccion.CAPACIDAD_ALMACENAMIENTO_MADERERO
+	madero_tasas_label.text = "Recolección prevista: -"
+	madero_ficha.visible = true
+
+
+## Recalculada en vivo cada fotograma mientras el modo colocar-puesto (tipo
+## "maderero") está activo, a partir de Recoleccion.tasa_maderero().
+func actualizar_tasas_madero(tasas: Dictionary) -> void:
+	if tasas.get("madera", 0.0) <= 0.0:
+		madero_tasas_label.text = "Recolección prevista: sin árboles detectados"
+		return
+	madero_tasas_label.text = "Recolección prevista por ciudadano:\n  %.1f madera/h" % tasas["madera"]
+
+
+func ocultar_ficha_madero() -> void:
+	madero_ficha.visible = false
 
 
 ## Muestra/oculta el aviso de que el modo deconstrucción está activo (ver

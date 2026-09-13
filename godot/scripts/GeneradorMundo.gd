@@ -489,6 +489,16 @@ func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 		var truncado: Array[Vector2i] = rio["cauce_truncado"]
 		if truncado.size() < 2:
 			continue
+		# Un cauce que no llega a desembocar en agua (mesa/valle cerrado, o
+		# truncado antes de llegar por un cruce con un río más fuerte) se
+		# descarta por completo — decisión tomada jugando en vivo: un cauce
+		# suelto que no conecta con nada se ve como un error visual, no como
+		# un arroyo real que se pierde en un valle. "Llegar a agua" se mide
+		# sobre el cauce YA truncado (la última celda que le queda), no sobre
+		# el cauce crudo original.
+		var ultima_truncada: Vector2i = truncado[truncado.size() - 1]
+		if not es_agua_en(ultima_truncada.x, ultima_truncada.y):
+			continue
 		_aplicar_ancho_profundidad(truncado, rio["ancho"], ancho_mundo, largo_mundo)
 		_marcar_cascadas(truncado, rio["ancho"], ancho_mundo, largo_mundo)
 

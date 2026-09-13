@@ -27,7 +27,7 @@ Código existente que esta pieza extiende: `godot/scripts/GeneradorMundo.gd` (`a
 Desde cada naciente, en un método nuevo `_trazar_rio(origen: Vector2i) -> Array[Vector2i]`:
 
 1. Empezar en `origen`, con un `Dictionary` de celdas visitadas (evita ciclos en mesetas).
-2. En cada paso, evaluar las 4 celdas vecinas ortogonales (N/S/E/O) no visitadas. Si ninguna tiene `altura_en()` estrictamente menor que la celda actual, el cauce termina ahí (mesa/valle cerrado sin salida — se conserva el cauce parcial tal cual, no es un error).
+2. En cada paso, evaluar las 4 celdas vecinas ortogonales (N/S/E/O) no visitadas. Si ninguna tiene `altura_en()` estrictamente menor que la celda actual, el cauce termina ahí (mesa/valle cerrado sin salida). `_trazar_rio()` en sí mismo devuelve ese cauce parcial tal cual — la decisión de qué hacer con un cauce que no llegó a agua se toma después, en `_generar_rios()` (ver el final de la Sección 2b): se descarta por completo, no se talla ni se marca nada de él.
 3. Si hay una o más vecinas más bajas, moverse a la de menor altura (empate: la primera en el orden N/E/S/O, determinista).
 4. El cauce termina exitosamente al entrar a una celda con `es_agua_en()` verdadero (llegó al mar o a un lago ya existente) — esa celda de agua se incluye como último elemento del cauce, pero no se tala ni se le agrega ancho/profundidad (ya es agua).
 5. Tope de seguridad `MAX_PASOS_RIO` (constante nueva, valor inicial `ancho_mundo + largo_mundo`, cota superior generosa de cualquier camino simple en el grid) para evitar recorridos patológicos.
@@ -41,6 +41,7 @@ El trazado de la Sección 2 se ejecuta para las `NUM_RIOS` nacientes de forma co
 3. **Dueño de cada celda:** se recorren los ríos de mayor a menor fuerza; cada celda del cauce crudo de un río que todavía no tenga dueño se le asigna a ese río. Una celda ya asignada a un río más fuerte no cambia de dueño.
 4. **Truncado:** el cauce final de cada río es el prefijo de su cauce crudo (desde la naciente) hasta la ÚLTIMA celda de la que sigue siendo dueño (inclusive) — la primera celda cuyo dueño es otro río corta el cauce ahí ("el cauce menos ancho termina allí"). Un río más fuerte que cruza el cauce de uno más débil nunca se trunca por ese cruce (solo lo truncaría un río aún más fuerte que él mismo, en un cruce distinto).
 5. El ancho/profundidad (Sección 3) y las cascadas (Sección 5) de cada río se calculan únicamente sobre su cauce YA truncado — un río truncado nunca talla ni marca celdas más allá de su punto de corte.
+6. **Descarte de cauces sin desembocadura (decisión tomada jugando en vivo, ver `docs/superpowers/plans/`):** si la ÚLTIMA celda del cauce ya truncado no es agua (`es_agua_en()` falso) — porque terminó en una mesa/valle cerrado, o porque un cruce lo truncó antes de llegar al agua que sí alcanzaba su cauce crudo — el río completo se descarta: no se le aplica ancho/profundidad (Sección 3) ni se marcan sus cascadas (Sección 5). Un cauce que no conecta tierras altas con el mar/lago no se ve como un arroyo real, se ve como un error visual (un trazo suelto en medio del terreno) — más importante que "aprovechar" el trabajo de trazado ya hecho.
 
 ## 3. Ancho y perfil de profundidad
 

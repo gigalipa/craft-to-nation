@@ -424,4 +424,39 @@ func ejecutar_pruebas() -> void:
 		assert(not gen_casc27.es_cascada_en(celda27.x, celda27.y))
 	print("OK: ninguna celda de franja se marca como cascada si _aplicar_ancho_profundidad() no la registró antes como río real.")
 
-	print("\n=== Las 27 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 28: un río cuyo cauce no llega a agua se descarta por completo (ninguna de sus celdas se registra como río) ===")
+	# Reproduce exactamente la selección de nacientes/anchos de _generar_rios()
+	# (mismo RNG sembrado en semilla+5, mismo orden de sorteos) para poder
+	# identificar, en un mundo real ya generado, cuáles de los NUM_RIOS
+	# candidatos NO llegaron a agua — esos deben tener CERO celdas registradas
+	# como río en el mundo final, sin importar cuántos pasos haya recorrido su
+	# cauce crudo antes de quedar atrapado en una mesa/valle cerrado.
+	var gen_t28: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var candidatos_t28: Array[Vector2i] = []
+	for x in range(VoxelWorld.ANCHO_MUNDO):
+		for z in range(VoxelWorld.LARGO_MUNDO):
+			if gen_t28.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
+				candidatos_t28.append(Vector2i(x, z))
+	var rng_t28 := RandomNumberGenerator.new()
+	rng_t28.seed = VoxelWorld.SEMILLA_MUNDO + 5
+	var num_a_elegir_t28: int = mini(GeneradorMundoScript.NUM_RIOS, candidatos_t28.size())
+	var vio_descartado_t28 := false
+	var vio_sobreviviente_t28 := false
+	for i in range(num_a_elegir_t28):
+		var idx: int = rng_t28.randi() % candidatos_t28.size()
+		var origen: Vector2i = candidatos_t28[idx]
+		candidatos_t28.remove_at(idx)
+		rng_t28.randi_range(GeneradorMundoScript.ANCHO_MINIMO_RIO, GeneradorMundoScript.ANCHO_MAXIMO_RIO)  # consumir el sorteo de ancho, mismo orden que _generar_rios()
+		var cauce_t28: Array[Vector2i] = gen_t28._trazar_rio(origen, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+		var ultima_t28: Vector2i = cauce_t28[cauce_t28.size() - 1]
+		if gen_t28.es_agua_en(ultima_t28.x, ultima_t28.y):
+			vio_sobreviviente_t28 = true
+			continue
+		vio_descartado_t28 = true
+		for celda_t28 in cauce_t28:
+			assert(not gen_t28.es_rio_en(celda_t28.x, celda_t28.y))
+	assert(vio_descartado_t28)
+	assert(vio_sobreviviente_t28)
+	print("OK: los cauces que no llegan a agua quedan con cero celdas registradas como río; los que sí llegan siguen intactos.")
+
+	print("\n=== Las 28 pruebas de GeneradorMundo pasaron correctamente ===")

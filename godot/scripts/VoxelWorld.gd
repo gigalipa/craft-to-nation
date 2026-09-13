@@ -280,6 +280,11 @@ func _ready() -> void:
 	arboles = GeneradorArbol.new()
 	_generar_terreno()
 	_generar_arboles()
+	var translucidos: Node3D = get_node("TranslucidosRenderer")
+	translucidos.voxel_world = self
+	translucidos._indexar_materiales()
+	bloque_translucido_cambiado.connect(translucidos._on_bloque_translucido_cambiado)
+	translucidos.reconstruir_todo()
 
 
 func _indexar_biblioteca() -> void:

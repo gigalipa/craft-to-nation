@@ -24,12 +24,7 @@ material = SubResource("Mat_puerta_superior")
 
 [sub_resource type="BoxShape3D" id="Shape_puerta_superior"]
 
-[sub_resource type="StandardMaterial3D" id="Mat_ventana"]
-transparency = 1
-albedo_color = Color(0.6, 0.8, 1, 0.5)
-
-[sub_resource type="BoxMesh" id="Mesh_ventana"]
-material = SubResource("Mat_ventana")
+[sub_resource type="ArrayMesh" id="Mesh_ventana"]
 
 [sub_resource type="BoxShape3D" id="Shape_ventana"]
 
@@ -122,12 +117,7 @@ material = SubResource("Mat_fantasma")
 
 [sub_resource type="BoxShape3D" id="Shape_fantasma"]
 
-[sub_resource type="StandardMaterial3D" id="Mat_agua"]
-transparency = 1
-albedo_color = Color(0.2, 0.45, 0.85, 0.45)
-
-[sub_resource type="BoxMesh" id="Mesh_agua"]
-material = SubResource("Mat_agua")
+[sub_resource type="ArrayMesh" id="Mesh_agua"]
 
 [sub_resource type="BoxShape3D" id="Shape_agua"]
 

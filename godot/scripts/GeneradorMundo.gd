@@ -410,7 +410,13 @@ func _aplicar_ancho_profundidad(cauce: Array[Vector2i], ancho: int, ancho_mundo:
 
 ## Marca cascadas (es_cascada_en) sobre "cauce" (ya truncado): cualquier
 ## paso cuya caída de altura hacia la siguiente celda sea >= UMBRAL_CASCADA
-## marca TODA su franja como cascada (Sección 5).
+## marca TODA su franja como cascada (Sección 5). Debe llamarse DESPUÉS de
+## _aplicar_ancho_profundidad() sobre el mismo "cauce" (ver _generar_rios()):
+## solo marca cascada una celda de franja que _aplicar_ancho_profundidad()
+## ya haya registrado en _profundidad_rio para ESTE río — así una celda bajo
+## agua o ya reclamada por otro río (más fuerte, procesado antes) nunca
+## puede quedar marcada como cascada sin ser también río (es_cascada_en =>
+## es_rio_en, ver TEST 25/TEST 26b).
 func _marcar_cascadas(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, largo_mundo: int) -> void:
 	for i in range(cauce.size() - 1):
 		var actual: Vector2i = cauce[i]
@@ -422,6 +428,10 @@ func _marcar_cascadas(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, larg
 			continue
 		for celda_franja in _celdas_franja_en(cauce, i, ancho):
 			if celda_franja.x < 0 or celda_franja.x >= ancho_mundo or celda_franja.y < 0 or celda_franja.y >= largo_mundo:
+				continue
+			if es_agua_en(celda_franja.x, celda_franja.y):
+				continue
+			if not _profundidad_rio.has(celda_franja):
 				continue
 			_celdas_cascada[celda_franja] = true
 

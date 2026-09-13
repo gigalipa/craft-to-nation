@@ -337,10 +337,46 @@ func ejecutar_pruebas() -> void:
 	var celda_a26 := Vector2i(10, 10)
 	var celda_b26 := Vector2i(11, 10)
 	var cauce_sintetico_26: Array[Vector2i] = [celda_a26, celda_b26]
+	# _aplicar_ancho_profundidad() primero (mismo orden que _generar_rios()):
+	# _marcar_cascadas() ahora exige que la celda ya esté registrada como río
+	# real en _profundidad_rio antes de poder marcarla como cascada (ver
+	# TEST 27) — sin este paso, la celda nunca calificaría sin importar la
+	# caída real de altura.
+	gen_casc._aplicar_ancho_profundidad(cauce_sintetico_26, 3, 60, 60)
 	gen_casc._marcar_cascadas(cauce_sintetico_26, 3, 60, 60)
 	var caida_26: int = gen_casc.altura_en(celda_a26.x, celda_a26.y) - gen_casc.altura_en(celda_b26.x, celda_b26.y)
 	var deberia_ser_cascada_26: bool = caida_26 >= GeneradorMundoScript.UMBRAL_CASCADA
 	assert(gen_casc.es_cascada_en(celda_a26.x, celda_a26.y) == deberia_ser_cascada_26)
 	print("OK (caída real detectada: %d, UMBRAL_CASCADA=%d): es_cascada_en() coincide con la regla exacta de caída de altura." % [caida_26, GeneradorMundoScript.UMBRAL_CASCADA])
 
-	print("\n=== Las 26 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 27: _marcar_cascadas() nunca marca cascada una celda de franja que no está registrada como río real (invariante es_cascada_en => es_rio_en) ===")
+	var gen_casc27: RefCounted = GeneradorMundoScript.new(7, 60, 60)
+	var actual27 := Vector2i(-1, -1)
+	var siguiente27 := Vector2i(-1, -1)
+	for x27 in range(1, 59):
+		for z27 in range(1, 59):
+			var a27 := Vector2i(x27, z27)
+			var b27 := Vector2i(x27 + 1, z27)
+			if gen_casc27.altura_en(a27.x, a27.y) - gen_casc27.altura_en(b27.x, b27.y) >= GeneradorMundoScript.UMBRAL_CASCADA:
+				actual27 = a27
+				siguiente27 = b27
+				break
+		if actual27 != Vector2i(-1, -1):
+			break
+	assert(actual27 != Vector2i(-1, -1))
+	var cauce_sintetico_27: Array[Vector2i] = [actual27, siguiente27]
+	# A propósito NO se llama _aplicar_ancho_profundidad() aquí: simula que
+	# estas celdas de franja nunca quedaron registradas como río real (por
+	# estar bajo agua o reclamadas antes por un río más fuerte en
+	# _resolver_cruces()) — _marcar_cascadas() no debe marcarlas como
+	# cascada de todas formas, aunque la caída de altura del paso supere
+	# UMBRAL_CASCADA. Antes del fix, _marcar_cascadas() marcaba TODA la
+	# franja sin este chequeo, rompiendo es_cascada_en() => es_rio_en().
+	gen_casc27._marcar_cascadas(cauce_sintetico_27, 3, 60, 60)
+	for offset27 in [-1, 0, 1]:
+		var celda27 := Vector2i(actual27.x, actual27.y + offset27)
+		assert(not gen_casc27.es_rio_en(celda27.x, celda27.y))
+		assert(not gen_casc27.es_cascada_en(celda27.x, celda27.y))
+	print("OK: ninguna celda de franja se marca como cascada si _aplicar_ancho_profundidad() no la registró antes como río real.")
+
+	print("\n=== Las 27 pruebas de GeneradorMundo pasaron correctamente ===")

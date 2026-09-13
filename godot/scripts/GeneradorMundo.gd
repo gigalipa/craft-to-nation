@@ -184,7 +184,7 @@ func _calcular_nivel_mar(ancho_mundo: int, largo_mundo: int) -> int:
 ## Verdadero si la columna (x, z) queda por debajo del nivel de mar. Usada
 ## por VoxelWorld para rellenar de agua (ver Task 4), y pensada para que
 ## sub-proyectos futuros (adyacencia de puestos de caza/pesca, obstáculos
-## para puentes de PoC 9) la consulten sin repetir este cálculo.
+## para puentes de PoC 10) la consulten sin repetir este cálculo.
 func es_agua_en(x: int, z: int) -> bool:
 	return altura_en(x, z) < nivel_mar
 

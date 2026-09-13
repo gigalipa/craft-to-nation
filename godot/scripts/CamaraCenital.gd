@@ -63,7 +63,7 @@ class _AlturaSinAgua:
 ##   ignorando el agua) antes de colocar el marcador.
 ## - Colocación de blueprint (tecla `B`, ver Task 7 de este plan) reemplaza
 ##   la antigua nivelación standalone — sin selección de tropas por
-##   arrastre todavía, eso sigue siendo PoC 6/Fase 4.
+##   arrastre todavía, eso sigue siendo PoC 7/Fase 4.
 
 const DISTANCIA_INICIAL := 25.0
 const DISTANCIA_MIN := 8.0

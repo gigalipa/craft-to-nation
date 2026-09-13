@@ -1,4 +1,6 @@
-# **Documento Técnico de Desarrollo: PoC 5 - Mundo Procedural y Puestos de Recolección**
+# **Documento Técnico de Desarrollo: PoC 6 - Mundo Procedural y Puestos de Recolección**
+
+**Nota de numeración (2026-09-13):** esta PoC se llamaba "PoC 5" hasta que el GDD v3.26 insertó una nueva PoC 5 (diseño de balance del Catálogo de Recursos y Cadenas de Producción) antes de esta en la Fase 3, recorriendo su número a PoC 6 — ver GDD, Sección 11.
 
 **Identificador del Módulo:** POC-05-MUNDO-PROCEDURAL
 
@@ -206,7 +208,7 @@ Spec: `docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md`.
 - Reglas de flotación/natación: el jugador puede minar/construir en celdas de agua sin ninguna restricción nueva.
 - `VoxelWorld.altura_en()` cuenta la superficie del agua como "altura" de la columna en cualquier zona inundada (devuelve la celda no vacía más alta, y el relleno de agua de este sub-proyecto la deja por encima del terreno sólido) — esto afecta a la nivelación de terreno (mide la pendiente contra la superficie del agua, no el fondo real, y agregaría relleno de tierra encima del agua) y a la detección de recursos de puestos de recolección (`Recoleccion.detectar_recursos()`) cuando se usan junto a agua (desplaza el centro de búsqueda hacia arriba tantas celdas como profundidad de agua haya ahí). No se corrige en esta etapa; queda para cuando esas mecánicas se aborden con más detalle.
 
-**Verificado (PoC 5, sub-proyecto 4):** vía MCP headless (`mcp__godot__run_project`/`get_debug_output`/`stop_project`) — `Test.tscn` (14/14) y `GeneradorMundoTest.tscn` (10/10) pasan sin errores de `assert()`; `Main.tscn` (mundo real 200×200, semilla `12345`) carga sin errores ni excepciones en ~35s. **Pendiente:** confirmación visual jugando en el editor real (relieve escarpado perceptible, agua visible en las cuencas correctas) — mismo patrón ya documentado para el relieve (3.5) y para los sub-proyectos 2 y 3 de esta PoC.
+**Verificado (PoC 6, sub-proyecto 4):** vía MCP headless (`mcp__godot__run_project`/`get_debug_output`/`stop_project`) — `Test.tscn` (14/14) y `GeneradorMundoTest.tscn` (10/10) pasan sin errores de `assert()`; `Main.tscn` (mundo real 200×200, semilla `12345`) carga sin errores ni excepciones en ~35s. **Pendiente:** confirmación visual jugando en el editor real (relieve escarpado perceptible, agua visible en las cuencas correctas) — mismo patrón ya documentado para el relieve (3.5) y para los sub-proyectos 2 y 3 de esta PoC.
 
 ### **3.11 Señales de Bioma/Fauna/Frutal y Árboles Procedurales Talables**
 

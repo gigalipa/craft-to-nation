@@ -104,6 +104,7 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	_ruido_arbol.frequency = 0.05
 
 	nivel_mar = _calcular_nivel_mar(ancho_mundo, largo_mundo)
+	_generar_rios(semilla, ancho_mundo, largo_mundo)
 
 
 ## Altura de la superficie en (x, z), determinista para (semilla, x, z).
@@ -381,3 +382,110 @@ func _trazar_rio(origen: Vector2i, ancho_mundo: int, largo_mundo: int) -> Array[
 		cauce.append(mejor)
 		actual = mejor
 	return cauce
+
+
+## Talla ancho/profundidad reales sobre "cauce" (ya truncado por
+## _resolver_cruces(), Sección 2b) — llena _profundidad_rio/
+## _direccion_flujo_rio para cada celda de la franja de cada paso,
+## saltando celdas ya bajo el mar/lago, fuera del mundo, o ya reclamadas
+## por otro río procesado antes (Sección 3).
+func _aplicar_ancho_profundidad(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, largo_mundo: int) -> void:
+	for i in range(cauce.size()):
+		var celda: Vector2i = cauce[i]
+		if es_agua_en(celda.x, celda.y):
+			continue
+		var franja: Array[Vector2i] = _celdas_franja_en(cauce, i, ancho)
+		var direccion_publica: Vector2i = cauce[i + 1] - cauce[i] if i + 1 < cauce.size() else Vector2i.ZERO
+		for k in range(franja.size()):
+			var celda_franja: Vector2i = franja[k]
+			if celda_franja.x < 0 or celda_franja.x >= ancho_mundo or celda_franja.y < 0 or celda_franja.y >= largo_mundo:
+				continue
+			if es_agua_en(celda_franja.x, celda_franja.y):
+				continue
+			if _profundidad_rio.has(celda_franja):
+				continue
+			_profundidad_rio[celda_franja] = _profundidad_en_franja(k, ancho)
+			_direccion_flujo_rio[celda_franja] = direccion_publica
+
+
+## Marca cascadas (es_cascada_en) sobre "cauce" (ya truncado): cualquier
+## paso cuya caída de altura hacia la siguiente celda sea >= UMBRAL_CASCADA
+## marca TODA su franja como cascada (Sección 5).
+func _marcar_cascadas(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, largo_mundo: int) -> void:
+	for i in range(cauce.size() - 1):
+		var actual: Vector2i = cauce[i]
+		if es_agua_en(actual.x, actual.y):
+			continue
+		var siguiente: Vector2i = cauce[i + 1]
+		var caida: int = altura_en(actual.x, actual.y) - altura_en(siguiente.x, siguiente.y)
+		if caida < UMBRAL_CASCADA:
+			continue
+		for celda_franja in _celdas_franja_en(cauce, i, ancho):
+			if celda_franja.x < 0 or celda_franja.x >= ancho_mundo or celda_franja.y < 0 or celda_franja.y >= largo_mundo:
+				continue
+			_celdas_cascada[celda_franja] = true
+
+
+## Genera todos los ríos del mundo (Secciones 1-5 del spec): elige
+## nacientes con un RandomNumberGenerator sembrado (semilla+5, siguiente
+## hueco libre tras _ruido_arbol en semilla+4), traza su cauce crudo,
+## resuelve cruces, y talla ancho/profundidad + cascadas sobre el cauce ya
+## truncado de cada uno. Llamada una única vez desde _init(), después de
+## calcular nivel_mar (los cauces necesitan es_agua_en() para saber dónde
+## terminan).
+func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
+	var candidatos: Array[Vector2i] = []
+	for x in range(ancho_mundo):
+		for z in range(largo_mundo):
+			if altura_en(x, z) >= ALTURA_MAXIMA - MARGEN_NACIENTE_RIO:
+				candidatos.append(Vector2i(x, z))
+	if candidatos.is_empty():
+		return
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = semilla + 5
+
+	var rios: Array[Dictionary] = []
+	var num_a_elegir: int = mini(NUM_RIOS, candidatos.size())
+	for i in range(num_a_elegir):
+		var idx: int = rng.randi() % candidatos.size()
+		var origen: Vector2i = candidatos[idx]
+		candidatos.remove_at(idx)
+		var ancho: int = rng.randi_range(ANCHO_MINIMO_RIO, ANCHO_MAXIMO_RIO)
+		rios.append({
+			"indice": i,
+			"origen": origen,
+			"ancho": ancho,
+			"altura_nacimiento": altura_en(origen.x, origen.y),
+			"cauce_crudo": _trazar_rio(origen, ancho_mundo, largo_mundo),
+		})
+
+	_resolver_cruces(rios)
+
+	for rio in rios:
+		var truncado: Array[Vector2i] = rio["cauce_truncado"]
+		if truncado.size() < 2:
+			continue
+		_aplicar_ancho_profundidad(truncado, rio["ancho"], ancho_mundo, largo_mundo)
+		_marcar_cascadas(truncado, rio["ancho"], ancho_mundo, largo_mundo)
+
+
+## Verdadero si (x,z) cae dentro de la franja de algún río (Sección 5).
+func es_rio_en(x: int, z: int) -> bool:
+	return _profundidad_rio.has(Vector2i(x, z))
+
+
+## Dirección unitaria hacia la siguiente celda del cauce en (x,z), o
+## Vector2i.ZERO si no es río o es la celda final (Sección 5).
+func direccion_flujo_en(x: int, z: int) -> Vector2i:
+	return _direccion_flujo_rio.get(Vector2i(x, z), Vector2i.ZERO)
+
+
+## Profundidad tallada en (x,z) — 0 si no es río (Sección 5).
+func profundidad_rio_en(x: int, z: int) -> int:
+	return _profundidad_rio.get(Vector2i(x, z), 0)
+
+
+## Verdadero si (x,z) es parte de una cascada (Sección 5).
+func es_cascada_en(x: int, z: int) -> bool:
+	return _celdas_cascada.has(Vector2i(x, z))

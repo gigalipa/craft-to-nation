@@ -290,4 +290,57 @@ func ejecutar_pruebas() -> void:
 		assert(gen_rio_a.altura_en(siguiente.x, siguiente.y) <= gen_rio_a.altura_en(actual.x, actual.y))
 	print("OK: ningún paso del cauce sube de altura antes de llegar a una celda de agua.")
 
-	print("\n=== Las 21 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 22: la generación de ríos es determinista end-to-end ===")
+	var gen_full_a: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var gen_full_b: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var vio_rio := false
+	for x in range(VoxelWorld.ANCHO_MUNDO):
+		for z in range(VoxelWorld.LARGO_MUNDO):
+			var a_es_rio: bool = gen_full_a.es_rio_en(x, z)
+			assert(a_es_rio == gen_full_b.es_rio_en(x, z))
+			if a_es_rio:
+				vio_rio = true
+				assert(gen_full_a.profundidad_rio_en(x, z) == gen_full_b.profundidad_rio_en(x, z))
+				assert(gen_full_a.direccion_flujo_en(x, z) == gen_full_b.direccion_flujo_en(x, z))
+	assert(vio_rio)
+	print("OK: dos instancias con SEMILLA_MUNDO producen exactamente el mismo mapa de ríos, y al menos una celda de río existe.")
+
+	print("\n=== TEST 23: profundidad_rio_en() está siempre en [1, PROFUNDIDAD_MAXIMA_RIO] donde es_rio_en() es true ===")
+	for x in range(VoxelWorld.ANCHO_MUNDO):
+		for z in range(VoxelWorld.LARGO_MUNDO):
+			if gen_full_a.es_rio_en(x, z):
+				var p: int = gen_full_a.profundidad_rio_en(x, z)
+				assert(p >= 1 and p <= GeneradorMundoScript.PROFUNDIDAD_MAXIMA_RIO)
+			else:
+				assert(gen_full_a.profundidad_rio_en(x, z) == 0)
+	print("OK: profundidad_rio_en() nunca sale de rango, y es 0 fuera de cualquier río.")
+
+	print("\n=== TEST 24: direccion_flujo_en() apunta a una celda de igual o menor altura ===")
+	for x in range(VoxelWorld.ANCHO_MUNDO):
+		for z in range(VoxelWorld.LARGO_MUNDO):
+			var direccion: Vector2i = gen_full_a.direccion_flujo_en(x, z)
+			if direccion == Vector2i.ZERO:
+				continue
+			var siguiente := Vector2i(x, z) + direccion
+			assert(gen_full_a.altura_en(siguiente.x, siguiente.y) <= gen_full_a.altura_en(x, z))
+	print("OK: toda dirección de flujo no nula apunta hacia una celda de altura igual o menor.")
+
+	print("\n=== TEST 25: toda celda de cascada es también una celda de río real ===")
+	for x in range(VoxelWorld.ANCHO_MUNDO):
+		for z in range(VoxelWorld.LARGO_MUNDO):
+			if gen_full_a.es_cascada_en(x, z):
+				assert(gen_full_a.es_rio_en(x, z))
+	print("OK: ninguna celda de cascada existe fuera de la franja de un río.")
+
+	print("\n=== TEST 26: es_cascada_en() coincide exactamente con la regla de caída de altura (cauce sintético) ===")
+	var gen_casc: RefCounted = GeneradorMundoScript.new(42, 60, 60)
+	var celda_a26 := Vector2i(10, 10)
+	var celda_b26 := Vector2i(11, 10)
+	var cauce_sintetico_26: Array[Vector2i] = [celda_a26, celda_b26]
+	gen_casc._marcar_cascadas(cauce_sintetico_26, 3, 60, 60)
+	var caida_26: int = gen_casc.altura_en(celda_a26.x, celda_a26.y) - gen_casc.altura_en(celda_b26.x, celda_b26.y)
+	var deberia_ser_cascada_26: bool = caida_26 >= GeneradorMundoScript.UMBRAL_CASCADA
+	assert(gen_casc.es_cascada_en(celda_a26.x, celda_a26.y) == deberia_ser_cascada_26)
+	print("OK (caída real detectada: %d, UMBRAL_CASCADA=%d): es_cascada_en() coincide con la regla exacta de caída de altura." % [caida_26, GeneradorMundoScript.UMBRAL_CASCADA])
+
+	print("\n=== Las 26 pruebas de GeneradorMundo pasaron correctamente ===")

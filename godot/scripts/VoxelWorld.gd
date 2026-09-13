@@ -348,7 +348,8 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 
 
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:
-	if get_cell_item(celda) != GridMap.INVALID_CELL_ITEM:
+	var actual: int = get_cell_item(celda)
+	if actual != GridMap.INVALID_CELL_ITEM and _tipo_por_id.get(actual, "") != "agua":
 		return false
 	if not _id_por_tipo.has(tipo):
 		return false
@@ -359,6 +360,8 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 
 
 func minar_bloque(celda: Vector3i) -> bool:
+	if obtener_tipo(celda) == "agua":
+		return false
 	if celda_a_edificio.has(celda):
 		return false
 	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:

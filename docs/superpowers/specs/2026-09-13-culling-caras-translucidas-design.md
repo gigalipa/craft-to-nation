@@ -20,7 +20,9 @@ Nueva constante en `VoxelWorld.gd`:
 const TIPOS_TRANSLUCIDOS := ["agua", "ventana"]
 ```
 
-En `godot/scenes/BlockLibrarySource.tscn`, los `MeshInstance3D` de `"agua"` y `"ventana"` cambian su `mesh` a un `ArrayMesh` vacío (0 superficies) en vez del `BoxMesh` actual. El `CollisionShape3D` de `"ventana"` (hijo del mismo nodo) NO se toca — en Godot, la `MeshLibrary` exportada guarda `mesh` y `shapes` como propiedades independientes del ítem, así que un ítem sin malla visual conserva su forma de colisión normal. `"agua"` ya no tiene `CollisionShape3D` (cambio de la spec de ríos), así que no hay nada que preservar ahí. Tras el cambio, reexportar `assets/BlockLibrary.res` (`mcp__godot__export_mesh_library`).
+En `godot/scenes/BlockLibrarySource.tscn`, los `MeshInstance3D` de `"agua"` y `"ventana"` cambian su `mesh` a un `ArrayMesh` vacío (0 superficies) en vez del `BoxMesh` actual, y se eliminan los `StandardMaterial3D` (`Mat_agua`/`Mat_ventana`) que quedan sin uso (el material ya no vive en la malla del ítem — ver más abajo). El `CollisionShape3D` de `"ventana"` (hijo del mismo nodo) NO se toca — en Godot, la `MeshLibrary` exportada guarda `mesh` y `shapes` como propiedades independientes del ítem, así que un ítem sin malla visual conserva su forma de colisión normal. `"agua"` ya no tiene `CollisionShape3D` (cambio de la spec de ríos), así que no hay nada que preservar ahí. Tras el cambio, reexportar `assets/BlockLibrary.res` (`mcp__godot__export_mesh_library`).
+
+Los materiales de agua/ventana pasan a vivir como recursos independientes — `godot/assets/mat_agua.tres` y `godot/assets/mat_ventana.tres` (mismas propiedades que los `StandardMaterial3D` eliminados) — porque una vez vacía la malla del ítem de `MeshLibrary`, ya no hay ninguna superficie de la que leer el material original. `TranslucidosRenderer` los carga directamente por ruta (`preload()`), sin pasar por `mesh_library` en absoluto.
 
 Efecto: `GridMap` sigue ocupando la celda (colisión, `get_cell_item()`, `obtener_tipo()`, todo el registro de juego) exactamente igual que antes, pero ya no dibuja nada visible para esos dos tipos — el único renderizado visible de agua/ventana pasa a ser el de `TranslucidosRenderer` (Sección 2).
 
@@ -99,9 +101,9 @@ Nueva señal en `VoxelWorld.gd`:
 signal bloque_translucido_cambiado(celda: Vector3i)
 ```
 
-Emitida al final de `colocar_bloque()`, `minar_bloque()`, `_revertir_celda()`, `eliminar_edificio()` (una vez por celda) y `drenar_agua()` (una vez por celda reemplazada), pero SOLO si el tipo involucrado — el nuevo tipo en `colocar_bloque()`, el tipo que había ANTES de borrar en `minar_bloque()`/`_revertir_celda()`/`eliminar_edificio()`/`drenar_agua()` — pertenece a `TIPOS_TRANSLUCIDOS`. Evita procesar cualquier bloque sólido colocado/minado (la inmensa mayoría de las llamadas). Importante para la implementación: en las funciones que BORRAN una celda, el tipo debe leerse con `obtener_tipo(celda)` ANTES de llamar a `set_cell_item(celda, GridMap.INVALID_CELL_ITEM)` — una vez borrada, `obtener_tipo()` ya no puede saber qué había ahí. `TranslucidosRenderer` no necesita saber cuál era el tipo (Sección 5, `_on_bloque_translucido_cambiado()` reconstruye AMBOS tipos translúcidos igual), pero `VoxelWorld` sí lo necesita para decidir si emite la señal.
+Emitida al final de `colocar_bloque()`, `minar_bloque()`, `_revertir_celda()`, `eliminar_edificio()` (una vez por celda) y `drenar_agua()` (una vez por celda reemplazada), pero SOLO si el tipo involucrado pertenece a `TIPOS_TRANSLUCIDOS` — el tipo NUEVO en `colocar_bloque()`, el tipo que había ANTES de borrar en `minar_bloque()`/`_revertir_celda()`/`eliminar_edificio()`/`drenar_agua()`. Caso especial en `colocar_bloque()`: como ya puede sustituir una celda de `"agua"` existente por otro tipo (ver Sección 6 de la spec de ríos), también debe emitir si el tipo ANTERIOR (el que había antes de la sustitución) era translúcido, aunque el tipo nuevo no lo sea — de otro modo, tapar un río con tierra dejaría intacta (sin recalcular) la malla de agua vecina que ya no debería mostrar esa cara como interna. Evita procesar cualquier bloque sólido colocado/minado (la inmensa mayoría de las llamadas). Importante para la implementación: en las funciones que BORRAN una celda, el tipo debe leerse con `obtener_tipo(celda)` ANTES de llamar a `set_cell_item(celda, GridMap.INVALID_CELL_ITEM)` — una vez borrada, `obtener_tipo()` ya no puede saber qué había ahí. `TranslucidosRenderer` no necesita saber cuál era el tipo (Sección 5, `_on_bloque_translucido_cambiado()` reconstruye AMBOS tipos translúcidos igual), pero `VoxelWorld` sí lo necesita para decidir si emite la señal.
 
-`TranslucidosRenderer._ready()` se conecta a esta señal:
+`VoxelWorld._ready()` conecta esta señal explícitamente al handler de `TranslucidosRenderer` (ver Sección 6) — no se conecta desde el propio `_ready()` de `TranslucidosRenderer`, porque en Godot los nodos hijos ejecutan `_ready()` ANTES que su padre, y `translucidos.voxel_world` todavía no estaría asignado en ese momento. El handler:
 
 ```gdscript
 func _on_bloque_translucido_cambiado(celda: Vector3i) -> void:
@@ -123,7 +125,8 @@ Marca sucios el chunk de la celda y los de sus 6 vecinos directos (nunca más de
   ```gdscript
   var translucidos: Node3D = get_node("TranslucidosRenderer")
   translucidos.voxel_world = self
-  translucidos._indexar_materiales()  # lee mesh_library, guarda Mat_agua/Mat_ventana por tipo
+  translucidos._indexar_materiales()  # preload() de mat_agua.tres/mat_ventana.tres
+  bloque_translucido_cambiado.connect(translucidos._on_bloque_translucido_cambiado)
   translucidos.reconstruir_todo()
   ```
 - Las pruebas existentes que instancian `VoxelWorld.new()` sin agregarlo al árbol (ver `BlueprintValidatorTest.gd`) NO llaman a `_ready()`, así que no se ven afectadas por este cambio — `TranslucidosRenderer` nunca se construye en esos tests, y ninguna prueba existente depende de la malla visual.

@@ -290,9 +290,25 @@ func _generar_terreno() -> void:
 			var altura: int = generador.altura_en(x, z)
 			if generador.es_rio_en(x, z):
 				var profundidad_rio: int = generador.profundidad_rio_en(x, z)
-				for y_agua in range(altura - profundidad_rio + 1, altura + 1):
+				var y_inicio_agua: int = altura - profundidad_rio + 1
+				if generador.es_cascada_en(x, z):
+					# Cascada real: en vez de solo tallar la profundidad normal
+					# de esta celda, el agua sigue cayendo hasta encontrarse con
+					# la altura natural de la celda del cauce a la que fluye
+					# (direccion_flujo_en()), tallando el acantilado entre
+					# ambas — sin esto, cada celda del río solo se talla según
+					# su propia altura y el salto queda seco (bug real,
+					# encontrado jugando: la cascada no "caía", quedaba un
+					# charco flotando sobre un acantilado seco).
+					var direccion: Vector2i = generador.direccion_flujo_en(x, z)
+					if direccion != Vector2i.ZERO:
+						var siguiente := Vector2i(x + direccion.x, z + direccion.y)
+						var altura_destino: int = generador.altura_en(siguiente.x, siguiente.y)
+						y_inicio_agua = mini(y_inicio_agua, altura_destino + 1)
+				for y_agua in range(y_inicio_agua, altura + 1):
 					colocar_bloque(Vector3i(x, y_agua, z), "agua")
-				for profundidad in range(profundidad_rio, PROFUNDIDAD_SUBSUELO + 1):
+				var profundidad_efectiva: int = altura - y_inicio_agua + 1
+				for profundidad in range(profundidad_efectiva, PROFUNDIDAD_SUBSUELO + 1):
 					var y: int = altura - profundidad
 					var tipo: String = generador.tipo_en_profundidad(x, y, z, profundidad)
 					colocar_bloque(Vector3i(x, y, z), tipo)

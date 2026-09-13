@@ -1028,6 +1028,7 @@ func ejecutar_pruebas() -> void:
 	var resultado_35: bool = mundo.minar_bloque(celda_agua_35)
 	assert(not resultado_35, "minar_bloque() debe devolver false sobre una celda de agua")
 	assert(mundo.obtener_tipo(celda_agua_35) == "agua", "la celda de agua no debe modificarse")
+	print("OK: minar_bloque() no hace nada sobre una celda de agua.")
 
 	print("\n=== TEST 36: colocar_bloque() sobre una celda de agua la sustituye ===")
 	const OX36 := 1090
@@ -1036,6 +1037,7 @@ func ejecutar_pruebas() -> void:
 	var resultado_36: bool = mundo.colocar_bloque(celda_agua_36, "piedra")
 	assert(resultado_36, "colocar_bloque() debe poder sustituir una celda de agua")
 	assert(mundo.obtener_tipo(celda_agua_36) == "piedra", "la celda debe pasar a tener el tipo nuevo")
+	print("OK: colocar_bloque() sustituye una celda de agua por el tipo nuevo.")
 
 	print("\n=== TEST 37: colocar_bloque() sigue rechazando celdas no vacías que no son agua ===")
 	const OX37 := 1100
@@ -1044,5 +1046,6 @@ func ejecutar_pruebas() -> void:
 	var resultado_37: bool = mundo.colocar_bloque(celda_piedra_37, "tierra")
 	assert(not resultado_37, "colocar_bloque() no debe sustituir una celda sólida que no sea agua")
 	assert(mundo.obtener_tipo(celda_piedra_37) == "piedra", "la celda sólida original no debe cambiar")
+	print("OK: colocar_bloque() sigue rechazando celdas sólidas no vacías que no son agua.")
 
 	print("\n=== Las 37 pruebas de BlueprintValidator pasaron correctamente ===")

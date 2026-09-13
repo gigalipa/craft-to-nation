@@ -330,7 +330,8 @@ func _generar_terreno() -> void:
 ## que el plano se dibuje al nivel del terreno real, por debajo de la
 ## superficie del agua — no cambia ningún cálculo de juego real (colocación
 ## de mina/relleno de nivelación, altura de spawn), que deben seguir viendo
-## el agua como la superficie caminable/sólida que es hoy.
+## el agua como el bloque más alto de la columna, aunque ya no sea sólido
+## para minado/colocación.
 func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 	for y in range(ALTURA_BUSQUEDA_MAX, ALTURA_BUSQUEDA_MIN, -1):
 		var celda := Vector3i(x, y, z)
@@ -551,7 +552,7 @@ func _generar_arboles() -> void:
 func _tronco_toca_agua(candidato: Dictionary) -> bool:
 	for cx in range(candidato["x_min"], candidato["x_max"] + 1):
 		for cz in range(candidato["z_min"], candidato["z_max"] + 1):
-			if generador.es_agua_en(cx, cz):
+			if generador.es_agua_en(cx, cz) or generador.es_rio_en(cx, cz):
 				return true
 	return false
 
@@ -878,9 +879,12 @@ func reemparejar_construccion(celdas: Array) -> void:
 ## la superficie de agua actual. Usada al confirmar un puesto periférico
 ## cuya huella pisa el agua (ver CamaraCenital.gd) — la construcción "seca"
 ## la columna bajo de sí en vez de flotar sobre el agua. set_cell_item()
-## directo (no colocar_bloque(), que rechaza celdas ya ocupadas): el agua ya
-## ocupa esas celdas. Devuelve cuántos bloques de agua se reemplazaron (0 si
-## la columna no tenía agua).
+## directo (no colocar_bloque()): el propio bucle ya confirma con
+## obtener_tipo() que cada celda es "agua" antes de reemplazarla, así que
+## repetir esa comprobación de ocupación dentro de colocar_bloque() sería
+## redundante, y drenar_agua() no es una acción del jugador ni necesita su
+## valor de retorno o el registro en colocado_por_jugador. Devuelve cuántos
+## bloques de agua se reemplazaron (0 si la columna no tenía agua).
 func drenar_agua(x: int, z: int) -> int:
 	var y: int = altura_en(x, z, true) + 1
 	var reemplazados := 0

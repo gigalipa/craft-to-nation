@@ -333,9 +333,26 @@ func ejecutar_pruebas() -> void:
 	print("OK: ninguna celda de cascada existe fuera de la franja de un río.")
 
 	print("\n=== TEST 26: es_cascada_en() coincide exactamente con la regla de caída de altura (cauce sintético) ===")
+	# Semilla 42 con el par fijo (10,10)/(11,10) daba caída 0, así que ese
+	# cauce sintético nunca ejercitaba la rama "sí es cascada" (habría pasado
+	# igual aunque _marcar_cascadas() nunca marcara nada). En su lugar,
+	# buscamos (mismo patrón que TEST 27) un par real de celdas vecinas con
+	# caída de altura >= UMBRAL_CASCADA, para garantizar que
+	# deberia_ser_cascada_26 sea true al menos una vez.
 	var gen_casc: RefCounted = GeneradorMundoScript.new(42, 60, 60)
-	var celda_a26 := Vector2i(10, 10)
-	var celda_b26 := Vector2i(11, 10)
+	var celda_a26 := Vector2i(-1, -1)
+	var celda_b26 := Vector2i(-1, -1)
+	for x26 in range(1, 59):
+		for z26 in range(1, 59):
+			var a26 := Vector2i(x26, z26)
+			var b26 := Vector2i(x26 + 1, z26)
+			if gen_casc.altura_en(a26.x, a26.y) - gen_casc.altura_en(b26.x, b26.y) >= GeneradorMundoScript.UMBRAL_CASCADA:
+				celda_a26 = a26
+				celda_b26 = b26
+				break
+		if celda_a26 != Vector2i(-1, -1):
+			break
+	assert(celda_a26 != Vector2i(-1, -1))
 	var cauce_sintetico_26: Array[Vector2i] = [celda_a26, celda_b26]
 	# _aplicar_ancho_profundidad() primero (mismo orden que _generar_rios()):
 	# _marcar_cascadas() ahora exige que la celda ya esté registrada como río

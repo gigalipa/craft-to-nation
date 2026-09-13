@@ -253,4 +253,41 @@ func ejecutar_pruebas() -> void:
 	assert(rios_empate[1]["cauce_truncado"] == rios_empate[1]["cauce_crudo"])
 	print("OK: en empate de ancho, el río de naciente más alta (14 > 10) conserva su cauce completo.")
 
-	print("\n=== Las 19 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 20: _trazar_rio() es determinista y termina en agua o mesa cerrada ===")
+	var gen_rio_a: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var gen_rio_b: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var origen_prueba := Vector2i(100, 100)
+	var cauce_a: Array[Vector2i] = gen_rio_a._trazar_rio(origen_prueba, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var cauce_b: Array[Vector2i] = gen_rio_b._trazar_rio(origen_prueba, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	assert(cauce_a == cauce_b)
+	assert(cauce_a.size() >= 1)
+	assert(cauce_a.size() <= VoxelWorld.ANCHO_MUNDO + VoxelWorld.LARGO_MUNDO)
+	var ultima: Vector2i = cauce_a[cauce_a.size() - 1]
+	var termino_en_agua: bool = gen_rio_a.es_agua_en(ultima.x, ultima.y)
+	# "Mesa cerrada" real: ninguna vecina ortogonal de la última celda (dentro
+	# del mundo) tiene menor altura. Comparar solo contra la celda anterior del
+	# cauce no basta: como cada paso es estrictamente descendente por
+	# construcción, esa comparación sería siempre "más baja" en cuanto el
+	# cauce avanza más de un paso, aunque la última celda sí sea un valle
+	# cerrado real (plateau con vecinas de igual o mayor altura).
+	var es_mesa_cerrada := true
+	for delta in [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]:
+		var vecino: Vector2i = ultima + delta
+		if vecino.x < 0 or vecino.x >= VoxelWorld.ANCHO_MUNDO or vecino.y < 0 or vecino.y >= VoxelWorld.LARGO_MUNDO:
+			continue
+		if gen_rio_a.altura_en(vecino.x, vecino.y) < gen_rio_a.altura_en(ultima.x, ultima.y):
+			es_mesa_cerrada = false
+			break
+	assert(termino_en_agua or cauce_a.size() == 1 or es_mesa_cerrada)
+	print("OK: _trazar_rio() es determinista, respeta el tope de pasos, y termina en agua o en una mesa sin vecino más bajo.")
+
+	print("\n=== TEST 21: cada paso del cauce baja de altura hasta llegar a agua ===")
+	for i in range(cauce_a.size() - 1):
+		var actual: Vector2i = cauce_a[i]
+		if gen_rio_a.es_agua_en(actual.x, actual.y):
+			break
+		var siguiente: Vector2i = cauce_a[i + 1]
+		assert(gen_rio_a.altura_en(siguiente.x, siguiente.y) <= gen_rio_a.altura_en(actual.x, actual.y))
+	print("OK: ningún paso del cauce sube de altura antes de llegar a una celda de agua.")
+
+	print("\n=== Las 21 pruebas de GeneradorMundo pasaron correctamente ===")

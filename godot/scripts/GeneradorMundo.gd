@@ -342,3 +342,42 @@ static func _resolver_cruces(rios: Array[Dictionary]) -> void:
 				break
 			truncado.append(celda)
 		rio["cauce_truncado"] = truncado
+
+## Traza el cauce crudo desde "origen" por descenso por gradiente (Sección
+## 2 del spec): en cada paso se mueve a la vecina ortogonal (N/E/S/O, en
+## ese orden de desempate) no visitada de menor altura; termina al entrar
+## a una celda de agua ya existente (se incluye como último elemento) o si
+## ninguna vecina es más baja (mesa/valle cerrado — se conserva el cauce
+## parcial, no es un error). Un tope de pasos evita recorridos patológicos
+## en mesetas totalmente planas.
+func _trazar_rio(origen: Vector2i, ancho_mundo: int, largo_mundo: int) -> Array[Vector2i]:
+	var cauce: Array[Vector2i] = [origen]
+	var visitadas: Dictionary = {origen: true}
+	var actual: Vector2i = origen
+	var max_pasos: int = ancho_mundo + largo_mundo
+	for _paso in range(max_pasos):
+		if es_agua_en(actual.x, actual.y):
+			break
+		var vecinos: Array[Vector2i] = [
+			actual + Vector2i(0, -1),
+			actual + Vector2i(1, 0),
+			actual + Vector2i(0, 1),
+			actual + Vector2i(-1, 0),
+		]
+		var mejor: Vector2i = actual
+		var mejor_altura: int = altura_en(actual.x, actual.y)
+		for vecino in vecinos:
+			if vecino.x < 0 or vecino.x >= ancho_mundo or vecino.y < 0 or vecino.y >= largo_mundo:
+				continue
+			if visitadas.has(vecino):
+				continue
+			var h: int = altura_en(vecino.x, vecino.y)
+			if h < mejor_altura:
+				mejor_altura = h
+				mejor = vecino
+		if mejor == actual:
+			break
+		visitadas[mejor] = true
+		cauce.append(mejor)
+		actual = mejor
+	return cauce

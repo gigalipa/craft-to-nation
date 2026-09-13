@@ -283,14 +283,21 @@ func densidad_arbol_en(x: int, z: int) -> float:
 ## constante ajustable como UMBRAL_HIERRO/EXPONENTE_RELIEVE.
 const NUM_RIOS := 6
 
-## Una columna es candidata a naciente de río si su altura está a lo sumo
-## esta distancia por debajo de ALTURA_MAXIMA (Sección 1). Subido de 3 a 6
-## (decisión tomada jugando en vivo): con margen 3 (altura >= 12) solo
-## calificaban las cumbres más altas del mundo; con 6 (altura >= 9) también
-## nacen ríos de colinas medias, no solo picos. Subido después a 10
-## (altura >= 5) para ampliar aún más el rango de colinas que pueden dar
-## nacimiento a un río.
-const MARGEN_NACIENTE_RIO := 10
+## Banda de altura [margen_inferior, margen_superior] dentro de la cual una
+## columna es candidata a naciente de río, medida como distancia por debajo
+## de ALTURA_MAXIMA (Sección 1): candidata si su altura está en
+## [ALTURA_MAXIMA - margen_inferior, ALTURA_MAXIMA - margen_superior]. Por
+## ejemplo, con ALTURA_MAXIMA = 15 y esta banda [5, 1], califican las
+## columnas con altura entre 10 y 14 (inclusive).
+## Antes era un único umbral inferior sin techo (cualquier altura >= cierto
+## valor calificaba) — bug real, encontrado jugando en vivo con
+## AMPLITUD_DETALLE_RELIEVE alto: el ruido de detalle es más fuerte
+## precisamente cerca de las cumbres (factor_extremo ~1), así que la propia
+## cumbre exacta queda con relieve local caótico y _trazar_rio() se atasca
+## ahí de inmediato (cauce de 1 sola celda, descartado). El margen superior
+## excluye esa franja más alta y caótica, dejando nacer los ríos desde el
+## "hombro" más estable de la montaña, un poco por debajo de la cumbre.
+const MARGEN_NACIENTE_RIO: Array[int] = [5, 1]
 
 ## Distancia mínima en línea recta (celdas) entre dos nacientes elegidas —
 ## evita que varios de los NUM_RIOS ríos nazcan todos de la misma montaña
@@ -300,7 +307,7 @@ const MARGEN_NACIENTE_RIO := 10
 ## sorteo. Si el terreno alto está muy concentrado, esto puede dejar menos
 ## de NUM_RIOS nacientes disponibles — _generar_rios() simplemente genera
 ## los que alcancen, no es un error.
-const MIN_DISTANCIA_NACIENTES := 20
+const MIN_DISTANCIA_NACIENTES := 10
 
 const ANCHO_MINIMO_RIO := 2
 const ANCHO_MAXIMO_RIO := 6
@@ -563,10 +570,13 @@ func _representante_de_region(region: Array[Vector2i]) -> Vector2i:
 
 
 func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
+	var altura_min_naciente: int = ALTURA_MAXIMA - MARGEN_NACIENTE_RIO[0]
+	var altura_max_naciente: int = ALTURA_MAXIMA - MARGEN_NACIENTE_RIO[1]
 	var candidatos_brutos: Array[Vector2i] = []
 	for x in range(ancho_mundo):
 		for z in range(largo_mundo):
-			if altura_en(x, z) >= ALTURA_MAXIMA - MARGEN_NACIENTE_RIO:
+			var h: int = altura_en(x, z)
+			if h >= altura_min_naciente and h <= altura_max_naciente:
 				candidatos_brutos.append(Vector2i(x, z))
 	if candidatos_brutos.is_empty():
 		return
@@ -584,29 +594,45 @@ func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = semilla + 5
 
+	# Se sigue sorteando mientras falten ríos y queden candidatas — no solo
+	# NUM_RIOS sorteos — descartando de inmediato (sin ocupar un cupo) las
+	# candidatas cuyo cauce crudo ni siquiera llega a desembocar en agua. Bug
+	# real, encontrado jugando en vivo: con el diseño anterior (exactamente
+	# NUM_RIOS sorteos, sin reintentar), en un mundo real la mayoría de las
+	# regiones elevadas son cuencas cerradas que nunca llegan al mar —
+	# bastaba con que el sorteo cayera en varias de esas para terminar con
+	# CERO ríos visibles en todo el mapa, sin ningún error. Reintentar con
+	# la siguiente candidata hasta agotar la lista es la corrección: mismo
+	# criterio de descarte ya usado más abajo (Sección 2b), aplicado antes
+	# de gastar uno de los NUM_RIOS cupos.
 	var rios: Array[Dictionary] = []
-	for i in range(NUM_RIOS):
-		if candidatos.is_empty():
-			break
+	while rios.size() < NUM_RIOS and not candidatos.is_empty():
 		var idx: int = rng.randi() % candidatos.size()
 		var origen: Vector2i = candidatos[idx]
 		candidatos.remove_at(idx)
 		var ancho: int = rng.randi_range(ANCHO_MINIMO_RIO, ANCHO_MAXIMO_RIO)
-		rios.append({
-			"indice": i,
-			"origen": origen,
-			"ancho": ancho,
-			"altura_nacimiento": altura_en(origen.x, origen.y),
-			"cauce_crudo": _trazar_rio(origen, ancho_mundo, largo_mundo),
-		})
+		var cauce_crudo: Array[Vector2i] = _trazar_rio(origen, ancho_mundo, largo_mundo)
+
 		# Filtrar candidatas demasiado cerca de la naciente recién elegida
 		# (MIN_DISTANCIA_NACIENTES) — no consume el RNG, así que no afecta el
-		# determinismo de los sorteos siguientes.
+		# determinismo de los sorteos siguientes. Se aplica siempre, haya
+		# tenido éxito esta naciente o no (evita reintentar la misma zona).
 		var candidatos_lejanos: Array[Vector2i] = []
 		for c in candidatos:
 			if Vector2(c.x - origen.x, c.y - origen.y).length() >= MIN_DISTANCIA_NACIENTES:
 				candidatos_lejanos.append(c)
 		candidatos = candidatos_lejanos
+
+		if cauce_crudo.size() < 2 or not es_agua_en(cauce_crudo[cauce_crudo.size() - 1].x, cauce_crudo[cauce_crudo.size() - 1].y):
+			continue
+
+		rios.append({
+			"indice": rios.size(),
+			"origen": origen,
+			"ancho": ancho,
+			"altura_nacimiento": altura_en(origen.x, origen.y),
+			"cauce_crudo": cauce_crudo,
+		})
 
 	_resolver_cruces(rios)
 

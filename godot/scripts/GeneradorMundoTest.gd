@@ -330,10 +330,13 @@ func ejecutar_pruebas() -> void:
 	# la selección de nacientes de _generar_rios() (mismo RNG sembrado en
 	# semilla+5) para poder verificar la invariante real sobre las celdas de
 	# cauce mismas, no sobre toda la franja.
+	var altura_min_naciente_t24: int = GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO[0]
+	var altura_max_naciente_t24: int = GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO[1]
 	var candidatos_brutos_t24: Array[Vector2i] = []
 	for x in range(VoxelWorld.ANCHO_MUNDO):
 		for z in range(VoxelWorld.LARGO_MUNDO):
-			if gen_full_a.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
+			var h_t24: int = gen_full_a.altura_en(x, z)
+			if h_t24 >= altura_min_naciente_t24 and h_t24 <= altura_max_naciente_t24:
 				candidatos_brutos_t24.append(Vector2i(x, z))
 	var regiones_t24: Array = GeneradorMundoScript._agrupar_regiones_elevadas(candidatos_brutos_t24)
 	var candidatos_t24: Array[Vector2i] = []
@@ -436,18 +439,22 @@ func ejecutar_pruebas() -> void:
 		assert(not gen_casc27.es_cascada_en(celda27.x, celda27.y))
 	print("OK: ninguna celda de franja se marca como cascada si _aplicar_ancho_profundidad() no la registró antes como río real.")
 
-	print("\n=== TEST 28: un río cuyo cauce no llega a agua se descarta por completo (ninguna de sus celdas se registra como río) ===")
+	print("\n=== TEST 28: un cauce crudo que no llega a agua se descarta y se reintenta con la siguiente candidata (sin gastar un cupo de NUM_RIOS) ===")
 	# Reproduce exactamente la selección de nacientes/anchos de _generar_rios()
-	# (mismo RNG sembrado en semilla+5, mismo orden de sorteos) para poder
-	# identificar, en un mundo real ya generado, cuáles de los NUM_RIOS
-	# candidatos NO llegaron a agua — esos deben tener CERO celdas registradas
-	# como río en el mundo final, sin importar cuántos pasos haya recorrido su
-	# cauce crudo antes de quedar atrapado en una mesa/valle cerrado.
+	# (mismo RNG sembrado en semilla+5, mismo orden de sorteos, mismo criterio
+	# de reintento) para poder identificar, en un mundo real ya generado,
+	# candidatas cuyo cauce crudo NO llega a agua — esas deben tener CERO
+	# celdas registradas como río en el mundo final, y no deben contar para
+	# los NUM_RIOS ríos finales (Sección 1: se reintenta con la siguiente
+	# candidata en vez de terminar con menos ríos de los necesarios).
 	var gen_t28: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var altura_min_naciente_t28: int = GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO[0]
+	var altura_max_naciente_t28: int = GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO[1]
 	var candidatos_brutos_t28: Array[Vector2i] = []
 	for x in range(VoxelWorld.ANCHO_MUNDO):
 		for z in range(VoxelWorld.LARGO_MUNDO):
-			if gen_t28.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
+			var h_t28: int = gen_t28.altura_en(x, z)
+			if h_t28 >= altura_min_naciente_t28 and h_t28 <= altura_max_naciente_t28:
 				candidatos_brutos_t28.append(Vector2i(x, z))
 	var regiones_t28: Array = GeneradorMundoScript._agrupar_regiones_elevadas(candidatos_brutos_t28)
 	var candidatos_t28: Array[Vector2i] = []
@@ -457,9 +464,8 @@ func ejecutar_pruebas() -> void:
 	rng_t28.seed = VoxelWorld.SEMILLA_MUNDO + 5
 	var vio_descartado_t28 := false
 	var vio_sobreviviente_t28 := false
-	for i in range(GeneradorMundoScript.NUM_RIOS):
-		if candidatos_t28.is_empty():
-			break
+	var rios_encontrados_t28 := 0
+	while rios_encontrados_t28 < GeneradorMundoScript.NUM_RIOS and not candidatos_t28.is_empty():
 		var idx: int = rng_t28.randi() % candidatos_t28.size()
 		var origen: Vector2i = candidatos_t28[idx]
 		candidatos_t28.remove_at(idx)
@@ -471,15 +477,16 @@ func ejecutar_pruebas() -> void:
 		candidatos_t28 = candidatos_lejanos_t28
 		var cauce_t28: Array[Vector2i] = gen_t28._trazar_rio(origen, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
 		var ultima_t28: Vector2i = cauce_t28[cauce_t28.size() - 1]
-		if gen_t28.es_agua_en(ultima_t28.x, ultima_t28.y):
-			vio_sobreviviente_t28 = true
+		if cauce_t28.size() < 2 or not gen_t28.es_agua_en(ultima_t28.x, ultima_t28.y):
+			vio_descartado_t28 = true
+			for celda_t28 in cauce_t28:
+				assert(not gen_t28.es_rio_en(celda_t28.x, celda_t28.y))
 			continue
-		vio_descartado_t28 = true
-		for celda_t28 in cauce_t28:
-			assert(not gen_t28.es_rio_en(celda_t28.x, celda_t28.y))
+		vio_sobreviviente_t28 = true
+		rios_encontrados_t28 += 1
 	assert(vio_descartado_t28)
 	assert(vio_sobreviviente_t28)
-	print("OK: los cauces que no llegan a agua quedan con cero celdas registradas como río; los que sí llegan siguen intactos.")
+	print("OK: los cauces crudos que no llegan a agua quedan con cero celdas registradas como río, y se reintenta con la siguiente candidata sin gastar un cupo de NUM_RIOS.")
 
 	print("\n=== TEST 29: _agrupar_regiones_elevadas() separa regiones desconectadas y agrupa una región en L completa ===")
 	var celdas_dos_islas: Array[Vector2i] = [
@@ -513,10 +520,13 @@ func ejecutar_pruebas() -> void:
 	# centro de la cumbre" tenga más de un candidato real que decidir entre
 	# ellos (con una sola celda en la cumbre, el resultado sería trivial).
 	var gen_t30: RefCounted = GeneradorMundoScript.new(99, 80, 80)
+	var altura_min_naciente_t30: int = GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO[0]
+	var altura_max_naciente_t30: int = GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO[1]
 	var candidatos_brutos_t30: Array[Vector2i] = []
 	for x in range(80):
 		for z in range(80):
-			if gen_t30.altura_en(x, z) >= GeneradorMundoScript.ALTURA_MAXIMA - GeneradorMundoScript.MARGEN_NACIENTE_RIO:
+			var h_t30: int = gen_t30.altura_en(x, z)
+			if h_t30 >= altura_min_naciente_t30 and h_t30 <= altura_max_naciente_t30:
 				candidatos_brutos_t30.append(Vector2i(x, z))
 	var regiones_t30: Array = GeneradorMundoScript._agrupar_regiones_elevadas(candidatos_brutos_t30)
 	var probada_t30 := false

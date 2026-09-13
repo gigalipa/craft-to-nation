@@ -1,16 +1,18 @@
 # Diseño: Ríos con Corriente y Cascadas (PoC 6, sub-proyecto 4 — extensión)
 
-Contexto: GDD Sección 11 (Fase 3, PoC 6) — extiende el sub-proyecto 4 (Generación de Cuerpos de Agua), que documentó explícitamente esta pieza como "fuera de alcance, para un desarrollo futuro" (ver `docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md`, sección "Alcance de esta etapa"). El agua hoy es un único criterio estático (nivel de mar por percentil, `GeneradorMundo.nivel_mar`/`es_agua_en()`): cualquier columna por debajo del nivel de mar se inunda, sin concepto de cauce, conexión ni dirección de flujo. Esta pieza agrega cauces reales que conectan tierras altas con el mar/lagos existentes, con ancho y profundidad variables, y marca las caídas bruscas como cascadas.
+Contexto: GDD Sección 11 (Fase 3, PoC 6) — extiende el sub-proyecto 4 (Generación de Cuerpos de Agua), que documentó explícitamente esta pieza como "fuera de alcance, para un desarrollo futuro" (ver `docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md`, sección "Alcance de esta etapa"). El agua hoy es un único criterio estático (nivel de mar por percentil, `GeneradorMundo.nivel_mar`/`es_agua_en()`): cualquier columna por debajo del nivel de mar se inunda, sin concepto de cauce, conexión ni dirección de flujo. Esta pieza agrega cauces reales que conectan tierras altas con el mar/lagos existentes, con ancho y profundidad variables, cascadas, resolución de cruces entre ríos, y dos cambios de comportamiento de TODA el agua (no solo ríos): deja de ser sólida para minado/colocación, y baja su opacidad para depuración visual.
 
-Código existente que esta pieza extiende: `godot/scripts/GeneradorMundo.gd` (`altura_en()`, `nivel_mar`, `es_agua_en()`), `godot/scripts/VoxelWorld.gd` (`_generar_terreno()`), y el patrón de RNG sembrado de `godot/scripts/GeneradorArbol.gd` (`RandomNumberGenerator` con `.seed` derivado de la semilla del mundo).
+Código existente que esta pieza extiende: `godot/scripts/GeneradorMundo.gd` (`altura_en()`, `nivel_mar`, `es_agua_en()`), `godot/scripts/VoxelWorld.gd` (`_generar_terreno()`, `colocar_bloque()`, `minar_bloque()`), `godot/scripts/Player.gd` (raycast de minado/colocación), `godot/scenes/BlockLibrarySource.tscn` (bloque `"agua"`), y el patrón de RNG sembrado de `godot/scripts/GeneradorArbol.gd` (`RandomNumberGenerator` con `.seed` derivado de la semilla del mundo).
 
 ## Alcance de esta etapa
 
-- Cauces trazados por descenso por gradiente desde un número fijo de nacientes en tierras altas hasta el nivel de mar/lagos ya existentes — no hay red de afluentes ni fusión especial entre ríos que se crucen.
+- Cauces trazados por descenso por gradiente desde un número fijo de nacientes en tierras altas hasta el nivel de mar/lagos ya existentes.
 - Ancho fijo por río (entre 2 y 6 bloques, elegido al nacer) con perfil de profundidad variable (borde 1 bloque, centro hasta 3), tallado real en el terreno.
 - Cascadas: dato (ubicación + salto de altura), sin bloque visual ni efecto de jugabilidad todavía — mismo criterio de "pulido pendiente" que el resto de bloques placeholder del proyecto.
-- **Fuera de alcance, documentado para un desarrollo futuro:** cauces sinuosos (curvas reales de río, no limitados a los 4 ejes cardinales del grid) — esta etapa traza el cauce como una secuencia de pasos ortogonales (N/S/E/O) por simplicidad; un desarrollo posterior podría suavizar el trazado o usar un algoritmo de meandros. También fuera de alcance: bloque visual distinto para agua con corriente/cascada, efecto de jugabilidad (velocidad, arrastre, ahogamiento), y que ríos se fusionen o generen afluentes.
-- El jugador puede minar/colocar bloques en celdas de río igual que en cualquier otra celda de agua — sin cambios a `minar_bloque`/`colocar_bloque`.
+- **Cruce entre ríos (ver Sección 2b):** cuando dos cauces se cruzan, el más angosto termina ahí (se trunca) y solo continúa el más ancho; en empate de ancho, continúa el que nació a mayor altura.
+- **Agua no sólida para minado/colocación (ver Sección 7), aplica a TODA el agua** (mar, lagos y ríos, no solo esta pieza): el jugador ya no puede minar agua ni colocarla como si fuera un bloque sólido normal; el raycast de minería/colocación la atraviesa y encuentra el bloque sólido real debajo, y colocar un bloque nuevo ahí sustituye el agua.
+- **Opacidad de depuración (ver Sección 8):** el bloque `"agua"` baja su opacidad para que el fondo sea visible al jugar — facilita verificar visualmente el relieve/cauces mientras no exista un material de agua real.
+- **Fuera de alcance, documentado para un desarrollo futuro:** cauces sinuosos (curvas reales de río, no limitados a los 4 ejes cardinales del grid) — esta etapa traza el cauce como una secuencia de pasos ortogonales (N/S/E/O) por simplicidad; un desarrollo posterior podría suavizar el trazado o usar un algoritmo de meandros. También fuera de alcance: bloque visual distinto para agua con corriente/cascada, efecto de jugabilidad más allá de la solidez (velocidad, arrastre, ahogamiento, natación), y que ríos generen afluentes reales (solo se resuelven cruces, no confluencias con cambio de curso).
 
 ## 1. Selección de nacientes
 
@@ -29,6 +31,16 @@ Desde cada naciente, en un método nuevo `_trazar_rio(origen: Vector2i) -> Array
 3. Si hay una o más vecinas más bajas, moverse a la de menor altura (empate: la primera en el orden N/E/S/O, determinista).
 4. El cauce termina exitosamente al entrar a una celda con `es_agua_en()` verdadero (llegó al mar o a un lago ya existente) — esa celda de agua se incluye como último elemento del cauce, pero no se tala ni se le agrega ancho/profundidad (ya es agua).
 5. Tope de seguridad `MAX_PASOS_RIO` (constante nueva, valor inicial `ancho_mundo + largo_mundo`, cota superior generosa de cualquier camino simple en el grid) para evitar recorridos patológicos.
+
+## 2b. Resolución de cruces entre ríos
+
+El trazado de la Sección 2 se ejecuta para las `NUM_RIOS` nacientes de forma completamente independiente (el descenso por gradiente de un río no consulta ni se ve afectado por los demás — su forma depende solo del relieve). Después de trazar los `NUM_RIOS` cauces crudos, se resuelven los cruces en un paso aparte, antes de aplicar ancho/profundidad (Sección 3) o tallar nada (Sección 4):
+
+1. **Definición de "cruce":** dos ríos se cruzan cuando sus cauces CENTRALES (la secuencia de celdas de la Sección 2, antes de aplicar el ancho) comparten una misma celda `(x, z)`. El ancho/franja perpendicular de un río no se considera para detectar cruces (simplificación documentada — dos cauces centrales que no se tocan pero cuyas franjas se solaparían no se tratan como cruce en esta etapa).
+2. **Fuerza de un río:** tupla `(ancho, altura_en(nacimiento), -índice_de_generación)`, comparada en ese orden (mayor ancho gana; en empate, mayor altura de nacimiento; en empate total, el río generado primero — menor índice en el orden de la Sección 1 — gana). Da un orden total estricto entre los `NUM_RIOS` ríos, sin empates posibles.
+3. **Dueño de cada celda:** se recorren los ríos de mayor a menor fuerza; cada celda del cauce crudo de un río que todavía no tenga dueño se le asigna a ese río. Una celda ya asignada a un río más fuerte no cambia de dueño.
+4. **Truncado:** el cauce final de cada río es el prefijo de su cauce crudo (desde la naciente) hasta la ÚLTIMA celda de la que sigue siendo dueño (inclusive) — la primera celda cuyo dueño es otro río corta el cauce ahí ("el cauce menos ancho termina allí"). Un río más fuerte que cruza el cauce de uno más débil nunca se trunca por ese cruce (solo lo truncaría un río aún más fuerte que él mismo, en un cruce distinto).
+5. El ancho/profundidad (Sección 3) y las cascadas (Sección 5) de cada río se calculan únicamente sobre su cauce YA truncado — un río truncado nunca talla ni marca celdas más allá de su punto de corte.
 
 ## 3. Ancho y perfil de profundidad
 
@@ -57,7 +69,21 @@ Para cada celda `(x, z)` de una franja de río con profundidad `d`, en vez de co
 
 Las cuatro consultas son de solo lectura sobre estructuras calculadas una única vez en `_init()` (mismo patrón que `nivel_mar`/`es_agua_en()`) — ningún consumidor futuro (puentes de PoC 10, logística) recalcula el trazado.
 
-## 6. Pruebas
+## 6. Agua no sólida para minado/colocación
+
+Este cambio aplica a **todo** bloque `"agua"` del mundo (mar, lagos y ríos), no solo a las celdas nuevas de esta pieza — es un cambio de comportamiento general que se hace en el mismo momento porque los ríos son los primeros cuerpos de agua con relieve interesante para depurar visualmente.
+
+- **`godot/scenes/BlockLibrarySource.tscn`:** se elimina el `CollisionShape3D` hijo del `MeshInstance3D` `"agua"` (los demás bloques conservan el suyo). Al reexportar `assets/BlockLibrary.res` (`mcp__godot__export_mesh_library`), el ítem `"agua"` de la `MeshLibrary` queda sin forma de colisión — `GridMap` no genera cuerpo físico para esas celdas. Un `RayCast3D` (usado tanto por `Player.gd` para minar/colocar como por `CamaraCenital._celda_bajo_mouse()`) que hoy golpearía la cara superior de un bloque de agua, en vez de eso continúa y golpea la primera superficie sólida real que encuentre detrás — sin ningún cambio de código en el raycasting, es una consecuencia directa de quitar la forma de colisión.
+- **`VoxelWorld.minar_bloque(celda)`:** agrega una guarda al inicio — si `obtener_tipo(celda) == "agua"`, devuelve `false` sin hacer nada (no hay forma realista de que el raycast golpee agua directamente tras el cambio anterior, pero esta guarda cubre cualquier llamada directa, p. ej. futura lógica de NPCs, y dobla como documentación de la regla "el agua no se mina").
+- **`VoxelWorld.colocar_bloque(celda, tipo, por_jugador)`:** hoy rechaza colocar si `get_cell_item(celda) != GridMap.INVALID_CELL_ITEM` (cualquier celda no vacía, agua incluida). Se cambia la condición para que una celda con `"agua"` cuente como colocable — colocar ahí SUSTITUYE el bloque de agua por el nuevo tipo (mismo `set_cell_item`, sin pasos adicionales; el agua que hubiera arriba de esa celda, si la hay, no se ve afectada). El resto de la función no cambia.
+- Consecuencia esperada en juego: al apuntar sobre una celda con agua (mar, lago o río) y minar, el jugador mina el bloque sólido real que hay debajo del agua; al colocar, el bloque nuevo reemplaza esa celda de agua puntual (no toda la columna de agua sobre ella, si la hay).
+- **Fuera de alcance:** reglas de flotación/natación, colisión física del propio jugador con el agua (el `CharacterBody3D` del jugador conserva su colisión normal — puede seguir "caminando" a través de la posición de una celda de agua exactamente igual que antes de este cambio, ver nota ya existente en `PoC_6/`, sub-proyecto 4).
+
+## 7. Opacidad de depuración
+
+En `godot/scenes/BlockLibrarySource.tscn`, `Mat_agua` gana `transparency = 1` y su `albedo_color` baja de alfa `1.0` a `0.45` (valor inicial, ajustable si en el editor real resulta insuficiente para ver el fondo) — mismo mecanismo que ya usa `Mat_fantasma`/`Mat_ventana`. Puramente visual, sin efecto en `es_agua_en()`/colisión/lógica de juego. Reexportar `assets/BlockLibrary.res` junto con el cambio de la Sección 6 (un solo re-export cubre ambos).
+
+## 8. Pruebas
 
 Nuevas pruebas en `GeneradorMundoTest.gd` (mismo patrón que las existentes — instancias deterministas, sin nodos de escena):
 
@@ -66,6 +92,13 @@ Nuevas pruebas en `GeneradorMundoTest.gd` (mismo patrón que las existentes — 
 - El perfil de profundidad de una franja de ancho conocido coincide exactamente con la fórmula (`[1,2,1]` para ancho 3, `[1,2,3,2,1]` para ancho 5, etc.) — probado con un cauce sintético (no generado por ruido) para aislar la fórmula del trazado real.
 - `es_cascada_en()` es verdadero exactamente en los pasos cuya caída de altura supera `UMBRAL_CASCADA`, sobre un cauce sintético con caídas conocidas.
 - `direccion_flujo_en()` apunta siempre hacia una celda con `altura_en()` menor o igual, nunca mayor, en cualquier celda de río del mundo real.
+- **Cruce de ríos (dos cauces sintéticos, no generados por ruido, construidos a mano para que se crucen en una celda conocida):** el río más angosto queda truncado justo en la celda de cruce (inclusive) y no tiene celdas después; el más ancho conserva su cauce completo sin truncar. Caso de empate de ancho: el de naciente más alta conserva su cauce completo; el otro se trunca.
+
+Nuevas pruebas en `BlueprintValidatorTest.gd` (ejecutado por `Test.tscn` — mismo archivo donde ya viven las demás pruebas directas de `VoxelWorld`, como el TEST 20 de inmunidad al minado):
+
+- `VoxelWorld.minar_bloque()` sobre una celda `"agua"` devuelve `false` y no modifica la celda.
+- `VoxelWorld.colocar_bloque()` sobre una celda `"agua"` devuelve `true` y dicha celda pasa a tener el tipo nuevo colocado (sustituye el agua).
+- `VoxelWorld.colocar_bloque()` sigue rechazando (devuelve `false`) sobre cualquier celda no vacía que NO sea `"agua"` (comportamiento existente, sin regresión).
 
 `Test.tscn` debe seguir corriendo sin errores nuevos tras el cambio (mismo criterio de verificación que sub-proyectos anteriores).
 

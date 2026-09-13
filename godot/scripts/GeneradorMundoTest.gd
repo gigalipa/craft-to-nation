@@ -201,4 +201,56 @@ func ejecutar_pruebas() -> void:
 	assert(vio_fuera_arbol)
 	print("OK: densidad_arbol_en es determinista, está en [0,1], y es exactamente 0.0 fuera del bioma (al menos una columna encontrada).")
 
-	print("\n=== Las 15 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 16: _profundidad_en_franja() da el perfil borde-1/centro-hasta-3 ===")
+	assert(GeneradorMundoScript._profundidad_en_franja(0, 2) == 1)
+	assert(GeneradorMundoScript._profundidad_en_franja(1, 2) == 1)
+	assert(GeneradorMundoScript._profundidad_en_franja(0, 3) == 1)
+	assert(GeneradorMundoScript._profundidad_en_franja(1, 3) == 2)
+	assert(GeneradorMundoScript._profundidad_en_franja(2, 3) == 1)
+	assert(GeneradorMundoScript._profundidad_en_franja(0, 5) == 1)
+	assert(GeneradorMundoScript._profundidad_en_franja(1, 5) == 2)
+	assert(GeneradorMundoScript._profundidad_en_franja(2, 5) == 3)
+	assert(GeneradorMundoScript._profundidad_en_franja(3, 5) == 2)
+	assert(GeneradorMundoScript._profundidad_en_franja(4, 5) == 1)
+	assert(GeneradorMundoScript._profundidad_en_franja(0, 6) == 1)
+	assert(GeneradorMundoScript._profundidad_en_franja(2, 6) == 3)
+	assert(GeneradorMundoScript._profundidad_en_franja(3, 6) == 3)
+	assert(GeneradorMundoScript._profundidad_en_franja(5, 6) == 1)
+	print("OK: perfiles [1,1] (ancho 2), [1,2,1] (ancho 3), [1,2,3,2,1] (ancho 5), [1,2,3,3,2,1] (ancho 6).")
+
+	print("\n=== TEST 17: _celdas_franja_en() genera 'ancho' celdas perpendiculares al avance ===")
+	var cauce_x: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
+	var franja_x: Array[Vector2i] = GeneradorMundoScript._celdas_franja_en(cauce_x, 1, 3)
+	assert(franja_x.size() == 3)
+	for celda in franja_x:
+		assert(celda.x == 1)  # avance en X -> franja se extiende en Z (.y)
+	var cauce_z: Array[Vector2i] = [Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2)]
+	var franja_z: Array[Vector2i] = GeneradorMundoScript._celdas_franja_en(cauce_z, 1, 3)
+	assert(franja_z.size() == 3)
+	for celda in franja_z:
+		assert(celda.y == 1)  # avance en Z -> franja se extiende en X
+	print("OK: la franja perpendicular al avance tiene 'ancho' celdas y varía en el eje correcto.")
+
+	print("\n=== TEST 18: _resolver_cruces() trunca el río más angosto en el cruce, el más ancho sigue completo ===")
+	var rios_cruce: Array[Dictionary] = [
+		{"indice": 0, "ancho": 2, "altura_nacimiento": 10, "cauce_crudo": [Vector2i(0, 5), Vector2i(1, 5), Vector2i(2, 5), Vector2i(3, 5), Vector2i(4, 5)]},
+		{"indice": 1, "ancho": 5, "altura_nacimiento": 8, "cauce_crudo": [Vector2i(2, 0), Vector2i(2, 1), Vector2i(2, 2), Vector2i(2, 5), Vector2i(2, 8)]},
+	]
+	GeneradorMundoScript._resolver_cruces(rios_cruce)
+	var truncado_angosto: Array[Vector2i] = rios_cruce[0]["cauce_truncado"]
+	var truncado_ancho: Array[Vector2i] = rios_cruce[1]["cauce_truncado"]
+	assert(truncado_angosto == [Vector2i(0, 5), Vector2i(1, 5)])  # corta justo antes de (2,5), que gana el más ancho
+	assert(truncado_ancho == rios_cruce[1]["cauce_crudo"])  # el más ancho no se trunca
+	print("OK: el río de ancho 2 se trunca antes del cruce en (2,5); el de ancho 5 conserva su cauce completo.")
+
+	print("\n=== TEST 19: _resolver_cruces() en empate de ancho, gana el de naciente más alta ===")
+	var rios_empate: Array[Dictionary] = [
+		{"indice": 0, "ancho": 3, "altura_nacimiento": 10, "cauce_crudo": [Vector2i(0, 5), Vector2i(1, 5), Vector2i(2, 5), Vector2i(3, 5)]},
+		{"indice": 1, "ancho": 3, "altura_nacimiento": 14, "cauce_crudo": [Vector2i(2, 0), Vector2i(2, 5), Vector2i(2, 8)]},
+	]
+	GeneradorMundoScript._resolver_cruces(rios_empate)
+	assert(rios_empate[0]["cauce_truncado"] == [Vector2i(0, 5), Vector2i(1, 5)])
+	assert(rios_empate[1]["cauce_truncado"] == rios_empate[1]["cauce_crudo"])
+	print("OK: en empate de ancho, el río de naciente más alta (14 > 10) conserva su cauce completo.")
+
+	print("\n=== Las 19 pruebas de GeneradorMundo pasaron correctamente ===")

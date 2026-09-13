@@ -232,3 +232,113 @@ func densidad_arbol_en(x: int, z: int) -> float:
 		return 0.0
 	var valor: float = _ruido_arbol.get_noise_2d(x, z)
 	return (valor + 1.0) / 2.0
+
+
+## Cuántas nacientes de río se generan por mundo (Sección 1 del spec) —
+## constante ajustable como UMBRAL_HIERRO/EXPONENTE_RELIEVE.
+const NUM_RIOS := 6
+
+## Una columna es candidata a naciente de río si su altura está a lo sumo
+## esta distancia por debajo de ALTURA_MAXIMA (Sección 1).
+const MARGEN_NACIENTE_RIO := 3
+
+const ANCHO_MINIMO_RIO := 2
+const ANCHO_MAXIMO_RIO := 6
+
+## Profundidad máxima tallada en el centro de un río, sin importar cuánto
+## crezca el ancho (Sección 3) — un río de ancho 6 no talla más hondo que
+## uno de ancho 5, según la fórmula de _profundidad_en_franja().
+const PROFUNDIDAD_MAXIMA_RIO := 3
+
+## Caída de altura mínima entre dos celdas consecutivas del cauce para
+## marcar ese paso como cascada (Sección 5, es_cascada_en()).
+const UMBRAL_CASCADA := 3
+
+## (x,z) -> profundidad tallada (1..PROFUNDIDAD_MAXIMA_RIO). Solo contiene
+## celdas que son parte de la franja de algún río — ver es_rio_en().
+var _profundidad_rio: Dictionary = {}  # Vector2i -> int
+
+## (x,z) -> dirección unitaria hacia la siguiente celda del cauce — ver
+## direccion_flujo_en().
+var _direccion_flujo_rio: Dictionary = {}  # Vector2i -> Vector2i
+
+## (x,z) marcadas como cascada — ver es_cascada_en().
+var _celdas_cascada: Dictionary = {}  # Vector2i -> true
+
+
+## Dirección de avance para la franja del paso "i" de "cauce" (Sección 3):
+## vector unitario entre la celda anterior y la actual; para la naciente
+## (i=0, sin "anterior"), entre la naciente y su primer paso.
+## Vector2i.ZERO si "cauce" tiene un único elemento (sin dirección
+## definible — caso degenerado de una naciente sin ningún paso siguiente).
+static func _direccion_avance_en(cauce: Array[Vector2i], i: int) -> Vector2i:
+	if i == 0:
+		if cauce.size() > 1:
+			return cauce[1] - cauce[0]
+		return Vector2i.ZERO
+	return cauce[i] - cauce[i - 1]
+
+
+## Celdas de la franja perpendicular al avance en el paso "i" de "cauce"
+## (Sección 3): "ancho" celdas consecutivas centradas aproximadamente en
+## cauce[i] (para ancho impar, cauce[i] cae exactamente en el centro).
+## Función pura de geometría — no consulta altura ni agua; quien la use
+## filtra después qué celdas de la franja son válidas.
+static func _celdas_franja_en(cauce: Array[Vector2i], i: int, ancho: int) -> Array[Vector2i]:
+	var avance: Vector2i = _direccion_avance_en(cauce, i)
+	if avance == Vector2i.ZERO:
+		return [cauce[i]]
+	var perpendicular: Vector2i = Vector2i(0, 1) if avance.x != 0 else Vector2i(1, 0)
+	@warning_ignore("integer_division")
+	var desde: int = -(ancho / 2)
+	var celdas: Array[Vector2i] = []
+	for k in range(ancho):
+		celdas.append(cauce[i] + perpendicular * (desde + k))
+	return celdas
+
+
+## Profundidad tallada en la posición "indice" (0-based) de una franja de
+## "ancho" celdas (Sección 3): borde = 1, sube hacia el centro hasta
+## PROFUNDIDAD_MAXIMA_RIO. Fórmula pura: ancho 2 -> [1,1]; ancho 3 ->
+## [1,2,1]; ancho 5 -> [1,2,3,2,1]; ancho 6 -> [1,2,3,3,2,1].
+static func _profundidad_en_franja(indice: int, ancho: int) -> int:
+	return mini(mini(indice, ancho - 1 - indice) + 1, PROFUNDIDAD_MAXIMA_RIO)
+
+
+## Compara la "fuerza" de dos ríos para _resolver_cruces() (Sección 2b):
+## mayor ancho gana; en empate, mayor altura de nacimiento; en empate
+## total, el río generado primero (menor índice). true si "a" es más
+## fuerte que "b" — da un orden total estricto, sin empates posibles.
+static func _es_mas_fuerte(a: Dictionary, b: Dictionary) -> bool:
+	if a["ancho"] != b["ancho"]:
+		return a["ancho"] > b["ancho"]
+	if a["altura_nacimiento"] != b["altura_nacimiento"]:
+		return a["altura_nacimiento"] > b["altura_nacimiento"]
+	return a["indice"] < b["indice"]
+
+
+## Resuelve cruces entre los cauces crudos de "rios" (Sección 2b): agrega a
+## cada Dictionary la clave "cauce_truncado" (Array[Vector2i]) — el
+## prefijo de su "cauce_crudo" hasta la última celda de la que sigue
+## siendo dueño (la primera celda ya reclamada por un río más fuerte corta
+## el cauce ahí, sin incluirla). Cada Dictionary de "rios" debe traer
+## "indice", "ancho", "altura_nacimiento" y "cauce_crudo". Pura sobre los
+## datos recibidos — no consulta altura ni agua reales, así se puede
+## probar con cauces sintéticos.
+static func _resolver_cruces(rios: Array[Dictionary]) -> void:
+	var orden_fuerza: Array[Dictionary] = rios.duplicate()
+	orden_fuerza.sort_custom(_es_mas_fuerte)
+
+	var dueño: Dictionary = {}  # Vector2i -> int (índice de río)
+	for rio in orden_fuerza:
+		for celda: Vector2i in rio["cauce_crudo"]:
+			if not dueño.has(celda):
+				dueño[celda] = rio["indice"]
+
+	for rio in rios:
+		var truncado: Array[Vector2i] = []
+		for celda: Vector2i in rio["cauce_crudo"]:
+			if dueño[celda] != rio["indice"]:
+				break
+			truncado.append(celda)
+		rio["cauce_truncado"] = truncado

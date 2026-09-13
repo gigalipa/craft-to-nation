@@ -22,19 +22,9 @@ const CHUNK_SIZE := 16
 ## en celda + DESF, no en celda — ver _reconstruir_chunk().
 const DESF := 0.5
 
-## A cuántas celdas de profundidad el agua alcanza su oscurecimiento máximo
-## (ALPHA_AGUA_PROFUNDA) — ver _profundidad_agua_en()/_color_agua_en().
-## Antes del culling de caras internas, una columna de agua profunda se veía
-## más oscura como efecto SECUNDARIO (accidental) de apilar muchas caras
-## translúcidas superpuestas; al quitar esas caras internas (el fix de esta
-## misma pieza) ese oscurecimiento desapareció. Esta es la versión real,
-## intencional, del mismo efecto: en vez de depender de caras duplicadas,
-## el color de la celda de agua se oscurece según su profundidad real en la
-## columna (ver mat_agua.tres: vertex_color_use_as_albedo hace que este
-## color module la albedo_color del material).
-const PROFUNDIDAD_MAXIMA_OSCURECIMIENTO := 8
-const ALPHA_AGUA_SUPERFICIE := 0.35
-const ALPHA_AGUA_PROFUNDA := 0.9
+## Dirección "arriba" — el agua solo dibuja su cara superior (ver
+## _cara_visible()); el resto de direcciones nunca se dibujan para agua.
+const ARRIBA := Vector3i(0, 1, 0)
 
 ## Para cada dirección cardinal (una de VoxelWorld.VECINOS_3D), los dos ejes
 ## tangentes [u, v] de la cara perpendicular a esa dirección, en el orden
@@ -73,24 +63,35 @@ static func _chunk_de(celda: Vector3i) -> Vector3i:
 	)
 
 
-## true si debe dibujarse la cara entre una celda de tipo "tipo_propio" (uno
-## de VoxelWorld.TIPOS_TRANSLUCIDOS) y su vecino de tipo "tipo_vecino" ("" si
-## el vecino está vacío). Se omite en dos casos: (a) el vecino es del MISMO
-## tipo translúcido (cara interna de un mismo cuerpo de agua/pared de
-## ventanas — el bug original), y (b) el vecino es un bloque SÓLIDO (ocupado
-## y no translúcido) — bug real, encontrado jugando en vivo tras el primer
-## fix: la cara del agua contra una pared queda exactamente coincidente con
-## la propia cara opaca de la pared (que ya cubre esa unión por completo),
-## así que dibujarla solo produce parpadeo/moiré (z-fighting) sin aportar
-## nada visible. Sigue dibujándose contra aire vacío y contra un tipo
-## translúcido DISTINTO (p. ej. agua junto a ventana) — ahí no hay geometría
-## opaca que la reemplace.
-static func _cara_visible(tipo_propio: String, tipo_vecino: String) -> bool:
-	if tipo_vecino == tipo_propio:
-		return false
+## true si debe dibujarse la cara de tipo "tipo_propio" (uno de
+## VoxelWorld.TIPOS_TRANSLUCIDOS) hacia la dirección "direccion", contra un
+## vecino de tipo "tipo_vecino" ("" si está vacío). Dos reglas, en orden:
+##
+## 1. Un vecino SÓLIDO (ocupado y no translúcido) oculta SIEMPRE la cara, sin
+##    excepción — bug real, encontrado jugando en vivo: esa cara queda
+##    exactamente coincidente con la propia cara opaca del sólido (que ya
+##    cubre esa unión por completo), así que dibujarla solo produce
+##    parpadeo/moiré (z-fighting) sin aportar nada visible.
+## 2. Para "agua" específicamente, el resto de la regla no depende del
+##    vecino en absoluto, solo de la dirección: la cara de ARRIBA se dibuja
+##    SIEMPRE (incluso contra otra celda de agua encima — a propósito: una
+##    columna profunda apila varias caras superiores reales, una por celda,
+##    y su alpha se combina al verlas desde arriba, dando la impresión de
+##    que la opacidad aumenta con la profundidad sin necesitar ningún truco
+##    de color por vértice); cualquier otra dirección (laterales y abajo)
+##    NUNCA se dibuja, ni siquiera contra aire — decisión de diseño pedida
+##    jugando en vivo (docs/superpowers/specs/2026-09-13-culling-caras-
+##    translucidas-design.md).
+## 3. Para cualquier otro tipo translúcido (p. ej. "ventana"), se mantiene
+##    la regla original: se omite solo contra el MISMO tipo (cara interna de
+##    una misma pared de ventanas); contra aire o un tipo translúcido
+##    distinto, se dibuja.
+static func _cara_visible(tipo_propio: String, tipo_vecino: String, direccion: Vector3i) -> bool:
 	if tipo_vecino != "" and not VoxelWorld.TIPOS_TRANSLUCIDOS.has(tipo_vecino):
 		return false
-	return true
+	if tipo_propio == "agua":
+		return direccion == ARRIBA
+	return tipo_vecino != tipo_propio
 
 
 ## Las 4 esquinas (orden CCW visto desde "direccion") de la cara de un cubo
@@ -122,39 +123,14 @@ func _indexar_materiales() -> void:
 	assert(_material_por_tipo.size() == VoxelWorld.TIPOS_TRANSLUCIDOS.size(), "cada tipo en VoxelWorld.TIPOS_TRANSLUCIDOS necesita un material aquí")
 
 
-func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i, color: Color) -> void:
+func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i) -> void:
 	var esquinas: Array[Vector3] = _esquinas_cara(centro, direccion)
 	var normal := Vector3(direccion.x, direccion.y, direccion.z)
 	var uvs := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
 	for i in [0, 1, 2, 0, 2, 3]:
 		st.set_normal(normal)
 		st.set_uv(uvs[i])
-		st.set_color(color)
 		st.add_vertex(esquinas[i])
-
-
-## Cuántas celdas de "agua" consecutivas hay desde "celda" hasta la
-## superficie de esa columna (inclusive) — 1 si "celda" ya es la celda de
-## agua más alta de su columna, 2 si hay una celda de agua justo encima,
-## etc. Sube celda por celda porque una columna de agua real es siempre
-## poco profunda (ver PROFUNDIDAD_MAXIMA_RIO/nivel_mar) — no hace falta un
-## método más elaborado.
-func _profundidad_agua_en(celda: Vector3i) -> int:
-	var profundidad := 1
-	var y := celda.y
-	while voxel_world.obtener_tipo(Vector3i(celda.x, y + 1, celda.z)) == "agua":
-		y += 1
-		profundidad += 1
-	return profundidad
-
-
-## Color (con alpha variable) de la celda de agua en "celda" — ver
-## PROFUNDIDAD_MAXIMA_OSCURECIMIENTO más arriba. Blanco puro en RGB: solo
-## modula el alpha, dejando el tono de mat_agua.tres sin tocar.
-func _color_agua_en(celda: Vector3i) -> Color:
-	var profundidad: int = _profundidad_agua_en(celda)
-	var t: float = clampf(float(profundidad) / PROFUNDIDAD_MAXIMA_OSCURECIMIENTO, 0.0, 1.0)
-	return Color(1.0, 1.0, 1.0, lerpf(ALPHA_AGUA_SUPERFICIE, ALPHA_AGUA_PROFUNDA, t))
 
 
 ## Reconstruye desde cero la malla de "chunk" para "tipo": recorre las
@@ -175,13 +151,12 @@ func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
 				var celda: Vector3i = origen + Vector3i(dx, dy, dz)
 				if voxel_world.obtener_tipo(celda) != tipo:
 					continue
-				var color: Color = _color_agua_en(celda) if tipo == "agua" else Color.WHITE
 				for direccion: Vector3i in VoxelWorld.VECINOS_3D:
 					var vecino: Vector3i = celda + direccion
 					var tipo_vecino: String = voxel_world.obtener_tipo(vecino)
-					if not _cara_visible(tipo, tipo_vecino):
+					if not _cara_visible(tipo, tipo_vecino, direccion):
 						continue
-					_agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, direccion, color)
+					_agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, direccion)
 					hay_caras = true
 
 	if not hay_caras:

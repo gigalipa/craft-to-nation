@@ -74,15 +74,32 @@ func ejecutar_pruebas() -> void:
 	assert(TranslucidosRendererScript._chunk_de(Vector3i(-CS - 1, 0, 0)) == Vector3i(-2, 0, 0))
 	print("OK: _chunk_de() da la misma clave dentro de un chunk, cambia al cruzar el borde, y respeta coordenadas negativas.")
 
-	print("\n=== TEST 3: _cara_visible() oculta la cara contra el MISMO tipo translúcido y contra cualquier bloque SÓLIDO ===")
-	assert(TranslucidosRendererScript._cara_visible("agua", "agua") == false)
-	assert(TranslucidosRendererScript._cara_visible("ventana", "ventana") == false)
-	assert(TranslucidosRendererScript._cara_visible("agua", "pared") == false, "un vecino sólido ya cubre esa unión con su propia cara opaca — dibujar la del agua ahí solo produce z-fighting")
-	assert(TranslucidosRendererScript._cara_visible("ventana", "piedra") == false)
-	assert(TranslucidosRendererScript._cara_visible("agua", "") == true)
-	assert(TranslucidosRendererScript._cara_visible("ventana", "") == true)
-	assert(TranslucidosRendererScript._cara_visible("agua", "ventana") == true, "dos tipos translúcidos DISTINTOS no tienen geometría opaca que reemplace la cara — sí se dibuja")
-	print("OK: _cara_visible() oculta agua-agua, ventana-ventana, y cualquier cara contra un sólido; solo se dibuja contra aire o un tipo translúcido distinto.")
+	print("\n=== TEST 3: _cara_visible() — sólido siempre oculta; agua solo dibuja ARRIBA; otros tipos (ventana) solo ocultan contra el mismo tipo ===")
+	const ARRIBA_T3 := Vector3i(0, 1, 0)
+	const ABAJO_T3 := Vector3i(0, -1, 0)
+	const LATERAL_T3 := Vector3i(1, 0, 0)
+	# Regla 1: un vecino sólido oculta SIEMPRE, sin excepción — incluida la
+	# cara de arriba del agua.
+	assert(TranslucidosRendererScript._cara_visible("agua", "pared", ARRIBA_T3) == false, "un vecino sólido oculta incluso la cara de arriba del agua — evita reintroducir el z-fighting")
+	assert(TranslucidosRendererScript._cara_visible("agua", "pared", LATERAL_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("ventana", "piedra", LATERAL_T3) == false)
+	# Regla 2 (agua): solo depende de la DIRECCIÓN, nunca del vecino, una vez
+	# descartado el caso sólido de la regla 1.
+	assert(TranslucidosRendererScript._cara_visible("agua", "", ARRIBA_T3) == true, "arriba contra aire: se dibuja")
+	assert(TranslucidosRendererScript._cara_visible("agua", "agua", ARRIBA_T3) == true, "arriba contra OTRA celda de agua: se dibuja igual — así se apilan capas reales con la profundidad")
+	assert(TranslucidosRendererScript._cara_visible("agua", "ventana", ARRIBA_T3) == true, "arriba contra un tipo translúcido distinto: se dibuja igual")
+	assert(TranslucidosRendererScript._cara_visible("agua", "", ABAJO_T3) == false, "abajo NUNCA se dibuja, ni siquiera contra aire")
+	assert(TranslucidosRendererScript._cara_visible("agua", "agua", ABAJO_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("agua", "", LATERAL_T3) == false, "laterales NUNCA se dibujan, ni siquiera contra aire")
+	assert(TranslucidosRendererScript._cara_visible("agua", "agua", LATERAL_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("agua", "ventana", LATERAL_T3) == false)
+	# Regla 3 (cualquier otro tipo translúcido, p. ej. ventana): la regla
+	# original — se omite solo contra el MISMO tipo, sin importar dirección.
+	assert(TranslucidosRendererScript._cara_visible("ventana", "ventana", ARRIBA_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("ventana", "ventana", LATERAL_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("ventana", "", LATERAL_T3) == true)
+	assert(TranslucidosRendererScript._cara_visible("ventana", "agua", LATERAL_T3) == true, "ventana contra un tipo translúcido distinto (agua): se dibuja")
+	print("OK: sólido oculta siempre; agua solo dibuja su cara de arriba (incluso contra otra agua); ventana conserva la regla original (solo oculta contra el mismo tipo).")
 
 	print("\n=== TEST 4: _esquinas_cara() da 4 esquinas en sentido CCW visto desde la dirección de la cara ===")
 	for direccion: Vector3i in [
@@ -101,7 +118,7 @@ func ejecutar_pruebas() -> void:
 			assert(absf(esquina.dot(normal_esperada) - 0.5) < 0.0001, "cada esquina debe quedar en la cara del cubo unitario, a 0.5 de distancia en la dirección de la normal")
 	print("OK: las 4 esquinas de cada una de las 6 caras quedan en sentido CCW visto desde su dirección, sobre la superficie del cubo unitario.")
 
-	print("\n=== TEST 5: reconstruir_todo() omite la cara compartida entre dos celdas de agua adyacentes ===")
+	print("\n=== TEST 5: dos celdas de agua adyacentes horizontalmente solo muestran su cara de ARRIBA cada una (nunca la lateral compartida) ===")
 	var mundo_t5: Node = VoxelWorld.new()
 	mundo_t5.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo_t5.cell_size = Vector3.ONE * 1.0
@@ -112,41 +129,30 @@ func ejecutar_pruebas() -> void:
 	render_t5.voxel_world = mundo_t5
 	render_t5._indexar_materiales()
 	render_t5.reconstruir_todo()
-	# Dos celdas de agua sueltas, cada una expone 5 caras (todas menos la que
-	# comparten entre sí) = 10 caras = 20 triángulos = 60 vértices (sin
-	# indexar, cada cara agrega sus propios 6 vértices — ver _agregar_cara()).
+	# Cada celda de agua solo dibuja su cara de ARRIBA (contra aire, ninguna
+	# es sólida) — 1 cara x 6 vértices x 2 celdas = 12 vértices. Ninguna cara
+	# lateral ni inferior se dibuja nunca para agua, compartida o no.
 	var chunk_t5: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
 	var instancia_t5: MeshInstance3D = render_t5._mesh_por_chunk["agua"][chunk_t5]
 	var conteo_vertices_t5: int = instancia_t5.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
-	assert(conteo_vertices_t5 == 10 * 6, "dos celdas de agua adyacentes deben exponer 10 caras (60 vértices), no 12 (72)")
-	print("OK: reconstruir_todo() omite exactamente la cara compartida entre dos celdas de agua adyacentes.")
+	assert(conteo_vertices_t5 == 2 * 6, "dos celdas de agua solo deben exponer su cara de arriba cada una (12 vértices)")
+	print("OK: cada celda de agua expone únicamente su cara de arriba; las laterales (compartida o no) nunca se dibujan.")
 
-	print("\n=== TEST 6: una celda de agua junto a un bloque sólido OMITE esa cara (la pared ya la cubre, evita z-fighting) ===")
+	print("\n=== TEST 6: un sólido justo ENCIMA del agua elimina también su cara de arriba (evita reintroducir z-fighting) ===")
 	var mundo_t6: Node = VoxelWorld.new()
 	mundo_t6.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo_t6.cell_size = Vector3.ONE * 1.0
 	mundo_t6._indexar_biblioteca()
 	mundo_t6.colocar_bloque(Vector3i(0, 0, 0), "agua")
-	mundo_t6.colocar_bloque(Vector3i(1, 0, 0), "pared", true)
+	mundo_t6.colocar_bloque(Vector3i(0, 1, 0), "pared", true)  # sólido justo encima
+	mundo_t6.colocar_bloque(Vector3i(1, 0, 0), "pared", true)  # sólido lateral (ya irrelevante: lateral nunca se dibuja)
 	var render_t6: Node3D = TranslucidosRendererScript.new()
 	render_t6.voxel_world = mundo_t6
 	render_t6._indexar_materiales()
 	render_t6.reconstruir_todo()
 	var chunk_t6: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
-	var instancia_t6: MeshInstance3D = render_t6._mesh_por_chunk["agua"][chunk_t6]
-	var conteo_vertices_t6: int = instancia_t6.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
-	assert(conteo_vertices_t6 == 5 * 6, "una celda de agua junto a un sólido debe exponer solo 5 caras (omite la que comparte con la pared)")
-	# El único bloque "agua" de este chunk está en la celda (0,0,0), que por
-	# convención (misma que CamaraCenital.gd/ZonaOverlay.gd: DESF := 0.5
-	# recentra la esquina al centro) ocupa el rango de mundo [0,1] en cada
-	# eje — NO [-0.5, 0.5]. Esto pin-ea la POSICIÓN real de la geometría, no
-	# solo su conteo: un desfase global de media celda (el bug real que
-	# motivó el fix anterior) no cambia el conteo de vértices pero sí los
-	# saca de este rango.
-	var vertices_t6: PackedVector3Array = instancia_t6.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
-	for v: Vector3 in vertices_t6:
-		assert(v.x >= 0.0 and v.x <= 1.0 and v.y >= 0.0 and v.y <= 1.0 and v.z >= 0.0 and v.z <= 1.0, "cada vértice de la celda de agua (0,0,0) debe caer en [0,1] por eje, dio %s" % v)
-	print("OK: una celda de agua junto a un bloque sólido omite la cara compartida (5 caras, no 6), en el rango de mundo correcto (celda N ocupa [N, N+1]).")
+	assert(not render_t6._mesh_por_chunk.get("agua", {}).has(chunk_t6), "sin ninguna cara visible (arriba tapada por el sólido, laterales/abajo siempre ocultas), el chunk de agua no debe tener malla")
+	print("OK: un sólido justo encima del agua elimina su única cara posible (arriba); el chunk queda sin malla de agua.")
 
 	print("\n=== TEST 7: la reconstrucción incremental (señal) converge al mismo resultado que reconstruir_todo() ===")
 	var mundo_t7: Node = VoxelWorld.new()
@@ -166,35 +172,36 @@ func ejecutar_pruebas() -> void:
 	render_t7.flush_pendientes()
 	var chunk_t7: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
 	var conteo_incremental_t7: int = render_t7._mesh_por_chunk["agua"][chunk_t7].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
-	assert(conteo_incremental_t7 == 10 * 6, "el camino incremental debe dar el mismo resultado que reconstruir_todo() (TEST 5) para el mismo estado final")
+	assert(conteo_incremental_t7 == 2 * 6, "el camino incremental debe dar el mismo resultado que reconstruir_todo() (TEST 5) para el mismo estado final")
 	print("OK: colocar bloques uno a uno vía señal converge exactamente al mismo resultado que reconstruir_todo().")
 
-	print("\n=== TEST 8: _profundidad_agua_en()/_color_agua_en() oscurecen el agua con la profundidad real de la columna ===")
+	print("\n=== TEST 8: una columna de agua apila una cara de arriba REAL por cada celda — más profundidad, más caras superpuestas ===")
 	var mundo_t8: Node = VoxelWorld.new()
 	mundo_t8.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo_t8.cell_size = Vector3.ONE * 1.0
 	mundo_t8._indexar_biblioteca()
-	# Columna de 3 celdas de agua apiladas: (0,2,0) es la superficie
-	# (profundidad 1), (0,0,0) es la más profunda (profundidad 3).
+	# 3 celdas de agua apiladas, sin nada más en la columna: cada una tiene
+	# "arriba" libre (agua u aire, nunca sólido), así que las 3 dibujan su
+	# propia cara de arriba — 3 capas reales superpuestas a distinta altura,
+	# no coincidentes (sin z-fighting), que el alpha blend combina al mirar
+	# desde arriba dando la impresión de mayor opacidad con la profundidad.
 	mundo_t8.colocar_bloque(Vector3i(0, 0, 0), "agua")
 	mundo_t8.colocar_bloque(Vector3i(0, 1, 0), "agua")
 	mundo_t8.colocar_bloque(Vector3i(0, 2, 0), "agua")
 	var render_t8: Node3D = TranslucidosRendererScript.new()
 	render_t8.voxel_world = mundo_t8
-	assert(render_t8._profundidad_agua_en(Vector3i(0, 2, 0)) == 1)
-	assert(render_t8._profundidad_agua_en(Vector3i(0, 1, 0)) == 2)
-	assert(render_t8._profundidad_agua_en(Vector3i(0, 0, 0)) == 3)
-	var alpha_superficie: float = render_t8._color_agua_en(Vector3i(0, 2, 0)).a
-	var alpha_media: float = render_t8._color_agua_en(Vector3i(0, 1, 0)).a
-	var alpha_profunda: float = render_t8._color_agua_en(Vector3i(0, 0, 0)).a
-	assert(alpha_superficie < alpha_media and alpha_media < alpha_profunda, "el alpha debe crecer estrictamente con la profundidad real de la columna")
-	assert(render_t8._color_agua_en(Vector3i(0, 2, 0)).r == 1.0 and render_t8._color_agua_en(Vector3i(0, 2, 0)).g == 1.0 and render_t8._color_agua_en(Vector3i(0, 2, 0)).b == 1.0, "el color de profundidad solo debe modular el alpha (RGB blanco), sin tocar el tono de mat_agua.tres")
-	# Profundidad más allá de PROFUNDIDAD_MAXIMA_OSCURECIMIENTO se satura en
-	# ALPHA_AGUA_PROFUNDA, no sigue subiendo indefinidamente.
-	for y in range(3, TranslucidosRendererScript.PROFUNDIDAD_MAXIMA_OSCURECIMIENTO + 5):
-		mundo_t8.colocar_bloque(Vector3i(0, y, 0), "agua")
-	var alpha_muy_profunda: float = render_t8._color_agua_en(Vector3i(0, 0, 0)).a
-	assert(is_equal_approx(alpha_muy_profunda, TranslucidosRendererScript.ALPHA_AGUA_PROFUNDA))
-	print("OK: el alpha del agua crece con la profundidad real de la columna y se satura en ALPHA_AGUA_PROFUNDA.")
+	render_t8._indexar_materiales()
+	render_t8.reconstruir_todo()
+	var chunk_t8: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
+	var conteo_vertices_t8: int = render_t8._mesh_por_chunk["agua"][chunk_t8].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
+	assert(conteo_vertices_t8 == 3 * 6, "una columna de 3 celdas de agua debe dibujar 3 caras de arriba reales (18 vértices), una por celda")
+
+	# Tapar la celda superior con un sólido elimina SOLO esa cara de arriba
+	# (regla 1 tiene prioridad) — las otras dos siguen intactas.
+	mundo_t8.colocar_bloque(Vector3i(0, 3, 0), "pared", true)
+	render_t8.reconstruir_todo()
+	var conteo_vertices_t8b: int = render_t8._mesh_por_chunk["agua"][chunk_t8].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
+	assert(conteo_vertices_t8b == 2 * 6, "tapar la celda superior con un sólido debe quitar únicamente su cara de arriba, dejando 2 caras (12 vértices)")
+	print("OK: cada celda de una columna de agua apila su propia cara de arriba real (más profundidad = más capas), y un sólido encima solo quita la cara de esa celda puntual.")
 
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

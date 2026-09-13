@@ -74,14 +74,15 @@ func ejecutar_pruebas() -> void:
 	assert(TranslucidosRendererScript._chunk_de(Vector3i(-CS - 1, 0, 0)) == Vector3i(-2, 0, 0))
 	print("OK: _chunk_de() da la misma clave dentro de un chunk, cambia al cruzar el borde, y respeta coordenadas negativas.")
 
-	print("\n=== TEST 3: _cara_visible() solo oculta la cara entre dos celdas del MISMO tipo translúcido ===")
+	print("\n=== TEST 3: _cara_visible() oculta la cara contra el MISMO tipo translúcido y contra cualquier bloque SÓLIDO ===")
 	assert(TranslucidosRendererScript._cara_visible("agua", "agua") == false)
 	assert(TranslucidosRendererScript._cara_visible("ventana", "ventana") == false)
+	assert(TranslucidosRendererScript._cara_visible("agua", "pared") == false, "un vecino sólido ya cubre esa unión con su propia cara opaca — dibujar la del agua ahí solo produce z-fighting")
+	assert(TranslucidosRendererScript._cara_visible("ventana", "piedra") == false)
 	assert(TranslucidosRendererScript._cara_visible("agua", "") == true)
-	assert(TranslucidosRendererScript._cara_visible("agua", "ventana") == true)
-	assert(TranslucidosRendererScript._cara_visible("agua", "pared") == true)
 	assert(TranslucidosRendererScript._cara_visible("ventana", "") == true)
-	print("OK: _cara_visible() oculta agua-agua y ventana-ventana; cualquier otra combinación se dibuja.")
+	assert(TranslucidosRendererScript._cara_visible("agua", "ventana") == true, "dos tipos translúcidos DISTINTOS no tienen geometría opaca que reemplace la cara — sí se dibuja")
+	print("OK: _cara_visible() oculta agua-agua, ventana-ventana, y cualquier cara contra un sólido; solo se dibuja contra aire o un tipo translúcido distinto.")
 
 	print("\n=== TEST 4: _esquinas_cara() da 4 esquinas en sentido CCW visto desde la dirección de la cara ===")
 	for direccion: Vector3i in [
@@ -120,7 +121,7 @@ func ejecutar_pruebas() -> void:
 	assert(conteo_vertices_t5 == 10 * 6, "dos celdas de agua adyacentes deben exponer 10 caras (60 vértices), no 12 (72)")
 	print("OK: reconstruir_todo() omite exactamente la cara compartida entre dos celdas de agua adyacentes.")
 
-	print("\n=== TEST 6: una celda de agua junto a un bloque sólido SÍ dibuja esa cara ===")
+	print("\n=== TEST 6: una celda de agua junto a un bloque sólido OMITE esa cara (la pared ya la cubre, evita z-fighting) ===")
 	var mundo_t6: Node = VoxelWorld.new()
 	mundo_t6.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo_t6.cell_size = Vector3.ONE * 1.0
@@ -134,18 +135,18 @@ func ejecutar_pruebas() -> void:
 	var chunk_t6: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
 	var instancia_t6: MeshInstance3D = render_t6._mesh_por_chunk["agua"][chunk_t6]
 	var conteo_vertices_t6: int = instancia_t6.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
-	assert(conteo_vertices_t6 == 6 * 6, "una celda de agua sola (junto a un sólido, no otra agua) debe exponer sus 6 caras completas")
+	assert(conteo_vertices_t6 == 5 * 6, "una celda de agua junto a un sólido debe exponer solo 5 caras (omite la que comparte con la pared)")
 	# El único bloque "agua" de este chunk está en la celda (0,0,0), que por
 	# convención (misma que CamaraCenital.gd/ZonaOverlay.gd: DESF := 0.5
 	# recentra la esquina al centro) ocupa el rango de mundo [0,1] en cada
 	# eje — NO [-0.5, 0.5]. Esto pin-ea la POSICIÓN real de la geometría, no
 	# solo su conteo: un desfase global de media celda (el bug real que
-	# motivó este fix) no cambia el conteo de vértices pero sí los saca de
-	# este rango.
+	# motivó el fix anterior) no cambia el conteo de vértices pero sí los
+	# saca de este rango.
 	var vertices_t6: PackedVector3Array = instancia_t6.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 	for v: Vector3 in vertices_t6:
 		assert(v.x >= 0.0 and v.x <= 1.0 and v.y >= 0.0 and v.y <= 1.0 and v.z >= 0.0 and v.z <= 1.0, "cada vértice de la celda de agua (0,0,0) debe caer en [0,1] por eje, dio %s" % v)
-	print("OK: una celda de agua junto a un bloque sólido dibuja las 6 caras completas (la pared no es del mismo tipo translúcido), en el rango de mundo correcto (celda N ocupa [N, N+1]).")
+	print("OK: una celda de agua junto a un bloque sólido omite la cara compartida (5 caras, no 6), en el rango de mundo correcto (celda N ocupa [N, N+1]).")
 
 	print("\n=== TEST 7: la reconstrucción incremental (señal) converge al mismo resultado que reconstruir_todo() ===")
 	var mundo_t7: Node = VoxelWorld.new()

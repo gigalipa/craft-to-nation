@@ -61,11 +61,22 @@ static func _chunk_de(celda: Vector3i) -> Vector3i:
 
 ## true si debe dibujarse la cara entre una celda de tipo "tipo_propio" (uno
 ## de VoxelWorld.TIPOS_TRANSLUCIDOS) y su vecino de tipo "tipo_vecino" ("" si
-## el vecino está vacío). Se omite ÚNICAMENTE cuando ambos lados son del
-## MISMO tipo translúcido — cualquier otra combinación (aire, sólido, u otro
-## tipo translúcido distinto) sí se dibuja.
+## el vecino está vacío). Se omite en dos casos: (a) el vecino es del MISMO
+## tipo translúcido (cara interna de un mismo cuerpo de agua/pared de
+## ventanas — el bug original), y (b) el vecino es un bloque SÓLIDO (ocupado
+## y no translúcido) — bug real, encontrado jugando en vivo tras el primer
+## fix: la cara del agua contra una pared queda exactamente coincidente con
+## la propia cara opaca de la pared (que ya cubre esa unión por completo),
+## así que dibujarla solo produce parpadeo/moiré (z-fighting) sin aportar
+## nada visible. Sigue dibujándose contra aire vacío y contra un tipo
+## translúcido DISTINTO (p. ej. agua junto a ventana) — ahí no hay geometría
+## opaca que la reemplace.
 static func _cara_visible(tipo_propio: String, tipo_vecino: String) -> bool:
-	return tipo_vecino != tipo_propio
+	if tipo_vecino == tipo_propio:
+		return false
+	if tipo_vecino != "" and not VoxelWorld.TIPOS_TRANSLUCIDOS.has(tipo_vecino):
+		return false
+	return true
 
 
 ## Las 4 esquinas (orden CCW visto desde "direccion") de la cara de un cubo

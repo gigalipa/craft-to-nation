@@ -135,7 +135,17 @@ func ejecutar_pruebas() -> void:
 	var instancia_t6: MeshInstance3D = render_t6._mesh_por_chunk["agua"][chunk_t6]
 	var conteo_vertices_t6: int = instancia_t6.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
 	assert(conteo_vertices_t6 == 6 * 6, "una celda de agua sola (junto a un sólido, no otra agua) debe exponer sus 6 caras completas")
-	print("OK: una celda de agua junto a un bloque sólido dibuja las 6 caras completas (la pared no es del mismo tipo translúcido).")
+	# El único bloque "agua" de este chunk está en la celda (0,0,0), que por
+	# convención (misma que CamaraCenital.gd/ZonaOverlay.gd: DESF := 0.5
+	# recentra la esquina al centro) ocupa el rango de mundo [0,1] en cada
+	# eje — NO [-0.5, 0.5]. Esto pin-ea la POSICIÓN real de la geometría, no
+	# solo su conteo: un desfase global de media celda (el bug real que
+	# motivó este fix) no cambia el conteo de vértices pero sí los saca de
+	# este rango.
+	var vertices_t6: PackedVector3Array = instancia_t6.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	for v: Vector3 in vertices_t6:
+		assert(v.x >= 0.0 and v.x <= 1.0 and v.y >= 0.0 and v.y <= 1.0 and v.z >= 0.0 and v.z <= 1.0, "cada vértice de la celda de agua (0,0,0) debe caer en [0,1] por eje, dio %s" % v)
+	print("OK: una celda de agua junto a un bloque sólido dibuja las 6 caras completas (la pared no es del mismo tipo translúcido), en el rango de mundo correcto (celda N ocupa [N, N+1]).")
 
 	print("\n=== TEST 7: la reconstrucción incremental (señal) converge al mismo resultado que reconstruir_todo() ===")
 	var mundo_t7: Node = VoxelWorld.new()
@@ -146,8 +156,13 @@ func ejecutar_pruebas() -> void:
 	render_t7.voxel_world = mundo_t7
 	render_t7._indexar_materiales()
 	mundo_t7.bloque_translucido_cambiado.connect(render_t7._on_bloque_translucido_cambiado)
-	mundo_t7.colocar_bloque(Vector3i(0, 0, 0), "agua")  # dispara la señal -> reconstrucción incremental
-	mundo_t7.colocar_bloque(Vector3i(1, 0, 0), "agua")  # dispara la señal de nuevo, sobre el chunk ya construido
+	mundo_t7.colocar_bloque(Vector3i(0, 0, 0), "agua")  # dispara la señal -> marca chunk sucio
+	mundo_t7.colocar_bloque(Vector3i(1, 0, 0), "agua")  # dispara la señal de nuevo, mismo chunk
+	# La reconstrucción ya no es síncrona dentro del handler de la señal (ver
+	# _on_bloque_translucido_cambiado()/flush_pendientes() — se agrupan los
+	# chunks sucios y se reconstruyen juntos). En juego real esto lo dispara
+	# _process(); aquí, fuera del árbol, se fuerza explícitamente.
+	render_t7.flush_pendientes()
 	var chunk_t7: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
 	var conteo_incremental_t7: int = render_t7._mesh_por_chunk["agua"][chunk_t7].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
 	assert(conteo_incremental_t7 == 10 * 6, "el camino incremental debe dar el mismo resultado que reconstruir_todo() (TEST 5) para el mismo estado final")

@@ -17,6 +17,11 @@ const MATERIAL_VENTANA := preload("res://assets/mat_ventana.tres")
 
 const CHUNK_SIZE := 16
 
+## Mismo desfase que CamaraCenital.gd/ZonaOverlay.gd: una celda "celda"
+## ocupa el rango [celda, celda+1] en cada eje, así que su CENTRO real está
+## en celda + DESF, no en celda — ver _reconstruir_chunk().
+const DESF := 0.5
+
 ## Para cada dirección cardinal (una de VoxelWorld.VECINOS_3D), los dos ejes
 ## tangentes [u, v] de la cara perpendicular a esa dirección, en el orden
 ## que da u×v == direccion (ver _esquinas_cara()) — así el sentido de
@@ -39,6 +44,7 @@ var voxel_world: Node
 
 var _material_por_tipo: Dictionary = {}  # String -> Material
 var _mesh_por_chunk: Dictionary = {}  # String -> Dictionary (Vector3i -> MeshInstance3D)
+var _chunks_sucios: Dictionary = {}  # Vector3i -> true, ver _on_bloque_translucido_cambiado()
 
 
 ## Clave de chunk de "celda" — división de PISO real (floori()), no
@@ -88,6 +94,7 @@ static func _esquinas_cara(centro: Vector3, direccion: Vector3i) -> Array[Vector
 func _indexar_materiales() -> void:
 	_material_por_tipo["agua"] = MATERIAL_AGUA
 	_material_por_tipo["ventana"] = MATERIAL_VENTANA
+	assert(_material_por_tipo.size() == VoxelWorld.TIPOS_TRANSLUCIDOS.size(), "cada tipo en VoxelWorld.TIPOS_TRANSLUCIDOS necesita un material aquí")
 
 
 func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i) -> void:
@@ -123,7 +130,7 @@ func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
 					var tipo_vecino: String = voxel_world.obtener_tipo(vecino)
 					if not _cara_visible(tipo, tipo_vecino):
 						continue
-					_agregar_cara(st, Vector3(celda), direccion)
+					_agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, direccion)
 					hay_caras = true
 
 	if not hay_caras:
@@ -172,14 +179,28 @@ func reconstruir_todo() -> void:
 ## los hijos ejecutan _ready() antes que su padre, y "voxel_world" todavía
 ## no estaría asignado). Marca sucios el chunk de "celda" y los de sus 6
 ## vecinos directos (una celda en el borde de un chunk afecta el cálculo de
-## caras expuestas del chunk vecino también) y los reconstruye de inmediato
-## para AMBOS tipos translúcidos — evento raro (un bloque a la vez), así
-## que reconstruir de más no es un problema de rendimiento.
+## caras expuestas del chunk vecino también) — NO reconstruye de inmediato:
+## drenar_agua()/eliminar_edificio() (VoxelWorld.gd, ya existentes) emiten
+## esta señal muchas veces en una sola acción del jugador (una columna de
+## agua entera, un edificio completo), así que reconstruir en cada emisión
+## rehace el mismo chunk una y otra vez dentro de esa misma acción. Ver
+## flush_pendientes().
 func _on_bloque_translucido_cambiado(celda: Vector3i) -> void:
-	var chunks_afectados: Dictionary = {}  # Vector3i -> true
-	chunks_afectados[_chunk_de(celda)] = true
+	_chunks_sucios[_chunk_de(celda)] = true
 	for delta: Vector3i in VoxelWorld.VECINOS_3D:
-		chunks_afectados[_chunk_de(celda + delta)] = true
-	for chunk in chunks_afectados:
+		_chunks_sucios[_chunk_de(celda + delta)] = true
+
+
+## Reconstruye todos los chunks marcados sucios desde la última llamada, y
+## limpia el registro — llamado desde _process() en juego real, y
+## directamente por las pruebas para forzar el vaciado sin depender del
+## bucle de frames (que no corre en instancias fuera del árbol).
+func flush_pendientes() -> void:
+	for chunk in _chunks_sucios:
 		for tipo in VoxelWorld.TIPOS_TRANSLUCIDOS:
 			_reconstruir_chunk(chunk, tipo)
+	_chunks_sucios.clear()
+
+
+func _process(_delta: float) -> void:
+	flush_pendientes()

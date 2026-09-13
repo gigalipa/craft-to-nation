@@ -100,4 +100,57 @@ func ejecutar_pruebas() -> void:
 			assert(absf(esquina.dot(normal_esperada) - 0.5) < 0.0001, "cada esquina debe quedar en la cara del cubo unitario, a 0.5 de distancia en la dirección de la normal")
 	print("OK: las 4 esquinas de cada una de las 6 caras quedan en sentido CCW visto desde su dirección, sobre la superficie del cubo unitario.")
 
+	print("\n=== TEST 5: reconstruir_todo() omite la cara compartida entre dos celdas de agua adyacentes ===")
+	var mundo_t5: Node = VoxelWorld.new()
+	mundo_t5.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t5.cell_size = Vector3.ONE * 1.0
+	mundo_t5._indexar_biblioteca()
+	mundo_t5.colocar_bloque(Vector3i(0, 0, 0), "agua")
+	mundo_t5.colocar_bloque(Vector3i(1, 0, 0), "agua")
+	var render_t5: Node3D = TranslucidosRendererScript.new()
+	render_t5.voxel_world = mundo_t5
+	render_t5._indexar_materiales()
+	render_t5.reconstruir_todo()
+	# Dos celdas de agua sueltas, cada una expone 5 caras (todas menos la que
+	# comparten entre sí) = 10 caras = 20 triángulos = 60 vértices (sin
+	# indexar, cada cara agrega sus propios 6 vértices — ver _agregar_cara()).
+	var chunk_t5: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
+	var instancia_t5: MeshInstance3D = render_t5._mesh_por_chunk["agua"][chunk_t5]
+	var conteo_vertices_t5: int = instancia_t5.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
+	assert(conteo_vertices_t5 == 10 * 6, "dos celdas de agua adyacentes deben exponer 10 caras (60 vértices), no 12 (72)")
+	print("OK: reconstruir_todo() omite exactamente la cara compartida entre dos celdas de agua adyacentes.")
+
+	print("\n=== TEST 6: una celda de agua junto a un bloque sólido SÍ dibuja esa cara ===")
+	var mundo_t6: Node = VoxelWorld.new()
+	mundo_t6.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t6.cell_size = Vector3.ONE * 1.0
+	mundo_t6._indexar_biblioteca()
+	mundo_t6.colocar_bloque(Vector3i(0, 0, 0), "agua")
+	mundo_t6.colocar_bloque(Vector3i(1, 0, 0), "pared", true)
+	var render_t6: Node3D = TranslucidosRendererScript.new()
+	render_t6.voxel_world = mundo_t6
+	render_t6._indexar_materiales()
+	render_t6.reconstruir_todo()
+	var chunk_t6: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
+	var instancia_t6: MeshInstance3D = render_t6._mesh_por_chunk["agua"][chunk_t6]
+	var conteo_vertices_t6: int = instancia_t6.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
+	assert(conteo_vertices_t6 == 6 * 6, "una celda de agua sola (junto a un sólido, no otra agua) debe exponer sus 6 caras completas")
+	print("OK: una celda de agua junto a un bloque sólido dibuja las 6 caras completas (la pared no es del mismo tipo translúcido).")
+
+	print("\n=== TEST 7: la reconstrucción incremental (señal) converge al mismo resultado que reconstruir_todo() ===")
+	var mundo_t7: Node = VoxelWorld.new()
+	mundo_t7.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t7.cell_size = Vector3.ONE * 1.0
+	mundo_t7._indexar_biblioteca()
+	var render_t7: Node3D = TranslucidosRendererScript.new()
+	render_t7.voxel_world = mundo_t7
+	render_t7._indexar_materiales()
+	mundo_t7.bloque_translucido_cambiado.connect(render_t7._on_bloque_translucido_cambiado)
+	mundo_t7.colocar_bloque(Vector3i(0, 0, 0), "agua")  # dispara la señal -> reconstrucción incremental
+	mundo_t7.colocar_bloque(Vector3i(1, 0, 0), "agua")  # dispara la señal de nuevo, sobre el chunk ya construido
+	var chunk_t7: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
+	var conteo_incremental_t7: int = render_t7._mesh_por_chunk["agua"][chunk_t7].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
+	assert(conteo_incremental_t7 == 10 * 6, "el camino incremental debe dar el mismo resultado que reconstruir_todo() (TEST 5) para el mismo estado final")
+	print("OK: colocar bloques uno a uno vía señal converge exactamente al mismo resultado que reconstruir_todo().")
+
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

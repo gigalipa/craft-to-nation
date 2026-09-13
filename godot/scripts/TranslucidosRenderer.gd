@@ -79,3 +79,107 @@ static func _esquinas_cara(centro: Vector3, direccion: Vector3i) -> Array[Vector
 		centro_cara - u * 0.5 + v * 0.5,
 	]
 	return esquinas
+
+
+## Carga los materiales de cada tipo translúcido — recursos independientes
+## (ver mat_agua.tres/mat_ventana.tres), no leídos de mesh_library: una vez
+## vacía la malla del ítem correspondiente (Task 4), ya no habría ninguna
+## superficie de la que sacar el material original.
+func _indexar_materiales() -> void:
+	_material_por_tipo["agua"] = MATERIAL_AGUA
+	_material_por_tipo["ventana"] = MATERIAL_VENTANA
+
+
+func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i) -> void:
+	var esquinas: Array[Vector3] = _esquinas_cara(centro, direccion)
+	var normal := Vector3(direccion.x, direccion.y, direccion.z)
+	var uvs := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
+	for i in [0, 1, 2, 0, 2, 3]:
+		st.set_normal(normal)
+		st.set_uv(uvs[i])
+		st.add_vertex(esquinas[i])
+
+
+## Reconstruye desde cero la malla de "chunk" para "tipo": recorre las
+## CHUNK_SIZE³ celdas del chunk, y para cada celda de ese tipo agrega solo
+## las caras que _cara_visible() aprueba contra cada uno de sus 6 vecinos
+## (consultando voxel_world.obtener_tipo(), que cruza libremente el borde
+## del chunk hacia chunks vecinos). Si el chunk queda sin ninguna cara para
+## ese tipo, borra su MeshInstance3D si existía; si tiene al menos una,
+## crea (la primera vez) o reutiliza su MeshInstance3D.
+func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var origen: Vector3i = chunk * CHUNK_SIZE
+	var hay_caras := false
+	for dx in range(CHUNK_SIZE):
+		for dy in range(CHUNK_SIZE):
+			for dz in range(CHUNK_SIZE):
+				var celda: Vector3i = origen + Vector3i(dx, dy, dz)
+				if voxel_world.obtener_tipo(celda) != tipo:
+					continue
+				for direccion: Vector3i in VoxelWorld.VECINOS_3D:
+					var vecino: Vector3i = celda + direccion
+					var tipo_vecino: String = voxel_world.obtener_tipo(vecino)
+					if not _cara_visible(tipo, tipo_vecino):
+						continue
+					_agregar_cara(st, Vector3(celda), direccion)
+					hay_caras = true
+
+	if not hay_caras:
+		if _mesh_por_chunk.has(tipo) and _mesh_por_chunk[tipo].has(chunk):
+			_mesh_por_chunk[tipo][chunk].queue_free()
+			_mesh_por_chunk[tipo].erase(chunk)
+		return
+
+	var malla: ArrayMesh = st.commit()
+	var instancia: MeshInstance3D
+	if _mesh_por_chunk.has(tipo) and _mesh_por_chunk[tipo].has(chunk):
+		instancia = _mesh_por_chunk[tipo][chunk]
+	else:
+		instancia = MeshInstance3D.new()
+		add_child(instancia)
+		if not _mesh_por_chunk.has(tipo):
+			_mesh_por_chunk[tipo] = {}
+		_mesh_por_chunk[tipo][chunk] = instancia
+	instancia.mesh = malla
+	instancia.set_surface_override_material(0, _material_por_tipo[tipo])
+
+
+## Reconstrucción completa — llamada una única vez desde VoxelWorld._ready(),
+## después de _generar_terreno() (Sección 5 del spec). Recorre
+## get_used_cells() (nativo de GridMap, ya filtra a celdas ocupadas) UNA
+## vez, agrupa por chunk, y reconstruye cada chunk afectado una sola vez —
+## sin pasar por bloque_translucido_cambiado celda por celda durante la
+## generación masiva inicial (miles de celdas de agua).
+func reconstruir_todo() -> void:
+	var chunks_por_tipo: Dictionary = {}  # String -> Dictionary (Vector3i -> true)
+	for celda in voxel_world.get_used_cells():
+		var tipo: String = voxel_world.obtener_tipo(celda)
+		if not VoxelWorld.TIPOS_TRANSLUCIDOS.has(tipo):
+			continue
+		var chunk: Vector3i = _chunk_de(celda)
+		if not chunks_por_tipo.has(tipo):
+			chunks_por_tipo[tipo] = {}
+		chunks_por_tipo[tipo][chunk] = true
+	for tipo in chunks_por_tipo:
+		for chunk in chunks_por_tipo[tipo]:
+			_reconstruir_chunk(chunk, tipo)
+
+
+## Conectado a VoxelWorld.bloque_translucido_cambiado desde VoxelWorld._ready()
+## (Sección 6 del spec — NO desde el propio _ready() de este nodo, porque
+## los hijos ejecutan _ready() antes que su padre, y "voxel_world" todavía
+## no estaría asignado). Marca sucios el chunk de "celda" y los de sus 6
+## vecinos directos (una celda en el borde de un chunk afecta el cálculo de
+## caras expuestas del chunk vecino también) y los reconstruye de inmediato
+## para AMBOS tipos translúcidos — evento raro (un bloque a la vez), así
+## que reconstruir de más no es un problema de rendimiento.
+func _on_bloque_translucido_cambiado(celda: Vector3i) -> void:
+	var chunks_afectados: Dictionary = {}  # Vector3i -> true
+	chunks_afectados[_chunk_de(celda)] = true
+	for delta: Vector3i in VoxelWorld.VECINOS_3D:
+		chunks_afectados[_chunk_de(celda + delta)] = true
+	for chunk in chunks_afectados:
+		for tipo in VoxelWorld.TIPOS_TRANSLUCIDOS:
+			_reconstruir_chunk(chunk, tipo)

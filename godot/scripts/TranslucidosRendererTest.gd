@@ -169,4 +169,32 @@ func ejecutar_pruebas() -> void:
 	assert(conteo_incremental_t7 == 10 * 6, "el camino incremental debe dar el mismo resultado que reconstruir_todo() (TEST 5) para el mismo estado final")
 	print("OK: colocar bloques uno a uno vía señal converge exactamente al mismo resultado que reconstruir_todo().")
 
+	print("\n=== TEST 8: _profundidad_agua_en()/_color_agua_en() oscurecen el agua con la profundidad real de la columna ===")
+	var mundo_t8: Node = VoxelWorld.new()
+	mundo_t8.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t8.cell_size = Vector3.ONE * 1.0
+	mundo_t8._indexar_biblioteca()
+	# Columna de 3 celdas de agua apiladas: (0,2,0) es la superficie
+	# (profundidad 1), (0,0,0) es la más profunda (profundidad 3).
+	mundo_t8.colocar_bloque(Vector3i(0, 0, 0), "agua")
+	mundo_t8.colocar_bloque(Vector3i(0, 1, 0), "agua")
+	mundo_t8.colocar_bloque(Vector3i(0, 2, 0), "agua")
+	var render_t8: Node3D = TranslucidosRendererScript.new()
+	render_t8.voxel_world = mundo_t8
+	assert(render_t8._profundidad_agua_en(Vector3i(0, 2, 0)) == 1)
+	assert(render_t8._profundidad_agua_en(Vector3i(0, 1, 0)) == 2)
+	assert(render_t8._profundidad_agua_en(Vector3i(0, 0, 0)) == 3)
+	var alpha_superficie: float = render_t8._color_agua_en(Vector3i(0, 2, 0)).a
+	var alpha_media: float = render_t8._color_agua_en(Vector3i(0, 1, 0)).a
+	var alpha_profunda: float = render_t8._color_agua_en(Vector3i(0, 0, 0)).a
+	assert(alpha_superficie < alpha_media and alpha_media < alpha_profunda, "el alpha debe crecer estrictamente con la profundidad real de la columna")
+	assert(render_t8._color_agua_en(Vector3i(0, 2, 0)).r == 1.0 and render_t8._color_agua_en(Vector3i(0, 2, 0)).g == 1.0 and render_t8._color_agua_en(Vector3i(0, 2, 0)).b == 1.0, "el color de profundidad solo debe modular el alpha (RGB blanco), sin tocar el tono de mat_agua.tres")
+	# Profundidad más allá de PROFUNDIDAD_MAXIMA_OSCURECIMIENTO se satura en
+	# ALPHA_AGUA_PROFUNDA, no sigue subiendo indefinidamente.
+	for y in range(3, TranslucidosRendererScript.PROFUNDIDAD_MAXIMA_OSCURECIMIENTO + 5):
+		mundo_t8.colocar_bloque(Vector3i(0, y, 0), "agua")
+	var alpha_muy_profunda: float = render_t8._color_agua_en(Vector3i(0, 0, 0)).a
+	assert(is_equal_approx(alpha_muy_profunda, TranslucidosRendererScript.ALPHA_AGUA_PROFUNDA))
+	print("OK: el alpha del agua crece con la profundidad real de la columna y se satura en ALPHA_AGUA_PROFUNDA.")
+
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

@@ -22,6 +22,20 @@ const CHUNK_SIZE := 16
 ## en celda + DESF, no en celda — ver _reconstruir_chunk().
 const DESF := 0.5
 
+## A cuántas celdas de profundidad el agua alcanza su oscurecimiento máximo
+## (ALPHA_AGUA_PROFUNDA) — ver _profundidad_agua_en()/_color_agua_en().
+## Antes del culling de caras internas, una columna de agua profunda se veía
+## más oscura como efecto SECUNDARIO (accidental) de apilar muchas caras
+## translúcidas superpuestas; al quitar esas caras internas (el fix de esta
+## misma pieza) ese oscurecimiento desapareció. Esta es la versión real,
+## intencional, del mismo efecto: en vez de depender de caras duplicadas,
+## el color de la celda de agua se oscurece según su profundidad real en la
+## columna (ver mat_agua.tres: vertex_color_use_as_albedo hace que este
+## color module la albedo_color del material).
+const PROFUNDIDAD_MAXIMA_OSCURECIMIENTO := 8
+const ALPHA_AGUA_SUPERFICIE := 0.35
+const ALPHA_AGUA_PROFUNDA := 0.9
+
 ## Para cada dirección cardinal (una de VoxelWorld.VECINOS_3D), los dos ejes
 ## tangentes [u, v] de la cara perpendicular a esa dirección, en el orden
 ## que da u×v == direccion (ver _esquinas_cara()) — así el sentido de
@@ -108,14 +122,39 @@ func _indexar_materiales() -> void:
 	assert(_material_por_tipo.size() == VoxelWorld.TIPOS_TRANSLUCIDOS.size(), "cada tipo en VoxelWorld.TIPOS_TRANSLUCIDOS necesita un material aquí")
 
 
-func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i) -> void:
+func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i, color: Color) -> void:
 	var esquinas: Array[Vector3] = _esquinas_cara(centro, direccion)
 	var normal := Vector3(direccion.x, direccion.y, direccion.z)
 	var uvs := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
 	for i in [0, 1, 2, 0, 2, 3]:
 		st.set_normal(normal)
 		st.set_uv(uvs[i])
+		st.set_color(color)
 		st.add_vertex(esquinas[i])
+
+
+## Cuántas celdas de "agua" consecutivas hay desde "celda" hasta la
+## superficie de esa columna (inclusive) — 1 si "celda" ya es la celda de
+## agua más alta de su columna, 2 si hay una celda de agua justo encima,
+## etc. Sube celda por celda porque una columna de agua real es siempre
+## poco profunda (ver PROFUNDIDAD_MAXIMA_RIO/nivel_mar) — no hace falta un
+## método más elaborado.
+func _profundidad_agua_en(celda: Vector3i) -> int:
+	var profundidad := 1
+	var y := celda.y
+	while voxel_world.obtener_tipo(Vector3i(celda.x, y + 1, celda.z)) == "agua":
+		y += 1
+		profundidad += 1
+	return profundidad
+
+
+## Color (con alpha variable) de la celda de agua en "celda" — ver
+## PROFUNDIDAD_MAXIMA_OSCURECIMIENTO más arriba. Blanco puro en RGB: solo
+## modula el alpha, dejando el tono de mat_agua.tres sin tocar.
+func _color_agua_en(celda: Vector3i) -> Color:
+	var profundidad: int = _profundidad_agua_en(celda)
+	var t: float = clampf(float(profundidad) / PROFUNDIDAD_MAXIMA_OSCURECIMIENTO, 0.0, 1.0)
+	return Color(1.0, 1.0, 1.0, lerpf(ALPHA_AGUA_SUPERFICIE, ALPHA_AGUA_PROFUNDA, t))
 
 
 ## Reconstruye desde cero la malla de "chunk" para "tipo": recorre las
@@ -136,12 +175,13 @@ func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
 				var celda: Vector3i = origen + Vector3i(dx, dy, dz)
 				if voxel_world.obtener_tipo(celda) != tipo:
 					continue
+				var color: Color = _color_agua_en(celda) if tipo == "agua" else Color.WHITE
 				for direccion: Vector3i in VoxelWorld.VECINOS_3D:
 					var vecino: Vector3i = celda + direccion
 					var tipo_vecino: String = voxel_world.obtener_tipo(vecino)
 					if not _cara_visible(tipo, tipo_vecino):
 						continue
-					_agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, direccion)
+					_agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, direccion, color)
 					hay_caras = true
 
 	if not hay_caras:

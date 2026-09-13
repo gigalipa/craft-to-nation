@@ -37,6 +37,19 @@ const UMBRAL_HIERRO := 0.2
 ## abrupto, siempre con un valor <1.
 const EXPONENTE_RELIEVE := 0.5
 
+## Cuántas unidades de altura de ruido de detalle (alta frecuencia,
+## _ruido_detalle) se suman cerca de los picos/cuencas — bug real, encontrado
+## jugando en vivo: un EXPONENTE_RELIEVE bajo aplana grandes áreas de
+## terreno a la misma altura entera cerca de los extremos (mesetas en vez de
+## picos, ver el comentario de _altura_flotante()). El detalle se escala por
+## qué tan cerca está la celda de un extremo (abs(valor_redistribuido), cerca
+## de 1 en picos/cuencas, cerca de 0 en pendientes medias), así que rompe la
+## meseta sin desordenar el relieve general en las laderas. Valor inicial
+## calibrado empíricamente, mismo patrón que las demás constantes de este
+## archivo — ajustar si los picos resultan demasiado ruidosos o siguen
+## pareciendo mesetas.
+const AMPLITUD_DETALLE_RELIEVE := 3.0
+
 ## Percentil (sobre la distribución real de altura_en() en todo el grid) que
 ## define nivel_mar — ver _calcular_nivel_mar(). Fijo por ahora; en un
 ## desarrollo futuro dependerá del "tipo de mundo" elegido (archipiélago,
@@ -62,6 +75,7 @@ var _ruido_mineral: FastNoiseLite
 var _ruido_fauna: FastNoiseLite
 var _ruido_frutal: FastNoiseLite
 var _ruido_arbol: FastNoiseLite
+var _ruido_detalle: FastNoiseLite
 
 
 func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
@@ -103,6 +117,16 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	_ruido_arbol.noise_type = FastNoiseLite.TYPE_PERLIN
 	_ruido_arbol.frequency = 0.05
 
+	# Semilla derivada distinta de todas las anteriores (semilla+5 ya la usa
+	# el RandomNumberGenerator de _generar_rios(), no otro FastNoiseLite —
+	# sin colisión real, pero se salta igual por claridad). Alta frecuencia
+	# a propósito: ver AMPLITUD_DETALLE_RELIEVE, rompe las "mesetas" que
+	# EXPONENTE_RELIEVE produce cerca de picos/cuencas.
+	_ruido_detalle = FastNoiseLite.new()
+	_ruido_detalle.seed = semilla + 6
+	_ruido_detalle.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_detalle.frequency = 0.1
+
 	nivel_mar = _calcular_nivel_mar(ancho_mundo, largo_mundo)
 	_generar_rios(semilla, ancho_mundo, largo_mundo)
 
@@ -128,7 +152,14 @@ func _altura_flotante(x: int, z: int) -> float:
 	var valor: float = _ruido.get_noise_2d(x, z)
 	var valor_redistribuido: float = _redistribuir(valor, EXPONENTE_RELIEVE)
 	var t: float = (valor_redistribuido + 1.0) / 2.0
-	return ALTURA_MINIMA + t * (ALTURA_MAXIMA - ALTURA_MINIMA)
+	var altura_base: float = ALTURA_MINIMA + t * (ALTURA_MAXIMA - ALTURA_MINIMA)
+
+	# Detalle de alta frecuencia (ver AMPLITUD_DETALLE_RELIEVE) escalado por
+	# qué tan cerca está esta celda de un extremo del relieve — rompe las
+	# mesetas cerca de picos/cuencas sin afectar mucho las pendientes medias.
+	var detalle: float = _ruido_detalle.get_noise_2d(x, z)
+	var factor_extremo: float = abs(valor_redistribuido)
+	return altura_base + detalle * AMPLITUD_DETALLE_RELIEVE * factor_extremo
 
 
 ## Curva de potencia sign(x)*pow(abs(x), exponente): comprime o expande los
@@ -256,8 +287,10 @@ const NUM_RIOS := 6
 ## esta distancia por debajo de ALTURA_MAXIMA (Sección 1). Subido de 3 a 6
 ## (decisión tomada jugando en vivo): con margen 3 (altura >= 12) solo
 ## calificaban las cumbres más altas del mundo; con 6 (altura >= 9) también
-## nacen ríos de colinas medias, no solo picos.
-const MARGEN_NACIENTE_RIO := 6
+## nacen ríos de colinas medias, no solo picos. Subido después a 10
+## (altura >= 5) para ampliar aún más el rango de colinas que pueden dar
+## nacimiento a un río.
+const MARGEN_NACIENTE_RIO := 10
 
 ## Distancia mínima en línea recta (celdas) entre dos nacientes elegidas —
 ## evita que varios de los NUM_RIOS ríos nazcan todos de la misma montaña

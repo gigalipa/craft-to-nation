@@ -140,4 +140,68 @@ func ejecutar_pruebas() -> void:
 	Recoleccion.quitar_puesto(Vector2i(999, 999))  # no existía, no debe fallar
 	print("OK: quitar_puesto() libera la reserva; quitar una esquina sin nada registrado no falla.")
 
-	print("\n=== Las 10 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 11: detectar_recursos() cuenta 'piso' como 'tierra' (superficie expuesta) ===")
+	var mundo_superficie: Node = VoxelWorld.new()
+	mundo_superficie.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_superficie.cell_size = Vector3.ONE * 1.0
+	mundo_superficie._indexar_biblioteca()
+	assert(mundo_superficie.material_real("piso") == "tierra")
+	assert(mundo_superficie.material_real("piedra") == "piedra")  # sin traducción, se devuelve igual
+
+	# Misma superficie plana que TEST 1, pero con la capa expuesta como
+	# "piso" (dy=0) y "tierra" real justo debajo (dy=1) — replica lo que
+	# hace VoxelWorld._generar_terreno() en el mundo real.
+	var centro_superficie := Vector2i(100, 100)
+	var altura_sup := 10
+	for dx in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
+		for dz in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
+			if Vector2(dx, dz).length() > Recoleccion.RADIO_AREA_MINA:
+				continue
+			mundo_superficie.colocar_bloque(Vector3i(centro_superficie.x + dx, altura_sup, centro_superficie.y + dz), "piso")
+			mundo_superficie.colocar_bloque(Vector3i(centro_superficie.x + dx, altura_sup - 1, centro_superficie.y + dz), "tierra")
+
+	var conteo_superficie: Dictionary = Recoleccion.detectar_recursos(mundo_superficie, centro_superficie, altura_sup)
+	print("Conteo detectado (piso + tierra): ", conteo_superficie)
+	assert(not conteo_superficie.has("piso"))
+	assert(conteo_superficie.get("tierra", 0) > 0)
+	# La celda dy=0 (el disco completo de radio 6, todas "piso") y la celda
+	# dy=1 (mismo disco, todas "tierra" real) deben sumarse en un solo
+	# conteo de "tierra". No es simplemente el doble de un disco 2D: al
+	# igual que detectar_recursos(), la esfera real de acción usa distancia
+	# 3D (dx, -dy, dz) — la capa dy=1 pierde algunas celdas del borde que sí
+	# entran en el filtro 2D de colocación pero no en la esfera 3D exacta.
+	var celdas_capa_0 := 0
+	var celdas_capa_1 := 0
+	for dx2 in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
+		for dz2 in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
+			if Vector3(dx2, 0, dz2).length() <= Recoleccion.RADIO_AREA_MINA:
+				celdas_capa_0 += 1
+			if Vector3(dx2, -1, dz2).length() <= Recoleccion.RADIO_AREA_MINA:
+				celdas_capa_1 += 1
+	assert(conteo_superficie["tierra"] == celdas_capa_0 + celdas_capa_1)
+	print("OK: la capa superficial 'piso' se cuenta como 'tierra', sumada a la 'tierra' real de debajo.")
+
+	print("\n=== TEST 12: detectar_recursos() ignora bloques estructurales de un edificio ===")
+	var mundo_edificio: Node = VoxelWorld.new()
+	mundo_edificio.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_edificio.cell_size = Vector3.ONE * 1.0
+	mundo_edificio._indexar_biblioteca()
+	var centro_edificio := Vector2i(200, 200)
+	var altura_edificio := 10
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x, altura_edificio - 1, centro_edificio.y), "piedra")
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x, altura_edificio, centro_edificio.y), "pared")
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 1, altura_edificio, centro_edificio.y), "ventana")
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 2, altura_edificio, centro_edificio.y), "puerta_inferior")
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 3, altura_edificio, centro_edificio.y), "cama_pies")
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 4, altura_edificio, centro_edificio.y), "baul")
+	var conteo_edificio: Dictionary = Recoleccion.detectar_recursos(mundo_edificio, centro_edificio, altura_edificio)
+	print("Conteo detectado bajo un edificio: ", conteo_edificio)
+	assert(not conteo_edificio.has("pared"))
+	assert(not conteo_edificio.has("ventana"))
+	assert(not conteo_edificio.has("puerta_inferior"))
+	assert(not conteo_edificio.has("cama_pies"))
+	assert(not conteo_edificio.has("baul"))
+	assert(conteo_edificio.get("piedra", 0) > 0)
+	print("OK: una mina bajo un edificio nunca reporta sus bloques estructurales como recurso minable.")
+
+	print("\n=== Las 12 pruebas de Recoleccion pasaron correctamente ===")

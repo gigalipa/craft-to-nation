@@ -13,13 +13,17 @@ const TASA_BASE_POR_CIUDADANO := 2.0
 const ANCHO_HUELLA_MINA := 5
 const ALTO_HUELLA_MINA := 5
 
-## Tipos de bloque que detectar_recursos() ignora explícitamente: son
-## recursos de otro dominio (madera/follaje de árboles — ver
-## GeneradorArbol.gd/VoxelWorld._generar_arboles() — pertenecen a futuros
-## puestos madereros, no a minas). Bug reportado por el usuario jugando en
-## vivo: la ficha de una mina mostraba "tronco"/"follaje" en su conteo de
-## recursos detectados.
-const TIPOS_NO_MINERALES := ["madera", "follaje"]
+## Catálogo de minerales que una mina puede detectar y recolectar (GDD,
+## Sección 4: "Minas — catálogo de hasta 6 tipos"). Whitelist en vez de
+## denylist: antes solo se excluían "madera"/"follaje" (árboles), pero eso
+## dejaba pasar cualquier otro tipo, incluyendo bloques estructurales
+## (pared, ventana, puerta, cama, baúl) si la mina quedaba bajo un
+## edificio — bug reportado por el usuario jugando en vivo (la ficha
+## mostraba "pared"/"ventana" como si la mina pudiera extraerlos). "cobre",
+## "carbon" y "tierras_raras" no tienen bloque real en el mundo todavía
+## (solo hierro/tierra/piedra — ver GeneradorMundo.gd), pero se incluyen
+## para no requerir tocar este archivo cuando se agreguen sus vetas.
+const TIPOS_MINERALES := ["tierra", "piedra", "hierro", "cobre", "carbon", "tierras_raras"]
 
 ## Ejemplo "mina manual, Tipo 1" del GDD (Sección 3) — puramente
 ## informativo por ahora: colocar una mina no cobra nada todavía (mismo
@@ -97,8 +101,8 @@ func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: in
 				if offset.length() > RADIO_AREA_MINA:
 					continue
 				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
-				var tipo: String = mundo.obtener_tipo(celda)
-				if tipo != "" and not TIPOS_NO_MINERALES.has(tipo):
+				var tipo: String = mundo.material_real(mundo.obtener_tipo(celda))
+				if TIPOS_MINERALES.has(tipo):
 					conteo[tipo] = conteo.get(tipo, 0) + 1
 	return conteo
 

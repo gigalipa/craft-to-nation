@@ -60,6 +60,27 @@ const TIPOS_ESTRUCTURA := [
 	"cama_cabecera", "cama_pies", "baul",
 ]
 
+## La celda de superficie de cada columna del mundo se coloca como "piso"
+## (ver _generar_terreno() — reutiliza el bloque caminable), pero
+## geológicamente es el mismo material que el subsuelo justo debajo
+## ("tierra", ver GeneradorMundo.tipo_en_profundidad()). La distinción
+## piso/tierra es puramente visual (bloque caminable vs. bloque de
+## relleno); para cualquier consumidor que le importe la IDENTIDAD del
+## recurso (minas, a futuro NPCs — ver Recoleccion.detectar_recursos()),
+## "piso" debe contarse como "tierra". No afecta renderizado ni
+## construcción: "piso" sigue fuera de TIPOS_ESTRUCTURA y sigue siendo un
+## bloque distinto en la MeshLibrary.
+const MATERIAL_REAL := {"piso": "tierra"}
+
+
+## Traduce "tipo" (el tipo de bloque real, tal como lo devuelve
+## obtener_tipo()) al material que representa para efectos de RECURSO —
+## ver MATERIAL_REAL más arriba. Devuelve "tipo" sin cambios si no hay
+## traducción registrada.
+func material_real(tipo: String) -> String:
+	return MATERIAL_REAL.get(tipo, tipo)
+
+
 ## Tipos de bloque generados por _generar_arboles() — ver altura_en() más
 ## abajo. Bug reportado por el usuario jugando en vivo: altura_en()
 ## contaba cualquier bloque sólido como "el suelo", así que el overlay de

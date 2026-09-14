@@ -101,7 +101,8 @@ const COLOR_PUESTO_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
 const COLOR_AREA_ACCION := Color(0.3, 0.7, 1.0, 0.15)
 
 ## El mayor ancho/alto entre los tipos de puesto existentes (mina 5x5, caza
-## y recolección 4x4) — tamaño del pool de planos fantasma reutilizable
+## y recolección 4x4, pesca y frutos del mar 4x6 — este último es el que fija
+## el valor actual (6)) — tamaño del pool de planos fantasma reutilizable
 ## entre cualquier tipo (ver _crear_huella_puesto()).
 const MAX_ANCHO_HUELLA_PUESTO := 6
 const MAX_ALTO_HUELLA_PUESTO := 6
@@ -605,21 +606,21 @@ func _huella_tiene_columna_en_tierra(esquina: Vector2i, columnas: Array[Vector2i
 	return false
 
 
-## true si el eje largo de la huella de pesca (siempre 3 x 5) corre por Z
-## (sin rotar: alto=5 > ancho=3) — false si fue rotada con Ctrl+rueda
-## (ancho=5 > alto=3, eje largo por X). Nunca son iguales para este puesto,
+## true si el eje largo de la huella de pesca (siempre 4 x 6) corre por Z
+## (sin rotar: alto=6 > ancho=4) — false si fue rotada con Ctrl+rueda
+## (ancho=6 > alto=4, eje largo por X). Nunca son iguales para este puesto,
 ## así que no hay caso ambiguo.
 static func _eje_largo_pesca_es_z(ancho: int, alto: int) -> bool:
 	return alto > ancho
 
 
 ## Las celdas (offsets dx,dz relativos a "esquina") del extremo "indice"
-## (0 o 1) a lo largo del eje largo de la huella — siempre 3 celdas, sobre
+## (0 o 1) a lo largo del eje largo de la huella — siempre 4 celdas, sobre
 ## el eje corto. Antes esto asumía que el eje largo era siempre Z (dz);
 ## generalizado para que la rotación (Ctrl+rueda, que solo intercambia
 ## ancho/alto) también rote qué eje del mundo se revisa como extremo — sin
-## esto, rotar la huella 90° seguía revisando filas de 5 celdas en Z en vez
-## de columnas de 3 celdas en X, y la colocación este-oeste era imposible
+## esto, rotar la huella 90° seguía revisando filas de 6 celdas en Z en vez
+## de columnas de 4 celdas en X, y la colocación este-oeste era imposible
 ## (bug encontrado jugando en vivo).
 static func _celdas_extremo_pesca(ancho: int, alto: int, indice: int) -> Array[Vector2i]:
 	var celdas: Array[Vector2i] = []
@@ -657,9 +658,9 @@ func _extremo_uniforme_en(esquina: Vector2i, ancho: int, alto: int, indice: int)
 ## agua: las 2 celdas de flanco (a los lados del extremo, sobre el eje
 ## corto) más toda la fila/columna inmediatamente más allá del extremo a lo
 ## largo del eje largo, extendida un bloque más allá de cada flanco — mismo
-## conteo (ancho_extremo + 4 = 7) sin importar la orientación. Exige que el
-## extremo no sea un charco angosto que termine justo en el borde de la
-## huella.
+## conteo (ancho_extremo + 4 = 8 para ancho_extremo = 4) sin importar la
+## orientación. Exige que el extremo no sea un charco angosto que termine
+## justo en el borde de la huella.
 func _periferia_extremo_es_agua(esquina: Vector2i, ancho: int, alto: int, indice: int) -> bool:
 	var eje_z := _eje_largo_pesca_es_z(ancho, alto)
 	var celdas_extremo := _celdas_extremo_pesca(ancho, alto, indice)
@@ -984,7 +985,7 @@ func _salir_de_modo_colocar_puesto() -> void:
 ## Ctrl + rueda del mouse, solo con un puesto en modo colocación: rota la
 ## huella activa 90° (intercambia ancho/alto). Sin efecto visible en mina
 ## (5x5) ni caza/recolección (4x4) — ambas cuadradas — pero sí en el
-## maderero (3x4, no cuadrada) y en pesca y frutos del mar (3x5, no
+## maderero (3x4, no cuadrada) y en pesca y frutos del mar (4x6, no
 ## cuadrada) — en este último caso, además de cambiar la forma visual de la
 ## huella, también rota qué eje del mundo (X o Z) se valida como extremo de
 ## agua/tierra (ver _eje_largo_pesca_es_z()/_celdas_extremo_pesca()), así
@@ -1310,8 +1311,8 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	for dx in range(_ancho_puesto_activo):
 		for dz in range(_alto_puesto_activo):
 			var celda_marcador := Vector3i(esquina.x + dx, objetivo + 1, esquina.y + dz)
-			mundo.colocar_bloque(celda_marcador, bloque_marcador)
-			celdas_puesto.append(celda_marcador)
+			if mundo.colocar_bloque(celda_marcador, bloque_marcador):
+				celdas_puesto.append(celda_marcador)
 	if _tipo_puesto_activo == "pesca_frutos_mar":
 		var eje_z := _eje_largo_pesca_es_z(_ancho_puesto_activo, _alto_puesto_activo)
 		var largo: int = _alto_puesto_activo if eje_z else _ancho_puesto_activo
@@ -1323,8 +1324,8 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 				var es_mitad_edificio: bool = (l >= mitad) if extremo_agua_indice == 0 else (l < mitad)
 				if es_mitad_edificio:
 					var celda_slab := Vector3i(esquina.x + dx, objetivo + 2, esquina.y + dz)
-					mundo.colocar_bloque(celda_slab, bloque_marcador)
-					celdas_puesto.append(celda_slab)
+					if mundo.colocar_bloque(celda_slab, bloque_marcador):
+						celdas_puesto.append(celda_slab)
 	mundo.registrar_edificio(celdas_puesto)
 
 	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)

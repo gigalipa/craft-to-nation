@@ -32,6 +32,22 @@ class GeneradorAguaFalso:
 		return 0.3 if x >= 0 else 0.0
 
 
+## Agua conectada: cuadrado 6x6 en x=[0,5], z=[0,5] (36 celdas), más un
+## charco de 1 celda en (10,10) SIN conexión con el cuadrado — separado por
+## tierra. Sirve para distinguir un escaneo circular simple (que contaría
+## el charco si cae dentro del radio) de un flood-fill real (que no debe
+## alcanzarlo).
+class GeneradorAguaConectadaFalso:
+	func es_agua_o_rio_en(x: int, z: int) -> bool:
+		if x == 10 and z == 10:
+			return true
+		return x >= 0 and x <= 5 and z >= 0 and z <= 5
+	func densidad_peces_en(_x: int, _z: int) -> float:
+		return 1.0
+	func densidad_algas_en(_x: int, _z: int) -> float:
+		return 1.0
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -228,23 +244,42 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(Recoleccion.tasa_maderero(promedio_arbol_fuera)["madera"], 0.0))
 	print("OK: detectar_arbol()/tasa_maderero() promedian densidad_arbol_en() igual que caza/recolección con fauna/frutal.")
 
-	print("\n=== TEST 14: detectar_pesca_frutos_mar() omite columnas de tierra del promedio (no cuentan como 0.0) ===")
+	print("\n=== TEST 14: detectar_pesca_frutos_mar() promedia exactamente las celdas del Dictionary recibido ===")
 	var generador_agua := GeneradorAguaFalso.new()
-	var promedios_pesca: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, Vector2i(0, 0))
-	print("Promedios (mitad agua/mitad tierra dentro del radio): ", promedios_pesca)
+	var celdas_prueba: Dictionary = {Vector2i(0, 0): true, Vector2i(1, 0): true, Vector2i(2, 0): true}
+	var promedios_pesca: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, celdas_prueba)
+	print("Promedios (3 celdas dadas): ", promedios_pesca)
 	assert(is_equal_approx(promedios_pesca["peces"], 0.5))
 	assert(is_equal_approx(promedios_pesca["algas"], 0.3))
-	print("OK: las columnas de tierra dentro del radio se omiten del promedio — si contaran como 0.0, el resultado sería ~la mitad.")
+	print("OK: detectar_pesca_frutos_mar() promedia exactamente las celdas del Dictionary recibido, sin escanear nada por su cuenta.")
 
-	print("\n=== TEST 15: detectar_pesca_frutos_mar() sin ninguna columna de agua da 0.0/0.0 ===")
-	var promedios_sin_agua: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, Vector2i(-1000, -1000))
+	print("\n=== TEST 15: detectar_pesca_frutos_mar() con un Dictionary vacío da 0.0/0.0 ===")
+	var promedios_sin_agua: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, {})
 	assert(is_equal_approx(promedios_sin_agua["peces"], 0.0))
 	assert(is_equal_approx(promedios_sin_agua["algas"], 0.0))
-	print("OK: sin ninguna muestra de agua, ambas señales devuelven 0.0 sin dividir por cero.")
+	print("OK: sin ninguna celda de agua, ambas señales devuelven 0.0 sin dividir por cero.")
 
 	print("\n=== TEST 16: tasas_pesca_frutos_mar() multiplica cada señal por su tasa base ===")
 	var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3})
 	assert(is_equal_approx(tasas_pesca["pesca"], 0.5 * Recoleccion.TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO))
 	assert(is_equal_approx(tasas_pesca["frutos_mar"], 0.3 * Recoleccion.TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO))
 
-	print("\n=== Las 16 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 17: celdas_agua_conectadas() sigue solo agua conectada por adyacencia, ignora un charco aislado dentro del mismo radio ===")
+	var generador_conectada := GeneradorAguaConectadaFalso.new()
+	var celdas: Dictionary = Recoleccion.celdas_agua_conectadas(generador_conectada, Vector2i(0, 0), 25)
+	assert(celdas.size() == 36)
+	for x in range(6):
+		for z in range(6):
+			assert(celdas.has(Vector2i(x, z)))
+	assert(not celdas.has(Vector2i(10, 10)))
+	print("OK: celdas_agua_conectadas() encontró las 36 celdas del cuadrado conectado e ignoró el charco aislado en (10,10).")
+
+	print("\n=== TEST 18: celdas_agua_conectadas() nunca sale del radio, aunque el agua siga conectada más allá ===")
+	var generador_infinita := GeneradorAguaFalso.new()
+	var celdas_acotadas: Dictionary = Recoleccion.celdas_agua_conectadas(generador_infinita, Vector2i(0, 0), 5)
+	assert(celdas_acotadas.size() > 0)
+	for xz in celdas_acotadas:
+		assert(Vector2(xz).length() <= 5.0)
+	print("OK: celdas_agua_conectadas() respeta el radio como tope, aunque el agua siga conectada más allá (GeneradorAguaFalso es infinito en x>=0).")
+
+	print("\n=== Las 18 pruebas de Recoleccion pasaron correctamente ===")

@@ -88,6 +88,14 @@ func material_real(tipo: String) -> String:
 ## ubicándose sobre la copa de un árbol en vez del terreno real debajo.
 const TIPOS_ARBOL := ["madera", "follaje"]
 
+## Tipos de bloque cuya geometría visible NO la dibuja GridMap (su ítem en
+## la MeshLibrary tiene una malla vacía) — la dibuja TranslucidosRenderer,
+## que omite las caras compartidas entre dos celdas del MISMO tipo
+## translúcido (ver docs/superpowers/specs/2026-09-13-culling-caras-
+## translucidas-design.md). GridMap sigue siendo la única fuente de verdad
+## para ocupación/colisión: esto es puramente visual.
+const TIPOS_TRANSLUCIDOS: Array[String] = ["agua", "ventana"]
+
 const VECINOS_3D: Array[Vector3i] = [
 	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
 	Vector3i(0, 1, 0), Vector3i(0, -1, 0),
@@ -136,6 +144,12 @@ var _siguiente_id_edificio := 1
 ## llamador que necesite "todas las celdas de un id" sin orden (p. ej. un
 ## puesto, que no tiene edificio_orden).
 var edificio_a_celdas: Dictionary = {}  # int -> Array[Vector3i]
+
+## Emitida cuando una celda cambia DE o A un tipo en TIPOS_TRANSLUCIDOS
+## (colocada, minada, revertida a fantasma, o drenada) — TranslucidosRenderer
+## la escucha para reconstruir solo los chunks afectados. No se emite para
+## ningún otro cambio de bloque (la inmensa mayoría de las llamadas).
+signal bloque_translucido_cambiado(celda: Vector3i)
 
 ## Por edificio (id de VoxelWorld.registrar_edificio()): el orden FIJO de
 ## sus celdas estructurales (piso -> paredes/puertas/ventanas ->
@@ -266,6 +280,11 @@ func _ready() -> void:
 	arboles = GeneradorArbol.new()
 	_generar_terreno()
 	_generar_arboles()
+	var translucidos: Node3D = get_node("TranslucidosRenderer")
+	translucidos.voxel_world = self
+	translucidos._indexar_materiales()
+	bloque_translucido_cambiado.connect(translucidos._on_bloque_translucido_cambiado)
+	translucidos.reconstruir_todo()
 
 
 func _indexar_biblioteca() -> void:
@@ -366,13 +385,16 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:
 	var actual: int = get_cell_item(celda)
-	if actual != GridMap.INVALID_CELL_ITEM and _tipo_por_id.get(actual, "") != "agua":
+	var tipo_anterior: String = _tipo_por_id.get(actual, "")
+	if actual != GridMap.INVALID_CELL_ITEM and tipo_anterior != "agua":
 		return false
 	if not _id_por_tipo.has(tipo):
 		return false
 	set_cell_item(celda, _id_por_tipo[tipo])
 	if por_jugador:
 		colocado_por_jugador[celda] = true
+	if TIPOS_TRANSLUCIDOS.has(tipo) or TIPOS_TRANSLUCIDOS.has(tipo_anterior):
+		bloque_translucido_cambiado.emit(celda)
 	return true
 
 
@@ -383,6 +405,7 @@ func minar_bloque(celda: Vector3i) -> bool:
 		return false
 	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
 		return false
+	var tipo_anterior: String = obtener_tipo(celda)
 	if pareja.has(celda):
 		var otra: Vector3i = pareja[celda]
 		set_cell_item(otra, GridMap.INVALID_CELL_ITEM)
@@ -391,6 +414,8 @@ func minar_bloque(celda: Vector3i) -> bool:
 		pareja.erase(celda)
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	colocado_por_jugador.erase(celda)
+	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
+		bloque_translucido_cambiado.emit(celda)
 	return true
 
 
@@ -712,9 +737,12 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 ## así que minar_bloque() nunca llega a consultar "pareja" para ella
 ## mientras dure la deconstrucción.
 func _revertir_celda(celda: Vector3i) -> void:
+	var tipo_anterior: String = obtener_tipo(celda)
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	colocado_por_jugador.erase(celda)
 	colocar_bloque(celda, "fantasma")
+	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
+		bloque_translucido_cambiado.emit(celda)
 
 
 ## Elimina por completo un edificio ya reducido a fantasma vacío (ver
@@ -736,8 +764,11 @@ func eliminar_edificio(id: int) -> Vector2i:
 		if pareja.has(celda):
 			pareja.erase(pareja[celda])
 			pareja.erase(celda)
+		var tipo_anterior: String = obtener_tipo(celda)
 		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 		celda_a_edificio.erase(celda)
+		if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
+			bloque_translucido_cambiado.emit(celda)
 	edificio_a_celdas.erase(id)
 	edificio_orden.erase(id)
 	edificio_tipos.erase(id)
@@ -906,6 +937,7 @@ func drenar_agua(x: int, z: int) -> int:
 	var reemplazados := 0
 	while obtener_tipo(Vector3i(x, y, z)) == "agua":
 		set_cell_item(Vector3i(x, y, z), _id_por_tipo["tierra"])
+		bloque_translucido_cambiado.emit(Vector3i(x, y, z))
 		y += 1
 		reemplazados += 1
 	return reemplazados

@@ -73,7 +73,7 @@ Este método es el único lugar que genera geometría — no hay meshing "greedy
 
 **Reconstrucción inicial (generación del mundo):**
 
-`VoxelWorld._ready()` llama a `translucidos.reconstruir_todo()` justo después de `_generar_terreno()` (antes de `_generar_arboles()`, que no coloca bloques translúcidos). `reconstruir_todo()`:
+`VoxelWorld._ready()` llama a `translucidos.reconstruir_todo()` justo después de `_generar_terreno()` y `_generar_arboles()` (este último no coloca bloques translúcidos, así que el resultado es el mismo). `reconstruir_todo()`:
 
 ```gdscript
 func reconstruir_todo() -> void:

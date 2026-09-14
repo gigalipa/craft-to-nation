@@ -29,6 +29,19 @@ existe (`PoC_6/`, secciones 3.10/3.11: ríos con corriente, `es_agua_en()`,
   mezclado, la colocación se rechaza. Esto reemplaza, solo para este tipo,
   la regla genérica `_huella_tiene_columna_en_tierra()` (que exige apenas
   una columna en tierra en cualquier parte de la huella).
+- **Periferia del extremo de agua también debe ser agua real (7 celdas):**
+  no basta con que las 3 celdas del extremo sean agua — el extremo no puede
+  ser un charco angosto que termine justo en el borde de la huella. Se
+  exige agua en las 7 celdas que rodean ese extremo por los 3 lados
+  expuestos (izquierda, derecha y frente; el lado de "atrás" no se revisa,
+  es el que conecta con la huella): las 2 celdas de flanco (una a cada lado
+  del extremo, a su misma fila) más toda la fila inmediatamente al frente,
+  extendida un bloque más allá de cada flanco (5 celdas de ancho, ya que el
+  extremo mide 3) — `2 + (ancho + 2) = ancho + 4 = 7` para `ancho = 3`.
+  Geométricamente son "dos L" que envuelven cada esquina exterior del
+  extremo (flanco + diagonal + celda de frente adyacente, 3 celdas cada
+  una) más el bloque central de frente — 7 celdas en total, todas
+  obligatoriamente agua.
 - **Confirmación con pilotes, no drenaje total (decisión explícita del
   usuario):** a diferencia de los demás puestos (que drenan y nivelan a
   `"tierra"` toda su huella), aquí solo las **2 esquinas** del extremo de
@@ -234,17 +247,42 @@ func _fila_uniforme_en(esquina: Vector2i, ancho: int, dz: int) -> String:
 	return ""
 
 
+## true si las (ancho + 4) celdas que rodean por fuera el extremo de agua
+## (fila "fila_agua", "df" = dirección hacia afuera de la huella: -1 si
+## fila_agua = 0, +1 si fila_agua = alto - 1) son todas agua: las 2 celdas
+## de flanco (a la misma fila que el extremo, una a cada lado) más toda la
+## fila inmediatamente al frente, extendida un bloque más allá de cada
+## flanco. Exige que el extremo no sea un charco angosto que termine justo
+## en el borde de la huella — ver "Periferia del extremo de agua" en las
+## decisiones de alcance.
+func _periferia_extremo_es_agua(esquina: Vector2i, ancho: int, fila_agua: int, df: int) -> bool:
+	var fila_frente := fila_agua + df
+	for dx in range(-1, ancho + 1):
+		var x: int = esquina.x + dx
+		var z: int = esquina.y + fila_frente
+		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+			return false
+	for dx in [-1, ancho]:
+		var x: int = esquina.x + dx
+		var z: int = esquina.y + fila_agua
+		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+			return false
+	return true
+
+
 ## Regla de colocación exclusiva de "pesca_frutos_mar": exactamente uno de
 ## los dos extremos de "ancho" celdas (dz=0 y dz=alto-1) debe ser
-## completamente agua y el opuesto completamente tierra firme. Devuelve el
-## dz del extremo de agua (0 o alto-1) si la huella es válida, o -1 si no lo
-## es (ambos extremos iguales, o cualquiera mezclado).
+## completamente agua (fila Y periferia — ver _periferia_extremo_es_agua())
+## y el opuesto completamente tierra firme. Devuelve el dz del extremo de
+## agua (0 o alto-1) si la huella es válida, o -1 si no lo es (ambos
+## extremos iguales, cualquiera mezclado, o la periferia del extremo de
+## agua no está despejada).
 func _extremo_agua_de_huella_pesca(esquina: Vector2i, ancho: int, alto: int) -> int:
 	var fila_a := _fila_uniforme_en(esquina, ancho, 0)
 	var fila_b := _fila_uniforme_en(esquina, ancho, alto - 1)
-	if fila_a == "agua" and fila_b == "tierra":
+	if fila_a == "agua" and fila_b == "tierra" and _periferia_extremo_es_agua(esquina, ancho, 0, -1):
 		return 0
-	if fila_b == "agua" and fila_a == "tierra":
+	if fila_b == "agua" and fila_a == "tierra" and _periferia_extremo_es_agua(esquina, ancho, alto - 1, 1):
 		return alto - 1
 	return -1
 ```
@@ -449,11 +487,14 @@ func ocultar_ficha_pesca() -> void
 - **Verificación manual en el editor** (mismo patrón que el resto de esta
   PoC): colocar un puesto de pesca junto a la costa del mar y junto a un
   río, confirmar visualmente que la huella solo se pone verde con un
-  extremo real sobre agua y el opuesto sobre tierra, que el círculo de área
-  de acción (25 celdas) no se dibuja sobre tierra, que al confirmar solo
-  las 2 esquinas del extremo de agua quedan como pilotes sólidos y el resto
-  del agua bajo la plataforma sigue siendo agua real, y que `Ctrl`+rueda
-  rota la huella (3×5 no es cuadrada).
+  extremo real sobre agua y el opuesto sobre tierra, que un extremo de agua
+  demasiado angosto (p. ej. justo en la entrada de una cala estrecha, con
+  tierra pegada a alguno de los 3 lados expuestos) se rechaza pese a que
+  las 3 celdas del extremo sean agua, que el círculo de área de acción (25
+  celdas) no se dibuja sobre tierra, que al confirmar solo las 2 esquinas
+  del extremo de agua quedan como pilotes sólidos y el resto del agua bajo
+  la plataforma sigue siendo agua real, y que `Ctrl`+rueda rota la huella
+  (3×5 no es cuadrada).
 
 ## Fuera de alcance (explícito)
 

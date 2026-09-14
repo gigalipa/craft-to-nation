@@ -547,3 +547,190 @@ sin rotar) o `ancho > alto` (eje largo en X, rotado) — `_extremo_agua_de_huell
 devuelve ahora un ÍNDICE de extremo (0 o 1), no una coordenada `dz`, para
 que sea válido en ambas orientaciones. El puesto ya puede colocarse mirando
 a cualquiera de los 4 puntos cardinales.
+
+## Actualización posterior (2026-09-14) — huella 4×6, plataforma de dos niveles, radio por conectividad real
+
+Redecisión del usuario tras probar la v1 en vivo, con dos motivos: (1) el
+radio de acción contaba agua sin conexión real con la estructura (charcos
+sueltos dentro del círculo de 25 celdas — ver captura); (2) se adopta
+nomenclatura fija para los dos extremos, útil desde ya para cuando este
+puesto sea un edificio jugable real: **extremo muelle** (el lado sobre el
+agua) y **extremo edificio** (el lado sobre tierra firme, donde en el
+futuro irán las puertas de entrega de recursos al sistema de transporte —
+no implementado todavía, solo la nomenclatura y la reserva visual de esta
+sección).
+
+**Cambios de alcance (reemplazan los valores equivalentes de más arriba):**
+
+- **Huella 4×6** (`ANCHO_HUELLA_PESCA_FRUTOS_MAR = 4`, `ALTO_HUELLA_PESCA_FRUTOS_MAR = 6`,
+  antes 3×5). Los extremos ahora son los lados de **4** celdas (antes 3). La
+  regla de validación (un extremo completo de agua + periferia de
+  `ancho_extremo + 4` celdas despejada, el opuesto completo de tierra) NO
+  cambia de lógica — ya estaba generalizada a cualquier `ancho`/`alto` por
+  la corrección de rotación de más arriba, así que solo cambian las
+  constantes; `_eje_largo_pesca_es_z()`/`_celdas_extremo_pesca()`/
+  `_extremo_uniforme_en()`/`_periferia_extremo_es_agua()`/
+  `_extremo_agua_de_huella_pesca()` siguen sin tocarse.
+- **`MAX_ANCHO_HUELLA_PUESTO`/`MAX_ALTO_HUELLA_PUESTO` suben de 5 a 6**
+  (`CamaraCenital.gd`) — el pool fijo de planos fantasma de la huella
+  (`_crear_huella_puesto()`) se dimensiona por el mayor rectángulo que
+  cualquier puesto pueda necesitar; 4×6 (o 6×4 rotado) ya no cabe en el
+  límite anterior de 5×5. El pool pasa de 25 a 36 planos — mismo patrón de
+  pool sobre-dimensionado y filtrado en vivo ya usado, solo más grande.
+- **Radio de acción por conectividad real, no por círculo simple (corrige
+  el bug de la captura):** nueva `Recoleccion.celdas_agua_conectadas(generador, centro_xz, radio) -> Dictionary`
+  (`Vector2i -> true`) — flood-fill acotado: parte de `centro_xz` (debe ser
+  agua) y se expande por adyacencia real de 4 direcciones SOLO a través de
+  columnas `generador.es_agua_o_rio_en()`, sin nunca salir del círculo de
+  radio `radio` (mismo `RADIO_AREA_PESCA_FRUTOS_MAR = 25` de antes — ver
+  Decisión confirmada: "mismo radio de 25 como tope"). Un charco
+  desconectado dentro del círculo pero sin camino de agua continuo hasta la
+  estructura ya NO cuenta, a diferencia del escaneo circular anterior.
+  - `detectar_pesca_frutos_mar(generador, celdas_agua: Dictionary) -> Dictionary`
+    cambia de firma: ya NO recibe `centro_xz` y escanea un círculo por su
+    cuenta — recibe directamente el `Dictionary` de `celdas_agua_conectadas()`
+    y promedia `densidad_peces_en()`/`densidad_algas_en()` sobre exactamente
+    esas celdas, sin muestreo por pasos (se elimina
+    `PASO_MUESTREO_PESCA_FRUTOS_MAR`: como el conjunto ya es agua real
+    conectada, casi siempre mucho más chico que el círculo completo, visitar
+    cada celda es barato).
+  - `CamaraCenital._actualizar_area_accion_agua()` cambia de firma —
+    ya NO recibe `radio` y filtra por `es_agua_o_rio_en()` por su cuenta;
+    recibe el mismo `Dictionary` de `celdas_agua_conectadas()` y solo
+    muestra un plano si su celda absoluta está en ese conjunto. El punto
+    clave: el círculo visual y las señales de peces/algas ahora consumen
+    **el mismo cálculo de conectividad**, calculado una sola vez por
+    fotograma en `_actualizar_previsualizacion_puesto()` — antes eran dos
+    escaneos circulares independientes que casualmente coincidían.
+- **Plataforma de dos niveles, sin bloque nuevo:** el piso marcador
+  (`"puesto_pesca"`) se coloca en TODA la huella a `objetivo + 1` (igual que
+  antes), y además una segunda capa a `objetivo + 2`, mismo bloque, SOLO en
+  la mitad de la huella más cercana al extremo edificio (`ancho_extremo × 3`
+  celdas — la mitad del eje largo de 6, ya que el extremo edificio es el
+  opuesto al índice de `_extremo_agua_de_huella_pesca()`). La mitad hacia el
+  extremo muelle queda con 1 solo nivel (como el resto de los puestos). Esto
+  diferencia visualmente los dos extremos sin necesitar un asset nuevo en la
+  `MeshLibrary`.
+
+### Código de referencia (`Recoleccion.gd`)
+
+```gdscript
+const ANCHO_HUELLA_PESCA_FRUTOS_MAR := 4
+const ALTO_HUELLA_PESCA_FRUTOS_MAR := 6
+# PASO_MUESTREO_PESCA_FRUTOS_MAR eliminada — ya no se usa (ver más arriba).
+
+## Flood-fill acotado: todas las celdas de agua (mar/lago/río, ver
+## GeneradorMundo.es_agua_o_rio_en()) alcanzables desde "centro_xz"
+## siguiendo solo adyacencia real (4 direcciones), sin nunca salir del
+## círculo de radio "radio". Devuelve un Dictionary (Vector2i -> true) para
+## membresía O(1) — usado tanto por el círculo visual
+## (CamaraCenital._actualizar_area_accion_agua()) como por
+## detectar_pesca_frutos_mar(), para que ambos vean exactamente el mismo
+## conjunto de celdas. Vacío si "centro_xz" mismo no es agua.
+func celdas_agua_conectadas(generador: Object, centro_xz: Vector2i, radio: int) -> Dictionary:
+	var visitadas: Dictionary = {}
+	if not generador.es_agua_o_rio_en(centro_xz.x, centro_xz.y):
+		return visitadas
+	var pendientes: Array[Vector2i] = [centro_xz]
+	visitadas[centro_xz] = true
+	var direcciones := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+	while not pendientes.is_empty():
+		var actual: Vector2i = pendientes.pop_back()
+		for dir in direcciones:
+			var vecino: Vector2i = actual + dir
+			if visitadas.has(vecino):
+				continue
+			if Vector2(vecino - centro_xz).length() > radio:
+				continue
+			if not generador.es_agua_o_rio_en(vecino.x, vecino.y):
+				continue
+			visitadas[vecino] = true
+			pendientes.append(vecino)
+	return visitadas
+
+
+## Promedia densidad_peces_en()/densidad_algas_en() sobre "celdas_agua" (ver
+## celdas_agua_conectadas()) — ya NO escanea un círculo por su cuenta.
+## Devuelve ambas claves en 0.0 si "celdas_agua" está vacío.
+func detectar_pesca_frutos_mar(generador: Object, celdas_agua: Dictionary) -> Dictionary:
+	var suma_peces := 0.0
+	var suma_algas := 0.0
+	for xz in celdas_agua:
+		suma_peces += generador.densidad_peces_en(xz.x, xz.y)
+		suma_algas += generador.densidad_algas_en(xz.x, xz.y)
+	var muestras: int = celdas_agua.size()
+	if muestras == 0:
+		return {"peces": 0.0, "algas": 0.0}
+	return {"peces": suma_peces / muestras, "algas": suma_algas / muestras}
+```
+
+### Código de referencia (`CamaraCenital.gd`)
+
+```gdscript
+const MAX_ANCHO_HUELLA_PUESTO := 6
+const MAX_ALTO_HUELLA_PUESTO := 6
+
+## Igual que _actualizar_area_accion(), pero en vez de un radio geométrico
+## simple, muestra un plano solo si su celda absoluta está en "celdas_agua"
+## (ver Recoleccion.celdas_agua_conectadas()) — exclusivo de
+## "pesca_frutos_mar". Reutiliza el mismo pool _area_accion/_offsets_area_accion.
+func _actualizar_area_accion_agua(centro: Vector2i, celdas_agua: Dictionary) -> void:
+	for i in range(_offsets_area_accion.size()):
+		var offset: Vector2i = _offsets_area_accion[i]
+		var plano: MeshInstance3D = _area_accion[i]
+		var x: int = centro.x + offset.x
+		var z: int = centro.y + offset.y
+		if not celdas_agua.has(Vector2i(x, z)):
+			plano.visible = false
+			continue
+		var altura_celda: int = mundo.altura_en(x, z, true)
+		plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE_AREA_ACCION, z + DESF)
+		plano.visible = true
+```
+
+En `_actualizar_previsualizacion_puesto()`, la rama `elif _tipo_puesto_activo == "pesca_frutos_mar":` calcula `celdas_agua_conectadas()` UNA VEZ y la pasa a ambas llamadas:
+
+```gdscript
+elif _tipo_puesto_activo == "pesca_frutos_mar":
+	if extremo_agua_indice != -1:
+		var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
+		@warning_ignore("integer_division")
+		var centro_agua := esquina + celdas_extremo[celdas_extremo.size() / 2]
+		var celdas_agua: Dictionary = Recoleccion.celdas_agua_conectadas(mundo.generador, centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+		var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, celdas_agua)
+		var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar(promedios)
+		hud.actualizar_tasas_pesca(tasas_pesca)
+		_actualizar_area_accion_agua(centro_agua, celdas_agua)
+	else:
+		hud.actualizar_tasas_pesca({})
+		_ocultar_area_accion()
+```
+
+En `_procesar_clic_puesto()`, tras el bucle existente que coloca `bloque_marcador` en toda la huella a `objetivo + 1` (sin cambios), se agrega la segunda capa de la mitad del extremo edificio:
+
+```gdscript
+if _tipo_puesto_activo == "pesca_frutos_mar":
+	var eje_z := _eje_largo_pesca_es_z(_ancho_puesto_activo, _alto_puesto_activo)
+	var largo: int = _alto_puesto_activo if eje_z else _ancho_puesto_activo
+	@warning_ignore("integer_division")
+	var mitad: int = largo / 2
+	for dx in range(_ancho_puesto_activo):
+		for dz in range(_alto_puesto_activo):
+			var l: int = dz if eje_z else dx
+			var es_mitad_edificio: bool = (l >= mitad) if extremo_agua_indice == 0 else (l < mitad)
+			if es_mitad_edificio:
+				var celda_slab := Vector3i(esquina.x + dx, objetivo + 2, esquina.y + dz)
+				mundo.colocar_bloque(celda_slab, bloque_marcador)
+				celdas_puesto.append(celda_slab)
+```
+
+(Este bloque va DESPUÉS de que `celdas_puesto` ya tiene las celdas de la
+primera capa y ANTES de `mundo.registrar_edificio(celdas_puesto)`, para que
+la segunda capa también quede registrada/inmune al minado.)
+
+### Fuera de alcance (sin cambios respecto a la sección anterior)
+
+Las puertas de entrega de recursos en el extremo edificio, y cualquier
+lógica de transporte/logística conectada a ellas, siguen sin implementarse
+— esta actualización solo reserva la nomenclatura y la diferencia visual
+(plataforma de 2 niveles) para cuando ese trabajo llegue.

@@ -124,14 +124,22 @@ _ruido_peces.frequency = 0.05
 ```
 
 ```gdscript
+## true si (x, z) es agua de cualquier tipo — mar/lago (es_agua_en()) o río
+## (es_rio_en(), que puede estar muy por encima del nivel del mar). Punto
+## único para cualquier lógica que deba tratar ambos tipos de agua por
+## igual (señales de peces/algas, radio de acción del puesto de pesca).
+func es_agua_o_rio_en(x: int, z: int) -> bool:
+	return es_agua_en(x, z) or es_rio_en(x, z)
+
+
 ## Densidad de peces en la columna de agua (x, z), en [0, 1] — 0.0 si la
-## columna no es agua (ver es_agua_en()). Ruido puro (mismo patrón que
+## columna no es agua (ver es_agua_o_rio_en()). Ruido puro (mismo patrón que
 ## densidad_fauna_en()/densidad_frutal_en()/densidad_arbol_en()): crea
 ## "nubes" de más/menos peces tanto en el mar como en cualquier río, sin
 ## relación con la profundidad real de esa columna (decisión explícita:
 ## una señal solo basada en profundidad resultaba demasiado plana/predecible).
 func densidad_peces_en(x: int, z: int) -> float:
-	if not es_agua_en(x, z):
+	if not es_agua_o_rio_en(x, z):
 		return 0.0
 	var valor: float = _ruido_peces.get_noise_2d(x, z)
 	return (valor + 1.0) / 2.0
@@ -156,11 +164,12 @@ func _profundidad_relativa_agua_en(x: int, z: int) -> float:
 
 
 ## Densidad de algas/frutos del mar en la columna de agua (x, z), en [0, 1]
-## — 0.0 si la columna no es agua. Geométrica, no ruido: inversa a la
-## profundidad relativa (agua somera = más luz = más señal) — a diferencia
-## de densidad_peces_en(), tiene sentido que dependa de geometría real.
+## — 0.0 si la columna no es agua (ver es_agua_o_rio_en()). Geométrica, no
+## ruido: inversa a la profundidad relativa (agua somera = más luz = más
+## señal) — a diferencia de densidad_peces_en(), tiene sentido que dependa
+## de geometría real.
 func densidad_algas_en(x: int, z: int) -> float:
-	if not es_agua_en(x, z):
+	if not es_agua_o_rio_en(x, z):
 		return 0.0
 	return 1.0 - _profundidad_relativa_agua_en(x, z)
 ```
@@ -203,7 +212,7 @@ func detectar_pesca_frutos_mar(generador: Object, centro_xz: Vector2i) -> Dictio
 				continue
 			var x: int = centro_xz.x + dx
 			var z: int = centro_xz.y + dz
-			if not generador.es_agua_en(x, z):
+			if not generador.es_agua_o_rio_en(x, z):
 				continue
 			suma_peces += generador.densidad_peces_en(x, z)
 			suma_algas += generador.densidad_algas_en(x, z)
@@ -330,8 +339,8 @@ sigue sirviendo a mina/caza/madero sin cambios):
 ```gdscript
 ## Igual que _actualizar_area_accion(), pero además de filtrar por radio,
 ## oculta cualquier plano cuya columna real no sea agua (mundo.generador.
-## es_agua_en()) — exclusivo de "pesca_frutos_mar": el radio de este puesto
-## nunca se dibuja ni se cuenta sobre tierra firme (ver decisiones de
+## es_agua_o_rio_en()) — exclusivo de "pesca_frutos_mar": el radio de este
+## puesto nunca se dibuja ni se cuenta sobre tierra firme (ver decisiones de
 ## alcance). Reutiliza el mismo pool _area_accion/_offsets_area_accion.
 func _actualizar_area_accion_agua(centro: Vector2i, radio: int) -> void:
 	for i in range(_offsets_area_accion.size()):
@@ -339,7 +348,7 @@ func _actualizar_area_accion_agua(centro: Vector2i, radio: int) -> void:
 		var plano: MeshInstance3D = _area_accion[i]
 		var x: int = centro.x + offset.x
 		var z: int = centro.y + offset.y
-		if offset.length() > radio or not mundo.generador.es_agua_en(x, z):
+		if offset.length() > radio or not mundo.generador.es_agua_o_rio_en(x, z):
 			plano.visible = false
 			continue
 		var altura_celda: int = mundo.altura_en(x, z, true)
@@ -514,3 +523,12 @@ func ocultar_ficha_pesca() -> void
 - Validar que el extremo de agua no quede en un cuerpo de agua demasiado
   pequeño o angosto para que el radio de 25 tenga sentido — no hay mínimo
   de agua contigua exigido, solo que el extremo esté completo.
+- Limitación conocida de la rotación (`Ctrl`+rueda): solo intercambia qué
+  eje mide 3 celdas y cuál mide 5 — nunca cambia cuál de los dos ejes es el
+  que se valida como extremo de agua/tierra (siempre el eje "alto", es
+  decir norte-sur en términos del mundo). En la práctica esto significa que
+  el puesto solo puede colocarse mirando al norte o al sur, nunca al este
+  ni al oeste, sin importar cuántas veces se rote. Es una limitación de
+  usabilidad real, deferida deliberadamente en esta pasada de fixes:
+  rediseñar la validación de eje para soportar ambas orientaciones se
+  consideró demasiado riesgoso para incluir junto a los demás cambios.

@@ -48,19 +48,26 @@ class _AlturaSinAgua:
 ##   colisiona, ese movimiento simplemente no se aplica esta vez (nunca se
 ##   redirige a otro sentido distinto al que pidió el jugador).
 ## - Colocación de puestos periféricos con huella real (mina: tecla `M`;
-##   caza y recolección: tecla `H`; ver GDD Sección 3 y
+##   caza y recolección: tecla `H`; maderero: tecla `L`; pesca y frutos del
+##   mar: tecla `F`; ver GDD Sección 3 y
 ##   docs/superpowers/specs/2026-09-10-puestos-huella-real-caza-recoleccion-design.md):
 ##   huella fantasma de N×M celdas, rotable 90° con Ctrl+rueda del mouse,
 ##   ficha en vivo en el HUD, confirma solo si pasan las 5 validaciones
 ##   (zona de influencia, relieve, huella libre de madera/estructura, sin
-##   choque con otro puesto, al menos una esquina en tierra firme). Junto a
-##   la huella se dibuja un círculo informativo del área de acción real del
-##   tipo (radio distinto de la huella — ver _actualizar_area_accion()), y
-##   al confirmar la colocación se drena el agua bajo la huella (ver
-##   VoxelWorld.drenar_agua()) y se nivela automáticamente el terreno real
-##   resultante (mismo mecanismo de nivelación que usa el modo de colocación
-##   de blueprint, tecla `B` — ver _AlturaSinAgua/nivelador_puesto — pero
-##   ignorando el agua) antes de colocar el marcador.
+##   choque con otro puesto, al menos una esquina en tierra firme para la
+##   mayoría de los tipos — "pesca_frutos_mar" es la excepción: exactamente
+##   uno de sus dos extremos debe ser agua, ver
+##   _extremo_agua_de_huella_pesca()). Junto a la huella se dibuja un
+##   círculo informativo del área de acción real del tipo (radio distinto
+##   de la huella — ver
+##   _actualizar_area_accion()), y al confirmar la colocación se drena el
+##   agua bajo la huella (ver VoxelWorld.drenar_agua()) y se nivela
+##   automáticamente el terreno real resultante (mismo mecanismo de
+##   nivelación que usa el modo de colocación de blueprint, tecla `B` — ver
+##   _AlturaSinAgua/nivelador_puesto — pero ignorando el agua) antes de
+##   colocar el marcador — de nuevo con la excepción de "pesca_frutos_mar",
+##   que en vez de drenar coloca pilotes bajo la huella (ver
+##   _procesar_clic_puesto()).
 ## - Colocación de blueprint (tecla `B`, ver Task 7 de este plan) reemplaza
 ##   la antigua nivelación standalone — sin selección de tropas por
 ##   arrastre todavía, eso sigue siendo PoC 7/Fase 4.
@@ -100,10 +107,11 @@ const MAX_ANCHO_HUELLA_PUESTO := 5
 const MAX_ALTO_HUELLA_PUESTO := 5
 
 ## El mayor radio de área de acción entre los tipos de puesto existentes
-## (Recoleccion.RADIO_AREA_MINA = 6, RADIO_AREA_CAZA_RECOLECCION = 12) —
-## mismo criterio que MAX_ANCHO/ALTO_HUELLA_PUESTO: tamaño del pool de
-## planos del círculo informativo, reutilizado por cualquier tipo (ver
-## _crear_area_accion()).
+## (Recoleccion.RADIO_AREA_MINA = 6, RADIO_AREA_CAZA_RECOLECCION = 12,
+## RADIO_AREA_PESCA_FRUTOS_MAR = 25 — este último es el que fija el valor
+## actual) — mismo criterio que MAX_ANCHO/ALTO_HUELLA_PUESTO: tamaño del
+## pool de planos del círculo informativo, reutilizado por cualquier tipo
+## (ver _crear_area_accion()).
 const RADIO_AREA_ACCION_MAX := 25
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
 
@@ -150,7 +158,7 @@ var nivelador_puesto: RefCounted
 ## _rotar_huella_puesto(). Mientras el modo está activo, la ficha del HUD
 ## correspondiente al tipo se actualiza cada fotograma.
 var modo_colocar_puesto := false
-var _tipo_puesto_activo := ""  # "mina" | "caza_recoleccion" | "maderero"
+var _tipo_puesto_activo := ""  # "mina" | "caza_recoleccion" | "maderero" | "pesca_frutos_mar"
 var _ancho_puesto_activo := 0
 var _alto_puesto_activo := 0
 var _huella_puesto: Array[MeshInstance3D] = []
@@ -924,7 +932,10 @@ func _salir_de_modo_colocar_puesto() -> void:
 ## Ctrl + rueda del mouse, solo con un puesto en modo colocación: rota la
 ## huella activa 90° (intercambia ancho/alto). Sin efecto visible en mina
 ## (5x5) ni caza/recolección (4x4) — ambas cuadradas — pero sí en el
-## maderero (3x4, no cuadrada).
+## maderero (3x4, no cuadrada) y en pesca y frutos del mar (3x5, no
+## cuadrada) — aunque en este último caso rotar solo cambia la forma visual
+## de la huella: el eje que se valida como extremo de agua/tierra sigue
+## siendo siempre el mismo (el "alto"), ver nota de alcance en el spec.
 func _rotar_huella_puesto() -> void:
 	var ancho_previo := _ancho_puesto_activo
 	_ancho_puesto_activo = _alto_puesto_activo
@@ -1063,15 +1074,15 @@ func _actualizar_area_accion(centro: Vector2i, radio: int) -> void:
 
 ## Igual que _actualizar_area_accion(), pero además de filtrar por radio,
 ## oculta cualquier plano cuya columna real no sea agua (mundo.generador.
-## es_agua_en()) — exclusivo de "pesca_frutos_mar". Reutiliza el mismo pool
-## _area_accion/_offsets_area_accion.
+## es_agua_o_rio_en()) — exclusivo de "pesca_frutos_mar". Reutiliza el mismo
+## pool _area_accion/_offsets_area_accion.
 func _actualizar_area_accion_agua(centro: Vector2i, radio: int) -> void:
 	for i in range(_offsets_area_accion.size()):
 		var offset: Vector2i = _offsets_area_accion[i]
 		var plano: MeshInstance3D = _area_accion[i]
 		var x: int = centro.x + offset.x
 		var z: int = centro.y + offset.y
-		if offset.length() > radio or not mundo.generador.es_agua_en(x, z):
+		if offset.length() > radio or not mundo.generador.es_agua_o_rio_en(x, z):
 			plano.visible = false
 			continue
 		var altura_celda: int = mundo.altura_en(x, z, true)
@@ -1138,18 +1149,24 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si
 ## las 5 validaciones (zona de influencia, relieve, huella libre, sin choque
-## con otro puesto, al menos una esquina en tierra firme) pasan — si no,
+## con otro puesto, al menos una esquina en tierra firme — "pesca_frutos_mar"
+## es la excepción: exactamente un extremo completo de agua y el opuesto
+## completo de tierra, ver _extremo_agua_de_huella_pesca()) pasan — si no,
 ## imprime el motivo y PERMANECE en modo colocar-puesto (el jugador puede
 ## reintentar de inmediato, igual que la mina original; mismo comportamiento
 ## que _procesar_clic_blueprint() con el modo de colocación de blueprint). El
-## follaje detectado se elimina; luego se drena el agua bajo la huella
-## (VoxelWorld.drenar_agua()) y se nivela al punto más alto del terreno REAL
-## resultante contra "nivelador_puesto" — que ignora el agua, ver
-## _AlturaSinAgua — antes de colocar el marcador, así la "construcción"
-## siempre queda sobre terreno plano y seco, nunca sobre o bajo el agua. La
-## validación de pendiente (verificar_pendiente(), arriba) ya usa ese mismo
-## terreno sin agua — es la que decide si la huella es demasiado empinada
-## para nivelarse de forma razonable.
+## follaje detectado se elimina; luego, para la mayoría de los tipos, se
+## drena el agua bajo la huella (VoxelWorld.drenar_agua()) y se nivela al
+## punto más alto del terreno REAL resultante contra "nivelador_puesto" —
+## que ignora el agua, ver _AlturaSinAgua — antes de colocar el marcador,
+## así la "construcción" siempre queda sobre terreno plano y seco, nunca
+## sobre o bajo el agua. "pesca_frutos_mar" es de nuevo la excepción: en vez
+## de drenar, coloca pilotes (bloque "pared") bajo las dos columnas del
+## extremo de agua y rellena de tierra el resto, dejando el agua abierta
+## intacta bajo la plataforma. La validación de pendiente
+## (verificar_pendiente(), arriba) ya usa ese mismo terreno sin agua — es la
+## que decide si la huella es demasiado empinada para nivelarse de forma
+## razonable.
 func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	@warning_ignore("integer_division")
@@ -1203,9 +1220,10 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 				var bloque: String = "pared" if es_pilote else "tierra"
 				for h in range(fondo + 1, objetivo + 1):
 					mundo.colocar_bloque(Vector3i(x, h, z), bloque)
-					total_relleno += 1
 					if es_pilote:
 						total_pilotes += 1
+					else:
+						total_relleno += 1
 	else:
 		var total_drenado := 0
 		for dx in range(_ancho_puesto_activo):

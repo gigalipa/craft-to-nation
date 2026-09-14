@@ -222,7 +222,7 @@ func detectar_pesca_frutos_mar(generador: Object, centro_xz: Vector2i) -> Dictio
 				continue
 			var x: int = centro_xz.x + dx
 			var z: int = centro_xz.y + dz
-			if not generador.es_agua_en(x, z):
+			if not generador.es_agua_o_rio_en(x, z):
 				continue
 			suma_peces += generador.densidad_peces_en(x, z)
 			suma_algas += generador.densidad_algas_en(x, z)

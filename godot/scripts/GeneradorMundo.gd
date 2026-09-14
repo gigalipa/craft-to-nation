@@ -243,6 +243,16 @@ func es_agua_en(x: int, z: int) -> bool:
 	return altura_en(x, z) < nivel_mar
 
 
+## true si (x, z) es agua de cualquier tipo — mar/lago (es_agua_en()) o río
+## (es_rio_en(), que puede estar muy por encima del nivel del mar). Punto
+## único para cualquier lógica que deba tratar ambos tipos de agua por
+## igual (señales de peces/algas, radio de acción del puesto de pesca) —
+## ver VoxelWorld._tronco_toca_agua(), que ya usaba este mismo criterio
+## compuesto de forma independiente.
+func es_agua_o_rio_en(x: int, z: int) -> bool:
+	return es_agua_en(x, z) or es_rio_en(x, z)
+
+
 ## Verdadero si la columna (x, z) es tierra firme dentro de la banda de
 ## bioma (vegetación/fauna) sobre el nivel del mar — falso si es agua o si
 ## está por encima de esa banda (cumbres estériles). Único tipo de bioma
@@ -295,7 +305,7 @@ func densidad_arbol_en(x: int, z: int) -> float:
 ## relación con la profundidad real de esa columna (decisión explícita:
 ## una señal solo basada en profundidad resultaba demasiado plana/predecible).
 func densidad_peces_en(x: int, z: int) -> float:
-	if not es_agua_en(x, z) and not es_rio_en(x, z):
+	if not es_agua_o_rio_en(x, z):
 		return 0.0
 	var valor: float = _ruido_peces.get_noise_2d(x, z)
 	return (valor + 1.0) / 2.0
@@ -323,7 +333,7 @@ func _profundidad_relativa_agua_en(x: int, z: int) -> float:
 ## profundidad relativa (agua somera = más luz = más señal) — a diferencia
 ## de densidad_peces_en(), tiene sentido que dependa de geometría real.
 func densidad_algas_en(x: int, z: int) -> float:
-	if not es_agua_en(x, z) and not es_rio_en(x, z):
+	if not es_agua_o_rio_en(x, z):
 		return 0.0
 	return 1.0 - _profundidad_relativa_agua_en(x, z)
 

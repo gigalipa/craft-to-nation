@@ -24,11 +24,11 @@ class GeneradorBiomaFalso:
 
 
 class GeneradorAguaFalso:
-	func es_agua_en(x: int, z: int) -> bool:
+	func es_agua_o_rio_en(x: int, _z: int) -> bool:
 		return x >= 0
-	func densidad_peces_en(x: int, z: int) -> float:
+	func densidad_peces_en(x: int, _z: int) -> float:
 		return 0.5 if x >= 0 else 0.0
-	func densidad_algas_en(x: int, z: int) -> float:
+	func densidad_algas_en(x: int, _z: int) -> float:
 		return 0.3 if x >= 0 else 0.0
 
 

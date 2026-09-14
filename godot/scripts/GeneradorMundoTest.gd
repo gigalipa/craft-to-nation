@@ -582,6 +582,11 @@ func ejecutar_pruebas() -> void:
 	var gen_peces_real: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
 	var vio_rio_con_peces := false
 	var vio_tierra_seca_cero := false
+	# Celda de río elevada real (es_rio_en() verdadero Y es_agua_en() falso,
+	# es decir por encima del nivel del mar, no cerca de la desembocadura) —
+	# la única que de verdad ejercita la regresión que originó este fix: con
+	# el bug original (gate solo en es_agua_en()) esta celda habría dado 0.0.
+	var celda_rio_elevado := Vector2i(-1, -1)
 	for x in range(0, VoxelWorld.ANCHO_MUNDO, 5):
 		for z in range(0, VoxelWorld.LARGO_MUNDO, 5):
 			if gen_peces_real.es_rio_en(x, z):
@@ -590,13 +595,22 @@ func ejecutar_pruebas() -> void:
 				assert(dens >= 0.0 and dens <= 1.0)
 				if not is_equal_approx(dens, 0.0):
 					vio_rio_con_peces = true
+				if celda_rio_elevado == Vector2i(-1, -1) and not gen_peces_real.es_agua_en(x, z):
+					celda_rio_elevado = Vector2i(x, z)
 			elif not gen_peces_real.es_agua_en(x, z):
 				# Tierra seca real (ni agua ni río) debe ser 0.0
 				vio_tierra_seca_cero = true
 				assert(gen_peces_real.densidad_peces_en(x, z) == 0.0)
 	assert(vio_rio_con_peces)
 	assert(vio_tierra_seca_cero)
-	print("OK: densidad_peces_en es determinista, está en [0,1], es exactamente 0.0 en tierra seca, y da valores no-cero en ríos reales (confirmando que maneja both es_agua_en y es_rio_en).")
+	# Regresión específica: una celda de río genuinamente elevada (no cerca
+	# de la desembocadura) debe seguir dando densidad no-cero en [0,1].
+	assert(celda_rio_elevado != Vector2i(-1, -1))
+	assert(gen_peces_real.es_rio_en(celda_rio_elevado.x, celda_rio_elevado.y))
+	assert(not gen_peces_real.es_agua_en(celda_rio_elevado.x, celda_rio_elevado.y))
+	var dens_rio_elevado: float = gen_peces_real.densidad_peces_en(celda_rio_elevado.x, celda_rio_elevado.y)
+	assert(dens_rio_elevado > 0.0 and dens_rio_elevado <= 1.0)
+	print("OK: densidad_peces_en es determinista, está en [0,1], es exactamente 0.0 en tierra seca, y da valores no-cero en ríos reales (confirmando que maneja tanto es_agua_en como es_rio_en). Celda de río elevado (es_rio_en=true, es_agua_en=false): (%d, %d), densidad=%f." % [celda_rio_elevado.x, celda_rio_elevado.y, dens_rio_elevado])
 
 	print("\n=== TEST 32: densidad_algas_en()/_profundidad_relativa_agua_en() normalizan cada columna contra el techo de SU tipo de cuerpo de agua ===")
 	var gen_algas: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)

@@ -22,6 +22,11 @@ const NOMBRES_CAZA_RECOLECCION := {
 	"recoleccion": "recolección",
 }
 
+const NOMBRES_PESCA_FRUTOS_MAR := {
+	"pesca": "pesca",
+	"frutos_mar": "frutos del mar",
+}
+
 @onready var nivel_label: Label = $HUD/NivelLabel
 @onready var poblacion_label: Label = $HUD/PoblacionLabel
 @onready var moral_label: Label = $HUD/MoralLabel
@@ -48,6 +53,12 @@ const NOMBRES_CAZA_RECOLECCION := {
 @onready var madero_personal_label: Label = $MaderoFicha/PersonalLabel
 @onready var madero_almacenamiento_label: Label = $MaderoFicha/AlmacenamientoLabel
 @onready var madero_tasas_label: Label = $MaderoFicha/TasasLabel
+
+@onready var pesca_ficha: VBoxContainer = $PescaFicha
+@onready var pesca_costo_label: Label = $PescaFicha/CostoLabel
+@onready var pesca_personal_label: Label = $PescaFicha/PersonalLabel
+@onready var pesca_almacenamiento_label: Label = $PescaFicha/AlmacenamientoLabel
+@onready var pesca_tasas_label: Label = $PescaFicha/TasasLabel
 
 @onready var modo_deconstruccion_label: Label = $ModoDeconstruccionLabel
 
@@ -162,6 +173,38 @@ func actualizar_tasas_madero(tasas: Dictionary) -> void:
 
 func ocultar_ficha_madero() -> void:
 	madero_ficha.visible = false
+
+
+## Mismo patrón que mostrar_ficha_caza(): valores FIJOS al activar el modo;
+## las tasas sí varían — ver actualizar_tasas_pesca().
+func mostrar_ficha_pesca() -> void:
+	var partes_costo: Array = []
+	for tipo in Recoleccion.COSTO_CONSTRUCCION_PESCA_FRUTOS_MAR:
+		partes_costo.append("%d %s" % [Recoleccion.COSTO_CONSTRUCCION_PESCA_FRUTOS_MAR[tipo], tipo])
+	pesca_costo_label.text = "Costo: %s" % ", ".join(partes_costo)
+	pesca_personal_label.text = "Personal máximo: %d" % Recoleccion.PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
+	pesca_almacenamiento_label.text = "Almacenamiento: %d" % Recoleccion.CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR
+	pesca_tasas_label.text = "Recolección prevista: -"
+	pesca_ficha.visible = true
+
+
+## Recalculada en vivo cada fotograma mientras el modo colocar-puesto (tipo
+## "pesca_frutos_mar") está activo, a partir de
+## Recoleccion.tasas_pesca_frutos_mar(). "tasas" puede ser un Dictionary
+## vacío ({}) cuando el extremo de agua todavía no es válido — ver
+## CamaraCenital.gd.
+func actualizar_tasas_pesca(tasas: Dictionary) -> void:
+	if tasas.get("pesca", 0.0) <= 0.0 and tasas.get("frutos_mar", 0.0) <= 0.0:
+		pesca_tasas_label.text = "Recolección prevista: sin agua detectada"
+		return
+	var lineas: Array = []
+	for tipo in tasas:
+		lineas.append("%.1f comida/h por %s" % [tasas[tipo], NOMBRES_PESCA_FRUTOS_MAR.get(tipo, tipo)])
+	pesca_tasas_label.text = "Recolección prevista por ciudadano:\n  " + "\n  ".join(lineas)
+
+
+func ocultar_ficha_pesca() -> void:
+	pesca_ficha.visible = false
 
 
 ## Muestra/oculta el aviso de que el modo deconstrucción está activo (ver

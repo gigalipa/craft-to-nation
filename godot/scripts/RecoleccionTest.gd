@@ -23,6 +23,15 @@ class GeneradorBiomaFalso:
 		return 0.6 if abs(x) <= 12 and abs(z) <= 12 else 0.0
 
 
+class GeneradorAguaFalso:
+	func es_agua_en(x: int, z: int) -> bool:
+		return x >= 0
+	func densidad_peces_en(x: int, z: int) -> float:
+		return 0.5 if x >= 0 else 0.0
+	func densidad_algas_en(x: int, z: int) -> float:
+		return 0.3 if x >= 0 else 0.0
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -219,4 +228,23 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(Recoleccion.tasa_maderero(promedio_arbol_fuera)["madera"], 0.0))
 	print("OK: detectar_arbol()/tasa_maderero() promedian densidad_arbol_en() igual que caza/recolección con fauna/frutal.")
 
-	print("\n=== Las 13 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 14: detectar_pesca_frutos_mar() omite columnas de tierra del promedio (no cuentan como 0.0) ===")
+	var generador_agua := GeneradorAguaFalso.new()
+	var promedios_pesca: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, Vector2i(0, 0))
+	print("Promedios (mitad agua/mitad tierra dentro del radio): ", promedios_pesca)
+	assert(is_equal_approx(promedios_pesca["peces"], 0.5))
+	assert(is_equal_approx(promedios_pesca["algas"], 0.3))
+	print("OK: las columnas de tierra dentro del radio se omiten del promedio — si contaran como 0.0, el resultado sería ~la mitad.")
+
+	print("\n=== TEST 15: detectar_pesca_frutos_mar() sin ninguna columna de agua da 0.0/0.0 ===")
+	var promedios_sin_agua: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, Vector2i(-1000, -1000))
+	assert(is_equal_approx(promedios_sin_agua["peces"], 0.0))
+	assert(is_equal_approx(promedios_sin_agua["algas"], 0.0))
+	print("OK: sin ninguna muestra de agua, ambas señales devuelven 0.0 sin dividir por cero.")
+
+	print("\n=== TEST 16: tasas_pesca_frutos_mar() multiplica cada señal por su tasa base ===")
+	var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3})
+	assert(is_equal_approx(tasas_pesca["pesca"], 0.5 * Recoleccion.TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_pesca["frutos_mar"], 0.3 * Recoleccion.TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO))
+
+	print("\n=== Las 16 pruebas de Recoleccion pasaron correctamente ===")

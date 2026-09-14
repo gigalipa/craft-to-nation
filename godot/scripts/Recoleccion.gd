@@ -58,6 +58,19 @@ const COSTO_CONSTRUCCION_CAZA_RECOLECCION := {"tierra": 10, "madera": 10, "piedr
 const PERSONAL_MAXIMO_CAZA_RECOLECCION := 3
 const CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION := 100
 
+const ANCHO_HUELLA_PESCA_FRUTOS_MAR := 3
+const ALTO_HUELLA_PESCA_FRUTOS_MAR := 5
+
+const RADIO_AREA_PESCA_FRUTOS_MAR := 25
+const PASO_MUESTREO_PESCA_FRUTOS_MAR := 2
+const TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO := 2.0
+
+# GDD Sección 3 — mismos valores placeholder que los otros tres puestos,
+# sin balance real todavía (ver Recoleccion.COSTO_CONSTRUCCION).
+const COSTO_CONSTRUCCION_PESCA_FRUTOS_MAR := {"tierra": 10, "madera": 10, "piedra": 5}
+const PERSONAL_MAXIMO_PESCA_FRUTOS_MAR := 3
+const CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR := 100
+
 ## Vector2i (esquina de la huella, celda de menor X/Z) -> {"tipo": String,
 ## "ancho": int, "alto": int, "nivel": int}. Antes solo guardaba minas
 ## indexadas por su único bloque marcador; ahora guarda cualquier puesto
@@ -187,3 +200,43 @@ func detectar_arbol(generador: Object, centro_xz: Vector2i) -> float:
 ## y tasas_caza_recoleccion(), para que CamaraCenital/HUD los traten igual.
 func tasa_maderero(promedio_arbol: float) -> Dictionary:
 	return {"madera": promedio_arbol * TASA_BASE_MADERERO_POR_CIUDADANO}
+
+
+## Promedia densidad_peces_en()/densidad_algas_en() (GeneradorMundo, duck
+## typing) muestreadas cada PASO_MUESTREO_PESCA_FRUTOS_MAR celdas dentro del
+## círculo de radio RADIO_AREA_PESCA_FRUTOS_MAR centrado en centro_xz (el
+## punto medio del extremo de agua, no el centro de la huella — ver
+## CamaraCenital.gd). A diferencia de detectar_fauna_frutal()/
+## detectar_arbol(), las columnas que NO son agua se OMITEN por completo
+## (ni cuentan como muestra) en vez de contribuir con 0.0 — este puesto
+## siempre tiene tierra firme cerca de su origen por diseño, así que
+## incluirla en el promedio lo castigaría sistemáticamente. Devuelve ambas
+## claves en 0.0 si no hubo ninguna muestra de agua (evita dividir por cero).
+func detectar_pesca_frutos_mar(generador: Object, centro_xz: Vector2i) -> Dictionary:
+	var suma_peces := 0.0
+	var suma_algas := 0.0
+	var muestras := 0
+	for dx in range(-RADIO_AREA_PESCA_FRUTOS_MAR, RADIO_AREA_PESCA_FRUTOS_MAR + 1, PASO_MUESTREO_PESCA_FRUTOS_MAR):
+		for dz in range(-RADIO_AREA_PESCA_FRUTOS_MAR, RADIO_AREA_PESCA_FRUTOS_MAR + 1, PASO_MUESTREO_PESCA_FRUTOS_MAR):
+			if Vector2(dx, dz).length() > RADIO_AREA_PESCA_FRUTOS_MAR:
+				continue
+			var x: int = centro_xz.x + dx
+			var z: int = centro_xz.y + dz
+			if not generador.es_agua_en(x, z):
+				continue
+			suma_peces += generador.densidad_peces_en(x, z)
+			suma_algas += generador.densidad_algas_en(x, z)
+			muestras += 1
+	if muestras == 0:
+		return {"peces": 0.0, "algas": 0.0}
+	return {"peces": suma_peces / muestras, "algas": suma_algas / muestras}
+
+
+## Dos tasas independientes ("pesca"/"frutos_mar"), cada una promedio_señal *
+## TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO — mismo patrón que
+## tasas_caza_recoleccion(), no se suman en un total.
+func tasas_pesca_frutos_mar(promedios: Dictionary) -> Dictionary:
+	return {
+		"pesca": promedios["peces"] * TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO,
+		"frutos_mar": promedios["algas"] * TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO,
+	}

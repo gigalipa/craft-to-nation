@@ -605,58 +605,108 @@ func _huella_tiene_columna_en_tierra(esquina: Vector2i, columnas: Array[Vector2i
 	return false
 
 
-## true si las "ancho" celdas de la fila "dz" (relativa a "esquina") son
+## true si el eje largo de la huella de pesca (siempre 3 x 5) corre por Z
+## (sin rotar: alto=5 > ancho=3) — false si fue rotada con Ctrl+rueda
+## (ancho=5 > alto=3, eje largo por X). Nunca son iguales para este puesto,
+## así que no hay caso ambiguo.
+static func _eje_largo_pesca_es_z(ancho: int, alto: int) -> bool:
+	return alto > ancho
+
+
+## Las celdas (offsets dx,dz relativos a "esquina") del extremo "indice"
+## (0 o 1) a lo largo del eje largo de la huella — siempre 3 celdas, sobre
+## el eje corto. Antes esto asumía que el eje largo era siempre Z (dz);
+## generalizado para que la rotación (Ctrl+rueda, que solo intercambia
+## ancho/alto) también rote qué eje del mundo se revisa como extremo — sin
+## esto, rotar la huella 90° seguía revisando filas de 5 celdas en Z en vez
+## de columnas de 3 celdas en X, y la colocación este-oeste era imposible
+## (bug encontrado jugando en vivo).
+static func _celdas_extremo_pesca(ancho: int, alto: int, indice: int) -> Array[Vector2i]:
+	var celdas: Array[Vector2i] = []
+	if _eje_largo_pesca_es_z(ancho, alto):
+		var dz: int = 0 if indice == 0 else alto - 1
+		for dx in range(ancho):
+			celdas.append(Vector2i(dx, dz))
+	else:
+		var dx: int = 0 if indice == 0 else ancho - 1
+		for dz in range(alto):
+			celdas.append(Vector2i(dx, dz))
+	return celdas
+
+
+## true si las celdas del extremo "indice" (ver _celdas_extremo_pesca()) son
 ## TODAS agua, false si son TODAS tierra firme, "" (cadena vacía) si están
 ## mezcladas — usa el bloque REAL actual (mundo.obtener_tipo()), mismo
 ## criterio que _huella_tiene_columna_en_tierra().
-func _fila_uniforme_en(esquina: Vector2i, ancho: int, dz: int) -> String:
+func _extremo_uniforme_en(esquina: Vector2i, ancho: int, alto: int, indice: int) -> String:
+	var celdas := _celdas_extremo_pesca(ancho, alto, indice)
 	var vistos_agua := 0
-	for dx in range(ancho):
-		var x: int = esquina.x + dx
-		var z: int = esquina.y + dz
+	for rel in celdas:
+		var x: int = esquina.x + rel.x
+		var z: int = esquina.y + rel.y
 		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) == "agua":
 			vistos_agua += 1
-	if vistos_agua == ancho:
+	if vistos_agua == celdas.size():
 		return "agua"
 	if vistos_agua == 0:
 		return "tierra"
 	return ""
 
 
-## true si las (ancho + 4) celdas que rodean por fuera el extremo de agua
-## (fila "fila_agua", "df" = dirección hacia afuera de la huella: -1 si
-## fila_agua = 0, +1 si fila_agua = alto - 1) son todas agua: las 2 celdas
-## de flanco (a la misma fila que el extremo, una a cada lado) más toda la
-## fila inmediatamente al frente, extendida un bloque más allá de cada
-## flanco. Exige que el extremo no sea un charco angosto que termine justo
-## en el borde de la huella.
-func _periferia_extremo_es_agua(esquina: Vector2i, ancho: int, fila_agua: int, df: int) -> bool:
-	var fila_frente := fila_agua + df
-	for dx in range(-1, ancho + 1):
-		var x: int = esquina.x + dx
-		var z: int = esquina.y + fila_frente
-		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
-			return false
-	for dx in [-1, ancho]:
-		var x: int = esquina.x + dx
-		var z: int = esquina.y + fila_agua
-		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
-			return false
+## true si las celdas que rodean por fuera el extremo "indice" son todas
+## agua: las 2 celdas de flanco (a los lados del extremo, sobre el eje
+## corto) más toda la fila/columna inmediatamente más allá del extremo a lo
+## largo del eje largo, extendida un bloque más allá de cada flanco — mismo
+## conteo (ancho_extremo + 4 = 7) sin importar la orientación. Exige que el
+## extremo no sea un charco angosto que termine justo en el borde de la
+## huella.
+func _periferia_extremo_es_agua(esquina: Vector2i, ancho: int, alto: int, indice: int) -> bool:
+	var eje_z := _eje_largo_pesca_es_z(ancho, alto)
+	var celdas_extremo := _celdas_extremo_pesca(ancho, alto, indice)
+	var df: int = -1 if indice == 0 else 1
+	if eje_z:
+		var fila_agua: int = celdas_extremo[0].y
+		var fila_frente: int = fila_agua + df
+		for dx in range(-1, ancho + 1):
+			var x: int = esquina.x + dx
+			var z: int = esquina.y + fila_frente
+			if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+				return false
+		for dx in [-1, ancho]:
+			var x: int = esquina.x + dx
+			var z: int = esquina.y + fila_agua
+			if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+				return false
+	else:
+		var col_agua: int = celdas_extremo[0].x
+		var col_frente: int = col_agua + df
+		for dz in range(-1, alto + 1):
+			var x: int = esquina.x + col_frente
+			var z: int = esquina.y + dz
+			if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+				return false
+		for dz in [-1, alto]:
+			var x: int = esquina.x + col_agua
+			var z: int = esquina.y + dz
+			if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+				return false
 	return true
 
 
 ## Regla de colocación exclusiva de "pesca_frutos_mar": exactamente uno de
-## los dos extremos de "ancho" celdas (dz=0 y dz=alto-1) debe ser
-## completamente agua (fila Y periferia) y el opuesto completamente tierra
-## firme. Devuelve el dz del extremo de agua (0 o alto-1) si la huella es
-## válida, o -1 si no lo es.
+## los dos extremos (ver _celdas_extremo_pesca(), ya generalizado a ambas
+## orientaciones) debe ser completamente agua (celdas Y periferia) y el
+## opuesto completamente tierra firme. Devuelve el ÍNDICE del extremo de
+## agua (0 o 1 — ya NO es una coordenada dz, ver _celdas_extremo_pesca()
+## para las celdas reales de ese extremo) si la huella es válida, o -1 si
+## no lo es.
 func _extremo_agua_de_huella_pesca(esquina: Vector2i, ancho: int, alto: int) -> int:
-	var fila_a := _fila_uniforme_en(esquina, ancho, 0)
-	var fila_b := _fila_uniforme_en(esquina, ancho, alto - 1)
-	if fila_a == "agua" and fila_b == "tierra" and _periferia_extremo_es_agua(esquina, ancho, 0, -1):
+	var extremo_0 := _extremo_uniforme_en(esquina, ancho, alto, 0)
+	var extremo_1 := _extremo_uniforme_en(esquina, ancho, alto, 1)
+	if extremo_0 == "agua" and extremo_1 == "tierra" and _periferia_extremo_es_agua(esquina, ancho, alto, 0):
 		return 0
-	if fila_b == "agua" and fila_a == "tierra" and _periferia_extremo_es_agua(esquina, ancho, alto - 1, 1):
-		return alto - 1
+	if extremo_1 == "agua" and extremo_0 == "tierra" and _periferia_extremo_es_agua(esquina, ancho, alto, 1):
+		return 1
 	return -1
 
 
@@ -712,10 +762,10 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, columnas)
 	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas)
 	var huella_anclada: bool
-	var extremo_agua_dz := -1
+	var extremo_agua_indice := -1
 	if _tipo_puesto_activo == "pesca_frutos_mar":
-		extremo_agua_dz = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
-		huella_anclada = extremo_agua_dz != -1
+		extremo_agua_indice = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+		huella_anclada = extremo_agua_indice != -1
 	else:
 		huella_anclada = _huella_tiene_columna_en_tierra(esquina, columnas)
 	var valida: bool = fuera_de_influencia and relieve_valido and resultado_huella["valida"] \
@@ -747,9 +797,10 @@ func _actualizar_previsualizacion_puesto() -> void:
 		hud.actualizar_tasas_caza(tasas_caza)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
 	elif _tipo_puesto_activo == "pesca_frutos_mar":
-		if extremo_agua_dz != -1:
+		if extremo_agua_indice != -1:
+			var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 			@warning_ignore("integer_division")
-			var centro_agua := Vector2i(esquina.x + _ancho_puesto_activo / 2, esquina.y + extremo_agua_dz)
+			var centro_agua := esquina + celdas_extremo[celdas_extremo.size() / 2]
 			var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, centro_agua)
 			var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar(promedios)
 			hud.actualizar_tasas_pesca(tasas_pesca)
@@ -933,9 +984,10 @@ func _salir_de_modo_colocar_puesto() -> void:
 ## huella activa 90° (intercambia ancho/alto). Sin efecto visible en mina
 ## (5x5) ni caza/recolección (4x4) — ambas cuadradas — pero sí en el
 ## maderero (3x4, no cuadrada) y en pesca y frutos del mar (3x5, no
-## cuadrada) — aunque en este último caso rotar solo cambia la forma visual
-## de la huella: el eje que se valida como extremo de agua/tierra sigue
-## siendo siempre el mismo (el "alto"), ver nota de alcance en el spec.
+## cuadrada) — en este último caso, además de cambiar la forma visual de la
+## huella, también rota qué eje del mundo (X o Z) se valida como extremo de
+## agua/tierra (ver _eje_largo_pesca_es_z()/_celdas_extremo_pesca()), así
+## que el puesto puede orientarse tanto norte-sur como este-oeste.
 func _rotar_huella_puesto() -> void:
 	var ancho_previo := _ancho_puesto_activo
 	_ancho_puesto_activo = _alto_puesto_activo
@@ -1186,10 +1238,10 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if _huella_choca_con_otro_puesto(esquina, columnas):
 		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
 		return
-	var extremo_agua_dz := -1
+	var extremo_agua_indice := -1
 	if _tipo_puesto_activo == "pesca_frutos_mar":
-		extremo_agua_dz = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
-		if extremo_agua_dz == -1:
+		extremo_agua_indice = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+		if extremo_agua_indice == -1:
 			print("Colocación rechazada: la huella necesita un extremo completo sobre agua (con su periferia despejada) y el opuesto completo sobre tierra firme.")
 			return
 	elif not _huella_tiene_columna_en_tierra(esquina, columnas):
@@ -1203,9 +1255,10 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var total_relleno := 0
 	var total_pilotes := 0
 	if _tipo_puesto_activo == "pesca_frutos_mar":
+		var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 		var esquinas_pilote: Array[Vector2i] = [
-			Vector2i(esquina.x, esquina.y + extremo_agua_dz),
-			Vector2i(esquina.x + _ancho_puesto_activo - 1, esquina.y + extremo_agua_dz),
+			esquina + celdas_extremo[0],
+			esquina + celdas_extremo[celdas_extremo.size() - 1],
 		]
 		for dx in range(_ancho_puesto_activo):
 			for dz in range(_alto_puesto_activo):

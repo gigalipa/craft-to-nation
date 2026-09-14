@@ -523,12 +523,27 @@ func ocultar_ficha_pesca() -> void
 - Validar que el extremo de agua no quede en un cuerpo de agua demasiado
   pequeño o angosto para que el radio de 25 tenga sentido — no hay mínimo
   de agua contigua exigido, solo que el extremo esté completo.
-- Limitación conocida de la rotación (`Ctrl`+rueda): solo intercambia qué
-  eje mide 3 celdas y cuál mide 5 — nunca cambia cuál de los dos ejes es el
-  que se valida como extremo de agua/tierra (siempre el eje "alto", es
-  decir norte-sur en términos del mundo). En la práctica esto significa que
-  el puesto solo puede colocarse mirando al norte o al sur, nunca al este
-  ni al oeste, sin importar cuántas veces se rote. Es una limitación de
-  usabilidad real, deferida deliberadamente en esta pasada de fixes:
-  rediseñar la validación de eje para soportar ambas orientaciones se
-  consideró demasiado riesgoso para incluir junto a los demás cambios.
+- Que la rotación (`Ctrl`+rueda) determine cuál de los dos extremos queda
+  "al frente" (mirando a una dirección cardinal específica) — hoy sigue sin
+  importar si el extremo de tierra queda al norte, sur, este u oeste,
+  siempre que exista un extremo completo de agua y el opuesto completo de
+  tierra en cualquiera de los dos ejes del mundo. Cuando este puesto pase a
+  ser un edificio jugable con puertas de entrega de recursos en su extremo
+  de tierra, esa orientación específica sí importará y requerirá una pasada
+  de diseño propia (el usuario ya lo anticipó).
+
+**Actualización posterior — corrección de rotación este-oeste:** la primera
+versión de esta huella (ver más arriba) solo validaba el eje Z (`dz=0`/
+`dz=alto-1`) como extremo, así que rotar con `Ctrl`+rueda cambiaba las
+proporciones de la huella (3×5 ↔ 5×3) pero seguía revisando filas de 5
+celdas en vez de columnas de 3 — la colocación este-oeste era imposible
+(reportado por el usuario jugando en vivo, con captura). Corregido
+generalizando `_fila_uniforme_en()`/`_periferia_extremo_es_agua()`/
+`_extremo_agua_de_huella_pesca()` (ahora `_extremo_uniforme_en()`/
+`_periferia_extremo_es_agua()`/`_extremo_agua_de_huella_pesca()`, con un
+nuevo par `_eje_largo_pesca_es_z()`/`_celdas_extremo_pesca()`) para que el
+eje validado como extremo se derive de si `alto > ancho` (eje largo en Z,
+sin rotar) o `ancho > alto` (eje largo en X, rotado) — `_extremo_agua_de_huella_pesca()`
+devuelve ahora un ÍNDICE de extremo (0 o 1), no una coordenada `dz`, para
+que sea válido en ambas orientaciones. El puesto ya puede colocarse mirando
+a cualquiera de los 4 puntos cardinales.

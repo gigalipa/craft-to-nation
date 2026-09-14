@@ -104,7 +104,7 @@ const MAX_ALTO_HUELLA_PUESTO := 5
 ## mismo criterio que MAX_ANCHO/ALTO_HUELLA_PUESTO: tamaño del pool de
 ## planos del círculo informativo, reutilizado por cualquier tipo (ver
 ## _crear_area_accion()).
-const RADIO_AREA_ACCION_MAX := 12
+const RADIO_AREA_ACCION_MAX := 25
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
 
 ## Raycast vertical bajo la propia cámara (ver _altura_bajo_camara()), para
@@ -597,6 +597,61 @@ func _huella_tiene_columna_en_tierra(esquina: Vector2i, columnas: Array[Vector2i
 	return false
 
 
+## true si las "ancho" celdas de la fila "dz" (relativa a "esquina") son
+## TODAS agua, false si son TODAS tierra firme, "" (cadena vacía) si están
+## mezcladas — usa el bloque REAL actual (mundo.obtener_tipo()), mismo
+## criterio que _huella_tiene_columna_en_tierra().
+func _fila_uniforme_en(esquina: Vector2i, ancho: int, dz: int) -> String:
+	var vistos_agua := 0
+	for dx in range(ancho):
+		var x: int = esquina.x + dx
+		var z: int = esquina.y + dz
+		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) == "agua":
+			vistos_agua += 1
+	if vistos_agua == ancho:
+		return "agua"
+	if vistos_agua == 0:
+		return "tierra"
+	return ""
+
+
+## true si las (ancho + 4) celdas que rodean por fuera el extremo de agua
+## (fila "fila_agua", "df" = dirección hacia afuera de la huella: -1 si
+## fila_agua = 0, +1 si fila_agua = alto - 1) son todas agua: las 2 celdas
+## de flanco (a la misma fila que el extremo, una a cada lado) más toda la
+## fila inmediatamente al frente, extendida un bloque más allá de cada
+## flanco. Exige que el extremo no sea un charco angosto que termine justo
+## en el borde de la huella.
+func _periferia_extremo_es_agua(esquina: Vector2i, ancho: int, fila_agua: int, df: int) -> bool:
+	var fila_frente := fila_agua + df
+	for dx in range(-1, ancho + 1):
+		var x: int = esquina.x + dx
+		var z: int = esquina.y + fila_frente
+		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+			return false
+	for dx in [-1, ancho]:
+		var x: int = esquina.x + dx
+		var z: int = esquina.y + fila_agua
+		if mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) != "agua":
+			return false
+	return true
+
+
+## Regla de colocación exclusiva de "pesca_frutos_mar": exactamente uno de
+## los dos extremos de "ancho" celdas (dz=0 y dz=alto-1) debe ser
+## completamente agua (fila Y periferia) y el opuesto completamente tierra
+## firme. Devuelve el dz del extremo de agua (0 o alto-1) si la huella es
+## válida, o -1 si no lo es.
+func _extremo_agua_de_huella_pesca(esquina: Vector2i, ancho: int, alto: int) -> int:
+	var fila_a := _fila_uniforme_en(esquina, ancho, 0)
+	var fila_b := _fila_uniforme_en(esquina, ancho, alto - 1)
+	if fila_a == "agua" and fila_b == "tierra" and _periferia_extremo_es_agua(esquina, ancho, 0, -1):
+		return 0
+	if fila_b == "agua" and fila_a == "tierra" and _periferia_extremo_es_agua(esquina, ancho, alto - 1, 1):
+		return alto - 1
+	return -1
+
+
 ## true si TODAS las columnas reales de la huella (esquina + columnas)
 ## caen dentro de una zona pintada que coincida con "zona_permitida".
 ## Antes solo se revisaba la celda central bajo el mouse — generalización
@@ -648,9 +703,16 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var fuera_de_influencia: bool = not Zonificacion.dentro_de_influencia(centro)
 	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, columnas)
 	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas)
+	var huella_anclada: bool
+	var extremo_agua_dz := -1
+	if _tipo_puesto_activo == "pesca_frutos_mar":
+		extremo_agua_dz = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+		huella_anclada = extremo_agua_dz != -1
+	else:
+		huella_anclada = _huella_tiene_columna_en_tierra(esquina, columnas)
 	var valida: bool = fuera_de_influencia and relieve_valido and resultado_huella["valida"] \
 			and not _huella_choca_con_otro_puesto(esquina, columnas) \
-			and _huella_tiene_columna_en_tierra(esquina, columnas)
+			and huella_anclada
 	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
 	var i := 0
@@ -676,6 +738,17 @@ func _actualizar_previsualizacion_puesto() -> void:
 		var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion(promedios)
 		hud.actualizar_tasas_caza(tasas_caza)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
+	elif _tipo_puesto_activo == "pesca_frutos_mar":
+		if extremo_agua_dz != -1:
+			@warning_ignore("integer_division")
+			var centro_agua := Vector2i(esquina.x + _ancho_puesto_activo / 2, esquina.y + extremo_agua_dz)
+			var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, centro_agua)
+			var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar(promedios)
+			hud.actualizar_tasas_pesca(tasas_pesca)
+			_actualizar_area_accion_agua(centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+		else:
+			hud.actualizar_tasas_pesca({})
+			_ocultar_area_accion()
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		var tasas_madero: Dictionary = Recoleccion.tasa_maderero(promedio_arbol)
@@ -756,6 +829,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_alternar_modo_colocar_puesto("caza_recoleccion", Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		elif tecla.pressed and tecla.keycode == KEY_L:
 			_alternar_modo_colocar_puesto("maderero", Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
+		elif tecla.pressed and tecla.keycode == KEY_F:
+			_alternar_modo_colocar_puesto("pesca_frutos_mar", Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
 		elif tecla.pressed and tecla.keycode == KEY_B:
 			_alternar_modo_colocar_blueprint()
 
@@ -817,6 +892,7 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
 	hud.ocultar_ficha_madero()
+	hud.ocultar_ficha_pesca()
 	assert(ancho <= MAX_ANCHO_HUELLA_PUESTO and alto <= MAX_ALTO_HUELLA_PUESTO, "Huella de puesto excede el pool fijo de planos fantasma")
 	modo_colocar_puesto = true
 	_tipo_puesto_activo = tipo
@@ -827,8 +903,10 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 		hud.mostrar_ficha_mina()
 	elif tipo == "caza_recoleccion":
 		hud.mostrar_ficha_caza()
-	else:
+	elif tipo == "maderero":
 		hud.mostrar_ficha_madero()
+	else:
+		hud.mostrar_ficha_pesca()
 	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
 
 
@@ -839,6 +917,7 @@ func _salir_de_modo_colocar_puesto() -> void:
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
 	hud.ocultar_ficha_madero()
+	hud.ocultar_ficha_pesca()
 	_tipo_puesto_activo = ""
 
 
@@ -982,6 +1061,24 @@ func _actualizar_area_accion(centro: Vector2i, radio: int) -> void:
 		plano.visible = true
 
 
+## Igual que _actualizar_area_accion(), pero además de filtrar por radio,
+## oculta cualquier plano cuya columna real no sea agua (mundo.generador.
+## es_agua_en()) — exclusivo de "pesca_frutos_mar". Reutiliza el mismo pool
+## _area_accion/_offsets_area_accion.
+func _actualizar_area_accion_agua(centro: Vector2i, radio: int) -> void:
+	for i in range(_offsets_area_accion.size()):
+		var offset: Vector2i = _offsets_area_accion[i]
+		var plano: MeshInstance3D = _area_accion[i]
+		var x: int = centro.x + offset.x
+		var z: int = centro.y + offset.y
+		if offset.length() > radio or not mundo.generador.es_agua_en(x, z):
+			plano.visible = false
+			continue
+		var altura_celda: int = mundo.altura_en(x, z, true)
+		plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE_AREA_ACCION, z + DESF)
+		plano.visible = true
+
+
 func _ocultar_area_accion() -> void:
 	for plano in _area_accion:
 		plano.visible = false
@@ -1072,39 +1169,71 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if _huella_choca_con_otro_puesto(esquina, columnas):
 		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
 		return
-	if not _huella_tiene_columna_en_tierra(esquina, columnas):
+	var extremo_agua_dz := -1
+	if _tipo_puesto_activo == "pesca_frutos_mar":
+		extremo_agua_dz = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
+		if extremo_agua_dz == -1:
+			print("Colocación rechazada: la huella necesita un extremo completo sobre agua (con su periferia despejada) y el opuesto completo sobre tierra firme.")
+			return
+	elif not _huella_tiene_columna_en_tierra(esquina, columnas):
 		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
 		return
 
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 
-	var total_drenado := 0
-	for dx in range(_ancho_puesto_activo):
-		for dz in range(_alto_puesto_activo):
-			total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
-	if total_drenado > 0:
-		print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
-
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
-	var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, columnas)
 	var total_relleno := 0
-	for celda_relleno in relleno:
-		var cantidad: int = relleno[celda_relleno]
-		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
-		for h in range(1, cantidad + 1):
-			mundo.colocar_bloque(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y), "tierra")
-		total_relleno += cantidad
+	var total_pilotes := 0
+	if _tipo_puesto_activo == "pesca_frutos_mar":
+		var esquinas_pilote: Array[Vector2i] = [
+			Vector2i(esquina.x, esquina.y + extremo_agua_dz),
+			Vector2i(esquina.x + _ancho_puesto_activo - 1, esquina.y + extremo_agua_dz),
+		]
+		for dx in range(_ancho_puesto_activo):
+			for dz in range(_alto_puesto_activo):
+				var x: int = esquina.x + dx
+				var z: int = esquina.y + dz
+				var xz := Vector2i(x, z)
+				var es_pilote: bool = esquinas_pilote.has(xz)
+				var es_agua_real: bool = mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) == "agua"
+				if es_agua_real and not es_pilote:
+					continue  # agua abierta bajo la plataforma: no se toca
+				var fondo: int = mundo.altura_en(x, z, true)
+				var bloque: String = "pared" if es_pilote else "tierra"
+				for h in range(fondo + 1, objetivo + 1):
+					mundo.colocar_bloque(Vector3i(x, h, z), bloque)
+					total_relleno += 1
+					if es_pilote:
+						total_pilotes += 1
+	else:
+		var total_drenado := 0
+		for dx in range(_ancho_puesto_activo):
+			for dz in range(_alto_puesto_activo):
+				total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+		if total_drenado > 0:
+			print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
+		var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, columnas)
+		for celda_relleno in relleno:
+			var cantidad: int = relleno[celda_relleno]
+			var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
+			for h in range(1, cantidad + 1):
+				mundo.colocar_bloque(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y), "tierra")
+			total_relleno += cantidad
+	if total_pilotes > 0:
+		print("Pilotes colocados bajo el puesto: ", total_pilotes, " bloques de \"pared\".")
 	if total_relleno > 0:
-		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques de tierra usados.")
+		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques usados.")
 
 	var bloque_marcador: String
 	if _tipo_puesto_activo == "mina":
 		bloque_marcador = "mina"
 	elif _tipo_puesto_activo == "caza_recoleccion":
 		bloque_marcador = "puesto_caza"
-	else:
+	elif _tipo_puesto_activo == "maderero":
 		bloque_marcador = "puesto_madero"
+	else:
+		bloque_marcador = "puesto_pesca"
 	var celdas_puesto: Array = []
 	for dx in range(_ancho_puesto_activo):
 		for dz in range(_alto_puesto_activo):

@@ -76,6 +76,7 @@ var _ruido_fauna: FastNoiseLite
 var _ruido_frutal: FastNoiseLite
 var _ruido_arbol: FastNoiseLite
 var _ruido_detalle: FastNoiseLite
+var _ruido_peces: FastNoiseLite
 
 
 func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
@@ -126,6 +127,14 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	_ruido_detalle.seed = semilla + 6
 	_ruido_detalle.noise_type = FastNoiseLite.TYPE_PERLIN
 	_ruido_detalle.frequency = 0.1
+
+	# Semilla derivada distinta de _ruido, _ruido_mineral (+1), _ruido_fauna
+	# (+2), _ruido_frutal (+3), _ruido_arbol (+4), el RNG de _generar_rios()
+	# (+5) y _ruido_detalle (+6) — siguiente offset libre.
+	_ruido_peces = FastNoiseLite.new()
+	_ruido_peces.seed = semilla + 7
+	_ruido_peces.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_peces.frequency = 0.05
 
 	nivel_mar = _calcular_nivel_mar(ancho_mundo, largo_mundo)
 	_generar_rios(semilla, ancho_mundo, largo_mundo)
@@ -277,6 +286,46 @@ func densidad_arbol_en(x: int, z: int) -> float:
 		return 0.0
 	var valor: float = _ruido_arbol.get_noise_2d(x, z)
 	return (valor + 1.0) / 2.0
+
+
+## Densidad de peces en la columna de agua (x, z), en [0, 1] — 0.0 si la
+## columna no es agua (ver es_agua_en()). Ruido puro (mismo patrón que
+## densidad_fauna_en()/densidad_frutal_en()/densidad_arbol_en()): crea
+## "nubes" de más/menos peces tanto en el mar como en cualquier río, sin
+## relación con la profundidad real de esa columna (decisión explícita:
+## una señal solo basada en profundidad resultaba demasiado plana/predecible).
+func densidad_peces_en(x: int, z: int) -> float:
+	if not es_agua_en(x, z):
+		return 0.0
+	var valor: float = _ruido_peces.get_noise_2d(x, z)
+	return (valor + 1.0) / 2.0
+
+
+## Profundidad relativa de la columna de agua (x, z) en [0, 1], normalizada
+## contra el techo realista de SU tipo de cuerpo de agua (río vs. mar/lago),
+## para que un río (profundidad máxima PROFUNDIDAD_MAXIMA_RIO) y un mar
+## (profundidad máxima nivel_mar - ALTURA_MINIMA) sean comparables en la
+## misma escala relativa. 0.0 si la columna no es agua.
+func _profundidad_relativa_agua_en(x: int, z: int) -> float:
+	if es_rio_en(x, z):
+		return float(profundidad_rio_en(x, z)) / float(PROFUNDIDAD_MAXIMA_RIO)
+	if not es_agua_en(x, z):
+		return 0.0
+	var techo: int = nivel_mar - ALTURA_MINIMA
+	if techo <= 0:
+		return 0.0
+	var profundidad: int = nivel_mar - altura_en(x, z)
+	return clampf(float(profundidad) / float(techo), 0.0, 1.0)
+
+
+## Densidad de algas/frutos del mar en la columna de agua (x, z), en [0, 1]
+## — 0.0 si la columna no es agua. Geométrica, no ruido: inversa a la
+## profundidad relativa (agua somera = más luz = más señal) — a diferencia
+## de densidad_peces_en(), tiene sentido que dependa de geometría real.
+func densidad_algas_en(x: int, z: int) -> float:
+	if not es_agua_en(x, z) and not es_rio_en(x, z):
+		return 0.0
+	return 1.0 - _profundidad_relativa_agua_en(x, z)
 
 
 ## Cuántas nacientes de río se generan por mundo (Sección 1 del spec) —

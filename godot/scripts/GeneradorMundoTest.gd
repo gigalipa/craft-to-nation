@@ -559,4 +559,48 @@ func ejecutar_pruebas() -> void:
 	assert(probada_t30)
 	print("OK: el representante de una región pertenece a su cumbre y es el más cercano al centro geométrico de esa cumbre.")
 
-	print("\n=== Las 30 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 31: densidad_peces_en() es determinista, está en [0,1], y es 0.0 fuera del agua ===")
+	var gen_dens_peces_a: RefCounted = GeneradorMundoScript.new(555, 60, 60)
+	var gen_dens_peces_b: RefCounted = GeneradorMundoScript.new(555, 60, 60)
+	var vio_fuera_peces := false
+	var vio_dentro_peces := false
+	for x in range(0, 60, 3):
+		for z in range(0, 60, 3):
+			var a: float = gen_dens_peces_a.densidad_peces_en(x, z)
+			var b: float = gen_dens_peces_b.densidad_peces_en(x, z)
+			assert(is_equal_approx(a, b))
+			assert(a >= 0.0 and a <= 1.0)
+			if not gen_dens_peces_a.es_agua_en(x, z):
+				vio_fuera_peces = true
+				assert(a == 0.0)
+			else:
+				vio_dentro_peces = true
+	assert(vio_fuera_peces)
+	assert(vio_dentro_peces)
+	print("OK: densidad_peces_en es determinista, está en [0,1], y es exactamente 0.0 fuera del agua (con muestras dentro y fuera encontradas).")
+
+	print("\n=== TEST 32: densidad_algas_en()/_profundidad_relativa_agua_en() normalizan cada columna contra el techo de SU tipo de cuerpo de agua ===")
+	var gen_algas: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var vio_rio_algas := false
+	var vio_mar_algas := false
+	for x in range(VoxelWorld.ANCHO_MUNDO):
+		for z in range(VoxelWorld.LARGO_MUNDO):
+			if not gen_algas.es_agua_en(x, z) and not gen_algas.es_rio_en(x, z):
+				continue
+			var relativa: float = gen_algas._profundidad_relativa_agua_en(x, z)
+			assert(relativa >= 0.0 and relativa <= 1.0)
+			assert(is_equal_approx(gen_algas.densidad_algas_en(x, z), 1.0 - relativa))
+			if gen_algas.es_rio_en(x, z):
+				vio_rio_algas = true
+				var esperado_rio: float = float(gen_algas.profundidad_rio_en(x, z)) / float(GeneradorMundoScript.PROFUNDIDAD_MAXIMA_RIO)
+				assert(is_equal_approx(relativa, esperado_rio))
+			else:
+				vio_mar_algas = true
+				var techo: int = gen_algas.nivel_mar - GeneradorMundoScript.ALTURA_MINIMA
+				var esperado_mar: float = clampf(float(gen_algas.nivel_mar - gen_algas.altura_en(x, z)) / float(techo), 0.0, 1.0)
+				assert(is_equal_approx(relativa, esperado_mar))
+	assert(vio_rio_algas)
+	assert(vio_mar_algas)
+	print("OK: la profundidad relativa de cada columna de agua se normaliza contra el techo de su propio tipo (río: PROFUNDIDAD_MAXIMA_RIO; mar/lago: nivel_mar - ALTURA_MINIMA), y densidad_algas_en() es siempre 1.0 menos esa profundidad relativa.")
+
+	print("\n=== Las 32 pruebas de GeneradorMundo pasaron correctamente ===")

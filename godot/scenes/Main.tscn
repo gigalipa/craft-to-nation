@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1"]
 [ext_resource type="Script" uid="uid://bljafw3iua3x0" path="res://scripts/VoxelWorld.gd" id="2"]
 [ext_resource type="Script" uid="uid://djo58ryeofic5" path="res://scripts/Main.gd" id="3"]
-[ext_resource type="MeshLibrary" path="res://assets/BlockLibrary.res" id="4"]
+[ext_resource type="MeshLibrary" uid="uid://b47cswj0aixp3" path="res://assets/BlockLibrary.res" id="4"]
 [ext_resource type="Script" uid="uid://dyx7ud7wfqpeg" path="res://scripts/HUD.gd" id="5"]
 [ext_resource type="Script" uid="uid://dv3grllxpedej" path="res://scripts/CamaraCenital.gd" id="6"]
 [ext_resource type="Script" uid="uid://b3dtjvjivtjbv" path="res://scripts/ZonaOverlay.gd" id="7"]
@@ -90,67 +90,67 @@ text = "  - : 0 / 0"
 layout_mode = 2
 text = "  +0.0 /tick"
 
-[node name="MinaFicha" type="VBoxContainer" parent="HUDLayer"]
+[node name="MinaFicha" type="VBoxContainer" parent="HUDLayer" unique_id=382321728]
 visible = false
 offset_left = 12.0
 offset_top = 160.0
 offset_right = 320.0
 offset_bottom = 280.0
 
-[node name="CostoLabel" type="Label" parent="HUDLayer/MinaFicha"]
+[node name="CostoLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=1528040882]
 layout_mode = 2
 
-[node name="PersonalLabel" type="Label" parent="HUDLayer/MinaFicha"]
+[node name="PersonalLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=1629101157]
 layout_mode = 2
 
-[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/MinaFicha"]
+[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=128478959]
 layout_mode = 2
 
-[node name="TasasLabel" type="Label" parent="HUDLayer/MinaFicha"]
+[node name="TasasLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=981453828]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="CazaFicha" type="VBoxContainer" parent="HUDLayer"]
+[node name="CazaFicha" type="VBoxContainer" parent="HUDLayer" unique_id=672351415]
 visible = false
 offset_left = 12.0
 offset_top = 160.0
 offset_right = 320.0
 offset_bottom = 280.0
 
-[node name="CostoLabel" type="Label" parent="HUDLayer/CazaFicha"]
+[node name="CostoLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=359706175]
 layout_mode = 2
 
-[node name="PersonalLabel" type="Label" parent="HUDLayer/CazaFicha"]
+[node name="PersonalLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=724885069]
 layout_mode = 2
 
-[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/CazaFicha"]
+[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=1670008041]
 layout_mode = 2
 
-[node name="TasasLabel" type="Label" parent="HUDLayer/CazaFicha"]
+[node name="TasasLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=785027141]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="MaderoFicha" type="VBoxContainer" parent="HUDLayer"]
+[node name="MaderoFicha" type="VBoxContainer" parent="HUDLayer" unique_id=1476136460]
 visible = false
 offset_left = 12.0
 offset_top = 160.0
 offset_right = 320.0
 offset_bottom = 280.0
 
-[node name="CostoLabel" type="Label" parent="HUDLayer/MaderoFicha"]
+[node name="CostoLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=683074046]
 layout_mode = 2
 
-[node name="PersonalLabel" type="Label" parent="HUDLayer/MaderoFicha"]
+[node name="PersonalLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=1965089747]
 layout_mode = 2
 
-[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/MaderoFicha"]
+[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=1489597917]
 layout_mode = 2
 
-[node name="TasasLabel" type="Label" parent="HUDLayer/MaderoFicha"]
+[node name="TasasLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=728635545]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="ModoDeconstruccionLabel" type="Label" parent="HUDLayer"]
+[node name="ModoDeconstruccionLabel" type="Label" parent="HUDLayer" unique_id=1106098849]
 visible = false
 offset_left = 12.0
 offset_top = 300.0

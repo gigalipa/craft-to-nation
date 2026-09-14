@@ -297,7 +297,7 @@ const NUM_RIOS := 6
 ## ahí de inmediato (cauce de 1 sola celda, descartado). El margen superior
 ## excluye esa franja más alta y caótica, dejando nacer los ríos desde el
 ## "hombro" más estable de la montaña, un poco por debajo de la cumbre.
-const MARGEN_NACIENTE_RIO: Array[int] = [5, 1]
+const MARGEN_NACIENTE_RIO: Array[int] = [4, 2]
 
 ## Distancia mínima en línea recta (celdas) entre dos nacientes elegidas —
 ## evita que varios de los NUM_RIOS ríos nazcan todos de la misma montaña

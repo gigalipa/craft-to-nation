@@ -103,8 +103,8 @@ const COLOR_AREA_ACCION := Color(0.3, 0.7, 1.0, 0.15)
 ## El mayor ancho/alto entre los tipos de puesto existentes (mina 5x5, caza
 ## y recolección 4x4) — tamaño del pool de planos fantasma reutilizable
 ## entre cualquier tipo (ver _crear_huella_puesto()).
-const MAX_ANCHO_HUELLA_PUESTO := 5
-const MAX_ALTO_HUELLA_PUESTO := 5
+const MAX_ANCHO_HUELLA_PUESTO := 6
+const MAX_ALTO_HUELLA_PUESTO := 6
 
 ## El mayor radio de área de acción entre los tipos de puesto existentes
 ## (Recoleccion.RADIO_AREA_MINA = 6, RADIO_AREA_CAZA_RECOLECCION = 12,
@@ -801,10 +801,11 @@ func _actualizar_previsualizacion_puesto() -> void:
 			var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 			@warning_ignore("integer_division")
 			var centro_agua := esquina + celdas_extremo[celdas_extremo.size() / 2]
-			var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, centro_agua)
+			var celdas_agua: Dictionary = Recoleccion.celdas_agua_conectadas(mundo.generador, centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+			var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, celdas_agua)
 			var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar(promedios)
 			hud.actualizar_tasas_pesca(tasas_pesca)
-			_actualizar_area_accion_agua(centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+			_actualizar_area_accion_agua(centro_agua, celdas_agua)
 		else:
 			hud.actualizar_tasas_pesca({})
 			_ocultar_area_accion()
@@ -1124,17 +1125,17 @@ func _actualizar_area_accion(centro: Vector2i, radio: int) -> void:
 		plano.visible = true
 
 
-## Igual que _actualizar_area_accion(), pero además de filtrar por radio,
-## oculta cualquier plano cuya columna real no sea agua (mundo.generador.
-## es_agua_o_rio_en()) — exclusivo de "pesca_frutos_mar". Reutiliza el mismo
-## pool _area_accion/_offsets_area_accion.
-func _actualizar_area_accion_agua(centro: Vector2i, radio: int) -> void:
+## Igual que _actualizar_area_accion(), pero en vez de un radio geométrico
+## simple, muestra un plano solo si su celda absoluta está en "celdas_agua"
+## (ver Recoleccion.celdas_agua_conectadas()) — exclusivo de
+## "pesca_frutos_mar". Reutiliza el mismo pool _area_accion/_offsets_area_accion.
+func _actualizar_area_accion_agua(centro: Vector2i, celdas_agua: Dictionary) -> void:
 	for i in range(_offsets_area_accion.size()):
 		var offset: Vector2i = _offsets_area_accion[i]
 		var plano: MeshInstance3D = _area_accion[i]
 		var x: int = centro.x + offset.x
 		var z: int = centro.y + offset.y
-		if offset.length() > radio or not mundo.generador.es_agua_o_rio_en(x, z):
+		if not celdas_agua.has(Vector2i(x, z)):
 			plano.visible = false
 			continue
 		var altura_celda: int = mundo.altura_en(x, z, true)
@@ -1311,6 +1312,19 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 			var celda_marcador := Vector3i(esquina.x + dx, objetivo + 1, esquina.y + dz)
 			mundo.colocar_bloque(celda_marcador, bloque_marcador)
 			celdas_puesto.append(celda_marcador)
+	if _tipo_puesto_activo == "pesca_frutos_mar":
+		var eje_z := _eje_largo_pesca_es_z(_ancho_puesto_activo, _alto_puesto_activo)
+		var largo: int = _alto_puesto_activo if eje_z else _ancho_puesto_activo
+		@warning_ignore("integer_division")
+		var mitad: int = largo / 2
+		for dx in range(_ancho_puesto_activo):
+			for dz in range(_alto_puesto_activo):
+				var l: int = dz if eje_z else dx
+				var es_mitad_edificio: bool = (l >= mitad) if extremo_agua_indice == 0 else (l < mitad)
+				if es_mitad_edificio:
+					var celda_slab := Vector3i(esquina.x + dx, objetivo + 2, esquina.y + dz)
+					mundo.colocar_bloque(celda_slab, bloque_marcador)
+					celdas_puesto.append(celda_slab)
 	mundo.registrar_edificio(celdas_puesto)
 
 	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)

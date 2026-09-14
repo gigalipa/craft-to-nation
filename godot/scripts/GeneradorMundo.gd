@@ -295,7 +295,7 @@ func densidad_arbol_en(x: int, z: int) -> float:
 ## relación con la profundidad real de esa columna (decisión explícita:
 ## una señal solo basada en profundidad resultaba demasiado plana/predecible).
 func densidad_peces_en(x: int, z: int) -> float:
-	if not es_agua_en(x, z):
+	if not es_agua_en(x, z) and not es_rio_en(x, z):
 		return 0.0
 	var valor: float = _ruido_peces.get_noise_2d(x, z)
 	return (valor + 1.0) / 2.0

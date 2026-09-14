@@ -559,7 +559,7 @@ func ejecutar_pruebas() -> void:
 	assert(probada_t30)
 	print("OK: el representante de una región pertenece a su cumbre y es el más cercano al centro geométrico de esa cumbre.")
 
-	print("\n=== TEST 31: densidad_peces_en() es determinista, está en [0,1], y es 0.0 fuera del agua ===")
+	print("\n=== TEST 31: densidad_peces_en() es determinista, está en [0,1], y es 0.0 fuera del agua (incluyendo ríos) ===")
 	var gen_dens_peces_a: RefCounted = GeneradorMundoScript.new(555, 60, 60)
 	var gen_dens_peces_b: RefCounted = GeneradorMundoScript.new(555, 60, 60)
 	var vio_fuera_peces := false
@@ -577,7 +577,26 @@ func ejecutar_pruebas() -> void:
 				vio_dentro_peces = true
 	assert(vio_fuera_peces)
 	assert(vio_dentro_peces)
-	print("OK: densidad_peces_en es determinista, está en [0,1], y es exactamente 0.0 fuera del agua (con muestras dentro y fuera encontradas).")
+
+	# Verificar con la semilla real que hay ríos y dan densidad_peces no-cero
+	var gen_peces_real: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var vio_rio_con_peces := false
+	var vio_tierra_seca_cero := false
+	for x in range(0, VoxelWorld.ANCHO_MUNDO, 5):
+		for z in range(0, VoxelWorld.LARGO_MUNDO, 5):
+			if gen_peces_real.es_rio_en(x, z):
+				# Un río está FUERA del agua (altura > nivel_mar), pero debe dar densidad no-cero
+				var dens: float = gen_peces_real.densidad_peces_en(x, z)
+				assert(dens >= 0.0 and dens <= 1.0)
+				if not is_equal_approx(dens, 0.0):
+					vio_rio_con_peces = true
+			elif not gen_peces_real.es_agua_en(x, z):
+				# Tierra seca real (ni agua ni río) debe ser 0.0
+				vio_tierra_seca_cero = true
+				assert(gen_peces_real.densidad_peces_en(x, z) == 0.0)
+	assert(vio_rio_con_peces)
+	assert(vio_tierra_seca_cero)
+	print("OK: densidad_peces_en es determinista, está en [0,1], es exactamente 0.0 en tierra seca, y da valores no-cero en ríos reales (confirmando que maneja both es_agua_en y es_rio_en).")
 
 	print("\n=== TEST 32: densidad_algas_en()/_profundidad_relativa_agua_en() normalizan cada columna contra el techo de SU tipo de cuerpo de agua ===")
 	var gen_algas: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)

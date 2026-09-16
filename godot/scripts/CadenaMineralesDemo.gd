@@ -13,7 +13,7 @@ extends Node2D
 ##   A/S: resta/suma 1 trabajador a la refinería de tierras raras (mínimo 0)
 ##   Espacio: avanza un tick de 1.0 hora
 
-const ORDEN_MINERALES := ["tierra", "piedra", "hierro", "cobre", "carbon", "tierras_raras"]
+var ORDEN_MINERALES: Array = Recoleccion.TIPOS_MINERALES
 const TECLAS_MINERALES := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6]
 
 @onready var texto: Label = $Texto

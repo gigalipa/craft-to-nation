@@ -60,7 +60,7 @@ godot/
 
 ### **3.1 `CadenaMinerales.gd`**
 
-El archivo completo vive en `godot/scripts/CadenaMinerales.gd` (73 líneas). La receta se indexa por tipo de entrada, no por nombre de edificio — consistente con que cada refinería tiene una única receta fija:
+El archivo completo vive en `godot/scripts/CadenaMinerales.gd` (70 líneas). La receta se indexa por tipo de entrada, no por nombre de edificio — consistente con que cada refinería tiene una única receta fija:
 
 ```gdscript
 const RECETAS: Dictionary = {

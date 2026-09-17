@@ -1152,7 +1152,7 @@ func _ocultar_area_accion() -> void:
 ## Convierte una posición de pantalla en la celda de grid (X,Z) que hay
 ## debajo, mediante un raycast físico real contra la colisión del terreno
 ## (la misma que usa Player.gd para minar/colocar) — no basta con
-## intersecar un plano fijo en y = 0: con relieve real (0-15 de altura) y
+## intersecar un plano fijo en y = 0: con relieve real (0-130 de altura) y
 ## una cámara en ángulo oblicuo, un rayo que visualmente toca el terreno a
 ## media altura sigue viajando mucho más lejos horizontalmente antes de
 ## llegar a y = 0, desplazando la celda detectada muy lejos del cursor. Si

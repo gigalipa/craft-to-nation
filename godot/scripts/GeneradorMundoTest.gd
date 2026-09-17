@@ -80,7 +80,7 @@ func ejecutar_pruebas() -> void:
 	# arbitrarios (42, y-100). Este test usa la semilla real del mundo
 	# (VoxelWorld.SEMILLA_MUNDO, así que el ruido de mineral interno usa
 	# semilla+1, ver GeneradorMundo._init()) y el rango de profundidad real
-	# ([-24, 15] dado PROFUNDIDAD_SUBSUELO=24 y ALTURA_MAXIMA=15) para
+	# ([-24, 130] dado PROFUNDIDAD_SUBSUELO=24 y ALTURA_MAXIMA=130) para
 	# confirmar que el hierro también aparece bajo los parámetros con los que
 	# el jugador de verdad juega, no solo en un muestreo fuera del mundo real.
 	var gen_real: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
@@ -286,13 +286,17 @@ func ejecutar_pruebas() -> void:
 	assert(termino_en_agua or cauce_a.size() == 1 or es_mesa_cerrada)
 	print("OK: _trazar_rio() es determinista, respeta el tope de pasos, y termina en agua o en una mesa sin vecino más bajo (altura continua).")
 
-	print("\n=== TEST 21: cada paso del cauce baja de altura continua hasta llegar a agua ===")
+	print("\n=== TEST 21: ningún paso del cauce sube de altura continua hasta llegar a agua (puede cruzar terreno llano) ===")
+	# 2026-09-17 (PoC_6 3.18): _trazar_rio() ya no exige bajar en CADA paso —
+	# puede cruzar terreno llano en línea recta (mismo rumbo) y solo gira
+	# cuando la dirección actual subiría. Lo único que sigue siendo cierto
+	# siempre es que ningún paso SUBE.
 	for i in range(cauce_a.size() - 1):
 		var actual: Vector2i = cauce_a[i]
 		if gen_rio_a.es_agua_en(actual.x, actual.y):
 			break
 		var siguiente: Vector2i = cauce_a[i + 1]
-		assert(gen_rio_a._altura_flotante(siguiente.x, siguiente.y) < gen_rio_a._altura_flotante(actual.x, actual.y))
+		assert(gen_rio_a._altura_flotante(siguiente.x, siguiente.y) <= gen_rio_a._altura_flotante(actual.x, actual.y))
 	print("OK: ningún paso del cauce sube de altura continua antes de llegar a una celda de agua.")
 
 	print("\n=== TEST 22: la generación de ríos es determinista end-to-end ===")
@@ -320,7 +324,7 @@ func ejecutar_pruebas() -> void:
 				assert(gen_full_a.profundidad_rio_en(x, z) == 0)
 	print("OK: profundidad_rio_en() nunca sale de rango, y es 0 fuera de cualquier río.")
 
-	print("\n=== TEST 24: direccion_flujo_en() en las celdas del CAUCE (no de su franja) apunta a altura continua menor ===")
+	print("\n=== TEST 24: direccion_flujo_en() en las celdas del CAUCE (no de su franja) nunca apunta a altura continua mayor ===")
 	# direccion_flujo_en() está definida sobre TODA la franja de un río (Sección
 	# 5 del spec: las celdas de franja heredan la dirección de su celda de
 	# cauce por diseño) — una celda de franja no tiene ninguna garantía propia
@@ -363,10 +367,12 @@ func ejecutar_pruebas() -> void:
 		for j in range(cauce_t24.size() - 1):
 			var actual_t24: Vector2i = cauce_t24[j]
 			var siguiente_t24: Vector2i = cauce_t24[j + 1]
-			assert(gen_full_a._altura_flotante(siguiente_t24.x, siguiente_t24.y) < gen_full_a._altura_flotante(actual_t24.x, actual_t24.y))
+			# <= no <: ver TEST 21 (2026-09-17, PoC_6 3.18) — el cauce puede
+			# cruzar terreno llano, solo nunca sube.
+			assert(gen_full_a._altura_flotante(siguiente_t24.x, siguiente_t24.y) <= gen_full_a._altura_flotante(actual_t24.x, actual_t24.y))
 			revisadas_t24 += 1
 	assert(revisadas_t24 > 0)
-	print("OK: cada paso de cauce real (%d pasos revisados en los %d ríos) baja de altura continua, sin excepción." % [revisadas_t24, rios_generados_t24])
+	print("OK: cada paso de cauce real (%d pasos revisados en los %d ríos) nunca sube de altura continua, sin excepción." % [revisadas_t24, rios_generados_t24])
 
 	print("\n=== TEST 25: toda celda de cascada es también una celda de río real ===")
 	for x in range(VoxelWorld.ANCHO_MUNDO):
@@ -381,14 +387,25 @@ func ejecutar_pruebas() -> void:
 	# igual aunque _marcar_cascadas() nunca marcara nada). En su lugar,
 	# buscamos (mismo patrón que TEST 27) un par real de celdas vecinas con
 	# caída de altura >= UMBRAL_CASCADA, para garantizar que
-	# deberia_ser_cascada_26 sea true al menos una vez.
-	var gen_casc: RefCounted = GeneradorMundoScript.new(42, 60, 60)
+	# deberia_ser_cascada_26 sea true al menos una vez. Grid de 200x200 (no
+	# 60x60): con la longitud de onda real del relieve (ver GeneradorMundo.
+	# _ruido.frequency) un parche de 60x60 puede no contener ningún salto de
+	# altura >= UMBRAL_CASCADA entre celdas vecinas — el mundo real sí lo
+	# tiene, así que se busca en un área del mismo tamaño.
+	var gen_casc: RefCounted = GeneradorMundoScript.new(42, 200, 200)
 	var celda_a26 := Vector2i(-1, -1)
 	var celda_b26 := Vector2i(-1, -1)
-	for x26 in range(1, 59):
-		for z26 in range(1, 59):
+	for x26 in range(1, 199):
+		for z26 in range(1, 199):
 			var a26 := Vector2i(x26, z26)
 			var b26 := Vector2i(x26 + 1, z26)
+			# Excluye candidatas bajo agua: _aplicar_ancho_profundidad()/
+			# _marcar_cascadas() nunca registran ni marcan una celda de agua
+			# (ver sus propios guards de es_agua_en()), así que un candidato
+			# ahí nunca podría dar deberia_ser_cascada_26 == es_cascada_en()
+			# real, sin importar la caída de altura.
+			if gen_casc.es_agua_en(a26.x, a26.y) or gen_casc.es_agua_en(b26.x, b26.y):
+				continue
 			if gen_casc.altura_en(a26.x, a26.y) - gen_casc.altura_en(b26.x, b26.y) >= GeneradorMundoScript.UMBRAL_CASCADA:
 				celda_a26 = a26
 				celda_b26 = b26
@@ -402,19 +419,20 @@ func ejecutar_pruebas() -> void:
 	# real en _profundidad_rio antes de poder marcarla como cascada (ver
 	# TEST 27) — sin este paso, la celda nunca calificaría sin importar la
 	# caída real de altura.
-	gen_casc._aplicar_ancho_profundidad(cauce_sintetico_26, 3, 60, 60)
-	gen_casc._marcar_cascadas(cauce_sintetico_26, 3, 60, 60)
+	gen_casc._aplicar_ancho_profundidad(cauce_sintetico_26, 3, 200, 200)
+	gen_casc._marcar_cascadas(cauce_sintetico_26, 3, 200, 200)
 	var caida_26: int = gen_casc.altura_en(celda_a26.x, celda_a26.y) - gen_casc.altura_en(celda_b26.x, celda_b26.y)
 	var deberia_ser_cascada_26: bool = caida_26 >= GeneradorMundoScript.UMBRAL_CASCADA
 	assert(gen_casc.es_cascada_en(celda_a26.x, celda_a26.y) == deberia_ser_cascada_26)
 	print("OK (caída real detectada: %d, UMBRAL_CASCADA=%d): es_cascada_en() coincide con la regla exacta de caída de altura." % [caida_26, GeneradorMundoScript.UMBRAL_CASCADA])
 
 	print("\n=== TEST 27: _marcar_cascadas() nunca marca cascada una celda de franja que no está registrada como río real (invariante es_cascada_en => es_rio_en) ===")
-	var gen_casc27: RefCounted = GeneradorMundoScript.new(7, 60, 60)
+	# Grid de 200x200, mismo motivo que TEST 26.
+	var gen_casc27: RefCounted = GeneradorMundoScript.new(7, 200, 200)
 	var actual27 := Vector2i(-1, -1)
 	var siguiente27 := Vector2i(-1, -1)
-	for x27 in range(1, 59):
-		for z27 in range(1, 59):
+	for x27 in range(1, 199):
+		for z27 in range(1, 199):
 			var a27 := Vector2i(x27, z27)
 			var b27 := Vector2i(x27 + 1, z27)
 			if gen_casc27.altura_en(a27.x, a27.y) - gen_casc27.altura_en(b27.x, b27.y) >= GeneradorMundoScript.UMBRAL_CASCADA:
@@ -432,7 +450,7 @@ func ejecutar_pruebas() -> void:
 	# cascada de todas formas, aunque la caída de altura del paso supere
 	# UMBRAL_CASCADA. Antes del fix, _marcar_cascadas() marcaba TODA la
 	# franja sin este chequeo, rompiendo es_cascada_en() => es_rio_en().
-	gen_casc27._marcar_cascadas(cauce_sintetico_27, 3, 60, 60)
+	gen_casc27._marcar_cascadas(cauce_sintetico_27, 3, 200, 200)
 	for offset27 in [-1, 0, 1]:
 		var celda27 := Vector2i(actual27.x, actual27.y + offset27)
 		assert(not gen_casc27.es_rio_en(celda27.x, celda27.y))
@@ -570,7 +588,11 @@ func ejecutar_pruebas() -> void:
 			var b: float = gen_dens_peces_b.densidad_peces_en(x, z)
 			assert(is_equal_approx(a, b))
 			assert(a >= 0.0 and a <= 1.0)
-			if not gen_dens_peces_a.es_agua_en(x, z):
+			# "Fuera del agua (incluyendo ríos)" es es_agua_o_rio_en() falso, no
+			# solo es_agua_en(): una celda de río puede estar en tierra firme
+			# (altura > nivel_mar) y aun así dar densidad no-cero, ver la propia
+			# guarda de densidad_peces_en().
+			if not gen_dens_peces_a.es_agua_o_rio_en(x, z):
 				vio_fuera_peces = true
 				assert(a == 0.0)
 			else:

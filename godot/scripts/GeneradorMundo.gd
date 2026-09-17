@@ -7,7 +7,7 @@ extends RefCounted
 ## evitar el bug de caché de clases globales de Godot) — se usa vía preload().new().
 
 const ALTURA_MINIMA := 0
-const ALTURA_MAXIMA := 15
+const ALTURA_MAXIMA := 130
 const GROSOR_TIERRA := 4
 
 ## Umbral de get_noise_3d() (rango [-1, 1]) por encima del cual una celda de
@@ -18,6 +18,14 @@ const GROSOR_TIERRA := 4
 ## Recalibrado empíricamente a 0.2, que sigue dejando al hierro como clara
 ## minoría frente a la piedra en la capa profunda.
 const UMBRAL_HIERRO := 0.2
+
+## Umbral de _ruido_bosque.get_noise_2d() (rango [-1, 1]) por encima del cual
+## una columna cae dentro de una zona de bosque real — ver densidad_arbol_en().
+## 0.0 da ~50% de cobertura de zona (la mitad del bioma es "bosque posible"),
+## dejando que UMBRAL_ARBOL (VoxelWorld.gd) recorte más adentro de cada zona
+## — calibrado empíricamente junto con la frecuencia de _ruido_bosque, mismo
+## patrón que las demás constantes de este archivo.
+const UMBRAL_ZONA_BOSQUE := 0.0
 
 ## Exponente de la redistribución por curva de potencia aplicada a la altura
 ## (ver altura_en() y _redistribuir()) para producir picos y cuencas más
@@ -50,6 +58,41 @@ const EXPONENTE_RELIEVE := 0.5
 ## pareciendo mesetas.
 const AMPLITUD_DETALLE_RELIEVE := 3.0
 
+## Cuántas unidades de altura aporta _ruido_medio (frecuencia intermedia,
+## ver _init()) — a diferencia de AMPLITUD_DETALLE_RELIEVE, esta se suma en
+## TODO punto del mapa, no solo cerca de picos/cuencas. Dio colinas/valles
+## reales para ríos/bioma (ver PoC_6 3.16), pero con amplitud alta (30) hacía
+## que TODO el mapa se sintiera "ocupado" de relieve — el usuario pidió
+## explícitamente pocas montañas puntuales y el resto llano/colinas suaves
+## (ver PoC_6 3.17-3.18), así que esta capa ahora es solo la textura suave
+## de la llanura — la altura "dramática" viene de _altura_montana() (picos
+## explícitos), no de esto. Bajada de 30 a 10 en consecuencia.
+const AMPLITUD_MEDIA_RELIEVE := 10.0
+
+## Techo de altura del terreno "base" (llanura/colinas suaves, sin contar
+## montañas) — ver _altura_flotante()/_altura_montana(). El resto de la
+## altura hasta ALTURA_MAXIMA solo lo alcanzan las MONTANAS_PICOS. Valor
+## inicial calibrado empíricamente (2026-09-17, PoC_6 3.18): bajo frente a
+## ALTURA_MAXIMA a propósito, para que el mapa se sienta mayormente llano.
+const ALTURA_BASE_MAXIMA := 30.0
+
+## Cuántos picos de montaña explícitos genera el mundo — ver
+## _generar_picos_montana()/_altura_montana(). El usuario pidió "una o dos
+## montañas altas" en vez de relieve accidentado por todo el mapa (2026-09-17,
+## PoC_6 3.18, con captura real de un mundo demasiado "ocupado" de picos).
+const NUM_MONTANAS := 2
+
+## Radio (en celdas) dentro del cual un pico de montaña influye en la altura
+## — fuera de este radio, la altura vuelve a depender solo del terreno base
+## (llanura/colinas). Sorteado por pico entre estos dos valores, para que no
+## todas las montañas tengan exactamente el mismo tamaño.
+const RADIO_MONTANA_MIN := 45.0
+const RADIO_MONTANA_MAX := 70.0
+
+## Distancia mínima al borde del mundo para el centro de un pico de montaña
+## — evita montañas cortadas a la mitad por el borde del mapa.
+const MARGEN_BORDE_MONTANA := 35
+
 ## Percentil (sobre la distribución real de altura_en() en todo el grid) que
 ## define nivel_mar — ver _calcular_nivel_mar(). Fijo por ahora; en un
 ## desarrollo futuro dependerá del "tipo de mundo" elegido (archipiélago,
@@ -60,8 +103,13 @@ const PERCENTIL_NIVEL_MAR := 0.15
 ## (vegetación/fauna) antes de volverse tierra estéril — ver es_bioma_en().
 ## Valor inicial calibrado empíricamente, mismo patrón que GROSOR_TIERRA/
 ## UMBRAL_HIERRO/EXPONENTE_RELIEVE: ajustar aquí si en el editor real la
-## banda resulta demasiado angosta o demasiado ancha.
-const BANDA_BIOMA := 4
+## banda resulta demasiado angosta o demasiado ancha. Escalada de 4 a 34
+## (2026-09-16, proporcional al aumento de ALTURA_MAXIMA de 15 a 130, mismo
+## criterio que MARGEN_NACIENTE_RIO) — sin reescalar, 4 unidades sobre un
+## rango de 130 dejaba el bioma como una franja angosta pegada a la costa
+## (18% del mapa, confirmado jugando en vivo con captura real), obligando de
+## facto a construir cerca del mar.
+const BANDA_BIOMA := 34
 
 ## Altura por debajo de la cual una columna se considera inundada (ver
 ## es_agua_en()). Calculada una vez en _init() a partir de
@@ -70,11 +118,23 @@ const BANDA_BIOMA := 4
 ## semilla, frecuencia de ruido o EXPONENTE_RELIEVE.
 var nivel_mar: int
 
+## Picos de montaña generados una vez en _init() — ver
+## _generar_picos_montana()/_altura_montana(). Cada entrada es
+## {"pos": Vector2, "radio": float}.
+var _picos_montana: Array[Dictionary] = []
+
+## Semilla del mundo, guardada para sembrar el RNG propio de cada
+## _trazar_rio() (ver ahí) — determinista por (semilla, origen), sin
+## compartir estado con el RNG de _generar_rios() (semilla+5).
+var _semilla: int
+
 var _ruido: FastNoiseLite
+var _ruido_medio: FastNoiseLite
 var _ruido_mineral: FastNoiseLite
 var _ruido_fauna: FastNoiseLite
 var _ruido_frutal: FastNoiseLite
 var _ruido_arbol: FastNoiseLite
+var _ruido_bosque: FastNoiseLite
 var _ruido_detalle: FastNoiseLite
 var _ruido_peces: FastNoiseLite
 
@@ -83,7 +143,27 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	_ruido = FastNoiseLite.new()
 	_ruido.seed = semilla
 	_ruido.noise_type = FastNoiseLite.TYPE_PERLIN
-	_ruido.frequency = 0.02
+	# Escalada a la baja junto con ALTURA_MAXIMA (era 0.02 cuando ALTURA_MAXIMA
+	# era 15): la misma frecuencia con un rango de salida 8.7x mayor daba
+	# pendientes casi verticales (picos injugables, confirmado jugando en
+	# vivo) — bajar la frecuencia estira la longitud de onda en la misma
+	# proporción, para que el mismo relieve "se sienta" igual de suave.
+	_ruido.frequency = 0.0023
+
+	# Frecuencia intermedia entre _ruido (0.0023) y _ruido_detalle (0.1) — ver
+	# AMPLITUD_MEDIA_RELIEVE: da colinas/valles reales de ~25 celdas de ancho
+	# en TODO el mapa (no solo cerca de extremos), para que haya suficientes
+	# cuencas de drenaje/variación de altura en el interior. Calibrada
+	# empíricamente junto con AMPLITUD_MEDIA_RELIEVE: frecuencias más bajas
+	# (menos colinas, más anchas) fusionaban las regiones candidatas a
+	# naciente de río en un solo bloque conectado gigante (peor que sin esta
+	# capa — de 4 ríos reales bajó a 0); esta combinación dio 6 ríos reales
+	# (el objetivo de NUM_RIOS) con la semilla real del mundo, sin superar
+	# una pendiente máxima de 8 bloques/celda.
+	_ruido_medio = FastNoiseLite.new()
+	_ruido_medio.seed = semilla + 8
+	_ruido_medio.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_medio.frequency = 0.03
 
 	# Semilla derivada (no la misma que _ruido) para que las vetas de hierro
 	# no queden correlacionadas con el relieve de superficie — sigue siendo
@@ -130,12 +210,28 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 
 	# Semilla derivada distinta de _ruido, _ruido_mineral (+1), _ruido_fauna
 	# (+2), _ruido_frutal (+3), _ruido_arbol (+4), el RNG de _generar_rios()
-	# (+5) y _ruido_detalle (+6) — siguiente offset libre.
+	# (+5), _ruido_detalle (+6) y _ruido_medio (+8, ver más arriba) —
+	# siguiente offset libre.
 	_ruido_peces = FastNoiseLite.new()
 	_ruido_peces.seed = semilla + 7
 	_ruido_peces.noise_type = FastNoiseLite.TYPE_PERLIN
 	_ruido_peces.frequency = 0.05
 
+	# Frecuencia baja a propósito — ver UMBRAL_ZONA_BOSQUE/densidad_arbol_en():
+	# define parches de bosque real (2026-09-17, confirmado jugando en vivo
+	# con captura real: sin esto, todo el bioma se veía como un solo bosque
+	# continuo — ver PoC_6 3.17), no un solo umbral de densidad por celda
+	# como fauna/frutal. Offset +9 (siguiente libre tras _ruido_medio, +8).
+	_ruido_bosque = FastNoiseLite.new()
+	_ruido_bosque.seed = semilla + 9
+	_ruido_bosque.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_bosque.frequency = 0.015
+
+	_semilla = semilla
+
+	# Picos de montaña ANTES de nivel_mar: altura_en() (que nivel_mar necesita
+	# muestrear en todo el grid) ya depende de _picos_montana.
+	_generar_picos_montana(semilla, ancho_mundo, largo_mundo)
 	nivel_mar = _calcular_nivel_mar(ancho_mundo, largo_mundo)
 	_generar_rios(semilla, ancho_mundo, largo_mundo)
 
@@ -149,26 +245,94 @@ func altura_en(x: int, z: int) -> int:
 
 ## Misma altura que altura_en(), sin redondear a entero — ver _trazar_rio():
 ## el trazado de ríos por descenso de gradiente necesita esta versión
-## continua, no la entera. Con solo 16 alturas enteras posibles en un mundo
-## de 200x200, comparar altura_en() (entero) entre vecinos deja la mayor
-## parte del relieve como "mesetas" artificiales de igual altura entera —
-## el descenso por gradiente se atascaba casi de inmediato (bug real,
-## encontrado jugando: los 6 ríos del mundo real quedaban en 1-2 celdas de
-## longitud, sin llegar nunca al mar). Comparando la altura continua en vez
-## de la entera, el descenso solo se detiene en un mínimo local real del
-## ruido, no en un artefacto de la cuantización a 16 niveles.
+## continua, no la entera. Con relativamente pocas alturas enteras posibles
+## (ALTURA_MAXIMA - ALTURA_MINIMA + 1; 16 cuando esto se descubrió, con el
+## rango de relieve original de esta PoC), comparar altura_en() (entero)
+## entre vecinos deja la mayor parte del relieve como "mesetas" artificiales
+## de igual altura entera — el descenso por gradiente se atascaba casi de
+## inmediato (bug real, encontrado jugando: los 6 ríos del mundo real
+## quedaban en 1-2 celdas de longitud, sin llegar nunca al mar). Comparando
+## la altura continua en vez de la entera, el descenso solo se detiene en un
+## mínimo local real del ruido, no en un artefacto de la cuantización.
 func _altura_flotante(x: int, z: int) -> float:
 	var valor: float = _ruido.get_noise_2d(x, z)
 	var valor_redistribuido: float = _redistribuir(valor, EXPONENTE_RELIEVE)
 	var t: float = (valor_redistribuido + 1.0) / 2.0
-	var altura_base: float = ALTURA_MINIMA + t * (ALTURA_MAXIMA - ALTURA_MINIMA)
+	# Techo bajo a propósito (ALTURA_BASE_MAXIMA, no ALTURA_MAXIMA): esta es
+	# la altura de la llanura/colinas suaves. La altura "dramática" hasta
+	# ALTURA_MAXIMA solo la dan los picos de montaña explícitos (ver
+	# _altura_montana() más abajo) — ver PoC_6 3.18.
+	var altura_base: float = ALTURA_MINIMA + t * (ALTURA_BASE_MAXIMA - ALTURA_MINIMA)
+
+	# Colinas/valles suaves de frecuencia intermedia (ver
+	# AMPLITUD_MEDIA_RELIEVE) — se suma en TODO punto del mapa, no solo cerca
+	# de extremos, para que el interior (ni montaña ni costa) tenga algo de
+	# variación real de altura en vez de una llanura perfectamente lisa.
+	var medio: float = _ruido_medio.get_noise_2d(x, z) * AMPLITUD_MEDIA_RELIEVE
 
 	# Detalle de alta frecuencia (ver AMPLITUD_DETALLE_RELIEVE) escalado por
-	# qué tan cerca está esta celda de un extremo del relieve — rompe las
-	# mesetas cerca de picos/cuencas sin afectar mucho las pendientes medias.
+	# qué tan cerca está esta celda de un extremo del relieve BASE — rompe las
+	# mesetas cerca de picos/cuencas de la llanura sin afectar mucho las
+	# pendientes medias.
 	var detalle: float = _ruido_detalle.get_noise_2d(x, z)
 	var factor_extremo: float = abs(valor_redistribuido)
-	return altura_base + detalle * AMPLITUD_DETALLE_RELIEVE * factor_extremo
+
+	return altura_base + medio + detalle * AMPLITUD_DETALLE_RELIEVE * factor_extremo + _altura_montana(x, z)
+
+
+## Cuántas unidades de altura extra aporta la montaña más cercana en (x, z),
+## por encima del terreno base — 0.0 si (x, z) cae fuera del radio de
+## cualquier pico (ver _picos_montana/_generar_picos_montana()). Usa
+## smoothstep (no una rampa lineal) para que la ladera se una al terreno
+## base sin un quiebre visible en el borde del radio de influencia. Si dos
+## radios se solapan, se usa el mayor de los dos (no se suman) — evita
+## picos imposiblemente altos donde dos montañas se acercan.
+func _altura_montana(x: int, z: int) -> float:
+	var maximo := 0.0
+	for pico in _picos_montana:
+		var distancia: float = Vector2(x, z).distance_to(pico["pos"])
+		var radio: float = pico["radio"]
+		if distancia >= radio:
+			continue
+		var t: float = 1.0 - distancia / radio
+		var factor: float = t * t * (3.0 - 2.0 * t)  # smoothstep
+		maximo = maxf(maximo, factor * (ALTURA_MAXIMA - ALTURA_BASE_MAXIMA))
+	return maximo
+
+
+## Sortea NUM_MONTANAS posiciones/radios de pico, deterministas por semilla
+## (RNG propio, offset +10 — siguiente libre tras _ruido_bosque, +9). Se
+## llama una única vez desde _init(), antes de nivel_mar (que ya depende de
+## altura_en(), y por lo tanto de estos picos).
+func _generar_picos_montana(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = semilla + 10
+	for i in range(NUM_MONTANAS):
+		var x: float
+		var z: float
+		var radio: float
+		# Hasta 20 intentos para que este pico no se solape con uno ya
+		# colocado — dos radios que se tocan crean una "silla" entre ambas
+		# cumbres (2026-09-17, PoC_6 3.18): un punto ahí queda con relieve
+		# más alto en casi todas direcciones salvo una franja angosta, así
+		# que _trazar_rio() se atasca en 1-2 pasos, sin importar
+		# NUM_MONTANAS — confirmado midiendo el mundo real, no solo
+		# observado. Si los 20 intentos fallan (mapa chico/muchas montañas),
+		# se acepta el último intento igual — es mejor que un bucle infinito,
+		# y un solape ocasional no rompe nada, solo reduce la chance de que
+		# ese pico en particular dé un río real.
+		for intento in range(20):
+			x = rng.randf_range(MARGEN_BORDE_MONTANA, ancho_mundo - MARGEN_BORDE_MONTANA)
+			z = rng.randf_range(MARGEN_BORDE_MONTANA, largo_mundo - MARGEN_BORDE_MONTANA)
+			radio = rng.randf_range(RADIO_MONTANA_MIN, RADIO_MONTANA_MAX)
+			var se_solapa := false
+			for otro in _picos_montana:
+				if Vector2(x, z).distance_to(otro["pos"]) < radio + otro["radio"]:
+					se_solapa = true
+					break
+			if not se_solapa:
+				break
+		_picos_montana.append({"pos": Vector2(x, z), "radio": radio})
 
 
 ## Curva de potencia sign(x)*pow(abs(x), exponente): comprime o expande los
@@ -178,6 +342,20 @@ func _altura_flotante(x: int, z: int) -> float:
 ## depender de _ruido) para poder probarla con valores conocidos.
 static func _redistribuir(valor: float, exponente: float) -> float:
 	return sign(valor) * pow(abs(valor), exponente)
+
+
+## Ancho de cauce (ANCHO_MINIMO_RIO..ANCHO_MAXIMO_RIO) para un río cuya
+## naciente está a "altura", dentro de la banda [altura_min_naciente,
+## altura_max_naciente] de MARGEN_NACIENTE_RIO — un río que nace más cerca
+## de altura_max_naciente (más cerca de una cumbre real) da un cauce más
+## ancho. Lineal a propósito (sin curva ni aleatoriedad extra): la banda de
+## nacientes ya es angosta, así que una curva no marcaría una diferencia
+## perceptible. Función estática pura, testable con valores conocidos.
+static func _ancho_por_altura(altura: int, altura_min_naciente: int, altura_max_naciente: int) -> int:
+	if altura_max_naciente <= altura_min_naciente:
+		return ANCHO_MAXIMO_RIO
+	var t: float = clampf(float(altura - altura_min_naciente) / float(altura_max_naciente - altura_min_naciente), 0.0, 1.0)
+	return roundi(lerp(float(ANCHO_MINIMO_RIO), float(ANCHO_MAXIMO_RIO), t))
 
 
 ## Tipo de bloque de subsuelo en la columna/profundidad dados: "tierra" cerca
@@ -200,9 +378,9 @@ func tipo_en_profundidad(x: int, y: int, z: int, profundidad_bajo_superficie: in
 ## Altura correspondiente al percentil PERCENTIL_NIVEL_MAR de la
 ## distribución real de altura_en() sobre el grid (ancho_mundo x
 ## largo_mundo) — ver nivel_mar.
-## Usa un histograma (solo hay ALTURA_MAXIMA - ALTURA_MINIMA + 1 = 16
-## alturas enteras posibles, así que es barato) en vez de indexar un array
-## ordenado por posición ordinal: con solo 16 alturas posibles, el índice
+## Usa un histograma (solo hay ALTURA_MAXIMA - ALTURA_MINIMA + 1 alturas
+## enteras posibles, así que es barato) en vez de indexar un array
+## ordenado por posición ordinal: el índice
 ## objetivo (int(total * PERCENTIL_NIVEL_MAR)) casi nunca cae justo en el
 ## borde de un grupo de alturas — recorremos las alturas en orden ascendente
 ## y, en el grupo donde cae el objetivo, elegimos la altura h cuyo conteo
@@ -288,11 +466,18 @@ func densidad_frutal_en(x: int, z: int) -> float:
 
 
 ## Densidad de árboles en la columna (x, z), en [0, 1] — 0.0 si la columna
-## no es bioma (ver es_bioma_en()). VoxelWorld._generar_arboles() coloca un
-## árbol real donde esta densidad supera un umbral (ver spec:
+## no es bioma (ver es_bioma_en()) o si cae fuera de una zona de bosque real
+## (ver UMBRAL_ZONA_BOSQUE/_ruido_bosque: frecuencia baja a propósito, para
+## que el bosque salga en parches — 2026-09-17, confirmado jugando en vivo
+## con captura real: sin esta zona, la densidad por celda sola cubría de
+## árboles ~40% de TODO el mapa, un bosque continuo en vez de agrupado, ver
+## PoC_6 3.17). Dentro de una zona de bosque, VoxelWorld._generar_arboles()
+## coloca un árbol real donde esta densidad supera un umbral (ver spec:
 ## docs/superpowers/specs/2026-09-09-arboles-procedurales-design.md).
 func densidad_arbol_en(x: int, z: int) -> float:
 	if not es_bioma_en(x, z):
+		return 0.0
+	if _ruido_bosque.get_noise_2d(x, z) < UMBRAL_ZONA_BOSQUE:
 		return 0.0
 	var valor: float = _ruido_arbol.get_noise_2d(x, z)
 	return (valor + 1.0) / 2.0
@@ -356,7 +541,7 @@ const NUM_RIOS := 6
 ## ahí de inmediato (cauce de 1 sola celda, descartado). El margen superior
 ## excluye esa franja más alta y caótica, dejando nacer los ríos desde el
 ## "hombro" más estable de la montaña, un poco por debajo de la cumbre.
-const MARGEN_NACIENTE_RIO: Array[int] = [4, 2]
+const MARGEN_NACIENTE_RIO: Array[int] = [35, 17]
 
 ## Distancia mínima en línea recta (celdas) entre dos nacientes elegidas —
 ## evita que varios de los NUM_RIOS ríos nazcan todos de la misma montaña
@@ -369,7 +554,10 @@ const MARGEN_NACIENTE_RIO: Array[int] = [4, 2]
 const MIN_DISTANCIA_NACIENTES := 10
 
 const ANCHO_MINIMO_RIO := 2
-const ANCHO_MAXIMO_RIO := 6
+## Subido de 6 a 8 (2026-09-17, PoC_6 3.18) — pedido explícito del usuario
+## junto con NUM_MONTANAS: los ríos que nacen más alto (más cerca de una
+## cumbre real) ahora tallan cauces más anchos, ver _ancho_por_altura().
+const ANCHO_MAXIMO_RIO := 8
 
 ## Profundidad máxima tallada en el centro de un río, sin importar cuánto
 ## crezca el ancho (Sección 3) — un río de ancho 6 no talla más hondo que
@@ -469,44 +657,142 @@ static func _resolver_cruces(rios: Array[Dictionary]) -> void:
 			truncado.append(celda)
 		rio["cauce_truncado"] = truncado
 
-## Traza el cauce crudo desde "origen" por descenso por gradiente (Sección
-## 2 del spec): en cada paso se mueve a la vecina ortogonal (N/E/S/O, en
-## ese orden de desempate) no visitada de menor altura; termina al entrar
-## a una celda de agua ya existente (se incluye como último elemento) o si
-## ninguna vecina es más baja (mesa/valle cerrado — se conserva el cauce
-## parcial, no es un error). Un tope de pasos evita recorridos patológicos
-## en mesetas totalmente planas.
+## Las 4 direcciones cardinales de avance de un cauce (N/E/S/O) — un paso de
+## _trazar_rio() siempre se mueve una celda a lo largo de uno de estos ejes,
+## nunca en diagonal (el resto del sistema de ríos — _celdas_franja_en(),
+## _aplicar_ancho_profundidad(), direccion_flujo_en() — asume avance
+## ortogonal).
+const DIRECCIONES_CARDINALES: Array[Vector2i] = [
+	Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0),
+]
+
+## Radio (en celdas) donde _trazar_rio() mira antes de decidir hacia dónde
+## avanzar — ver ahí. 2026-09-17 (PoC_6 3.18): con el terreno mayormente
+## llano fuera de las montañas, mirar solo el vecino inmediato (radio 1, el
+## diseño original) atascaba el cauce en depresiones minúsculas y reales de
+## menos de 1 bloque de profundidad — confirmado midiendo el mundo real, no
+## solo observado (ver notas del commit). Mirar más lejos encuentra la
+## bajada real aunque esté a varias celdas, sin necesitar que el cauce
+## "suba" para escapar.
+const RADIO_VISTA_RIO := 5
+
+## Traza el cauce crudo desde "origen" (Sección 2 del spec, reescrito
+## 2026-09-17 — pedido explícito del usuario, PoC_6 3.18): en cada paso,
+## primero busca el punto más bajo dentro de RADIO_VISTA_RIO celdas; si lo
+## encuentra, apunta el siguiente paso (1 celda cardinal) hacia él. Si la
+## vecindad es plana (nada más bajo cerca), mantiene la dirección con la que
+## venía — así el cauce SÍ puede atravesar terreno llano en línea recta, no
+## solo bajar. Si el siguiente paso en esa dirección subiría, gira hacia una
+## de las otras direcciones cardinales (elegida al azar, pero determinista —
+## RNG propio de este trazado, sembrado por semilla+origen) que no suba.
+## Nunca se mueve a una celda más alta que la actual — eso es lo único que
+## de verdad no puede pasar (a diferencia del diseño anterior, que exigía
+## bajar en CADA paso). Termina al entrar a una celda de agua ya existente
+## (incluida como último elemento) o si ninguna dirección (ni las 4
+## cardinales inmediatas ni nada dentro de RADIO_VISTA_RIO) lleva a una
+## celda no visitada que no suba — mesa/valle de verdad cerrado, se conserva
+## el cauce parcial, no es un error. Un tope de pasos evita recorridos
+## patológicos en mesetas totalmente planas.
 func _trazar_rio(origen: Vector2i, ancho_mundo: int, largo_mundo: int) -> Array[Vector2i]:
 	var cauce: Array[Vector2i] = [origen]
 	var visitadas: Dictionary = {origen: true}
 	var actual: Vector2i = origen
 	var max_pasos: int = ancho_mundo + largo_mundo
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector3i(_semilla, origen.x, origen.y))
+	var direccion: Vector2i = Vector2i.ZERO
+
 	for _paso in range(max_pasos):
 		if es_agua_en(actual.x, actual.y):
 			break
-		var vecinos: Array[Vector2i] = [
-			actual + Vector2i(0, -1),
-			actual + Vector2i(1, 0),
-			actual + Vector2i(0, 1),
-			actual + Vector2i(-1, 0),
-		]
-		var mejor: Vector2i = actual
-		var mejor_altura: float = _altura_flotante(actual.x, actual.y)
-		for vecino in vecinos:
-			if vecino.x < 0 or vecino.x >= ancho_mundo or vecino.y < 0 or vecino.y >= largo_mundo:
+		var altura_actual: float = _altura_flotante(actual.x, actual.y)
+
+		var objetivo: Vector2i = _punto_mas_bajo_en_radio(actual, altura_actual, visitadas, ancho_mundo, largo_mundo)
+		if objetivo != actual:
+			direccion = _direccion_cardinal_hacia(actual, objetivo)
+		elif direccion == Vector2i.ZERO:
+			direccion = DIRECCIONES_CARDINALES[rng.randi() % DIRECCIONES_CARDINALES.size()]
+
+		var candidata: Vector2i = actual + direccion
+		if not _celda_transitable(candidata, altura_actual, visitadas, ancho_mundo, largo_mundo):
+			# La dirección actual está bloqueada (sube, sale del mundo, o ya
+			# se visitó) — probar el resto de direcciones cardinales en
+			# orden aleatorio (determinista, RNG propio de este trazado)
+			# hasta encontrar una que no suba.
+			var alternativas: Array[Vector2i] = DIRECCIONES_CARDINALES.duplicate()
+			_barajar(alternativas, rng)
+			var encontrada := false
+			for alt in alternativas:
+				var c: Vector2i = actual + alt
+				if _celda_transitable(c, altura_actual, visitadas, ancho_mundo, largo_mundo):
+					direccion = alt
+					candidata = c
+					encontrada = true
+					break
+			if not encontrada:
+				break  # de verdad encerrado: cada dirección sube o ya está visitada
+
+		visitadas[candidata] = true
+		cauce.append(candidata)
+		actual = candidata
+	return cauce
+
+
+## Punto más bajo (estrictamente menor que "altura_actual") dentro de
+## RADIO_VISTA_RIO celdas de "actual", sin contar celdas ya visitadas ni
+## fuera del mundo — o "actual" mismo si no hay ninguno (vecindad plana o
+## solo con subidas). Usado por _trazar_rio() para decidir hacia dónde
+## apuntar el siguiente paso.
+func _punto_mas_bajo_en_radio(actual: Vector2i, altura_actual: float, visitadas: Dictionary, ancho_mundo: int, largo_mundo: int) -> Vector2i:
+	var mejor: Vector2i = actual
+	var mejor_altura: float = altura_actual
+	for dx in range(-RADIO_VISTA_RIO, RADIO_VISTA_RIO + 1):
+		for dz in range(-RADIO_VISTA_RIO, RADIO_VISTA_RIO + 1):
+			if dx == 0 and dz == 0:
 				continue
-			if visitadas.has(vecino):
+			if Vector2(dx, dz).length() > RADIO_VISTA_RIO:
 				continue
-			var h: float = _altura_flotante(vecino.x, vecino.y)
+			var candidata := Vector2i(actual.x + dx, actual.y + dz)
+			if candidata.x < 0 or candidata.x >= ancho_mundo or candidata.y < 0 or candidata.y >= largo_mundo:
+				continue
+			if visitadas.has(candidata):
+				continue
+			var h: float = _altura_flotante(candidata.x, candidata.y)
 			if h < mejor_altura:
 				mejor_altura = h
-				mejor = vecino
-		if mejor == actual:
-			break
-		visitadas[mejor] = true
-		cauce.append(mejor)
-		actual = mejor
-	return cauce
+				mejor = candidata
+	return mejor
+
+
+## Dirección cardinal (una de DIRECCIONES_CARDINALES) que más acerca a
+## "objetivo" desde "origen" — el eje (X o Z) con mayor distancia gana el
+## desempate, para avanzar realmente hacia el objetivo un paso a la vez.
+static func _direccion_cardinal_hacia(origen: Vector2i, objetivo: Vector2i) -> Vector2i:
+	var delta: Vector2i = objetivo - origen
+	if abs(delta.x) >= abs(delta.y):
+		return Vector2i(signi(delta.x), 0)
+	return Vector2i(0, signi(delta.y))
+
+
+## true si "celda" es un paso válido para _trazar_rio(): dentro del mundo,
+## no visitada, y su altura continua no es mayor que "altura_actual" (puede
+## ser igual — cruzar terreno llano está permitido — pero nunca mayor).
+func _celda_transitable(celda: Vector2i, altura_actual: float, visitadas: Dictionary, ancho_mundo: int, largo_mundo: int) -> bool:
+	if celda.x < 0 or celda.x >= ancho_mundo or celda.y < 0 or celda.y >= largo_mundo:
+		return false
+	if visitadas.has(celda):
+		return false
+	return _altura_flotante(celda.x, celda.y) <= altura_actual
+
+
+## Fisher-Yates in-place con un RandomNumberGenerator propio — Array.shuffle()
+## usa el RNG global de Godot, no reproducible por semilla de mundo.
+static func _barajar(arreglo: Array, rng: RandomNumberGenerator) -> void:
+	for i in range(arreglo.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = arreglo[i]
+		arreglo[i] = arreglo[j]
+		arreglo[j] = tmp
 
 
 ## Talla ancho/profundidad reales sobre "cauce" (ya truncado por
@@ -669,7 +955,14 @@ func _generar_rios(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 		var idx: int = rng.randi() % candidatos.size()
 		var origen: Vector2i = candidatos[idx]
 		candidatos.remove_at(idx)
-		var ancho: int = rng.randi_range(ANCHO_MINIMO_RIO, ANCHO_MAXIMO_RIO)
+		# El sorteo de ancho se sigue consumiendo aquí (mismo lugar en la
+		# secuencia del RNG que antes, para no romper la reproducción exacta
+		# de esta secuencia en GeneradorMundoTest.gd) pero ya no decide el
+		# ancho real — ver _ancho_por_altura(): un río que nace más alto
+		# (más cerca de una cumbre real) talla un cauce más ancho, pedido
+		# explícito del usuario junto con NUM_MONTANAS (PoC_6 3.18).
+		rng.randi_range(ANCHO_MINIMO_RIO, ANCHO_MAXIMO_RIO)
+		var ancho: int = _ancho_por_altura(altura_en(origen.x, origen.y), altura_min_naciente, altura_max_naciente)
 		var cauce_crudo: Array[Vector2i] = _trazar_rio(origen, ancho_mundo, largo_mundo)
 
 		# Filtrar candidatas demasiado cerca de la naciente recién elegida

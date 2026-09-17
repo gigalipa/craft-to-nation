@@ -12,7 +12,22 @@ const GeneradorArbol = preload("res://scripts/GeneradorArbol.gd")
 
 const ANCHO_MUNDO := 200
 const LARGO_MUNDO := 200
+
+## Cuántas celdas de subsuelo cava cada columna bajo SU PROPIA superficie
+## (relativo, no un piso absoluto — ver 2026-09-16, PoC_6 3.15): un piso
+## absoluto fijo en y = ALTURA_MINIMA - PROFUNDIDAD_SUBSUELO se probó
+## primero (fondo plano de verdad), pero con ALTURA_MAXIMA = 130 y un
+## relieve que ya no baja de ~50 en casi ningún punto del mundo real, un
+## piso absoluto obliga a cavar ~90-130 celdas por columna sin importar cuán
+## chico sea este número — 6.3 millones de celdas sólidas en total, que
+## revientan un límite interno de GridMap de Godot (overflow de índice,
+## crash reproducido con y sin GPU). Cavar relativo a la superficie desacopla
+## el volumen total de la altura del terreno (siempre ANCHO×LARGO×(este+1)
+## celdas, aquí 1 millón) — y como el relieve ya es suave (ver
+## GeneradorMundo._ruido.frequency), el fondo resultante también sale
+## razonablemente uniforme, sin ser un piso perfectamente plano.
 const PROFUNDIDAD_SUBSUELO := 24
+
 const SEMILLA_MUNDO := 12345
 
 ## Umbral de densidad_arbol_en() (rango [0,1]) por encima del cual una
@@ -40,9 +55,11 @@ const SOLAPE_MAXIMO_COPAS := 1
 
 ## Rango de búsqueda vertical de altura_en() (ver más abajo) — generoso para
 ## cubrir cualquier construcción del jugador por encima del relieve máximo
-## (GeneradorMundo.ALTURA_MAXIMA = 15) y el subsuelo generado por debajo.
-const ALTURA_BUSQUEDA_MAX := 50
-const ALTURA_BUSQUEDA_MIN := -30
+## (GeneradorMundo.ALTURA_MAXIMA = 130) y el subsuelo generado por debajo
+## (PROFUNDIDAD_SUBSUELO = 24, relativo a cada columna — con ALTURA_MINIMA =
+## 0 el punto más bajo posible del subsuelo es y = -24).
+const ALTURA_BUSQUEDA_MAX := 165
+const ALTURA_BUSQUEDA_MIN := -34
 
 var generador: RefCounted
 var arboles: RefCounted
@@ -296,11 +313,23 @@ func _indexar_biblioteca() -> void:
 
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
 ## (x, z) coloca la celda de superficie ("piso", reutilizando el bloque
-## caminable existente) y el subsuelo debajo (tierra cerca de la
-## superficie, piedra más profundo, o vetas de "hierro" en la capa profunda
-## — ver GeneradorMundo.tipo_en_profundidad), y si la columna queda por
-## debajo del nivel de mar, agrega bloques "agua" encima de la superficie
-## hasta ese nivel (ver GeneradorMundo.es_agua_en/nivel_mar).
+## caminable existente) y PROFUNDIDAD_SUBSUELO celdas de subsuelo debajo
+## (tierra cerca de la superficie, piedra más profundo, o vetas de "hierro"
+## en la capa profunda — ver GeneradorMundo.tipo_en_profundidad), y si la
+## columna queda por debajo del nivel de mar, agrega bloques "agua" encima
+## de la superficie hasta ese nivel (ver GeneradorMundo.es_agua_en/
+## nivel_mar). La excavación es relativa a la superficie de CADA columna
+## (no un piso absoluto — ver PROFUNDIDAD_SUBSUELO, 2026-09-16 PoC_6 3.15):
+## un piso absoluto se probó primero para que el fondo no copiara el
+## relieve de arriba, pero con el relieve real del mundo (que ya no baja de
+## ~50 en casi ningún punto) eso disparaba el volumen de celdas sólidas a
+## 6.3 millones, reventando un límite interno de GridMap (overflow de
+## índice, crash reproducido con y sin GPU). La última celda de cada
+## columna (profundidad == PROFUNDIDAD_SUBSUELO) es "bedrock", inminable
+## (ver minar_bloque()), para que el jugador nunca pueda cavar hasta el
+## vacío — con el relieve ya suave (ver GeneradorMundo._ruido.frequency),
+## este fondo relativo sale razonablemente uniforme igual, sin el costo de
+## un piso absoluto.
 ## Ninguna de estas celdas se marca colocado_por_jugador: el terreno del
 ## mundo nunca puede ser parte de un edificio declarado por el jugador.
 func _generar_terreno() -> void:
@@ -329,13 +358,13 @@ func _generar_terreno() -> void:
 				var profundidad_efectiva: int = altura - y_inicio_agua + 1
 				for profundidad in range(profundidad_efectiva, PROFUNDIDAD_SUBSUELO + 1):
 					var y: int = altura - profundidad
-					var tipo: String = generador.tipo_en_profundidad(x, y, z, profundidad)
+					var tipo: String = "bedrock" if profundidad == PROFUNDIDAD_SUBSUELO else generador.tipo_en_profundidad(x, y, z, profundidad)
 					colocar_bloque(Vector3i(x, y, z), tipo)
 				continue
 			colocar_bloque(Vector3i(x, altura, z), "piso")
 			for profundidad in range(1, PROFUNDIDAD_SUBSUELO + 1):
 				var y: int = altura - profundidad
-				var tipo: String = generador.tipo_en_profundidad(x, y, z, profundidad)
+				var tipo: String = "bedrock" if profundidad == PROFUNDIDAD_SUBSUELO else generador.tipo_en_profundidad(x, y, z, profundidad)
 				colocar_bloque(Vector3i(x, y, z), tipo)
 			if generador.es_agua_en(x, z):
 				for y_agua in range(altura + 1, generador.nivel_mar + 1):
@@ -400,6 +429,10 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 
 func minar_bloque(celda: Vector3i) -> bool:
 	if obtener_tipo(celda) == "agua":
+		return false
+	# "bedrock" es el piso absoluto del mundo (PISO_MUNDO) — inminable a
+	# propósito, para que el jugador nunca pueda cavar hasta el vacío.
+	if obtener_tipo(celda) == "bedrock":
 		return false
 	if celda_a_edificio.has(celda):
 		return false

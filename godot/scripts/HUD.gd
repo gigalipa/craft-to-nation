@@ -62,6 +62,8 @@ const NOMBRES_PESCA_FRUTOS_MAR := {
 
 @onready var modo_deconstruccion_label: Label = $ModoDeconstruccionLabel
 
+@onready var oxigeno_label: Label = $OxigenoLabel
+
 
 func _process(_delta: float) -> void:
 	nivel_label.text = "Nivel: %d (potencial: %d)" % [Ciudad.nivel, Ciudad.nivel_potencial]
@@ -215,3 +217,16 @@ func mostrar_modo_deconstruccion() -> void:
 
 func ocultar_modo_deconstruccion() -> void:
 	modo_deconstruccion_label.visible = false
+
+
+## Llamada cada física por Player._procesar_oxigeno() mientras el jugador
+## está en agua o recuperando aire — oculta con ocultar_oxigeno() en cuanto
+## vuelve a estar a full fuera del agua, para no saturar el HUD en seco.
+func actualizar_oxigeno(fraccion: float) -> void:
+	oxigeno_label.text = "Oxígeno: %d%%" % round(fraccion * 100)
+	oxigeno_label.modulate = COLOR_NEGATIVO if fraccion < 0.3 else COLOR_POSITIVO
+	oxigeno_label.visible = true
+
+
+func ocultar_oxigeno() -> void:
+	oxigeno_label.visible = false

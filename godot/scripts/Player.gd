@@ -7,11 +7,40 @@ const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")  # TEM
 ## de bloques por raycast contra las celdas de VoxelWorld.
 
 const VELOCIDAD := 5.0
-const GRAVEDAD := 9.8
-const VELOCIDAD_SALTO := 5.5
+## Gravedad y salto calibrados juntos: VELOCIDAD_SALTO = sqrt(2 * GRAVEDAD *
+## ALTURA_SALTO_OBJETIVO) para un salto de ~1.2m (sube un bloque sin pasarse
+## por mucho) con una caída con más peso que la gravedad original (9.8).
+const GRAVEDAD := 19.6
+const VELOCIDAD_SALTO := 6.86
 const SENSIBILIDAD_MOUSE := 0.003
 const ALCANCE_RAYCAST := 5.0
 const DANO_TALA := 1
+
+## Velocidad vertical al nadar hacia arriba/abajo (Espacio/Ctrl) una vez que
+## los pies llegan al 2do bloque de agua o más profundo — ver
+## _profundidad_agua_en_pies(). Un solo bloque de agua no alcanza para nadar:
+## el jugador lo atraviesa cayendo con gravedad normal, como si no hubiera
+## nada (ver _physics_process()).
+const VELOCIDAD_NATACION := 3.0
+## Hundimiento lento por defecto al nadar sin tocar Espacio/Ctrl — más lento
+## que VELOCIDAD_NATACION, para que "dejarse caer" en el agua no se sienta
+## como estar de pie sobre ella.
+const VELOCIDAD_HUNDIMIENTO := 1.0
+
+## Efecto visual de flotación (solo cosmético, no afecta velocity/colisión):
+## mece la cámara con un seno mientras el jugador nada con la cabeza fuera
+## del agua, para que se note que está en el agua y no caminando sobre ella
+## (ver _procesar_flotacion()).
+const AMPLITUD_FLOTACION := 0.08
+const FRECUENCIA_FLOTACION := 1.0
+
+## Segundos de aire disponibles con la cabeza sumergida (ver
+## _cabeza_sumergida()) antes de ahogarse. Sin sistema de salud todavía (ver
+## _morir_jugador()/_ejecutar_sucesion()): llegar a 0 reusa la misma
+## sucesión del avatar que la tecla K de prueba.
+const OXIGENO_MAXIMO := 10.0
+const TASA_CONSUMO_OXIGENO := 1.0
+const TASA_RECUPERACION_OXIGENO := 2.0
 
 ## Intervalo entre repeticiones de minar/colocar mientras se mantiene el
 ## click presionado. Placeholder único para todo tipo de bloque/herramienta
@@ -36,6 +65,11 @@ var modo_deconstruccion := false
 var _id_listo_para_remocion := -1
 var _ticks_listo_para_remocion := 0
 
+var oxigeno_actual := OXIGENO_MAXIMO
+
+var _altura_camara_base := 0.0
+var _tiempo_flotacion := 0.0
+
 ## Cuántos "ticks" de acción repetida (INTERVALO_ACCION_REPETIDA, 0.2s)
 ## seguidos apuntando al MISMO edificio ya reducido a fantasma vacío hacen
 ## falta para eliminarlo del todo — demora deliberada (~1s) para evitar
@@ -46,6 +80,7 @@ const TICKS_REMOCION_FINAL := 5
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	raycast.target_position = Vector3(0, 0, -ALCANCE_RAYCAST)
+	_altura_camara_base = camara.position.y
 
 
 func _input(event: InputEvent) -> void:
@@ -119,7 +154,15 @@ func _physics_process(delta: float) -> void:
 
 	velocity.x = direccion.x * VELOCIDAD
 	velocity.z = direccion.z * VELOCIDAD
-	if not is_on_floor():
+	var nadando := _profundidad_agua_en_pies() >= 2
+	if nadando:
+		if Input.is_key_pressed(KEY_SPACE):
+			velocity.y = VELOCIDAD_NATACION
+		elif Input.is_key_pressed(KEY_CTRL):
+			velocity.y = -VELOCIDAD_NATACION
+		else:
+			velocity.y = -VELOCIDAD_HUNDIMIENTO
+	elif not is_on_floor():
 		velocity.y -= GRAVEDAD * delta
 	elif Input.is_key_pressed(KEY_SPACE):
 		velocity.y = VELOCIDAD_SALTO
@@ -127,6 +170,76 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 
 	move_and_slide()
+	_procesar_oxigeno(delta)
+	_procesar_flotacion(delta, nadando)
+
+
+## Cuenta cuántos bloques de agua consecutivos hay desde la celda de los pies
+## del jugador hacia arriba (0 si los pies no están en agua). Determina tanto
+## si hay suficiente profundidad para nadar (>= 2, ver _physics_process()) —
+## un solo bloque de agua no alcanza, el jugador lo atraviesa cayendo con
+## gravedad normal — como cuántos bloques lleva hundidos dentro del cuerpo de
+## agua.
+func _profundidad_agua_en_pies() -> int:
+	return _profundidad_agua_en(global_position)
+
+
+## Recibe la posición como parámetro (en vez de leer global_position
+## directamente) para poder probarla en PlayerNatacionTest.gd sin necesitar
+## que el nodo esté dentro del árbol de la escena.
+func _profundidad_agua_en(posicion: Vector3) -> int:
+	if mundo == null:
+		return 0
+	var celda: Vector3i = mundo.local_to_map(mundo.to_local(posicion))
+	if mundo.obtener_tipo(celda) != "agua":
+		return 0
+	var profundidad := 1
+	celda += Vector3i(0, 1, 0)
+	while mundo.obtener_tipo(celda) == "agua":
+		profundidad += 1
+		celda += Vector3i(0, 1, 0)
+	return profundidad
+
+
+## Efecto cosmético (no toca velocity ni colisión): mece la cámara con un
+## seno mientras el jugador nada con la cabeza fuera del agua, para que se
+## note que está en el agua y no caminando sobre ella. Se apaga (altura base,
+## fase en 0) en cuanto deja de nadar o se sumerge del todo.
+func _procesar_flotacion(delta: float, nadando: bool) -> void:
+	if nadando and not _cabeza_sumergida():
+		_tiempo_flotacion += delta
+		camara.position.y = _altura_camara_base + sin(_tiempo_flotacion * FRECUENCIA_FLOTACION * TAU) * AMPLITUD_FLOTACION
+	else:
+		_tiempo_flotacion = 0.0
+		camara.position.y = _altura_camara_base
+
+
+## true si el bloque en la cámara (altura de los ojos) es agua — es lo que
+## gasta oxígeno, no _pies_en_agua() (ver _procesar_oxigeno()).
+func _cabeza_sumergida() -> bool:
+	if mundo == null:
+		return false
+	return mundo.obtener_tipo(mundo.local_to_map(mundo.to_local(camara.global_position))) == "agua"
+
+
+## Aritmética pura de oxígeno, sin nodos ni estado — extraída así para poder
+## probarla en PlayerOxigenoTest.gd sin necesitar una escena real. Clampeada
+## a [0, OXIGENO_MAXIMO].
+static func _calcular_oxigeno(actual: float, sumergido: bool, delta: float) -> float:
+	if sumergido:
+		return max(0.0, actual - TASA_CONSUMO_OXIGENO * delta)
+	return min(OXIGENO_MAXIMO, actual + TASA_RECUPERACION_OXIGENO * delta)
+
+
+func _procesar_oxigeno(delta: float) -> void:
+	var sumergido := _cabeza_sumergida()
+	oxigeno_actual = _calcular_oxigeno(oxigeno_actual, sumergido, delta)
+	if sumergido or oxigeno_actual < OXIGENO_MAXIMO:
+		hud.actualizar_oxigeno(oxigeno_actual / OXIGENO_MAXIMO)
+	else:
+		hud.ocultar_oxigeno()
+	if oxigeno_actual <= 0.0:
+		_ejecutar_sucesion("ahogamiento")
 
 
 ## GridMap expone una única forma física para todo el mapa (no un cuerpo por
@@ -338,13 +451,22 @@ func _declarar_edificio() -> void:
 
 ## Tecla de prueba (K): simula la muerte del jugador para poder probar la
 ## sucesión del Avatar en vivo. No hay salud/combate real todavía (ver
-## PoC_4/); esta PoC no modela ninguna causa de muerte física.
+## PoC_4/); ver _ejecutar_sucesion() para la causa real de muerte que sí
+## existe hoy (ahogamiento, ver _procesar_oxigeno()).
 func _morir_jugador() -> void:
+	_ejecutar_sucesion("prueba (tecla K)")
+
+
+## Compartida entre la tecla K de prueba y cualquier causa de muerte real
+## (hoy solo ahogamiento, ver _procesar_oxigeno()) — sin sistema de
+## salud/combate todavía, toda muerte pasa por la misma sucesión de Ciudad.
+func _ejecutar_sucesion(motivo: String) -> void:
 	var resultado: String = Ciudad.suceder_avatar()
-	print("Muerte del jugador -> Sucesión: ", resultado)
+	print("Muerte del jugador (", motivo, ") -> Sucesión: ", resultado)
 	if resultado == "sucesion_exitosa":
 		global_position = Vector3(0, 1, 0)
 		velocity = Vector3.ZERO
+		oxigeno_actual = OXIGENO_MAXIMO
 		print("Sucesor al mando. Jugador reaparece en el punto de partida.")
 
 

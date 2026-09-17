@@ -19,6 +19,34 @@ const GROSOR_TIERRA := 4
 ## minoría frente a la piedra en la capa profunda.
 const UMBRAL_HIERRO := 0.2
 
+## Profundidad mínima bajo superficie (profundidad_bajo_superficie) y umbral
+## de _ruido_mineral.get_noise_3d() para carbón, cobre y tierras raras — ver
+## tipo_en_profundidad(). Comparten el mismo campo de ruido que hierro (no uno
+## nuevo por mineral): lo que cambia es a partir de qué profundidad empieza a
+## poder aparecer cada uno y qué tan alto debe ser el ruido en esa celda.
+## Concentración pedida por el usuario, de más común a más rara: carbón >
+## cobre > hierro > tierras_raras (umbral creciente); profundidad creciente
+## en el mismo orden para que una mina nivel 1 (alcance
+## Recoleccion.PROFUNDIDAD_MINA_NIVEL_1 = 8) apenas roce el borde superior de
+## la veta de hierro y nunca llegue a tierras raras, nivel 2 (alcance 16)
+## cubra bien hierro y roce tierras raras, y nivel 3 (alcance 24) cubra bien
+## tierras raras.
+const PROFUNDIDAD_CARBON := GROSOR_TIERRA
+const UMBRAL_CARBON := -0.1
+const PROFUNDIDAD_COBRE := 6
+## Subido de 0.0 a 0.12 (2026-09-17): con 0.0 el cobre salía visiblemente en
+## exceso jugando en vivo — sigue estrictamente entre UMBRAL_CARBON (-0.1) y
+## UMBRAL_HIERRO (0.2), conservando el orden de rareza carbón > cobre > hierro
+## > tierras_raras pedido por el usuario, solo que más cerca de hierro.
+const UMBRAL_COBRE := 0.12
+## Profundidad mínima de hierro — antes el hierro no tenía piso propio (solo
+## GROSOR_TIERRA), pero para que una mina nivel 1 (alcance 8) apenas roce el
+## borde de la veta necesita empezar justo en ese alcance, no en la
+## superficie del subsuelo.
+const PROFUNDIDAD_HIERRO := 8
+const PROFUNDIDAD_TIERRAS_RARAS := 16
+const UMBRAL_TIERRAS_RARAS := 0.3
+
 ## Umbral de _ruido_bosque.get_noise_2d() (rango [-1, 1]) por encima del cual
 ## una columna cae dentro de una zona de bosque real — ver densidad_arbol_en().
 ## 0.0 da ~50% de cobertura de zona (la mitad del bioma es "bosque posible"),
@@ -360,18 +388,30 @@ static func _ancho_por_altura(altura: int, altura_min_naciente: int, altura_max_
 
 ## Tipo de bloque de subsuelo en la columna/profundidad dados: "tierra" cerca
 ## de la superficie (por debajo de GROSOR_TIERRA), "piedra" más profundo, o
-## "hierro" si el ruido de vetas supera UMBRAL_HIERRO en esa celda exacta —
-## el hierro NUNCA aparece en la capa de tierra, sin importar el ruido (el
-## chequeo de profundidad corta antes de consultar _ruido_mineral). (x, y, z)
-## son coordenadas absolutas del mundo (y = altura de superficie -
-## profundidad_bajo_superficie) — necesarias para el ruido 3D, a diferencia
-## de la versión anterior de esta función que solo dependía de la profundidad
-## relativa.
+## "hierro"/"cobre"/"carbon"/"tierras_raras" si el ruido de vetas supera el
+## umbral del mineral más profundo cuya PROFUNDIDAD_* ya se alcanzó (ver
+## PROFUNDIDAD_CARBON/UMBRAL_CARBON y hermanas) — ningún mineral aparece en la
+## capa de tierra, sin importar el ruido (el chequeo de profundidad corta
+## antes de consultar _ruido_mineral). Se revisa de más profundo/raro a más
+## superficial/común (tierras_raras, hierro, cobre, carbón) porque sus
+## umbrales son crecientes en ese orden: una celda que supera el umbral de
+## tierras_raras también supera el de carbón, así que hay que darle prioridad
+## al mineral más raro antes de caer al más común. (x, y, z) son coordenadas
+## absolutas del mundo (y = altura de superficie - profundidad_bajo_superficie)
+## — necesarias para el ruido 3D, a diferencia de la versión anterior de esta
+## función que solo dependía de la profundidad relativa.
 func tipo_en_profundidad(x: int, y: int, z: int, profundidad_bajo_superficie: int) -> String:
 	if profundidad_bajo_superficie < GROSOR_TIERRA:
 		return "tierra"
-	if _ruido_mineral.get_noise_3d(x, y, z) > UMBRAL_HIERRO:
+	var ruido: float = _ruido_mineral.get_noise_3d(x, y, z)
+	if profundidad_bajo_superficie >= PROFUNDIDAD_TIERRAS_RARAS and ruido > UMBRAL_TIERRAS_RARAS:
+		return "tierras_raras"
+	if profundidad_bajo_superficie >= PROFUNDIDAD_HIERRO and ruido > UMBRAL_HIERRO:
 		return "hierro"
+	if profundidad_bajo_superficie >= PROFUNDIDAD_COBRE and ruido > UMBRAL_COBRE:
+		return "cobre"
+	if profundidad_bajo_superficie >= PROFUNDIDAD_CARBON and ruido > UMBRAL_CARBON:
+		return "carbon"
 	return "piedra"
 
 

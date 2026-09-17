@@ -121,3 +121,22 @@ func ocultar_ficha_mina() -> void
 - Producción real por tick / inventario de recursos / cobro del costo de construcción.
 - Validación de solapamiento entre puestos.
 - Escalar `PROFUNDIDAD_SUBSUELO` hasta los ~300 bloques finales del GDD (ya anotado como optimización futura en `PoC_5/`).
+
+## Addendum (2026-09-17): cobre, carbón y tierras raras
+
+Extiende la Sección 1 (vetas de hierro) para cubrir el resto del catálogo de minerales pedido por el GDD Sección 4 ("Minas — catálogo de hasta 6 tipos"), reusando el mismo `_ruido_mineral` (sin ruido nuevo por mineral) — ver `GeneradorMundo.tipo_en_profundidad()`.
+
+**Regla:** cada mineral tiene su propia profundidad mínima y su propio umbral de ruido, revisados de más profundo/raro a más superficial/común (una celda que supera el umbral de un mineral raro también supera el de uno común, así que hay que darle prioridad al más raro):
+
+| Mineral | Profundidad mínima | Umbral | Concentración |
+|---|---|---|---|
+| tierras_raras | 16 | 0.3 | más rara |
+| hierro | 8 | 0.2 (sin cambio) | — |
+| cobre | 6 | 0.12 (subido de 0.0 — jugando en vivo salía en exceso) | — |
+| carbón | 4 (`GROSOR_TIERRA`) | -0.1 | más común |
+
+**Corrección de geometría (`Recoleccion.detectar_recursos()`):** el área de acción era una semiesfera real (mismo radio `RADIO_AREA_MINA` para horizontal y profundidad), lo que dejaba sin efecto cualquier profundidad mayor a `RADIO_AREA_MINA` — el propio radio ya cortaba el alcance vertical antes de llegar ahí. Pasa a ser un semielipsoide: cada eje se normaliza por su propio límite (`RADIO_AREA_MINA` horizontal, `profundidad` vertical) antes de medir la distancia. Con `profundidad == RADIO_AREA_MINA` da exactamente la misma semiesfera de antes — no cambia el comportamiento de una mina nivel 1 salvo por el propio cambio de profundidad mínima de hierro (ver tabla).
+
+**Nuevo parámetro:** `detectar_recursos(mundo, centro_xz, altura_superficie, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1)`. Nuevas constantes `Recoleccion.PROFUNDIDAD_MINA_NIVEL_2 := 16` / `PROFUNDIDAD_MINA_NIVEL_3 := 24`, coincidentes a propósito con las profundidades mínimas de hierro/tierras_raras: una mina nivel 1 apenas roza el borde superior de la veta de hierro y nunca llega a tierras raras; nivel 2 cubre bien hierro y roza tierras raras; nivel 3 cubre bien tierras raras.
+
+**Sigue fuera de alcance:** cómo una mina sube de nivel 1 a 2/3 (el campo `puesto.nivel` sigue fijo en 1 — depende del mismo sistema de "Mejoramiento de edificios" ya anotado arriba). El parámetro `profundidad` queda listo para que ese mecanismo futuro lo use.

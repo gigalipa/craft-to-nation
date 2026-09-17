@@ -84,14 +84,27 @@ func ejecutar_pruebas() -> void:
 	var piedra_antes: int = conteo.get("piedra", 0)
 
 	# Bloque de piedra en una esquina que cae DENTRO de la caja delimitadora
-	# ingenua (dx en [-6,6], dy en [0,8], dz en [-6,6]) pero FUERA de la
-	# semiesfera real (Vector3(6,-6,0).length() ≈ 8.49 > RADIO_AREA_MINA=6):
-	# si detectar_recursos() usara una caja en vez de la esfera real, este
-	# bloque se contaría de más.
+	# ingenua (dx en [-6,6], dy en [0,8], dz en [-6,6]) pero FUERA del
+	# semielipsoide real ((6/6)² + (6/8)² = 1.5625 > 1, con profundidad por
+	# defecto = PROFUNDIDAD_MINA_NIVEL_1 = 8): si detectar_recursos() usara
+	# una caja en vez del elipsoide real, este bloque se contaría de más.
 	mundo.colocar_bloque(Vector3i(6, altura_superficie - 6, 0), "piedra")
 	var conteo_esquina: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie)
-	print("Conteo piedra antes de la esquina fuera de esfera: ", piedra_antes, " / después: ", conteo_esquina.get("piedra", 0))
+	print("Conteo piedra antes de la esquina fuera del elipsoide: ", piedra_antes, " / después: ", conteo_esquina.get("piedra", 0))
 	assert(conteo_esquina.get("piedra", 0) == piedra_antes)
+
+	print("\n=== TEST 1b: 'profundidad' alcanza más hondo sin tocar el radio horizontal ===")
+	# Bloque justo debajo del centro, a profundidad 12: fuera del alcance
+	# nivel 1 (PROFUNDIDAD_MINA_NIVEL_1=8) pero dentro del alcance nivel 2
+	# (PROFUNDIDAD_MINA_NIVEL_2=16) — confirma que subir "profundidad" sí
+	# extiende el alcance vertical (antes quedaba sin efecto, capado por
+	# RADIO_AREA_MINA=6 sin importar qué tan grande fuera "profundidad").
+	mundo.colocar_bloque(Vector3i(0, altura_superficie - 12, 0), "hierro")
+	var conteo_nivel_1: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie, Recoleccion.PROFUNDIDAD_MINA_NIVEL_1)
+	var conteo_nivel_2: Dictionary = Recoleccion.detectar_recursos(mundo, centro, altura_superficie, Recoleccion.PROFUNDIDAD_MINA_NIVEL_2)
+	assert(conteo_nivel_1.get("hierro", 0) == 2)
+	assert(conteo_nivel_2.get("hierro", 0) == 3)
+	print("OK: nivel 1 no alcanza el bloque a profundidad 12; nivel 2 sí.")
 
 	print("\n=== TEST 2: tasas_recoleccion() reparte proporcionalmente ===")
 	var conteo_simple := {"piedra": 3, "hierro": 1}

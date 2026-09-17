@@ -9,6 +9,12 @@ extends Node
 
 const RADIO_AREA_MINA := 6
 const PROFUNDIDAD_MINA_NIVEL_1 := 8
+## Alcance hacia abajo de una mina mejorada (nivel 2) y avanzada (nivel 3) —
+## ver detectar_recursos(). Coinciden con GeneradorMundo.PROFUNDIDAD_HIERRO/
+## PROFUNDIDAD_TIERRAS_RARAS a propósito: nivel 2 recién empieza a cubrir bien
+## la veta de hierro y nivel 3 recién empieza a cubrir bien tierras raras.
+const PROFUNDIDAD_MINA_NIVEL_2 := 16
+const PROFUNDIDAD_MINA_NIVEL_3 := 24
 const TASA_BASE_POR_CIUDADANO := 2.0
 const ANCHO_HUELLA_MINA := 5
 const ALTO_HUELLA_MINA := 5
@@ -106,19 +112,27 @@ func celda_dentro_de_algun_puesto(celda: Vector2i) -> bool:
 	return false
 
 
-## Cuenta los tipos de bloque REALES dentro de la semiesfera de acción
-## (radio horizontal RADIO_AREA_MINA, hacia abajo PROFUNDIDAD_MINA_NIVEL_1)
-## centrada en (centro_xz, altura_superficie). "mundo" se le pasa por duck
-## typing (necesita solo .obtener_tipo(Vector3i) -> String) — mismo patrón
-## que NiveladorTerreno con .altura_en(), para poder probar esta función
-## con un VoxelWorld real sin depender de generación de ruido.
-func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: int) -> Dictionary:
+## Cuenta los tipos de bloque REALES dentro del semielipsoide de acción
+## (radio horizontal RADIO_AREA_MINA, hacia abajo "profundidad" — por defecto
+## PROFUNDIDAD_MINA_NIVEL_1, pasar PROFUNDIDAD_MINA_NIVEL_2/3 para una mina
+## mejorada/avanzada) centrada en (centro_xz, altura_superficie). Antes era
+## una semiesfera real (mismo radio para horizontal y profundidad), lo que
+## dejaba "profundidad" sin efecto en la práctica cuando superaba
+## RADIO_AREA_MINA (el propio radio ya cortaba el alcance vertical antes de
+## llegar ahí) — normalizar cada eje por su propio límite antes de medir la
+## distancia (elipsoide) permite variar la profundidad sin tocar el radio
+## horizontal. Con profundidad == RADIO_AREA_MINA da exactamente la misma
+## semiesfera de antes. "mundo" se le pasa por duck typing (necesita solo
+## .obtener_tipo(Vector3i) -> String) — mismo patrón que NiveladorTerreno con
+## .altura_en(), para poder probar esta función con un VoxelWorld real sin
+## depender de generación de ruido.
+func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: int, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1) -> Dictionary:
 	var conteo: Dictionary = {}  # String (tipo) -> int
 	for dx in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
 		for dz in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
-			for dy in range(0, PROFUNDIDAD_MINA_NIVEL_1 + 1):
-				var offset := Vector3(dx, -dy, dz)
-				if offset.length() > RADIO_AREA_MINA:
+			for dy in range(0, profundidad + 1):
+				var normalizado := Vector3(float(dx) / RADIO_AREA_MINA, float(dy) / profundidad, float(dz) / RADIO_AREA_MINA)
+				if normalizado.length() > 1.0:
 					continue
 				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
 				var tipo: String = mundo.material_real(mundo.obtener_tipo(celda))

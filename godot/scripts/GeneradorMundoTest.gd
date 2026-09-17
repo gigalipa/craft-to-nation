@@ -46,19 +46,22 @@ func ejecutar_pruebas() -> void:
 	assert(hay_diferencia)
 	print("OK: al menos un punto muestreado difiere entre semilla 1 y semilla 2.")
 
-	print("\n=== TEST 4: tipo_en_profundidad() por capas (tierra/piedra) ===")
+	print("\n=== TEST 4: tipo_en_profundidad() por capas (tierra/piedra/carbón) ===")
 	var gen_capas: RefCounted = GeneradorMundoScript.new(1, 10, 10)
 	for p in range(GeneradorMundoScript.GROSOR_TIERRA):
 		assert(gen_capas.tipo_en_profundidad(0, 10 - p, 0, p) == "tierra")
+	# A profundidad == GROSOR_TIERRA todavía no se alcanza PROFUNDIDAD_COBRE
+	# (6) ni PROFUNDIDAD_HIERRO (8), así que solo "piedra" o "carbon" son
+	# posibles (nunca "tierra").
 	var tipo_profundo: String = gen_capas.tipo_en_profundidad(0, 10 - GeneradorMundoScript.GROSOR_TIERRA, 0, GeneradorMundoScript.GROSOR_TIERRA)
-	assert(tipo_profundo == "piedra" or tipo_profundo == "hierro")
-	print("OK: tierra hasta GROSOR_TIERRA; piedra o hierro en adelante (nunca tierra).")
+	assert(tipo_profundo == "piedra" or tipo_profundo == "carbon")
+	print("OK: tierra hasta GROSOR_TIERRA; piedra o carbón justo en adelante (nunca tierra).")
 
-	print("\n=== TEST 5: Las vetas de hierro nunca aparecen en la capa de tierra, y sí varían la piedra ===")
+	print("\n=== TEST 5: Las vetas de mineral nunca aparecen en la capa de tierra, y sí varían la piedra ===")
 	var gen_vetas: RefCounted = GeneradorMundoScript.new(42, 60, 60)
 	var vio_tierra := false
 	var vio_piedra := false
-	var vio_hierro := false
+	var minerales_vistos: Dictionary = {}
 	for x in range(0, 60, 2):
 		for z in range(0, 60, 2):
 			for p in range(0, 20):
@@ -68,12 +71,14 @@ func ejecutar_pruebas() -> void:
 					vio_tierra = true
 				elif tipo == "piedra":
 					vio_piedra = true
-				elif tipo == "hierro":
-					vio_hierro = true
+				else:
+					minerales_vistos[tipo] = true
 	assert(vio_tierra)
 	assert(vio_piedra)
-	assert(vio_hierro)
-	print("OK: capa de tierra siempre 'tierra'; capa profunda produjo tanto 'piedra' como 'hierro' en el muestreo.")
+	assert(minerales_vistos.has("carbon"))
+	assert(minerales_vistos.has("cobre"))
+	assert(minerales_vistos.has("hierro"))
+	print("OK: capa de tierra siempre 'tierra'; capa profunda produjo piedra y minerales (%s) en el muestreo." % [minerales_vistos.keys()])
 
 	print("\n=== TEST 6: Aparece hierro con la semilla y el rango de profundidad REALES del juego ===")
 	# Test 5 solo prueba que el hierro PUEDE existir, con una semilla/rango
@@ -85,15 +90,23 @@ func ejecutar_pruebas() -> void:
 	# el jugador de verdad juega, no solo en un muestreo fuera del mundo real.
 	var gen_real: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
 	var vio_hierro_real := false
+	# El rango de profundidad ya cubre PROFUNDIDAD_TIERRAS_RARAS (16), así que
+	# de paso confirma que también aparece con la semilla real (más rara, por
+	# eso se busca en todo el muestreo en vez de acotarlo aparte).
+	var vio_tierras_raras_real := false
 	for x in range(0, 200, 4):
 		for z in range(0, 200, 4):
 			for altura_superficie in range(0, 16, 3):
 				for p in range(GeneradorMundoScript.GROSOR_TIERRA, 21):
 					var y: int = altura_superficie - p
-					if gen_real.tipo_en_profundidad(x, y, z, p) == "hierro":
+					var tipo: String = gen_real.tipo_en_profundidad(x, y, z, p)
+					if tipo == "hierro":
 						vio_hierro_real = true
+					elif tipo == "tierras_raras":
+						vio_tierras_raras_real = true
 	assert(vio_hierro_real)
-	print("OK: 'hierro' aparece con SEMILLA_MUNDO real y el rango de profundidad real del subsuelo.")
+	assert(vio_tierras_raras_real)
+	print("OK: 'hierro' y 'tierras_raras' aparecen con SEMILLA_MUNDO real y el rango de profundidad real del subsuelo.")
 
 	print("\n=== TEST 7: la redistribución por curva de potencia preserva signo y extremos exactos ===")
 	assert(is_equal_approx(GeneradorMundoScript._redistribuir(0.0, 2.0), 0.0))

@@ -84,6 +84,30 @@ material = SubResource("Mat_hierro")
 
 [sub_resource type="BoxShape3D" id="Shape_hierro"]
 
+[sub_resource type="StandardMaterial3D" id="Mat_carbon"]
+albedo_color = Color(0.22, 0.19, 0.16, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_carbon"]
+material = SubResource("Mat_carbon")
+
+[sub_resource type="BoxShape3D" id="Shape_carbon"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_cobre"]
+albedo_color = Color(0.25, 0.55, 0.45, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_cobre"]
+material = SubResource("Mat_cobre")
+
+[sub_resource type="BoxShape3D" id="Shape_cobre"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_tierras_raras"]
+albedo_color = Color(0.65, 0.15, 0.75, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_tierras_raras"]
+material = SubResource("Mat_tierras_raras")
+
+[sub_resource type="BoxShape3D" id="Shape_tierras_raras"]
+
 [sub_resource type="StandardMaterial3D" id="Mat_bedrock"]
 albedo_color = Color(0.12, 0.12, 0.14, 1)
 
@@ -220,6 +244,24 @@ mesh = SubResource("Mesh_hierro")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="hierro" unique_id=194053609]
 shape = SubResource("Shape_hierro")
+
+[node name="carbon" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_carbon")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="carbon"]
+shape = SubResource("Shape_carbon")
+
+[node name="cobre" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_cobre")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cobre"]
+shape = SubResource("Shape_cobre")
+
+[node name="tierras_raras" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_tierras_raras")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="tierras_raras"]
+shape = SubResource("Shape_tierras_raras")
 
 [node name="bedrock" type="MeshInstance3D" parent="."]
 mesh = SubResource("Mesh_bedrock")

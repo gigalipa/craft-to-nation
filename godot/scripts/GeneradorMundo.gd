@@ -619,6 +619,11 @@ var _direccion_flujo_rio: Dictionary = {}  # Vector2i -> Vector2i
 ## (x,z) marcadas como cascada — ver es_cascada_en().
 var _celdas_cascada: Dictionary = {}  # Vector2i -> true
 
+## (x,z) -> caída de altura (Sección 5) hacia la siguiente celda del cauce,
+## para TODA celda de río (no solo cascadas) — ver caida_en(). Un tramo llano
+## queda en 0; es_cascada_en() es simplemente caida_en() >= UMBRAL_CASCADA.
+var _caida_rio: Dictionary = {}  # Vector2i -> int
+
 
 ## Dirección de avance para la franja del paso "i" de "cauce" (Sección 3):
 ## vector unitario entre la celda anterior y la actual; para la naciente
@@ -859,15 +864,15 @@ func _aplicar_ancho_profundidad(cauce: Array[Vector2i], ancho: int, ancho_mundo:
 			_direccion_flujo_rio[celda_franja] = direccion_publica
 
 
-## Marca cascadas (es_cascada_en) sobre "cauce" (ya truncado): cualquier
-## paso cuya caída de altura hacia la siguiente celda sea >= UMBRAL_CASCADA
-## marca TODA su franja como cascada (Sección 5). Debe llamarse DESPUÉS de
-## _aplicar_ancho_profundidad() sobre el mismo "cauce" (ver _generar_rios()):
-## solo marca cascada una celda de franja que _aplicar_ancho_profundidad()
-## ya haya registrado en _profundidad_rio para ESTE río — así una celda bajo
-## agua o ya reclamada por otro río (más fuerte, procesado antes) nunca
-## puede quedar marcada como cascada sin ser también río (es_cascada_en =>
-## es_rio_en, ver TEST 25/TEST 26b).
+## Registra la caída de altura (_caida_rio) de cada paso de "cauce" (ya
+## truncado) sobre toda su franja, y marca cascada (_celdas_cascada) los
+## pasos cuya caída sea >= UMBRAL_CASCADA (Sección 5). Debe llamarse DESPUÉS
+## de _aplicar_ancho_profundidad() sobre el mismo "cauce" (ver _generar_rios()):
+## solo registra una celda de franja que _aplicar_ancho_profundidad() ya haya
+## registrado en _profundidad_rio para ESTE río — así una celda bajo agua o ya
+## reclamada por otro río (más fuerte, procesado antes) nunca puede quedar
+## marcada como cascada sin ser también río (es_cascada_en => es_rio_en, ver
+## TEST 25/TEST 26b).
 func _marcar_cascadas(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, largo_mundo: int) -> void:
 	for i in range(cauce.size() - 1):
 		var actual: Vector2i = cauce[i]
@@ -875,8 +880,6 @@ func _marcar_cascadas(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, larg
 			continue
 		var siguiente: Vector2i = cauce[i + 1]
 		var caida: int = altura_en(actual.x, actual.y) - altura_en(siguiente.x, siguiente.y)
-		if caida < UMBRAL_CASCADA:
-			continue
 		for celda_franja in _celdas_franja_en(cauce, i, ancho):
 			if celda_franja.x < 0 or celda_franja.x >= ancho_mundo or celda_franja.y < 0 or celda_franja.y >= largo_mundo:
 				continue
@@ -884,7 +887,9 @@ func _marcar_cascadas(cauce: Array[Vector2i], ancho: int, ancho_mundo: int, larg
 				continue
 			if not _profundidad_rio.has(celda_franja):
 				continue
-			_celdas_cascada[celda_franja] = true
+			_caida_rio[celda_franja] = caida
+			if caida >= UMBRAL_CASCADA:
+				_celdas_cascada[celda_franja] = true
 
 
 ## Genera todos los ríos del mundo (Secciones 1-5 del spec): elige
@@ -1065,3 +1070,11 @@ func profundidad_rio_en(x: int, z: int) -> int:
 ## Verdadero si (x,z) es parte de una cascada (Sección 5).
 func es_cascada_en(x: int, z: int) -> bool:
 	return _celdas_cascada.has(Vector2i(x, z))
+
+
+## Caída de altura (Sección 5) hacia la siguiente celda del cauce en (x,z) —
+## 0 si no es río o el tramo es llano. es_cascada_en(x,z) == caida_en(x,z) >=
+## UMBRAL_CASCADA. Base de la corriente del río (Player._empuje_corriente()):
+## a mayor caida_en(), mayor empuje.
+func caida_en(x: int, z: int) -> int:
+	return _caida_rio.get(Vector2i(x, z), 0)

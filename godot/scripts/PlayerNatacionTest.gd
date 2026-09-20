@@ -1,12 +1,14 @@
 extends Node
 
-## Pruebas aisladas de Player._profundidad_agua_en_pies() (mismo patrón que
-## NiveladorTerrenoTest.gd: un "mundo" falso y determinista en vez de
-## VoxelWorld real). Corre esta escena (PlayerNatacionTest.tscn) con F6 y
-## revisa el panel "Output": debe imprimir las 4 pruebas y no debe lanzar
-## ningún error de assert().
+## Pruebas aisladas de Player._profundidad_agua_en_pies() y de las funciones
+## puras de empuje de corriente/cascada (_empuje_rio()/_empuje_base_cascada(),
+## Sección diseño 2026-09-17) (mismo patrón que NiveladorTerrenoTest.gd: un
+## "mundo" falso y determinista en vez de VoxelWorld real). Corre esta escena
+## (PlayerNatacionTest.tscn) con F6 y revisa el panel "Output": debe imprimir
+## las 8 pruebas y no debe lanzar ningún error de assert().
 
 const Player = preload("res://scripts/Player.gd")
+const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 
 
 ## Mundo falso: mapea celdas de grilla a un tipo de bloque ("agua" por
@@ -15,6 +17,8 @@ const Player = preload("res://scripts/Player.gd")
 ## transform propio (equivalente a un GridMap sin rotar en el origen).
 class MundoFalso extends Node:
 	var celdas_agua: Dictionary = {}  # Vector3i -> true
+	var corriente_por_celda: Dictionary = {}  # Vector2i(x,z) -> Dictionary
+	var cascada_por_celda: Dictionary = {}  # Vector2i(x,z) -> Dictionary
 
 	func obtener_tipo(celda: Vector3i) -> String:
 		return "agua" if celdas_agua.has(celda) else "aire"
@@ -24,6 +28,12 @@ class MundoFalso extends Node:
 
 	func local_to_map(local_pos: Vector3) -> Vector3i:
 		return Vector3i(floor(local_pos.x), floor(local_pos.y), floor(local_pos.z))
+
+	func corriente_en(x: int, z: int) -> Dictionary:
+		return corriente_por_celda.get(Vector2i(x, z), {})
+
+	func columna_cascada_en(x: int, z: int) -> Dictionary:
+		return cascada_por_celda.get(Vector2i(x, z), {})
 
 
 func _agua_en_columna(mundo: MundoFalso, x: int, z: int, y_desde: int, y_hasta: int) -> void:
@@ -64,5 +74,59 @@ func ejecutar_pruebas() -> void:
 	print("Profundidad en el fondo (y=5): ", jugador._profundidad_agua_en(Vector3(0, 5, 0)), " (esperada: 3)")
 	assert(jugador._profundidad_agua_en(Vector3(0, 5, 0)) == 3)
 
+	print("\n=== TEST 5: _empuje_rio() crece con la caída hasta el umbral de cascada, sin ser nunca 0 en llano ===")
+	var empuje_llano: float = Player._empuje_rio(0)
+	var empuje_pendiente: float = Player._empuje_rio(1)
+	var empuje_umbral: float = Player._empuje_rio(GeneradorMundo.UMBRAL_CASCADA)
+	var empuje_mas_alla: float = Player._empuje_rio(GeneradorMundo.UMBRAL_CASCADA + 5)
+	print("Empuje llano (caida=0): ", empuje_llano, " (esperado > 0)")
+	assert(empuje_llano > 0.0)
+	assert(empuje_pendiente > empuje_llano)
+	assert(empuje_umbral > empuje_pendiente)
+	# Más allá del umbral de cascada, el empuje de RÍO satura (el empuje
+	# relevante pasa a ser el de pie de cascada, ver TEST 6).
+	assert(is_equal_approx(empuje_mas_alla, empuje_umbral))
+
+	print("\n=== TEST 6: _empuje_base_cascada() satura entre un salto justo en el umbral y uno grande ===")
+	var empuje_base_umbral: float = Player._empuje_base_cascada(GeneradorMundo.UMBRAL_CASCADA)
+	var empuje_base_medio: float = Player._empuje_base_cascada(GeneradorMundo.UMBRAL_CASCADA + 4)
+	var empuje_base_grande: float = Player._empuje_base_cascada(Player.CAIDA_EMPUJE_SATURA)
+	var empuje_base_mas_alla: float = Player._empuje_base_cascada(Player.CAIDA_EMPUJE_SATURA + 10)
+	print("Empuje de pie de cascada — umbral: ", empuje_base_umbral, ", grande: ", empuje_base_grande)
+	assert(is_equal_approx(empuje_base_umbral, Player.EMPUJE_CASCADA_BASE_MINIMO))
+	assert(empuje_base_medio > empuje_base_umbral and empuje_base_medio < empuje_base_grande)
+	assert(is_equal_approx(empuje_base_grande, Player.EMPUJE_CASCADA_BASE_MAXIMO))
+	assert(is_equal_approx(empuje_base_mas_alla, Player.EMPUJE_CASCADA_BASE_MAXIMO))
+
 	jugador.free()
-	print("\n=== Las 4 pruebas de Player._profundidad_agua_en_pies() pasaron correctamente ===")
+
+	print("\n=== TEST 7: _procesar_corriente() NO empuja si la celda de los pies no es agua real, aunque el generador la marque como río/cascada ===")
+	# Reproduce el bug real (2026-09-18): un pasillo minado detrás de una
+	# cascada sigue devolviendo corriente_en()/columna_cascada_en() no vacíos
+	# (datos estáticos del generador, no saben que el jugador vació la
+	# celda) — sin el chequeo de agua real en _procesar_corriente(), el
+	# empuje seguía "halando" al jugador hacia afuera del pasillo seco.
+	var mundo_pasillo_seco := MundoFalso.new()
+	mundo_pasillo_seco.corriente_por_celda[Vector2i(0, 0)] = {"direccion": Vector2i(1, 0), "caida": 5}
+	mundo_pasillo_seco.cascada_por_celda[Vector2i(0, 0)] = {"y_base": 0, "caida": 5, "direccion": Vector2i(1, 0)}
+	var jugador_seco := Player.new()
+	jugador_seco.mundo = mundo_pasillo_seco
+	jugador_seco.velocity = Vector3.ZERO
+	jugador_seco._procesar_corriente(Vector3i(0, 0, 0))
+	print("Velocidad tras _procesar_corriente() en celda seca: ", jugador_seco.velocity, " (esperada: (0,0,0))")
+	assert(jugador_seco.velocity == Vector3.ZERO)
+	jugador_seco.free()
+
+	print("\n=== TEST 8: _procesar_corriente() SÍ empuja cuando la celda de los pies es agua real ===")
+	var mundo_con_agua := MundoFalso.new()
+	mundo_con_agua.celdas_agua[Vector3i(0, 0, 0)] = true
+	mundo_con_agua.corriente_por_celda[Vector2i(0, 0)] = {"direccion": Vector2i(1, 0), "caida": 0}
+	var jugador_mojado := Player.new()
+	jugador_mojado.mundo = mundo_con_agua
+	jugador_mojado.velocity = Vector3.ZERO
+	jugador_mojado._procesar_corriente(Vector3i(0, 0, 0))
+	print("Velocidad tras _procesar_corriente() en agua real: ", jugador_mojado.velocity, " (esperada: x > 0)")
+	assert(jugador_mojado.velocity.x > 0.0)
+	jugador_mojado.free()
+
+	print("\n=== Las 8 pruebas de Player pasaron correctamente ===")

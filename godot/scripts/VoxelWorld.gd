@@ -9,6 +9,7 @@ const TAMANO_CELDA := 1.0
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const GeneradorArbol = preload("res://scripts/GeneradorArbol.gd")
+const MATERIAL_AGUA := preload("res://assets/mat_agua.tres")
 
 const ANCHO_MUNDO := 200
 const LARGO_MUNDO := 200
@@ -63,6 +64,16 @@ const ALTURA_BUSQUEDA_MIN := -34
 
 var generador: RefCounted
 var arboles: RefCounted
+
+## (x,z) -> {"y_base": int, "caida": int, "direccion": Vector2i} para cada
+## columna marcada como cascada (generador.es_cascada_en()) — llenado una
+## sola vez en _generar_terreno(). "y_base" es el fondo real tallado de la
+## caída (el mínimo entre la profundidad normal del río y la altura de la
+## celda de cauce a la que fluye, ver ese mismo cálculo en _generar_terreno);
+## "caida"/"direccion" vienen directo de generador.caida_en()/
+## direccion_flujo_en(). Consumido por CascadaEffects (partículas) y por
+## Player._empuje_corriente() (empuje extra al pie de la caída).
+var cascadas: Dictionary = {}  # Vector2i -> Dictionary
 
 ## Tipos de bloque que pueden formar parte de un edificio declarado (ver
 ## detectar_estructura()). "piso" queda deliberadamente fuera: es un
@@ -297,6 +308,7 @@ func _ready() -> void:
 	arboles = GeneradorArbol.new()
 	_generar_terreno()
 	_generar_arboles()
+	_generar_efectos_cascada()
 	var translucidos: Node3D = get_node("TranslucidosRenderer")
 	translucidos.voxel_world = self
 	translucidos._indexar_materiales()
@@ -353,6 +365,11 @@ func _generar_terreno() -> void:
 						var siguiente := Vector2i(x + direccion.x, z + direccion.y)
 						var altura_destino: int = generador.altura_en(siguiente.x, siguiente.y)
 						y_inicio_agua = mini(y_inicio_agua, altura_destino + 1)
+					cascadas[Vector2i(x, z)] = {
+						"y_base": y_inicio_agua,
+						"caida": generador.caida_en(x, z),
+						"direccion": direccion,
+					}
 				for y_agua in range(y_inicio_agua, altura + 1):
 					colocar_bloque(Vector3i(x, y_agua, z), "agua")
 				var profundidad_efectiva: int = altura - y_inicio_agua + 1
@@ -369,6 +386,38 @@ func _generar_terreno() -> void:
 			if generador.es_agua_en(x, z):
 				for y_agua in range(altura + 1, generador.nivel_mar + 1):
 					colocar_bloque(Vector3i(x, y_agua, z), "agua")
+
+
+## Partículas de salpicadura al pie de cada cascada registrada en "cascadas"
+## (Sección diseño 2026-09-17) — una GPUParticles3D por columna, coloreada con
+## MATERIAL_AGUA (mismo material que el bloque de agua, ver TranslucidosRenderer)
+## para no depender de un asset nuevo. Sin sonido: no hay ningún asset de
+## audio en el repo todavía (decisión explícita del usuario, ver sesión de
+## diseño) — cuando se agregue un .ogg/.wav, se puede colgar un
+## AudioStreamPlayer3D del mismo nodo.
+func _generar_efectos_cascada() -> void:
+	var material := ParticleProcessMaterial.new()
+	material.direction = Vector3(0, -1, 0)
+	material.spread = 25.0
+	material.gravity = Vector3(0, -9.8, 0)
+	material.initial_velocity_min = 0.5
+	material.initial_velocity_max = 1.5
+	var malla := QuadMesh.new()
+	malla.size = Vector2(0.15, 0.15)
+	var material_mesh := StandardMaterial3D.new()
+	material_mesh.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material_mesh.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material_mesh.albedo_color = Color(1.0, 1.0, 1.0, 0.6) * MATERIAL_AGUA.albedo_color
+	malla.material = material_mesh
+	for celda in cascadas:
+		var datos: Dictionary = cascadas[celda]
+		var particulas := GPUParticles3D.new()
+		particulas.amount = 12
+		particulas.lifetime = 0.5
+		particulas.process_material = material
+		particulas.draw_pass_1 = malla
+		particulas.position = map_to_local(Vector3i(celda.x, datos["y_base"], celda.y))
+		add_child(particulas)
 
 
 ## Altura de la celda sólida más alta en la columna (x, z) del mundo REAL —
@@ -454,6 +503,26 @@ func minar_bloque(celda: Vector3i) -> bool:
 
 func obtener_tipo(celda: Vector3i) -> String:
 	return _tipo_por_id.get(get_cell_item(celda), "")
+
+
+## Datos de cascada de la columna (x,z), o {} si no es cascada — ver
+## "cascadas" más arriba. Usado por CascadaEffects y por
+## Player._empuje_corriente().
+func columna_cascada_en(x: int, z: int) -> Dictionary:
+	return cascadas.get(Vector2i(x, z), {})
+
+
+## Dirección y caída de la corriente de río en (x,z), o {} si no es río (ver
+## GeneradorMundo.direccion_flujo_en()/caida_en()). Usado por
+## Player._procesar_corriente() para empujar al jugador en el sentido del
+## cauce — a mayor "caida", mayor empuje (ver esa función).
+func corriente_en(x: int, z: int) -> Dictionary:
+	if not generador.es_rio_en(x, z):
+		return {}
+	return {
+		"direccion": generador.direccion_flujo_en(x, z),
+		"caida": generador.caida_en(x, z),
+	}
 
 
 func _celda_libre(celda: Vector3i) -> bool:

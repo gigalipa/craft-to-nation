@@ -671,4 +671,24 @@ func ejecutar_pruebas() -> void:
 	assert(vio_mar_algas)
 	print("OK: la profundidad relativa de cada columna de agua se normaliza contra el techo de su propio tipo (río: PROFUNDIDAD_MAXIMA_RIO; mar/lago: nivel_mar - ALTURA_MINIMA), y densidad_algas_en() es siempre 1.0 menos esa profundidad relativa.")
 
-	print("\n=== Las 32 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 33: caida_en() coincide exactamente con es_cascada_en() (>= UMBRAL_CASCADA) y da 0 en tramos llanos ===")
+	var gen_caida: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, VoxelWorld.ANCHO_MUNDO, VoxelWorld.LARGO_MUNDO)
+	var vio_caida_cero := false
+	var vio_caida_cascada := false
+	for x in range(VoxelWorld.ANCHO_MUNDO):
+		for z in range(VoxelWorld.LARGO_MUNDO):
+			if not gen_caida.es_rio_en(x, z):
+				assert(gen_caida.caida_en(x, z) == 0)
+				continue
+			var caida: int = gen_caida.caida_en(x, z)
+			assert(caida >= 0)
+			assert(gen_caida.es_cascada_en(x, z) == (caida >= GeneradorMundoScript.UMBRAL_CASCADA))
+			if caida == 0:
+				vio_caida_cero = true
+			elif caida >= GeneradorMundoScript.UMBRAL_CASCADA:
+				vio_caida_cascada = true
+	assert(vio_caida_cero)
+	assert(vio_caida_cascada)
+	print("OK: caida_en() es 0 fuera de río, coincide con es_cascada_en() en cada celda de río real, y el mundo real tiene tanto tramos llanos (caida=0) como cascadas (caida>=UMBRAL_CASCADA).")
+
+	print("\n=== Las 33 pruebas de GeneradorMundo pasaron correctamente ===")

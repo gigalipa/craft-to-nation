@@ -2,6 +2,7 @@ extends CharacterBody3D
 class_name Player
 
 const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")  # TEMP: ver nota de verificación tras mover el proyecto a godot/
+const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
@@ -26,6 +27,31 @@ const VELOCIDAD_NATACION := 3.0
 ## que VELOCIDAD_NATACION, para que "dejarse caer" en el agua no se sienta
 ## como estar de pie sobre ella.
 const VELOCIDAD_HUNDIMIENTO := 1.0
+
+## Corriente de río/cascada (diseño 2026-09-17, a partir de una captura real
+## de un río en pendiente de montaña): a mayor pendiente del cauce (ver
+## VoxelWorld.corriente_en()/GeneradorMundo.caida_en()), mayor empuje
+## horizontal — un tramo llano (caida 0) empuja poco pero nunca cero, y el
+## empuje crece con la caída hasta el umbral de cascada
+## (GeneradorMundo.UMBRAL_CASCADA); más allá de eso el tramo ya es
+## prácticamente vertical y el empuje horizontal relevante es el de
+## EMPUJE_CASCADA_BASE_* al pie de la caída, no este. Ver _empuje_rio().
+const EMPUJE_RIO_MINIMO := 0.4
+const EMPUJE_RIO_POR_CAIDA := 0.7
+
+## Empuje horizontal EXTRA (sumado al de _empuje_rio()) al pie de una
+## cascada, interpolado según qué tan grande sea el salto (caida): un salto
+## justo en el umbral empuja poco (EMPUJE_CASCADA_BASE_MINIMO), uno grande
+## (CAIDA_EMPUJE_SATURA bloques o más) empuja fuerte (EMPUJE_CASCADA_BASE_
+## MAXIMO) — ver _empuje_base_cascada().
+const EMPUJE_CASCADA_BASE_MINIMO := 0.5
+const EMPUJE_CASCADA_BASE_MAXIMO := 9.0
+const CAIDA_EMPUJE_SATURA := 12
+
+## Margen vertical (celdas) desde el fondo tallado de una cascada
+## (VoxelWorld.columna_cascada_en()["y_base"]) dentro del cual se considera
+## que el jugador está "al pie" de la caída — ver _procesar_corriente().
+const MARGEN_PIE_CASCADA := 2
 
 ## Efecto visual de flotación (solo cosmético, no afecta velocity/colisión):
 ## mece la cámara con un seno mientras el jugador nada con la cabeza fuera
@@ -155,11 +181,17 @@ func _physics_process(delta: float) -> void:
 	velocity.x = direccion.x * VELOCIDAD
 	velocity.z = direccion.z * VELOCIDAD
 	var nadando := _profundidad_agua_en_pies() >= 2
+	var celda_pies: Vector3i = _celda_en(global_position) if mundo != null else Vector3i.ZERO
 	if nadando:
 		if Input.is_key_pressed(KEY_SPACE):
 			velocity.y = VELOCIDAD_NATACION
 		elif Input.is_key_pressed(KEY_CTRL):
 			velocity.y = -VELOCIDAD_NATACION
+		elif not mundo.columna_cascada_en(celda_pies.x, celda_pies.z).is_empty():
+			# Dentro de una cascada, la corriente cae tan rápido como la
+			# gravedad normal (diseño 2026-09-17) — mismo cálculo que la
+			# rama "sin nadar" de abajo, en vez del hundimiento pasivo.
+			velocity.y -= GRAVEDAD * delta
 		else:
 			velocity.y = -VELOCIDAD_HUNDIMIENTO
 	elif not is_on_floor():
@@ -168,6 +200,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y = VELOCIDAD_SALTO
 	else:
 		velocity.y = 0.0
+	if mundo != null:
+		_procesar_corriente(celda_pies)
 
 	move_and_slide()
 	_procesar_oxigeno(delta)
@@ -190,7 +224,7 @@ func _profundidad_agua_en_pies() -> int:
 func _profundidad_agua_en(posicion: Vector3) -> int:
 	if mundo == null:
 		return 0
-	var celda: Vector3i = mundo.local_to_map(mundo.to_local(posicion))
+	var celda: Vector3i = _celda_en(posicion)
 	if mundo.obtener_tipo(celda) != "agua":
 		return 0
 	var profundidad := 1
@@ -199,6 +233,61 @@ func _profundidad_agua_en(posicion: Vector3) -> int:
 		profundidad += 1
 		celda += Vector3i(0, 1, 0)
 	return profundidad
+
+
+## Celda de grilla (VoxelWorld) bajo "posicion" — asume mundo != null.
+func _celda_en(posicion: Vector3) -> Vector3i:
+	return mundo.local_to_map(mundo.to_local(posicion))
+
+
+## Empuje de corriente de río/cascada (ver EMPUJE_RIO_MINIMO más arriba):
+## se SUMA a velocity.x/z después del control WASD normal, así que el
+## jugador conserva su propio movimiento sobre la corriente en vez de que
+## esta lo reemplace. Cubre tanto el empuje a lo largo de todo el cauce
+## (VoxelWorld.corriente_en(), incluyendo tramos llanos) como el empuje
+## extra al pie de una cascada (VoxelWorld.columna_cascada_en()).
+func _procesar_corriente(celda_pies: Vector3i) -> void:
+	# Solo empuja si la celda de los pies es agua REAL ahora mismo — no basta
+	# con que GeneradorMundo la haya marcado como franja de río al generar el
+	# mundo: un pasillo minado detrás de una cascada sigue devolviendo
+	# corriente_en()/columna_cascada_en() no vacíos (esos datos son estáticos
+	# y no saben que el jugador ya vació esa celda), y sin este chequeo el
+	# empuje seguía "halando" al jugador hacia afuera del pasillo aunque ya
+	# no hubiera ni una gota de agua ahí (bug real, reportado jugando en
+	# vivo, 2026-09-18).
+	if mundo.obtener_tipo(celda_pies) != "agua":
+		return
+	var corriente: Dictionary = mundo.corriente_en(celda_pies.x, celda_pies.z)
+	if not corriente.is_empty() and corriente["direccion"] != Vector2i.ZERO:
+		var empuje: float = _empuje_rio(corriente["caida"])
+		velocity.x += corriente["direccion"].x * empuje
+		velocity.z += corriente["direccion"].y * empuje
+	var cascada: Dictionary = mundo.columna_cascada_en(celda_pies.x, celda_pies.z)
+	if cascada.is_empty() or cascada["direccion"] == Vector2i.ZERO:
+		return
+	if celda_pies.y > cascada["y_base"] + MARGEN_PIE_CASCADA:
+		return
+	var empuje_base: float = _empuje_base_cascada(cascada["caida"])
+	velocity.x += cascada["direccion"].x * empuje_base
+	velocity.z += cascada["direccion"].y * empuje_base
+
+
+## Empuje horizontal de un tramo de río con esta "caida" de altura (Sección
+## diseño 2026-09-17) — mínimo pero no cero en llano, creciendo linealmente
+## hasta el umbral de cascada (más allá de eso, ver _empuje_base_cascada()).
+## Función pura (sin acceder a "mundo"/"velocity") para poder probarla
+## directamente en PlayerNatacionTest.gd.
+static func _empuje_rio(caida: int) -> float:
+	return EMPUJE_RIO_MINIMO + minf(float(caida), float(GeneradorMundo.UMBRAL_CASCADA)) * EMPUJE_RIO_POR_CAIDA
+
+
+## Empuje horizontal EXTRA al pie de una cascada de esta "caida" (altura del
+## salto): satura entre EMPUJE_CASCADA_BASE_MINIMO (justo en el umbral) y
+## EMPUJE_CASCADA_BASE_MAXIMO (CAIDA_EMPUJE_SATURA bloques o más). Función
+## pura, mismo motivo que _empuje_rio().
+static func _empuje_base_cascada(caida: int) -> float:
+	var factor: float = clampf(float(caida - GeneradorMundo.UMBRAL_CASCADA) / float(CAIDA_EMPUJE_SATURA - GeneradorMundo.UMBRAL_CASCADA), 0.0, 1.0)
+	return lerpf(EMPUJE_CASCADA_BASE_MINIMO, EMPUJE_CASCADA_BASE_MAXIMO, factor)
 
 
 ## Efecto cosmético (no toca velocity ni colisión): mece la cámara con un

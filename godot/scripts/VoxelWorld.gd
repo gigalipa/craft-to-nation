@@ -1266,7 +1266,13 @@ func eliminar_edificio(id: int) -> Vector2i:
 			pareja.erase(pareja[celda])
 			pareja.erase(celda)
 		var tipo_anterior: String = obtener_tipo(celda)
-		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+		# Una celda de la estructura que sigue siendo TERRENO real (la losa
+		# enterrada o las paredes sobre un desnivel, que la cola de excavación
+		# aún no había cavado) no es del edificio: solo se desregistra, nunca se
+		# borra. Al emplazar un blueprint el terreno no se modifica; cambia
+		# bloque a bloque al surtirlo (excavación -> relleno -> construcción).
+		if tipo_anterior == "fantasma" or TIPOS_ESTRUCTURA.has(tipo_anterior):
+			set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 		celda_a_edificio.erase(celda)
 		if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 			bloque_translucido_cambiado.emit(celda)

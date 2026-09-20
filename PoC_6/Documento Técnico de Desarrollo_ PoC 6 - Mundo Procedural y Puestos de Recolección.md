@@ -554,7 +554,7 @@ sola cola de preparación de `Construccion.gd`, excavación primero
 bloques `fantasma` del relleno pendiente se retiran (antes quedaban sueltos como
 "relleno huérfano"). Deconstruir no restaura el terreno ya excavado, el relleno ya
 hecho ni el hueco de la losa enterrada (queda un foso; restaurarlo queda
-pendiente). El HUD muestra un resumen VISUAL de materiales
+pendiente). Al emplazar un blueprint no se modifica el terreno (salvo drenar agua y quitar follaje): el terreno cambia bloque a bloque al surtirlo (excavación → relleno → construcción), y `eliminar_edificio()` nunca borra una celda de la estructura que siga siendo terreno real sin cavar, solo la desregistra. El HUD muestra un resumen VISUAL de materiales
 (piedra/madera/tierra, neto = recogido - necesario); sigue sin inventario ni cobro real.
 Los puestos periféricos conservan la nivelación al punto más alto.
 

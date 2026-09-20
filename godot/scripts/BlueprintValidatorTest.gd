@@ -1401,6 +1401,23 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.obtener_tipo(celda_relleno_pendiente_48d) == "", "el fantasma pendiente desaparece")
 	print("OK: solo el relleno fantasma pendiente se retira; el terreno ya modificado se conserva.")
 
+	print("\n=== TEST 48e: eliminar_edificio() no toca el terreno real que la estructura aún no había cavado ===")
+	const OX48E := 1440
+	var celda_terreno_48e := Vector3i(OX48E, 1, OX48E)  # terreno real bajo una celda de la estructura (p. ej. la losa enterrada), aún sin cavar
+	var celda_pared_48e := Vector3i(OX48E + 1, 1, OX48E)  # celda de la estructura sobre aire: fantasma
+	mundo.colocar_bloque(celda_terreno_48e, "piedra")
+	var tipos_48e := {celda_terreno_48e: "pared", celda_pared_48e: "pared"}
+	var id_48e: int = mundo.iniciar_construccion_fantasma([celda_terreno_48e], {celda_terreno_48e: "fantasma"}, [celda_terreno_48e, celda_pared_48e], tipos_48e)
+	assert(mundo.obtener_tipo(celda_terreno_48e) == "piedra", "al emplazar no se modifica el terreno")
+	assert(mundo.obtener_tipo(celda_pared_48e) == "fantasma")
+	assert(mundo.procesar_deconstruccion(celda_pared_48e)["lista_para_remocion"])
+	mundo.eliminar_edificio(id_48e)
+	assert(mundo.obtener_tipo(celda_terreno_48e) == "piedra", "el terreno que nunca se cavó no se borra")
+	assert(mundo.obtener_tipo(celda_pared_48e) == "", "el fantasma sí se retira")
+	assert(mundo.id_de_edificio(celda_terreno_48e) == -1, "y la celda de terreno deja de figurar como parte del edificio")
+	assert(mundo.minar_bloque(celda_terreno_48e), "vuelve a ser minable como cualquier terreno")
+	print("OK: quitar un edificio recién emplazado no abre huecos en el terreno.")
+
 	print("\n=== TEST 49: celdas_fantasma_destacadas() marca solo puertas y ventanas todavía fantasma, y se actualiza al surtir y deconstruir ===")
 	# Mundo PROPIO para las pruebas 49-50: celdas_fantasma_destacadas() recorre TODOS los
 	# edificios del mundo, y las pruebas anteriores dejan en `mundo` edificios con
@@ -1570,4 +1587,4 @@ func ejecutar_pruebas() -> void:
 	assert(not mundo_d.es_terreno_natural(c_tierra_52), "una celda que pertenece a un edificio no es terreno")
 	print("OK: solo el suelo/subsuelo libre cuenta como terreno natural.")
 
-	print("\n=== Las 57 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== Las 58 pruebas de BlueprintValidator pasaron correctamente ===")

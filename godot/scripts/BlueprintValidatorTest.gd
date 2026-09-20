@@ -1587,4 +1587,64 @@ func ejecutar_pruebas() -> void:
 	assert(not mundo_d.es_terreno_natural(c_tierra_52), "una celda que pertenece a un edificio no es terreno")
 	print("OK: solo el suelo/subsuelo libre cuenta como terreno natural.")
 
-	print("\n=== Las 58 pruebas de BlueprintValidator pasaron correctamente ===")
+	# `arboles` lo crea VoxelWorld._ready(), que no corre en estos mundos de prueba;
+	# eliminar_follaje() lo necesita para desregistrar el follaje de su árbol.
+	mundo_d.arboles = load("res://scripts/GeneradorArbol.gd").new()
+
+	print("\n=== TEST 53: emplazar no sobrescribe el agua; su celda se vuelve tierra (con limpieza de niveles) solo cuando le toca su paso ===")
+	const OX53 := 1600
+	var celda_agua_53 := Vector3i(OX53, 1, OX53)          # relleno sobre agua
+	var celda_vacia_53 := Vector3i(OX53 + 1, 1, OX53)     # relleno sobre aire
+	var celda_estructura_53 := Vector3i(OX53 + 2, 1, OX53)
+	mundo_d.colocar_bloque(celda_agua_53, "agua")
+	mundo_d._nivel_agua[celda_agua_53] = 3  # simula agua de flujo: colocar_bloque() debe limpiar esta entrada
+	var orden_53: Array[Vector3i] = [celda_agua_53, celda_vacia_53]
+	mundo_d.iniciar_construccion_fantasma(orden_53, {celda_agua_53: "tierra", celda_vacia_53: "tierra"}, [celda_estructura_53], {celda_estructura_53: "pared"})
+	assert(mundo_d.obtener_tipo(celda_agua_53) == "agua", "al emplazar el agua no se drena ni se reemplaza por un fantasma")
+	assert(mundo_d.obtener_tipo(celda_vacia_53) == "fantasma", "la celda vacía sí recibe su fantasma")
+	var ocupadas_53: Array[Vector3i] = mundo_d.celdas_fantasma_ocupadas()
+	assert(ocupadas_53.size() == 1 and ocupadas_53[0] == celda_agua_53, "la celda de agua pendiente se reporta como ocupada")
+	mundo_d.surtir_construccion(celda_estructura_53)  # primer paso de la cola: la celda de agua
+	assert(mundo_d.obtener_tipo(celda_agua_53) == "tierra", "al llegar su turno, el agua se vuelve tierra sólida")
+	assert(not mundo_d._nivel_agua.has(celda_agua_53), "y su entrada de nivel de agua se limpia")
+	assert(mundo_d.celdas_fantasma_ocupadas().is_empty())
+	print("OK: el agua espera su turno y se drena en el mismo instante en que su celda se vuelve sólida.")
+
+	print("\n=== TEST 54: el follaje registrado desaparece por columna con el primer paso de esa columna, no antes ===")
+	const OX54 := 1610
+	var relleno_a_54 := Vector3i(OX54, 1, OX54)             # columna A: celda de relleno (vacía -> fantasma)
+	var follaje_a_54 := Vector3i(OX54, 2, OX54)             # columna A: follaje sobre el relleno, sin ser celda del edificio
+	var estructura_b_54 := Vector3i(OX54 + 1, 1, OX54)      # columna B: celda de estructura ocupada por follaje
+	mundo_d.colocar_bloque(follaje_a_54, "follaje")
+	mundo_d.colocar_bloque(estructura_b_54, "follaje")
+	var orden_54: Array[Vector3i] = [relleno_a_54]
+	var id_54: int = mundo_d.iniciar_construccion_fantasma(orden_54, {relleno_a_54: "tierra"}, [estructura_b_54], {estructura_b_54: "pared"})
+	mundo_d.registrar_follaje_pendiente(id_54, [follaje_a_54, estructura_b_54])
+	assert(mundo_d.obtener_tipo(follaje_a_54) == "follaje" and mundo_d.obtener_tipo(estructura_b_54) == "follaje", "al emplazar el follaje sigue en pie")
+	assert(mundo_d.obtener_tipo(relleno_a_54) == "fantasma")
+	var ocupadas_54: Array[Vector3i] = mundo_d.celdas_fantasma_ocupadas()
+	assert(ocupadas_54.size() == 1 and ocupadas_54[0] == estructura_b_54, "solo la celda de estructura ocupada (el follaje suelto no es del edificio)")
+	mundo_d.surtir_construccion(estructura_b_54)  # paso de la columna A (relleno)
+	assert(mundo_d.obtener_tipo(relleno_a_54) == "tierra")
+	assert(mundo_d.obtener_tipo(follaje_a_54) == "", "el follaje de la columna A desaparece con su primer paso")
+	assert(mundo_d.obtener_tipo(estructura_b_54) == "follaje", "el de la columna B espera: su columna aún no tuvo ningún paso")
+	var resultado_54: Dictionary = mundo_d.surtir_construccion(estructura_b_54)  # paso de estructura, columna B
+	assert(mundo_d.obtener_tipo(estructura_b_54) == "pared", "la celda de estructura pasa de follaje a pared sólida")
+	assert(resultado_54["completa"])
+	print("OK: el follaje se retira por columna con su primer paso, y la celda de estructura liberada queda sólida.")
+
+	print("\n=== TEST 55: quitar el edificio antes de tiempo deja el follaje registrado sin tocar ===")
+	const OX55 := 1620
+	var follaje_55 := Vector3i(OX55, 1, OX55)
+	var estructura_55 := Vector3i(OX55 + 1, 1, OX55)
+	mundo_d.colocar_bloque(follaje_55, "follaje")
+	var id_55: int = mundo_d.iniciar_construccion_fantasma([], {}, [estructura_55], {estructura_55: "pared"})
+	mundo_d.registrar_follaje_pendiente(id_55, [follaje_55])
+	assert(mundo_d.procesar_deconstruccion(estructura_55)["lista_para_remocion"])
+	mundo_d.eliminar_edificio(id_55)
+	assert(mundo_d.obtener_tipo(follaje_55) == "follaje", "el follaje nunca se tocó")
+	mundo_d._despejar_follaje_de_columna(Vector2i(OX55, OX55))
+	assert(mundo_d.obtener_tipo(follaje_55) == "follaje", "y ya no hay un registro que lo retire")
+	print("OK: eliminar el edificio antes de tiempo no modifica el follaje.")
+
+	print("\n=== Las 61 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -38,6 +38,18 @@ func construccion_de(celda: Vector3i) -> int:
 	return _celda_a_construccion.get(celda, -1)
 
 
+## Las celdas de la construcción "id" que siguen pendientes (índice >= el
+## siguiente por avanzar), en orden. Vacío si "id" no existe.
+func celdas_pendientes(id: int) -> Array[Vector3i]:
+	var pendientes: Array[Vector3i] = []
+	if not _construcciones.has(id):
+		return pendientes
+	var datos: Dictionary = _construcciones[id]
+	for i in range(datos["indice"], datos["orden"].size()):
+		pendientes.append(datos["orden"][i])
+	return pendientes
+
+
 ## Descarta de la construcción "id" los pasos AÚN PENDIENTES cuyo tipo esté en
 ## "tipos_a_descartar" (los ya avanzados no se tocan) y libera sus celdas.
 ## Si no queda nada pendiente, la construcción se limpia por completo.

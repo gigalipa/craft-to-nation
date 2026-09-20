@@ -225,6 +225,16 @@ var edificio_metadata: Dictionary = {}  # int -> Dictionary
 ## completar su relleno (eliminar_edificio()).
 var edificio_relleno_cola: Dictionary = {}  # int -> int
 
+## Follaje que un edificio recién emplazado tiene encima (huella y fachada),
+## por columna: NO se retira al emplazar; desaparece con el primer paso que
+## se aplique en esa columna (ver _despejar_follaje_de_columna()) o se descarta
+## al eliminar el edificio. Columna Vector2i -> {"id": int, "celdas":
+## Array[Vector3i]}. ponytail: si dos edificios registraran la misma columna
+## las celdas se mezclan bajo el primer id; las huellas no se solapan y el
+## caso de las fachadas queda sin cubrir.
+var _follaje_por_columna: Dictionary = {}
+var edificio_follaje: Dictionary = {}  # int (id de edificio) -> Array[Vector2i] (columnas que registró)
+
 ## Por edificio: las celdas de despeje reservadas por sus ventanas/puertas
 ## (ver calcular_despeje()) y su consulta inversa — mismo patrón que
 ## edificio_a_celdas/celda_a_edificio. Persiste mientras exista el id del
@@ -1292,6 +1302,12 @@ func eliminar_edificio(id: int) -> Vector2i:
 			if obtener_tipo(celda_pendiente) == "fantasma":
 				set_cell_item(celda_pendiente, GridMap.INVALID_CELL_ITEM)
 	edificio_relleno_cola.erase(id)
+	# El follaje registrado que aún no se retiró se queda donde está: al
+	# emplazar no se modificó nada, y quitar el edificio a tiempo no debe hacerlo.
+	for columna: Vector2i in edificio_follaje.get(id, []):
+		if _follaje_por_columna.has(columna) and _follaje_por_columna[columna]["id"] == id:
+			_follaje_por_columna.erase(columna)
+	edificio_follaje.erase(id)
 	for celda_despeje in edificio_despeje.get(id, []):
 		if celda_a_despeje.has(celda_despeje):
 			celda_a_despeje[celda_despeje].erase(id)
@@ -1300,6 +1316,14 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_despeje.erase(id)
 	fantasmas_cambiados.emit()
 	return esquina
+
+
+## Coloca "fantasma" solo en una celda VACÍA: una celda ocupada (terreno, agua,
+## follaje) espera su turno. colocar_bloque() sí reemplaza el agua, y eso no
+## debe pasar al emplazar un blueprint.
+func _colocar_fantasma_si_vacia(celda: Vector3i) -> void:
+	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
+		colocar_bloque(celda, "fantasma")
 
 
 ## Arranca un edificio fantasma. "orden_relleno"/"tipos_relleno" son las
@@ -1314,11 +1338,14 @@ func eliminar_edificio(id: int) -> Vector2i:
 ## id nuevo. orden_relleno/tipos_relleno pueden incluir, ANTES del relleno,
 ## celdas de excavación (terreno real) con tipo "aire" o "fantasma" — ver
 ## _aplicar_paso_cola().
+## Las celdas que ya están ocupadas (terreno, agua, follaje) no reciben
+## fantasma: esperan su turno y el ocupante se retira cuando se aplica su paso
+## (ver _reemplazar_celda()).
 func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictionary, orden_estructura: Array, tipos_estructura: Dictionary, metadata: Dictionary = {}) -> int:
 	for celda in orden_relleno:
-		colocar_bloque(celda, "fantasma")
+		_colocar_fantasma_si_vacia(celda)
 	for celda in orden_estructura:
-		colocar_bloque(celda, "fantasma")
+		_colocar_fantasma_si_vacia(celda)
 	var id: int = registrar_edificio(orden_estructura)
 	if not orden_relleno.is_empty():
 		edificio_relleno_cola[id] = Construccion.iniciar(orden_relleno, tipos_relleno)
@@ -1359,22 +1386,92 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 	return id
 
 
+## Sustituye lo que haya en "celda" (fantasma, terreno sin cavar, agua o
+## follaje) por un bloque real de "tipo". El agua se sobrescribe con
+## colocar_bloque() (limpia _nivel_agua y encola el secado del agua vecina, no
+## set_cell_item directo); el follaje se retira con eliminar_follaje() (lo
+## desregistra del árbol); todo lo demás se vacía primero. Así el agua se
+## drena y el follaje desaparece en el mismo instante en que el bloque sólido
+## ocupa la celda.
+func _reemplazar_celda(celda: Vector3i, tipo: String) -> void:
+	var actual: String = obtener_tipo(celda)
+	if actual == "follaje":
+		eliminar_follaje(celda)
+	elif actual != "agua":
+		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+	colocar_bloque(celda, tipo, true)
+
+
+## Registra el follaje de "id" (huella y fachada, ver
+## CamaraCenital._procesar_clic_blueprint()) para retirarlo por columna con el
+## primer paso que se aplique en ella. No modifica el mundo.
+func registrar_follaje_pendiente(id: int, celdas: Array) -> void:
+	var columnas: Array[Vector2i] = []
+	for celda: Vector3i in celdas:
+		var columna := Vector2i(celda.x, celda.z)
+		if not _follaje_por_columna.has(columna):
+			_follaje_por_columna[columna] = {"id": id, "celdas": []}
+			columnas.append(columna)
+		_follaje_por_columna[columna]["celdas"].append(celda)
+	edificio_follaje[id] = columnas
+	fantasmas_cambiados.emit()
+
+
+## Retira el follaje registrado de "columna" que siga siendo follaje (pudo
+## talarse o minarse antes) y borra la entrada. Cada celda liberada que
+## pertenezca a la estructura pendiente (registrada en celda_a_edificio) o a
+## una cola de preparación recibe su "fantasma", para que el edificio fantasma
+## no quede con huecos. Se llama antes de aplicar cualquier paso de la columna.
+func _despejar_follaje_de_columna(columna: Vector2i) -> void:
+	if not _follaje_por_columna.has(columna):
+		return
+	var celdas: Array = _follaje_por_columna[columna]["celdas"]
+	_follaje_por_columna.erase(columna)
+	for celda: Vector3i in celdas:
+		if obtener_tipo(celda) != "follaje":
+			continue
+		eliminar_follaje(celda)
+		if celda_a_edificio.has(celda) or Construccion.construccion_de(celda) != -1:
+			colocar_bloque(celda, "fantasma")
+
+
+## Celdas pendientes de construir (estructura pendiente y cola de preparación)
+## cuyo ocupante actual sigue siendo agua o follaje: no pueden mostrar un
+## fantasma (una celda guarda un solo bloque), así que FantasmasDestacados.gd
+## dibuja un marcador fantasma encima. Lógica pura; no dibuja nada.
+func celdas_fantasma_ocupadas() -> Array[Vector3i]:
+	var resultado: Array[Vector3i] = []
+	for id in edificio_orden:
+		var pendientes: Array[Vector3i] = []
+		var orden: Array = edificio_orden[id]
+		for i in range(edificio_progreso[id], orden.size()):
+			pendientes.append(orden[i])
+		if edificio_relleno_cola.has(id):
+			pendientes.append_array(Construccion.celdas_pendientes(edificio_relleno_cola[id]))
+		for celda in pendientes:
+			var tipo: String = obtener_tipo(celda)
+			if tipo == "agua" or tipo == "follaje":
+				resultado.append(celda)
+	return resultado
+
+
 ## Aplica un paso ya avanzado de la cola de preparación del terreno (ver
 ## Construccion.avanzar()): "resultado" trae {"celda", "tipo"}. "tierra"
-## (relleno) convierte la celda fantasma en bloque real. "aire" y "fantasma"
+## (relleno) convierte la celda —fantasma, agua o follaje— en bloque real (ver
+## _reemplazar_celda()). "aire" y "fantasma"
 ## son EXCAVACIÓN: la celda es terreno real y se retira; "fantasma" indica
 ## que además pertenece a la estructura del edificio (p. ej. la losa
 ## enterrada) y por eso queda como fantasma en vez de vacía.
 func _aplicar_paso_cola(resultado: Dictionary) -> void:
 	var celda: Vector3i = resultado["celda"]
 	var tipo: String = resultado["tipo"]
+	_despejar_follaje_de_columna(Vector2i(celda.x, celda.z))
 	if tipo == "aire" or tipo == "fantasma":
 		_retirar_bloque(celda)
 		if tipo == "fantasma":
 			colocar_bloque(celda, "fantasma")
 	else:
-		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
-		colocar_bloque(celda, tipo, true)
+		_reemplazar_celda(celda, tipo)
 	fantasmas_cambiados.emit()
 
 
@@ -1424,8 +1521,8 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 		return {}
 	var celda_a_surtir: Vector3i = orden[progreso]
 	var tipo: String = edificio_tipos[id][celda_a_surtir]
-	set_cell_item(celda_a_surtir, GridMap.INVALID_CELL_ITEM)
-	colocar_bloque(celda_a_surtir, tipo, true)
+	_despejar_follaje_de_columna(Vector2i(celda_a_surtir.x, celda_a_surtir.z))
+	_reemplazar_celda(celda_a_surtir, tipo)
 	edificio_progreso[id] = progreso + 1
 	fantasmas_cambiados.emit()
 	var completa: bool = edificio_progreso[id] == orden.size()

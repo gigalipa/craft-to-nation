@@ -53,4 +53,14 @@ func ejecutar_pruebas() -> void:
 	assert(r4["metadata"] == metadata)
 	assert(r4["completa"])
 
-	print("\n=== Las 5 pruebas de Construccion pasaron correctamente ===")
+	print("\n=== TEST 6: celdas_pendientes() devuelve las celdas aún no avanzadas, en orden ===")
+	var celdas_6: Array[Vector3i] = [Vector3i(20, 0, 0), Vector3i(21, 0, 0), Vector3i(22, 0, 0)]
+	var tipos_6 := {celdas_6[0]: "tierra", celdas_6[1]: "tierra", celdas_6[2]: "tierra"}
+	var id_6: int = Construccion.iniciar(celdas_6, tipos_6)
+	assert(Construccion.celdas_pendientes(id_6).size() == 3)
+	Construccion.avanzar(id_6)
+	var pendientes_6: Array[Vector3i] = Construccion.celdas_pendientes(id_6)
+	assert(pendientes_6.size() == 2 and pendientes_6[0] == celdas_6[1] and pendientes_6[1] == celdas_6[2])
+	assert(Construccion.celdas_pendientes(999999).is_empty(), "un id inexistente no tiene pendientes")
+
+	print("\n=== Las 6 pruebas de Construccion pasaron correctamente ===")

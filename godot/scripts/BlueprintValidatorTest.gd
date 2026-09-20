@@ -1048,4 +1048,266 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.obtener_tipo(celda_piedra_37) == "piedra", "la celda sólida original no debe cambiar")
 	print("OK: colocar_bloque() sigue rechazando celdas sólidas no vacías que no son agua.")
 
-	print("\n=== Las 37 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 38: minar_bloque() bajo un bloque de agua hace que el agua caiga a la celda recién vaciada (escurrimiento vertical) ===")
+	const OX38 := 1110
+	var piso_38 := Vector3i(OX38, 0, OX38)
+	var bloqueo_38 := Vector3i(OX38, 1, OX38)
+	var agua_38 := Vector3i(OX38, 2, OX38)
+	mundo.colocar_bloque(piso_38, "piedra")
+	mundo.colocar_bloque(bloqueo_38, "piedra")
+	mundo.colocar_bloque(agua_38, "agua")
+	mundo.minar_bloque(bloqueo_38)
+	mundo._drenar_escurrimiento_para_pruebas()  # el escurrimiento ahora es gradual (ver _process()) — esto fuerza el resultado final para poder comprobarlo sin simular frames reales
+	assert(mundo.obtener_tipo(bloqueo_38) == "agua", "la celda recién vaciada bajo el agua debe llenarse con agua (escurrimiento vertical)")
+	assert(mundo.obtener_tipo(agua_38) == "agua", "el agua original no debe desaparecer (sin secado/recesión, ver diseño 2026-09-18)")
+	print("OK: minar_bloque() bajo agua hace que el agua caiga a la celda vaciada, sin desaparecer de su origen.")
+
+	print("\n=== TEST 39: minar_bloque() al lado del agua (con piso debajo) llena la celda vaciada con nivel 1, y sigue con nivel 2 en la siguiente celda plana ===")
+	const OZ39 := 1120
+	var agua_39 := Vector3i(OZ39, 1, OZ39)
+	var piso_agua_39 := Vector3i(OZ39, 0, OZ39)
+	var bloqueo1_39 := Vector3i(OZ39 + 1, 1, OZ39)
+	var piso1_39 := Vector3i(OZ39 + 1, 0, OZ39)
+	var piso2_39 := Vector3i(OZ39 + 2, 0, OZ39)
+	mundo.colocar_bloque(piso_agua_39, "piedra")
+	mundo.colocar_bloque(agua_39, "agua")
+	mundo.colocar_bloque(bloqueo1_39, "piedra")
+	mundo.colocar_bloque(piso1_39, "piedra")
+	mundo.colocar_bloque(piso2_39, "piedra")
+	# Cierra los otros lados (mundo abierto de la prueba: cualquier vecino sin
+	# piso cuenta como una caída y desviaría el agua hacia allá).
+	mundo.colocar_bloque(Vector3i(OZ39 - 1, 1, OZ39), "piedra")
+	mundo.colocar_bloque(Vector3i(OZ39, 1, OZ39 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OZ39, 1, OZ39 - 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OZ39 + 1, 1, OZ39 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OZ39 + 1, 1, OZ39 - 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OZ39 + 2, 1, OZ39 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OZ39 + 2, 1, OZ39 - 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OZ39 + 3, 1, OZ39), "piedra")
+	mundo.minar_bloque(bloqueo1_39)
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.obtener_tipo(bloqueo1_39) == "agua", "debe esparcirse lateralmente hacia la celda recién vaciada")
+	assert(mundo.nivel_agua_en(bloqueo1_39) == 1, "la celda vaciada junto a la fuente es agua de flujo nivel 1")
+	assert(mundo.nivel_agua_en(Vector3i(OZ39 + 2, 1, OZ39)) == 2, "la siguiente celda plana es nivel 2 (un semibloque más bajo)")
+	print("OK: el agua llena la celda vaciada con nivel 1 y sigue en plano con nivel 2, cada vez más baja.")
+
+	print("\n=== TEST 40: el escurrimiento nunca sobreescribe bedrock ===")
+	const OX40 := 1130
+	var piso_40 := Vector3i(OX40, 0, OX40)
+	var bloqueo_40 := Vector3i(OX40, 1, OX40)
+	var agua_40 := Vector3i(OX40, 2, OX40)
+	mundo.colocar_bloque(piso_40, "bedrock")
+	mundo.colocar_bloque(bloqueo_40, "piedra")
+	mundo.colocar_bloque(agua_40, "agua")
+	mundo.minar_bloque(bloqueo_40)
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.obtener_tipo(bloqueo_40) == "agua", "debe seguir escurriendo hacia la celda vaciada")
+	assert(mundo.obtener_tipo(piso_40) == "bedrock", "el escurrimiento nunca debe sobreescribir bedrock")
+	print("OK: el escurrimiento se detiene ante bedrock, sin sobreescribirlo.")
+
+	print("\n=== TEST 41: colocar_bloque(..., \"agua\", true) encola escurrimiento; sin por_jugador (como en _generar_terreno()) no encola nada ===")
+	const OX41 := 1140
+	var piso_agua_41a := Vector3i(OX41, 0, OX41)
+	var vacio_lateral_41a := Vector3i(OX41 + 1, 1, OX41)
+	var piso_lateral_41a := Vector3i(OX41 + 1, 0, OX41)
+	mundo.colocar_bloque(piso_agua_41a, "piedra")
+	mundo.colocar_bloque(piso_lateral_41a, "piedra")
+	for cerco_41 in [Vector3i(OX41 - 1, 1, OX41), Vector3i(OX41, 1, OX41 + 1), Vector3i(OX41, 1, OX41 - 1), Vector3i(OX41 + 1, 1, OX41 + 1), Vector3i(OX41 + 1, 1, OX41 - 1), Vector3i(OX41 + 2, 1, OX41)]:
+		mundo.colocar_bloque(cerco_41, "piedra")  # evita que vecinos sin piso desvíen el agua (ver TEST 39)
+	mundo.colocar_bloque(Vector3i(OX41, 1, OX41), "agua", true)
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.obtener_tipo(vacio_lateral_41a) == "agua", "colocar agua con por_jugador=true debe escurrir hacia el vecino vacío")
+
+	const OX41B := 1150
+	var piso_agua_41b := Vector3i(OX41B, 0, OX41B)
+	var vacio_lateral_41b := Vector3i(OX41B + 1, 1, OX41B)
+	var piso_lateral_41b := Vector3i(OX41B + 1, 0, OX41B)
+	mundo.colocar_bloque(piso_agua_41b, "piedra")
+	mundo.colocar_bloque(piso_lateral_41b, "piedra")
+	mundo.colocar_bloque(Vector3i(OX41B, 1, OX41B), "agua")  # sin por_jugador, como en _generar_terreno()
+	assert(mundo.obtener_tipo(vacio_lateral_41b) != "agua", "colocar agua sin por_jugador (generación) NO debe disparar escurrimiento")
+	print("OK: colocar_bloque() solo escurre cuando por_jugador=true, evitando disparar esto en cada bloque de agua de _generar_terreno().")
+
+	print("\n=== TEST 42: _escurrir_agua_desde() nunca deja agua \"flotando\" (sin piso debajo) aunque el tope de esparcido se agote justo al llegar a un hueco sin piso ===")
+	# Reproduce el bug real (2026-09-18): una celda al lado de la fuente sin
+	# piso (un "acantilado"). Con limite=1, el esparcido llega exactamente a
+	# la celda del acantilado en la 1ra y última unidad de presupuesto
+	# permitida. La vieja
+	# implementación (cola FIFO que encolaba la celda recién esparcida y
+	# dejaba SU PROPIA caída para un turno futuro) se quedaba sin
+	# presupuesto justo ahí, sin llegar nunca a comprobar que esa celda
+	# debía seguir cayendo — quedaba agua plantada sobre el vacío. La
+	# versión corregida resuelve la caída de cada celda esparcida de
+	# inmediato y sin tope propio, así que esto no puede pasar sin importar
+	# dónde se agote "limite".
+	const OX42 := 1160
+	var agua_42 := Vector3i(OX42, 0, OX42)
+	mundo.colocar_bloque(agua_42 + Vector3i(0, -1, 0), "piedra")  # piso bajo la fuente
+	mundo.colocar_bloque(agua_42, "agua")  # la fuente es agua real (si estuviera vacía, el esparcido se devolvería a ella y gastaría presupuesto)
+	# Encierra la fuente por todos los otros lados: solo debe poder avanzar
+	# en +X hacia el pasillo — sin esto, el esparcido escapa también hacia
+	# atrás/los lados, cae por el "mundo abierto" de la prueba (sin piso
+	# ahí, nunca pensado para tenerlo) hasta el límite vertical real
+	# (ALTURA_BUSQUEDA_MIN) y esa celda de límite se ve como "flotante" sin
+	# serlo realmente (no es el bug, es una fuga del propio montaje de la
+	# prueba).
+	mundo.colocar_bloque(Vector3i(OX42 - 1, 0, OX42), "piedra")
+	mundo.colocar_bloque(Vector3i(OX42, 0, OX42 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX42, 0, OX42 - 1), "piedra")
+	# muros laterales en Z para que el esparcido solo pueda avanzar en X
+	mundo.colocar_bloque(Vector3i(OX42 + 1, 0, OX42 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX42 + 1, 0, OX42 - 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX42 + 2, 0, OX42), "piedra")
+	# (OX42+1, -1, OX42) queda sin piso a propósito: el "acantilado" — pero
+	# sí tiene un fondo real varios niveles más abajo, para que la caída
+	# aterrice en piso de verdad y no en el límite vertical de búsqueda del
+	# mundo (que no representa ningún piso real, ver _celda_escurrible()).
+	mundo.colocar_bloque(Vector3i(OX42 + 1, -6, OX42), "piedra")
+	mundo._limite_escurrimiento = 1
+	var semillas_42: Array[Vector3i] = [agua_42]
+	mundo._escurrir_agua_desde(semillas_42)
+	mundo._drenar_escurrimiento_para_pruebas()
+	mundo._limite_escurrimiento = VoxelWorld.LIMITE_ESCURRIMIENTO  # no afectar pruebas futuras
+	var flotantes_42 := 0
+	for x in range(OX42 - 1, OX42 + 8):
+		for y in range(-40, 5):
+			for z in range(OX42 - 2, OX42 + 3):
+				var celda := Vector3i(x, y, z)
+				if mundo.obtener_tipo(celda) == "agua":
+					var abajo := celda + Vector3i(0, -1, 0)
+					if mundo.get_cell_item(abajo) == -1:
+						flotantes_42 += 1
+	assert(flotantes_42 == 0, "ninguna celda de agua debe quedar flotando (sin piso ni otra agua debajo)")
+	assert(mundo.obtener_tipo(Vector3i(OX42 + 1, 0, OX42)) == "agua", "el esparcido debe haber llegado hasta la celda del acantilado")
+	print("OK: ninguna celda de agua queda flotando, incluso agotando el tope justo al llegar al hueco sin piso.")
+
+	print("\n=== TEST 43: el agua corre en plano con niveles crecientes (más bajos) y se detiene tras NIVEL_MAXIMO_FLUJO celdas ===")
+	# Pasillo plano y largo, con piso y muros laterales en toda su extensión:
+	# el agua solo puede avanzar en +X. La celda i celdas a la derecha de la
+	# fuente es de nivel i (altura (8 - i) / 8) hasta NIVEL_MAXIMO_FLUJO, y
+	# ahí se detiene (pedido del usuario, 2026-09-20).
+	const OX43 := 1170
+	var maxima_43: int = VoxelWorld.NIVEL_MAXIMO_FLUJO
+	mundo.colocar_bloque(Vector3i(OX43, -1, OX43), "piedra")
+	mundo.colocar_bloque(Vector3i(OX43, 0, OX43), "agua")
+	mundo.colocar_bloque(Vector3i(OX43 - 1, 0, OX43), "piedra")
+	mundo.colocar_bloque(Vector3i(OX43, 0, OX43 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX43, 0, OX43 - 1), "piedra")
+	for i in range(1, maxima_43 + 4):
+		mundo.colocar_bloque(Vector3i(OX43 + i, -1, OX43), "piedra")
+		mundo.colocar_bloque(Vector3i(OX43 + i, 0, OX43 + 1), "piedra")
+		mundo.colocar_bloque(Vector3i(OX43 + i, 0, OX43 - 1), "piedra")
+	var semillas_43: Array[Vector3i] = [Vector3i(OX43, 0, OX43)]
+	mundo._escurrir_agua_desde(semillas_43)
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.nivel_agua_en(Vector3i(OX43, 0, OX43)) == -1, "la fuente no tiene nivel de flujo")
+	assert(is_equal_approx(mundo.altura_agua_en(Vector3i(OX43, 0, OX43)), 1.0), "la fuente se ve llena")
+	for i in range(1, maxima_43 + 1):
+		var celda_43 := Vector3i(OX43 + i, 0, OX43)
+		assert(mundo.obtener_tipo(celda_43) == "agua", "el agua debe llegar hasta NIVEL_MAXIMO_FLUJO celdas de la fuente")
+		assert(mundo.nivel_agua_en(celda_43) == i, "la celda %d debe ser de nivel %d" % [i, i])
+		assert(is_equal_approx(mundo.altura_agua_en(celda_43), float(8 - i) / 8.0), "la altura baja con el nivel")
+	assert(mundo.obtener_tipo(Vector3i(OX43 + maxima_43 + 1, 0, OX43)) != "agua", "el agua NO debe esparcirse más allá de NIVEL_MAXIMO_FLUJO celdas sin caer")
+	print("OK: en plano el agua avanza con niveles 1..7 (cada vez más baja) y se detiene.")
+
+	print("\n=== TEST 44: si hay un vecino con caída (vacío debajo), el agua va solo hacia allá y no se esparce en plano ===")
+	# Feedback real (2026-09-18): "solo continúe horizontal si no hay bloques
+	# más bajos". La fuente tiene un vecino plano (+X, con piso) y un vecino
+	# con caída (-X, sin piso, con un fondo real más abajo): el agua debe ir
+	# solo hacia -X.
+	const OX44 := 1180
+	mundo.colocar_bloque(Vector3i(OX44, -1, OX44), "piedra")
+	mundo.colocar_bloque(Vector3i(OX44, 0, OX44), "agua")
+	mundo.colocar_bloque(Vector3i(OX44 + 1, -1, OX44), "piedra")  # vecino plano (+X), con piso
+	mundo.colocar_bloque(Vector3i(OX44, 0, OX44 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX44, 0, OX44 - 1), "piedra")
+	# vecino con caída (-X): sin piso en y=-1; fondo real en y=-6 (losa 3x3 para
+	# que el esparcido del fondo no siga cayendo por el mundo abierto)
+	for dx_44 in range(-2, 1):
+		for dz_44 in range(-1, 2):
+			mundo.colocar_bloque(Vector3i(OX44 - 1 + dx_44 + 1, -6, OX44 + dz_44), "piedra")
+	for dz_44 in [-1, 1]:
+		mundo.colocar_bloque(Vector3i(OX44 - 1, 0, OX44 + dz_44), "piedra")
+	mundo.colocar_bloque(Vector3i(OX44 - 2, 0, OX44), "piedra")
+	var semillas_44: Array[Vector3i] = [Vector3i(OX44, 0, OX44)]
+	mundo._escurrir_agua_desde(semillas_44)
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.obtener_tipo(Vector3i(OX44 - 1, 0, OX44)) == "agua", "el agua debe ir hacia el vecino con caída")
+	assert(mundo.obtener_tipo(Vector3i(OX44 + 1, 0, OX44)) != "agua", "el agua NO debe esparcirse en plano hacia +X cuando hay una caída al otro lado")
+	print("OK: con una caída cerca, el agua va solo hacia ella.")
+
+	print("\n=== TEST 45: al quitar la fuente, el flujo se seca en cadena (cada semibloque necesita una fuente conectada) ===")
+	const OX45 := 1190
+	mundo.colocar_bloque(Vector3i(OX45, -1, OX45), "piedra")
+	mundo.colocar_bloque(Vector3i(OX45, 0, OX45), "agua")  # fuente
+	mundo.colocar_bloque(Vector3i(OX45 - 1, 0, OX45), "piedra")
+	mundo.colocar_bloque(Vector3i(OX45, 0, OX45 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX45, 0, OX45 - 1), "piedra")
+	for i in range(1, 5):
+		mundo.colocar_bloque(Vector3i(OX45 + i, -1, OX45), "piedra")
+		mundo.colocar_bloque(Vector3i(OX45 + i, 0, OX45 + 1), "piedra")
+		mundo.colocar_bloque(Vector3i(OX45 + i, 0, OX45 - 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX45 + 5, 0, OX45), "piedra")
+	var semillas_45: Array[Vector3i] = [Vector3i(OX45, 0, OX45)]
+	mundo._escurrir_agua_desde(semillas_45)
+	mundo._drenar_escurrimiento_para_pruebas()
+	for i in range(1, 5):
+		assert(mundo.obtener_tipo(Vector3i(OX45 + i, 0, OX45)) == "agua", "antes de quitar la fuente, el flujo existe")
+	# Quitar la fuente: reemplazarla por un bloque (colocar_bloque ya reemplaza agua).
+	mundo.colocar_bloque(Vector3i(OX45, 0, OX45), "piedra", true)
+	mundo._drenar_escurrimiento_para_pruebas()
+	for i in range(1, 5):
+		assert(mundo.obtener_tipo(Vector3i(OX45 + i, 0, OX45)) == "", "sin fuente conectada, el semibloque %d debe secarse" % i)
+		assert(mundo.nivel_agua_en(Vector3i(OX45 + i, 0, OX45)) == -1, "un semibloque seco no conserva su nivel")
+	print("OK: quitar la fuente seca todo el flujo conectado a ella, en cadena.")
+
+	print("\n=== TEST 46: un semibloque con dos fuentes conectadas no se seca al perder solo una ===")
+	const OX46 := 1200
+	mundo.colocar_bloque(Vector3i(OX46, -1, OX46), "piedra")
+	mundo.colocar_bloque(Vector3i(OX46, 0, OX46), "agua")  # fuente A
+	mundo.colocar_bloque(Vector3i(OX46 - 1, 0, OX46), "piedra")
+	mundo.colocar_bloque(Vector3i(OX46, 0, OX46 + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX46, 0, OX46 - 1), "piedra")
+	for i in range(1, 5):
+		mundo.colocar_bloque(Vector3i(OX46 + i, -1, OX46), "piedra")
+		mundo.colocar_bloque(Vector3i(OX46 + i, 0, OX46 + 1), "piedra")
+		mundo.colocar_bloque(Vector3i(OX46 + i, 0, OX46 - 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX46 + 4, 0, OX46), "agua")  # fuente B, al otro extremo
+	mundo.colocar_bloque(Vector3i(OX46 + 5, 0, OX46), "piedra")
+	var semillas_46: Array[Vector3i] = [Vector3i(OX46, 0, OX46), Vector3i(OX46 + 4, 0, OX46)]
+	mundo._escurrir_agua_desde(semillas_46)
+	mundo._drenar_escurrimiento_para_pruebas()
+	for i in range(1, 4):
+		assert(mundo.obtener_tipo(Vector3i(OX46 + i, 0, OX46)) == "agua", "las 3 celdas intermedias se llenan")
+	mundo.colocar_bloque(Vector3i(OX46, 0, OX46), "piedra", true)  # quita la fuente A
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.obtener_tipo(Vector3i(OX46 + 1, 0, OX46)) == "", "la celda pegada a la fuente A quitada se seca (su único alimentador era A)")
+	assert(mundo.obtener_tipo(Vector3i(OX46 + 2, 0, OX46)) == "agua", "la celda 2 sigue alimentada por el flujo que viene de la fuente B")
+	assert(mundo.obtener_tipo(Vector3i(OX46 + 3, 0, OX46)) == "agua", "la celda 3, pegada a la fuente B, sigue existiendo")
+	print("OK: con dos fuentes, quitar una seca solo lo que dependía exclusivamente de ella.")
+
+	print("\n=== TEST 47: una columna de agua que cae se seca al quitar la fuente de arriba ===")
+	const OX47 := 1210
+	for dx_47 in range(-8, 9):
+		for dz_47 in range(-8, 9):
+			mundo.colocar_bloque(Vector3i(OX47 + dx_47, 0, OX47 + dz_47), "piedra")  # losa de piso
+	mundo.colocar_bloque(Vector3i(OX47, 5, OX47), "agua")  # fuente en el aire, 4 celdas sobre el piso
+	mundo._limite_escurrimiento = 12
+	var semillas_47: Array[Vector3i] = [Vector3i(OX47, 5, OX47)]
+	mundo._escurrir_agua_desde(semillas_47)
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.nivel_agua_en(Vector3i(OX47, 3, OX47)) == 0, "la columna cae: nivel de caída (0), se ve llena")
+	assert(mundo.obtener_tipo(Vector3i(OX47, 1, OX47)) == "agua", "la columna llega hasta el piso")
+	mundo.colocar_bloque(Vector3i(OX47, 5, OX47), "piedra", true)  # quita la fuente
+	mundo._drenar_escurrimiento_para_pruebas()
+	mundo._limite_escurrimiento = VoxelWorld.LIMITE_ESCURRIMIENTO
+	var restante_47 := 0
+	for x_47 in range(OX47 - 8, OX47 + 9):
+		for y_47 in range(-40, 8):
+			for z_47 in range(OX47 - 8, OX47 + 9):
+				if mundo.obtener_tipo(Vector3i(x_47, y_47, z_47)) == "agua":
+					restante_47 += 1
+	assert(restante_47 == 0, "sin la fuente de arriba, la columna y todo el flujo que esta alimentaba deben secarse (quedan %d celdas de agua)" % restante_47)
+	print("OK: al quitar la fuente, la columna que cae y su esparcido al aterrizar se secan por completo.")
+
+	print("\n=== Las 47 pruebas de BlueprintValidator pasaron correctamente ===")

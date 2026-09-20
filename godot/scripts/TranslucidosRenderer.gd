@@ -128,8 +128,19 @@ func _indexar_materiales() -> void:
 	assert(_material_por_tipo.size() == VoxelWorld.TIPOS_TRANSLUCIDOS.size(), "cada tipo en VoxelWorld.TIPOS_TRANSLUCIDOS necesita un material aquí")
 
 
-func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i) -> void:
+## "h_inferior"/"h_superior" (0..1, fracción de la altura del cubo) recortan
+## la cara para los semibloques de agua de flujo (ver VoxelWorld.
+## altura_agua_en()): la cara de ARRIBA se dibuja a "h_superior", y una cara
+## lateral solo cubre el tramo [h_inferior, h_superior]. Los valores por
+## defecto dan el cubo completo de siempre.
+func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i, h_inferior: float = 0.0, h_superior: float = 1.0) -> void:
 	var esquinas: Array[Vector3] = _esquinas_cara(centro, direccion)
+	var base_y: float = centro.y - 0.5
+	for i in range(esquinas.size()):
+		if direccion == ARRIBA:
+			esquinas[i].y = base_y + h_superior
+		elif direccion.y == 0:
+			esquinas[i].y = base_y + (h_superior if esquinas[i].y > centro.y else h_inferior)
 	var normal := Vector3(direccion.x, direccion.y, direccion.z)
 	var uvs := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
 	for i in [0, 1, 2, 0, 2, 3]:
@@ -156,12 +167,23 @@ func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
 				var celda: Vector3i = origen + Vector3i(dx, dy, dz)
 				if voxel_world.obtener_tipo(celda) != tipo:
 					continue
+				var h_propia: float = voxel_world.altura_agua_en(celda) if tipo == "agua" else 1.0
 				for direccion: Vector3i in VoxelWorld.VECINOS_3D:
 					var vecino: Vector3i = celda + direccion
 					var tipo_vecino: String = voxel_world.obtener_tipo(vecino)
-					if not _cara_visible(tipo, tipo_vecino, direccion):
+					var h_inferior := 0.0
+					if tipo == "agua" and tipo_vecino == "agua" and direccion.y == 0:
+						# Agua contra agua lateral: solo se dibuja el tramo por
+						# encima del vecino, si este es más bajo (semibloques de
+						# flujo); contra uno igual o más alto, se omite como
+						# siempre (cara interna del mismo cuerpo de agua).
+						var h_vecino: float = voxel_world.altura_agua_en(vecino)
+						if h_vecino >= h_propia:
+							continue
+						h_inferior = h_vecino
+					elif not _cara_visible(tipo, tipo_vecino, direccion):
 						continue
-					_agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, direccion)
+					_agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, direccion, h_inferior, h_propia)
 					hay_caras = true
 
 	if not hay_caras:

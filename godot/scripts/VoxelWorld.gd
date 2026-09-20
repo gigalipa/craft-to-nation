@@ -471,8 +471,23 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 	set_cell_item(celda, _id_por_tipo[tipo])
 	if por_jugador:
 		colocado_por_jugador[celda] = true
+	if tipo_anterior == "agua":
+		# Reemplazar agua (de flujo o fuente) por otra cosa: el agua de flujo
+		# que dependía de esta celda debe revisar si sigue conectada a una
+		# fuente (ver _procesar_secado()); si se reemplaza por más agua, la
+		# celda pasa a ser una fuente (sin entrada en _nivel_agua).
+		_nivel_agua.erase(celda)
+		if tipo != "agua":
+			_encolar_secado_alrededor(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo) or TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
+	# Solo si "por_jugador": _generar_terreno() coloca miles de bloques de
+	# agua uno por uno al arrancar el mundo (ver ese método) y no debe
+	# disparar un escurrimiento por cada uno — un futuro bloque de agua
+	# colocado a mano por el jugador (aún sin UI, ver sesión de diseño
+	# 2026-09-18) sí debe escurrir de inmediato, igual que al minar.
+	if tipo == "agua" and por_jugador:
+		_escurrir_agua_desde([celda])
 	return true
 
 
@@ -498,6 +513,13 @@ func minar_bloque(celda: Vector3i) -> bool:
 	colocado_por_jugador.erase(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
+	var vecinos_agua: Array[Vector3i] = []
+	for delta in VECINOS_3D:
+		var vecino: Vector3i = celda + delta
+		if obtener_tipo(vecino) == "agua":
+			vecinos_agua.append(vecino)
+	if not vecinos_agua.is_empty():
+		_escurrir_agua_desde(vecinos_agua)
 	return true
 
 
@@ -527,6 +549,306 @@ func corriente_en(x: int, z: int) -> Dictionary:
 
 func _celda_libre(celda: Vector3i) -> bool:
 	return get_cell_item(celda) == GridMap.INVALID_CELL_ITEM
+
+
+## Techo de celdas ESPARCIDAS LATERALMENTE (no de caída vertical, ver
+## _caer_hasta_el_fondo()) por sesión de escurrimiento (desde que la cola deja
+## de estar vacía hasta que vuelve a vaciarse, ver _process()): una caverna
+## gigante conectada a un lago no debe llenarse entera sin límite. Bajado de
+## 500 a 150 (2026-09-18, feedback jugando en vivo: "500 parece ser mucho").
+## Variable de instancia (no una constante usada directamente) solo para
+## poder forzar un tope pequeño y determinista en las pruebas — ver
+## _limite_escurrimiento más abajo. ponytail: límite fijo por sesión — si
+## algún día hace falta escurrir más allá de esto, la vía de escape es
+## repartirlo en más frames (ya diferido, ver FRENTES_ESCURRIMIENTO_POR_FRAME),
+## no subir este número.
+const LIMITE_ESCURRIMIENTO := 150
+
+## Cuántos "frentes" de la cola de escurrimiento se expanden por frame (ver
+## _process()) — controla qué tan rápido se ve "fluir" el agua nueva en vez
+## de aparecer de golpe (diseño 2026-09-18, feedback jugando en vivo: la
+## propagación instantánea no se sentía como agua corriendo). Bajarlo hace
+## el flujo más lento/visible; subirlo lo acerca de nuevo al llenado
+## instantáneo de la versión anterior. Un "frente" es una celda de agua ya
+## colocada cuyos 4 vecinos horizontales todavía no se exploraron — cada uno
+## puede colocar hasta 4 celdas nuevas (más su propia caída, sin tope), así
+## que el avance real por frame es mayor que este número, no igual a él.
+const FRENTES_ESCURRIMIENTO_POR_FRAME := 2
+
+## Niveles del agua de flujo (diseño 2026-09-20, pedido del usuario: "a medida
+## que el agua se aleja del bloque fuente, que se vea menos lleno; y que cada
+## semibloque esté conectado a al menos 1 fuente para existir"). El agua sigue
+## siendo el tipo "agua" (nada de lo que ya la consulta cambia): la fuente no
+## tiene entrada en _nivel_agua y se ve llena; una celda de flujo guarda su
+## nivel — NIVEL_CAIDA (0) para el agua que cae (se ve llena, como en
+## Minecraft) o 1..NIVEL_MAXIMO_FLUJO para el agua que corre en plano (cada
+## nivel más bajo que el anterior, ver altura_agua_en()). Una caída reinicia
+## el nivel: al aterrizar, el agua vuelve a esparcirse con alcance completo.
+const NIVEL_CAIDA := 0
+const NIVEL_MAXIMO_FLUJO := 7
+
+## Cuántas celdas de la cola de secado se revisan por frame (ver
+## _procesar_secado()) — mismo motivo que FRENTES_ESCURRIMIENTO_POR_FRAME: que
+## el agua se vea secarse gradualmente en vez de desaparecer de golpe.
+const FRENTES_SECADO_POR_FRAME := 3
+
+## Ver LIMITE_ESCURRIMIENTO — variable en vez de constante para que las
+## pruebas puedan forzar un tope pequeño en su propia instancia de
+## VoxelWorld sin afectar al resto del juego.
+var _limite_escurrimiento: int = LIMITE_ESCURRIMIENTO
+
+## Vector3i -> int: nivel de cada celda de agua de FLUJO (ver NIVEL_CAIDA/
+## NIVEL_MAXIMO_FLUJO). Una celda de agua sin entrada aquí es una fuente.
+var _nivel_agua: Dictionary = {}
+
+## Cola pendiente de escurrimiento: celdas de agua YA colocadas cuyos vecinos
+## horizontales todavía no se exploraron — ver _process()/
+## _procesar_frente_escurrimiento(). Persiste entre frames a propósito (ver
+## FRENTES_ESCURRIMIENTO_POR_FRAME): drenarla de una sola vez, como hacía la
+## primera versión de este método, es exactamente lo que se quitó para que
+## el escurrimiento se vea como un flujo gradual en vez de instantáneo.
+var _cola_escurrimiento: Array[Vector3i] = []
+
+## Celdas de agua de flujo cuya conexión con una fuente hay que volver a
+## comprobar (ver _procesar_secado()) — se llena cuando una celda de agua
+## deja de serlo (ver _encolar_secado_alrededor()).
+var _cola_secado: Array[Vector3i] = []
+
+## Cuenta las celdas esparcidas lateralmente en la sesión de escurrimiento
+## en curso (ver LIMITE_ESCURRIMIENTO) — se reinicia a 0 cada vez que
+## _cola_escurrimiento vuelve a quedar vacía (_process()), así que cada
+## sesión nueva parte de presupuesto completo otra vez.
+var _esparcidas_escurrimiento := 0
+
+
+## Vacía y dentro del rango vertical real del mundo (ver
+## _escurrir_agua_desde()) — sin este último chequeo, una celda de agua cerca
+## del límite de altura_en() podría escurrir indefinidamente hacia arriba/
+## abajo del rango donde el resto del juego busca celdas (GridMap no tiene
+## límite propio). Sin límite horizontal a propósito: GridMap tampoco tiene
+## columnas "fuera del mundo" reales, LIMITE_ESCURRIMIENTO ya acota
+## cualquier fuga en cualquier dirección, y las pruebas colocan bloques
+## sueltos en coordenadas fuera de ANCHO_MUNDO/LARGO_MUNDO a propósito para
+## aislarse entre sí.
+func _celda_escurrible(celda: Vector3i) -> bool:
+	if celda.y < ALTURA_BUSQUEDA_MIN or celda.y > ALTURA_BUSQUEDA_MAX:
+		return false
+	return _celda_libre(celda)
+
+
+## Nivel de flujo de "celda": -1 si no es agua de flujo (una fuente, o no es
+## agua), NIVEL_CAIDA (0) si es agua que cae, 1..NIVEL_MAXIMO_FLUJO si corre
+## en plano. Ver _nivel_agua.
+func nivel_agua_en(celda: Vector3i) -> int:
+	return _nivel_agua.get(celda, -1)
+
+
+## Altura visible (0..1, fracción del cubo) de la celda de agua "celda": 1.0
+## para una fuente o agua que cae, y (8 - nivel) / 8 para agua que corre en
+## plano (nivel 1 = 0.875, ..., nivel 7 = 0.125). Usada por
+## TranslucidosRenderer para dibujar los semibloques.
+func altura_agua_en(celda: Vector3i) -> float:
+	var nivel: int = _nivel_agua.get(celda, NIVEL_CAIDA)
+	if nivel <= NIVEL_CAIDA:
+		return 1.0
+	return float(NIVEL_MAXIMO_FLUJO + 1 - nivel) / float(NIVEL_MAXIMO_FLUJO + 1)
+
+
+## "Distancia a la fuente" efectiva de una celda de agua: 0 para una fuente
+## o agua que cae, el nivel para agua que corre en plano.
+func _nivel_efectivo(celda: Vector3i) -> int:
+	return maxi(_nivel_agua.get(celda, NIVEL_CAIDA), NIVEL_CAIDA)
+
+
+func _es_agua_de_flujo(celda: Vector3i) -> bool:
+	return _nivel_agua.has(celda) and obtener_tipo(celda) == "agua"
+
+
+## Coloca una celda de agua de flujo con "nivel" (ver NIVEL_CAIDA/
+## NIVEL_MAXIMO_FLUJO). colocar_bloque() ya emite bloque_translucido_cambiado;
+## el nivel se fija justo después, antes de que TranslucidosRenderer
+## reconstruya en su próximo frame.
+func _colocar_agua_flujo(celda: Vector3i, nivel: int) -> void:
+	colocar_bloque(celda, "agua")
+	_nivel_agua[celda] = nivel
+
+
+## Cambia el nivel de una celda de flujo que ya existe y avisa al renderer.
+func _cambiar_nivel_agua(celda: Vector3i, nivel: int) -> void:
+	_nivel_agua[celda] = nivel
+	bloque_translucido_cambiado.emit(celda)
+
+
+## Encola "semillas" (agua real, con al menos un vecino vacío) para que
+## _process() las escurra gradualmente — ver esa función y
+## _procesar_frente_escurrimiento() para el algoritmo (inspirado en
+## Minecraft, con niveles y secado — ver NIVEL_MAXIMO_FLUJO y
+## _procesar_secado()). Llamada desde minar_bloque() (siempre que la celda
+## minada tuviera agua vecina) y desde colocar_bloque() (solo cuando
+## "por_jugador", ver esa función). No hace ningún trabajo por sí misma —
+## solo encola; así que llamarla nunca bloquea el frame actual.
+func _escurrir_agua_desde(semillas: Array[Vector3i]) -> void:
+	_cola_escurrimiento.append_array(semillas)
+
+
+func _process(_delta: float) -> void:
+	if _cola_escurrimiento.is_empty():
+		_esparcidas_escurrimiento = 0
+	else:
+		for _i in range(FRENTES_ESCURRIMIENTO_POR_FRAME):
+			if not _procesar_frente_escurrimiento():
+				break
+	for _i in range(FRENTES_SECADO_POR_FRAME):
+		if not _procesar_secado():
+			break
+
+
+## Procesa un solo "frente" de _cola_escurrimiento (una celda de agua ya
+## colocada cuyos vecinos todavía no se exploraron). Regla (pedido del
+## usuario, 2026-09-20, evaluada sobre la celda VECINA según lo que tenga
+## debajo):
+##  - Primero agota la caída vertical del frente (_caer_hasta_el_fondo(),
+##    sin tope: está acotada por la altura del mundo). Al final de la caída
+##    hay suelo (sólido o fuente): desde ahí se esparce, con alcance
+##    renovado; o agua de flujo: se une a ella y la "alimenta" (pasa a
+##    caer, se ve llena), sin esparcirse más desde aquí.
+##  - Desde el fondo, para cada vecino horizontal vacío: si debajo hay vacío
+##    o agua de flujo (una caída), va SOLO hacia esos; si no hay ninguno,
+##    corre en plano a los que tienen debajo un sólido o una fuente. Cada
+##    celda nueva lleva un nivel más que el fondo (más baja/delgada), hasta
+##    NIVEL_MAXIMO_FLUJO, donde se detiene.
+##  - Un vecino que ya es agua de flujo con un nivel más alto (más delgado)
+##    que el que le llegaría se "mejora" al nivel menor y se vuelve a
+##    encolar — así una segunda fuente cercana puede rellenarlo mejor.
+## Respeta _limite_escurrimiento (que SOLO cuenta celdas nuevas esparcidas
+## lateralmente). La caída de una celda esparcida se resuelve siempre en el
+## mismo paso en que se coloca (nunca queda pendiente para un frente
+## futuro), así que ninguna celda puede quedar "flotando" sin importar en
+## qué frame se agote el tope (bug real, corregido 2026-09-18). Devuelve
+## false si la cola ya estaba vacía. Llamada varias veces por frame desde
+## _process(); las pruebas la llaman en un bucle propio (ver
+## _drenar_escurrimiento_para_pruebas()).
+func _procesar_frente_escurrimiento() -> bool:
+	if _cola_escurrimiento.is_empty():
+		return false
+	var origen: Vector3i = _cola_escurrimiento.pop_front()
+	if obtener_tipo(origen) != "agua":
+		return true  # se secó antes de que le tocara su turno
+	var fondo: Vector3i = _caer_hasta_el_fondo(origen)
+	var abajo: Vector3i = fondo + Vector3i(0, -1, 0)
+	if _es_agua_de_flujo(abajo):
+		# Cae sobre agua de flujo: se une a ella y la alimenta (pasa a caer).
+		if _nivel_agua[abajo] > NIVEL_CAIDA:
+			_cambiar_nivel_agua(abajo, NIVEL_CAIDA)
+			_cola_escurrimiento.append(abajo)
+		return true
+	var nivel: int = _nivel_efectivo(fondo)
+	if nivel >= NIVEL_MAXIMO_FLUJO:
+		return true
+	var con_caida: Array[Vector3i] = []
+	var planas: Array[Vector3i] = []
+	for direccion_xz in VECINOS_ORTOGONALES_XZ:
+		var lateral: Vector3i = fondo + Vector3i(direccion_xz.x, 0, direccion_xz.y)
+		if _es_agua_de_flujo(lateral):
+			if _nivel_agua[lateral] > nivel + 1:
+				_cambiar_nivel_agua(lateral, nivel + 1)
+				_cola_escurrimiento.append(lateral)
+			continue
+		if not _celda_escurrible(lateral):
+			continue
+		var debajo: Vector3i = lateral + Vector3i(0, -1, 0)
+		if _celda_escurrible(debajo) or _es_agua_de_flujo(debajo):
+			con_caida.append(lateral)
+		else:
+			planas.append(lateral)
+	var destinos: Array[Vector3i] = con_caida if not con_caida.is_empty() else planas
+	for lateral in destinos:
+		if _esparcidas_escurrimiento >= _limite_escurrimiento:
+			break
+		_colocar_agua_flujo(lateral, nivel + 1)
+		_esparcidas_escurrimiento += 1
+		_cola_escurrimiento.append(lateral)
+	return true
+
+
+## Deja caer agua desde "origen" hasta que ya no pueda seguir bajando
+## (encuentra suelo, otra agua, o el límite vertical real del mundo — ver
+## _celda_escurrible()), colocando agua que cae (NIVEL_CAIDA) en cada celda
+## de la caída, y devuelve la celda final (el "fondo" real). SIN tope de
+## seguridad propio a propósito: una caída vertical está acotada por la
+## altura real del mundo (unas 200 celdas en el peor caso), nunca puede ser
+## el origen de una fuga descontrolada como sí puede serlo el esparcido
+## lateral (una caverna enorme, ver LIMITE_ESCURRIMIENTO).
+func _caer_hasta_el_fondo(origen: Vector3i) -> Vector3i:
+	var fondo := origen
+	var abajo: Vector3i = fondo + Vector3i(0, -1, 0)
+	while _celda_escurrible(abajo):
+		_colocar_agua_flujo(abajo, NIVEL_CAIDA)
+		fondo = abajo
+		abajo = fondo + Vector3i(0, -1, 0)
+	return fondo
+
+
+## Encola para revisar (ver _procesar_secado()) los 6 vecinos de "celda" que
+## sean agua de flujo — llamado cada vez que una celda de agua deja de serlo
+## (reemplazada por un bloque, drenada, o ella misma secada). Barato cuando
+## no hay agua de flujo en el mundo (el caso normal): sale de inmediato.
+func _encolar_secado_alrededor(celda: Vector3i) -> void:
+	if _nivel_agua.is_empty():
+		return
+	for delta in VECINOS_3D:
+		var vecino: Vector3i = celda + delta
+		if _nivel_agua.has(vecino):
+			_cola_secado.append(vecino)
+
+
+## Verdadero si "celda" (agua de flujo) sigue conectada a una fuente: agua
+## de cualquier tipo justo encima (la alimenta cayendo), o —si corre en
+## plano— un vecino horizontal de agua con un nivel efectivo MENOR que el
+## suyo. Como cada eslabón tiene un nivel estrictamente menor, no puede
+## haber ciclos: la cadena termina en una fuente o en agua que cae, y esta a
+## su vez en agua encima, y así hasta una fuente.
+func _esta_alimentada(celda: Vector3i) -> bool:
+	if obtener_tipo(celda + Vector3i(0, 1, 0)) == "agua":
+		return true
+	var nivel: int = _nivel_agua[celda]
+	if nivel <= NIVEL_CAIDA:
+		return false
+	for direccion_xz in VECINOS_ORTOGONALES_XZ:
+		var vecino: Vector3i = celda + Vector3i(direccion_xz.x, 0, direccion_xz.y)
+		if obtener_tipo(vecino) == "agua" and _nivel_efectivo(vecino) < nivel:
+			return true
+	return false
+
+
+## Revisa una celda de _cola_secado: si ya no está conectada a una fuente,
+## la seca (quita el bloque) y encola a sus vecinos de flujo para que
+## revisen lo mismo — así el secado avanza en cadena, gradualmente, desde
+## donde se quitó la fuente. Devuelve false si la cola ya estaba vacía.
+func _procesar_secado() -> bool:
+	if _cola_secado.is_empty():
+		return false
+	var celda: Vector3i = _cola_secado.pop_front()
+	if not _es_agua_de_flujo(celda) or _esta_alimentada(celda):
+		return true
+	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+	_nivel_agua.erase(celda)
+	bloque_translucido_cambiado.emit(celda)
+	_encolar_secado_alrededor(celda)
+	return true
+
+
+## Drena TODAS las colas de agua pendientes (escurrimiento y secado) de una
+## sola vez, sin el límite por frame de _process() — solo para pruebas, que
+## necesitan el resultado final determinista sin simular el paso de frames
+## reales.
+func _drenar_escurrimiento_para_pruebas() -> void:
+	while not _cola_escurrimiento.is_empty() or not _cola_secado.is_empty():
+		while _procesar_frente_escurrimiento():
+			pass
+		while _procesar_secado():
+			pass
+	_esparcidas_escurrimiento = 0
 
 
 ## Coloca una puerta de 2 celdas verticales: "base" es la mitad inferior,
@@ -1039,6 +1361,8 @@ func drenar_agua(x: int, z: int) -> int:
 	var reemplazados := 0
 	while obtener_tipo(Vector3i(x, y, z)) == "agua":
 		set_cell_item(Vector3i(x, y, z), _id_por_tipo["tierra"])
+		_nivel_agua.erase(Vector3i(x, y, z))
+		_encolar_secado_alrededor(Vector3i(x, y, z))
 		bloque_translucido_cambiado.emit(Vector3i(x, y, z))
 		y += 1
 		reemplazados += 1

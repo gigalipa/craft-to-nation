@@ -213,4 +213,31 @@ func ejecutar_pruebas() -> void:
 	assert(conteo_vertices_t8b == 2 * 6, "tapar la celda superior con un sólido debe quitar únicamente su cara de arriba, dejando 2 caras (12 vértices)")
 	print("OK: cada celda de un pozo de agua apila su propia cara de arriba real (más profundidad = más capas), y un sólido encima solo quita la cara de esa celda puntual.")
 
+	print("\n=== TEST 9: un semibloque de agua de flujo dibuja su cara de arriba más baja, y la fuente vecina dibuja solo la franja lateral expuesta sobre él ===")
+	var mundo_t9: Node = VoxelWorld.new()
+	mundo_t9.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t9.cell_size = Vector3.ONE * 1.0
+	mundo_t9._indexar_biblioteca()
+	mundo_t9.colocar_bloque(Vector3i(0, 0, 0), "agua")  # fuente: altura 1.0
+	mundo_t9.colocar_bloque(Vector3i(1, 0, 0), "agua")
+	mundo_t9._nivel_agua[Vector3i(1, 0, 0)] = 4  # flujo nivel 4: altura (8-4)/8 = 0.5
+	assert(is_equal_approx(mundo_t9.altura_agua_en(Vector3i(0, 0, 0)), 1.0))
+	assert(is_equal_approx(mundo_t9.altura_agua_en(Vector3i(1, 0, 0)), 0.5))
+	var render_t9: Node3D = TranslucidosRendererScript.new()
+	render_t9.voxel_world = mundo_t9
+	render_t9._indexar_materiales()
+	render_t9.reconstruir_todo()
+	var chunk_t9: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
+	var vertices_t9: PackedVector3Array = render_t9._mesh_por_chunk["agua"][chunk_t9].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	# Fuente: arriba + 3 laterales contra aire + la franja hacia el semibloque
+	# (más bajo) = 5 caras. Semibloque: arriba + 3 laterales contra aire (la
+	# compartida se omite: el vecino es más alto) = 4 caras. Total 9 caras.
+	assert(vertices_t9.size() == 9 * 6, "fuente + semibloque deben dibujar 9 caras (54 vértices)")
+	var max_y_semibloque := -INF
+	for vertice_t9 in vertices_t9:
+		if vertice_t9.x > 1.0 - 0.0001 and vertice_t9.x < 2.0 + 0.0001 and vertice_t9.x != 1.0:
+			max_y_semibloque = maxf(max_y_semibloque, vertice_t9.y)
+	assert(is_equal_approx(max_y_semibloque, 0.5), "los vértices exclusivos del semibloque (x en (1, 2]) no deben subir de su altura 0.5, salió %f" % max_y_semibloque)
+	print("OK: el semibloque (nivel 4) llega a 0.5 de altura, y la fuente dibuja una franja lateral hacia él.")
+
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

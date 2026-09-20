@@ -8,9 +8,11 @@ const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
 ## typing (mismo patrón que el propio VoxelWorld), así que este envoltorio
 ## basta para que verificar_pendiente()/calcular_relleno()/altura_objetivo()
 ## evalúen el terreno REAL bajo un puesto, no la superficie del agua — el
-## agua bajo la huella se drena de todos modos al confirmar (ver
+## agua bajo la huella de un puesto se drena al confirmar (ver
 ## VoxelWorld.drenar_agua()), así que la pendiente y el relleno deben verse
-## contra lo que quedará después de drenar, no contra el nivel del mar. La
+## contra lo que quedará después de drenar, no contra el nivel del mar. Los
+## blueprints, en cambio, no drenan al confirmar: su agua se rellena celda a
+## celda al surtirlos (ver VoxelWorld._reemplazar_celda()). La
 ## tecla `B` ya no activa nivelación manual (ver _alternar_modo_colocar_
 ## blueprint() más abajo, Task 7).
 class _AlturaSinAgua:
@@ -611,8 +613,10 @@ func _columnas_rectangulo(ancho: int, alto: int) -> Array[Vector2i]:
 ## true si AL MENOS una columna real de la huella (esquina + columnas)
 ## está en tierra firme (no sobre agua) — evita construir puestos o
 ## blueprints enteramente flotando en medio de un lago. Basta con una
-## columna firme para anclar la construcción, y el resto del agua bajo la
-## huella se drena al confirmar (ver VoxelWorld.drenar_agua()). Antes solo
+## columna firme para anclar la construcción; el resto del agua bajo la
+## huella se drena al confirmar un puesto (ver VoxelWorld.drenar_agua()) o,
+## en un blueprint, se rellena celda a celda al surtirlo (ver
+## VoxelWorld._reemplazar_celda()). Antes solo
 ## revisaba las 4 esquinas del rectángulo delimitador — para una huella
 ## irregular (un edificio en L) esas esquinas pueden no ser parte real del
 ## edificio, así que ahora revisa TODAS las columnas reales (ver
@@ -1554,10 +1558,11 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 ## `base_y` válido para las puertas y despejes de ventanas/puertas) — si no,
 ## imprime el motivo (_mensaje_rechazo_blueprint()) y PERMANECE en modo
 ## colocar-blueprint. A diferencia de _procesar_clic_puesto() (que coloca el
-## marcador de inmediato), esto NO completa nada: NO modifica el terreno (el agua
-## y el follaje se retiran celda a celda al surtir), calcula el nivel base
-## (`base_y`, puerta a ras del suelo frontal) y la nivelación (_plan_nivelacion(): huella + fachada, excavación
-## y relleno), reubica blueprint["celdas_3d"] en el mundo e inicia UNA cola
+## marcador de inmediato), esto NO completa nada: NO modifica el terreno (el
+## agua y el follaje se retiran celda a celda al surtir), calcula el nivel
+## base (`base_y`, puerta a ras del suelo frontal) y la nivelación
+## (_plan_nivelacion(): huella + fachada, excavación y relleno), reubica
+## blueprint["celdas_3d"] en el mundo e inicia UNA cola
 ## de preparación del terreno (excavación primero, luego relleno;
 ## Construccion.gd, vía VoxelWorld.iniciar_construccion_fantasma()) más el
 ## orden de la estructura del edificio (VoxelWorld.edificio_orden, ver

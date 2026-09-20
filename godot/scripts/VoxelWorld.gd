@@ -100,6 +100,18 @@ const TIPOS_ESTRUCTURA := [
 ## bloque distinto en la MeshLibrary.
 const MATERIAL_REAL := {"piso": "tierra"}
 
+## Color con el que se destacan las puertas y ventanas de un edificio en
+## construcción, para que se distingan del resto de sus celdas fantasma. Una
+## sola fuente para la previsualización del blueprint (CamaraCenital.gd) y
+## los fantasmas ya emplazados (FantasmasDestacados.gd), así se leen como lo
+## mismo. Distintos a propósito del dorado de la previsualización
+## (CamaraCenital.COLOR_PUESTO_VALIDO) y del azul del bloque "fantasma".
+const COLOR_DESTACADO := {
+	"puerta_inferior": Color(1.0, 0.2, 0.8, 0.6),
+	"puerta_superior": Color(1.0, 0.2, 0.8, 0.6),
+	"ventana": Color(0.5, 1.0, 0.2, 0.6),
+}
+
 
 ## Traduce "tipo" (el tipo de bloque real, tal como lo devuelve
 ## obtener_tipo()) al material que representa para efectos de RECURSO —

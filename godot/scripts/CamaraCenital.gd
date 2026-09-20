@@ -945,7 +945,10 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		var z: int = esquina.y + rel.z
 		var caja: MeshInstance3D = _huella_blueprint[i]
 		var material: StandardMaterial3D = caja.material_override
-		material.albedo_color = color
+		# Puertas y ventanas se destacan solo si la colocación es válida; si
+		# no, siguen en rojo para no perder el aviso de rechazo.
+		var tipo_celda: String = _blueprint_activo["celdas_3d"][rel]
+		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
 	_actualizar_resumen_materiales(esquina, columnas, base_y, valida)
 

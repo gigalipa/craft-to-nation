@@ -1,6 +1,7 @@
 extends Camera3D
 
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
+const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
 
 ## Envoltorio para NiveladorTerreno: siempre llama a altura_en(x, z, true)
 ## (ignora agua). NiveladorTerreno solo necesita .altura_en(x, z) por duck
@@ -190,6 +191,10 @@ var _blueprint_activo: Dictionary = {}
 ## (se recalcula solo si cambia, o si se invalida al rotar/entrar al modo).
 const SIN_RESUMEN := Vector2i(-999999, -999999)
 var _resumen_blueprint_vigente: Vector2i = SIN_RESUMEN
+## Última esquina para la que se dibujaron los overlays de nivelación (mismo
+## criterio que _resumen_blueprint_vigente).
+var _overlay_vigente: Vector2i = SIN_RESUMEN
+var _overlay_nivelacion: Node3D
 
 const MENSAJES_BASE_Y := {
 	"pendiente": "Colocación rechazada: el desnivel entre una puerta y el suelo frente a ella supera el límite permitido.",
@@ -235,6 +240,8 @@ func _ready() -> void:
 	nivelador_puesto = NiveladorTerreno.new(_AlturaSinAgua.new(mundo))
 	_crear_huella_puesto()
 	_crear_area_accion()
+	_overlay_nivelacion = NivelacionOverlay.new()
+	add_child(_overlay_nivelacion)
 
 
 ## Pool de planos fantasma de tamaño fijo (MAX_ANCHO_HUELLA_PUESTO x
@@ -1002,6 +1009,36 @@ func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: b
 	hud.actualizar_materiales(nivelador_puesto.resumen_materiales(_blueprint_activo["celdas_3d"], total_relleno, recogido))
 
 
+## Dibuja los overlays del blueprint activo en "esquina" (evaluación "ev" de
+## _evaluar_blueprint()): las celdas reservadas delante de puertas y ventanas
+## (rojas si están bloqueadas, ver VoxelWorld.despeje_bloqueado()) y la región
+## nivelada (huella + fachada, por acción). Se recalcula solo si cambió la
+## esquina (o se invalidó al rotar/entrar al modo), y también cuando la
+## colocación es inválida, para ver qué la bloquea.
+func _actualizar_overlays(esquina: Vector2i, ev: Dictionary) -> void:
+	if esquina == _overlay_vigente:
+		return
+	_overlay_vigente = esquina
+	var fachada: Dictionary = ev["fachada"]
+	var plan: Dictionary = _plan_nivelacion(esquina, ev["columnas"], ev["resultado_base"]["base_y"], fachada)
+	var cava: Dictionary = {}  # columna mundial -> true
+	for celda: Vector3i in plan["excavacion"]:
+		cava[Vector2i(celda.x, celda.z)] = true
+	var region: Array = []
+	for rel: Vector2i in ev["columnas_union"]:
+		var columna: Vector2i = esquina + rel
+		var accion := "nivel"
+		if cava.has(columna):
+			accion = "cavar"
+		elif plan["relleno"].has(columna):
+			accion = "rellenar"
+		region.append({"columna": columna, "y": mundo.altura_en(columna.x, columna.y, true), "accion": accion})
+	var reservadas: Array = []
+	for celda: Vector3i in mundo.calcular_despeje(ev["celdas_mundo"]):
+		reservadas.append({"celda": celda, "bloqueada": mundo.despeje_bloqueado(celda, fachada)})
+	_overlay_nivelacion.mostrar(reservadas, region)
+
+
 ## Recalcula la posición/color de la previsualización 3D del blueprint
 ## activo según la celda bajo el cursor (esa celda es su CENTRO, igual que
 ## los puestos). A diferencia de los puestos (regla: fuera de la zona de
@@ -1038,6 +1075,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
 	_actualizar_resumen_materiales(esquina, ev, valida)
+	_actualizar_overlays(esquina, ev)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1204,6 +1242,7 @@ func _rotar_blueprint() -> void:
 		var rel: Vector3i = _offsets_huella_blueprint[i]
 		_offsets_huella_blueprint[i] = Vector3i(profundidad_previa - 1 - rel.z, rel.y, rel.x)
 	_resumen_blueprint_vigente = SIN_RESUMEN
+	_overlay_vigente = SIN_RESUMEN
 	_mostrar_huella_blueprint(true)
 
 
@@ -1232,6 +1271,7 @@ func _alternar_modo_colocar_blueprint() -> void:
 	_crear_huella_blueprint(_blueprint_activo["celdas_3d"])
 	modo_colocar_blueprint = true
 	_resumen_blueprint_vigente = SIN_RESUMEN
+	_overlay_vigente = SIN_RESUMEN
 	hud.mostrar_ficha_materiales()
 	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar, Ctrl+rueda para rotar).")
 
@@ -1241,6 +1281,8 @@ func _salir_de_modo_colocar_blueprint() -> void:
 	_mostrar_huella_blueprint(false)
 	_blueprint_activo = {}
 	hud.ocultar_ficha_materiales()
+	_overlay_nivelacion.ocultar()
+	_overlay_vigente = SIN_RESUMEN
 
 
 ## Sale de cualquier modo de interacción de esta cámara (colocar blueprint,

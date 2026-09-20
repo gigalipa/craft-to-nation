@@ -68,11 +68,12 @@ periféricos (no tienen puertas y conservan su nivelación actual).
 
 ### 2. Flujo en el mundo (`CamaraCenital.gd`, `VoxelWorld.gd`)
 
-- **Orden:** excavación → relleno → estructura. La excavación es otra cola
-  de un solo sentido de `Construccion.gd` con destino "aire", referenciada
-  en `VoxelWorld.edificio_excavacion_cola` (paralela a
-  `edificio_relleno_cola`). `surtir_construccion()` avanza primero la de
-  excavación, luego la de relleno, luego la estructura.
+- **Orden:** excavación → relleno → estructura. Excavación y relleno viajan
+  en **una sola cola de preparación** de `Construccion.gd` (excavación
+  primero, relleno después), con la misma referencia `edificio_relleno_cola`;
+  así `iniciar_construccion_fantasma()` no cambia y el orden se cumple solo.
+  Las celdas de excavación llevan destino `"aire"`, o `"fantasma"` si además
+  son celdas de la estructura.
 - **Celdas de estructura sobre terreno:** `colocar_bloque()` rechaza celdas
   ocupadas, así que la losa no puede nacer como fantasma sobre el terreno.
   Al cavarse una celda que coincide con una de la estructura, el paso deja
@@ -140,10 +141,8 @@ afectadas, con Godot 4.7.
 
 ## Riesgos conocidos
 
-- La cola de excavación reutiliza `Construccion.gd` con destino "aire": la
-  rama de "relleno huérfano" de `surtir_construccion()` asume que el paso
-  coloca un bloque; ambas ramas deben pasar por un único aplicador de paso
-  que conozca "aire" y "fantasma".
+- El aplicador de pasos (`_aplicar_paso_cola()`) es común a la rama de
+  relleno huérfano y a la de grupo de `surtir_construccion()`.
 - Blueprints con la losa a más de un bloque bajo la puerta (sótanos)
   implican `base_y` más profundo: la excavación sigue la misma regla y no
   requiere caso especial, pero conviene una prueba.

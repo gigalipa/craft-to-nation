@@ -502,6 +502,17 @@ func minar_bloque(celda: Vector3i) -> bool:
 		return false
 	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
 		return false
+	_retirar_bloque(celda)
+	return true
+
+
+## Retira "celda" SIN las guardas de minar_bloque() (agua, bedrock,
+## inmunidad de edificio, celda vacía): borra su "pareja" si la tiene, avisa
+## a los translúcidos y deja escurrir el agua vecina. Lo usan minar_bloque()
+## (que ya validó) y el paso de excavación de la cola de preparación
+## (_aplicar_paso_cola()), que necesita cavar celdas que YA pertenecen a un
+## edificio (la losa enterrada) y que minar_bloque() rechazaría.
+func _retirar_bloque(celda: Vector3i) -> void:
 	var tipo_anterior: String = obtener_tipo(celda)
 	if pareja.has(celda):
 		var otra: Vector3i = pareja[celda]
@@ -520,7 +531,6 @@ func minar_bloque(celda: Vector3i) -> bool:
 			vecinos_agua.append(vecino)
 	if not vecinos_agua.is_empty():
 		_escurrir_agua_desde(vecinos_agua)
-	return true
 
 
 func obtener_tipo(celda: Vector3i) -> String:
@@ -1217,7 +1227,9 @@ func eliminar_edificio(id: int) -> Vector2i:
 ## son las celdas del edificio en sí — esas NO pasan por Construccion.gd:
 ## se registran directamente en edificio_orden/edificio_tipos/
 ## edificio_progreso (progreso arranca en 0, todas fantasma). Devuelve el
-## id nuevo.
+## id nuevo. orden_relleno/tipos_relleno pueden incluir, ANTES del relleno,
+## celdas de excavación (terreno real) con tipo "aire" o "fantasma" — ver
+## _aplicar_paso_cola().
 func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictionary, orden_estructura: Array, tipos_estructura: Dictionary, metadata: Dictionary = {}) -> int:
 	for celda in orden_relleno:
 		colocar_bloque(celda, "fantasma")
@@ -1262,6 +1274,24 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 	return id
 
 
+## Aplica un paso ya avanzado de la cola de preparación del terreno (ver
+## Construccion.avanzar()): "resultado" trae {"celda", "tipo"}. "tierra"
+## (relleno) convierte la celda fantasma en bloque real. "aire" y "fantasma"
+## son EXCAVACIÓN: la celda es terreno real y se retira; "fantasma" indica
+## que además pertenece a la estructura del edificio (p. ej. la losa
+## enterrada) y por eso queda como fantasma en vez de vacía.
+func _aplicar_paso_cola(resultado: Dictionary) -> void:
+	var celda: Vector3i = resultado["celda"]
+	var tipo: String = resultado["tipo"]
+	if tipo == "aire" or tipo == "fantasma":
+		_retirar_bloque(celda)
+		if tipo == "fantasma":
+			colocar_bloque(celda, "fantasma")
+		return
+	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+	colocar_bloque(celda, tipo, true)
+
+
 ## Avanza, según a qué pertenezca "celda": si todavía es parte de una cola
 ## de RELLENO activa en Construccion.gd sin dueño (una celda de nivelación
 ## suelta, de un edificio ya eliminado — ver eliminar_edificio()), avanza
@@ -1283,8 +1313,7 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 		var resultado_relleno: Dictionary = Construccion.avanzar(id_relleno_huerfano)
 		if resultado_relleno.is_empty():
 			return {}
-		set_cell_item(resultado_relleno["celda"], GridMap.INVALID_CELL_ITEM)
-		colocar_bloque(resultado_relleno["celda"], resultado_relleno["tipo"], true)
+		_aplicar_paso_cola(resultado_relleno)
 		return {"completa": false, "metadata": {}}
 
 	var id: int = id_de_edificio(celda)
@@ -1295,8 +1324,7 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 		var id_cola_relleno: int = edificio_relleno_cola[id]
 		var resultado_grupo: Dictionary = Construccion.avanzar(id_cola_relleno)
 		if not resultado_grupo.is_empty():
-			set_cell_item(resultado_grupo["celda"], GridMap.INVALID_CELL_ITEM)
-			colocar_bloque(resultado_grupo["celda"], resultado_grupo["tipo"], true)
+			_aplicar_paso_cola(resultado_grupo)
 			if resultado_grupo["completa"]:
 				edificio_relleno_cola.erase(id)
 			return {"completa": false, "metadata": {}}

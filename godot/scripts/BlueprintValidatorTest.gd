@@ -1310,4 +1310,40 @@ func ejecutar_pruebas() -> void:
 	assert(restante_47 == 0, "sin la fuente de arriba, la columna y todo el flujo que esta alimentaba deben secarse (quedan %d celdas de agua)" % restante_47)
 	print("OK: al quitar la fuente, la columna que cae y su esparcido al aterrizar se secan por completo.")
 
-	print("\n=== Las 47 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 48: la cola de preparación cava terreno real (aire/fantasma) antes de rellenar, y la losa enterrada queda como fantasma ===")
+	const OX48 := 1300
+	var celda_cavar_48 := Vector3i(OX48, 1, OX48)        # terreno suelto, no es parte del edificio
+	var celda_losa_48 := Vector3i(OX48 + 1, 1, OX48)     # terreno que la losa del edificio va a ocupar
+	var celda_relleno_48 := Vector3i(OX48 + 2, 1, OX48)  # hueco por rellenar
+	mundo.colocar_bloque(celda_cavar_48, "tierra")
+	mundo.colocar_bloque(celda_losa_48, "piedra")
+	var orden_prep_48: Array[Vector3i] = [celda_cavar_48, celda_losa_48, celda_relleno_48]
+	var tipos_prep_48 := {celda_cavar_48: "aire", celda_losa_48: "fantasma", celda_relleno_48: "tierra"}
+	mundo.iniciar_construccion_fantasma(orden_prep_48, tipos_prep_48, [celda_losa_48], {celda_losa_48: "pared"})
+	assert(mundo.obtener_tipo(celda_cavar_48) == "tierra", "el terreno a cavar sigue intacto al emplazar")
+	assert(mundo.obtener_tipo(celda_losa_48) == "piedra")
+	assert(mundo.obtener_tipo(celda_relleno_48) == "fantasma")
+	assert(not mundo.minar_bloque(celda_losa_48), "la celda de la estructura es inmune al minado normal")
+
+	# Apunta al terreno suelto (no es del edificio): avanza la cola y lo cava.
+	var s1_48: Dictionary = mundo.surtir_construccion(celda_cavar_48)
+	assert(mundo.obtener_tipo(celda_cavar_48) == "", "la celda 'aire' queda vacía")
+	assert(mundo.obtener_tipo(celda_losa_48) == "piedra")
+	assert(not s1_48.get("completa", false))
+
+	# Apunta a la estructura: el grupo avanza su cola de preparación primero -> la losa
+	# se retira y queda fantasma (la estructura aún no avanza).
+	mundo.surtir_construccion(celda_losa_48)
+	assert(mundo.obtener_tipo(celda_losa_48) == "fantasma", "la celda 'fantasma' retira el terreno y deja el fantasma")
+	assert(mundo.obtener_tipo(celda_relleno_48) == "fantasma", "el relleno espera a que termine la excavación")
+
+	# Ahora el relleno, y por último la estructura.
+	var s3_48: Dictionary = mundo.surtir_construccion(celda_losa_48)
+	assert(mundo.obtener_tipo(celda_relleno_48) == "tierra")
+	assert(not s3_48.get("completa", false))
+	var s4_48: Dictionary = mundo.surtir_construccion(celda_losa_48)
+	assert(mundo.obtener_tipo(celda_losa_48) == "pared")
+	assert(s4_48["completa"])
+	print("OK: la cola cava (aire/fantasma) antes de rellenar y solo entonces avanza la estructura.")
+
+	print("\n=== Las 48 pruebas de BlueprintValidator pasaron correctamente ===")

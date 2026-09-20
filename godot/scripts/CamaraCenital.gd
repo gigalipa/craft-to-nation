@@ -194,7 +194,7 @@ var _resumen_blueprint_vigente: Vector2i = SIN_RESUMEN
 ## Última esquina para la que se dibujaron los overlays de nivelación (mismo
 ## criterio que _resumen_blueprint_vigente).
 var _overlay_vigente: Vector2i = SIN_RESUMEN
-var _overlay_nivelacion: Node3D
+var _overlay_nivelacion: NivelacionOverlay
 
 const MENSAJES_BASE_Y := {
 	"pendiente": "Colocación rechazada: el desnivel entre una puerta y el suelo frente a ella supera el límite permitido.",

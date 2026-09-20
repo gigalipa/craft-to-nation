@@ -3,7 +3,9 @@ extends Node3D
 ## Overlays de la previsualización del blueprint (ver
 ## docs/superpowers/specs/2026-09-20-nivelacion-frente-y-overlays-design.md):
 ## (1) las celdas RESERVADAS delante de puertas y ventanas — cajas cian, y
-## rojas las bloqueadas por un árbol, una estructura u otro edificio; (2) la
+## rojas las bloqueadas por un árbol, una estructura u otro edificio (la celda
+## que bloquea es sólida, así que la caja roja se dibuja SIN prueba de
+## profundidad: si no, quedaría escondida dentro del bloque); (2) la
 ## región NIVELADA — un plano por columna a ras del terreno actual, naranja
 ## donde se cava, azul donde se rellena y verde tenue donde ya está a nivel.
 ## Solo visual: CamaraCenital.gd calcula los datos y llama a mostrar()/
@@ -47,7 +49,7 @@ func mostrar(reservadas: Array, region: Array) -> void:
 	for r: Dictionary in reservadas:
 		var celda: Vector3i = r["celda"]
 		var color: Color = COLOR_BLOQUEADA if r["bloqueada"] else COLOR_RESERVADA
-		_agregar(_malla_caja, color, Vector3(celda) + Vector3(DESF, DESF, DESF))
+		_agregar(_malla_caja, color, Vector3(celda) + Vector3(DESF, DESF, DESF), r["bloqueada"])
 	for p: Dictionary in region:
 		var columna: Vector2i = p["columna"]
 		_agregar(_malla_plano, COLOR_REGION[p["accion"]], Vector3(columna.x + DESF, p["y"] + ALTURA_PLANO, columna.y + DESF))
@@ -60,12 +62,17 @@ func ocultar() -> void:
 
 
 ## Un puñado de nodos por actualización (y solo cuando cambia la esquina), así
-## que se recrean todos en vez de mantener un pool.
-func _agregar(malla: Mesh, color: Color, posicion: Vector3) -> void:
+## que se recrean todos en vez de mantener un pool. "sin_profundidad" (solo las
+## cajas bloqueadas) las deja ver a través del bloque que las esconde, y
+## render_priority 1 las dibuja encima de los demás overlays translúcidos.
+func _agregar(malla: Mesh, color: Color, posicion: Vector3, sin_profundidad: bool = false) -> void:
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = color
+	if sin_profundidad:
+		material.no_depth_test = true
+		material.render_priority = 1
 	var nodo := MeshInstance3D.new()
 	nodo.mesh = malla
 	nodo.material_override = material

@@ -1497,4 +1497,56 @@ func ejecutar_pruebas() -> void:
 	mundo_d.eliminar_edificio(id_50b)
 	print("OK: la señal de deconstrucción se emite con el progreso ya actualizado.")
 
-	print("\n=== Las 54 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 51: verificar_despejes() acepta terreno natural sobre el nivel en una columna a nivelar, y sigue rechazando árbol, estructura y terreno fuera de la fachada ===")
+	const OX51 := 1500
+	var celdas_51 := {
+		Vector3i(OX51, 1, OX51): "puerta_inferior",
+		Vector3i(OX51, 2, OX51): "puerta_superior",
+	}
+	var despeje_51: Array = mundo_d.calcular_despeje(celdas_51)
+	assert(despeje_51.size() == 16, "4 direcciones x 2 pasos x 2 niveles")
+	for celda_51 in despeje_51:
+		mundo_d.colocar_bloque(celda_51, "tierra")
+	var niveles_51: Dictionary = {}
+	for celda_51 in despeje_51:
+		niveles_51[Vector2i(celda_51.x, celda_51.z)] = 0
+	assert(not mundo_d.verificar_despejes(celdas_51), "sin nivelación, el terreno en el despeje rechaza (comportamiento anterior)")
+	assert(mundo_d.verificar_despejes(celdas_51, niveles_51), "terreno natural sobre el nivel de una columna a nivelar no bloquea")
+
+	var celda_prueba_51: Vector3i = despeje_51[0]
+	var columna_prueba_51 := Vector2i(celda_prueba_51.x, celda_prueba_51.z)
+	mundo_d.set_cell_item(celda_prueba_51, GridMap.INVALID_CELL_ITEM)
+	mundo_d.colocar_bloque(celda_prueba_51, "madera")
+	assert(not mundo_d.verificar_despejes(celdas_51, niveles_51), "un árbol sigue bloqueando")
+	mundo_d.set_cell_item(celda_prueba_51, GridMap.INVALID_CELL_ITEM)
+	mundo_d.colocar_bloque(celda_prueba_51, "pared")
+	assert(not mundo_d.verificar_despejes(celdas_51, niveles_51), "una estructura sigue bloqueando")
+	mundo_d.set_cell_item(celda_prueba_51, GridMap.INVALID_CELL_ITEM)
+	mundo_d.colocar_bloque(celda_prueba_51, "tierra")
+	assert(mundo_d.verificar_despejes(celdas_51, niveles_51), "restaurado el terreno, vuelve a aceptarse")
+
+	var niveles_sin_51: Dictionary = niveles_51.duplicate()
+	niveles_sin_51.erase(columna_prueba_51)
+	assert(not mundo_d.verificar_despejes(celdas_51, niveles_sin_51), "terreno en una columna que no se nivela sigue bloqueando")
+	var niveles_altos_51: Dictionary = niveles_51.duplicate()
+	niveles_altos_51[columna_prueba_51] = celda_prueba_51.y
+	assert(mundo_d.despeje_bloqueado(celda_prueba_51, niveles_altos_51), "una celda que no está POR ENCIMA del nivel sigue bloqueando")
+	assert(not mundo_d.despeje_bloqueado(celda_prueba_51, niveles_51))
+	print("OK: el terreno natural sobre el nivel no bloquea; árbol, estructura y columnas fuera de la fachada sí.")
+
+	print("\n=== TEST 52: es_terreno_natural() distingue terreno de árbol, estructura, fantasma, agua, vacío y edificio ===")
+	const OX52 := 1510
+	var c_tierra_52 := Vector3i(OX52, 1, OX52)
+	mundo_d.colocar_bloque(c_tierra_52, "tierra")
+	assert(mundo_d.es_terreno_natural(c_tierra_52))
+	assert(not mundo_d.es_terreno_natural(Vector3i(OX52 + 1, 1, OX52)), "celda vacía")
+	for tipo_52 in ["madera", "follaje", "pared", "fantasma", "agua"]:
+		var celda_52 := Vector3i(OX52 + 2, 1, OX52)
+		mundo_d.set_cell_item(celda_52, GridMap.INVALID_CELL_ITEM)
+		mundo_d.colocar_bloque(celda_52, tipo_52)
+		assert(not mundo_d.es_terreno_natural(celda_52), "no es terreno natural: " + tipo_52)
+	mundo_d.registrar_edificio([c_tierra_52])
+	assert(not mundo_d.es_terreno_natural(c_tierra_52), "una celda que pertenece a un edificio no es terreno")
+	print("OK: solo el suelo/subsuelo libre cuenta como terreno natural.")
+
+	print("\n=== Las 56 pruebas de BlueprintValidator pasaron correctamente ===")

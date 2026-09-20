@@ -299,23 +299,49 @@ func calcular_despeje(celdas_mundo: Dictionary) -> Array:
 	return despeje.keys()
 
 
+## true si "celda" es terreno natural (suelo o subsuelo libre): ocupada y ni
+## árbol, ni estructura, ni "fantasma", ni agua, ni parte de un edificio.
+func es_terreno_natural(celda: Vector3i) -> bool:
+	var tipo: String = obtener_tipo(celda)
+	if tipo == "" or tipo == "fantasma" or tipo == "agua":
+		return false
+	if TIPOS_ARBOL.has(tipo) or TIPOS_ESTRUCTURA.has(tipo):
+		return false
+	return not celda_a_edificio.has(celda)
+
+
+## true si la celda de despeje "celda" impide colocar el edificio: está
+## ocupada, SALVO que sea terreno natural por ENCIMA del nivel de una columna
+## que se va a nivelar ("terreno_a_nivelar": columna Vector2i -> nivel G, la
+## fachada de un blueprint) — ese terreno se cava al construir, así que no
+## bloquea. Árboles, estructuras y otros edificios siempre bloquean. Usada por
+## verificar_despejes() y por el overlay de celdas reservadas.
+func despeje_bloqueado(celda: Vector3i, terreno_a_nivelar: Dictionary = {}) -> bool:
+	if obtener_tipo(celda) == "":
+		return false
+	var columna := Vector2i(celda.x, celda.z)
+	if terreno_a_nivelar.has(columna) and celda.y > terreno_a_nivelar[columna] and es_terreno_natural(celda):
+		return false
+	return true
+
+
 ## Valida si "celdas_mundo" (las celdas estructurales de un edificio a
 ## punto de colocarse, mismo formato que calcular_despeje()) respeta la
 ## regla de despeje: (a) ninguna de sus propias celdas de despeje puede
-## estar físicamente ocupada (terreno, árbol, o cualquier estructura —
-## cualquier bloque real tiene un tipo no vacío, así que basta comparar
-## contra "" sin enumerar tipos "sólidos"), y (b) ninguna de sus celdas
-## ESTRUCTURALES puede caer dentro del despeje YA RESERVADO de otro
-## edificio (celda_a_despeje). El despeje del edificio nuevo NUNCA se
-## compara contra el despeje ajeno — dos despejes distintos pueden
+## estar bloqueada (ver despeje_bloqueado(): cualquier bloque real tiene un
+## tipo no vacío, salvo el terreno natural que se va a nivelar), y (b)
+## ninguna de sus celdas ESTRUCTURALES puede caer dentro del despeje YA
+## RESERVADO de otro edificio (celda_a_despeje). El despeje del edificio nuevo
+## NUNCA se compara contra el despeje ajeno — dos despejes distintos pueden
 ## solaparse libremente (puertas enfrentadas, ventana sobre despeje de
-## puerta ajena, etc.), ver spec punto de diseño.
-func verificar_despejes(celdas_mundo: Dictionary) -> bool:
+## puerta ajena, etc.), ver spec punto de diseño. "terreno_a_nivelar"
+## omitido = comportamiento anterior (lo usa Player._declarar_edificio()).
+func verificar_despejes(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> bool:
 	for celda in celdas_mundo:
 		if celda_a_despeje.has(celda):
 			return false
 	for celda_despeje in calcular_despeje(celdas_mundo):
-		if obtener_tipo(celda_despeje) != "":
+		if despeje_bloqueado(celda_despeje, terreno_a_nivelar):
 			return false
 	return true
 

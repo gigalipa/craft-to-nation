@@ -196,6 +196,11 @@ const MENSAJES_BASE_Y := {
 	"puertas": "Colocación rechazada: las puertas de este edificio quedarían a niveles distintos (el suelo frente a cada una tiene otra altura).",
 	"frente": "Colocación rechazada: el suelo frente a una puerta es agua o queda fuera del mundo.",
 }
+
+## Altura en bloques del despeje de una puerta: hasta dónde se revisa que el
+## frente (la fachada) esté libre de árboles y estructuras.
+const ALTURA_PUERTA := 2
+
 var _huella_blueprint: Array[MeshInstance3D] = []
 var _offsets_huella_blueprint: Array[Vector3i] = []
 
@@ -886,13 +891,102 @@ func _material_excavado(celdas: Array[Vector3i]) -> Dictionary:
 	return recogido
 
 
+## "columnas_mundo" (Vector2i mundiales) como offsets relativos a "esquina" —
+## el mismo formato que "columnas" de la huella.
+func _columnas_relativas(esquina: Vector2i, columnas_mundo: Array) -> Array[Vector2i]:
+	var relativas: Array[Vector2i] = []
+	for columna: Vector2i in columnas_mundo:
+		relativas.append(columna - esquina)
+	return relativas
+
+
+## Celdas mundiales del blueprint activo colocado en "esquina" con su celda
+## rel.y=0 en "base_y" (Vector3i real -> tipo).
+func _celdas_mundo_blueprint(esquina: Vector2i, base_y: int) -> Dictionary:
+	var celdas_mundo: Dictionary = {}
+	for rel in _blueprint_activo["celdas_3d"]:
+		var real := Vector3i(esquina.x + rel.x, base_y + rel.y, esquina.y + rel.z)
+		celdas_mundo[real] = _blueprint_activo["celdas_3d"][rel]
+	return celdas_mundo
+
+
+## Todo lo que hay que cavar y rellenar para emplazar el blueprint: la huella
+## (hasta `base_y - 1`) más la fachada (cada columna a su nivel). Fuente ÚNICA
+## del clic, el resumen de materiales y los overlays. "excavacion" son celdas
+## de terreno REAL (sin las ya vacías), huella primero; "relleno" es columna
+## mundial -> cantidad de bloques.
+func _plan_nivelacion(esquina: Vector2i, columnas: Array[Vector2i], base_y: int, fachada: Dictionary) -> Dictionary:
+	var excavacion: Array[Vector3i] = _celdas_excavacion(esquina, columnas, base_y)
+	var relleno: Dictionary = nivelador_puesto.calcular_relleno_hasta(esquina, columnas, base_y - 1)
+	var nivelacion_fachada: Dictionary = nivelador_puesto.calcular_nivelacion_fachada(fachada)
+	for celda: Vector3i in nivelacion_fachada["excavacion"]:
+		if mundo.get_cell_item(celda) != GridMap.INVALID_CELL_ITEM:
+			excavacion.append(celda)
+	relleno.merge(nivelacion_fachada["relleno"])
+	return {"excavacion": excavacion, "relleno": relleno}
+
+
+## Evalúa TODAS las condiciones para emplazar el blueprint activo en
+## "esquina" sin tocar el mundo: fuente única de la previsualización y del
+## clic (ver _mensaje_rechazo_blueprint()). "columnas_union" es la huella más
+## la fachada (lo que se nivela), como offsets relativos a "esquina".
+func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
+	var columnas: Array[Vector2i] = _blueprint_activo["huella_relativa"]
+	var resultado_base: Dictionary = _base_y_blueprint(esquina)
+	var fachada: Dictionary = resultado_base["fachada"]
+	var columnas_fachada: Array[Vector2i] = _columnas_relativas(esquina, fachada.keys())
+	var columnas_union: Array[Vector2i] = []
+	columnas_union.append_array(columnas)
+	columnas_union.append_array(columnas_fachada)
+	var celdas_mundo: Dictionary = _celdas_mundo_blueprint(esquina, resultado_base["base_y"])
+	return {
+		"columnas": columnas,
+		"resultado_base": resultado_base,
+		"fachada": fachada,
+		"columnas_fachada": columnas_fachada,
+		"columnas_union": columnas_union,
+		"celdas_mundo": celdas_mundo,
+		"zona_correcta": _huella_en_zona_correcta(esquina, columnas, _blueprint_activo["zona_permitida"]),
+		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas_union),
+		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, _altura_blueprint(_blueprint_activo)),
+		"resultado_fachada": mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA),
+		"choca": _huella_choca_con_otro_puesto(esquina, columnas_union),
+		"en_tierra": _huella_tiene_columna_en_tierra(esquina, columnas),
+		"despejes_ok": mundo.verificar_despejes(celdas_mundo, fachada),
+	}
+
+
+## Motivo de rechazo de una evaluación (_evaluar_blueprint()), en el mismo
+## orden en que se validaba al hacer clic; "" si es válida. La previsualización
+## considera válida exactamente lo que el clic aceptaría.
+func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
+	if not ev["zona_correcta"]:
+		return "Colocación rechazada: esta zona no acepta este blueprint."
+	if not ev["relieve_valido"]:
+		return "Colocación rechazada: la pendiente de esta huella (o del frente de sus puertas) supera el límite permitido."
+	if not ev["resultado_huella"]["valida"]:
+		return "Colocación rechazada: la huella choca con un recurso de madera o una estructura existente."
+	if not ev["resultado_fachada"]["valida"]:
+		return "Colocación rechazada: el frente de una puerta choca con un recurso de madera o una estructura existente."
+	if ev["choca"]:
+		return "Colocación rechazada: la huella (o el frente de una puerta) choca con un puesto o construcción ya colocada."
+	if not ev["en_tierra"]:
+		return "Colocación rechazada: la huella necesita al menos una columna sobre tierra firme."
+	if not ev["resultado_base"]["valido"]:
+		return MENSAJES_BASE_Y[ev["resultado_base"]["motivo"]]
+	if not ev["despejes_ok"]:
+		return "Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio."
+	return ""
+
+
 ## Actualiza la ficha de materiales del HUD para el blueprint activo en
-## "esquina". Se recalcula solo si cambió la esquina (o se invalidó, ver
-## SIN_RESUMEN). Si la colocación no es válida muestra "-".
+## "esquina" (evaluación "ev" de _evaluar_blueprint()). Se recalcula solo si
+## cambió la esquina (o se invalidó, ver SIN_RESUMEN). Si la colocación no es
+## válida muestra "-". Cuenta la nivelación de la huella Y de la fachada.
 ## ponytail: sobre una huella con agua, la previsualización cuenta la
 ## excavación con el fondo real y no con la tierra que dejará el drenado
 ## (que ocurre al confirmar); la diferencia solo afecta al número mostrado.
-func _actualizar_resumen_materiales(esquina: Vector2i, columnas: Array[Vector2i], base_y: int, valida: bool) -> void:
+func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: bool) -> void:
 	var clave: Vector2i = esquina if valida else SIN_RESUMEN
 	if clave == _resumen_blueprint_vigente:
 		return
@@ -900,11 +994,11 @@ func _actualizar_resumen_materiales(esquina: Vector2i, columnas: Array[Vector2i]
 	if not valida:
 		hud.actualizar_materiales({})
 		return
-	var relleno: Dictionary = nivelador_puesto.calcular_relleno_hasta(esquina, columnas, base_y - 1)
+	var plan: Dictionary = _plan_nivelacion(esquina, ev["columnas"], ev["resultado_base"]["base_y"], ev["fachada"])
 	var total_relleno := 0
-	for cantidad in relleno.values():
+	for cantidad in plan["relleno"].values():
 		total_relleno += cantidad
-	var recogido: Dictionary = _material_excavado(_celdas_excavacion(esquina, columnas, base_y))
+	var recogido: Dictionary = _material_excavado(plan["excavacion"])
 	hud.actualizar_materiales(nivelador_puesto.resumen_materiales(_blueprint_activo["celdas_3d"], total_relleno, recogido))
 
 
@@ -917,27 +1011,20 @@ func _actualizar_resumen_materiales(esquina: Vector2i, columnas: Array[Vector2i]
 ## bloque real si se confirmara ahora mismo (mismo cálculo que
 ## _procesar_clic_blueprint(): esquina + rel, en `base_y` — el nivel al que
 ## la puerta queda a ras del suelo frontal, ver `_base_y_blueprint()`), así la previsualización
-## no miente sobre dónde va a caer la construcción.
+## no miente sobre dónde va a caer la construcción. La validez es exactamente
+## la del clic (`_mensaje_rechazo_blueprint()`), incluidos los despejes y el
+## frente nivelado.
 func _actualizar_previsualizacion_blueprint() -> void:
 	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
 	var ancho: int = _blueprint_activo["ancho"]
 	var alto: int = _blueprint_activo["profundidad"]
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(ancho / 2, alto / 2)
-	var columnas: Array[Vector2i] = _blueprint_activo["huella_relativa"]
-
-	var zona_correcta: bool = _huella_en_zona_correcta(esquina, columnas, _blueprint_activo["zona_permitida"])
-	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, columnas)
-	var altura_blueprint: int = _altura_blueprint(_blueprint_activo)
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas, altura_blueprint)
-	var resultado_base: Dictionary = _base_y_blueprint(esquina)
-	var valida: bool = zona_correcta and relieve_valido and resultado_huella["valida"] \
-			and resultado_base["valido"] \
-			and not _huella_choca_con_otro_puesto(esquina, columnas) \
-			and _huella_tiene_columna_en_tierra(esquina, columnas)
+	var ev: Dictionary = _evaluar_blueprint(esquina)
+	var valida: bool = _mensaje_rechazo_blueprint(ev) == ""
 	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
 
-	var base_y: int = resultado_base["base_y"]
+	var base_y: int = ev["resultado_base"]["base_y"]
 	for i in range(_offsets_huella_blueprint.size()):
 		var rel: Vector3i = _offsets_huella_blueprint[i]
 		var x: int = esquina.x + rel.x
@@ -950,7 +1037,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		var tipo_celda: String = _blueprint_activo["celdas_3d"][rel]
 		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
-	_actualizar_resumen_materiales(esquina, columnas, base_y, valida)
+	_actualizar_resumen_materiales(esquina, ev, valida)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1423,16 +1510,18 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 
 
 ## Confirma la colocación del blueprint activo en la celda bajo el cursor
-## si las validaciones (zona correcta, relieve, huella libre, sin choque,
-## esquina en tierra firme, nivel base `base_y` válido para las puertas y
-## despejes de ventanas/puertas) pasan — si no, imprime el motivo y PERMANECE
-## en modo colocar-blueprint. A diferencia de _procesar_clic_puesto() (que
-## coloca el marcador de inmediato), esto NO completa nada: drena el agua,
-## calcula el nivel base (`base_y`, puerta a ras del suelo frontal), la
-## excavación y el relleno, reubica blueprint["celdas_3d"] en el mundo e
-## inicia UNA cola de preparación del terreno (excavación primero, luego
-## relleno; Construccion.gd, vía VoxelWorld.iniciar_construccion_fantasma())
-## más el orden de la estructura del edificio (VoxelWorld.edificio_orden, ver
+## si _evaluar_blueprint() la acepta (zona, relieve sobre huella + fachada,
+## huella y frente libres, sin choque, esquina en tierra firme, nivel base
+## `base_y` válido para las puertas y despejes de ventanas/puertas) — si no,
+## imprime el motivo (_mensaje_rechazo_blueprint()) y PERMANECE en modo
+## colocar-blueprint. A diferencia de _procesar_clic_puesto() (que coloca el
+## marcador de inmediato), esto NO completa nada: drena el agua bajo la huella
+## y la fachada, calcula el nivel base (`base_y`, puerta a ras del suelo
+## frontal) y la nivelación (_plan_nivelacion(): huella + fachada, excavación
+## y relleno), reubica blueprint["celdas_3d"] en el mundo e inicia UNA cola
+## de preparación del terreno (excavación primero, luego relleno;
+## Construccion.gd, vía VoxelWorld.iniciar_construccion_fantasma()) más el
+## orden de la estructura del edificio (VoxelWorld.edificio_orden, ver
 ## VoxelWorld.ordenar_celdas_edificio()) — la finalización real ocurre
 ## después, celda por celda, cuando el jugador la surte (ver
 ## Player._minar()/_completar_construccion()); la estructura solo avanza
@@ -1443,54 +1532,35 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var alto: int = _blueprint_activo["profundidad"]
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(ancho / 2, alto / 2)
-	var columnas: Array[Vector2i] = _blueprint_activo["huella_relativa"]
 
-	if not _huella_en_zona_correcta(esquina, columnas, _blueprint_activo["zona_permitida"]):
-		print("Colocación rechazada: esta zona no acepta este blueprint.")
+	var ev: Dictionary = _evaluar_blueprint(esquina)
+	var mensaje: String = _mensaje_rechazo_blueprint(ev)
+	if mensaje != "":
+		print(mensaje)
 		return
-	if not nivelador_puesto.verificar_pendiente(esquina, columnas):
-		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
-		return
-	var altura_blueprint: int = _altura_blueprint(_blueprint_activo)
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas, altura_blueprint)
-	if not resultado_huella["valida"]:
-		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
-		return
-	if _huella_choca_con_otro_puesto(esquina, columnas):
-		print("Colocación rechazada: la huella choca con un puesto o construcción ya colocada.")
-		return
-	if not _huella_tiene_columna_en_tierra(esquina, columnas):
-		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
-		return
+	var columnas: Array[Vector2i] = ev["columnas"]
+	var fachada: Dictionary = ev["fachada"]
+	var base_y: int = ev["resultado_base"]["base_y"]
+	var celdas_mundo: Dictionary = ev["celdas_mundo"]
 
-	var resultado_base: Dictionary = _base_y_blueprint(esquina)
-	if not resultado_base["valido"]:
-		print(MENSAJES_BASE_Y[resultado_base["motivo"]])
-		return
-	var base_y: int = resultado_base["base_y"]
-	var celdas_mundo: Dictionary = {}  # Vector3i real -> tipo
-	for rel in _blueprint_activo["celdas_3d"]:
-		var real := Vector3i(esquina.x + rel.x, base_y + rel.y, esquina.y + rel.z)
-		celdas_mundo[real] = _blueprint_activo["celdas_3d"][rel]
-	if not mundo.verificar_despejes(celdas_mundo):
-		print("Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio.")
-		return
-
-	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
+	for celda_follaje in ev["resultado_huella"]["follaje_a_eliminar"]:
+		mundo.eliminar_follaje(celda_follaje)
+	for celda_follaje in ev["resultado_fachada"]["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 
 	var total_drenado := 0
-	for rel in columnas:
+	for rel in ev["columnas_union"]:
 		total_drenado += mundo.drenar_agua(esquina.x + rel.x, esquina.y + rel.y)
 	if total_drenado > 0:
 		print("Agua drenada bajo la construcción: ", total_drenado, " bloques reemplazados por tierra.")
 
 	# Cola de "preparación del terreno" (ver VoxelWorld._aplicar_paso_cola()):
-	# primero se CAVA (terreno real sobre la losa), luego se RELLENA (columnas
-	# por debajo del nivel de la losa). Una celda cavada que además es de la
-	# estructura (la losa enterrada) queda "fantasma", no vacía.
-	var excavacion: Array[Vector3i] = _celdas_excavacion(esquina, columnas, base_y)
-	var relleno: Dictionary = nivelador_puesto.calcular_relleno_hasta(esquina, columnas, base_y - 1)
+	# primero se CAVA (terreno real sobre la losa y sobre el nivel de la
+	# fachada), luego se RELLENA (columnas por debajo). Una celda cavada que
+	# además es de la estructura (la losa enterrada) queda "fantasma", no vacía.
+	var plan: Dictionary = _plan_nivelacion(esquina, columnas, base_y, fachada)
+	var excavacion: Array[Vector3i] = plan["excavacion"]
+	var relleno: Dictionary = plan["relleno"]
 	var relleno_orden: Array[Vector3i] = []
 	var tipos_relleno: Dictionary = {}
 	for celda_e in excavacion:
@@ -1523,9 +1593,10 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		"ancho": ancho,
 		"profundidad": alto,
 		"base_y": base_y,
+		"fachada": fachada,
 	}
 	var id_edificio: int = mundo.iniciar_construccion_fantasma(relleno_orden, tipos_relleno, orden_estructura, celdas_mundo, metadata)
 	metadata["id_edificio"] = id_edificio
-	print("Construcción fantasma iniciada en (", esquina.x, ", ", esquina.y, ") — excavación: ", excavacion.size(), " bloques, relleno: ", total_relleno, " — surtir para completarla.")
+	print("Construcción fantasma iniciada en (", esquina.x, ", ", esquina.y, ") — excavación: ", excavacion.size(), " bloques, relleno: ", total_relleno, " (huella + frente de las puertas) — surtir para completarla.")
 
 	_salir_de_modo_colocar_blueprint()

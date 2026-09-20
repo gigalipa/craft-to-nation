@@ -240,4 +240,32 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(max_y_semibloque, 0.5), "los vértices exclusivos del semibloque (x en (1, 2]) no deben subir de su altura 0.5, salió %f" % max_y_semibloque)
 	print("OK: el semibloque (nivel 4) llega a 0.5 de altura, y la fuente dibuja una franja lateral hacia él.")
 
+	print("\n=== TEST 10: quitar un fantasma que estaba justo encima del agua le devuelve la cara de arriba (el renderer se entera) ===")
+	var mundo_t10: Node = VoxelWorld.new()
+	mundo_t10.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t10.cell_size = Vector3.ONE * 1.0
+	mundo_t10._indexar_biblioteca()
+	var render_t10: Node3D = TranslucidosRendererScript.new()
+	render_t10.voxel_world = mundo_t10
+	render_t10._indexar_materiales()
+	mundo_t10.bloque_translucido_cambiado.connect(render_t10._on_bloque_translucido_cambiado)
+	var agua_t10 := Vector3i(0, 0, 0)
+	var fantasma_t10 := Vector3i(0, 1, 0)  # celda vacía justo encima del agua: recibe el fantasma
+	mundo_t10.colocar_bloque(agua_t10, "agua")
+	var id_t10: int = mundo_t10.iniciar_construccion_fantasma([], {}, [fantasma_t10], {fantasma_t10: "pared"})
+	# Otra celda de agua fuerza reconstruir el chunk con el fantasma ya puesto, como
+	# hace en juego el primer bloque de relleno que sustituye agua.
+	mundo_t10.colocar_bloque(Vector3i(10, 0, 0), "agua")
+	render_t10.flush_pendientes()
+	var chunk_t10: Vector3i = TranslucidosRendererScript._chunk_de(agua_t10)
+	var con_fantasma_t10: int = render_t10._mesh_por_chunk["agua"][chunk_t10].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
+	# Celda 1: 4 laterales (el fantasma sólido le oculta la de arriba) = 4 caras. Celda 2 (aislada): 5 caras.
+	assert(con_fantasma_t10 == 9 * 6, "con el fantasma encima, el agua no dibuja su cara de arriba (9 caras en total), salió %d vértices" % con_fantasma_t10)
+	assert(mundo_t10.procesar_deconstruccion(fantasma_t10)["lista_para_remocion"])
+	mundo_t10.eliminar_edificio(id_t10)
+	render_t10.flush_pendientes()
+	var sin_fantasma_t10: int = render_t10._mesh_por_chunk["agua"][chunk_t10].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
+	assert(sin_fantasma_t10 == 10 * 6, "al quitar el fantasma el agua recupera su cara de arriba (10 caras en total), salió %d vértices" % sin_fantasma_t10)
+	print("OK: eliminar el edificio avisa al renderer y el agua recupera su cara de arriba.")
+
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

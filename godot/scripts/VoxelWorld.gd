@@ -1283,6 +1283,7 @@ func eliminar_edificio(id: int) -> Vector2i:
 		# bloque a bloque al surtirlo (excavación -> relleno -> construcción).
 		if tipo_anterior == "fantasma" or TIPOS_ESTRUCTURA.has(tipo_anterior):
 			set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+			_avisar_si_junto_a_translucido(celda)
 		celda_a_edificio.erase(celda)
 		if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 			bloque_translucido_cambiado.emit(celda)
@@ -1301,6 +1302,7 @@ func eliminar_edificio(id: int) -> Vector2i:
 		for celda_pendiente in pendientes:
 			if obtener_tipo(celda_pendiente) == "fantasma":
 				set_cell_item(celda_pendiente, GridMap.INVALID_CELL_ITEM)
+				_avisar_si_junto_a_translucido(celda_pendiente)
 	edificio_relleno_cola.erase(id)
 	# El follaje registrado que aún no se retiró se queda donde está: al
 	# emplazar no se modificó nada, y quitar el edificio a tiempo no debe hacerlo.
@@ -1324,6 +1326,23 @@ func eliminar_edificio(id: int) -> Vector2i:
 func _colocar_fantasma_si_vacia(celda: Vector3i) -> void:
 	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
 		colocar_bloque(celda, "fantasma")
+		_avisar_si_junto_a_translucido(celda)
+
+
+## Avisa a TranslucidosRenderer de que "celda" pasó de vacía a sólida (o al
+## revés) junto a un bloque translúcido: el culling de caras del agua depende de
+## si su vecino es sólido, y un fantasma cuenta como sólido (ver
+## TranslucidosRenderer._cara_visible(): un fantasma encima del agua le oculta la
+## cara de arriba). Sin este aviso, quitar el fantasma dejaba el agua "invisible"
+## hasta que otro evento reconstruyera ese chunk. Solo emite si hay un vecino
+## translúcido, para no rehacer chunks de más ni cambiar el contrato de
+## bloque_translucido_cambiado (colocar/minar un sólido cualquiera no emite, ver
+## TranslucidosRendererTest TEST 1).
+func _avisar_si_junto_a_translucido(celda: Vector3i) -> void:
+	for delta: Vector3i in VECINOS_3D:
+		if TIPOS_TRANSLUCIDOS.has(obtener_tipo(celda + delta)):
+			bloque_translucido_cambiado.emit(celda)
+			return
 
 
 ## Arranca un edificio fantasma. "orden_relleno"/"tipos_relleno" son las
@@ -1433,6 +1452,8 @@ func _despejar_follaje_de_columna(columna: Vector2i) -> void:
 		eliminar_follaje(celda)
 		if celda_a_edificio.has(celda) or Construccion.construccion_de(celda) != -1:
 			colocar_bloque(celda, "fantasma")
+		else:
+			_avisar_si_junto_a_translucido(celda)  # el follaje era sólido y la celda queda vacía
 
 
 ## Celdas pendientes de construir (estructura pendiente y cola de preparación)

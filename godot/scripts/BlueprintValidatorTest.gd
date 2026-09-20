@@ -1346,4 +1346,21 @@ func ejecutar_pruebas() -> void:
 	assert(s4_48["completa"])
 	print("OK: la cola cava (aire/fantasma) antes de rellenar y solo entonces avanza la estructura.")
 
-	print("\n=== Las 48 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 48b: excavar una celda 'aire' bajo agua deja caer el agua a la celda cavada (mismo retiro que minar_bloque) ===")
+	const OX48B := 1350
+	var piso_48b := Vector3i(OX48B, 0, OX48B)
+	var celda_cavar_48b := Vector3i(OX48B, 1, OX48B)
+	var agua_48b := Vector3i(OX48B, 2, OX48B)
+	var celda_estructura_48b := Vector3i(OX48B + 5, 1, OX48B)
+	mundo.colocar_bloque(piso_48b, "piedra")
+	mundo.colocar_bloque(celda_cavar_48b, "piedra")
+	mundo.colocar_bloque(agua_48b, "agua")
+	var orden_prep_48b: Array[Vector3i] = [celda_cavar_48b]
+	mundo.iniciar_construccion_fantasma(orden_prep_48b, {celda_cavar_48b: "aire"}, [celda_estructura_48b], {celda_estructura_48b: "pared"})
+	mundo.surtir_construccion(celda_cavar_48b)
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.obtener_tipo(celda_cavar_48b) == "agua", "la celda cavada bajo el agua debe llenarse (escurrimiento al retirar el bloque)")
+	assert(mundo.obtener_tipo(agua_48b) == "agua", "el agua original no debe desaparecer")
+	print("OK: la excavación 'aire' avisa al agua vecina igual que minar_bloque().")
+
+	print("\n=== Las 49 pruebas de BlueprintValidator pasaron correctamente ===")

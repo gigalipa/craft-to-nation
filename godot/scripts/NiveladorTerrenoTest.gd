@@ -2,7 +2,7 @@ extends Node
 
 ## Pruebas aisladas de NiveladorTerreno.gd (mismo patrón que
 ## ZonificacionTest.gd). Corre esta escena (NiveladorTerrenoTest.tscn) con
-## F6 y revisa el panel "Output": debe imprimir las 8 pruebas y no debe
+## F6 y revisa el panel "Output": debe imprimir las 14 pruebas y no debe
 ## lanzar ningún error de assert(). Usa un generador de alturas falso y
 ## determinista (no GeneradorMundo real, que usa ruido) para poder construir
 ## pendientes exactas y verificar el cálculo de relleno con precisión.
@@ -48,12 +48,45 @@ class GeneradorConAcantilado:
 		return 3
 
 
+## Generador falso: la altura crece 1 por cada paso en X y es constante en Z
+## (para probar puertas en lados opuestos con suelos frontales distintos).
+class GeneradorRampaX:
+	func altura_en(x: int, _z: int) -> int:
+		return x
+
+
 func _rectangulo(ancho: int, alto: int) -> Array[Vector2i]:
 	var columnas: Array[Vector2i] = []
 	for x in range(ancho):
 		for z in range(alto):
 			columnas.append(Vector2i(x, z))
 	return columnas
+
+
+## Casa de prueba 4x5x5 (ver spec 2026-09-20): losas de piso (y=0) y techo
+## (y=4) de "pared", muro perimetral en y=1..3 con una puerta en x=0 (z=2,
+## y=1..2) y una ventana en x=3 (z=2, y=2), cama y baúl adentro. Con
+## "puerta_extra_derecha" la ventana se reemplaza por una segunda puerta en
+## x=3.
+func _casa_4x5(puerta_extra_derecha: bool = false) -> Dictionary:
+	var celdas: Dictionary = {}
+	for x in range(4):
+		for z in range(5):
+			celdas[Vector3i(x, 0, z)] = "pared"
+			celdas[Vector3i(x, 4, z)] = "pared"
+			if x == 0 or x == 3 or z == 0 or z == 4:
+				for y in range(1, 4):
+					celdas[Vector3i(x, y, z)] = "pared"
+	celdas[Vector3i(0, 1, 2)] = "puerta_inferior"
+	celdas[Vector3i(0, 2, 2)] = "puerta_superior"
+	celdas[Vector3i(3, 2, 2)] = "ventana"
+	celdas[Vector3i(1, 1, 1)] = "cama_cabecera"
+	celdas[Vector3i(1, 1, 2)] = "cama_pies"
+	celdas[Vector3i(2, 1, 3)] = "baul"
+	if puerta_extra_derecha:
+		celdas[Vector3i(3, 1, 2)] = "puerta_inferior"
+		celdas[Vector3i(3, 2, 2)] = "puerta_superior"
+	return celdas
 
 
 func _ready() -> void:
@@ -136,4 +169,67 @@ func ejecutar_pruebas() -> void:
 	assert(nivelador_acantilado.altura_objetivo(Vector2i(2, 2), columnas_sin_origen) == 3)
 	print("OK: altura_objetivo() solo lee columnas de la lista, nunca el offset (0,0) por defecto.")
 
-	print("\n=== Las 8 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 9: calcular_base_y() en terreno plano entierra la losa (la puerta queda a nivel del suelo frontal) ===")
+	var casa_9: Dictionary = _casa_4x5()
+	var base_9: Dictionary = nivelador_plano.calcular_base_y(Vector2i(10, 10), casa_9)
+	assert(base_9["valido"])
+	assert(base_9["base_y"] == 5, "suelo 5 + 1 - puerta en y=1 = 5: la losa ocupa la Y del suelo, enterrada un bloque (antes quedaba en 6)")
+	var excavacion_9: Array[Vector3i] = nivelador_plano.calcular_excavacion(Vector2i(10, 10), _rectangulo(4, 5), 5)
+	assert(excavacion_9.size() == 20, "una capa de 20 bloques bajo la huella")
+	for celda_9 in excavacion_9:
+		assert(celda_9.y == 5)
+	assert(nivelador_plano.calcular_relleno_hasta(Vector2i(10, 10), _rectangulo(4, 5), 4).is_empty())
+
+	print("\n=== TEST 10: en una ladera el nivel lo da el suelo frente a la puerta; se cava arriba y se rellena abajo ===")
+	# altura_en(x,z) = z. Puerta en (10,12), frente en (9,12), suelo 12 -> base_y 12.
+	var base_10: Dictionary = nivelador_suave.calcular_base_y(Vector2i(10, 10), casa_9)
+	assert(base_10["valido"] and base_10["base_y"] == 12)
+	var excavacion_10: Array[Vector3i] = nivelador_suave.calcular_excavacion(Vector2i(10, 10), _rectangulo(4, 5), 12)
+	# Filas z=12,13,14 (alturas 12,13,14) aportan 1+2+3 = 6 celdas por columna X, x4 columnas.
+	assert(excavacion_10.size() == 24)
+	assert(excavacion_10[0].y == 14 and excavacion_10[excavacion_10.size() - 1].y == 12)
+	for i_10 in range(1, excavacion_10.size()):
+		assert(excavacion_10[i_10 - 1].y >= excavacion_10[i_10].y, "orden de arriba hacia abajo")
+	# Relleno hasta base_y - 1 = 11: solo la fila z=10 (altura 10) necesita 1 bloque por columna.
+	var relleno_10: Dictionary = nivelador_suave.calcular_relleno_hasta(Vector2i(10, 10), _rectangulo(4, 5), 11)
+	assert(relleno_10.size() == 4)
+	assert(relleno_10[Vector2i(10, 10)] == 1)
+
+	print("\n=== TEST 11: puertas en lados con suelos frontales distintos se rechazan ===")
+	var nivelador_x: RefCounted = NiveladorTerreno.new(GeneradorRampaX.new())
+	var una_puerta_11: Dictionary = nivelador_x.calcular_base_y(Vector2i(10, 10), _casa_4x5())
+	assert(una_puerta_11["valido"] and una_puerta_11["base_y"] == 9)  # frente (9,12): suelo 9
+	var dos_puertas_11: Dictionary = nivelador_x.calcular_base_y(Vector2i(10, 10), _casa_4x5(true))
+	assert(not dos_puertas_11["valido"] and dos_puertas_11["motivo"] == "puertas")  # 9 vs 14
+
+	print("\n=== TEST 12: puerta frente a un desnivel mayor al límite se rechaza ===")
+	# Acantilado (altura 100) exactamente en el frente (2,2) de la puerta en (3,2).
+	var acantilado_12: Dictionary = nivelador_acantilado.calcular_base_y(Vector2i(3, 0), _casa_4x5())
+	assert(not acantilado_12["valido"] and acantilado_12["motivo"] == "pendiente")
+
+	print("\n=== TEST 13: sin puerta, base_y conserva el comportamiento anterior (altura_objetivo + 1) ===")
+	var casa_sin_puerta: Dictionary = _casa_4x5()
+	casa_sin_puerta.erase(Vector3i(0, 1, 2))
+	casa_sin_puerta.erase(Vector3i(0, 2, 2))
+	var base_13: Dictionary = nivelador_plano.calcular_base_y(Vector2i(0, 0), casa_sin_puerta)
+	assert(base_13["valido"] and base_13["base_y"] == 6)
+	# Puerta a 2 bloques sobre la losa (p. ej. un nivel bajo la entrada): la
+	# losa baja un bloque más (base_y = 5 + 1 - 2 = 4) y la excavación llega más hondo.
+	var casa_sotano: Dictionary = {}
+	for rel_13 in _casa_4x5():
+		casa_sotano[rel_13 + Vector3i(0, 1, 0)] = _casa_4x5()[rel_13]
+	var base_13b: Dictionary = nivelador_plano.calcular_base_y(Vector2i(0, 0), casa_sotano)
+	assert(base_13b["valido"] and base_13b["base_y"] == 4)
+	assert(nivelador_plano.calcular_excavacion(Vector2i(0, 0), _rectangulo(4, 5), 4).size() == 40, "2 capas (Y=5 y Y=4) x 20 columnas")
+
+	print("\n=== TEST 14: resumen_materiales() del ejemplo 4x5x5 sobre terreno plano (79 piedra, 12 madera, +19 tierra) ===")
+	var neto_14: Dictionary = nivelador_plano.resumen_materiales(casa_9, 0, {"tierra": 20})
+	assert(neto_14["piedra"] == -79)
+	assert(neto_14["madera"] == -12)
+	assert(neto_14["tierra"] == 19, "20 excavados - 1 de la ventana")
+	var neto_14b: Dictionary = nivelador_plano.resumen_materiales(casa_9, 3, {"tierra": 20})
+	assert(neto_14b["tierra"] == 16, "el relleno consume tierra")
+	var neto_14c: Dictionary = nivelador_plano.resumen_materiales({Vector3i(0, 0, 0): "ventana"}, 0, {"tierra": 1})
+	assert(neto_14c.is_empty(), "un neto de 0 no aparece")
+
+	print("\n=== Las 14 pruebas de NiveladorTerreno pasaron correctamente ===")

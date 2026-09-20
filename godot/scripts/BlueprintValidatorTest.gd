@@ -1474,4 +1474,27 @@ func ejecutar_pruebas() -> void:
 	assert(cuenta_50[0] == 7, "eliminar")
 	print("OK: la señal se emite en cada punto que puede cambiar los marcadores.")
 
-	print("\n=== Las 53 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 50b: al deconstruir, un receptor síncrono de fantasmas_cambiados ya ve la puerta recién revertida ===")
+	const OX50B := 1480
+	var pared_50b := Vector3i(OX50B, 1, OX50B)
+	var puerta_inf_50b := Vector3i(OX50B + 1, 1, OX50B)
+	var puerta_sup_50b := Vector3i(OX50B + 1, 2, OX50B)
+	var tipos_50b := {pared_50b: "pared", puerta_inf_50b: "puerta_inferior", puerta_sup_50b: "puerta_superior"}
+	var orden_50b: Array = mundo_d.ordenar_celdas_edificio(tipos_50b)
+	assert(orden_50b.back() == puerta_sup_50b, "la puerta superior es la última celda: se revierte primero")
+	var id_50b: int = mundo_d.iniciar_construccion_fantasma([], {}, orden_50b, tipos_50b)
+	for _i in orden_50b.size():
+		mundo_d.surtir_construccion(pared_50b)
+	# (mundo_d conserva la puerta enterrada de la prueba 49b: no se cuenta el tamaño total.)
+	assert(not mundo_d.celdas_fantasma_destacadas().has(puerta_sup_50b), "edificio completo: nada pendiente")
+	# El receptor guarda la foto DENTRO de la señal (Array: la lambda captura por referencia).
+	var foto_50b: Array = [{}]
+	mundo_d.fantasmas_cambiados.connect(func() -> void: foto_50b[0] = mundo_d.celdas_fantasma_destacadas())
+	foto_50b[0] = {}
+	mundo_d.procesar_deconstruccion(pared_50b)  # revierte puerta_superior
+	assert(foto_50b[0].has(puerta_sup_50b), "el receptor síncrono ya ve la puerta recién revertida")
+	assert(not foto_50b[0].has(puerta_inf_50b), "solo la celda revertida se destaca")
+	mundo_d.eliminar_edificio(id_50b)
+	print("OK: la señal de deconstrucción se emite con el progreso ya actualizado.")
+
+	print("\n=== Las 54 pruebas de BlueprintValidator pasaron correctamente ===")

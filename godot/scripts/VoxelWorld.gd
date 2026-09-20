@@ -1178,6 +1178,7 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 	var celda_a_revertir: Vector3i = orden[progreso - 1]
 	_revertir_celda(celda_a_revertir)
 	edificio_progreso[id] = progreso - 1
+	fantasmas_cambiados.emit()
 	var vacio: bool = edificio_progreso[id] == 0
 	return {"id": id, "completa_reversion": vacio, "lista_para_remocion": vacio, "total_camas": total_camas}
 
@@ -1196,7 +1197,6 @@ func _revertir_celda(celda: Vector3i) -> void:
 	colocar_bloque(celda, "fantasma")
 	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
-	fantasmas_cambiados.emit()
 
 
 ## Celdas de puerta y ventana que hoy siguen siendo "fantasma": para cada

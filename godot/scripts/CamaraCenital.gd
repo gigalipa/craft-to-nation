@@ -990,9 +990,6 @@ func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
 ## "esquina" (evaluación "ev" de _evaluar_blueprint()). Se recalcula solo si
 ## cambió la esquina (o se invalidó, ver SIN_RESUMEN). Si la colocación no es
 ## válida muestra "-". Cuenta la nivelación de la huella Y de la fachada.
-## ponytail: sobre una huella con agua, la previsualización cuenta la
-## excavación con el fondo real y no con la tierra que dejará el drenado
-## (que ocurre al confirmar); la diferencia solo afecta al número mostrado.
 func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: bool) -> void:
 	var clave: Vector2i = esquina if valida else SIN_RESUMEN
 	if clave == _resumen_blueprint_vigente:
@@ -1557,9 +1554,9 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 ## `base_y` válido para las puertas y despejes de ventanas/puertas) — si no,
 ## imprime el motivo (_mensaje_rechazo_blueprint()) y PERMANECE en modo
 ## colocar-blueprint. A diferencia de _procesar_clic_puesto() (que coloca el
-## marcador de inmediato), esto NO completa nada: drena el agua bajo la huella
-## y la fachada, calcula el nivel base (`base_y`, puerta a ras del suelo
-## frontal) y la nivelación (_plan_nivelacion(): huella + fachada, excavación
+## marcador de inmediato), esto NO completa nada: NO modifica el terreno (el agua
+## y el follaje se retiran celda a celda al surtir), calcula el nivel base
+## (`base_y`, puerta a ras del suelo frontal) y la nivelación (_plan_nivelacion(): huella + fachada, excavación
 ## y relleno), reubica blueprint["celdas_3d"] en el mundo e inicia UNA cola
 ## de preparación del terreno (excavación primero, luego relleno;
 ## Construccion.gd, vía VoxelWorld.iniciar_construccion_fantasma()) más el
@@ -1585,17 +1582,6 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var base_y: int = ev["resultado_base"]["base_y"]
 	var celdas_mundo: Dictionary = ev["celdas_mundo"]
 
-	for celda_follaje in ev["resultado_huella"]["follaje_a_eliminar"]:
-		mundo.eliminar_follaje(celda_follaje)
-	for celda_follaje in ev["resultado_fachada"]["follaje_a_eliminar"]:
-		mundo.eliminar_follaje(celda_follaje)
-
-	var total_drenado := 0
-	for rel in ev["columnas_union"]:
-		total_drenado += mundo.drenar_agua(esquina.x + rel.x, esquina.y + rel.y)
-	if total_drenado > 0:
-		print("Agua drenada bajo la construcción: ", total_drenado, " bloques reemplazados por tierra.")
-
 	# Cola de "preparación del terreno" (ver VoxelWorld._aplicar_paso_cola()):
 	# primero se CAVA (terreno real sobre la losa y sobre el nivel de la
 	# fachada), luego se RELLENA (columnas por debajo). Una celda cavada que
@@ -1612,7 +1598,9 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	for celda_relleno in relleno:
 		var cantidad: int = relleno[celda_relleno]
 		total_relleno += cantidad
-		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
+		# Sin agua: al emplazar el agua sigue en el mundo y las celdas de agua
+		# bajo el nivel de la losa son parte del relleno (ver VoxelWorld._reemplazar_celda()).
+		var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y, true)
 		for h in range(1, cantidad + 1):
 			var celda_r := Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y)
 			relleno_orden.append(celda_r)
@@ -1638,6 +1626,12 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		"fachada": fachada,
 	}
 	var id_edificio: int = mundo.iniciar_construccion_fantasma(relleno_orden, tipos_relleno, orden_estructura, celdas_mundo, metadata)
+	# El follaje NO se borra al emplazar: se registra y desaparece por columna con
+	# el primer paso que se aplique en ella (ver VoxelWorld.registrar_follaje_pendiente()).
+	var follaje: Array = []
+	follaje.append_array(ev["resultado_huella"]["follaje_a_eliminar"])
+	follaje.append_array(ev["resultado_fachada"]["follaje_a_eliminar"])
+	mundo.registrar_follaje_pendiente(id_edificio, follaje)
 	metadata["id_edificio"] = id_edificio
 	print("Construcción fantasma iniciada en (", esquina.x, ", ", esquina.y, ") — excavación: ", excavacion.size(), " bloques, relleno: ", total_relleno, " (huella + frente de las puertas) — surtir para completarla.")
 

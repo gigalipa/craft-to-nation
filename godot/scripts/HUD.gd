@@ -63,6 +63,7 @@ const NOMBRES_PESCA_FRUTOS_MAR := {
 @onready var modo_deconstruccion_label: Label = $ModoDeconstruccionLabel
 
 @onready var oxigeno_label: Label = $OxigenoLabel
+@onready var materiales_ficha: Label = $MaterialesFicha
 
 
 func _process(_delta: float) -> void:
@@ -230,3 +231,41 @@ func actualizar_oxigeno(fraccion: float) -> void:
 
 func ocultar_oxigeno() -> void:
 	oxigeno_label.visible = false
+
+
+## Ficha VISUAL de los materiales que movilizaría el blueprint activo (ver
+## docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md):
+## no lee ni toca ningún inventario real (no existe todavía).
+func mostrar_ficha_materiales() -> void:
+	materiales_ficha.text = texto_materiales({})
+	materiales_ficha.visible = true
+
+
+func actualizar_materiales(neto: Dictionary) -> void:
+	materiales_ficha.text = texto_materiales(neto)
+
+
+func ocultar_ficha_materiales() -> void:
+	materiales_ficha.visible = false
+
+
+## "neto" es material -> int (negativo = hace falta, positivo = sobra; ver
+## NiveladorTerreno.resumen_materiales()). Lo necesario va sin signo y de
+## mayor a menor; el sobrante recogido va después con "+".
+static func texto_materiales(neto: Dictionary) -> String:
+	var necesarios: Array = []
+	var sobrantes: Array = []
+	for material in neto:
+		var cantidad: int = neto[material]
+		if cantidad < 0:
+			necesarios.append([-cantidad, material])
+		elif cantidad > 0:
+			sobrantes.append("+ %d %s" % [cantidad, material])
+	necesarios.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
+	var lineas: Array = ["Materiales de construcción:"]
+	for necesario in necesarios:
+		lineas.append("%d %s" % [necesario[0], necesario[1]])
+	lineas.append_array(sobrantes)
+	if lineas.size() == 1:
+		lineas.append("-")
+	return "\n".join(lineas)

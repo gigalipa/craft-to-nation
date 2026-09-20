@@ -2,7 +2,7 @@ extends Node
 
 ## Pruebas aisladas de NiveladorTerreno.gd (mismo patrón que
 ## ZonificacionTest.gd). Corre esta escena (NiveladorTerrenoTest.tscn) con
-## F6 y revisa el panel "Output": debe imprimir las 14 pruebas y no debe
+## F6 y revisa el panel "Output": debe imprimir las 15 pruebas y no debe
 ## lanzar ningún error de assert(). Usa un generador de alturas falso y
 ## determinista (no GeneradorMundo real, que usa ruido) para poder construir
 ## pendientes exactas y verificar el cálculo de relleno con precisión.
@@ -15,6 +15,7 @@ extends Node
 ## depender de ningún helper compartido con CamaraCenital.gd.
 
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
+const HUDScript = preload("res://scripts/HUD.gd")
 
 
 ## Generador falso: la altura crece 1 celda por cada paso en Z (pendiente de
@@ -232,4 +233,9 @@ func ejecutar_pruebas() -> void:
 	var neto_14c: Dictionary = nivelador_plano.resumen_materiales({Vector3i(0, 0, 0): "ventana"}, 0, {"tierra": 1})
 	assert(neto_14c.is_empty(), "un neto de 0 no aparece")
 
-	print("\n=== Las 14 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 15: HUD.texto_materiales() pone lo necesario sin signo (mayor primero) y el sobrante con '+' ===")
+	var texto_15: String = HUDScript.texto_materiales({"piedra": -79, "madera": -12, "tierra": 19})
+	assert(texto_15 == "Materiales de construcción:\n79 piedra\n12 madera\n+ 19 tierra", texto_15)
+	assert(HUDScript.texto_materiales({}) == "Materiales de construcción:\n-")
+
+	print("\n=== Las 15 pruebas de NiveladorTerreno pasaron correctamente ===")

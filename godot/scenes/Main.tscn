@@ -170,6 +170,14 @@ layout_mode = 2
 layout_mode = 2
 autowrap_mode = 2
 
+[node name="MaterialesFicha" type="Label" parent="HUDLayer" unique_id=1902384756]
+visible = false
+offset_left = 12.0
+offset_top = 160.0
+offset_right = 320.0
+offset_bottom = 280.0
+text = "Materiales de construcción:"
+
 [node name="ModoDeconstruccionLabel" type="Label" parent="HUDLayer" unique_id=1106098849]
 visible = false
 offset_left = 12.0

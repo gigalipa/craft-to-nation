@@ -1275,11 +1275,16 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_tipos.erase(id)
 	edificio_progreso.erase(id)
 	edificio_metadata.erase(id)
-	# La excavación pendiente (terreno real, "aire"/"fantasma") no debe
-	# poder aplicarse ya sin edificio; el relleno pendiente sigue como
-	# relleno huérfano (ver surtir_construccion()).
+	# Lo que quede pendiente de la cola de preparación se cancela: la
+	# excavación (terreno real, "aire"/"fantasma") no debe poder aplicarse sin
+	# edificio, y el relleno pendiente son bloques "fantasma" sueltos que ya no
+	# sirven a nada, así que se retiran. El relleno YA hecho (tierra real) y lo
+	# ya excavado no se restauran.
 	if edificio_relleno_cola.has(id):
-		Construccion.descartar_pendientes(edificio_relleno_cola[id], ["aire", "fantasma"])
+		var pendientes: Array[Vector3i] = Construccion.descartar_pendientes(edificio_relleno_cola[id], ["aire", "fantasma", "tierra"])
+		for celda_pendiente in pendientes:
+			if obtener_tipo(celda_pendiente) == "fantasma":
+				set_cell_item(celda_pendiente, GridMap.INVALID_CELL_ITEM)
 	edificio_relleno_cola.erase(id)
 	for celda_despeje in edificio_despeje.get(id, []):
 		if celda_a_despeje.has(celda_despeje):

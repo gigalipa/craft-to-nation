@@ -41,10 +41,12 @@ func construccion_de(celda: Vector3i) -> int:
 ## Descarta de la construcción "id" los pasos AÚN PENDIENTES cuyo tipo esté en
 ## "tipos_a_descartar" (los ya avanzados no se tocan) y libera sus celdas.
 ## Si no queda nada pendiente, la construcción se limpia por completo.
-## No-op si "id" no existe.
-func descartar_pendientes(id: int, tipos_a_descartar: Array) -> void:
+## Devuelve las celdas descartadas (para que el llamador limpie lo que haya
+## en el mundo, p. ej. los fantasmas del relleno). No-op si "id" no existe.
+func descartar_pendientes(id: int, tipos_a_descartar: Array) -> Array[Vector3i]:
+	var descartadas: Array[Vector3i] = []
 	if not _construcciones.has(id):
-		return
+		return descartadas
 	var datos: Dictionary = _construcciones[id]
 	var orden: Array = datos["orden"]
 	var indice: int = datos["indice"]
@@ -53,6 +55,7 @@ func descartar_pendientes(id: int, tipos_a_descartar: Array) -> void:
 		var celda: Vector3i = orden[i]
 		if tipos_a_descartar.has(datos["tipos"][celda]):
 			_celda_a_construccion.erase(celda)
+			descartadas.append(celda)
 		else:
 			nuevo_orden.append(celda)
 	datos["orden"] = nuevo_orden
@@ -60,6 +63,7 @@ func descartar_pendientes(id: int, tipos_a_descartar: Array) -> void:
 		for c in nuevo_orden:
 			_celda_a_construccion.erase(c)
 		_construcciones.erase(id)
+	return descartadas
 
 
 ## Convierte la SIGUIENTE celda pendiente de la construcción "id" (no

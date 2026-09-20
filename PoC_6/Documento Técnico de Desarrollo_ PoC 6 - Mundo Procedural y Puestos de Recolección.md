@@ -549,10 +549,12 @@ si el desnivel puerta-frente supera `LIMITE_PENDIENTE` o si el frente es agua/fu
 La excavación (terreno real bajo la huella, "aire"/"fantasma") y el relleno viajan en una
 sola cola de preparación de `Construccion.gd`, excavación primero
 (`VoxelWorld._aplicar_paso_cola()`). Al deconstruir y eliminar el edificio
-(`eliminar_edificio()`) se descartan los pasos de excavación aún pendientes
-(`Construccion.descartar_pendientes()`); el relleno pendiente sigue como relleno
-huérfano. Deconstruir no restaura el terreno ya excavado ni el hueco de la losa
-enterrada (queda un foso; restaurarlo queda pendiente, igual que el relleno). El HUD muestra un resumen VISUAL de materiales
+(`eliminar_edificio()`) se cancela lo que quede pendiente de la cola
+(`Construccion.descartar_pendientes()`): la excavación ya no se aplica y los
+bloques `fantasma` del relleno pendiente se retiran (antes quedaban sueltos como
+"relleno huérfano"). Deconstruir no restaura el terreno ya excavado, el relleno ya
+hecho ni el hueco de la losa enterrada (queda un foso; restaurarlo queda
+pendiente). El HUD muestra un resumen VISUAL de materiales
 (piedra/madera/tierra, neto = recogido - necesario); sigue sin inventario ni cobro real.
 Los puestos periféricos conservan la nivelación al punto más alto.
 

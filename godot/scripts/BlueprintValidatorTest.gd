@@ -1363,7 +1363,7 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.obtener_tipo(agua_48b) == "agua", "el agua original no debe desaparecer")
 	print("OK: la excavación 'aire' avisa al agua vecina igual que minar_bloque().")
 
-	print("\n=== TEST 48c: eliminar_edificio() descarta la excavación pendiente de su cola pero conserva el relleno huérfano ===")
+	print("\n=== TEST 48c: eliminar_edificio() descarta la excavación pendiente y retira el relleno fantasma pendiente de su cola ===")
 	const OX48C := 1400
 	var celda_cavar_48c := Vector3i(OX48C, 1, OX48C)        # terreno real que se iba a cavar
 	var celda_estructura_48c := Vector3i(OX48C + 1, 1, OX48C)
@@ -1376,9 +1376,30 @@ func ejecutar_pruebas() -> void:
 	mundo.eliminar_edificio(id_48c)
 	assert(mundo.surtir_construccion(celda_cavar_48c).is_empty(), "la excavación pendiente de un edificio eliminado ya no se aplica")
 	assert(mundo.obtener_tipo(celda_cavar_48c) == "tierra", "el terreno real no se cava")
-	mundo.surtir_construccion(celda_relleno_48c)
-	assert(mundo.obtener_tipo(celda_relleno_48c) == "tierra", "el relleno huérfano sigue completable")
-	print("OK: eliminar_edificio() descarta solo los pasos de excavación pendientes; el relleno huérfano se conserva.")
+	assert(mundo.obtener_tipo(celda_relleno_48c) == "", "el fantasma del relleno pendiente se retira junto con el edificio")
+	assert(mundo.surtir_construccion(celda_relleno_48c).is_empty(), "y ya no hay nada que surtir ahí")
+	print("OK: eliminar_edificio() cancela lo pendiente de la cola: la excavación no se aplica y el fantasma del relleno desaparece.")
+
+	print("\n=== TEST 48d: eliminar_edificio() conserva el relleno YA hecho y lo ya excavado, y retira solo el relleno fantasma pendiente ===")
+	const OX48D := 1420
+	var celda_cavar_48d := Vector3i(OX48D, 1, OX48D)
+	var celda_estructura_48d := Vector3i(OX48D + 1, 1, OX48D)
+	var celda_relleno_hecho_48d := Vector3i(OX48D + 2, 1, OX48D)
+	var celda_relleno_pendiente_48d := Vector3i(OX48D + 3, 1, OX48D)
+	mundo.colocar_bloque(celda_cavar_48d, "tierra")
+	var orden_prep_48d: Array[Vector3i] = [celda_cavar_48d, celda_relleno_hecho_48d, celda_relleno_pendiente_48d]
+	var tipos_prep_48d := {celda_cavar_48d: "aire", celda_relleno_hecho_48d: "tierra", celda_relleno_pendiente_48d: "tierra"}
+	var id_48d: int = mundo.iniciar_construccion_fantasma(orden_prep_48d, tipos_prep_48d, [celda_estructura_48d], {celda_estructura_48d: "pared"})
+	mundo.surtir_construccion(celda_estructura_48d)  # cava
+	mundo.surtir_construccion(celda_estructura_48d)  # rellena el primero
+	assert(mundo.obtener_tipo(celda_relleno_hecho_48d) == "tierra")
+	assert(mundo.obtener_tipo(celda_relleno_pendiente_48d) == "fantasma")
+	assert(mundo.procesar_deconstruccion(celda_estructura_48d)["lista_para_remocion"])
+	mundo.eliminar_edificio(id_48d)
+	assert(mundo.obtener_tipo(celda_relleno_hecho_48d) == "tierra", "el relleno ya hecho es terreno real y se conserva")
+	assert(mundo.obtener_tipo(celda_cavar_48d) == "", "lo ya excavado no se restaura")
+	assert(mundo.obtener_tipo(celda_relleno_pendiente_48d) == "", "el fantasma pendiente desaparece")
+	print("OK: solo el relleno fantasma pendiente se retira; el terreno ya modificado se conserva.")
 
 	print("\n=== TEST 49: celdas_fantasma_destacadas() marca solo puertas y ventanas todavía fantasma, y se actualiza al surtir y deconstruir ===")
 	# Mundo PROPIO para las pruebas 49-50: celdas_fantasma_destacadas() recorre TODOS los
@@ -1549,4 +1570,4 @@ func ejecutar_pruebas() -> void:
 	assert(not mundo_d.es_terreno_natural(c_tierra_52), "una celda que pertenece a un edificio no es terreno")
 	print("OK: solo el suelo/subsuelo libre cuenta como terreno natural.")
 
-	print("\n=== Las 56 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== Las 57 pruebas de BlueprintValidator pasaron correctamente ===")

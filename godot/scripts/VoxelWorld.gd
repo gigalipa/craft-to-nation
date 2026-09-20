@@ -191,6 +191,13 @@ var edificio_a_celdas: Dictionary = {}  # int -> Array[Vector3i]
 ## ningún otro cambio de bloque (la inmensa mayoría de las llamadas).
 signal bloque_translucido_cambiado(celda: Vector3i)
 
+## Emitida cuando puede haber cambiado el resultado de
+## celdas_fantasma_destacadas() (se inicia, surte, revierte o elimina un
+## edificio) — FantasmasDestacados la escucha para redibujar sus marcadores.
+## Puede emitirse sin un cambio real (p. ej. un paso de relleno): el
+## receptor solo marca "sucio" y reconstruye una vez por fotograma.
+signal fantasmas_cambiados
+
 ## Por edificio (id de VoxelWorld.registrar_edificio()): el orden FIJO de
 ## sus celdas estructurales (piso -> paredes/puertas/ventanas ->
 ## mobiliario), sus tipos, y cuántas celdas desde el inicio de ese orden
@@ -1189,6 +1196,25 @@ func _revertir_celda(celda: Vector3i) -> void:
 	colocar_bloque(celda, "fantasma")
 	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
+	fantasmas_cambiados.emit()
+
+
+## Celdas de puerta y ventana que hoy siguen siendo "fantasma": para cada
+## edificio, las pendientes (índice >= edificio_progreso) cuyo tipo final está
+## en COLOR_DESTACADO y que en el GridMap son realmente "fantasma" — una
+## puerta enterrada bajo terreno aún sin cavar (ver
+## _aplicar_paso_cola()) no cuenta hasta que se cava. Devuelve Vector3i ->
+## tipo. Lógica pura para FantasmasDestacados.gd; no dibuja nada.
+func celdas_fantasma_destacadas() -> Dictionary:
+	var resultado: Dictionary = {}
+	for id in edificio_orden:
+		var orden: Array = edificio_orden[id]
+		for i in range(edificio_progreso[id], orden.size()):
+			var celda: Vector3i = orden[i]
+			var tipo: String = edificio_tipos[id][celda]
+			if COLOR_DESTACADO.has(tipo) and obtener_tipo(celda) == "fantasma":
+				resultado[celda] = tipo
+	return resultado
 
 
 ## Elimina por completo un edificio ya reducido a fantasma vacío (ver
@@ -1232,6 +1258,7 @@ func eliminar_edificio(id: int) -> Vector2i:
 			if celda_a_despeje[celda_despeje].is_empty():
 				celda_a_despeje.erase(celda_despeje)
 	edificio_despeje.erase(id)
+	fantasmas_cambiados.emit()
 	return esquina
 
 
@@ -1265,6 +1292,7 @@ func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictiona
 		if not celda_a_despeje.has(celda_despeje):
 			celda_a_despeje[celda_despeje] = {}
 		celda_a_despeje[celda_despeje][id] = true
+	fantasmas_cambiados.emit()
 	return id
 
 
@@ -1304,9 +1332,10 @@ func _aplicar_paso_cola(resultado: Dictionary) -> void:
 		_retirar_bloque(celda)
 		if tipo == "fantasma":
 			colocar_bloque(celda, "fantasma")
-		return
-	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
-	colocar_bloque(celda, tipo, true)
+	else:
+		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+		colocar_bloque(celda, tipo, true)
+	fantasmas_cambiados.emit()
 
 
 ## Avanza, según a qué pertenezca "celda": si todavía es parte de una cola
@@ -1358,6 +1387,7 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 	set_cell_item(celda_a_surtir, GridMap.INVALID_CELL_ITEM)
 	colocar_bloque(celda_a_surtir, tipo, true)
 	edificio_progreso[id] = progreso + 1
+	fantasmas_cambiados.emit()
 	var completa: bool = edificio_progreso[id] == orden.size()
 	if completa:
 		reemparejar_construccion(orden)

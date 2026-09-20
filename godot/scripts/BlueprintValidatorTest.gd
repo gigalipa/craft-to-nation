@@ -1380,4 +1380,98 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.obtener_tipo(celda_relleno_48c) == "tierra", "el relleno huérfano sigue completable")
 	print("OK: eliminar_edificio() descarta solo los pasos de excavación pendientes; el relleno huérfano se conserva.")
 
-	print("\n=== Las 50 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 49: celdas_fantasma_destacadas() marca solo puertas y ventanas todavía fantasma, y se actualiza al surtir y deconstruir ===")
+	# Mundo PROPIO para las pruebas 49-50: celdas_fantasma_destacadas() recorre TODOS los
+	# edificios del mundo, y las pruebas anteriores dejan en `mundo` edificios con
+	# puertas/ventanas pendientes que falsearían los conteos.
+	var mundo_d: Node = VoxelWorld.new()
+	mundo_d.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_d.cell_size = Vector3.ONE * 1.0
+	mundo_d._indexar_biblioteca()
+	const OX49 := 1450
+	var pared_49 := Vector3i(OX49, 1, OX49)
+	var puerta_inf_49 := Vector3i(OX49 + 1, 1, OX49)
+	var puerta_sup_49 := Vector3i(OX49 + 1, 2, OX49)
+	var ventana_49 := Vector3i(OX49 + 2, 1, OX49)
+	var baul_49 := Vector3i(OX49 + 3, 1, OX49)
+	var tipos_49 := {
+		pared_49: "pared", puerta_inf_49: "puerta_inferior", puerta_sup_49: "puerta_superior",
+		ventana_49: "ventana", baul_49: "baul",
+	}
+	var orden_49: Array = mundo_d.ordenar_celdas_edificio(tipos_49)
+	var id_49: int = mundo_d.iniciar_construccion_fantasma([], {}, orden_49, tipos_49)
+	var d_49: Dictionary = mundo_d.celdas_fantasma_destacadas()
+	assert(d_49.size() == 3, "solo puerta (2 mitades) y ventana; ni pared ni baúl")
+	assert(d_49[puerta_inf_49] == "puerta_inferior")
+	assert(d_49[puerta_sup_49] == "puerta_superior")
+	assert(d_49[ventana_49] == "ventana")
+	assert(not d_49.has(pared_49) and not d_49.has(baul_49))
+
+	# Surtir en el orden fijo [pared, puerta_inf, ventana, puerta_sup, baúl]: cada
+	# celda destacada sale del resultado cuando deja de ser fantasma.
+	mundo_d.surtir_construccion(pared_49)
+	assert(mundo_d.celdas_fantasma_destacadas().size() == 3, "la pared no es destacada")
+	mundo_d.surtir_construccion(pared_49)  # puerta_inferior
+	assert(not mundo_d.celdas_fantasma_destacadas().has(puerta_inf_49))
+	assert(mundo_d.celdas_fantasma_destacadas().size() == 2)
+	mundo_d.surtir_construccion(pared_49)  # ventana
+	assert(mundo_d.celdas_fantasma_destacadas().size() == 1)
+	mundo_d.surtir_construccion(pared_49)  # puerta_superior
+	mundo_d.surtir_construccion(pared_49)  # baúl (completa)
+	assert(mundo_d.celdas_fantasma_destacadas().is_empty(), "edificio completo: nada pendiente")
+
+	# Deconstruir revierte primero el baúl y luego la puerta superior: esa vuelve a destacarse.
+	mundo_d.procesar_deconstruccion(pared_49)  # baúl
+	assert(mundo_d.celdas_fantasma_destacadas().is_empty())
+	mundo_d.procesar_deconstruccion(pared_49)  # puerta_superior
+	var d_decon_49: Dictionary = mundo_d.celdas_fantasma_destacadas()
+	assert(d_decon_49.size() == 1 and d_decon_49.has(puerta_sup_49))
+	mundo_d.procesar_deconstruccion(pared_49)  # ventana
+	mundo_d.procesar_deconstruccion(pared_49)  # puerta_inferior
+	mundo_d.procesar_deconstruccion(pared_49)  # pared -> progreso 0
+	assert(mundo_d.celdas_fantasma_destacadas().size() == 3)
+	mundo_d.eliminar_edificio(id_49)
+	assert(mundo_d.celdas_fantasma_destacadas().is_empty(), "un edificio eliminado no deja marcadores")
+	print("OK: solo puertas/ventanas pendientes se destacan, y el resultado sigue al surtir, deconstruir y eliminar.")
+
+	print("\n=== TEST 49b: una puerta enterrada bajo terreno sin cavar no se destaca hasta que la cola de excavación la deja como fantasma ===")
+	const OX49B := 1460
+	var celda_enterrada_49b := Vector3i(OX49B, 1, OX49B)
+	mundo_d.colocar_bloque(celda_enterrada_49b, "tierra")
+	mundo_d.iniciar_construccion_fantasma(
+		[celda_enterrada_49b], {celda_enterrada_49b: "fantasma"},
+		[celda_enterrada_49b], {celda_enterrada_49b: "puerta_inferior"}
+	)
+	assert(mundo_d.obtener_tipo(celda_enterrada_49b) == "tierra")
+	assert(mundo_d.celdas_fantasma_destacadas().is_empty(), "todavía es terreno real, no un fantasma")
+	mundo_d.surtir_construccion(celda_enterrada_49b)  # cava y deja fantasma
+	assert(mundo_d.celdas_fantasma_destacadas().has(celda_enterrada_49b))
+	print("OK: la puerta enterrada se destaca recién cuando se cava.")
+
+	print("\n=== TEST 50: fantasmas_cambiados se emite al iniciar, surtir (relleno y estructura), deconstruir y eliminar ===")
+	const OX50 := 1470
+	var pared_50 := Vector3i(OX50, 1, OX50)
+	var ventana_50 := Vector3i(OX50 + 1, 1, OX50)
+	var relleno_50 := Vector3i(OX50 + 2, 1, OX50)
+	var tipos_50 := {pared_50: "pared", ventana_50: "ventana"}
+	var cuenta_50: Array = [0]
+	mundo_d.fantasmas_cambiados.connect(func() -> void: cuenta_50[0] += 1)
+	var id_50: int = mundo_d.iniciar_construccion_fantasma([relleno_50], {relleno_50: "tierra"}, mundo_d.ordenar_celdas_edificio(tipos_50), tipos_50)
+	assert(cuenta_50[0] == 1, "iniciar")
+	mundo_d.surtir_construccion(pared_50)  # relleno
+	assert(cuenta_50[0] == 2, "surtir: paso de relleno")
+	mundo_d.surtir_construccion(pared_50)  # pared
+	assert(cuenta_50[0] == 3, "surtir: paso de estructura")
+	mundo_d.surtir_construccion(pared_50)  # ventana (completa)
+	assert(cuenta_50[0] == 4)
+	mundo_d.procesar_deconstruccion(pared_50)  # revierte ventana
+	assert(cuenta_50[0] == 5, "deconstruir")
+	mundo_d.procesar_deconstruccion(pared_50)  # revierte pared -> progreso 0
+	assert(cuenta_50[0] == 6)
+	mundo_d.procesar_deconstruccion(pared_50)  # progreso 0: no revierte nada
+	assert(cuenta_50[0] == 6, "sin celda revertida no hay emisión")
+	mundo_d.eliminar_edificio(id_50)
+	assert(cuenta_50[0] == 7, "eliminar")
+	print("OK: la señal se emite en cada punto que puede cambiar los marcadores.")
+
+	print("\n=== Las 53 pruebas de BlueprintValidator pasaron correctamente ===")

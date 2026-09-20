@@ -112,14 +112,17 @@ func calcular_excavacion(esquina: Vector2i, columnas: Array[Vector2i], base_y: i
 		var z: int = esquina.y + rel.y
 		for y in range(_generador.altura_en(x, z), base_y - 1, -1):
 			celdas.append(Vector3i(x, y, z))
-	celdas.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
-		if a.y != b.y:
-			return a.y > b.y
-		if a.x != b.x:
-			return a.x < b.x
-		return a.z < b.z
-	)
+	celdas.sort_custom(_arriba_abajo)
 	return celdas
+
+
+## Comparador de celdas de excavación: de arriba hacia abajo, luego x, luego z.
+static func _arriba_abajo(a: Vector3i, b: Vector3i) -> bool:
+	if a.y != b.y:
+		return a.y > b.y
+	if a.x != b.x:
+		return a.x < b.x
+	return a.z < b.z
 
 
 ## Nivel base de un blueprint colocado en "esquina": la Y mundial de su
@@ -128,10 +131,20 @@ func calcular_excavacion(esquina: Vector2i, columnas: Array[Vector2i], base_y: i
 ## rel.y_puerta. "frente" es el vecino cardinal en XZ que cae fuera de la
 ## huella (mismo criterio que VoxelWorld.calcular_despeje()). Rechaza
 ## ("valido": false) si una puerta y su frente difieren en más de
-## LIMITE_PENDIENTE ("pendiente") o si dos puertas piden base_y distintos
-## ("puertas"). Sin puertas devuelve altura_objetivo() + 1, el
-## comportamiento anterior. "frentes" son todas las columnas frontales, para
-## que el llamador valide lo que este módulo no ve (agua, límites del mundo).
+## LIMITE_PENDIENTE ("pendiente") o si dos puertas piden base_y distintos, o
+## dos puertas de la misma dirección piden un suelo frontal G distinto, o una
+## columna cae en dos fachadas con G distinto ("puertas"). Sin puertas
+## devuelve altura_objetivo() + 1, el comportamiento anterior. "frentes" son
+## todas las columnas frontales, para que el llamador valide lo que este
+## módulo no ve (agua, límites del mundo).
+##
+## "fachada" (columna mundial Vector2i -> G) es la franja que también se
+## nivela (ver docs/superpowers/specs/2026-09-20-nivelacion-frente-y-overlays-
+## design.md): para cada dirección con puerta, las 2 columnas delante de TODAS
+## las columnas de la huella cuyo vecino en esa dirección queda fuera de ella
+## (todo el lado; en una huella en L sigue el contorno), sin contar columnas
+## de la propia huella. G es el suelo natural delante de la puerta. Vacía si
+## el resultado es inválido.
 func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary) -> Dictionary:
 	var huella: Dictionary = {}  # Vector2i -> true
 	var columnas: Array[Vector2i] = []
@@ -144,6 +157,7 @@ func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary) -> Dictionary:
 
 	var frentes: Array[Vector2i] = []
 	var candidatos: Dictionary = {}  # int base_y -> true
+	var nivel_por_direccion: Dictionary = {}  # Vector2i (dirección) -> int (G)
 	for rel in celdas_3d:
 		if celdas_3d[rel] != "puerta_inferior":
 			continue
@@ -155,13 +169,55 @@ func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary) -> Dictionary:
 			var frente := columna_puerta + direccion
 			var suelo_frente: int = _generador.altura_en(frente.x, frente.y)
 			if abs(_generador.altura_en(columna_puerta.x, columna_puerta.y) - suelo_frente) > LIMITE_PENDIENTE:
-				return {"valido": false, "base_y": respaldo, "motivo": "pendiente", "frentes": frentes}
+				return _base_y_invalida(respaldo, "pendiente", frentes)
 			frentes.append(frente)
 			candidatos[suelo_frente + 1 - rel.y] = true
+			if nivel_por_direccion.get(direccion, suelo_frente) != suelo_frente:
+				return _base_y_invalida(respaldo, "puertas", frentes)
+			nivel_por_direccion[direccion] = suelo_frente
 	if candidatos.size() > 1:
-		return {"valido": false, "base_y": respaldo, "motivo": "puertas", "frentes": frentes}
+		return _base_y_invalida(respaldo, "puertas", frentes)
+
+	var fachada: Dictionary = {}  # Vector2i (columna mundial) -> int (G)
+	for direccion: Vector2i in nivel_por_direccion:
+		var nivel: int = nivel_por_direccion[direccion]
+		for c: Vector2i in columnas:
+			if huella.has(c + direccion):
+				continue
+			for paso in range(1, 3):
+				var relativa: Vector2i = c + direccion * paso
+				if huella.has(relativa):
+					continue
+				var columna: Vector2i = esquina + relativa
+				if fachada.get(columna, nivel) != nivel:
+					return _base_y_invalida(respaldo, "puertas", frentes)
+				fachada[columna] = nivel
+
 	var base_y: int = respaldo if candidatos.is_empty() else candidatos.keys()[0]
-	return {"valido": true, "base_y": base_y, "motivo": "", "frentes": frentes}
+	return {"valido": true, "base_y": base_y, "motivo": "", "frentes": frentes, "fachada": fachada}
+
+
+func _base_y_invalida(respaldo: int, motivo: String, frentes: Array[Vector2i]) -> Dictionary:
+	return {"valido": false, "base_y": respaldo, "motivo": motivo, "frentes": frentes, "fachada": {}}
+
+
+## Lo que hay que cavar y rellenar para llevar cada columna de "fachada"
+## (columna mundial -> nivel G, ver calcular_base_y()) a su nivel: se cava todo
+## bloque por encima de G y se rellena de tierra hasta G. Devuelve
+## {"excavacion": Array[Vector3i] (de arriba hacia abajo), "relleno":
+## Dictionary (Vector2i -> cantidad de bloques)}.
+func calcular_nivelacion_fachada(fachada: Dictionary) -> Dictionary:
+	var excavacion: Array[Vector3i] = []
+	var relleno: Dictionary = {}  # Vector2i -> int
+	for columna: Vector2i in fachada:
+		var nivel: int = fachada[columna]
+		var superficie: int = _generador.altura_en(columna.x, columna.y)
+		for y in range(superficie, nivel, -1):
+			excavacion.append(Vector3i(columna.x, y, columna.y))
+		if nivel > superficie:
+			relleno[columna] = nivel - superficie
+	excavacion.sort_custom(_arriba_abajo)
+	return {"excavacion": excavacion, "relleno": relleno}
 
 
 ## Neto por material de un blueprint: negativo = hace falta, positivo =

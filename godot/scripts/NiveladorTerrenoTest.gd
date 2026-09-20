@@ -2,7 +2,7 @@ extends Node
 
 ## Pruebas aisladas de NiveladorTerreno.gd (mismo patrón que
 ## ZonificacionTest.gd). Corre esta escena (NiveladorTerrenoTest.tscn) con
-## F6 y revisa el panel "Output": debe imprimir las 15 pruebas y no debe
+## F6 y revisa el panel "Output": debe imprimir las 20 pruebas y no debe
 ## lanzar ningún error de assert(). Usa un generador de alturas falso y
 ## determinista (no GeneradorMundo real, que usa ruido) para poder construir
 ## pendientes exactas y verificar el cálculo de relleno con precisión.
@@ -87,6 +87,21 @@ func _casa_4x5(puerta_extra_derecha: bool = false) -> Dictionary:
 	if puerta_extra_derecha:
 		celdas[Vector3i(3, 1, 2)] = "puerta_inferior"
 		celdas[Vector3i(3, 2, 2)] = "puerta_superior"
+	return celdas
+
+
+## Huella en L (14 columnas): barra x=0..4 x z=0..1 más barra x=0..1 x z=2..3;
+## losa "pared" en y=0 y una puerta en (x=3, z=1) (y=1..2) que mira hacia +z.
+func _casa_l() -> Dictionary:
+	var celdas: Dictionary = {}
+	for x in range(5):
+		for z in range(2):
+			celdas[Vector3i(x, 0, z)] = "pared"
+	for x in range(2):
+		for z in range(2, 4):
+			celdas[Vector3i(x, 0, z)] = "pared"
+	celdas[Vector3i(3, 1, 1)] = "puerta_inferior"
+	celdas[Vector3i(3, 2, 1)] = "puerta_superior"
 	return celdas
 
 
@@ -238,4 +253,56 @@ func ejecutar_pruebas() -> void:
 	assert(texto_15 == "Materiales de construcción:\n79 piedra\n12 madera\n+ 19 tierra", texto_15)
 	assert(HUDScript.texto_materiales({}) == "Materiales de construcción:\n-")
 
-	print("\n=== Las 15 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 16: calcular_base_y() devuelve la fachada del lado de la puerta, al nivel del suelo frontal ===")
+	# Casa 4x5 con la puerta al oeste (x=0, z=2), terreno plano de altura 5, esquina (10,10):
+	# toda la cara oeste (5 columnas) x 2 de fondo = 10 columnas a nivel G = 5.
+	var base_16: Dictionary = nivelador_plano.calcular_base_y(Vector2i(10, 10), _casa_4x5())
+	assert(base_16["valido"])
+	var fachada_16: Dictionary = base_16["fachada"]
+	assert(fachada_16.size() == 10, "5 columnas de ancho x 2 de fondo")
+	for z_16 in range(10, 15):
+		assert(fachada_16.get(Vector2i(9, z_16)) == 5, "primera columna delante de la cara oeste")
+		assert(fachada_16.get(Vector2i(8, z_16)) == 5, "segunda columna delante de la cara oeste")
+	for clave_16 in fachada_16:
+		assert(clave_16.x < 10, "ninguna columna de la fachada pertenece a la huella")
+
+	print("\n=== TEST 17: la fachada de una huella en L sigue el contorno real ===")
+	# Puerta mirando hacia +z. Bordes que miran a +z: (2,1),(3,1),(4,1) a z=1 y (0,3),(1,3) a z=3.
+	var base_17: Dictionary = nivelador_plano.calcular_base_y(Vector2i(10, 10), _casa_l())
+	assert(base_17["valido"])
+	var fachada_17: Dictionary = base_17["fachada"]
+	assert(fachada_17.size() == 10)
+	assert(fachada_17.has(Vector2i(12, 12)) and fachada_17.has(Vector2i(14, 13)))  # delante de la barra ancha
+	assert(fachada_17.has(Vector2i(10, 14)) and fachada_17.has(Vector2i(11, 15)))  # delante del brazo de la L
+	assert(not fachada_17.has(Vector2i(10, 12)) and not fachada_17.has(Vector2i(10, 13)), "esas columnas son de la propia L")
+
+	print("\n=== TEST 18: dos puertas de la misma dirección con suelo frontal distinto se rechazan (aunque su base_y coincida) ===")
+	# altura_en = z. Puerta A (y=1) en z=2 -> G=12, base 12. Puerta B (y=2) en z=3 -> G=13, base 13+1-2 = 12: misma base_y, distinto G.
+	var casa_18: Dictionary = _casa_4x5()
+	casa_18[Vector3i(0, 2, 3)] = "puerta_inferior"
+	casa_18[Vector3i(0, 3, 3)] = "puerta_superior"
+	var base_18: Dictionary = nivelador_suave.calcular_base_y(Vector2i(10, 10), casa_18)
+	assert(not base_18["valido"] and base_18["motivo"] == "puertas")
+	assert(base_18["fachada"].is_empty())
+
+	print("\n=== TEST 19: calcular_nivelacion_fachada() cava por encima del nivel y rellena por debajo ===")
+	# altura_en = z; nivel 12 en tres columnas de alturas 10, 12 y 14.
+	var nivelacion_19: Dictionary = nivelador_suave.calcular_nivelacion_fachada({
+		Vector2i(9, 10): 12, Vector2i(9, 12): 12, Vector2i(9, 14): 12,
+	})
+	var excavacion_19: Array[Vector3i] = nivelacion_19["excavacion"]
+	assert(excavacion_19.size() == 2, "solo la columna de altura 14 se cava")
+	assert(excavacion_19[0] == Vector3i(9, 14, 14) and excavacion_19[1] == Vector3i(9, 13, 14), "de arriba hacia abajo")
+	assert(nivelacion_19["relleno"].size() == 1 and nivelacion_19["relleno"][Vector2i(9, 10)] == 2, "solo la columna de altura 10 necesita 2 bloques")
+
+	print("\n=== TEST 20: el límite de pendiente sobre huella + fachada rechaza donde la huella sola pasaba ===")
+	# Acantilado (altura 100) en (2,2): es la segunda columna delante de la puerta con esquina (4,0).
+	var base_20: Dictionary = nivelador_acantilado.calcular_base_y(Vector2i(4, 0), _casa_4x5())
+	assert(base_20["valido"], "la puerta y su frente inmediato (3,2) están a nivel")
+	var union_20: Array[Vector2i] = _rectangulo(4, 5)
+	for columna_20: Vector2i in base_20["fachada"]:
+		union_20.append(columna_20 - Vector2i(4, 0))
+	assert(nivelador_acantilado.verificar_pendiente(Vector2i(4, 0), _rectangulo(4, 5)), "la huella sola es válida")
+	assert(not nivelador_acantilado.verificar_pendiente(Vector2i(4, 0), union_20), "con la fachada, el acantilado invalida")
+
+	print("\n=== Las 20 pruebas de NiveladorTerreno pasaron correctamente ===")

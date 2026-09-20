@@ -1363,4 +1363,21 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.obtener_tipo(agua_48b) == "agua", "el agua original no debe desaparecer")
 	print("OK: la excavación 'aire' avisa al agua vecina igual que minar_bloque().")
 
-	print("\n=== Las 49 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 48c: eliminar_edificio() descarta la excavación pendiente de su cola pero conserva el relleno huérfano ===")
+	const OX48C := 1400
+	var celda_cavar_48c := Vector3i(OX48C, 1, OX48C)        # terreno real que se iba a cavar
+	var celda_estructura_48c := Vector3i(OX48C + 1, 1, OX48C)
+	var celda_relleno_48c := Vector3i(OX48C + 2, 1, OX48C)  # hueco por rellenar
+	mundo.colocar_bloque(celda_cavar_48c, "tierra")
+	var orden_prep_48c: Array[Vector3i] = [celda_cavar_48c, celda_relleno_48c]
+	var id_48c: int = mundo.iniciar_construccion_fantasma(orden_prep_48c, {celda_cavar_48c: "aire", celda_relleno_48c: "tierra"}, [celda_estructura_48c], {celda_estructura_48c: "pared"})
+	var r_48c: Dictionary = mundo.procesar_deconstruccion(celda_estructura_48c)
+	assert(r_48c["lista_para_remocion"], "un edificio a progreso 0 ya está listo para remoción")
+	mundo.eliminar_edificio(id_48c)
+	assert(mundo.surtir_construccion(celda_cavar_48c).is_empty(), "la excavación pendiente de un edificio eliminado ya no se aplica")
+	assert(mundo.obtener_tipo(celda_cavar_48c) == "tierra", "el terreno real no se cava")
+	mundo.surtir_construccion(celda_relleno_48c)
+	assert(mundo.obtener_tipo(celda_relleno_48c) == "tierra", "el relleno huérfano sigue completable")
+	print("OK: eliminar_edificio() descarta solo los pasos de excavación pendientes; el relleno huérfano se conserva.")
+
+	print("\n=== Las 50 pruebas de BlueprintValidator pasaron correctamente ===")

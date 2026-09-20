@@ -1208,6 +1208,11 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_tipos.erase(id)
 	edificio_progreso.erase(id)
 	edificio_metadata.erase(id)
+	# La excavación pendiente (terreno real, "aire"/"fantasma") no debe
+	# poder aplicarse ya sin edificio; el relleno pendiente sigue como
+	# relleno huérfano (ver surtir_construccion()).
+	if edificio_relleno_cola.has(id):
+		Construccion.descartar_pendientes(edificio_relleno_cola[id], ["aire", "fantasma"])
 	edificio_relleno_cola.erase(id)
 	for celda_despeje in edificio_despeje.get(id, []):
 		if celda_a_despeje.has(celda_despeje):

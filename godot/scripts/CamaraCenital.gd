@@ -1420,18 +1420,20 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 
 
 ## Confirma la colocación del blueprint activo en la celda bajo el cursor
-## si las 5 validaciones (zona correcta, relieve, huella libre, sin choque,
-## esquina en tierra firme) pasan — si no, imprime el motivo y PERMANECE en
-## modo colocar-blueprint. A diferencia de _procesar_clic_puesto() (que
+## si las validaciones (zona correcta, relieve, huella libre, sin choque,
+## esquina en tierra firme, nivel base `base_y` válido para las puertas y
+## despejes de ventanas/puertas) pasan — si no, imprime el motivo y PERMANECE
+## en modo colocar-blueprint. A diferencia de _procesar_clic_puesto() (que
 ## coloca el marcador de inmediato), esto NO completa nada: drena el agua,
 ## calcula el nivel base (`base_y`, puerta a ras del suelo frontal), la
-## excavación y el relleno, reubica blueprint["celdas_3d"] en el
-## mundo e inicia dos colas INDEPENDIENTES, cada una surtible por su cuenta:
-## el relleno de tierra (Construccion.gd, vía iniciar_construccion_fantasma())
-## y el orden de la estructura del edificio (VoxelWorld.edificio_orden, ver
+## excavación y el relleno, reubica blueprint["celdas_3d"] en el mundo e
+## inicia UNA cola de preparación del terreno (excavación primero, luego
+## relleno; Construccion.gd, vía VoxelWorld.iniciar_construccion_fantasma())
+## más el orden de la estructura del edificio (VoxelWorld.edificio_orden, ver
 ## VoxelWorld.ordenar_celdas_edificio()) — la finalización real ocurre
 ## después, celda por celda, cuando el jugador la surte (ver
-## Player._minar()/_completar_construccion()).
+## Player._minar()/_completar_construccion()); la estructura solo avanza
+## cuando la cola de preparación se agota.
 func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	var ancho: int = _blueprint_activo["ancho"]

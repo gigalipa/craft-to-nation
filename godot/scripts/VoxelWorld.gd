@@ -333,6 +333,9 @@ func _ready() -> void:
 	translucidos._indexar_materiales()
 	bloque_translucido_cambiado.connect(translucidos._on_bloque_translucido_cambiado)
 	translucidos.reconstruir_todo()
+	var destacados: Node3D = get_node("FantasmasDestacados")
+	destacados.voxel_world = self
+	fantasmas_cambiados.connect(destacados.marcar_sucio)
 
 
 func _indexar_biblioteca() -> void:

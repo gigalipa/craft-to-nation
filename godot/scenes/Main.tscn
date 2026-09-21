@@ -81,9 +81,9 @@ text = "Moral (variedad): 0.0"
 [node name="MinaFicha" type="VBoxContainer" parent="HUDLayer" unique_id=382321728]
 visible = false
 offset_left = 12.0
-offset_top = 160.0
+offset_top = 320.0
 offset_right = 320.0
-offset_bottom = 280.0
+offset_bottom = 440.0
 
 [node name="CostoLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=1528040882]
 layout_mode = 2
@@ -101,9 +101,9 @@ autowrap_mode = 2
 [node name="CazaFicha" type="VBoxContainer" parent="HUDLayer" unique_id=672351415]
 visible = false
 offset_left = 12.0
-offset_top = 160.0
+offset_top = 320.0
 offset_right = 320.0
-offset_bottom = 280.0
+offset_bottom = 440.0
 
 [node name="CostoLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=359706175]
 layout_mode = 2
@@ -121,9 +121,9 @@ autowrap_mode = 2
 [node name="MaderoFicha" type="VBoxContainer" parent="HUDLayer" unique_id=1476136460]
 visible = false
 offset_left = 12.0
-offset_top = 160.0
+offset_top = 320.0
 offset_right = 320.0
-offset_bottom = 280.0
+offset_bottom = 440.0
 
 [node name="CostoLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=683074046]
 layout_mode = 2
@@ -141,9 +141,9 @@ autowrap_mode = 2
 [node name="PescaFicha" type="VBoxContainer" parent="HUDLayer"]
 visible = false
 offset_left = 12.0
-offset_top = 160.0
+offset_top = 320.0
 offset_right = 320.0
-offset_bottom = 280.0
+offset_bottom = 440.0
 
 [node name="CostoLabel" type="Label" parent="HUDLayer/PescaFicha"]
 layout_mode = 2
@@ -161,23 +161,23 @@ autowrap_mode = 2
 [node name="MaterialesFicha" type="Label" parent="HUDLayer" unique_id=1902384756]
 visible = false
 offset_left = 12.0
-offset_top = 160.0
+offset_top = 320.0
 offset_right = 320.0
-offset_bottom = 280.0
+offset_bottom = 440.0
 text = "Materiales de construcción:"
 
 [node name="ModoDeconstruccionLabel" type="Label" parent="HUDLayer" unique_id=1106098849]
 visible = false
 offset_left = 12.0
-offset_top = 300.0
+offset_top = 450.0
 offset_right = 420.0
-offset_bottom = 330.0
+offset_bottom = 480.0
 text = "Modo deconstrucción activo (G para cancelar)"
 
 [node name="OxigenoLabel" type="Label" parent="HUDLayer"]
 visible = false
 offset_left = 12.0
-offset_top = 340.0
+offset_top = 490.0
 offset_right = 260.0
-offset_bottom = 370.0
+offset_bottom = 520.0
 text = "Oxígeno: 100%"

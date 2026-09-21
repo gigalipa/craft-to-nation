@@ -30,12 +30,17 @@ func _ready() -> void:
 	offset_left = -280.0
 	offset_top = 12.0
 	offset_right = -12.0
+	custom_minimum_size.x = 268.0
+	grow_horizontal = Control.GROW_DIRECTION_BEGIN  # si crece, hacia la izquierda
 	var caja := VBoxContainer.new()
 	add_child(caja)
 	caja.add_child(_titulo)
 	for rol in ["recolector", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
 	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _distancia]:
+		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		etiqueta.custom_minimum_size.x = 250.0
 		caja.add_child(etiqueta)
 
 

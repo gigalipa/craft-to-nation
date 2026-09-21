@@ -66,7 +66,7 @@ const CAPACIDAD_ALMACENAMIENTO_MADERERO := 1000
 
 const RADIO_AREA_CAZA_RECOLECCION := 12
 const PASO_MUESTREO_CAZA_RECOLECCION := 2  # cada 2 celdas, no las ~450 del área completa
-const TASA_BASE_CAZA_POR_CIUDADANO := 15.0  # Excel: venado 15/h
+const TASA_BASE_CAZA_POR_CIUDADANO := 10.0  # ya no es el venado 15 del Excel: balance decidido el 2026-09-21 para que caza + frutos = 7,5/h a densidad 0.5
 const TASA_BASE_FRUTOS_POR_CIUDADANO := 5.0  # Excel: columna "Árbol (obj)", Comida 5/h (se interpreta como frutos)
 const ANCHO_HUELLA_CAZA_RECOLECCION := 4
 const ALTO_HUELLA_CAZA_RECOLECCION := 4
@@ -81,8 +81,8 @@ const ANCHO_HUELLA_PESCA_FRUTOS_MAR := 4
 const ALTO_HUELLA_PESCA_FRUTOS_MAR := 6
 
 const RADIO_AREA_PESCA_FRUTOS_MAR := 25
-const TASA_BASE_PESCA_POR_CIUDADANO := 5.0  # Excel: pescado 5/h
-const TASA_BASE_ALGAS_POR_CIUDADANO := 1.0  # Excel: algas 1/h
+const TASA_BASE_PESCA_POR_CIUDADANO := 12.0  # balance decidido el 2026-09-21: pesca + algas ~7,5/h a densidad media
+const TASA_BASE_ALGAS_POR_CIUDADANO := 3.0  # balance decidido el 2026-09-21; la densidad de algas depende de la profundidad, así que el promedio es aproximado
 
 # GDD Sección 3 — mismos valores placeholder que los otros tres puestos,
 # sin balance real todavía (ver Recoleccion.COSTO_CONSTRUCCION).

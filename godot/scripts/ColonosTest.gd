@@ -455,7 +455,8 @@ func ejecutar_pruebas() -> void:
 	var ciudad21: Node = CiudadScript.new()
 	var colonos21: Node = _nuevo_con_puesto(ciudad21)
 	var madera_inicial: float = ciudad21.almacen["madera"].cantidad
-	colonos21.economia.puestos[Vector2i(2, 2)]["almacen"]["madera"] = 30.0  # almacén local con carga de sobra
+	var carga21: float = colonos21.economia.CAPACIDAD_CARGA
+	colonos21.economia.puestos[Vector2i(2, 2)]["almacen"]["madera"] = carga21 + 10.0  # almacén local con carga de sobra
 	var id21: int = colonos21.agregar_colono("desempleado", Vector3i(4, 1, 4))
 	ciudad21.demografia["desempleado"] = 1
 	assert(colonos21.contratar(Vector2i(2, 2), "acarreador"))
@@ -466,7 +467,7 @@ func ejecutar_pruebas() -> void:
 			entregado21 = true
 			break
 	assert(entregado21, "el acarreador entrega en el núcleo")
-	assert(is_equal_approx(ciudad21.almacen["madera"].cantidad, madera_inicial + 20.0), "una carga de 20")
+	assert(is_equal_approx(ciudad21.almacen["madera"].cantidad, madera_inicial + carga21), "una carga completa")
 	assert(is_equal_approx(colonos21.economia.almacen_local(Vector2i(2, 2))["madera"], 10.0), "quedan 10 en el puesto")
 	assert(colonos21.colonos[id21]["carga"].is_empty(), "ya no lleva nada")
 

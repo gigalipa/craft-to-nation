@@ -239,7 +239,8 @@ func ejecutar_pruebas() -> void:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
 	assert(ocho.almacen.size() == 8)
 	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 1000.0)
-	assert(ocho.almacen["comida"].limite == 2000.0)
+	assert(ocho.almacen["comida"].cantidad == ocho.almacen["comida"].limite, "la comida inicial es su límite")
+	assert(ocho.almacen["comida"].limite > 1000.0, "el límite de comida supera el de los demás")
 
 	print("\n=== TEST 19: reasignar_tipo() mueve un habitante de un tipo a otro ===")
 	var reasig: Node = CiudadScript.new()

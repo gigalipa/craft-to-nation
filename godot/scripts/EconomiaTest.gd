@@ -64,15 +64,16 @@ func ejecutar_pruebas() -> void:
 	e3.marcar_presente(2, false)
 	assert(e3.trabajadores_de(ESQ)["presentes"] == 1)
 
-	print("\n=== TEST 4: el almacén local tiene tope (100) y el exceso se pierde ===")
+	print("\n=== TEST 4: el almacén local tiene tope (el de su tipo de puesto) y el exceso se pierde ===")
 	var e4: Node = _nueva(CiudadScript.new())
 	e4.registrar_puesto(Vector2i(50, 50), "mina", 5, 5, {"hierro": 30.0, "piedra": 10.0})
 	e4.asignar(Vector2i(50, 50), "recolector", 1)
 	e4.marcar_presente(1, true)
-	for i in range(10):
+	var tope4: float = Recoleccion.capacidad_almacen_de("mina")
+	for i in range(int(ceil(tope4 / 40.0)) + 2):  # 40/h de producción: se pasa del tope seguro
 		e4.simular_hora()
 	var local4: Dictionary = e4.almacen_local(Vector2i(50, 50))
-	assert(is_equal_approx(local4["hierro"] + local4["piedra"], 100.0), "nunca pasa de 100 en total")
+	assert(is_equal_approx(local4["hierro"] + local4["piedra"], tope4), "nunca pasa del tope del puesto")
 	assert(is_equal_approx(local4["hierro"] / local4["piedra"], 3.0), "conserva la proporción de la tasa")
 
 	print("\n=== TEST 5: caza, frutos, pesca y algas suman en comida ===")

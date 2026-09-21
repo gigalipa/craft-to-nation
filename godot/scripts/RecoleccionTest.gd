@@ -173,7 +173,7 @@ func ejecutar_pruebas() -> void:
 	var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.5, "frutal": 0.25})
 	assert(is_equal_approx(tasas_caza["caza"], 0.5 * Recoleccion.TASA_BASE_CAZA_POR_CIUDADANO))
 	assert(is_equal_approx(tasas_caza["recoleccion"], 0.25 * Recoleccion.TASA_BASE_FRUTOS_POR_CIUDADANO))
-	assert(is_equal_approx(tasas_caza["caza"], 7.5) and is_equal_approx(tasas_caza["recoleccion"], 1.25))
+	assert(is_equal_approx(tasas_caza["caza"], 5.0) and is_equal_approx(tasas_caza["recoleccion"], 1.25))
 
 	print("\n=== TEST 10: quitar_puesto() libera la reserva ===")
 	Recoleccion.puestos.clear()
@@ -280,7 +280,7 @@ func ejecutar_pruebas() -> void:
 	var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3})
 	assert(is_equal_approx(tasas_pesca["pesca"], 0.5 * Recoleccion.TASA_BASE_PESCA_POR_CIUDADANO))
 	assert(is_equal_approx(tasas_pesca["frutos_mar"], 0.3 * Recoleccion.TASA_BASE_ALGAS_POR_CIUDADANO))
-	assert(is_equal_approx(tasas_pesca["pesca"], 2.5) and is_equal_approx(tasas_pesca["frutos_mar"], 0.3))
+	assert(is_equal_approx(tasas_pesca["pesca"], 6.0) and is_equal_approx(tasas_pesca["frutos_mar"], 0.9))
 
 	print("\n=== TEST 17: celdas_agua_conectadas() sigue solo agua conectada por adyacencia, ignora un charco aislado dentro del mismo radio ===")
 	var generador_conectada := GeneradorAguaConectadaFalso.new()
@@ -306,7 +306,10 @@ func ejecutar_pruebas() -> void:
 	assert(Recoleccion.cupo_de("pesca_frutos_mar") == 7)
 	assert(Recoleccion.cupo_de("mina") == 5)
 	assert(Recoleccion.cupo_de("blueprint") == 0)
-	assert(Recoleccion.capacidad_almacen_de("mina") == 100 and Recoleccion.capacidad_almacen_de("maderero") == 100)
+	assert(Recoleccion.capacidad_almacen_de("mina") == Recoleccion.CAPACIDAD_ALMACENAMIENTO)
+	assert(Recoleccion.capacidad_almacen_de("maderero") == Recoleccion.CAPACIDAD_ALMACENAMIENTO_MADERERO)
+	assert(Recoleccion.capacidad_almacen_de("caza_recoleccion") == Recoleccion.CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION)
+	assert(Recoleccion.capacidad_almacen_de("pesca_frutos_mar") == Recoleccion.CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR)
 	assert(Recoleccion.capacidad_almacen_de("blueprint") == 0)
 
 	print("\n=== TEST 20: esquina_de_puesto_en() encuentra el puesto por cualquier celda de su huella ===")
@@ -319,4 +322,12 @@ func ejecutar_pruebas() -> void:
 	assert(Recoleccion.esquina_de_puesto_en(Vector2i(31, 31)) == Recoleccion.SIN_PUESTO, "un edificio (blueprint) no es un puesto de trabajo")
 	Recoleccion.puestos.clear()
 
-	print("\n=== Las 20 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 21: un recolector de comida aporta 7.5/h a densidad media ===")
+	# Meta de diseño: 5/h para sí mismo + 2.5/h (medio acarreador). Con tres obreros
+	# (2 recolectores + 1 acarreador) el grupo se sostiene solo; el 4.º recolector deja 2.5/h al avatar.
+	var caza_media: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.5, "frutal": 0.5})
+	assert(is_equal_approx(caza_media["caza"] + caza_media["recoleccion"], 7.5))
+	var pesca_media: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.5})
+	assert(is_equal_approx(pesca_media["pesca"] + pesca_media["frutos_mar"], 7.5))
+
+	print("\n=== Las 21 pruebas de Recoleccion pasaron correctamente ===")

@@ -14,8 +14,10 @@ extends Node
 ## (Colonos.gd los vuelve a desempleado).
 signal puesto_quitado(ids: Array)
 
-## Unidades que un acarreador lleva por viaje (placeholder sin balance real).
-const CAPACIDAD_CARGA := 30.0
+## Unidades que un acarreador lleva por viaje (placeholder). Con ~20 celdas de ruta
+## un acarreador mueve ~16 comida/h, es decir 1 acarreador por cada 2 recolectores;
+## los puestos más lejanos rinden menos.
+const CAPACIDAD_CARGA := 150.0
 
 const ROLES := ["recolector", "acarreador"]
 

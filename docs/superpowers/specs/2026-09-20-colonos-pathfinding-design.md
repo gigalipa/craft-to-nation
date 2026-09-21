@@ -121,8 +121,7 @@ de la columna vecina entre la altura actual y la de destino, más las 2 de
 alto del NPC, deben estar libres (subir exige además la celda `c + 2·arriba`
 libre en la columna de origen). Sin diagonales.
 
-**Búsqueda:** A\* con cola de prioridad binaria, coste 1 por paso, heurística
-Manhattan 3D, tope de nodos expandidos por consulta
+**Búsqueda:** A\* con cola de prioridad binaria, coste 1 + |dy| por paso (así la heurística Manhattan 3D sigue siendo admisible), tope de nodos expandidos por consulta
 (`MAX_NODOS_EXPANDIDOS := 20000`, suficiente para cruzar el mapa de
 200×200). `buscar_ruta(origen, destino) -> Array[Vector3i]` devuelve las
 celdas a recorrer (sin incluir el origen) o `[]` si no hay ruta, el origen

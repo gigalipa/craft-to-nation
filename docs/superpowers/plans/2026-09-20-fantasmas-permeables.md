@@ -43,7 +43,7 @@ Pasa si imprime una única línea `=== Las N pruebas de ... pasaron correctament
 | Archivo | Acción | Responsabilidad |
 |---|---|---|
 | `godot/scripts/BuscadorRutas.gd` | Modificar | `ignorar_fantasmas`, búsqueda genérica `_buscar()` y `buscar_salida()` |
-| `godot/scripts/BuscadorRutasTest.gd` | Modificar | Pruebas 14-16 |
+| `godot/scripts/BuscadorRutasTest.gd` | Modificar | Pruebas 15-17 |
 | `godot/scripts/CuerposObra.gd` | Crear | Un `StaticBody3D` por obra con una caja por celda fantasma |
 | `godot/scripts/FantasmasPermeablesTest.gd` + `godot/scenes/FantasmasPermeablesTest.tscn` | Crear | Pruebas de `CuerposObra` (física real) y de los permisos/puerta de `VoxelWorld` |
 | `godot/scripts/VoxelWorld.gd` | Modificar | Sin colisión en el ítem fantasma, cuerpos por obra, volumen, permisos, señal, puerta de inicio |
@@ -69,7 +69,7 @@ Pasa si imprime una única línea `=== Las N pruebas de ... pasaron correctament
   - `buscar_salida(origen: Vector3i, esta_dentro: Callable, opciones: Dictionary = {}) -> Array[Vector3i]` — ruta más corta (sin incluir el origen) hasta la primera celda transitable para la que `esta_dentro.call(celda)` es `false`; `[]` si no hay o si el origen ya está fuera.
   - El suelo sigue contando un fantasma como sólido incluso con `ignorar_fantasmas` (solo el cuerpo y la cabeza lo atraviesan).
 
-- [ ] **Step 1: Agregar las pruebas 14-16 (fallarán)**
+- [ ] **Step 1: Agregar las pruebas 15-17 (fallarán)**
 
 En `godot/scripts/BuscadorRutasTest.gd`, ampliar `MundoFalso` con las obras (dentro de `class MundoFalso extends RefCounted:`, junto a `celdas`):
 
@@ -87,7 +87,7 @@ En `godot/scripts/BuscadorRutasTest.gd`, ampliar `MundoFalso` con las obras (den
 Antes del `print` final, agregar:
 
 ```gdscript
-	print("\n=== TEST 14: Un fantasma solo se atraviesa con el permiso de SU obra ===")
+	print("\n=== TEST 15: Un fantasma solo se atraviesa con el permiso de SU obra ===")
 	var m14 := MundoFalso.new()
 	_llano(m14, 6, 1)  # una sola fila
 	m14.poner_fantasma(Vector3i(2, 1, 0), 7)
@@ -101,7 +101,7 @@ Antes del `print` final, agregar:
 	assert(ruta14.size() == 4 and ruta14.has(Vector3i(2, 1, 0)), "con permiso cruza la pared fantasma")
 	assert(b14.buscar_ruta(Vector3i(0, 1, 0), Vector3i(4, 1, 0), {"ignorar_fantasmas": [8]}).is_empty())
 
-	print("\n=== TEST 15: buscar_salida() lleva desde dentro de la obra hasta la primera celda de fuera ===")
+	print("\n=== TEST 16: buscar_salida() lleva desde dentro de la obra hasta la primera celda de fuera ===")
 	var m15 := MundoFalso.new()
 	_llano(m15, 7, 7)
 	for x in range(2, 5):  # un cubo fantasma macizo de 3x3x2
@@ -117,14 +117,14 @@ Antes del `print` final, agregar:
 	assert(not esta_dentro.call(salida15.back()), "termina fuera del volumen")
 	assert(b15.buscar_salida(Vector3i(3, 1, 3), esta_dentro).is_empty(), "sin permiso, el origen es un sólido: no hay ruta")
 
-	print("\n=== TEST 16: Si el origen ya está fuera, no hay nada que recorrer ===")
+	print("\n=== TEST 17: Si el origen ya está fuera, no hay nada que recorrer ===")
 	assert(b15.buscar_salida(Vector3i(0, 1, 0), esta_dentro).is_empty())
 ```
 
 y cambiar la última línea a:
 
 ```gdscript
-	print("\n=== Las 16 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== Las 17 pruebas de BuscadorRutas pasaron correctamente ===")
 ```
 
 - [ ] **Step 2: Ejecutar y verificar que falla**
@@ -370,7 +370,7 @@ GD="/c/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt
 "$GD" --headless --path godot res://scenes/ColonosTest.tscn --quit-after 300 2>&1 | grep -E "pasaron correctamente|Assertion|SCRIPT ERROR|Parse Error"
 ```
 
-Expected: `=== Las 16 pruebas de BuscadorRutas pasaron correctamente ===` y `=== Las 12 pruebas de Colonos pasaron correctamente ===` (Colonos usa el buscador; no debe romperse).
+Expected: `=== Las 17 pruebas de BuscadorRutas pasaron correctamente ===` y `=== Las 12 pruebas de Colonos pasaron correctamente ===` (Colonos usa el buscador; no debe romperse).
 
 - [ ] **Step 5: Commit**
 

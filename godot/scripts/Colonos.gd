@@ -42,6 +42,10 @@ var colonos: Dictionary = {}
 ## Vector3i -> id de colono: la celda que ocupa cada colono y, mientras da un
 ## paso, también la celda a la que va (reserva).
 var ocupadas: Dictionary = {}
+## Celdas que el avatar ocupa ahora (Vector3i -> true): la suya y, si se está
+## moviendo, la de adelante. Los colonos las esquivan pero no huyen: solo
+## abandonan su destino si quedan bloqueados (ver _esquivar()).
+var celdas_avatar: Dictionary = {}
 
 var _siguiente_id := 1
 var _buscador: RefCounted = null
@@ -217,17 +221,34 @@ func _completar_paso(c: Dictionary, delta: float) -> void:
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
 
 
+## La llama Player.gd en cada frame de física con la celda donde está y su
+## velocidad. Si se mueve (más de 0.5 celdas/s horizontales), la celda de
+## adelante, en el sentido dominante de la velocidad, también cuenta.
+func actualizar_avatar(celda: Vector3i, velocidad: Vector3) -> void:
+	celdas_avatar.clear()
+	celdas_avatar[celda] = true
+	var horizontal := Vector2(velocidad.x, velocidad.z)
+	if horizontal.length() <= 0.5:
+		return
+	if absf(horizontal.x) > absf(horizontal.y):
+		celdas_avatar[celda + Vector3i(int(signf(horizontal.x)), 0, 0)] = true
+	else:
+		celdas_avatar[celda + Vector3i(0, 0, int(signf(horizontal.y)))] = true
+
+
 func _ocupada_por_otro(celda: Vector3i, id: int) -> bool:
-	return ocupadas.has(celda) and ocupadas[celda] != id
+	return (ocupadas.has(celda) and ocupadas[celda] != id) or celdas_avatar.has(celda)
 
 
-## Celdas que este colono no puede pisar ahora: las de los demás colonos.
-## (La Tarea 4 añade las del avatar.)
+## Celdas que este colono no puede pisar ahora: las de los demás colonos y
+## las del avatar.
 func _bloqueadas_para(id: int) -> Dictionary:
 	var bloqueadas := {}
 	for celda in ocupadas:
 		if ocupadas[celda] != id:
 			bloqueadas[celda] = true
+	for celda in celdas_avatar:
+		bloqueadas[celda] = true
 	return bloqueadas
 
 

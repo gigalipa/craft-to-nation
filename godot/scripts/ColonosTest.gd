@@ -185,4 +185,82 @@ func ejecutar_pruebas() -> void:
 	colonos8._retirar(id8)
 	assert(colonos8.ocupadas.is_empty(), "no queda ni la celda que deja ni la reservada")
 
-	print("\n=== Las 8 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 9: Dos colonos nunca comparten celda; el bloqueado rodea al otro ===")
+	var colonos9: Node = _nuevo(_mundo_llano(), CiudadScript.new())
+	var id_a: int = colonos9.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var id_b: int = colonos9.agregar_colono("obrero", Vector3i(2, 1, 1))
+	var a9: Dictionary = colonos9.colonos[id_a]
+	var b9: Dictionary = colonos9.colonos[id_b]
+	b9["espera"] = 999.0  # B se queda quieto estorbando
+	var ruta9: Array[Vector3i] = [Vector3i(2, 1, 1), Vector3i(3, 1, 1)]
+	a9["ruta"] = ruta9
+	var llego9 := false
+	for i in range(80):
+		colonos9.avanzar(0.1)
+		assert(a9["celda"] != b9["celda"], "nunca comparten celda")
+		assert(colonos9.ocupadas.size() == 2 or colonos9.ocupadas.size() == 3, "solo su celda y, a lo sumo, la reservada")
+		if a9["celda"] == Vector3i(3, 1, 1):
+			llego9 = true  # al llegar se queda esperando y luego deambularía: se comprueba aquí y se corta
+			break
+	assert(llego9, "tras esperar, A rodea a B y llega a su destino")
+
+	print("\n=== TEST 10: En un pasillo de una celda, el bloqueado abandona su destino ===")
+	var colonos10: Node = _nuevo(_mundo_llano(10, 1), CiudadScript.new())  # una sola fila
+	var id_a10: int = colonos10.agregar_colono("obrero", Vector3i(1, 1, 0))
+	var id_b10: int = colonos10.agregar_colono("obrero", Vector3i(2, 1, 0))
+	var a10: Dictionary = colonos10.colonos[id_a10]
+	colonos10.colonos[id_b10]["espera"] = 999.0
+	var ruta10: Array[Vector3i] = [Vector3i(2, 1, 0), Vector3i(3, 1, 0)]
+	a10["ruta"] = ruta10
+	for i in range(6):  # 0.6 s > ESPERA_BLOQUEO
+		colonos10.avanzar(0.1)
+	assert(a10["ruta"].is_empty() and a10["espera"] > 0.0, "sin forma de rodear, abandona el destino")
+	assert(a10["celda"] == Vector3i(1, 1, 0))
+
+	print("\n=== TEST 11: Esquivan la celda del avatar, y la de adelante si se mueve ===")
+	var colonos11: Node = _nuevo(_mundo_llano(), CiudadScript.new())
+	var id11: int = colonos11.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var c11: Dictionary = colonos11.colonos[id11]
+	var ruta11: Array[Vector3i] = [Vector3i(2, 1, 1), Vector3i(3, 1, 1)]
+	c11["ruta"] = ruta11
+	colonos11.actualizar_avatar(Vector3i(2, 1, 1), Vector3.ZERO)
+	assert(colonos11.celdas_avatar.size() == 1, "quieto: solo su celda")
+	var llego11 := false
+	for i in range(80):
+		colonos11.avanzar(0.1)
+		assert(c11["celda"] != Vector3i(2, 1, 1), "nunca pisa la celda del avatar")
+		if c11["celda"] == Vector3i(3, 1, 1):
+			llego11 = true
+			break
+	assert(llego11, "rodea al avatar y llega")
+	colonos11.actualizar_avatar(Vector3i(5, 1, 5), Vector3(5, 0, 0))
+	assert(colonos11.celdas_avatar.has(Vector3i(5, 1, 5)) and colonos11.celdas_avatar.has(Vector3i(6, 1, 5)), "en movimiento: su celda y la de adelante")
+	colonos11.actualizar_avatar(Vector3i(5, 1, 5), Vector3(0, 0, -5))
+	assert(colonos11.celdas_avatar.has(Vector3i(5, 1, 4)), "el sentido lo da la velocidad")
+
+	print("\n=== TEST 12: No huyen del avatar: un avatar junto a la ruta no la cambia ===")
+	var colonos12: Node = _nuevo(_mundo_llano(), CiudadScript.new())
+	var id12: int = colonos12.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var c12: Dictionary = colonos12.colonos[id12]
+	var ruta12: Array[Vector3i] = [Vector3i(2, 1, 1), Vector3i(3, 1, 1)]
+	c12["ruta"] = ruta12
+	colonos12.actualizar_avatar(Vector3i(2, 1, 2), Vector3.ZERO)  # pegado a la ruta, no sobre ella
+	colonos12.avanzar(0.5)
+	colonos12.avanzar(0.5)
+	assert(c12["celda"] == Vector3i(3, 1, 1), "sigue su ruta directa, sin desviarse")
+
+	print("\n=== TEST 13: Si el mundo cambia bajo la ruta, recalcula ===")
+	var mundo13 := _mundo_llano()
+	var colonos13: Node = _nuevo(mundo13, CiudadScript.new())
+	var id13: int = colonos13.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var c13: Dictionary = colonos13.colonos[id13]
+	var ruta13: Array[Vector3i] = [Vector3i(2, 1, 1), Vector3i(3, 1, 1)]
+	c13["ruta"] = ruta13
+	mundo13.poner(Vector3i(2, 1, 1), "pared")
+	mundo13.poner(Vector3i(2, 2, 1), "pared")
+	colonos13.avanzar(0.1)
+	assert(c13["celda"] == Vector3i(1, 1, 1), "todavía no se movió")
+	assert(not c13["ruta"].is_empty() and not c13["ruta"].has(Vector3i(2, 1, 1)), "la nueva ruta evita la celda que se volvió sólida")
+	assert(c13["ruta"].back() == Vector3i(3, 1, 1), "al mismo destino")
+
+	print("\n=== Las 13 pruebas de Colonos pasaron correctamente ===")

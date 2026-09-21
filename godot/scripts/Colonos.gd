@@ -161,9 +161,139 @@ func _reasignar_hogares() -> void:
 			c["hogar"] = _elegir_hogar()
 
 
-## Todavía sin comportamiento: el movimiento se implementa en la Tarea 3.
-func avanzar(_delta: float) -> void:
-	pass
+func avanzar(delta: float) -> void:
+	if _buscador == null:
+		return
+	for c in colonos.values():
+		_avanzar_colono(c, delta)
+
+
+func _avanzar_colono(c: Dictionary, delta: float) -> void:
+	if c["moviendo"]:
+		_completar_paso(c, delta)
+		return
+	if c["espera"] > 0.0:
+		c["espera"] -= delta
+		return
+	if c["ruta"].is_empty():
+		_elegir_destino(c)
+		return
+	_iniciar_paso(c, delta)
+
+
+## Empieza a caminar hacia la siguiente celda de la ruta, si sigue siendo
+## transitable (el mundo pudo cambiar: minado, obra, agua) y nadie la ocupa.
+func _iniciar_paso(c: Dictionary, delta: float) -> void:
+	var siguiente: Vector3i = c["ruta"][0]
+	if not _buscador.es_transitable(siguiente):
+		_replanificar(c)
+		return
+	if _ocupada_por_otro(siguiente, c["id"]):
+		c["bloqueo"] += delta
+		if c["bloqueo"] >= ESPERA_BLOQUEO:
+			c["bloqueo"] = 0.0
+			_esquivar(c)
+		return
+	c["bloqueo"] = 0.0
+	ocupadas[siguiente] = c["id"]  # reserva la celda a la que va
+	c["moviendo"] = true
+	c["progreso"] = 0.0
+	_completar_paso(c, delta)
+
+
+func _completar_paso(c: Dictionary, delta: float) -> void:
+	c["progreso"] += delta * VELOCIDAD_COLONO
+	var siguiente: Vector3i = c["ruta"][0]
+	var t: float = minf(c["progreso"], 1.0)
+	c["posicion"] = _centro_de(c["celda"]).lerp(_centro_de(siguiente), t)
+	if c["progreso"] < 1.0:
+		return
+	ocupadas.erase(c["celda"])
+	c["celda"] = siguiente
+	c["ruta"].pop_front()
+	c["moviendo"] = false
+	c["progreso"] = 0.0
+	if c["ruta"].is_empty():
+		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+
+
+func _ocupada_por_otro(celda: Vector3i, id: int) -> bool:
+	return ocupadas.has(celda) and ocupadas[celda] != id
+
+
+## Celdas que este colono no puede pisar ahora: las de los demás colonos.
+## (La Tarea 4 añade las del avatar.)
+func _bloqueadas_para(id: int) -> Dictionary:
+	var bloqueadas := {}
+	for celda in ocupadas:
+		if ocupadas[celda] != id:
+			bloqueadas[celda] = true
+	return bloqueadas
+
+
+## Vuelve a calcular la ruta al MISMO destino sin obstáculos de otros
+## (el mundo cambió bajo la ruta); si ya no hay ruta, abandona el destino.
+func _replanificar(c: Dictionary) -> void:
+	var vacia: Array[Vector3i] = []
+	if c["ruta"].is_empty():
+		return
+	var destino: Vector3i = c["ruta"].back()
+	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino)
+	c["ruta"] = nueva if not nueva.is_empty() else vacia
+	if nueva.is_empty():
+		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+
+
+## Otro colono (o el avatar) le cierra el paso: rodea sus celdas; si no hay
+## forma, abandona el destino y elige otro tras esperar. Dos colonos de frente
+## en un pasillo de 1 celda se resuelven porque ambos abandonan su destino.
+## ponytail: sin negociación de prioridad; añadirla si aparecen atascos
+## persistentes con mucha población.
+func _esquivar(c: Dictionary) -> void:
+	var vacia: Array[Vector3i] = []
+	var destino: Vector3i = c["ruta"].back()
+	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"bloqueadas": _bloqueadas_para(c["id"])})
+	if nueva.is_empty():
+		c["ruta"] = vacia
+		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+	else:
+		c["ruta"] = nueva
+
+
+## Elige el siguiente destino: la mitad de las veces su casa (si tiene), el
+## resto un punto de la zona de influencia. Prueba INTENTOS_DESTINO veces hasta
+## dar con uno alcanzable; si no, espera y reintenta.
+func _elegir_destino(c: Dictionary) -> void:
+	var a_casa: bool = c["hogar"] != -1 and _rng.randf() < PROBABILIDAD_CASA
+	for i in range(INTENTOS_DESTINO):
+		var destino: Vector3i = _candidato_en_casa(c["hogar"]) if a_casa else _candidato_exterior()
+		if destino == INVALIDA:
+			continue
+		var ruta: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"bloqueadas": _bloqueadas_para(c["id"])})
+		if not ruta.is_empty():
+			c["ruta"] = ruta
+			return
+	c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+
+
+## Una celda transitable al azar dentro de la caja envolvente de las celdas del
+## hogar (puede quedar sobre una cama o junto a ella); INVALIDA si cae en una
+## pared o en el aire.
+func _candidato_en_casa(hogar: int) -> Vector3i:
+	var celdas: Array = mundo.edificio_a_celdas.get(hogar, [])
+	if celdas.is_empty():
+		return INVALIDA
+	var minimo: Vector3i = celdas[0]
+	var maximo: Vector3i = celdas[0]
+	for celda: Vector3i in celdas:
+		minimo = Vector3i(mini(minimo.x, celda.x), mini(minimo.y, celda.y), mini(minimo.z, celda.z))
+		maximo = Vector3i(maxi(maximo.x, celda.x), maxi(maximo.y, celda.y), maxi(maximo.z, celda.z))
+	var candidata := Vector3i(
+		_rng.randi_range(minimo.x, maximo.x),
+		_rng.randi_range(minimo.y, maximo.y),
+		_rng.randi_range(minimo.z, maximo.z)
+	)
+	return candidata if _buscador.es_transitable(candidata) else INVALIDA
 
 
 ## Una celda transitable dentro de la zona de influencia, al azar; INVALIDA si

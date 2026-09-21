@@ -10,24 +10,49 @@ extends Node
 ## (CiudadTest.gd) llaman a simular_tick() directamente en bucle, sin esperar
 ## al Timer, igual que PoC_1 llama a simular_tick() en un bucle de Python.
 
+## Emitida al final de cada simular_tick(); Colonos.gd (Plan 2) la escucha
+## para reconciliar los colonos visibles con demografia.
+signal tick_simulado
+
 const SEGUNDOS_POR_TICK := 2.0
 
-const CONSUMO_POR_ROL := {
-	"jovenes": 2,
-	"trabajador_tipo_1": 5,
-	"trabajador_tipo_2": 4,
-	"trabajador_tipo_3": 3,
-	"investigador": 2,
-	"militar": 4,
-	"ancianos": 2,
+## Tipos de población (fuente: docs/Recursos.xlsx, hoja "Relacion"; el Excel
+## reemplaza la tabla de roles del GDD Sección 6). "x_cama" es cuántos
+## habitantes de ese tipo caben por cama construida: cada cama aporta 1
+## unidad de vivienda y una persona ocupa 1 / x_cama de ella (vivienda
+## fraccionaria compartida, ver vivienda_ocupada). Solo "comida" se aplica
+## hoy; combustible y energía quedan transcritos para el sub-proyecto de
+## economía (consumo con eficiencia proporcional). "ciudadano" no tiene
+## ninguna fuente todavía (no hay nacimientos ni envejecimiento): los
+## colonos llegan como "desempleado".
+const TIPOS_POBLACION := {
+	"ciudadano": {"comida": 2, "combustible": 0, "energia": 0, "x_cama": 4},
+	"desempleado": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 4},
+	"obrero": {"comida": 5, "combustible": 0, "energia": 0, "x_cama": 4},
+	"tecnico": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 3},
+	"especialista": {"comida": 2, "combustible": 1, "energia": 1, "x_cama": 2},
+	"investigador": {"comida": 1, "combustible": 0, "energia": 2, "x_cama": 1},
+	"militar": {"comida": 4, "combustible": 3, "energia": 0, "x_cama": 3},
 }
 
-## Habitabilidad base por piso disponible según nivel EFECTIVO de ciudad.
-const CAMAS_POR_PISO_PERMITIDO := {
-	1: 4,   # Nivel 1: Suelo + 1 piso = 2 niveles (4 camas)
-	2: 8,   # Nivel 2: Suelo + 3 pisos = 4 niveles (8 camas)
-	3: 12,  # Nivel 3: Suelo + 5 pisos = 6 niveles (12 camas)
+## Límites de vivienda por nivel EFECTIVO de ciudad (decisión del usuario,
+## 2026-09-20): cuántas camas por piso y cuántos pisos puede tener una casa.
+## La población máxima es la vivienda real construida, no un tope por nivel.
+## Los 12 pisos quedan reservados para el nivel máximo de desarrollo, que
+## todavía no existe.
+const NIVELES_VIVIENDA := {
+	1: {"camas_por_piso": 2, "pisos": 2},
+	2: {"camas_por_piso": 4, "pisos": 4},
+	3: {"camas_por_piso": 4, "pisos": 8},
 }
+
+## A quién se desahucia primero cuando la vivienda ocupada excede la
+## capacidad: primero quien no produce. Los últimos tres solo garantizan que
+## el bucle de regular_densidad_vertical() siempre termina.
+const ORDEN_DESAHUCIO := ["desempleado", "ciudadano", "obrero", "tecnico", "especialista", "investigador", "militar"]
+
+## A quién quita primero la hambruna (igual que antes de la taxonomía nueva).
+const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico"]
 
 ## Costo de activación por nivel (GDD Sección 7).
 const COSTOS_INVESTIGACION := {
@@ -101,18 +126,22 @@ var progreso_investigacion := {2: 0.0, 3: 0.0}
 var fuentes_comida_activas: Dictionary = {}
 var bono_moral_variedad := 0.0
 var periodo_elecciones_restante := 0
-## Suma de camas de todos los edificios residenciales declarados válidos por
-## el jugador (ver Player.gd::_declarar_edificio). No es población real, solo
-## capacidad habitacional construida — la demografía sigue siendo manual
-## hasta que exista un modelo de crecimiento poblacional.
-var capacidad_camas_construida := 0
+## Edificios residenciales registrados: id de edificio (el que asigna
+## VoxelWorld) -> Array[int] con las camas de CADA piso. Ver
+## registrar_edificio_residencial().
+var edificios_residenciales: Dictionary = {}
+
+## Si es false, simular_tick() no hace llegar colonos (lo usan las pruebas
+## que fijan la demografía a mano).
+var migracion_activa := true
+var _migrantes_acumulados := 0.0
 
 var _timer: Timer
 
 
 func _init() -> void:
-	for rol in CONSUMO_POR_ROL:
-		demografia[rol] = 0
+	for tipo in TIPOS_POBLACION:
+		demografia[tipo] = 0
 	almacen = {
 		"madera": Recurso.new("Madera", 200, 1000),
 		"comida": Recurso.new("Comida", 150, 2000),
@@ -175,8 +204,29 @@ var nivel_potencial: int:
 var nivel: int:
 	get: return min(nivel_potencial, nivel_investigado)
 
-var capacidad_habitacional: int:
-	get: return CAMAS_POR_PISO_PERMITIDO.get(nivel, 4)
+## Camas que cuentan HOY: de cada edificio, solo los pisos que el nivel
+## efectivo permite, y de cada piso a lo sumo las camas por piso del nivel.
+## Si baja el nivel, los pisos superiores dejan de contar y quien vivía ahí
+## se desahucia (GDD Sección 5).
+var capacidad_camas_construida: int:
+	get:
+		var limites: Dictionary = NIVELES_VIVIENDA[nivel]
+		var total := 0
+		for camas_por_piso: Array in edificios_residenciales.values():
+			for i in range(mini(camas_por_piso.size(), limites["pisos"])):
+				total += mini(camas_por_piso[i], limites["camas_por_piso"])
+		return total
+
+## Suma de 1 / x_cama de cada habitante: la vivienda que ocupa la población.
+var vivienda_ocupada: float:
+	get:
+		var total := 0.0
+		for tipo in demografia:
+			total += float(demografia[tipo]) / float(TIPOS_POBLACION[tipo]["x_cama"])
+		return total
+
+var vivienda_libre: float:
+	get: return float(capacidad_camas_construida) - vivienda_ocupada
 
 
 ## Acumula horas-investigador y activa el siguiente nivel al completar el umbral.
@@ -209,42 +259,40 @@ func actualizar_bono_variedad() -> void:
 	bono_moral_variedad += diferencia * VELOCIDAD_SUAVIZADO_MORAL
 
 
-## Verifica si la población excede el límite permitido por el nivel EFECTIVO.
+## Desahucia, de uno en uno y en ORDEN_DESAHUCIO, hasta que la vivienda
+## ocupada cabe en la capacidad construida (tolerancia 1e-6 por los
+## flotantes de las fracciones).
 func regular_densidad_vertical() -> void:
-	var limite: int = capacidad_habitacional
-	if censo_total > limite:
-		var exceso: int = censo_total - limite
-		desahuciados += exceso
-
-		var orden_recorte := ["trabajador_tipo_1", "jovenes", "trabajador_tipo_2", "ancianos"]
-		for rol in orden_recorte:
-			if exceso <= 0:
+	var capacidad := float(capacidad_camas_construida)
+	while vivienda_ocupada > capacidad + 1e-6:
+		var desahuciado := false
+		for tipo in ORDEN_DESAHUCIO:
+			if demografia[tipo] > 0:
+				demografia[tipo] -= 1
+				desahuciados += 1
+				desahuciado = true
 				break
-			var disponibles: int = demografia[rol]
-			var a_remover: int = min(disponibles, exceso)
-			demografia[rol] -= a_remover
-			exceso -= a_remover
+		if not desahuciado:
+			break
 
 
-## Registra un edificio residencial recién declarado válido (ver
-## Player.gd::_declarar_edificio). ponytail: no deduplica — declarar el mismo
-## edificio dos veces suma sus camas dos veces; corregir cuando exista un
-## registro real de edificios declarados (identidad/posición), no solo un
-## contador acumulado.
-func registrar_edificio_residencial(total_camas: int) -> void:
-	capacidad_camas_construida += total_camas
+## Registra un edificio residencial completo (ver
+## Player.gd::_completar_construccion). "id" es el id de edificio de
+## VoxelWorld y "camas_por_piso" las camas de cada piso, en orden. Idempotente
+## por id: registrar dos veces el mismo edificio (p. ej. al deconstruirlo y
+## volver a completarlo) no duplica sus camas.
+func registrar_edificio_residencial(id: int, camas_por_piso: Array) -> void:
+	edificios_residenciales[id] = camas_por_piso.duplicate()
 
 
-## Retira la capacidad de camas de un edificio residencial que empieza a
-## deconstruirse (ver Player.gd::_procesar_deconstruccion) — simétrica a
-## registrar_edificio_residencial(). Se llama al INICIAR la deconstrucción
-## de un edificio ya terminado (no al completarla): un ciudadano no debería
-## poder "vivir" en una cama que ya está siendo desmontada, aunque las
-## paredes tarden más en desaparecer. clamp a 0 por seguridad (nunca debería
-## bajar de 0 si la contabilidad es correcta, pero un edificio nunca debe
-## dejar el contador en negativo).
-func retirar_edificio_residencial(total_camas: int) -> void:
-	capacidad_camas_construida = max(0, capacidad_camas_construida - total_camas)
+## Retira las camas de un edificio residencial que empieza a deconstruirse
+## (ver Player.gd::_procesar_deconstruccion) — simétrica a
+## registrar_edificio_residencial(). Se llama al INICIAR la deconstrucción de
+## un edificio ya terminado (no al completarla): un colono no debería poder
+## "vivir" en una cama que ya está siendo desmontada. Un id desconocido no
+## hace nada.
+func retirar_edificio_residencial(id: int) -> void:
+	edificios_residenciales.erase(id)
 
 
 ## Aplica la sucesión del avatar tras su muerte (GDD Sección 9).
@@ -285,8 +333,8 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	actualizar_bono_variedad()
 
 	var gasto_poblacion := 0.0
-	for rol in demografia:
-		gasto_poblacion += demografia[rol] * CONSUMO_POR_ROL[rol]
+	for tipo in demografia:
+		gasto_poblacion += demografia[tipo] * TIPOS_POBLACION[tipo]["comida"]
 	var gasto_total: float = gasto_poblacion + avatar_consumo
 
 	if periodo_elecciones_restante > 0:
@@ -299,7 +347,7 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	if not exito_comida:
 		bajas_inanicion = max(1, int(censo_total * 0.25))
 		(almacen["comida"] as Recurso).cantidad = 0.0
-		for rol in ["militar", "trabajador_tipo_1", "trabajador_tipo_2"]:
+		for rol in ORDEN_BAJAS_HAMBRUNA:
 			if demografia[rol] > 0 and bajas_inanicion > 0:
 				var quitar: int = min(demografia[rol], bajas_inanicion)
 				demografia[rol] -= quitar

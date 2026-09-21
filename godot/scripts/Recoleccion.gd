@@ -66,8 +66,8 @@ const CAPACIDAD_ALMACENAMIENTO_MADERERO := 1000
 
 const RADIO_AREA_CAZA_RECOLECCION := 12
 const PASO_MUESTREO_CAZA_RECOLECCION := 2  # cada 2 celdas, no las ~450 del área completa
-const TASA_BASE_CAZA_POR_CIUDADANO := 10.0  # ya no es el venado 15 del Excel: balance decidido el 2026-09-21 para que caza + frutos = 7,5/h a densidad 0.5
-const TASA_BASE_FRUTOS_POR_CIUDADANO := 5.0  # Excel: columna "Árbol (obj)", Comida 5/h (se interpreta como frutos)
+const TASA_BASE_CAZA_POR_CIUDADANO := 14.0  # decisión del usuario 2026-09-21: caza y recolección competitivas con la pesca (con 10/5 daban ~6,8 comida/h por recolector frente a ~8,6 de la pesca); ~10,0/h a las densidades medias del mundo (fauna 0.45, frutal 0.46)
+const TASA_BASE_FRUTOS_POR_CIUDADANO := 8.0  # Excel: columna "Árbol (obj)" era 5 (se interpreta como frutos); decisión del usuario 2026-09-21: 8, ver TASA_BASE_CAZA_POR_CIUDADANO
 const ANCHO_HUELLA_CAZA_RECOLECCION := 4
 const ALTO_HUELLA_CAZA_RECOLECCION := 4
 

@@ -173,7 +173,7 @@ func ejecutar_pruebas() -> void:
 	var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.5, "frutal": 0.25})
 	assert(is_equal_approx(tasas_caza["caza"], 0.5 * Recoleccion.TASA_BASE_CAZA_POR_CIUDADANO))
 	assert(is_equal_approx(tasas_caza["recoleccion"], 0.25 * Recoleccion.TASA_BASE_FRUTOS_POR_CIUDADANO))
-	assert(is_equal_approx(tasas_caza["caza"], 5.0) and is_equal_approx(tasas_caza["recoleccion"], 1.25))
+	assert(is_equal_approx(tasas_caza["caza"], 7.0) and is_equal_approx(tasas_caza["recoleccion"], 2.0))
 
 	print("\n=== TEST 10: quitar_puesto() libera la reserva ===")
 	Recoleccion.puestos.clear()
@@ -322,12 +322,18 @@ func ejecutar_pruebas() -> void:
 	assert(Recoleccion.esquina_de_puesto_en(Vector2i(31, 31)) == Recoleccion.SIN_PUESTO, "un edificio (blueprint) no es un puesto de trabajo")
 	Recoleccion.puestos.clear()
 
-	print("\n=== TEST 21: un recolector de comida aporta 7.5/h a densidad media ===")
+	print("
+=== TEST 21: un recolector de comida cumple la meta de diseño (7.5/h) con margen ===")
 	# Meta de diseño: 5/h para sí mismo + 2.5/h (medio acarreador). Con tres obreros
 	# (2 recolectores + 1 acarreador) el grupo se sostiene solo; el 4.º recolector deja 2.5/h al avatar.
-	var caza_media: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.5, "frutal": 0.5})
-	assert(is_equal_approx(caza_media["caza"] + caza_media["recoleccion"], 7.5))
+	# Caza y frutos se miden con las densidades medias reales del mundo (semilla 12345: fauna 0.45,
+	# frutal 0.46), no a 0.5: con caza 14 y frutos 8 dan ~10.0/h, por encima de la pesca (~8.6/h medidos).
+	var caza_media: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.45, "frutal": 0.46})
+	var suma_caza: float = caza_media["caza"] + caza_media["recoleccion"]
 	var pesca_media: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.5})
-	assert(is_equal_approx(pesca_media["pesca"] + pesca_media["frutos_mar"], 7.5))
+	var suma_pesca: float = pesca_media["pesca"] + pesca_media["frutos_mar"]
+	assert(is_equal_approx(suma_pesca, 7.5))
+	assert(suma_caza >= 7.5, "caza + frutos debe cumplir la meta de diseño de 7.5/h")
+	assert(suma_caza > suma_pesca, "caza + frutos debe ser competitiva con la pesca")
 
 	print("\n=== Las 21 pruebas de Recoleccion pasaron correctamente ===")

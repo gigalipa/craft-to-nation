@@ -1431,6 +1431,25 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 	overlay.reconstruir()
 
 
+## Tasas por trabajador y hora del puesto activo en "centro" (las mismas
+## funciones y áreas que usa la previsualización), para guardarlas en Economia
+## al colocarlo. Hay que llamarla ANTES de nivelar/marcar el terreno: la mina
+## cuenta los bloques reales del área.
+func _tasas_de_puesto(centro: Vector2i, esquina: Vector2i, extremo_agua_indice: int) -> Dictionary:
+	if _tipo_puesto_activo == "mina":
+		var conteo: Dictionary = Recoleccion.detectar_recursos(mundo, centro, mundo.altura_en(centro.x, centro.y))
+		return Recoleccion.tasas_recoleccion(conteo)
+	if _tipo_puesto_activo == "caza_recoleccion":
+		return Recoleccion.tasas_caza_recoleccion(Recoleccion.detectar_fauna_frutal(mundo.generador, centro))
+	if _tipo_puesto_activo == "pesca_frutos_mar":
+		var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
+		@warning_ignore("integer_division")
+		var centro_agua := esquina + celdas_extremo[celdas_extremo.size() / 2]
+		var celdas_agua: Dictionary = Recoleccion.celdas_agua_conectadas(mundo.generador, centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+		return Recoleccion.tasas_pesca_frutos_mar(Recoleccion.detectar_pesca_frutos_mar(mundo.generador, celdas_agua))
+	return Recoleccion.tasa_maderero(Recoleccion.detectar_arbol(mundo.generador, centro))
+
+
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si
 ## las 5 validaciones (zona de influencia, relieve, huella libre, sin choque
 ## con otro puesto, al menos una esquina en tierra firme — "pesca_frutos_mar"
@@ -1479,6 +1498,8 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	elif not _huella_tiene_columna_en_tierra(esquina, columnas):
 		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
 		return
+
+	var tasas_puesto: Dictionary = _tasas_de_puesto(centro, esquina, extremo_agua_indice)
 
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
@@ -1559,6 +1580,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	mundo.registrar_edificio(celdas_puesto)
 
 	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)
+	Economia.registrar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo, tasas_puesto)
 	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])
 
 	_salir_de_modo_colocar_puesto()

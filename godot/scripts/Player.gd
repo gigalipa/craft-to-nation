@@ -489,6 +489,7 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		var esquina: Vector2i = mundo.eliminar_edificio(id)
 		Zonificacion.retirar_contribucion(id)
 		Recoleccion.quitar_puesto(esquina)
+		Economia.quitar_puesto(esquina)  # libera a sus trabajadores (no-op si era un edificio)
 		print("Edificio deconstruido por completo.")
 		_id_listo_para_remocion = -1
 		_ticks_listo_para_remocion = 0

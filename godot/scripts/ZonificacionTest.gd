@@ -156,4 +156,13 @@ func ejecutar_pruebas() -> void:
 	assert(sin_limite.influencia_min == Vector2i(-14, -14), "comportamiento anterior: se extiende a negativos")
 	assert(sin_limite.dentro_de_influencia(Vector2i(-1, 0)))
 
-	print("\n=== Las 13 pruebas de Zonificacion pasaron correctamente ===")
+	print("\n=== TEST 14: huella_del_nucleo() devuelve una copia de la huella declarada ===")
+	var con_nucleo: Node = ZonificacionScript.new()
+	assert(con_nucleo.huella_del_nucleo().is_empty(), "sin núcleo, vacía")
+	con_nucleo.declarar_nucleo([Vector2i(1, 1), Vector2i(2, 1)])
+	var huella_n: Array = con_nucleo.huella_del_nucleo()
+	assert(huella_n.size() == 2 and huella_n.has(Vector2i(2, 1)))
+	huella_n.clear()
+	assert(con_nucleo.huella_del_nucleo().size() == 2, "modificar la copia no altera el núcleo")
+
+	print("\n=== Las 14 pruebas de Zonificacion pasaron correctamente ===")

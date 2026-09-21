@@ -110,8 +110,11 @@ func ejecutar_pruebas() -> void:
 	var conteo_simple := {"piedra": 3, "hierro": 1}
 	var tasas: Dictionary = Recoleccion.tasas_recoleccion(conteo_simple)
 	print("Tasas: ", tasas)
-	assert(is_equal_approx(tasas["piedra"], 1.5))  # 3/4 * 2.0
-	assert(is_equal_approx(tasas["hierro"], 0.5))  # 1/4 * 2.0
+	assert(is_equal_approx(tasas["piedra"], 3.75))  # 3/4 * 5.0 (Excel: piedra 5/h)
+	assert(is_equal_approx(tasas["hierro"], 1.25))  # 1/4 * 5.0
+	var tasas_tierra: Dictionary = Recoleccion.tasas_recoleccion({"tierra": 1, "hierro": 1})
+	assert(is_equal_approx(tasas_tierra["tierra"], 0.5), "la tierra se extrae a 1/h: 1/2 * 1.0")
+	assert(is_equal_approx(tasas_tierra["hierro"], 2.5), "1/2 * 5.0")
 
 	print("\n=== TEST 3: tasas_recoleccion() con conteo vacío no divide por cero ===")
 	var tasas_vacias: Dictionary = Recoleccion.tasas_recoleccion({})
@@ -168,8 +171,9 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 9: tasas_caza_recoleccion() multiplica cada señal por su tasa base ===")
 	var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.5, "frutal": 0.25})
-	assert(is_equal_approx(tasas_caza["caza"], 0.5 * Recoleccion.TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO))
-	assert(is_equal_approx(tasas_caza["recoleccion"], 0.25 * Recoleccion.TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_caza["caza"], 0.5 * Recoleccion.TASA_BASE_CAZA_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_caza["recoleccion"], 0.25 * Recoleccion.TASA_BASE_FRUTOS_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_caza["caza"], 7.5) and is_equal_approx(tasas_caza["recoleccion"], 1.25))
 
 	print("\n=== TEST 10: quitar_puesto() libera la reserva ===")
 	Recoleccion.puestos.clear()
@@ -274,8 +278,9 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 16: tasas_pesca_frutos_mar() multiplica cada señal por su tasa base ===")
 	var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3})
-	assert(is_equal_approx(tasas_pesca["pesca"], 0.5 * Recoleccion.TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO))
-	assert(is_equal_approx(tasas_pesca["frutos_mar"], 0.3 * Recoleccion.TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_pesca["pesca"], 0.5 * Recoleccion.TASA_BASE_PESCA_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_pesca["frutos_mar"], 0.3 * Recoleccion.TASA_BASE_ALGAS_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_pesca["pesca"], 2.5) and is_equal_approx(tasas_pesca["frutos_mar"], 0.3))
 
 	print("\n=== TEST 17: celdas_agua_conectadas() sigue solo agua conectada por adyacencia, ignora un charco aislado dentro del mismo radio ===")
 	var generador_conectada := GeneradorAguaConectadaFalso.new()
@@ -295,4 +300,23 @@ func ejecutar_pruebas() -> void:
 		assert(Vector2(xz).length() <= 5.0)
 	print("OK: celdas_agua_conectadas() respeta el radio como tope, aunque el agua siga conectada más allá (GeneradorAguaFalso es infinito en x>=0).")
 
-	print("\n=== Las 18 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 19: cupo_de() y capacidad_almacen_de() por tipo de puesto ===")
+	assert(Recoleccion.cupo_de("maderero") == 5)
+	assert(Recoleccion.cupo_de("caza_recoleccion") == 7)
+	assert(Recoleccion.cupo_de("pesca_frutos_mar") == 7)
+	assert(Recoleccion.cupo_de("mina") == 5)
+	assert(Recoleccion.cupo_de("blueprint") == 0)
+	assert(Recoleccion.capacidad_almacen_de("mina") == 100 and Recoleccion.capacidad_almacen_de("maderero") == 100)
+	assert(Recoleccion.capacidad_almacen_de("blueprint") == 0)
+
+	print("\n=== TEST 20: esquina_de_puesto_en() encuentra el puesto por cualquier celda de su huella ===")
+	Recoleccion.puestos.clear()
+	Recoleccion.colocar_puesto(Vector2i(10, 10), "maderero", 3, 4)
+	Recoleccion.colocar_puesto(Vector2i(30, 30), "blueprint", 5, 5)
+	assert(Recoleccion.esquina_de_puesto_en(Vector2i(10, 10)) == Vector2i(10, 10))
+	assert(Recoleccion.esquina_de_puesto_en(Vector2i(12, 13)) == Vector2i(10, 10), "la esquina opuesta también")
+	assert(Recoleccion.esquina_de_puesto_en(Vector2i(13, 10)) == Recoleccion.SIN_PUESTO, "justo fuera de la huella")
+	assert(Recoleccion.esquina_de_puesto_en(Vector2i(31, 31)) == Recoleccion.SIN_PUESTO, "un edificio (blueprint) no es un puesto de trabajo")
+	Recoleccion.puestos.clear()
+
+	print("\n=== Las 20 pruebas de Recoleccion pasaron correctamente ===")

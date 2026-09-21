@@ -15,7 +15,18 @@ const PROFUNDIDAD_MINA_NIVEL_1 := 8
 ## la veta de hierro y nivel 3 recién empieza a cubrir bien tierras raras.
 const PROFUNDIDAD_MINA_NIVEL_2 := 16
 const PROFUNDIDAD_MINA_NIVEL_3 := 24
-const TASA_BASE_POR_CIUDADANO := 2.0
+## Unidades por trabajador y hora de cada mineral (docs/Recursos.xlsx). La tasa
+## de un mineral en una mina es su fracción en el área × esta tasa base.
+const TASAS_BASE_MINERAL := {
+	"tierra": 1.0, "piedra": 5.0, "hierro": 5.0,
+	"cobre": 5.0, "carbon": 5.0, "tierras_raras": 5.0,
+}
+
+## Marca de "no hay puesto" para esquina_de_puesto_en().
+const SIN_PUESTO := Vector2i(-99999, -99999)
+## Los únicos tipos de puesto donde se asignan trabajadores (los edificios
+## registrados con tipo "blueprint" comparten el registro pero no son puestos).
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar"]
 const ANCHO_HUELLA_MINA := 5
 const ALTO_HUELLA_MINA := 5
 
@@ -36,7 +47,8 @@ const TIPOS_MINERALES := ["tierra", "piedra", "hierro", "cobre", "carbon", "tier
 ## alcance reducido que la nivelación de terreno, el juego no tiene
 ## inventario de recursos real).
 const COSTO_CONSTRUCCION := {"tierra": 10, "madera": 10, "piedra": 5}
-const PERSONAL_MAXIMO := 3
+## Cupos de trabajadores (decisión del usuario, 2026-09-21): mina 5, maderero 5, caza/recolección 7, pesca 7.
+const PERSONAL_MAXIMO := 5
 const CAPACIDAD_ALMACENAMIENTO := 100
 
 const ANCHO_HUELLA_MADERERO := 3
@@ -44,36 +56,38 @@ const ALTO_HUELLA_MADERERO := 4
 
 const RADIO_AREA_MADERERO := 12
 const PASO_MUESTREO_MADERERO := 2  # mismo patrón de muestreo que caza/recolección
-const TASA_BASE_MADERERO_POR_CIUDADANO := 2.0
+const TASA_BASE_MADERERO_POR_CIUDADANO := 5.0
 
 # GDD Sección 3 — mismos valores que la mina por ahora, sin balance real
 # todavía (ver Recoleccion.COSTO_CONSTRUCCION más arriba).
 const COSTO_CONSTRUCCION_MADERERO := {"tierra": 10, "madera": 10, "piedra": 5}
-const PERSONAL_MAXIMO_MADERERO := 3
+const PERSONAL_MAXIMO_MADERERO := 5
 const CAPACIDAD_ALMACENAMIENTO_MADERERO := 100
 
 const RADIO_AREA_CAZA_RECOLECCION := 12
 const PASO_MUESTREO_CAZA_RECOLECCION := 2  # cada 2 celdas, no las ~450 del área completa
-const TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO := 2.0
+const TASA_BASE_CAZA_POR_CIUDADANO := 15.0  # Excel: venado 15/h
+const TASA_BASE_FRUTOS_POR_CIUDADANO := 5.0  # Excel: columna "Árbol (obj)", Comida 5/h (se interpreta como frutos)
 const ANCHO_HUELLA_CAZA_RECOLECCION := 4
 const ALTO_HUELLA_CAZA_RECOLECCION := 4
 
 # GDD Sección 3 — mismos valores que la mina por ahora, sin balance real
 # todavía (ver Recoleccion.COSTO_CONSTRUCCION más arriba).
 const COSTO_CONSTRUCCION_CAZA_RECOLECCION := {"tierra": 10, "madera": 10, "piedra": 5}
-const PERSONAL_MAXIMO_CAZA_RECOLECCION := 3
+const PERSONAL_MAXIMO_CAZA_RECOLECCION := 7
 const CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION := 100
 
 const ANCHO_HUELLA_PESCA_FRUTOS_MAR := 4
 const ALTO_HUELLA_PESCA_FRUTOS_MAR := 6
 
 const RADIO_AREA_PESCA_FRUTOS_MAR := 25
-const TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO := 2.0
+const TASA_BASE_PESCA_POR_CIUDADANO := 5.0  # Excel: pescado 5/h
+const TASA_BASE_ALGAS_POR_CIUDADANO := 1.0  # Excel: algas 1/h
 
 # GDD Sección 3 — mismos valores placeholder que los otros tres puestos,
 # sin balance real todavía (ver Recoleccion.COSTO_CONSTRUCCION).
 const COSTO_CONSTRUCCION_PESCA_FRUTOS_MAR := {"tierra": 10, "madera": 10, "piedra": 5}
-const PERSONAL_MAXIMO_PESCA_FRUTOS_MAR := 3
+const PERSONAL_MAXIMO_PESCA_FRUTOS_MAR := 7
 const CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR := 100
 
 ## Vector2i (esquina de la huella, celda de menor X/Z) -> {"tipo": String,
@@ -112,6 +126,42 @@ func celda_dentro_de_algun_puesto(celda: Vector2i) -> bool:
 	return false
 
 
+## Cupo de trabajadores (recolectores + acarreadores) de un tipo de puesto; 0
+## para un tipo que no es puesto de trabajo.
+func cupo_de(tipo: String) -> int:
+	match tipo:
+		"mina": return PERSONAL_MAXIMO
+		"maderero": return PERSONAL_MAXIMO_MADERERO
+		"caza_recoleccion": return PERSONAL_MAXIMO_CAZA_RECOLECCION
+		"pesca_frutos_mar": return PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
+	return 0
+
+
+## Capacidad del almacén local de un tipo de puesto (total entre recursos).
+func capacidad_almacen_de(tipo: String) -> int:
+	match tipo:
+		"mina": return CAPACIDAD_ALMACENAMIENTO
+		"maderero": return CAPACIDAD_ALMACENAMIENTO_MADERERO
+		"caza_recoleccion": return CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION
+		"pesca_frutos_mar": return CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR
+	return 0
+
+
+## Esquina del puesto de trabajo (mina, caza/recolección, maderero, pesca)
+## cuya huella contiene "celda", o SIN_PUESTO. Ignora los edificios
+## registrados con tipo "blueprint". Usada por CamaraCenital para abrir el
+## panel del puesto al hacer clic.
+func esquina_de_puesto_en(celda: Vector2i) -> Vector2i:
+	for esquina in puestos:
+		var datos: Dictionary = puestos[esquina]
+		if not TIPOS_PUESTO_TRABAJO.has(datos["tipo"]):
+			continue
+		if celda.x >= esquina.x and celda.x < esquina.x + datos["ancho"] \
+				and celda.y >= esquina.y and celda.y < esquina.y + datos["alto"]:
+			return esquina
+	return SIN_PUESTO
+
+
 ## Cuenta los tipos de bloque REALES dentro del semielipsoide de acción
 ## (radio horizontal RADIO_AREA_MINA, hacia abajo "profundidad" — por defecto
 ## PROFUNDIDAD_MINA_NIVEL_1, pasar PROFUNDIDAD_MINA_NIVEL_2/3 para una mina
@@ -143,7 +193,7 @@ func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: in
 
 ## Tasa de recolección prevista por ciudadano y tipo de recurso, a partir
 ## del conteo de detectar_recursos() — proporción de cada tipo dentro del
-## área multiplicada por TASA_BASE_POR_CIUDADANO. {} si el área no detectó
+## área multiplicada por la tasa base de ese mineral (TASAS_BASE_MINERAL). {} si el área no detectó
 ## nada (evita dividir por cero).
 func tasas_recoleccion(conteo: Dictionary) -> Dictionary:
 	var total := 0
@@ -153,7 +203,7 @@ func tasas_recoleccion(conteo: Dictionary) -> Dictionary:
 		return {}
 	var tasas: Dictionary = {}
 	for tipo in conteo:
-		tasas[tipo] = (float(conteo[tipo]) / float(total)) * TASA_BASE_POR_CIUDADANO
+		tasas[tipo] = (float(conteo[tipo]) / float(total)) * TASAS_BASE_MINERAL[tipo]
 	return tasas
 
 
@@ -180,13 +230,13 @@ func detectar_fauna_frutal(generador: Object, centro_xz: Vector2i) -> Dictionary
 	return {"fauna": suma_fauna / muestras, "frutal": suma_frutal / muestras}
 
 
-## Dos tasas independientes ("caza"/"recoleccion"), cada una promedio_señal *
-## TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO — no se suman en un total, igual
-## que tasas_recoleccion() no suma sus minerales.
+## Dos tasas independientes ("caza"/"recoleccion"), cada señal × la tasa base
+## propia del Excel — no se suman en un total, igual que tasas_recoleccion()
+## no suma sus minerales.
 func tasas_caza_recoleccion(promedios: Dictionary) -> Dictionary:
 	return {
-		"caza": promedios["fauna"] * TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO,
-		"recoleccion": promedios["frutal"] * TASA_BASE_CAZA_RECOLECCION_POR_CIUDADANO,
+		"caza": promedios["fauna"] * TASA_BASE_CAZA_POR_CIUDADANO,
+		"recoleccion": promedios["frutal"] * TASA_BASE_FRUTOS_POR_CIUDADANO,
 	}
 
 
@@ -261,11 +311,11 @@ func detectar_pesca_frutos_mar(generador: Object, celdas_agua: Dictionary) -> Di
 	return {"peces": suma_peces / muestras, "algas": suma_algas / muestras}
 
 
-## Dos tasas independientes ("pesca"/"frutos_mar"), cada una promedio_señal *
-## TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO — mismo patrón que
-## tasas_caza_recoleccion(), no se suman en un total.
+## Dos tasas independientes ("pesca"/"frutos_mar"), cada señal × la tasa base
+## propia del Excel — mismo patrón que tasas_caza_recoleccion(), no se suman
+## en un total.
 func tasas_pesca_frutos_mar(promedios: Dictionary) -> Dictionary:
 	return {
-		"pesca": promedios["peces"] * TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO,
-		"frutos_mar": promedios["algas"] * TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO,
+		"pesca": promedios["peces"] * TASA_BASE_PESCA_POR_CIUDADANO,
+		"frutos_mar": promedios["algas"] * TASA_BASE_ALGAS_POR_CIUDADANO,
 	}

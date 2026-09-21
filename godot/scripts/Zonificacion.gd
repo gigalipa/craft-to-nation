@@ -197,6 +197,12 @@ func celda_es_del_nucleo(celda: Vector2i) -> bool:
 	return _huella_nucleo.has(celda)
 
 
+## Copia de las celdas (X,Z) de la huella del núcleo urbano; [] si todavía no
+## se declaró. La usan los acarreadores para saber dónde entregar (Colonos.gd).
+func huella_del_nucleo() -> Array:
+	return _huella_nucleo.duplicate()
+
+
 ## Pinta el rectángulo entre las dos esquinas (inclusive), recortado a la
 ## zona de influencia. Devuelve cuántas celdas se pintaron realmente, para
 ## que quien llama (CamaraCenital.gd) pueda avisar si el rectángulo cayó

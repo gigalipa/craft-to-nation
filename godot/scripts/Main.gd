@@ -14,6 +14,7 @@ var cenital_activa := false
 func _ready() -> void:
 	jugador.mundo = mundo
 	Colonos.mundo = mundo
+	mundo.obra_a_fantasma.connect(jugador._on_obra_a_fantasma)
 	var centro_x: int = mundo.ANCHO_MUNDO / 2
 	var centro_z: int = mundo.LARGO_MUNDO / 2
 	var altura_spawn: int = mundo.altura_en(centro_x, centro_z)

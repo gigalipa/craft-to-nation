@@ -202,6 +202,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 	if mundo != null:
 		_procesar_corriente(celda_pies)
+		_actualizar_permisos_avatar()
 
 	move_and_slide()
 	if mundo != null:
@@ -242,6 +243,38 @@ func _profundidad_agua_en(posicion: Vector3) -> int:
 ## Celda de grilla (VoxelWorld) bajo "posicion" — asume mundo != null.
 func _celda_en(posicion: Vector3) -> Vector3i:
 	return mundo.local_to_map(mundo.to_local(posicion))
+
+
+## true si los pies o la cabeza del avatar están dentro del volumen de la obra.
+func _dentro_de_obra(id_obra: int) -> bool:
+	var pies: Vector3i = _celda_en(global_position + Vector3.UP * 0.1)
+	return mundo.celda_en_volumen(id_obra, pies) or mundo.celda_en_volumen(id_obra, pies + Vector3i(0, 1, 0))
+
+
+## Una obra acaba de pasar a fantasma (se emplazó un blueprint o empezó a
+## deconstruirse un edificio completo): si el avatar está dentro de su
+## volumen, recibe permiso para salir sin chocar con sus fantasmas (Sección 6
+## del spec de colonos y pathfinding). Conectada en Main.gd.
+func _on_obra_a_fantasma(id_obra: int) -> void:
+	if mundo != null and _dentro_de_obra(id_obra):
+		mundo.otorgar_permiso_salida(id_obra, "avatar")
+
+
+## Mantiene la excepción de colisión del avatar con las obras donde tiene
+## permiso vigente, y lo revoca (para siempre) al salir de su volumen: desde
+## fuera los fantasmas vuelven a ser sólidos y no se puede volver a entrar.
+## Se llama cada frame de física (add_collision_exception_with es idempotente,
+## y el cuerpo de la obra puede haberse recreado desde el frame anterior).
+func _actualizar_permisos_avatar() -> void:
+	for id_obra in mundo.obras_con_permiso("avatar"):
+		var cuerpo: Node = mundo.cuerpo_de_obra(id_obra)
+		if _dentro_de_obra(id_obra):
+			if cuerpo != null:
+				add_collision_exception_with(cuerpo)
+		else:
+			mundo.revocar_permiso_salida(id_obra, "avatar")
+			if cuerpo != null:
+				remove_collision_exception_with(cuerpo)
 
 
 ## Empuje de corriente de río/cascada (ver EMPUJE_RIO_MINIMO más arriba):
@@ -457,7 +490,9 @@ func _colocar() -> void:
 	var celda := _celda_impactada()
 	var resultado: Dictionary = mundo.surtir_construccion(celda)
 	if not resultado.is_empty():
-		if resultado.get("completa", false):
+		if resultado.get("bloqueada", false):
+			print("Hay alguien dentro del sitio de la obra: deben salir antes de iniciarla.")
+		elif resultado.get("completa", false):
 			_completar_construccion(resultado["metadata"])
 		return
 	var normal := raycast.get_collision_normal()

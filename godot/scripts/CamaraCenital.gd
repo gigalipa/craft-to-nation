@@ -1308,6 +1308,7 @@ func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
 	_cancelar_pintado_zona()
+	hud.cerrar_panel_puesto()
 
 
 ## Cancela la selección de esquinas de zona en curso (tras el primer
@@ -1413,6 +1414,13 @@ func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 func _procesar_clic(posicion_pantalla: Vector2) -> void:
 	var celda := _celda_bajo_mouse(posicion_pantalla)
 	if not esperando_segunda_esquina:
+		# Sin un rectángulo de zona a medias, un clic sobre un puesto de trabajo
+		# abre su panel; en cualquier otro sitio lo cierra y empieza la zona.
+		var esquina_puesto := Recoleccion.esquina_de_puesto_en(celda)
+		if esquina_puesto != Recoleccion.SIN_PUESTO:
+			hud.abrir_panel_puesto(esquina_puesto)
+			return
+		hud.cerrar_panel_puesto()
 		primera_esquina = celda
 		esperando_segunda_esquina = true
 		print("Primera esquina de la zona: ", primera_esquina)

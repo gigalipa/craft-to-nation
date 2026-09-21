@@ -64,7 +64,7 @@ script = ExtResource("5")
 offset_left = 12.0
 offset_top = 12.0
 offset_right = 260.0
-offset_bottom = 140.0
+offset_bottom = 300.0
 
 [node name="NivelLabel" type="Label" parent="HUDLayer/HUD" unique_id=2052434221]
 layout_mode = 2
@@ -77,26 +77,6 @@ text = "Población: 0 / 0"
 [node name="MoralLabel" type="Label" parent="HUDLayer/HUD" unique_id=155013072]
 layout_mode = 2
 text = "Moral (variedad): 0.0"
-
-[node name="ComidaStockLabel" type="Label" parent="HUDLayer/HUD" unique_id=203043215]
-layout_mode = 2
-text = "  Comida: 0 / 0"
-
-[node name="ComidaTasaLabel" type="Label" parent="HUDLayer/HUD" unique_id=755754761]
-layout_mode = 2
-text = "  +0.0 /tick"
-
-[node name="CriticoNombreLabel" type="Label" parent="HUDLayer/HUD" unique_id=401294872]
-layout_mode = 2
-text = "Recurso crítico: -"
-
-[node name="CriticoStockLabel" type="Label" parent="HUDLayer/HUD" unique_id=1870068988]
-layout_mode = 2
-text = "  - : 0 / 0"
-
-[node name="CriticoTasaLabel" type="Label" parent="HUDLayer/HUD" unique_id=848394072]
-layout_mode = 2
-text = "  +0.0 /tick"
 
 [node name="MinaFicha" type="VBoxContainer" parent="HUDLayer" unique_id=382321728]
 visible = false

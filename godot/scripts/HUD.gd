@@ -68,8 +68,8 @@ const NOMBRES_PESCA_FRUTOS_MAR := {
 
 func _process(_delta: float) -> void:
 	nivel_label.text = "Nivel: %d (potencial: %d)" % [Ciudad.nivel, Ciudad.nivel_potencial]
-	poblacion_label.text = "Población: %d / %d" % [Ciudad.censo_total, Ciudad.capacidad_camas_construida]
-	poblacion_label.modulate = COLOR_NEGATIVO if Ciudad.censo_total > Ciudad.capacidad_camas_construida else COLOR_POSITIVO
+	poblacion_label.text = "Población: %d (vivienda %.1f / %d)" % [Ciudad.censo_total, Ciudad.vivienda_ocupada, Ciudad.capacidad_camas_construida]
+	poblacion_label.modulate = COLOR_NEGATIVO if Ciudad.vivienda_ocupada > Ciudad.capacidad_camas_construida else COLOR_POSITIVO
 	moral_label.text = "Moral (variedad): %.1f" % Ciudad.bono_moral_variedad
 
 	_actualizar_recurso("comida", comida_stock_label, comida_tasa_label)

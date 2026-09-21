@@ -390,7 +390,7 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		return
 
 	if resultado["total_camas"] > 0:
-		Ciudad.retirar_edificio_residencial(resultado["total_camas"])
+		Ciudad.retirar_edificio_residencial(resultado["id"])
 		print("Deconstrucción iniciada: ", resultado["total_camas"], " cama(s) retiradas de Ciudad.")
 
 	if not resultado["lista_para_remocion"]:
@@ -570,11 +570,14 @@ func _completar_construccion(metadata: Dictionary) -> void:
 	if metadata.is_empty():
 		return
 	var blueprint: Dictionary = metadata["blueprint"]
+	var camas_por_piso: Array[int] = []
 	var total_camas := 0
 	for piso in blueprint["pisos"]:
-		total_camas += (piso.get("camas", []) as Array).size()
-	Ciudad.registrar_edificio_residencial(total_camas)
-	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (total construido: ", Ciudad.capacidad_camas_construida, ")")
+		var camas: int = (piso.get("camas", []) as Array).size()
+		camas_por_piso.append(camas)
+		total_camas += camas
+	Ciudad.registrar_edificio_residencial(metadata["id_edificio"], camas_por_piso)
+	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (capacidad de camas actual: ", Ciudad.capacidad_camas_construida, ")")
 
 	if not Zonificacion.nucleo_declarado:
 		Zonificacion.declarar_nucleo(metadata["huella_xz"])

@@ -107,7 +107,7 @@ pasan a leer `Recoleccion.TASAS_BASE`):
 | Mina | tierra | 1 | fracción de tierra en el área |
 | Maderero | madera | 5 | densidad de árboles |
 | Caza/recolección | comida (caza) | 15 | densidad de fauna |
-| Caza/recolección | comida (frutos) | 5 (**cifra propuesta: el Excel no la trae**) | densidad frutal |
+| Caza/recolección | comida (frutos) | 5 (Excel, columna `Árbol (obj)`, Comida 5; interpretada como frutos) | densidad frutal |
 | Pesca/frutos del mar | comida (pesca) | 5 | densidad de peces |
 | Pesca/frutos del mar | comida (algas) | 1 | densidad de algas |
 
@@ -258,7 +258,7 @@ verificación final.
 
 ## Supuestos que el usuario puede corregir
 
-- Tasa de recolección de frutos: 5/h (el Excel no la trae).
+- Tasa de recolección de frutos: 5/h, tomada de la columna `Árbol (obj)` del Excel (Comida 5) e interpretada como frutos.
 - Capacidad de carga de 20 unidades por viaje.
 - Un recolector de caza/recolección o de pesca produce las dos señales a la
   vez y se suman en comida.

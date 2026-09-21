@@ -14,10 +14,10 @@
 
 - GDScript con **tabulaciones** (CLAUDE.md). Autoloads: `extends Node`, sin `class_name`.
 - Documentación, mensajes del juego, comentarios y pruebas en **español**.
-- No editar ni agregar `.godot/`, `.godot-mcp/`, `.superpowers/` ni cachés de Python. No tocar `docs/Recursos.xlsx`, `docs/Fichas_Consumo_Produccion.md`, `docs/Pendientes y próximos pasos.md` ni el diff de `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - ...md`. No hacer `git add` de los `*.gd.uid` sueltos que ya están sin versionar. En cada commit, `git add` solo los archivos del paso.
+- No editar ni agregar `.godot/`, `.godot-mcp/`, `.superpowers/` ni cachés de Python. No tocar `docs/Pendientes y próximos pasos.md` ni el diff de `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`. `docs/Recursos.xlsx` y `docs/Fichas_Consumo_Produccion.md` **solo** se editan en la Tarea 8 (el usuario lo pidió expresamente). No hacer `git add` de los `*.gd.uid` sueltos que ya están sin versionar. En cada commit, `git add` solo los archivos del paso.
 - Verificación (CLAUDE.md): `godot/scenes/Test.tscn` con Godot 4.7 más las demás escenas `*Test.tscn` afectadas.
 - **Cupos de trabajadores por puesto** (decisión del usuario): maderero 5, caza/recolección 7, pesca 7, mina 5 — compartidos entre recolectores y acarreadores. Almacén local por puesto: 100 (total entre recursos).
-- **Tasas base del Excel** (`docs/Recursos.xlsx`, por trabajador y hora): tierra 1; piedra, hierro, cobre, carbón y tierras raras 5 (mina: cada una × su fracción en el área); madera 5 × densidad de árboles; caza 15 × densidad de fauna; frutos 5 × densidad frutal (**cifra propuesta, el Excel no la trae**); pesca 5 × densidad de peces; algas 1 × densidad de algas. Las claves de tasa existentes se conservan: mina → nombre del mineral; caza/recolección → `"caza"`, `"recoleccion"`; pesca → `"pesca"`, `"frutos_mar"`; maderero → `"madera"`. En `Economia`, `caza`/`recoleccion`/`pesca`/`frutos_mar` se suman en el recurso `"comida"`.
+- **Tasas base del Excel** (`docs/Recursos.xlsx`, por trabajador y hora): tierra 1; piedra, hierro, cobre, carbón y tierras raras 5 (mina: cada una × su fracción en el área); madera 5 × densidad de árboles; caza 15 × densidad de fauna; frutos 5 × densidad frutal (Excel, columna `Árbol (obj)`, Comida 5; se interpreta como frutos — el usuario puede corregirlo); pesca 5 × densidad de peces; algas 1 × densidad de algas. Las claves de tasa existentes se conservan: mina → nombre del mineral; caza/recolección → `"caza"`, `"recoleccion"`; pesca → `"pesca"`, `"frutos_mar"`; maderero → `"madera"`. En `Economia`, `caza`/`recoleccion`/`pesca`/`frutos_mar` se suman en el recurso `"comida"`.
 - Stock central: 8 recursos — `madera`, `comida`, `hierro` (como hoy) y `tierra`, `piedra`, `cobre`, `carbon`, `tierras_raras` (nuevos, cantidad inicial 0). Límite 1000 cada uno, salvo comida (2000).
 - `CAPACIDAD_CARGA := 20` unidades por viaje de acarreo (placeholder).
 - Ciclo del tiempo: 1 tick de `Ciudad` = 2 s reales = 1 hora de juego; un colono camina 2,5 celdas/s.
@@ -59,6 +59,7 @@ Pasa si imprime una única línea `=== Las N pruebas de ... pasaron correctament
 | `godot/scripts/CamaraCenital.gd` | Modificar | Clic sobre un puesto abre el panel; registrar el puesto con sus tasas |
 | `godot/scripts/Player.gd` | Modificar | `Economia.quitar_puesto` al deconstruir |
 | GDD y `PoC_5/` (documento nuevo) | Modificar/Crear | Documentación (Tarea 8) |
+| `docs/Recursos.xlsx`, `docs/Fichas_Consumo_Produccion.md` | Modificar | Completarlos con la información actualizada (Tarea 8) |
 
 ---
 
@@ -331,7 +332,7 @@ const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_fr
 
 ```gdscript
 const TASA_BASE_CAZA_POR_CIUDADANO := 15.0  # Excel: venado 15/h
-const TASA_BASE_FRUTOS_POR_CIUDADANO := 5.0  # ponytail: el Excel no trae frutos; cifra propuesta, ajustar con el balance
+const TASA_BASE_FRUTOS_POR_CIUDADANO := 5.0  # Excel: columna "Árbol (obj)", Comida 5/h (se interpreta como frutos)
 ```
 
 5. Reemplazar `const TASA_BASE_PESCA_FRUTOS_MAR_POR_CIUDADANO := 2.0` por:
@@ -1664,12 +1665,16 @@ Expected: cada suite imprime su línea `pasaron correctamente` (Ciudad 20, Colon
 
 ---
 
-### Task 8: Documentación y verificación manual
+### Task 8: Documentación (GDD, Excel y fichas) y verificación manual
 
 **Files:**
 - Modify: `Documento de Diseño de Juego (GDD)_ Craft to Nation.md` (subir a la versión 3.34)
 - Create: `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2A - Puestos, Producción y Acarreo.md`
-- Do **not** modify: `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md` (trabajo en curso del usuario), `docs/Recursos.xlsx`.
+- Modify: `docs/Recursos.xlsx` (hojas `Niveles` corregida, `Puestos` y `Economia` nuevas)
+- Modify: `docs/Fichas_Consumo_Produccion.md`
+- Do **not** modify: `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md` (trabajo en curso del usuario) ni `docs/Pendientes y próximos pasos.md`.
+
+**Aviso sobre el worktree:** `docs/Recursos.xlsx` y `docs/Fichas_Consumo_Produccion.md` están **sin versionar** en el árbol principal (`C:\Users\peraz\Projects\Misc\CityCraft`), así que no existen en un worktree nuevo. En los pasos 4 y 5, copiarlos desde el árbol principal al worktree (`cp <árbol principal>/docs/Recursos.xlsx docs/`), editarlos ahí y commitearlos en la rama (pasan a estar versionados por primera vez). **Al mergear a `main`**, quien mergee debe antes mover fuera del árbol principal esas dos copias sin versionar (se reemplazan por las de la rama; Git se negaría a sobrescribirlas) y confirmar con el usuario que no tenía cambios propios pendientes en ellas.
 
 - [ ] **Step 1: GDD 3.34**
 
@@ -1677,19 +1682,129 @@ Leer las secciones del GDD que hablan de puestos de recolección, producción y 
 
 - [ ] **Step 2: Documento técnico nuevo de la PoC 5, fase 2A**
 
-Crear el archivo indicado con: objetivo; arquitectura (`Economia.gd`, `Colonos.gd`, `PanelPuesto.gd`, cambios en `Ciudad`/`Recoleccion`/`Zonificacion`/`CamaraCenital`/`HUD`); tabla de constantes y placeholders (cupos 5/7/7/5, almacén local 100, `CAPACIDAD_CARGA` 20, tasas del Excel con la de frutos marcada como propuesta, stock 1000/2000); reglas (producción solo con recolectores presentes, tope y pérdida, `recoger` con carga completa o sin recolectores presentes, `entregar` con pérdida por stock lleno); balance esperado (un acarreador mueve unas 1,25 unidades/h a 40 celdas frente a 5-15 unidades/h de un recolector); y "fuera de alcance / siguiente" (2B extracción física y agotamiento, 2C transformación, moral/nivel del puesto y drones futuros). Basarlo en el spec `docs/superpowers/specs/2026-09-21-economia-puestos-produccion-acarreo-design.md`.
+Crear el archivo indicado con: objetivo; arquitectura (`Economia.gd`, `Colonos.gd`, `PanelPuesto.gd`, cambios en `Ciudad`/`Recoleccion`/`Zonificacion`/`CamaraCenital`/`HUD`); tabla de constantes y placeholders (cupos 5/7/7/5, almacén local 100, `CAPACIDAD_CARGA` 20, tasas del Excel con la de frutos marcada como interpretación de la columna "Árbol (obj)", stock 1000/2000); reglas (producción solo con recolectores presentes, tope y pérdida, `recoger` con carga completa o sin recolectores presentes, `entregar` con pérdida por stock lleno); balance esperado (un acarreador mueve unas 1,25 unidades/h a 40 celdas frente a 5-15 unidades/h de un recolector); y "fuera de alcance / siguiente" (2B extracción física y agotamiento, 2C transformación, moral/nivel del puesto y drones futuros). Basarlo en el spec `docs/superpowers/specs/2026-09-21-economia-puestos-produccion-acarreo-design.md`.
 
-- [ ] **Step 3: Verificación manual (para el usuario, en el editor con Godot 4.7)**
+- [ ] **Step 3: Confirmar contra el código los valores que irán al Excel y a las fichas**
 
-Anotar en el mensaje final la lista y que el usuario la ejecuta: (1) colocar cada uno de los 4 puestos (M, H, L, F) y hacer clic sobre él en la cenital abre el panel; un clic sobre otro sitio lo cierra y no rompe el pintado de zonas; (2) con desempleados libres, `+` en Recolectores y Acarreadores los pone a caminar al puesto y a producir; (3) el almacén local sube y el acarreador lleva la carga al núcleo y el stock central sube en la lista del HUD; (4) el stock de comida sostiene a la población con un puesto de caza/recolección o pesca atendido; (5) `-` despide y el cupo se libera; (6) deconstruir un puesto por completo devuelve a sus trabajadores a desempleados y cierra el panel.
+Antes de escribir números en el Excel o en las fichas, releer en el código ya implementado (no de memoria): `Recoleccion.gd` (`TASAS_BASE_MINERAL`, `TASA_BASE_*_POR_CIUDADANO`, `PERSONAL_MAXIMO*`, `CAPACIDAD_ALMACENAMIENTO*`, `ANCHO_/ALTO_HUELLA_*`, `RADIO_AREA_*`, `PROFUNDIDAD_MINA_NIVEL_*`), `Economia.gd` (`CAPACIDAD_CARGA`), `Ciudad.gd` (`SEGUNDOS_POR_TICK`, `NIVELES_VIVIENDA`, `TASA_MIGRACION`, límites y stock inicial de `almacen`, `TIPOS_POBLACION`) y `Colonos.gd` (`VELOCIDAD_COLONO`). Si algún valor difiere de los que aparecen abajo, gana el código y se anota la diferencia en el mensaje final.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Completar `docs/Recursos.xlsx`**
+
+Copiar el archivo al worktree (ver aviso), guardar una copia de respaldo fuera del repo y ejecutar este script desde la raíz del worktree (`python`, con `openpyxl`; escribirlo en el scratchpad, no en el repo):
+
+```python
+import shutil
+from copy import copy
+import openpyxl
+from openpyxl.styles import Alignment, Font
+
+RUTA = "docs/Recursos.xlsx"
+shutil.copy(RUTA, "<scratchpad>/Recursos_respaldo.xlsx")
+wb = openpyxl.load_workbook(RUTA)
+
+
+def encabezado(ws, fila, titulos):
+    for col, texto in enumerate(titulos, start=1):
+        celda = ws.cell(fila, col, texto)
+        celda.font = Font(bold=True)
+        celda.alignment = Alignment(wrap_text=True, vertical="top")
+
+
+# 1) Niveles: la vivienda real por nivel de ciudad (Ciudad.NIVELES_VIVIENDA).
+ws = wb["Niveles"]
+ws["B2"] = "Camas por piso"
+ws["G2"] = "Pisos máximos"
+ws["G2"]._style = copy(ws["F2"]._style)
+for fila, (camas, pisos) in {3: (2, 2), 4: (4, 4), 5: (4, 8)}.items():
+    ws.cell(fila, 2, camas)
+    ws.cell(fila, 7, pisos)
+    ws.cell(fila, 7)._style = copy(ws.cell(fila, 6)._style)
+
+# 2) Puestos: cupos, almacén, huella, área y tasas por trabajador y hora.
+if "Puestos" in wb.sheetnames:
+    del wb["Puestos"]
+ws = wb.create_sheet("Puestos")
+encabezado(ws, 1, ["Puesto", "Clave de tasa", "Recurso en el almacén", "Tasa base (unid/trabajador/hora)",
+                   "Se multiplica por", "Personal máximo", "Almacén local", "Huella (ancho x alto)",
+                   "Radio del área", "Estado", "Fuente"])
+MINA = (5, 100, "5 x 5", "6 (profundidad 8/16/24 según nivel)")  # personal, almacén, huella, radio
+filas = [
+    ("Mina", "tierra", "tierra", 1, "fracción de tierra en el área", *MINA, "Implementado", "Recoleccion.gd"),
+    *[("Mina", m, m, 5, f"fracción de {m} en el área", *MINA, "Implementado", "Recoleccion.gd")
+      for m in ["piedra", "hierro", "cobre", "carbon", "tierras_raras"]],
+    ("Maderero", "madera", "madera", 5, "densidad de árboles", 5, 100, "3 x 4", "12", "Implementado", "Recoleccion.gd"),
+    ("Caza y recolección", "caza", "comida", 15, "densidad de fauna (Excel: venado)", 7, 100, "4 x 4", "12", "Implementado", "Recoleccion.gd"),
+    ("Caza y recolección", "recoleccion", "comida", 5, "densidad frutal (Excel: columna Árbol (obj), Comida 5; interpretada como frutos)", 7, 100, "4 x 4", "12", "Implementado", "Recoleccion.gd"),
+    ("Pesca y frutos del mar", "pesca", "comida", 5, "densidad de peces", 7, 100, "4 x 6", "25 (agua conectada)", "Implementado", "Recoleccion.gd"),
+    ("Pesca y frutos del mar", "frutos_mar", "comida", 1, "densidad de algas", 7, 100, "4 x 6", "25 (agua conectada)", "Implementado", "Recoleccion.gd"),
+    ("Caza (conejo)", "-", "comida", 8, "-", "-", "-", "-", "-", "Propuesta (Excel), no implementada", "docs/Recursos.xlsx, hoja Relacion"),
+    ("Pozo de petróleo", "-", "crudo", 2, "-", "-", "-", "-", "-", "Propuesta (Excel), no implementada", "docs/Recursos.xlsx, hoja Relacion"),
+    ("Pozo de agua", "-", "agua", 2, "-", "-", "-", "-", "-", "Propuesta (Excel), no implementada", "docs/Recursos.xlsx, hoja Relacion"),
+]
+for fila, datos in enumerate(filas, start=2):
+    for col, valor in enumerate(datos, start=1):
+        ws.cell(fila, col, valor)
+for col, ancho in zip("ABCDEFGHIJK", [24, 14, 20, 18, 46, 12, 12, 16, 30, 32, 34]):
+    ws.column_dimensions[col].width = ancho
+
+# 3) Economia: parámetros de tiempo, acarreo, almacenes y población.
+if "Economia" in wb.sheetnames:
+    del wb["Economia"]
+ws = wb.create_sheet("Economia")
+encabezado(ws, 1, ["Parámetro", "Valor", "Unidad", "Fuente"])
+parametros = [
+    ("Duración de un tick", 2, "segundos reales = 1 hora de juego", "Ciudad.SEGUNDOS_POR_TICK"),
+    ("Velocidad de un colono", 2.5, "celdas por segundo (5 por hora de juego)", "Colonos.VELOCIDAD_COLONO"),
+    ("Carga de un acarreador", 20, "unidades por viaje (placeholder)", "Economia.CAPACIDAD_CARGA"),
+    ("Almacén local de un puesto", 100, "unidades, total entre recursos", "Recoleccion.CAPACIDAD_ALMACENAMIENTO*"),
+    ("Límite del stock central", 1000, "unidades por recurso (comida: 2000)", "Ciudad.almacen"),
+    ("Stock inicial: comida", 2000, "unidades (al máximo)", "Ciudad.almacen"),
+    ("Stock inicial: madera", 200, "unidades", "Ciudad.almacen"),
+    ("Stock inicial: hierro", 50, "unidades", "Ciudad.almacen"),
+    ("Stock inicial: tierra, piedra, cobre, carbón, tierras raras", 0, "unidades", "Ciudad.almacen"),
+    ("Migración de colonos", 0.5, "colonos por hora de juego (solo con vivienda libre y sin hambruna)", "Ciudad.TASA_MIGRACION"),
+    ("Consumo de un obrero asignado a un puesto", 5, "comida por hora (un desempleado consume 3)", "Ciudad.TIPOS_POBLACION"),
+]
+for fila, datos in enumerate(parametros, start=2):
+    for col, valor in enumerate(datos, start=1):
+        ws.cell(fila, col, valor)
+for col, ancho in zip("ABCD", [52, 10, 62, 40]):
+    ws.column_dimensions[col].width = ancho
+
+wb.save(RUTA)
+
+# Verificación: las hojas originales que no se tocaron conservan sus valores.
+antes = openpyxl.load_workbook("<scratchpad>/Recursos_respaldo.xlsx")
+despues = openpyxl.load_workbook(RUTA)
+for nombre in ["Relacion", "Recetas"]:
+    for fila in antes[nombre].iter_rows():
+        for celda in fila:
+            assert despues[nombre][celda.coordinate].value == celda.value, (nombre, celda.coordinate)
+print("Hojas:", despues.sheetnames)
+```
+
+Sustituir `<scratchpad>` por la ruta real del scratchpad. Expected: imprime `Hojas: ['Relacion', 'Recetas', 'Niveles', 'Puestos', 'Economia']` sin `AssertionError`. Si el script falla porque el Excel está abierto en otro programa, pedir al usuario que lo cierre.
+
+- [ ] **Step 5: Completar `docs/Fichas_Consumo_Produccion.md`**
+
+Copiar el archivo al worktree (ver aviso) y editarlo así, en el mismo estilo y en español (no inventar cifras: cada número sale del Excel o del código releído en el Step 3):
+
+1. **Encabezado:** añadir que la transcripción incluye ahora las hojas `Niveles`, `Puestos` y `Economia`, y citar `Economia.gd`.
+2. **Sección 1 (Unidades):** en la nota de **"x Cama"**, sustituir "significado no aclarado" por el significado ya implementado: cuántos habitantes de ese tipo caben por cada cama construida; cada cama aporta 1 unidad de vivienda y una persona ocupa `1 / x_cama` de ella (vivienda fraccionaria compartida, `Ciudad.vivienda_ocupada`). Añadir una nota: un `obrero` es ahora un desempleado asignado a un puesto (`Colonos.contratar`), así que pasa de consumir 3 a 5 comida/h; combustible y energía siguen sin aplicarse. Añadir el límite de vivienda por nivel de ciudad (camas por piso × pisos: nivel 1 = 2 × 2, nivel 2 = 4 × 4, nivel 3 = 4 × 8).
+3. **Sección 2 (Puestos):** convertir la tabla en la del Step 4 (hoja `Puestos`): estado **Implementado** para tierra, piedra, hierro, cobre, carbón, tierras raras, madera, caza (venado, 15), frutos (5, de la columna "Árbol (obj)" del Excel, que la tabla anterior omitía), pesca (5) y algas (1); **Propuesta (Excel)** solo para conejo (8), pozo de petróleo (2) y pozo de agua (2). Añadir por puesto: personal máximo (mina 5, maderero 5, caza/recolección 7, pesca 7), almacén local 100, huella y radio. **Eliminar** el párrafo "no coincide con el cálculo real todavía implementado" (ya coincide) y sustituirlo por la fórmula vigente: tasa de un recurso = tasa base del Excel × fracción o densidad del área detectada, por trabajador presente y hora; el `TASA_BASE_POR_CIUDADANO = 2.0` genérico ya no existe.
+4. **Nueva sección "Acarreo y almacén central":** producción → almacén local (tope 100, exceso se pierde) → acarreador a pie (carga 20, ciclo puesto → núcleo → puesto) → stock central de 8 recursos (límite 1000; comida 2000); la comida de caza/frutos/pesca/algas se suma en `comida`; un tick = 2 s reales = 1 hora de juego. Indicar qué falta: extracción física y agotamiento (2B), refinerías/energía (2C), carretas y carreteras (sub-proyecto 6), moral y nivel del puesto, drones.
+5. **Sección 3 (Refinerías) y 4 (Fábricas):** sin cambios de contenido; solo comprobar que sus estados siguen siendo ciertos.
+6. **Pendientes:** quitar el punto de "x Cama"; conservar el de conciliar comida por tipo de unidad con la hambre por nivel de avatar; añadir "confirmar que la columna `Árbol (obj)` (Comida 5) es la tasa de frutos" y "balance del acarreo (`CAPACIDAD_CARGA`, cupos) tras jugar".
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add "Documento de Diseño de Juego (GDD)_ Craft to Nation.md" "PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2A - Puestos, Producción y Acarreo.md"
-git commit -m "docs: GDD 3.34 y documento técnico de la PoC 5 (fase 2A)" -m "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+git add "Documento de Diseño de Juego (GDD)_ Craft to Nation.md" "PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2A - Puestos, Producción y Acarreo.md" docs/Recursos.xlsx docs/Fichas_Consumo_Produccion.md
+git commit -m "docs: GDD 3.34, PoC 5 fase 2A, Recursos.xlsx y fichas de consumo/producción actualizados" -m "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01SJTyjZex75AFX3j4vFf7i6"
 ```
+
+Al terminar, anotar en el mensaje final la **verificación manual** que hace el usuario en el editor con Godot 4.7: (1) colocar cada uno de los 4 puestos (M, H, L, F) y hacer clic sobre él en la cenital abre el panel; un clic sobre otro sitio lo cierra y no rompe el pintado de zonas; (2) con desempleados libres, `+` en Recolectores y Acarreadores los pone a caminar al puesto y a producir; (3) el almacén local sube y el acarreador lleva la carga al núcleo y el stock central sube en la lista del HUD; (4) el stock de comida sostiene a la población con un puesto de caza/recolección o pesca atendido; (5) `-` despide y el cupo se libera; (6) deconstruir un puesto por completo devuelve a sus trabajadores a desempleados y cierra el panel.
 
 ---
 

@@ -15,7 +15,7 @@ extends Node
 signal puesto_quitado(ids: Array)
 
 ## Unidades que un acarreador lleva por viaje (placeholder sin balance real).
-const CAPACIDAD_CARGA := 20.0
+const CAPACIDAD_CARGA := 30.0
 
 const ROLES := ["recolector", "acarreador"]
 

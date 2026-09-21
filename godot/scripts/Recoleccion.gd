@@ -49,7 +49,7 @@ const TIPOS_MINERALES := ["tierra", "piedra", "hierro", "cobre", "carbon", "tier
 const COSTO_CONSTRUCCION := {"tierra": 10, "madera": 10, "piedra": 5}
 ## Cupos de trabajadores (decisión del usuario, 2026-09-21): mina 5, maderero 5, caza/recolección 7, pesca 7.
 const PERSONAL_MAXIMO := 5
-const CAPACIDAD_ALMACENAMIENTO := 100
+const CAPACIDAD_ALMACENAMIENTO := 1000
 
 const ANCHO_HUELLA_MADERERO := 3
 const ALTO_HUELLA_MADERERO := 4
@@ -62,7 +62,7 @@ const TASA_BASE_MADERERO_POR_CIUDADANO := 5.0
 # todavía (ver Recoleccion.COSTO_CONSTRUCCION más arriba).
 const COSTO_CONSTRUCCION_MADERERO := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_MADERERO := 5
-const CAPACIDAD_ALMACENAMIENTO_MADERERO := 100
+const CAPACIDAD_ALMACENAMIENTO_MADERERO := 1000
 
 const RADIO_AREA_CAZA_RECOLECCION := 12
 const PASO_MUESTREO_CAZA_RECOLECCION := 2  # cada 2 celdas, no las ~450 del área completa
@@ -75,7 +75,7 @@ const ALTO_HUELLA_CAZA_RECOLECCION := 4
 # todavía (ver Recoleccion.COSTO_CONSTRUCCION más arriba).
 const COSTO_CONSTRUCCION_CAZA_RECOLECCION := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_CAZA_RECOLECCION := 7
-const CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION := 100
+const CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION := 1000
 
 const ANCHO_HUELLA_PESCA_FRUTOS_MAR := 4
 const ALTO_HUELLA_PESCA_FRUTOS_MAR := 6
@@ -88,7 +88,7 @@ const TASA_BASE_ALGAS_POR_CIUDADANO := 1.0  # Excel: algas 1/h
 # sin balance real todavía (ver Recoleccion.COSTO_CONSTRUCCION).
 const COSTO_CONSTRUCCION_PESCA_FRUTOS_MAR := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_PESCA_FRUTOS_MAR := 7
-const CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR := 100
+const CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR := 1000
 
 ## Vector2i (esquina de la huella, celda de menor X/Z) -> {"tipo": String,
 ## "ancho": int, "alto": int, "nivel": int}. Antes solo guardaba minas

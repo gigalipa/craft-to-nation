@@ -537,4 +537,31 @@ func ejecutar_pruebas() -> void:
 			break
 	assert(llego24, "tras reubicarse llega a su puesto y se marca presente")
 
-	print("\n=== Las 24 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 25: un puesto inalcanzable se reintenta con retroceso exponencial ===")
+	var ciudad25: Node = CiudadScript.new()
+	var colonos25: Node = _nuevo_con_puesto(ciudad25)
+	# Anillo cerrado de columnas "pared" de 2 de alto alrededor del puesto (2,2): ninguna
+	# celda junto a su huella es alcanzable desde fuera.
+	for i in range(6):
+		for borde in [Vector2i(i, 0), Vector2i(i, 5), Vector2i(0, i), Vector2i(5, i)]:
+			colonos25.mundo.poner(Vector3i(borde.x, 1, borde.y), "pared")
+			colonos25.mundo.poner(Vector3i(borde.x, 2, borde.y), "pared")
+	var id25: int = colonos25.agregar_colono("desempleado", Vector3i(7, 1, 7))
+	ciudad25.demografia["desempleado"] = 1
+	assert(colonos25.contratar(Vector2i(2, 2), "recolector"))
+	var c25: Dictionary = colonos25.colonos[id25]
+	assert(c25["fallos_servicio"] == 0, "sin fallos al contratar")
+	var esperas25: Array = []
+	var fallos_vistos25: int = 0
+	for i in range(250):  # 25 s de juego: fallos a ~0, 1, 3, 7 y 15 s
+		colonos25.avanzar(0.1)
+		if c25["fallos_servicio"] != fallos_vistos25:
+			fallos_vistos25 = c25["fallos_servicio"]
+			esperas25.append(c25["espera"])
+	assert(c25["fallos_servicio"] >= 3, "acumula fallos (%d)" % c25["fallos_servicio"])
+	assert(esperas25.size() >= 3 and esperas25[0] == 1.0 and esperas25[1] == 2.0 and esperas25[2] == 4.0, "espera 1, 2, 4... (%s)" % [esperas25])
+	for i in range(1, esperas25.size()):
+		assert(esperas25[i] >= esperas25[i - 1] and esperas25[i] <= 8.0, "espera no decreciente y con tope de 8 s")
+	assert(colonos25.economia.trabajadores_de(Vector2i(2, 2))["presentes"] == 0, "nunca llega a su puesto")
+
+	print("\n=== Las 25 pruebas de Colonos pasaron correctamente ===")

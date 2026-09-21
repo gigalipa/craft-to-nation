@@ -338,7 +338,7 @@ func suceder_avatar() -> String:
 	return "sucesion_exitosa"
 
 
-## Devuelve la clave de almacen (comida/madera/hierro) con la tasa neta más
+## Devuelve la clave de almacen (una de las 8 del almacén) con la tasa neta más
 ## negativa del último tick — el recurso en mayor déficit ahora mismo. Si
 ## ninguno está en déficit, igual devuelve el de tasa más baja (puede ser 0
 ## o positiva); el HUD decide cómo mostrarlo (ver Ciudad.recurso_critico()).

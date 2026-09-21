@@ -6,6 +6,8 @@ extends PanelContainer
 ## almacén local, producción y distancia al núcleo. Las reglas viven en
 ## Economia/Colonos; esto solo las muestra y les pasa los clics.
 
+const HUDScript = preload("res://scripts/HUD.gd")
+
 const NOMBRES_PUESTO := {
 	"mina": "Mina",
 	"caza_recoleccion": "Caza y recolección",
@@ -65,6 +67,8 @@ func _crear_fila(rol: String) -> HBoxContainer:
 
 
 func abrir(nueva_esquina: Vector2i) -> void:
+	if not Economia.tiene_puesto(nueva_esquina):
+		return
 	esquina = nueva_esquina
 	visible = true
 	_actualizar()
@@ -106,7 +110,7 @@ func _actualizar() -> void:
 static func _texto_recursos(recursos: Dictionary, vacio: String, sufijo: String = "") -> String:
 	var partes: Array = []
 	for recurso in recursos:
-		partes.append("%.1f %s%s" % [recursos[recurso], recurso, sufijo])
+		partes.append("%.1f %s%s" % [recursos[recurso], HUDScript.NOMBRES_RECURSO.get(recurso, recurso), sufijo])
 	return ", ".join(partes) if not partes.is_empty() else vacio
 
 

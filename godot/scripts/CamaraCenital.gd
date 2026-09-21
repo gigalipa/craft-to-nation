@@ -1415,9 +1415,10 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 	var celda := _celda_bajo_mouse(posicion_pantalla)
 	if not esperando_segunda_esquina:
 		# Sin un rectángulo de zona a medias, un clic sobre un puesto de trabajo
-		# abre su panel; en cualquier otro sitio lo cierra y empieza la zona.
+		# abre su panel (salvo con la herramienta de borrar zona activa); en cualquier
+		# otro sitio lo cierra y empieza la zona.
 		var esquina_puesto := Recoleccion.esquina_de_puesto_en(celda)
-		if esquina_puesto != Recoleccion.SIN_PUESTO:
+		if esquina_puesto != Recoleccion.SIN_PUESTO and tipo_zona_seleccionada != Zonificacion.MARCADOR_BORRAR:
 			hud.abrir_panel_puesto(esquina_puesto)
 			return
 		hud.cerrar_panel_puesto()

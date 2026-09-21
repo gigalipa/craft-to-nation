@@ -49,7 +49,7 @@ var economia: Object = null:  # Economia
 			valor.puesto_quitado.connect(_on_puesto_quitado)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
-## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase"}. "celda" es la celda donde está parado;
+## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase", "fallos_servicio"}. "celda" es la celda donde está parado;
 ## "posicion" (Vector3, los pies) es lo que dibuja el renderer.
 var colonos: Dictionary = {}
 ## Vector3i -> id de colono: la celda que ocupa cada colono y, mientras da un
@@ -90,7 +90,7 @@ func agregar_colono(tipo: String, celda: Vector3i, hogar: int = -1) -> int:
 		"ruta": ruta, "progreso": 0.0, "moviendo": false,
 		"espera": 0.0, "bloqueo": 0.0,
 		"evacuando": -1, "ruta_de_evacuacion": false,
-		"trabajo": {}, "carga": {}, "fase": "",
+		"trabajo": {}, "carga": {}, "fase": "", "fallos_servicio": 0,
 	}
 	ocupadas[celda] = id
 	colono_creado.emit(id)
@@ -497,6 +497,7 @@ func contratar(esquina: Vector2i, rol: String) -> bool:
 	c["trabajo"] = {"puesto": esquina, "rol": rol}
 	c["fase"] = ""
 	c["carga"] = {}
+	c["fallos_servicio"] = 0
 	_dejar_lo_que_hacia(c)
 	return true
 
@@ -524,6 +525,7 @@ func _volver_a_desempleado(c: Dictionary) -> void:
 	c["trabajo"] = {}
 	c["carga"] = {}
 	c["fase"] = ""
+	c["fallos_servicio"] = 0
 	c["tipo"] = "desempleado"
 	ciudad.reasignar_tipo("obrero", "desempleado")
 	_dejar_lo_que_hacia(c)
@@ -622,5 +624,9 @@ func _ir_junto_a(c: Dictionary, huella: Array) -> void:
 		var ruta: Array[Vector3i] = _buscador.buscar_ruta(origen, candidatas[i], opciones)
 		if not ruta.is_empty():
 			c["ruta"] = ruta
+			c["fallos_servicio"] = 0
 			return
-	c["espera"] = ESPERA_TRABAJO
+	# Sin ruta (o sin celda libre): retroceso exponencial (1, 2, 4, 8 s) para no
+	# repetir hasta INTENTOS_SERVICIO búsquedas costosas cada segundo.
+	c["fallos_servicio"] = mini(c["fallos_servicio"] + 1, 4)
+	c["espera"] = ESPERA_TRABAJO * pow(2.0, c["fallos_servicio"] - 1)

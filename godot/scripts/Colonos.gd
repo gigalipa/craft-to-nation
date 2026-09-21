@@ -285,12 +285,26 @@ func _esquivar(c: Dictionary) -> void:
 ## resto un punto de la zona de influencia. Prueba INTENTOS_DESTINO veces hasta
 ## dar con uno alcanzable; si no, espera y reintenta.
 func _elegir_destino(c: Dictionary) -> void:
+	# Si algo se volvió sólido sobre el colono (bloque, agua, fantasma), la
+	# búsqueda de ruta falla siempre desde un origen no transitable y quedaría
+	# congelado: se reubica en lo alto de su propia columna. (No hay reserva en
+	# vuelo: aquí solo se llega con "moviendo" en falso.)
+	if not _buscador.es_transitable(c["celda"]):
+		var reubicada := Vector3i(c["celda"].x, mundo.altura_en(c["celda"].x, c["celda"].z) + 1, c["celda"].z)
+		if not _buscador.es_transitable(reubicada) or _ocupada_por_otro(reubicada, c["id"]):
+			c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+			return
+		ocupadas.erase(c["celda"])
+		c["celda"] = reubicada
+		c["posicion"] = _centro_de(reubicada)
+		ocupadas[reubicada] = c["id"]
+	var opciones := {"bloqueadas": _bloqueadas_para(c["id"])}
 	var a_casa: bool = c["hogar"] != -1 and _rng.randf() < PROBABILIDAD_CASA
 	for i in range(INTENTOS_DESTINO):
 		var destino: Vector3i = _candidato_en_casa(c["hogar"]) if a_casa else _candidato_exterior()
 		if destino == INVALIDA:
 			continue
-		var ruta: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"bloqueadas": _bloqueadas_para(c["id"])})
+		var ruta: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, opciones)
 		if not ruta.is_empty():
 			c["ruta"] = ruta
 			return
@@ -347,7 +361,7 @@ func _celda_aparicion() -> Vector3i:
 	var respaldo := INVALIDA
 	for i in range(INTENTOS_APARICION):
 		var celda: Vector3i = _candidato_exterior()
-		if celda == INVALIDA or ocupadas.has(celda):
+		if celda == INVALIDA or ocupadas.has(celda) or celdas_avatar.has(celda):
 			continue
 		if _es_borde_de_zona(Vector2i(celda.x, celda.z)):
 			return celda

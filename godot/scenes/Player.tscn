@@ -31,4 +31,5 @@ position = Vector3(0, 1.6, 0)
 current = true
 
 [node name="RayCast3D" type="RayCast3D" parent="Camara"]
+collision_mask = 1
 target_position = Vector3(0, 0, -5)

@@ -19,8 +19,14 @@ class MundoFalso extends RefCounted:
 	func poner(celda: Vector3i, tipo: String) -> void:
 		celdas[celda] = tipo
 
+	## Altura de la columna más alta con bloque (refleja lo colocado con poner()).
 	func altura_en(x: int, z: int) -> int:
-		return 0 if x >= 0 and x < lado and z >= 0 and z < lado else -1
+		if x < 0 or x >= lado or z < 0 or z >= lado:
+			return -1
+		for y in range(20, -1, -1):
+			if celdas.get(Vector3i(x, y, z), "") != "":
+				return y
+		return -1
 
 
 ## Cuadrado [0, lado) x [0, lado) de zona de influencia.
@@ -263,4 +269,34 @@ func ejecutar_pruebas() -> void:
 	assert(not c13["ruta"].is_empty() and not c13["ruta"].has(Vector3i(2, 1, 1)), "la nueva ruta evita la celda que se volvió sólida")
 	assert(c13["ruta"].back() == Vector3i(3, 1, 1), "al mismo destino")
 
-	print("\n=== Las 13 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 14: Un colono dentro de un sólido se reubica sobre su columna ===")
+	var mundo_reub := _mundo_llano()
+	var colonos_reub: Node = _nuevo(mundo_reub, CiudadScript.new())
+	var id_reub: int = colonos_reub.agregar_colono("obrero", Vector3i(4, 1, 4))
+	var c_reub: Dictionary = colonos_reub.colonos[id_reub]
+	mundo_reub.poner(Vector3i(4, 1, 4), "pared")
+	mundo_reub.poner(Vector3i(4, 2, 4), "pared")
+	colonos_reub.avanzar(0.1)
+	assert(c_reub["celda"] == Vector3i(4, 3, 4), "se reubica sobre la pared, en lo alto de su columna")
+	assert(colonos_reub.ocupadas.get(Vector3i(4, 3, 4), -1) == id_reub, "ocupa la celda nueva")
+	assert(not colonos_reub.ocupadas.has(Vector3i(4, 1, 4)), "libera la celda sólida")
+	assert(colonos_reub.ocupadas.size() == 1, "solo queda su celda en ocupadas")
+	for i in range(200):
+		colonos_reub.avanzar(0.1)
+		assert(colonos_reub._buscador.es_transitable(c_reub["celda"]), "nunca queda parado en una celda no transitable")
+
+	# Si la celda de reubicación la ocupa otro colono, espera sin moverse.
+	var mundo_reub2 := _mundo_llano()
+	var colonos_reub2: Node = _nuevo(mundo_reub2, CiudadScript.new())
+	var id_a_reub: int = colonos_reub2.agregar_colono("obrero", Vector3i(7, 1, 7))
+	var id_b_reub: int = colonos_reub2.agregar_colono("obrero", Vector3i(7, 3, 7))
+	colonos_reub2.colonos[id_b_reub]["espera"] = 1000.0
+	mundo_reub2.poner(Vector3i(7, 1, 7), "pared")
+	mundo_reub2.poner(Vector3i(7, 2, 7), "pared")
+	colonos_reub2.avanzar(0.1)
+	var a_reub: Dictionary = colonos_reub2.colonos[id_a_reub]
+	assert(a_reub["celda"] == Vector3i(7, 1, 7), "no se reubica sobre otro colono")
+	assert(a_reub["espera"] > 0.0, "espera y reintenta")
+	assert(colonos_reub2.ocupadas[Vector3i(7, 1, 7)] == id_a_reub and colonos_reub2.ocupadas[Vector3i(7, 3, 7)] == id_b_reub, "ocupadas sigue consistente")
+
+	print("\n=== Las 14 pruebas de Colonos pasaron correctamente ===")

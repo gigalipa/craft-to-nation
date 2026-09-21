@@ -264,4 +264,24 @@ func ejecutar_pruebas() -> void:
 	neta.simular_tick(0.0)
 	assert(neta.almacen["madera"].tasa_neta == 0.0, "sin entregas, vuelve a 0")
 
-	print("\n=== Las 20 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 21: tasa_neta_promedio promedia las últimas VENTANA_TASA_PROMEDIO horas ===")
+	var prom: Node = CiudadScript.new()
+	prom.migracion_activa = false
+	prom.simular_tick(0.0)  # primer tick: tasa 0 (1 muestra)
+	assert(prom.almacen["madera"].tasa_neta_promedio == 0.0)
+	# Una entrega de 30 cada 3 horas (a tirones, como los acarreadores): media 10/h.
+	for i in range(3):
+		prom.almacen["madera"].agregar(30.0)
+		prom.simular_tick(0.0)
+		prom.simular_tick(0.0)
+		prom.simular_tick(0.0)
+	# La ventana (10 muestras: el tick inicial + 9 horas) suma las 3 entregas: 90 / 10.
+	var esperado: float = 90.0 / prom.VENTANA_TASA_PROMEDIO
+	assert(is_equal_approx(prom.almacen["madera"].tasa_neta_promedio, esperado), "media de la ventana: %s" % prom.almacen["madera"].tasa_neta_promedio)
+	assert(prom.almacen["madera"].tasa_neta == 0.0, "tasa_neta sigue siendo la de la última hora")
+	# Tras VENTANA_TASA_PROMEDIO horas sin entregas, la ventana ya no recuerda las entregas.
+	for i in range(prom.VENTANA_TASA_PROMEDIO):
+		prom.simular_tick(0.0)
+	assert(prom.almacen["madera"].tasa_neta_promedio == 0.0, "la ventana descarta las muestras viejas")
+
+	print("\n=== Las 21 pruebas de Ciudad pasaron correctamente ===")

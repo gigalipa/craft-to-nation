@@ -72,6 +72,9 @@ const CATEGORIAS_COMIDA := [
 	"sembradios", "granjas_animales", "recoleccion_caza",
 	"hidroponia", "pesca", "sintetico",
 ]
+## Horas (ticks) que abarca Recurso.tasa_neta_promedio: un acarreador tarda
+## ~8-10 h por viaje de ida y vuelta, así que menos de 10 seguiría oscilando.
+const VENTANA_TASA_PROMEDIO := 10
 const BONO_MORAL_MAXIMO := 15.0
 const VELOCIDAD_SUAVIZADO_MORAL := 0.15
 
@@ -85,11 +88,27 @@ class Recurso:
 	## que llega entre ticks, como las entregas de los acarreadores. Usado por
 	## el HUD (lista de recursos).
 	var tasa_neta: float = 0.0
+	## Media de las últimas VENTANA_TASA_PROMEDIO tasas_netas (horas): suaviza
+	## las entregas a tirones de los acarreadores para que el HUD muestre si la
+	## relación producción/consumo es positiva. Ver registrar_tasa().
+	var tasa_neta_promedio: float = 0.0
+	var _historial_tasa: Array[float] = []
 
 	func _init(p_nombre: String, p_cantidad: float, p_limite: float) -> void:
 		nombre = p_nombre
 		cantidad = max(0.0, p_cantidad)
 		limite = p_limite
+
+	## Fija tasa_neta (última hora) y recalcula tasa_neta_promedio.
+	func registrar_tasa(tasa: float) -> void:
+		tasa_neta = tasa
+		_historial_tasa.append(tasa)
+		if _historial_tasa.size() > VENTANA_TASA_PROMEDIO:
+			_historial_tasa.pop_front()
+		var suma := 0.0
+		for t in _historial_tasa:
+			suma += t
+		tasa_neta_promedio = suma / _historial_tasa.size()
 
 	func agregar(monto: float) -> float:
 		var espacio_libre: float = limite - cantidad
@@ -339,14 +358,14 @@ func suceder_avatar() -> String:
 
 
 ## Devuelve la clave de almacen (una de las 8 del almacén) con la tasa neta más
-## negativa del último tick — el recurso en mayor déficit ahora mismo. Si
+## negativa (promedio de las últimas horas) — el recurso en mayor déficit ahora mismo. Si
 ## ninguno está en déficit, igual devuelve el de tasa más baja (puede ser 0
 ## o positiva); el HUD decide cómo mostrarlo (ver Ciudad.recurso_critico()).
 func recurso_critico() -> String:
 	var peor_clave := ""
 	var peor_tasa := INF
 	for clave in almacen:
-		var tasa: float = (almacen[clave] as Recurso).tasa_neta
+		var tasa: float = (almacen[clave] as Recurso).tasa_neta_promedio
 		if tasa < peor_tasa:
 			peor_tasa = tasa
 			peor_clave = clave
@@ -414,7 +433,7 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 
 	for clave in almacen:
 		var recurso: Recurso = almacen[clave]
-		recurso.tasa_neta = recurso.cantidad - float(referencia[clave])
+		recurso.registrar_tasa(recurso.cantidad - float(referencia[clave]))
 		_cantidad_al_cierre[clave] = recurso.cantidad
 
 	var resultado := {

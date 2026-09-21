@@ -16,7 +16,7 @@ El GDD (Fase 5) preveía `NavigationServer3D`. No se usa: exige hornear una mall
 
 ## **`BuscadorRutas.gd`**
 
-Clase pura (`RefCounted`), probada con un mundo falso (`BuscadorRutasTest.gd`, 14 pruebas).
+Clase pura (`RefCounted`), probada con un mundo falso (`BuscadorRutasTest.gd`, 17 pruebas).
 
 * **Celda transitable:** un NPC ocupa 2 celdas de alto; las dos deben estar libres (`""`, `puerta_inferior`, `puerta_superior`) y la de abajo ser suelo sólido. El agua de 1 bloque de profundidad se cruza; de 2 o más, no. Camas y baúles son suelo (un colono puede pararse encima).
 * **Movimientos:** 4 ortogonales; sube 1 bloque, cae hasta 3. Coste `1 + |dy|`, heurística Manhattan 3D, tope de 20 000 nodos expandidos por consulta.
@@ -25,16 +25,27 @@ Clase pura (`RefCounted`), probada con un mundo falso (`BuscadorRutasTest.gd`, 1
 
 ## **`Colonos.gd` y `ColonosRenderer.gd`**
 
-Probados en `ColonosTest.gd` (13 pruebas).
+Probados en `ColonosTest.gd` (16 pruebas).
 
 * **`Colonos` (autoload, estado puro):** `Ciudad.demografia` es la fuente de verdad de las cantidades; `reconciliar()` crea o retira colonos al recibir `Ciudad.tick_simulado`. Cada colono tiene un hogar (edificio residencial con menor ocupación relativa, ponderada por `1 / x_cama`), aparece en el borde de la zona de influencia y deambula: la mitad de las veces hacia su casa (puede quedar sobre una cama o junto a ella) y el resto por la zona de influencia.
 * **Evitación:** dos colonos nunca ocupan la misma celda (reserva de la celda siguiente). Si otro colono o el avatar la ocupa, espera 0,5 s, rodea sus celdas y, si no hay forma, abandona el destino. El avatar cuenta como obstáculo en su celda y, si se mueve, en la de adelante; los colonos lo esquivan pero no huyen de él.
 * **`ColonosRenderer`:** una cápsula placeholder y un `AnimatableBody3D` por colono, para que el avatar no los atraviese.
 * **Cuerpo del avatar:** cápsula visible en primera persona y en la cámara cenital (`Player.tscn`).
 
+## **Fantasmas de obra permeables hacia afuera**
+
+* **Problema:** al emplazar un blueprint, sus bloques `fantasma` son sólidos; quien estuviera en el sitio quedaba dentro de un sólido (el pathfinding no encontraba ruta desde su celda y el avatar quedaba atrapado).
+* **Solución:** `GridMap` no permite colisión por celda ni por cara, así que el ítem `fantasma` de la `MeshLibrary` ya no lleva formas de colisión y cada obra tiene un `StaticBody3D` propio (`CuerposObra.gd`) con una caja por fantasma pendiente. Quien está dentro del volumen de la obra al emplazarla (o al empezar a deconstruir un edificio completo, señal `obra_a_fantasma`) recibe un permiso de salida: el avatar ignora la colisión con ese cuerpo (`add_collision_exception_with`) y los colonos usan `ignorar_fantasmas` en `BuscadorRutas`. El permiso se revoca al salir y no se recupera. Los colonos con permiso evacúan por `buscar_salida()`.
+* **Puerta de inicio de obra:** `VoxelWorld.surtir_construccion()` devuelve `{"bloqueada": true}` mientras haya un permiso vigente.
+* **Capas de colisión:** el mundo (terreno, edificios y cuerpos de obra fantasma) está en la capa 1; los `AnimatableBody3D` de los colonos, en la capa 2 con máscara 0; el avatar `Player` tiene `collision_mask = 3` (choca con el mundo y con los colonos). El `RayCast3D` del jugador usa máscara 1 y las cuatro consultas físicas de `CamaraCenital` usan `MASCARA_MUNDO = 1`, así que clics y rayos atraviesan a los colonos y golpean el terreno o los cuerpos de obra.
+* **Pruebas:** `BuscadorRutasTest` 17, `ColonosTest` 16, `FantasmasPermeablesTest` 8 (2 de `CuerposObra`, con física real, y 6 de permisos, volumen y puerta de `VoxelWorld`), `CiudadTest` 16 y `Test.tscn` 63.
+* **Limitaciones conocidas:** la exención del avatar es por obra mediante excepciones de colisión; un colono cuya celda destino (no la actual) cae dentro de un volumen que acaba de pasar a fantasma no recibe permiso (ventana de ~0,4 s); un fantasma de follaje liberado creado para una obra vecina se sincroniza solo en el siguiente avance de esa obra (raro); el aviso de obra bloqueada es un `print` en consola, no un mensaje del HUD.
+* **Alternativa no elegida:** una malla cóncava con solo las caras externas y `backface_collision = false`, que impediría entrar y dejaría salir sin permisos. No se garantiza que `GodotPhysics3D` la respete para el movimiento de un `CharacterBody3D`; queda como vía a explorar si se quiere simplificar.
+
 ## **Fuera de alcance / Próximos pasos**
 
-* Fantasmas de obra permeables hacia afuera (Plan 3 del mismo spec).
+* Deconstrucción marcada desde la cámara cenital con la tecla `G` (obreros NPC que desmontan un edificio marcado): diseño documentado en el spec, se implementa con el sub-proyecto de construcción por NPC.
 * Trabajo, recolección, acarreo, almacenes y construcción por NPC (sub-proyectos 2 y 3).
 * Carreteras y carretas; pathfinding asíncrono o jerárquico si la población lo exige; negociación de prioridad entre colonos; unidades definitivas (arte).
 * Verificación manual pendiente en el editor real: colonos llegan por el borde, entran a las casas, se paran sobre camas y no atraviesan paredes ni agua profunda.
+* Verificación manual pendiente (fantasmas permeables): que el avatar y los colonos salgan de un sitio emplazado encima de ellos y no puedan volver a entrar; el aviso al intentar surtir con alguien dentro; que surtir y deconstruir sobre un fantasma siga funcionando (el rayo ahora golpea el `StaticBody3D` de la obra, no el `GridMap`); y que el picking sobre un fantasma en la cenital elija la celda correcta.

@@ -54,6 +54,11 @@ const ORDEN_DESAHUCIO := ["desempleado", "ciudadano", "obrero", "tecnico", "espe
 ## A quién quita primero la hambruna (igual que antes de la taxonomía nueva).
 const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico"]
 
+## Colonos que llegan por hora de juego (placeholder sin balance real). Llega
+## un "desempleado" cada vez que el acumulador llega a 1, si hay vivienda
+## libre y el tick no tuvo hambruna.
+const TASA_MIGRACION := 0.5
+
 ## Costo de activación por nivel (GDD Sección 7).
 const COSTOS_INVESTIGACION := {
 	2: {"nombre": "Metalurgia Aplicada", "hierro": 300, "madera": 200, "horas_investigador": 20},
@@ -322,6 +327,28 @@ func recurso_critico() -> String:
 	return peor_clave
 
 
+## Acumula TASA_MIGRACION y hace llegar desempleados mientras haya vivienda
+## para ellos y no haya hambruna. Devuelve cuántos llegaron. Nunca guarda más
+## de 1 en el acumulador: sin esto, tras un bloqueo largo entraría una ráfaga
+## de golpe al liberarse espacio.
+## ponytail: sin cola de migrantes; si el diseño pide una "bolsa" de
+## migrantes en espera, sustituir el tope de 1 por un contador real.
+func _migrar(hambruna: bool) -> int:
+	if not migracion_activa:
+		return 0
+	_migrantes_acumulados += TASA_MIGRACION
+	var llegados := 0
+	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
+	while _migrantes_acumulados >= 1.0:
+		if hambruna or vivienda_libre < espacio_minimo - 1e-6:
+			_migrantes_acumulados = 1.0
+			break
+		demografia["desempleado"] += 1
+		_migrantes_acumulados -= 1.0
+		llegados += 1
+	return llegados
+
+
 ## Ejecuta un ciclo horario verificando alimentación, habitabilidad e investigación.
 func simular_tick(avatar_consumo: float) -> Dictionary:
 	var cantidad_antes: Dictionary = {}
@@ -353,15 +380,20 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 				demografia[rol] -= quitar
 				bajas_inanicion -= quitar
 
+	var migrantes: int = _migrar(not exito_comida)
+
 	for clave in almacen:
 		var recurso: Recurso = almacen[clave]
 		recurso.tasa_neta = recurso.cantidad - float(cantidad_antes[clave])
 
-	return {
+	var resultado := {
 		"gasto_comida": gasto_total,
 		"hambruna": not exito_comida,
 		"bajas": bajas_inanicion,
 		"nivel_ciudad": nivel,
 		"nivel_potencial": nivel_potencial,
 		"bono_moral_variedad": snapped(bono_moral_variedad, 0.01),
+		"migrantes": migrantes,
 	}
+	tick_simulado.emit()
+	return resultado

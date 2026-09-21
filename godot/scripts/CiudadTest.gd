@@ -163,4 +163,49 @@ func ejecutar_pruebas() -> void:
 	assert(orden_test.demografia["obrero"] == 4 and orden_test.demografia["tecnico"] == 3 and orden_test.demografia["militar"] == 4)
 	assert(orden_test.desahuciados == 10)
 
-	print("\n=== Las 13 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 14: Migración de colonos ===")
+	# 14a: con vivienda, llega un desempleado cada 2 ticks (0.5 colonos/h).
+	var mig: Node = CiudadScript.new()
+	mig.registrar_edificio_residencial(1, [2, 2])  # 4 camas = hasta 16 desempleados
+	var res_mig: Dictionary = {}
+	for i in range(4):
+		res_mig = mig.simular_tick(5.0)
+	print("Desempleados tras 4 ticks: ", mig.demografia["desempleado"])
+	assert(mig.demografia["desempleado"] == 2)
+	assert(res_mig["migrantes"] == 1, "en el tick 4 llegó uno")
+
+	# 14b: sin ninguna vivienda no llega nadie.
+	var sin_casa: Node = CiudadScript.new()
+	for i in range(10):
+		sin_casa.simular_tick(5.0)
+	assert(sin_casa.demografia["desempleado"] == 0)
+
+	# 14c: la hambruna bloquea la migración.
+	var hambre: Node = CiudadScript.new()
+	hambre.registrar_edificio_residencial(1, [2, 2])
+	hambre.almacen["comida"].cantidad = 0.0
+	for i in range(4):
+		hambre.simular_tick(5.0)
+	assert(hambre.demografia["desempleado"] == 0)
+
+	# 14d: con la vivienda llena no llegan más, y tampoco se acumula una
+	# "bolsa" de migrantes que entre de golpe al liberarse espacio.
+	var llena: Node = CiudadScript.new()
+	llena.registrar_edificio_residencial(1, [1])  # 1 cama = 4 desempleados
+	llena.almacen["comida"].cantidad = 2000.0
+	for i in range(20):
+		llena.simular_tick(5.0)
+	assert(llena.demografia["desempleado"] == 4)
+	llena.registrar_edificio_residencial(2, [1])  # otra cama: caben 4 más
+	llena.simular_tick(5.0)
+	assert(llena.demografia["desempleado"] == 5, "llega de uno en uno, sin ráfaga de 4")
+
+	print("\n=== TEST 15: simular_tick() emite tick_simulado ===")
+	var senal: Node = CiudadScript.new()
+	var contador := [0]
+	senal.tick_simulado.connect(func() -> void: contador[0] += 1)
+	senal.simular_tick(5.0)
+	senal.simular_tick(5.0)
+	assert(contador[0] == 2)
+
+	print("\n=== Las 15 pruebas de Ciudad pasaron correctamente ===")

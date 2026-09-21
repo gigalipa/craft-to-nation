@@ -6,7 +6,7 @@ extends CanvasLayer
 ## construidas, en rojo si excede la capacidad — señal de que hace falta
 ## ampliar zona o construir más edificios residenciales) y la lista de los
 ## recursos del almacén con su tasa neta (una línea por recurso, en blanco si
-## la tasa del último tick es >= 0 o roja si es negativa).
+## el promedio de las últimas horas es >= 0 o roja si es negativa).
 
 const COLOR_POSITIVO := Color.WHITE
 const COLOR_NEGATIVO := Color(1.0, 0.3, 0.3)
@@ -94,9 +94,9 @@ func _process(_delta: float) -> void:
 
 func _actualizar_recurso(clave: String, etiqueta: Label) -> void:
 	var recurso = Ciudad.almacen[clave]
-	var tasa: float = recurso.tasa_neta
+	var tasa: float = recurso.tasa_neta_promedio
 	var signo := "+" if tasa >= 0 else ""
-	etiqueta.text = "  %s: %.0f / %.0f  (%s%.1f /tick)" % [NOMBRES_RECURSO.get(clave, clave), recurso.cantidad, recurso.limite, signo, tasa]
+	etiqueta.text = "  %s: %.0f / %.0f  (%s%.1f /h)" % [NOMBRES_RECURSO.get(clave, clave), recurso.cantidad, recurso.limite, signo, tasa]
 	etiqueta.modulate = COLOR_POSITIVO if tasa >= 0 else COLOR_NEGATIVO
 
 

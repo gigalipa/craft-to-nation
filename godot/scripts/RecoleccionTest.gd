@@ -185,8 +185,7 @@ func ejecutar_pruebas() -> void:
 	var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.5, "frutal": 0.25})
 	assert(is_equal_approx(tasas_caza["caza"], 0.5 * Recoleccion.TASA_BASE_CAZA_POR_CIUDADANO))
 	assert(is_equal_approx(tasas_caza["recoleccion"], 0.25 * Recoleccion.TASA_BASE_FRUTOS_POR_CIUDADANO))
-	assert(is_equal_approx(tasas_caza["caza"], 7.0) and is_equal_approx(tasas_caza["recoleccion"], 2.0))
-
+	
 	print("\n=== TEST 10: quitar_puesto() libera la reserva ===")
 	Recoleccion.puestos.clear()
 	Recoleccion.colocar_puesto(Vector2i(50, 50), "blueprint", 5, 5)
@@ -346,7 +345,7 @@ func ejecutar_pruebas() -> void:
 	# Meta de diseño: 5/h para sí mismo + 2.5/h (medio acarreador). Con tres obreros
 	# (2 recolectores + 1 acarreador) el grupo se sostiene solo; el 4.º recolector deja 2.5/h al avatar.
 	# Caza y frutos se miden con las densidades medias reales del mundo (semilla 12345: fauna 0.45,
-	# frutal 0.46), no a 0.5: con caza 14 y frutos 8 dan ~10.0/h, por encima de la pesca (~8.6/h medidos).
+	# frutal 0.46), no a 0.5: con caza 17 y frutos 10 dan ~12.2/h, por encima de la pesca (~8.6/h medidos).
 	var caza_media: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.45, "frutal": 0.46})
 	var suma_caza: float = caza_media["caza"] + caza_media["recoleccion"]
 	# La pesca se midió sobre el mundo real (semilla 12345, 227 puestos costeros candidatos): peces efectivo
@@ -356,6 +355,7 @@ func ejecutar_pruebas() -> void:
 	assert(suma_pesca >= 7.5, "pesca + algas debe cumplir la meta de diseño de 7.5/h")
 	assert(absf(suma_pesca - 8.6) < 0.05, "pesca + algas ~8.6/h a las densidades medias medidas")
 	assert(suma_caza >= 7.5, "caza + frutos debe cumplir la meta de diseño de 7.5/h")
+	assert(absf(suma_caza - 12.25) < 0.05, "caza + frutos ~12.2/h a las densidades medias medidas")
 	assert(suma_caza > suma_pesca, "caza + frutos debe ser competitiva con la pesca")
 
 	print("\n=== TEST 22: la escala por tamaño del agua va de 0.4 (poca) a 1.5 (mucha), 1.0 en la referencia ===")

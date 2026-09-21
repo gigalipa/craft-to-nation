@@ -116,7 +116,12 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
 		if tecla.pressed and tecla.keycode == KEY_ESCAPE:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			# Esc desactiva primero la herramienta activa (modo deconstrucción);
+			# sin ninguna activa, libera el mouse como siempre.
+			if modo_deconstruccion:
+				_alternar_modo_deconstruccion()
+			else:
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		if tecla.pressed and tecla.keycode == KEY_B:
 			_declarar_edificio()
 		if tecla.pressed and tecla.keycode == KEY_G:

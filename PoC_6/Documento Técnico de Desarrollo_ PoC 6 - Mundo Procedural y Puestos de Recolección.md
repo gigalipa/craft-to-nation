@@ -519,6 +519,16 @@ Cierra el pendiente "reglas de flotación/natación" de 3.10. Toda la lógica vi
 - **Pruebas:** `PlayerNatacionTest.tscn` (profundidad de agua, `_empuje_rio()`, `_empuje_base_cascada()`) y `PlayerOxigenoTest.tscn` (consumo, clamp a 0, recuperación, clamp al máximo).
 - **Pendiente:** las constantes de empuje y de hundimiento son un punto de partida calibrado a ojo, no una medición física; sin sonido de agua (no existe ningún asset de audio en el repo).
 
+### **3.22 Herramientas de la cámara cenital: zonificación con `Z` y `Esc` general (2026-09-21)**
+
+Antes, con la cenital activa y sin herramienta seleccionada, el clic izquierdo empezaba a pintar zona y `1`/`2`/`0` cambiaban el tipo de zona en cualquier momento (ver PoC_4, pintado por rectángulo de 2 clics). Ahora la zonificación es un modo más, como colocar puesto o blueprint:
+
+- **`Z`** activa/desactiva el modo (`CamaraCenital.modo_zonificar`, `_alternar_modo_zonificar()`); es mutuamente excluyente con los modos de colocación de puesto (`M`/`H`/`L`/`F`) y de blueprint (`B`), y conserva la última zona elegida (la zona A la primera vez). Dentro del modo, `1` elige la zona A (`residencial_investigacion`), `2` la zona B (`fabricacion_militar`) y `0` borra; fuera del modo esas teclas no hacen nada. Cambiar de zona a medio rectángulo lo descarta.
+- **Clic izquierdo:** con el modo activo siempre pinta (dos esquinas, incluso sobre un puesto, así que ya no existe la excepción de la herramienta de borrar); sin ningún modo abre el panel de un puesto o lo cierra (`_procesar_clic_interaccion()`).
+- **`Esc`** es un desactivador general: en la cenital llama a `salir_de_todos_los_modos()` (zonificación, colocar puesto, colocar blueprint, panel del puesto y rectángulo a medias); en primera persona apaga el modo deconstrucción (`G`) si está activo y, si no hay ninguna herramienta activa, libera el mouse como antes. Cada tecla (`Z`, `B`, `M`, `H`, `L`, `F`, `G`) sigue siendo un toggle propio.
+- **HUD:** `ModoZonificacionLabel` (`HUD.mostrar_modo_zonificacion()`/`ocultar_modo_zonificacion()`) muestra la zona activa y las teclas.
+- **Verificación:** no hay escena de prueba de `CamaraCenital`; se comprobó con una prueba temporal (eventos de tecla simulados sobre `Main`, ya retirada): `1`/`2`/`0` sin el modo no hacen nada, `Z` alterna, es excluyente con `M`/`B`, `Esc` apaga el modo y descarta el rectángulo a medias y en primera persona apaga `G`. Pendiente: probarlo jugando.
+
 ---
 
 ## **Próximos Pasos de esta PoC**

@@ -67,6 +67,7 @@ var _panel_puesto: PanelContainer
 @onready var pesca_tasas_label: Label = $PescaFicha/TasasLabel
 
 @onready var modo_deconstruccion_label: Label = $ModoDeconstruccionLabel
+@onready var modo_zonificacion_label: Label = $ModoZonificacionLabel
 
 @onready var oxigeno_label: Label = $OxigenoLabel
 @onready var materiales_ficha: Label = $MaterialesFicha
@@ -229,6 +230,18 @@ func mostrar_modo_deconstruccion() -> void:
 
 func ocultar_modo_deconstruccion() -> void:
 	modo_deconstruccion_label.visible = false
+
+
+## Aviso del modo zonificación (tecla Z en la cenital, ver
+## CamaraCenital._alternar_modo_zonificar()): la zona que se pinta ahora y las
+## teclas para cambiarla o salir. "nombre_zona" es "Zona A", "Zona B" o "Borrar".
+func mostrar_modo_zonificacion(nombre_zona: String) -> void:
+	modo_zonificacion_label.text = "Zonificación: %s   (1 Zona A · 2 Zona B · 0 Borrar · Z/Esc para salir)" % nombre_zona
+	modo_zonificacion_label.visible = true
+
+
+func ocultar_modo_zonificacion() -> void:
+	modo_zonificacion_label.visible = false
 
 
 ## Llamada cada física por Player._procesar_oxigeno() mientras el jugador

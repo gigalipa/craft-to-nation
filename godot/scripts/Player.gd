@@ -204,6 +204,10 @@ func _physics_process(delta: float) -> void:
 		_procesar_corriente(celda_pies)
 
 	move_and_slide()
+	if mundo != null:
+		# +0.1: la posición del CharacterBody3D queda a veces apenas por debajo
+		# del suelo por el margen de colisión; así la celda siempre es la de los pies.
+		Colonos.actualizar_avatar(_celda_en(global_position + Vector3.UP * 0.1), velocity)
 	_procesar_oxigeno(delta)
 	_procesar_flotacion(delta, nadando)
 

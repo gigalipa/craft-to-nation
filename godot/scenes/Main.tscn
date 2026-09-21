@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://b3dtjvjivtjbv" path="res://scripts/ZonaOverlay.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/TranslucidosRenderer.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/FantasmasDestacados.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/ColonosRenderer.gd" id="10"]
 
 [node name="Main" type="Node3D" unique_id=1572763968]
 script = ExtResource("3")
@@ -23,6 +24,9 @@ script = ExtResource("8")
 
 [node name="FantasmasDestacados" type="Node3D" parent="VoxelWorld"]
 script = ExtResource("9")
+
+[node name="ColonosRenderer" type="Node3D" parent="."]
+script = ExtResource("10")
 
 [node name="Player" parent="." unique_id=1891965274 instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

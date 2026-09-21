@@ -119,6 +119,10 @@ const MAX_ALTO_HUELLA_PUESTO := 6
 ## (ver _crear_area_accion()).
 const RADIO_AREA_ACCION_MAX := 25
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
+## Las consultas físicas de la cámara (picking del terreno, altura mínima,
+## colisión de la propia cámara) solo deben ver el mundo (capa 1), no los
+## cuerpos de los colonos (capa 2, ver ColonosRenderer.gd).
+const MASCARA_MUNDO := 1
 
 ## Raycast vertical bajo la propia cámara (ver _altura_bajo_camara()), para
 ## la altura mínima al bajar con Shift+S — origen bien por encima de
@@ -393,6 +397,7 @@ func _posicion_libre(posicion: Vector3) -> bool:
 	consulta.position = posicion
 	consulta.collide_with_areas = false
 	consulta.collide_with_bodies = true
+	consulta.collision_mask = MASCARA_MUNDO
 	var resultados: Array = get_world_3d().direct_space_state.intersect_point(consulta, 1)
 	return resultados.is_empty()
 
@@ -412,6 +417,7 @@ func _refinar_foco_por_mira() -> void:
 	var origen := project_ray_origin(centro)
 	var direccion := project_ray_normal(centro)
 	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
+	consulta.collision_mask = MASCARA_MUNDO
 	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
 	if not resultado.is_empty():
 		foco = resultado["position"]
@@ -428,6 +434,7 @@ func _altura_bajo_camara() -> float:
 	var origen := Vector3(x, ORIGEN_RAYCAST_VERTICAL_Y, z)
 	var destino := Vector3(x, ORIGEN_RAYCAST_VERTICAL_Y - ALCANCE_RAYCAST_VERTICAL, z)
 	var consulta := PhysicsRayQueryParameters3D.create(origen, destino)
+	consulta.collision_mask = MASCARA_MUNDO
 	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
 	if resultado.is_empty():
 		return -INF
@@ -1385,6 +1392,7 @@ func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 	var direccion := project_ray_normal(posicion_pantalla)
 
 	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
+	consulta.collision_mask = MASCARA_MUNDO
 	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
 
 	var punto: Vector3

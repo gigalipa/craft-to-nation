@@ -26,6 +26,7 @@ Recoleccion="*res://scripts/Recoleccion.gd"
 Blueprints="*res://scripts/Blueprints.gd"
 Construccion="*res://scripts/Construccion.gd"
 CadenaMinerales="*res://scripts/CadenaMinerales.gd"
+Colonos="*res://scripts/Colonos.gd"
 
 [physics]
 

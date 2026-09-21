@@ -211,3 +211,5 @@ Igual que el HUD (3.4), la cámara cenital, el pintado por mouse (clic de 2 esqu
 * **Actualización (2026-09-20):** la demografía de `Ciudad.gd` dejó de usar los roles de PoC 1 (jóvenes, trabajador tipo 1/2/3, ancianos) y pasó a los 7 tipos del Excel con vivienda fraccionaria y registro de edificios por id; el límite de población es la vivienda real, no el tope de 4/8/12 por nivel. Ver `docs/superpowers/specs/2026-09-20-colonos-pathfinding-design.md`, Sección 4.
 
 * **Actualización (2026-09-20):** los colonos NPC (última pieza pendiente de la Fase 2) se implementaron junto con el pathfinding a pie: ver `PoC_8/Documento Técnico de Desarrollo_ PoC 8 - Pathfinding a Pie y Colonos NPC.md`.
+
+* **Actualización (2026-09-21):** `Ciudad` arranca con la comida al máximo (2000) como placeholder hasta que exista producción de comida; `Zonificacion.limite_mundo` recorta la zona de influencia a los límites del mundo (Main.gd lo fija al iniciar) y `Player` no puede salir del mapa.

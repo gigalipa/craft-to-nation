@@ -65,9 +65,13 @@ carga (`ponytail:`, ver Sección 3).
 
 - **Trabajadores.** Asignar un colono a un puesto lo convierte de
   `desempleado` en `obrero` (su consumo de comida pasa de 3 a 5 por hora);
-  liberarlo lo devuelve a `desempleado`. Cupo por puesto: el `PERSONAL_MAXIMO*` que
-  ya define `Recoleccion` para cada tipo (hoy 3, ya mostrado en las fichas),
-  compartido entre recolectores y acarreadores.
+  liberarlo lo devuelve a `desempleado`. Cupo por puesto (decidido por el
+  usuario): maderero 5, caza/recolección 7, pesca 7, mina 5, compartido entre
+  recolectores y acarreadores. Se fija en las constantes `PERSONAL_MAXIMO*` de
+  `Recoleccion` (hoy 3), que ya muestran las fichas del HUD. Más adelante la
+  moral y el nivel del puesto subirán la eficiencia con el mismo personal, y
+  las tecnologías de automatización añadirán drones y unidades de transporte
+  (fuera de esta rebanada).
 - **Roles.** *Recolector:* produce mientras está presente en el puesto.
   *Acarreador:* lleva del almacén local del puesto al núcleo urbano, que es el
   único almacén central.
@@ -88,8 +92,9 @@ Dictionary (recurso -> float), "tasas": Dictionary (recurso -> unidades por
 recolector y hora)}`.
 
 Constantes: cupo y almacén local se leen de `Recoleccion`
-(`PERSONAL_MAXIMO*` y `CAPACIDAD_ALMACENAMIENTO*`, hoy 3 y 100 en los cuatro
-tipos; el almacén cuenta el total entre recursos). Solo `CAPACIDAD_CARGA :=
+(`PERSONAL_MAXIMO*`, que esta rebanada cambia a 5/7/7/5, y
+`CAPACIDAD_ALMACENAMIENTO*`, 100 en los cuatro tipos; el almacén cuenta el
+total entre recursos). Solo `CAPACIDAD_CARGA :=
 20` es nueva (placeholder).
 
 **Tasas** (por recolector y hora; se guardan en el puesto al colocarlo con las
@@ -214,7 +219,7 @@ así que el comportamiento observable de las pruebas actuales no cambia.
 **Pruebas nuevas o ampliadas (escenas `*Test.tscn`):**
 - `EconomiaTest` (nueva, lógica pura, con una `Ciudad` falsa): registrar y
   quitar puesto; producción solo con recolectores presentes; tope de 100 y
-  pérdida del exceso; cupo de 3 (asignar falla al llenarse); `liberar` y
+  pérdida del exceso; cupo por tipo (asignar falla al llenarse); `liberar` y
   `quitar_puesto`; `recoger` (con carga completa, sin recolectores presentes,
   con almacén vacío, y que no descuenta de más); `entregar` con stock casi
   lleno; caza+frutos suman en comida.
@@ -244,7 +249,7 @@ sin terminar). `docs/Recursos.xlsx` no se modifica.
 
 **Partición prevista del plan (una sola implementación, tareas
 independientes y probables):** (1) `Ciudad`: 8 recursos, `reasignar_tipo`,
-`tasa_neta`; (2) `Recoleccion` (tasas del Excel, `esquina_de_puesto_en`) y
+`tasa_neta`; (2) `Recoleccion` (tasas del Excel, cupos 5/7/7/5, `esquina_de_puesto_en`) y
 `Zonificacion.huella_del_nucleo`; (3) `Economia.gd` + `EconomiaTest`; (4)
 `Colonos`: contratar/despedir, recolector, acarreador; (5) integración en
 `CamaraCenital`/`Player` (registrar y quitar puestos, clic); (6) panel del
@@ -254,9 +259,6 @@ verificación final.
 ## Supuestos que el usuario puede corregir
 
 - Tasa de recolección de frutos: 5/h (el Excel no la trae).
-- Cupo de trabajadores = `PERSONAL_MAXIMO*` existente (3), común a
-  recolectores y acarreadores; con 3 casi no cabe la proporción acarreo/
-  recolección que pide el balance, así que probablemente conviene subirlo.
 - Capacidad de carga de 20 unidades por viaje.
 - Un recolector de caza/recolección o de pesca produce las dos señales a la
   vez y se suman en comida.

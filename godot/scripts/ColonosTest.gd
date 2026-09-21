@@ -12,6 +12,35 @@ class MundoFalso extends RefCounted:
 	var celdas: Dictionary = {}
 	var edificio_a_celdas: Dictionary = {}
 	var lado := 10
+	var ids: Dictionary = {}  # Vector3i -> int: la obra de cada fantasma
+	var volumenes: Dictionary = {}  # int -> {"min": Vector3i, "max": Vector3i}
+	var permisos: Dictionary = {}  # int -> Dictionary (entidad -> true)
+
+	func id_de_edificio(celda: Vector3i) -> int:
+		return ids.get(celda, -1)
+
+	func poner_fantasma(celda: Vector3i, id_obra: int) -> void:
+		celdas[celda] = "fantasma"
+		ids[celda] = id_obra
+
+	func celda_en_volumen(id: int, celda: Vector3i) -> bool:
+		var v: Dictionary = volumenes.get(id, {})
+		if v.is_empty():
+			return false
+		return celda.x >= v["min"].x and celda.x <= v["max"].x \
+			and celda.y >= v["min"].y and celda.y <= v["max"].y \
+			and celda.z >= v["min"].z and celda.z <= v["max"].z
+
+	func otorgar_permiso_salida(id_obra: int, entidad) -> void:
+		if not permisos.has(id_obra):
+			permisos[id_obra] = {}
+		permisos[id_obra][entidad] = true
+
+	func revocar_permiso_salida(id_obra: int, entidad) -> void:
+		if permisos.has(id_obra):
+			permisos[id_obra].erase(entidad)
+			if permisos[id_obra].is_empty():
+				permisos.erase(id_obra)
 
 	func obtener_tipo(celda: Vector3i) -> String:
 		return celdas.get(celda, "")
@@ -299,4 +328,38 @@ func ejecutar_pruebas() -> void:
 	assert(a_reub["espera"] > 0.0, "espera y reintenta")
 	assert(colonos_reub2.ocupadas[Vector3i(7, 1, 7)] == id_a_reub and colonos_reub2.ocupadas[Vector3i(7, 3, 7)] == id_b_reub, "ocupadas sigue consistente")
 
-	print("\n=== Las 14 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 15: Un colono dentro de una obra recibe permiso, sale y no puede volver a entrar ===")
+	var mundo_evac := _mundo_llano()
+	for x in range(3, 6):  # cubo fantasma macizo de 3x3x2 (obra 7)
+		for z in range(3, 6):
+			mundo_evac.poner_fantasma(Vector3i(x, 1, z), 7)
+			mundo_evac.poner_fantasma(Vector3i(x, 2, z), 7)
+	mundo_evac.volumenes[7] = {"min": Vector3i(3, 1, 3), "max": Vector3i(5, 2, 5)}
+	var colonos_evac: Node = _nuevo(mundo_evac, CiudadScript.new())
+	var id_evac: int = colonos_evac.agregar_colono("obrero", Vector3i(4, 1, 4))  # en el centro del cubo
+	var c_evac: Dictionary = colonos_evac.colonos[id_evac]
+	colonos_evac._on_obra_a_fantasma(7)
+	assert(c_evac["evacuando"] == 7 and mundo_evac.permisos[7].has(id_evac), "recibe el permiso y empieza a evacuar")
+	var salio := false
+	for i in range(100):
+		colonos_evac.avanzar(0.1)
+		if c_evac["evacuando"] == -1:
+			salio = true
+			break
+	assert(salio, "sale del volumen de la obra")
+	assert(not mundo_evac.celda_en_volumen(7, c_evac["celda"]), "está fuera")
+	assert(not mundo_evac.permisos.has(7), "el permiso se revocó al salir")
+	for i in range(600):  # 60 s deambulando: los fantasmas ya son sólidos para él
+		colonos_evac.avanzar(0.1)
+		assert(not mundo_evac.celda_en_volumen(7, c_evac["celda"]), "no vuelve a entrar")
+
+	print("\n=== TEST 16: Un colono fuera de la obra no recibe permiso ni cambia lo que hace ===")
+	var mundo_fuera := _mundo_llano()
+	mundo_fuera.poner_fantasma(Vector3i(4, 1, 4), 9)
+	mundo_fuera.volumenes[9] = {"min": Vector3i(4, 1, 4), "max": Vector3i(4, 1, 4)}
+	var colonos_fuera: Node = _nuevo(mundo_fuera, CiudadScript.new())
+	var id_fuera: int = colonos_fuera.agregar_colono("obrero", Vector3i(1, 1, 1))
+	colonos_fuera._on_obra_a_fantasma(9)
+	assert(colonos_fuera.colonos[id_fuera]["evacuando"] == -1 and not mundo_fuera.permisos.has(9))
+
+	print("\n=== Las 16 pruebas de Colonos pasaron correctamente ===")

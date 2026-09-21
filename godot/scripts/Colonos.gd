@@ -30,8 +30,12 @@ const PROBABILIDAD_CASA := 0.5  # de deambular hacia su hogar en vez de por la c
 ## El mundo (VoxelWorld en el juego). Asignarlo crea el buscador de rutas.
 var mundo: Object = null:
 	set(valor):
+		if mundo != null and mundo.has_signal("obra_a_fantasma") and mundo.obra_a_fantasma.is_connected(_on_obra_a_fantasma):
+			mundo.obra_a_fantasma.disconnect(_on_obra_a_fantasma)
 		mundo = valor
 		_buscador = BuscadorRutas.new(valor) if valor != null else null
+		if valor != null and valor.has_signal("obra_a_fantasma"):
+			valor.obra_a_fantasma.connect(_on_obra_a_fantasma)
 var ciudad: Object = null  # Ciudad
 var zona: Object = null  # Zonificacion
 
@@ -74,6 +78,7 @@ func agregar_colono(tipo: String, celda: Vector3i, hogar: int = -1) -> int:
 		"celda": celda, "posicion": _centro_de(celda),
 		"ruta": ruta, "progreso": 0.0, "moviendo": false,
 		"espera": 0.0, "bloqueo": 0.0,
+		"evacuando": -1, "ruta_de_evacuacion": false,
 	}
 	ocupadas[celda] = id
 	colono_creado.emit(id)
@@ -108,6 +113,8 @@ func _ids_de_tipo(tipo: String) -> Array[int]:
 
 func _retirar(id: int) -> void:
 	var colono: Dictionary = colonos[id]
+	if colono["evacuando"] != -1:
+		mundo.revocar_permiso_salida(colono["evacuando"], id)
 	ocupadas.erase(colono["celda"])
 	if colono["moviendo"] and not colono["ruta"].is_empty():
 		ocupadas.erase(colono["ruta"][0])
@@ -176,6 +183,9 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 	if c["moviendo"]:
 		_completar_paso(c, delta)
 		return
+	if c["evacuando"] != -1:
+		_avanzar_evacuacion(c, delta)
+		return
 	if c["espera"] > 0.0:
 		c["espera"] -= delta
 		return
@@ -189,7 +199,7 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 ## transitable (el mundo pudo cambiar: minado, obra, agua) y nadie la ocupa.
 func _iniciar_paso(c: Dictionary, delta: float) -> void:
 	var siguiente: Vector3i = c["ruta"][0]
-	if not _buscador.es_transitable(siguiente):
+	if not _buscador.es_transitable(siguiente, _ignorar_de(c)):
 		_replanificar(c)
 		return
 	if _ocupada_por_otro(siguiente, c["id"]):
@@ -252,6 +262,65 @@ func _bloqueadas_para(id: int) -> Dictionary:
 	return bloqueadas
 
 
+## Ids de obra cuyos fantasmas este colono puede atravesar: solo la que está
+## evacuando.
+func _ignorar_de(c: Dictionary) -> Array:
+	return [c["evacuando"]] if c["evacuando"] != -1 else []
+
+
+func _opciones_ruta(c: Dictionary) -> Dictionary:
+	return {"bloqueadas": _bloqueadas_para(c["id"]), "ignorar_fantasmas": _ignorar_de(c)}
+
+
+## Una obra acaba de pasar a fantasma: cada colono cuya celda esté dentro de
+## su volumen recibe permiso de salida y pasa a evacuar (ver
+## _avanzar_evacuacion()). Los de fuera no cambian nada. Conectada a
+## VoxelWorld.obra_a_fantasma.
+func _on_obra_a_fantasma(id_obra: int) -> void:
+	for c in colonos.values():
+		if c["evacuando"] == -1 and mundo.celda_en_volumen(id_obra, c["celda"]):
+			mundo.otorgar_permiso_salida(id_obra, c["id"])
+			c["evacuando"] = id_obra
+			c["ruta_de_evacuacion"] = false  # se planifica en el siguiente paso, cuando no esté a medio paso
+
+
+## Mientras evacúa no hace otra cosa: cuando ya no está dentro del volumen
+## revoca su permiso (para siempre) y vuelve a lo suyo; si no, planifica o
+## recorre la ruta de salida (que atraviesa los fantasmas de esa obra).
+func _avanzar_evacuacion(c: Dictionary, delta: float) -> void:
+	var id_obra: int = c["evacuando"]
+	if not mundo.celda_en_volumen(id_obra, c["celda"]):
+		mundo.revocar_permiso_salida(id_obra, c["id"])
+		c["evacuando"] = -1
+		c["ruta_de_evacuacion"] = false
+		var vacia: Array[Vector3i] = []
+		c["ruta"] = vacia
+		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+		return
+	if c["espera"] > 0.0:
+		c["espera"] -= delta
+		return
+	if not c["ruta_de_evacuacion"]:
+		var vacia: Array[Vector3i] = []
+		c["ruta"] = vacia  # abandona lo que hacía
+		_planear_evacuacion(c)
+		return
+	if c["ruta"].is_empty():
+		c["ruta_de_evacuacion"] = false  # se agotó o se rompió: se replanifica
+		return
+	_iniciar_paso(c, delta)
+
+
+func _planear_evacuacion(c: Dictionary) -> void:
+	var id_obra: int = c["evacuando"]
+	var esta_dentro := func(celda: Vector3i) -> bool: return mundo.celda_en_volumen(id_obra, celda)
+	var ruta: Array[Vector3i] = _buscador.buscar_salida(c["celda"], esta_dentro, _opciones_ruta(c))
+	c["ruta"] = ruta
+	c["ruta_de_evacuacion"] = not ruta.is_empty()
+	if ruta.is_empty():
+		c["espera"] = 1.0  # sin salida ahora mismo: reintenta en un segundo
+
+
 ## Vuelve a calcular la ruta al MISMO destino sin obstáculos de otros
 ## (el mundo cambió bajo la ruta); si ya no hay ruta, abandona el destino.
 func _replanificar(c: Dictionary) -> void:
@@ -259,7 +328,7 @@ func _replanificar(c: Dictionary) -> void:
 	if c["ruta"].is_empty():
 		return
 	var destino: Vector3i = c["ruta"].back()
-	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino)
+	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"ignorar_fantasmas": _ignorar_de(c)})
 	c["ruta"] = nueva if not nueva.is_empty() else vacia
 	if nueva.is_empty():
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
@@ -273,7 +342,7 @@ func _replanificar(c: Dictionary) -> void:
 func _esquivar(c: Dictionary) -> void:
 	var vacia: Array[Vector3i] = []
 	var destino: Vector3i = c["ruta"].back()
-	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"bloqueadas": _bloqueadas_para(c["id"])})
+	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, _opciones_ruta(c))
 	if nueva.is_empty():
 		c["ruta"] = vacia
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
@@ -298,7 +367,7 @@ func _elegir_destino(c: Dictionary) -> void:
 		c["celda"] = reubicada
 		c["posicion"] = _centro_de(reubicada)
 		ocupadas[reubicada] = c["id"]
-	var opciones := {"bloqueadas": _bloqueadas_para(c["id"])}
+	var opciones := _opciones_ruta(c)
 	var a_casa: bool = c["hogar"] != -1 and _rng.randf() < PROBABILIDAD_CASA
 	for i in range(INTENTOS_DESTINO):
 		var destino: Vector3i = _candidato_en_casa(c["hogar"]) if a_casa else _candidato_exterior()

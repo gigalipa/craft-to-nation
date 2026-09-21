@@ -1083,38 +1083,38 @@ Antes del `print` final, agregar (y cambiar el final a `Las 15 pruebas`):
 
 ```gdscript
 	print("\n=== TEST 14: Un colono dentro de una obra recibe permiso, sale y no puede volver a entrar ===")
-	var mundo13 := _mundo_llano()
+	var mundo_evac := _mundo_llano()
 	for x in range(3, 6):  # cubo fantasma macizo de 3x3x2 (obra 7)
 		for z in range(3, 6):
-			mundo13.poner_fantasma(Vector3i(x, 1, z), 7)
-			mundo13.poner_fantasma(Vector3i(x, 2, z), 7)
-	mundo13.volumenes[7] = {"min": Vector3i(3, 1, 3), "max": Vector3i(5, 2, 5)}
-	var colonos13: Node = _nuevo(mundo13, CiudadScript.new())
-	var id13: int = colonos13.agregar_colono("obrero", Vector3i(4, 1, 4))  # en el centro del cubo
-	var c13: Dictionary = colonos13.colonos[id13]
-	colonos13._on_obra_a_fantasma(7)
-	assert(c13["evacuando"] == 7 and mundo13.permisos[7].has(id13), "recibe el permiso y empieza a evacuar")
+			mundo_evac.poner_fantasma(Vector3i(x, 1, z), 7)
+			mundo_evac.poner_fantasma(Vector3i(x, 2, z), 7)
+	mundo_evac.volumenes[7] = {"min": Vector3i(3, 1, 3), "max": Vector3i(5, 2, 5)}
+	var colonos_evac: Node = _nuevo(mundo_evac, CiudadScript.new())
+	var id_evac: int = colonos_evac.agregar_colono("obrero", Vector3i(4, 1, 4))  # en el centro del cubo
+	var c_evac: Dictionary = colonos_evac.colonos[id_evac]
+	colonos_evac._on_obra_a_fantasma(7)
+	assert(c_evac["evacuando"] == 7 and mundo_evac.permisos[7].has(id_evac), "recibe el permiso y empieza a evacuar")
 	var salio := false
 	for i in range(100):
-		colonos13.avanzar(0.1)
-		if c13["evacuando"] == -1:
+		colonos_evac.avanzar(0.1)
+		if c_evac["evacuando"] == -1:
 			salio = true
 			break
 	assert(salio, "sale del volumen de la obra")
-	assert(not mundo13.celda_en_volumen(7, c13["celda"]), "está fuera")
-	assert(not mundo13.permisos.has(7), "el permiso se revocó al salir")
+	assert(not mundo_evac.celda_en_volumen(7, c_evac["celda"]), "está fuera")
+	assert(not mundo_evac.permisos.has(7), "el permiso se revocó al salir")
 	for i in range(600):  # 60 s deambulando: los fantasmas ya son sólidos para él
-		colonos13.avanzar(0.1)
-		assert(not mundo13.celda_en_volumen(7, c13["celda"]), "no vuelve a entrar")
+		colonos_evac.avanzar(0.1)
+		assert(not mundo_evac.celda_en_volumen(7, c_evac["celda"]), "no vuelve a entrar")
 
 	print("\n=== TEST 15: Un colono fuera de la obra no recibe permiso ni cambia lo que hace ===")
-	var mundo14 := _mundo_llano()
-	mundo14.poner_fantasma(Vector3i(4, 1, 4), 9)
-	mundo14.volumenes[9] = {"min": Vector3i(4, 1, 4), "max": Vector3i(4, 1, 4)}
-	var colonos14: Node = _nuevo(mundo14, CiudadScript.new())
-	var id14: int = colonos14.agregar_colono("obrero", Vector3i(1, 1, 1))
-	colonos14._on_obra_a_fantasma(9)
-	assert(colonos14.colonos[id14]["evacuando"] == -1 and not mundo14.permisos.has(9))
+	var mundo_fuera := _mundo_llano()
+	mundo_fuera.poner_fantasma(Vector3i(4, 1, 4), 9)
+	mundo_fuera.volumenes[9] = {"min": Vector3i(4, 1, 4), "max": Vector3i(4, 1, 4)}
+	var colonos_fuera: Node = _nuevo(mundo_fuera, CiudadScript.new())
+	var id_fuera: int = colonos_fuera.agregar_colono("obrero", Vector3i(1, 1, 1))
+	colonos_fuera._on_obra_a_fantasma(9)
+	assert(colonos_fuera.colonos[id_fuera]["evacuando"] == -1 and not mundo_fuera.permisos.has(9))
 
 	print("\n=== Las 15 pruebas de Colonos pasaron correctamente ===")
 ```

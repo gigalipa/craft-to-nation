@@ -26,6 +26,8 @@ const ESPERA_BLOQUEO := 0.5  # segundos esperando antes de esquivar
 const INTENTOS_DESTINO := 8
 const INTENTOS_APARICION := 200
 const PROBABILIDAD_CASA := 0.5  # de deambular hacia su hogar en vez de por la ciudad
+const ESPERA_TRABAJO := 1.0  # segundos que espera un recolector/acarreador antes de volver a decidir
+const INTENTOS_SERVICIO := 6  # celdas junto a una huella que se prueban al buscar ruta
 
 ## El mundo (VoxelWorld en el juego). Asignarlo crea el buscador de rutas.
 var mundo: Object = null:
@@ -38,9 +40,16 @@ var mundo: Object = null:
 			valor.obra_a_fantasma.connect(_on_obra_a_fantasma)
 var ciudad: Object = null  # Ciudad
 var zona: Object = null  # Zonificacion
+var economia: Object = null:  # Economia
+	set(valor):
+		if economia != null and economia.puesto_quitado.is_connected(_on_puesto_quitado):
+			economia.puesto_quitado.disconnect(_on_puesto_quitado)
+		economia = valor
+		if valor != null:
+			valor.puesto_quitado.connect(_on_puesto_quitado)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
-## "moviendo", "espera", "bloqueo"}. "celda" es la celda donde está parado;
+## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase"}. "celda" es la celda donde está parado;
 ## "posicion" (Vector3, los pies) es lo que dibuja el renderer.
 var colonos: Dictionary = {}
 ## Vector3i -> id de colono: la celda que ocupa cada colono y, mientras da un
@@ -61,6 +70,8 @@ func _ready() -> void:
 		ciudad = Ciudad
 	if zona == null:
 		zona = Zonificacion
+	if economia == null:
+		economia = Economia
 	ciudad.tick_simulado.connect(reconciliar)
 
 
@@ -79,6 +90,7 @@ func agregar_colono(tipo: String, celda: Vector3i, hogar: int = -1) -> int:
 		"ruta": ruta, "progreso": 0.0, "moviendo": false,
 		"espera": 0.0, "bloqueo": 0.0,
 		"evacuando": -1, "ruta_de_evacuacion": false,
+		"trabajo": {}, "carga": {}, "fase": "",
 	}
 	ocupadas[celda] = id
 	colono_creado.emit(id)
@@ -113,6 +125,8 @@ func _ids_de_tipo(tipo: String) -> Array[int]:
 
 func _retirar(id: int) -> void:
 	var colono: Dictionary = colonos[id]
+	if not colono["trabajo"].is_empty():
+		economia.liberar(id)
 	if colono["evacuando"] != -1:
 		mundo.revocar_permiso_salida(colono["evacuando"], id)
 	ocupadas.erase(colono["celda"])
@@ -190,7 +204,10 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		c["espera"] -= delta
 		return
 	if c["ruta"].is_empty():
-		_elegir_destino(c)
+		if c["trabajo"].is_empty():
+			_elegir_destino(c)
+		else:
+			_decidir_trabajo(c)
 		return
 	_iniciar_paso(c, delta)
 
@@ -211,6 +228,8 @@ func _iniciar_paso(c: Dictionary, delta: float) -> void:
 	c["bloqueo"] = 0.0
 	ocupadas[siguiente] = c["id"]  # reserva la celda a la que va
 	c["moviendo"] = true
+	if not c["trabajo"].is_empty():
+		economia.marcar_presente(c["id"], false)  # se aleja del puesto: deja de producir
 	c["progreso"] = 0.0
 	_completar_paso(c, delta)
 
@@ -227,7 +246,7 @@ func _completar_paso(c: Dictionary, delta: float) -> void:
 	c["ruta"].pop_front()
 	c["moviendo"] = false
 	c["progreso"] = 0.0
-	if c["ruta"].is_empty():
+	if c["ruta"].is_empty() and c["trabajo"].is_empty():
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
 
 
@@ -450,3 +469,147 @@ func _celda_aparicion() -> Vector3i:
 		if respaldo == INVALIDA:
 			respaldo = celda
 	return respaldo
+
+
+## Contrata a un desempleado (el de id menor) para un puesto con un rol
+## ("recolector" o "acarreador"): pasa a obrero en Ciudad.demografia y en el
+## colono. Falso si no hay desempleados, el puesto no existe o no tiene cupo.
+func contratar(esquina: Vector2i, rol: String) -> bool:
+	var desempleados: Array[int] = _ids_de_tipo("desempleado")
+	if desempleados.is_empty():
+		return false
+	desempleados.sort()
+	var id: int = desempleados[0]
+	if not economia.asignar(esquina, rol, id):
+		return false
+	ciudad.reasignar_tipo("desempleado", "obrero")
+	var c: Dictionary = colonos[id]
+	c["tipo"] = "obrero"
+	c["trabajo"] = {"puesto": esquina, "rol": rol}
+	c["fase"] = ""
+	c["carga"] = {}
+	_dejar_lo_que_hacia(c)
+	return true
+
+
+## Despide al último colono contratado con ese rol en el puesto; vuelve a
+## desempleado y pierde lo que llevara. Falso si no hay ninguno.
+func despedir(esquina: Vector2i, rol: String) -> bool:
+	var id: int = economia.ultimo_de(esquina, rol)
+	if id == -1 or not colonos.has(id):
+		return false
+	economia.liberar(id)
+	_volver_a_desempleado(colonos[id])
+	return true
+
+
+## El puesto se quitó (se deconstruyó): sus trabajadores ya fueron liberados en
+## Economia; aquí solo vuelven a desempleado. Conectada a Economia.puesto_quitado.
+func _on_puesto_quitado(ids: Array) -> void:
+	for id in ids:
+		if colonos.has(id):
+			_volver_a_desempleado(colonos[id])
+
+
+func _volver_a_desempleado(c: Dictionary) -> void:
+	c["trabajo"] = {}
+	c["carga"] = {}
+	c["fase"] = ""
+	c["tipo"] = "desempleado"
+	ciudad.reasignar_tipo("obrero", "desempleado")
+	_dejar_lo_que_hacia(c)
+
+
+## Abandona la ruta en curso (si no está a medio paso) para que el colono
+## decida de nuevo con su oficio nuevo o sin él.
+func _dejar_lo_que_hacia(c: Dictionary) -> void:
+	if c["moviendo"] or c["evacuando"] != -1:
+		return  # termina el paso o la evacuación y decide después
+	var vacia: Array[Vector3i] = []
+	c["ruta"] = vacia
+	c["espera"] = 0.0
+
+
+## Lo que hace un trabajador cuando está quieto, sin ruta ni espera: un
+## recolector va a su puesto y se queda (presente); un acarreador cicla
+## puesto -> núcleo -> puesto.
+func _decidir_trabajo(c: Dictionary) -> void:
+	var esquina: Vector2i = c["trabajo"]["puesto"]
+	var huella_puesto: Array = economia.huella_de(esquina)
+	if huella_puesto.is_empty():
+		c["espera"] = ESPERA_TRABAJO  # el puesto ya no existe: Economia avisará
+		return
+	if c["trabajo"]["rol"] == "recolector":
+		if _junto_a(c["celda"], huella_puesto):
+			economia.marcar_presente(c["id"], true)
+			c["espera"] = ESPERA_TRABAJO
+		else:
+			_ir_junto_a(c, huella_puesto)
+		return
+	var huella_nucleo: Array = zona.huella_del_nucleo()
+	if c["fase"] == "entregar":
+		if _junto_a(c["celda"], huella_nucleo):
+			economia.entregar(c["carga"])
+			c["carga"] = {}
+			c["fase"] = "recoger"
+		else:
+			_ir_junto_a(c, huella_nucleo)
+		return
+	# fase "" o "recoger": ir al puesto y pedir la carga.
+	if not _junto_a(c["celda"], huella_puesto):
+		_ir_junto_a(c, huella_puesto)
+		return
+	var carga: Dictionary = economia.recoger(esquina, economia.CAPACIDAD_CARGA)
+	if carga.is_empty():
+		c["espera"] = ESPERA_TRABAJO  # todavía no hay carga (o nada que llevar)
+		return
+	c["carga"] = carga
+	c["fase"] = "entregar"
+
+
+## true si "celda" está en la columna pegada (4 direcciones) a alguna celda de
+## la huella y no dentro de ella.
+func _junto_a(celda: Vector3i, huella: Array) -> bool:
+	var xz := Vector2i(celda.x, celda.z)
+	if huella.has(xz):
+		return false
+	for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if huella.has(xz + direccion):
+			return true
+	return false
+
+
+## Celdas transitables en el anillo que rodea una huella (una por columna,
+## sobre la superficie).
+func _celdas_junto_a(huella: Array) -> Array[Vector3i]:
+	var vistas := {}
+	var celdas: Array[Vector3i] = []
+	for celda: Vector2i in huella:
+		for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var vecina: Vector2i = celda + direccion
+			if huella.has(vecina) or vistas.has(vecina):
+				continue
+			vistas[vecina] = true
+			var altura: int = mundo.altura_en(vecina.x, vecina.y)
+			if altura < 0:
+				continue
+			var candidata := Vector3i(vecina.x, altura + 1, vecina.y)
+			if _buscador.es_transitable(candidata):
+				celdas.append(candidata)
+	return celdas
+
+
+## Planifica una ruta hasta la celda libre más cercana junto a la huella; si
+## ninguna de las INTENTOS_SERVICIO más cercanas es alcanzable, espera y reintenta.
+func _ir_junto_a(c: Dictionary, huella: Array) -> void:
+	var candidatas: Array[Vector3i] = _celdas_junto_a(huella)
+	var origen: Vector3i = c["celda"]
+	candidatas.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
+		return (a - origen).length_squared() < (b - origen).length_squared())
+	var opciones := _opciones_ruta(c)
+	for i in range(mini(candidatas.size(), INTENTOS_SERVICIO)):
+		var ruta: Array[Vector3i] = _buscador.buscar_ruta(origen, candidatas[i], opciones)
+		if not ruta.is_empty():
+			c["ruta"] = ruta
+			return
+	c["espera"] = ESPERA_TRABAJO

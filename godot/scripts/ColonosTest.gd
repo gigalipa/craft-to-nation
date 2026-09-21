@@ -6,6 +6,7 @@ extends Node
 
 const ColonosScript = preload("res://scripts/Colonos.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
+const EconomiaScript = preload("res://scripts/Economia.gd")
 
 
 class MundoFalso extends RefCounted:
@@ -66,6 +67,10 @@ class ZonaFalsa extends RefCounted:
 	func dentro_de_influencia(celda: Vector2i) -> bool:
 		return celda.x >= influencia_min.x and celda.x <= influencia_max.x and celda.y >= influencia_min.y and celda.y <= influencia_max.y
 
+	## Núcleo urbano falso: un bloque de 2x2 en (7,7)-(8,8).
+	func huella_del_nucleo() -> Array:
+		return [Vector2i(7, 7), Vector2i(8, 7), Vector2i(7, 8), Vector2i(8, 8)]
+
 
 func _ready() -> void:
 	ejecutar_pruebas()
@@ -87,6 +92,17 @@ func _nuevo(mundo: MundoFalso, ciudad: Node) -> Node:
 	colonos.zona = ZonaFalsa.new()
 	colonos.mundo = mundo
 	colonos._rng.seed = 12345
+	return colonos
+
+
+## Colonos con una Economia real (ciudad inyectada) y un maderero de 2x2 en
+## (2, 2) con tasa 3 madera/h; mundo llano de 10x10 y el núcleo en (7..8, 7..8).
+func _nuevo_con_puesto(ciudad: Node) -> Node:
+	var economia: Node = EconomiaScript.new()
+	economia.ciudad = ciudad
+	economia.registrar_puesto(Vector2i(2, 2), "maderero", 2, 2, {"madera": 3.0})
+	var colonos: Node = _nuevo(_mundo_llano(), ciudad)
+	colonos.economia = economia
 	return colonos
 
 
@@ -381,4 +397,124 @@ func ejecutar_pruebas() -> void:
 	assert(not mundo_atr.celda_en_volumen(7, c_atr["celda"]), "sale del volumen atrapado")
 	assert(not mundo_atr.permisos.has(7), "el permiso se revocó al salir")
 
-	print("\n=== Las 17 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 18: contratar() convierte a un desempleado en obrero asignado al puesto ===")
+	var ciudad18: Node = CiudadScript.new()
+	var colonos18: Node = _nuevo_con_puesto(ciudad18)
+	ciudad18.demografia["desempleado"] = 2
+	colonos18.reconciliar()
+	assert(colonos18.contratar(Vector2i(2, 2), "recolector"))
+	assert(ciudad18.demografia["desempleado"] == 1 and ciudad18.demografia["obrero"] == 1)
+	assert(_contar(colonos18, "obrero") == 1 and _contar(colonos18, "desempleado") == 1)
+	var trabajador18: Dictionary = {}
+	for c in colonos18.colonos.values():
+		if c["tipo"] == "obrero":
+			trabajador18 = c
+	assert(trabajador18["trabajo"] == {"puesto": Vector2i(2, 2), "rol": "recolector"})
+	assert(colonos18.economia.trabajadores_de(Vector2i(2, 2))["recolectores"] == 1)
+	colonos18.reconciliar()  # la demografía y los colonos siguen coincidiendo: no crea ni retira
+	assert(colonos18.colonos.size() == 2)
+	assert(not colonos18.contratar(Vector2i(99, 99), "recolector"), "puesto inexistente")
+	assert(colonos18.contratar(Vector2i(2, 2), "acarreador"))
+	assert(not colonos18.contratar(Vector2i(2, 2), "acarreador"), "ya no quedan desempleados")
+	assert(ciudad18.demografia["obrero"] == 2 and ciudad18.demografia["desempleado"] == 0)
+
+	print("\n=== TEST 19: despedir() devuelve al último a desempleado y libera el cupo ===")
+	assert(colonos18.despedir(Vector2i(2, 2), "acarreador"))
+	assert(ciudad18.demografia["desempleado"] == 1 and ciudad18.demografia["obrero"] == 1)
+	assert(colonos18.economia.trabajadores_de(Vector2i(2, 2))["acarreadores"] == 0)
+	assert(not colonos18.despedir(Vector2i(2, 2), "acarreador"), "no queda ninguno")
+	var despedido19: int = -1
+	for c in colonos18.colonos.values():
+		if c["tipo"] == "desempleado":
+			despedido19 = c["id"]
+	assert(colonos18.colonos[despedido19]["trabajo"].is_empty())
+
+	print("\n=== TEST 20: un recolector camina a su puesto, queda presente y produce ===")
+	var ciudad20: Node = CiudadScript.new()
+	var colonos20: Node = _nuevo_con_puesto(ciudad20)
+	var id20: int = colonos20.agregar_colono("desempleado", Vector3i(6, 1, 1))
+	ciudad20.demografia["desempleado"] = 1
+	assert(colonos20.contratar(Vector2i(2, 2), "recolector"))
+	var c20: Dictionary = colonos20.colonos[id20]
+	var llego20 := false
+	for i in range(400):
+		colonos20.avanzar(0.1)
+		if colonos20.economia.trabajadores_de(Vector2i(2, 2))["presentes"] == 1:
+			llego20 = true
+			break
+	assert(llego20, "llega junto al puesto y se marca presente")
+	assert(absi(c20["celda"].x - 2) <= 2 and absi(c20["celda"].z - 2) <= 2, "está junto a la huella 2x2 de (2,2)")
+	assert(not (c20["celda"].x in [2, 3] and c20["celda"].z in [2, 3]), "no está dentro de la huella")
+	colonos20.economia.simular_hora()
+	assert(is_equal_approx(colonos20.economia.almacen_local(Vector2i(2, 2))["madera"], 3.0))
+	for i in range(100):  # se queda ahí: no deambula
+		colonos20.avanzar(0.1)
+	assert(colonos20.economia.trabajadores_de(Vector2i(2, 2))["presentes"] == 1, "sigue en su puesto")
+
+	print("\n=== TEST 21: un acarreador lleva la carga al núcleo y la entrega ===")
+	var ciudad21: Node = CiudadScript.new()
+	var colonos21: Node = _nuevo_con_puesto(ciudad21)
+	var madera_inicial: float = ciudad21.almacen["madera"].cantidad
+	colonos21.economia.puestos[Vector2i(2, 2)]["almacen"]["madera"] = 30.0  # almacén local con carga de sobra
+	var id21: int = colonos21.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad21.demografia["desempleado"] = 1
+	assert(colonos21.contratar(Vector2i(2, 2), "acarreador"))
+	var entregado21 := false
+	for i in range(1500):  # hasta 150 s de juego
+		colonos21.avanzar(0.1)
+		if ciudad21.almacen["madera"].cantidad > madera_inicial:
+			entregado21 = true
+			break
+	assert(entregado21, "el acarreador entrega en el núcleo")
+	assert(is_equal_approx(ciudad21.almacen["madera"].cantidad, madera_inicial + 20.0), "una carga de 20")
+	assert(is_equal_approx(colonos21.economia.almacen_local(Vector2i(2, 2))["madera"], 10.0), "quedan 10 en el puesto")
+	assert(colonos21.colonos[id21]["carga"].is_empty(), "ya no lleva nada")
+
+	print("\n=== TEST 22: retirar a un trabajador (o quitar su puesto) lo libera ===")
+	var ciudad22: Node = CiudadScript.new()
+	var colonos22: Node = _nuevo_con_puesto(ciudad22)
+	ciudad22.demografia["desempleado"] = 2
+	colonos22.reconciliar()
+	colonos22.contratar(Vector2i(2, 2), "recolector")
+	colonos22.contratar(Vector2i(2, 2), "acarreador")
+	assert(colonos22.economia.cupo_libre(Vector2i(2, 2)) == 3)
+	var obrero22: int = -1
+	for c in colonos22.colonos.values():
+		if c["trabajo"].get("rol", "") == "acarreador":
+			obrero22 = c["id"]
+	colonos22._retirar(obrero22)
+	assert(colonos22.economia.cupo_libre(Vector2i(2, 2)) == 4, "retirarlo libera su cupo")
+	colonos22.economia.quitar_puesto(Vector2i(2, 2))
+	for c in colonos22.colonos.values():
+		assert(c["trabajo"].is_empty() and c["tipo"] == "desempleado", "al quitarse el puesto, vuelve a desempleado")
+	# El acarreador retirado con _retirar() no se descontó de la demografía (solo se
+	# probó la liberación); el recolector devuelto pasó de obrero a desempleado.
+	assert(ciudad22.demografia["obrero"] == 1 and ciudad22.demografia["desempleado"] == 1)
+
+	print("\n=== TEST 23: la evacuación de una obra tiene prioridad sobre el trabajo ===")
+	var ciudad23: Node = CiudadScript.new()
+	var mundo23 := _mundo_llano()
+	for x in range(3, 6):
+		for z in range(3, 6):
+			mundo23.poner_fantasma(Vector3i(x, 1, z), 7)
+			mundo23.poner_fantasma(Vector3i(x, 2, z), 7)
+	mundo23.volumenes[7] = {"min": Vector3i(3, 1, 3), "max": Vector3i(5, 2, 5)}
+	var economia23: Node = EconomiaScript.new()
+	economia23.ciudad = ciudad23
+	economia23.registrar_puesto(Vector2i(0, 0), "maderero", 2, 2, {"madera": 3.0})
+	var colonos23: Node = _nuevo(mundo23, ciudad23)
+	colonos23.economia = economia23
+	var id23: int = colonos23.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad23.demografia["desempleado"] = 1
+	assert(colonos23.contratar(Vector2i(0, 0), "recolector"))
+	colonos23._on_obra_a_fantasma(7)
+	assert(colonos23.colonos[id23]["evacuando"] == 7)
+	var salio23 := false
+	for i in range(100):
+		colonos23.avanzar(0.1)
+		if colonos23.colonos[id23]["evacuando"] == -1:
+			salio23 = true
+			break
+	assert(salio23 and not mundo23.celda_en_volumen(7, colonos23.colonos[id23]["celda"]), "sale de la obra aunque tenga trabajo")
+
+	print("\n=== Las 23 pruebas de Colonos pasaron correctamente ===")

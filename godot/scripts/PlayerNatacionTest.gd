@@ -5,7 +5,7 @@ extends Node
 ## Sección diseño 2026-09-17) (mismo patrón que NiveladorTerrenoTest.gd: un
 ## "mundo" falso y determinista en vez de VoxelWorld real). Corre esta escena
 ## (PlayerNatacionTest.tscn) con F6 y revisa el panel "Output": debe imprimir
-## las 8 pruebas y no debe lanzar ningún error de assert().
+## las 9 pruebas y no debe lanzar ningún error de assert().
 
 const Player = preload("res://scripts/Player.gd")
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
@@ -129,4 +129,15 @@ func ejecutar_pruebas() -> void:
 	assert(jugador_mojado.velocity.x > 0.0)
 	jugador_mojado.free()
 
-	print("\n=== Las 8 pruebas de Player pasaron correctamente ===")
+	print("\n=== TEST 9: _limitar_al_mundo() confina la posición al mapa ===")
+	var dentro := Vector3(50.0, 12.5, 80.0)
+	assert(Player._limitar_al_mundo(dentro, 200, 200) == dentro, "dentro del mapa no cambia")
+	assert(Player._limitar_al_mundo(Vector3(-3.0, 7.0, 10.0), 200, 200) == Vector3(0.4, 7.0, 10.0), "x < 0 -> radio")
+	assert(Player._limitar_al_mundo(Vector3(250.0, 7.0, 10.0), 200, 200) == Vector3(199.6, 7.0, 10.0), "x > ancho -> ancho - radio")
+	assert(Player._limitar_al_mundo(Vector3(10.0, 7.0, -3.0), 200, 150) == Vector3(10.0, 7.0, 0.4), "z < 0 -> radio")
+	assert(Player._limitar_al_mundo(Vector3(10.0, 7.0, 300.0), 200, 150) == Vector3(10.0, 7.0, 149.6), "z > largo -> largo - radio")
+	assert(Player._limitar_al_mundo(Vector3(-9.0, -500.0, 999.0), 200, 200).y == -500.0, "y nunca se modifica")
+	var en_limite := Vector3(0.4, 3.0, 199.6)
+	assert(Player._limitar_al_mundo(en_limite, 200, 200) == en_limite, "exactamente en el límite no cambia")
+
+	print("\n=== Las 9 pruebas de Player pasaron correctamente ===")

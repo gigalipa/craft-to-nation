@@ -220,4 +220,17 @@ func ejecutar_pruebas() -> void:
 	assert(famelica.demografia["desempleado"] < 8, "la hambruna debe quitar desempleados")
 	assert(famelica.demografia["desempleado"] == 6, "bajas = max(1, int(8 * 0.25)) = 2")
 
-	print("\n=== Las 16 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 17: la ciudad recién creada no pasa hambruna durante 10 minutos de juego ===")
+	# Sin producción de comida, el stock inicial debe alcanzar para que el
+	# avatar coma 10 minutos (300 ticks de 2 s) sin hambruna.
+	var recien_nacida: Node = CiudadScript.new()
+	recien_nacida.migracion_activa = false
+	assert(recien_nacida.almacen["comida"].cantidad == recien_nacida.almacen["comida"].limite, "la comida inicial debe ser igual a su límite")
+	var hubo_hambruna := false
+	for i in range(300):
+		if recien_nacida.simular_tick(5.0)["hambruna"]:
+			hubo_hambruna = true
+	print("Comida tras 300 ticks: ", recien_nacida.almacen["comida"].cantidad)
+	assert(not hubo_hambruna, "no debe haber hambruna en los primeros 10 minutos")
+
+	print("\n=== Las 17 pruebas de Ciudad pasaron correctamente ===")

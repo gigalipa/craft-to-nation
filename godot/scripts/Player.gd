@@ -207,6 +207,14 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	if mundo != null:
+		var limitada := _limitar_al_mundo(global_position, mundo.ANCHO_MUNDO, mundo.LARGO_MUNDO)
+		if limitada != global_position:
+			# Anula también la velocidad que empujaba hacia afuera.
+			if limitada.x != global_position.x:
+				velocity.x = 0.0
+			if limitada.z != global_position.z:
+				velocity.z = 0.0
+			global_position = limitada
 		# +0.1: la posición del CharacterBody3D queda a veces apenas por debajo
 		# del suelo por el margen de colisión; así la celda siempre es la de los pies.
 		Colonos.actualizar_avatar(_celda_en(global_position + Vector3.UP * 0.1), velocity)
@@ -349,6 +357,17 @@ static func _empuje_rio(caida: int) -> float:
 static func _empuje_base_cascada(caida: int) -> float:
 	var factor: float = clampf(float(caida - GeneradorMundo.UMBRAL_CASCADA) / float(CAIDA_EMPUJE_SATURA - GeneradorMundo.UMBRAL_CASCADA), 0.0, 1.0)
 	return lerpf(EMPUJE_CASCADA_BASE_MINIMO, EMPUJE_CASCADA_BASE_MAXIMO, factor)
+
+
+## Confina "posicion" al mundo (x en [0, ancho], z en [0, largo]) dejando
+## "radio" (el de la cápsula del avatar) de margen respecto al borde; y no se
+## toca. Función pura, mismo motivo que _empuje_rio().
+static func _limitar_al_mundo(posicion: Vector3, ancho: int, largo: int, radio: float = 0.4) -> Vector3:
+	return Vector3(
+		clampf(posicion.x, radio, ancho - radio),
+		posicion.y,
+		clampf(posicion.z, radio, largo - radio)
+	)
 
 
 ## Efecto cosmético (no toca velocity ni colisión): mece la cámara con un

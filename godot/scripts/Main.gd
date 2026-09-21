@@ -13,6 +13,7 @@ var cenital_activa := false
 
 func _ready() -> void:
 	jugador.mundo = mundo
+	Zonificacion.limite_mundo = Vector2i(mundo.ANCHO_MUNDO, mundo.LARGO_MUNDO)
 	Colonos.mundo = mundo
 	mundo.obra_a_fantasma.connect(jugador._on_obra_a_fantasma)
 	var centro_x: int = mundo.ANCHO_MUNDO / 2

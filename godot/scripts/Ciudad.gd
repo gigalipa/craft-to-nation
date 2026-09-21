@@ -152,7 +152,10 @@ func _init() -> void:
 		demografia[tipo] = 0
 	almacen = {
 		"madera": Recurso.new("Madera", 200, 1000),
-		"comida": Recurso.new("Comida", 150, 2000),
+		# Placeholder hasta que exista producción de comida: con 150 el avatar
+		# (5 por tick de 2 s) la agotaba en 60 s y, sin comida, cada tick es
+		# hambruna, lo que bloquea para siempre la migración de colonos.
+		"comida": Recurso.new("Comida", 2000, 2000),
 		"hierro": Recurso.new("Hierro", 50, 1000),
 	}
 	for categoria in CATEGORIAS_COMIDA:

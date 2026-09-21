@@ -41,6 +41,11 @@ const ZONAS_PINTABLES := ["residencial_investigacion", "fabricacion_militar"]
 ## como marcador de modo entre CamaraCenital.gd y despintar_zona().
 const MARCADOR_BORRAR := "borrar"
 
+## Tamaño del mundo en celdas (ancho en x, largo en z). Si no es ZERO,
+## _caja_expandida() recorta toda caja de influencia a [0, ancho-1] x
+## [0, largo-1], para que la zona nunca salga del mapa. ZERO = sin límite.
+var limite_mundo := Vector2i.ZERO
+
 var nucleo_declarado := false
 var influencia_min := Vector2i.ZERO
 var influencia_max := Vector2i.ZERO
@@ -133,6 +138,11 @@ func _caja_expandida(huella: Array, margen: int) -> Dictionary:
 		max_x = max(max_x, celda.x + margen)
 		min_z = min(min_z, celda.y - margen)
 		max_z = max(max_z, celda.y + margen)
+	if limite_mundo != Vector2i.ZERO:
+		min_x = max(min_x, 0)
+		min_z = max(min_z, 0)
+		max_x = min(max_x, limite_mundo.x - 1)
+		max_z = min(max_z, limite_mundo.y - 1)
 	return {"min": Vector2i(min_x, min_z), "max": Vector2i(max_x, max_z)}
 
 

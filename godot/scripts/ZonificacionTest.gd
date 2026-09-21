@@ -2,7 +2,7 @@ extends Node
 
 ## Pruebas aisladas de Zonificacion.gd (mismo patrón que CiudadTest.gd).
 ## Corre esta escena (ZonificacionTest.tscn) con F6 en el editor de Godot y
-## revisa el panel "Output": debe imprimir las 12 pruebas y no debe lanzar
+## revisa el panel "Output": debe imprimir las 13 pruebas y no debe lanzar
 ## ningún error de assert(). No usa el autoload "Zonificacion" — instancia
 ## una Zonificacion nueva vía preload, para poder correr las pruebas de
 ## forma aislada y repetible (igual que CiudadTest.gd con Ciudad). TEST 9b
@@ -129,4 +129,31 @@ func ejecutar_pruebas() -> void:
 	assert(borradas_vacio == 0, "Borrar donde no había nada pintado no cuenta celdas")
 	print("OK: despintar_zona() borra solo las celdas que tenían una zona pintada, deja el resto intacto.")
 
-	print("\n=== Las 12 pruebas de Zonificacion pasaron correctamente ===")
+	print("\n=== TEST 12: limite_mundo recorta la zona de influencia al mundo ===")
+	var acotada: Node = ZonificacionScript.new()
+	acotada.limite_mundo = Vector2i(100, 100)
+	acotada.declarar_nucleo([Vector2i(1, 1), Vector2i(3, 3)])
+	assert(acotada.influencia_min == Vector2i(0, 0), "el borde mínimo se recorta a 0")
+	assert(not acotada.dentro_de_influencia(Vector2i(-1, 0)), "fuera del mapa no es zona")
+	assert(acotada.dentro_de_influencia(Vector2i(0, 0)))
+	var acotada_lejos: Node = ZonificacionScript.new()
+	acotada_lejos.limite_mundo = Vector2i(100, 100)
+	acotada_lejos.declarar_nucleo([Vector2i(96, 96), Vector2i(98, 98)])
+	assert(acotada_lejos.influencia_max == Vector2i(99, 99), "el borde máximo se recorta a ancho-1")
+	assert(not acotada_lejos.dentro_de_influencia(Vector2i(100, 99)))
+	assert(acotada_lejos.dentro_de_influencia(Vector2i(99, 99)))
+	# Un edificio junto al borde también queda recortado.
+	acotada.ampliar_influencia(1, [Vector2i(97, 2)], "militar")
+	assert(acotada.influencia_min.x >= 0 and acotada.influencia_min.y >= 0)
+	assert(acotada.influencia_max.x <= 99 and acotada.influencia_max.y <= 99)
+	assert(acotada.influencia_max.x == 99, "la contribución alcanza el borde derecho recortada")
+	assert(not acotada.dentro_de_influencia(Vector2i(100, 2)))
+
+	print("\n=== TEST 13: sin limite_mundo (por defecto) la zona NO se recorta ===")
+	var sin_limite: Node = ZonificacionScript.new()
+	assert(sin_limite.limite_mundo == Vector2i.ZERO)
+	sin_limite.declarar_nucleo([Vector2i(1, 1), Vector2i(3, 3)])
+	assert(sin_limite.influencia_min == Vector2i(-14, -14), "comportamiento anterior: se extiende a negativos")
+	assert(sin_limite.dentro_de_influencia(Vector2i(-1, 0)))
+
+	print("\n=== Las 13 pruebas de Zonificacion pasaron correctamente ===")

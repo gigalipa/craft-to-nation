@@ -128,6 +128,32 @@ static func validar_aberturas(piso: Dictionary) -> Array:
 	return errores
 
 
+## Límites de vivienda por nivel de ciudad (GDD Sección 5, decisión del
+## usuario 2026-09-20): cuántos pisos puede tener una casa y cuántas camas
+## cabe por piso. "limites" es Ciudad.NIVELES_VIVIENDA[nivel]:
+## {"camas_por_piso": int, "pisos": int}. Solo aplica a la zona residencial;
+## una fábrica o un cuartel no tienen límite de pisos habitables. Evita, por
+## ejemplo, un "barracón" de un piso con camas ilimitadas.
+static func validar_limites_vivienda(blueprint: Dictionary, limites: Dictionary) -> Array:
+	if blueprint.get("zona_permitida", "") != "residencial_investigacion":
+		return []
+	var errores: Array = []
+	var pisos: Array = blueprint["pisos"]
+	if pisos.size() > limites["pisos"]:
+		errores.append(
+			"El Blueprint tiene %d piso(s) y el nivel actual de la ciudad permite %d por casa"
+			% [pisos.size(), limites["pisos"]]
+		)
+	for piso in pisos:
+		var camas: int = (piso.get("camas", []) as Array).size()
+		if camas > limites["camas_por_piso"]:
+			errores.append(
+				"Piso %d: tiene %d cama(s), pero el nivel actual permite %d por piso"
+				% [piso["nivel"], camas, limites["camas_por_piso"]]
+			)
+	return errores
+
+
 ## Regla de almacenamiento: al menos 1 baúl por cada cama EN TODO EL EDIFICIO,
 ## sin exigir que cada cama tenga "su" baúl emparejado por posición. Esto da
 ## libertad de diseño: un barracón puede tener varias camas juntas y una
@@ -442,7 +468,8 @@ static func validar_blueprint(
 	blueprint: Dictionary,
 	zona_destino: String = "",
 	blueprint_anterior: Dictionary = {},
-	blueprint_original_produccion: Dictionary = {}
+	blueprint_original_produccion: Dictionary = {},
+	limites_vivienda: Dictionary = {}
 ) -> Dictionary:
 	var errores: Array = []
 
@@ -454,6 +481,8 @@ static func validar_blueprint(
 
 	errores.append_array(validar_camas_y_almacenamiento(blueprint))
 	errores.append_array(validar_zona_permitida(blueprint))
+	if not limites_vivienda.is_empty():
+		errores.append_array(validar_limites_vivienda(blueprint, limites_vivienda))
 
 	if zona_destino != "":
 		errores.append_array(validar_colocacion(blueprint, zona_destino))

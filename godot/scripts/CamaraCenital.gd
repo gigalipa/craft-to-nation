@@ -2,6 +2,7 @@ extends Camera3D
 
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
+const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
 
 ## Envoltorio para NiveladorTerreno: siempre llama a altura_en(x, z, true)
 ## (ignora agua). NiveladorTerreno solo necesita .altura_en(x, z) por duck
@@ -958,6 +959,7 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 		"columnas_union": columnas_union,
 		"celdas_mundo": celdas_mundo,
 		"zona_correcta": _huella_en_zona_correcta(esquina, columnas, _blueprint_activo["zona_permitida"]),
+		"errores_vivienda": BlueprintValidator.validar_limites_vivienda(_blueprint_activo, Ciudad.NIVELES_VIVIENDA[Ciudad.nivel]),
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas_union),
 		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, _altura_blueprint(_blueprint_activo)),
 		"resultado_fachada": mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA),
@@ -973,6 +975,8 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
 	if not ev["zona_correcta"]:
 		return "Colocación rechazada: esta zona no acepta este blueprint."
+	if not ev["errores_vivienda"].is_empty():
+		return "Colocación rechazada: " + ev["errores_vivienda"][0]
 	if not ev["relieve_valido"]:
 		return "Colocación rechazada: la pendiente de esta huella (o del frente de sus puertas) supera el límite permitido."
 	if not ev["resultado_huella"]["valida"]:

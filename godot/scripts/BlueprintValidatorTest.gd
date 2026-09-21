@@ -1647,4 +1647,44 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_d.obtener_tipo(follaje_55) == "follaje", "y ya no hay un registro que lo retire")
 	print("OK: eliminar el edificio antes de tiempo no modifica el follaje.")
 
-	print("\n=== Las 61 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 62: validar_limites_vivienda() aplica el límite de pisos y de camas por piso ===")
+	var limites_n1 := {"camas_por_piso": 2, "pisos": 2}
+	var casa_ok := {
+		"zona_permitida": "residencial_investigacion",
+		"pisos": [
+			{"nivel": 0, "camas": [{}, {}]},
+			{"nivel": 1, "camas": [{}, {}]},
+		],
+	}
+	assert(BlueprintValidator.validar_limites_vivienda(casa_ok, limites_n1).is_empty(), "2 pisos x 2 camas cabe en el nivel 1")
+	var casa_alta := {
+		"zona_permitida": "residencial_investigacion",
+		"pisos": [
+			{"nivel": 0, "camas": [{}]},
+			{"nivel": 1, "camas": [{}]},
+			{"nivel": 2, "camas": [{}]},
+		],
+	}
+	var errores_alta: Array = BlueprintValidator.validar_limites_vivienda(casa_alta, limites_n1)
+	assert(errores_alta.size() == 1, "3 pisos excede los 2 del nivel 1")
+	var casa_barracon := {
+		"zona_permitida": "residencial_investigacion",
+		"pisos": [{"nivel": 0, "camas": [{}, {}, {}, {}, {}]}],
+	}
+	var errores_barracon: Array = BlueprintValidator.validar_limites_vivienda(casa_barracon, limites_n1)
+	assert(errores_barracon.size() == 1, "5 camas en un piso excede las 2 del nivel 1")
+	print("OK: ", errores_alta[0], " | ", errores_barracon[0])
+
+	print("\n=== TEST 63: los límites solo aplican a la zona residencial y validar_blueprint() los acepta como parámetro opcional ===")
+	var industrial := {
+		"zona_permitida": "fabricacion_militar",
+		"pisos": [{"nivel": 0, "camas": []}, {"nivel": 1, "camas": []}, {"nivel": 2, "camas": []}],
+	}
+	assert(BlueprintValidator.validar_limites_vivienda(industrial, limites_n1).is_empty(), "una fábrica no tiene límite de pisos habitables")
+	var bp_limites: Dictionary = JSON.parse_string(BLUEPRINT_VALIDO_JSON)
+	assert(BlueprintValidator.validar_blueprint(bp_limites)["valido"], "sin el parámetro opcional, el blueprint válido sigue válido")
+	var limites_cero := {"camas_por_piso": 0, "pisos": 0}
+	var res_limites: Dictionary = BlueprintValidator.validar_blueprint(bp_limites, "", {}, {}, limites_cero)
+	assert(not res_limites["valido"], "con límites imposibles el blueprint válido queda rechazado")
+
+	print("\n=== Las 63 pruebas de BlueprintValidator pasaron correctamente ===")

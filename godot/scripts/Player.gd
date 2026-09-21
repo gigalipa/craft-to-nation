@@ -506,12 +506,13 @@ func _declarar_edificio() -> void:
 			huella_vista[punto_xz] = true
 			huella.append(punto_xz)
 
+	var limites_vivienda: Dictionary = Ciudad.NIVELES_VIVIENDA[Ciudad.nivel]
 	var resultado: Dictionary
 	if not Zonificacion.nucleo_declarado:
-		resultado = BlueprintValidator.validar_blueprint(blueprint)
+		resultado = BlueprintValidator.validar_blueprint(blueprint, "", {}, {}, limites_vivienda)
 	else:
 		var zona_destino: String = Zonificacion.consultar_zona(celda_puerta_xz)
-		resultado = BlueprintValidator.validar_blueprint(blueprint, zona_destino)
+		resultado = BlueprintValidator.validar_blueprint(blueprint, zona_destino, {}, {}, limites_vivienda)
 
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if not resultado["valido"]:

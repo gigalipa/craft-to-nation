@@ -48,6 +48,18 @@ class GeneradorAguaConectadaFalso:
 		return 1.0
 
 
+## Profundidad: z < 10 es agua somera (algas 0.9 = profundidad relativa 0.1),
+## z >= 10 es agua profunda (algas 0.1 = profundidad relativa 0.9). Peces
+## constantes (0.5) para aislar el peso por profundidad.
+class GeneradorProfundidadFalso:
+	func es_agua_o_rio_en(_x: int, _z: int) -> bool:
+		return true
+	func densidad_peces_en(_x: int, _z: int) -> float:
+		return 0.5
+	func densidad_algas_en(_x: int, z: int) -> float:
+		return 0.9 if z < 10 else 0.1
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -266,21 +278,28 @@ func ejecutar_pruebas() -> void:
 	var celdas_prueba: Dictionary = {Vector2i(0, 0): true, Vector2i(1, 0): true, Vector2i(2, 0): true}
 	var promedios_pesca: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, celdas_prueba)
 	print("Promedios (3 celdas dadas): ", promedios_pesca)
-	assert(is_equal_approx(promedios_pesca["peces"], 0.5))
+	# peces efectivo = 0.5 * (0.5 + (1 - 0.3)) = 0.6; 3 celdas están muy por debajo de la referencia: escala mínima.
+	assert(is_equal_approx(promedios_pesca["peces"], 0.6))
 	assert(is_equal_approx(promedios_pesca["algas"], 0.3))
-	print("OK: detectar_pesca_frutos_mar() promedia exactamente las celdas del Dictionary recibido, sin escanear nada por su cuenta.")
+	assert(is_equal_approx(promedios_pesca["escala"], Recoleccion.ESCALA_AGUA_MIN))
+	assert(is_equal_approx(promedios_pesca["escala"], 0.4))
+	print("OK: detectar_pesca_frutos_mar() promedia exactamente las celdas del Dictionary recibido (peces ponderados por profundidad), sin escanear nada por su cuenta.")
 
-	print("\n=== TEST 15: detectar_pesca_frutos_mar() con un Dictionary vacío da 0.0/0.0 ===")
+	print("\n=== TEST 15: detectar_pesca_frutos_mar() con un Dictionary vacío da 0.0/0.0/0.0 ===")
 	var promedios_sin_agua: Dictionary = Recoleccion.detectar_pesca_frutos_mar(generador_agua, {})
 	assert(is_equal_approx(promedios_sin_agua["peces"], 0.0))
 	assert(is_equal_approx(promedios_sin_agua["algas"], 0.0))
-	print("OK: sin ninguna celda de agua, ambas señales devuelven 0.0 sin dividir por cero.")
+	assert(is_equal_approx(promedios_sin_agua["escala"], 0.0))
+	print("OK: sin ninguna celda de agua, peces, algas y escala devuelven 0.0 sin dividir por cero (nada que pescar).")
 
 	print("\n=== TEST 16: tasas_pesca_frutos_mar() multiplica cada señal por su tasa base ===")
-	var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3})
+	var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3, "escala": 1.0})
 	assert(is_equal_approx(tasas_pesca["pesca"], 0.5 * Recoleccion.TASA_BASE_PESCA_POR_CIUDADANO))
 	assert(is_equal_approx(tasas_pesca["frutos_mar"], 0.3 * Recoleccion.TASA_BASE_ALGAS_POR_CIUDADANO))
-	assert(is_equal_approx(tasas_pesca["pesca"], 6.0) and is_equal_approx(tasas_pesca["frutos_mar"], 0.9))
+	assert(is_equal_approx(tasas_pesca["pesca"], 8.5) and is_equal_approx(tasas_pesca["frutos_mar"], 0.9))
+	# La escala por tamaño del agua multiplica ambas tasas.
+	var tasas_pesca_chica: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3, "escala": 0.4})
+	assert(is_equal_approx(tasas_pesca_chica["pesca"], 3.4) and is_equal_approx(tasas_pesca_chica["frutos_mar"], 0.36))
 
 	print("\n=== TEST 17: celdas_agua_conectadas() sigue solo agua conectada por adyacencia, ignora un charco aislado dentro del mismo radio ===")
 	var generador_conectada := GeneradorAguaConectadaFalso.new()
@@ -330,10 +349,44 @@ func ejecutar_pruebas() -> void:
 	# frutal 0.46), no a 0.5: con caza 14 y frutos 8 dan ~10.0/h, por encima de la pesca (~8.6/h medidos).
 	var caza_media: Dictionary = Recoleccion.tasas_caza_recoleccion({"fauna": 0.45, "frutal": 0.46})
 	var suma_caza: float = caza_media["caza"] + caza_media["recoleccion"]
-	var pesca_media: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.5})
+	# La pesca se midió sobre el mundo real (semilla 12345, 227 puestos costeros candidatos): peces efectivo
+	# medio 0.37 (ya ponderado por profundidad), algas medio 0.77 y escala 1.0 (agua de referencia) dan ~8.6/h.
+	var pesca_media: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.37, "algas": 0.77, "escala": 1.0})
 	var suma_pesca: float = pesca_media["pesca"] + pesca_media["frutos_mar"]
-	assert(is_equal_approx(suma_pesca, 7.5))
+	assert(suma_pesca >= 7.5, "pesca + algas debe cumplir la meta de diseño de 7.5/h")
+	assert(absf(suma_pesca - 8.6) < 0.05, "pesca + algas ~8.6/h a las densidades medias medidas")
 	assert(suma_caza >= 7.5, "caza + frutos debe cumplir la meta de diseño de 7.5/h")
 	assert(suma_caza > suma_pesca, "caza + frutos debe ser competitiva con la pesca")
 
-	print("\n=== Las 21 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 22: la escala por tamaño del agua va de 0.4 (poca) a 1.5 (mucha), 1.0 en la referencia ===")
+	var expectativas_escala := {100: 0.4, 450: 1.0, 675: 1.5, 2000: 1.5}
+	for cantidad in expectativas_escala:
+		var agua_n: Dictionary = {}
+		for x in range(cantidad):
+			agua_n[Vector2i(x, 0)] = true
+		var escala_n: float = Recoleccion.detectar_pesca_frutos_mar(generador_agua, agua_n)["escala"]
+		assert(is_equal_approx(escala_n, expectativas_escala[cantidad]), "%d celdas -> escala %f" % [cantidad, escala_n])
+	print("OK: 100 celdas -> 0.4, 450 -> 1.0, 675 -> 1.5, 2000 -> 1.5 (topes mínimo y máximo).")
+
+	print("\n=== TEST 23: los peces pesan más en agua profunda que en agua somera ===")
+	var generador_profundidad := GeneradorProfundidadFalso.new()
+	var agua_somera: Dictionary = {Vector2i(0, 0): true, Vector2i(1, 0): true}
+	var agua_profunda: Dictionary = {Vector2i(0, 20): true, Vector2i(1, 20): true}
+	var peces_someros: float = Recoleccion.detectar_pesca_frutos_mar(generador_profundidad, agua_somera)["peces"]
+	var peces_profundos: float = Recoleccion.detectar_pesca_frutos_mar(generador_profundidad, agua_profunda)["peces"]
+	assert(is_equal_approx(peces_someros, 0.3), "somera: 0.5 * (0.5 + 0.1)")
+	assert(is_equal_approx(peces_profundos, 0.7), "profunda: 0.5 * (0.5 + 0.9)")
+	assert(peces_profundos > peces_someros)
+	print("OK: mismos peces de base, pero el agua profunda rinde más que la somera (0.7 frente a 0.3).")
+
+	print("\n=== TEST 24: una costa grande y profunda rinde más de 3 veces que un lago pequeño y somero ===")
+	var lago_chico: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.27, "algas": 0.93, "escala": 0.4})
+	var costa_grande: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.36, "algas": 0.80, "escala": 1.5})
+	var total_lago: float = lago_chico["pesca"] + lago_chico["frutos_mar"]
+	var total_costa: float = costa_grande["pesca"] + costa_grande["frutos_mar"]
+	print("Lago chico: %.2f/h, costa grande: %.2f/h" % [total_lago, total_costa])
+	assert(total_lago > 0.0 and total_costa > 0.0)
+	assert(total_costa > 3.0 * total_lago, "el tamaño y la profundidad del agua deben importar")
+	print("OK: el rendimiento de la pesca ya no es casi constante: depende del tamaño y la profundidad del agua.")
+
+	print("\n=== Las 24 pruebas de Recoleccion pasaron correctamente ===")

@@ -81,8 +81,16 @@ const ANCHO_HUELLA_PESCA_FRUTOS_MAR := 4
 const ALTO_HUELLA_PESCA_FRUTOS_MAR := 6
 
 const RADIO_AREA_PESCA_FRUTOS_MAR := 25
-const TASA_BASE_PESCA_POR_CIUDADANO := 12.0  # balance decidido el 2026-09-21: pesca + algas ~7,5/h a densidad media
+const TASA_BASE_PESCA_POR_CIUDADANO := 17.0  # decisión del usuario 2026-09-21: sube de 12 a 17 para compensar el descuento por profundidad (peces ponderados ×0,5 a ×1,5) y que la media del mundo siga en ~8,6 comida/h
 const TASA_BASE_ALGAS_POR_CIUDADANO := 3.0  # balance decidido el 2026-09-21; la densidad de algas depende de la profundidad, así que el promedio es aproximado
+## Los peces rinden más en agua profunda: cada celda pesa PECES_FACTOR_SOMERO + profundidad relativa
+## (×0,5 en el agua más somera hasta ×1,5 en la más profunda). Decisión 2026-09-21.
+const PECES_FACTOR_SOMERO := 0.5
+## Escala por tamaño del agua conectada (decisión 2026-09-21): celdas / AGUA_REFERENCIA, acotado entre
+## ESCALA_AGUA_MIN y ESCALA_AGUA_MAX. 450 celdas es la mediana del mundo actual dentro del radio de 25.
+const AGUA_REFERENCIA := 450.0
+const ESCALA_AGUA_MIN := 0.4
+const ESCALA_AGUA_MAX := 1.5
 
 # GDD Sección 3 — mismos valores placeholder que los otros tres puestos,
 # sin balance real todavía (ver Recoleccion.COSTO_CONSTRUCCION).
@@ -295,27 +303,39 @@ func celdas_agua_conectadas(generador: Object, centro_xz: Vector2i, radio: int) 
 	return visitadas
 
 
-## Promedia densidad_peces_en()/densidad_algas_en() sobre "celdas_agua" (ver
-## celdas_agua_conectadas()) — ya NO escanea un círculo por su cuenta.
-## Devuelve ambas claves en 0.0 si "celdas_agua" está vacío (evita dividir
-## por cero).
+## Promedia sobre "celdas_agua" (ver celdas_agua_conectadas()) — ya NO escanea
+## un círculo por su cuenta. Devuelve:
+## - "peces": promedio de densidad_peces_en() ponderada por profundidad en cada
+##   celda: peces × (PECES_FACTOR_SOMERO + (1 - algas)), porque
+##   densidad_algas_en() = 1 - profundidad relativa.
+## - "algas": promedio de densidad_algas_en() sin ponderar.
+## - "escala": tamaño del agua, celdas / AGUA_REFERENCIA acotado a
+##   [ESCALA_AGUA_MIN, ESCALA_AGUA_MAX].
+## Las tres claves valen 0.0 si "celdas_agua" está vacío (nada que pescar; evita
+## dividir por cero).
 func detectar_pesca_frutos_mar(generador: Object, celdas_agua: Dictionary) -> Dictionary:
 	var suma_peces := 0.0
 	var suma_algas := 0.0
 	for xz in celdas_agua:
-		suma_peces += generador.densidad_peces_en(xz.x, xz.y)
-		suma_algas += generador.densidad_algas_en(xz.x, xz.y)
+		var algas: float = generador.densidad_algas_en(xz.x, xz.y)
+		suma_peces += generador.densidad_peces_en(xz.x, xz.y) * (PECES_FACTOR_SOMERO + (1.0 - algas))
+		suma_algas += algas
 	var muestras: int = celdas_agua.size()
 	if muestras == 0:
-		return {"peces": 0.0, "algas": 0.0}
-	return {"peces": suma_peces / muestras, "algas": suma_algas / muestras}
+		return {"peces": 0.0, "algas": 0.0, "escala": 0.0}
+	return {
+		"peces": suma_peces / muestras,
+		"algas": suma_algas / muestras,
+		"escala": clampf(float(muestras) / AGUA_REFERENCIA, ESCALA_AGUA_MIN, ESCALA_AGUA_MAX),
+	}
 
 
 ## Dos tasas independientes ("pesca"/"frutos_mar"), cada señal × la tasa base
-## propia del Excel — mismo patrón que tasas_caza_recoleccion(), no se suman
-## en un total.
+## propia del Excel × la escala por tamaño del agua ("escala" es obligatoria,
+## viene de detectar_pesca_frutos_mar()) — mismo patrón que
+## tasas_caza_recoleccion(), no se suman en un total.
 func tasas_pesca_frutos_mar(promedios: Dictionary) -> Dictionary:
 	return {
-		"pesca": promedios["peces"] * TASA_BASE_PESCA_POR_CIUDADANO,
-		"frutos_mar": promedios["algas"] * TASA_BASE_ALGAS_POR_CIUDADANO,
+		"pesca": promedios["peces"] * TASA_BASE_PESCA_POR_CIUDADANO * promedios["escala"],
+		"frutos_mar": promedios["algas"] * TASA_BASE_ALGAS_POR_CIUDADANO * promedios["escala"],
 	}

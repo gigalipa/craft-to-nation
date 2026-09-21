@@ -9,6 +9,7 @@ const TAMANO_CELDA := 1.0
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const GeneradorArbol = preload("res://scripts/GeneradorArbol.gd")
+const CuerposObra = preload("res://scripts/CuerposObra.gd")
 const MATERIAL_AGUA := preload("res://assets/mat_agua.tres")
 
 const ANCHO_MUNDO := 200
@@ -198,6 +199,26 @@ signal bloque_translucido_cambiado(celda: Vector3i)
 ## receptor solo marca "sucio" y reconstruye una vez por fotograma.
 signal fantasmas_cambiados
 
+## Se emite cuando los bloques de una obra pasan a ser fantasma: al emplazar un
+## blueprint (iniciar_construccion_fantasma()) y al empezar a deconstruir un
+## edificio completo (primer paso de procesar_deconstruccion()). Quien esté
+## dentro del volumen de la obra debe recibir un permiso de salida (Player.gd
+## para el avatar, Colonos.gd para los colonos).
+signal obra_a_fantasma(id: int)
+
+## Permisos de salida: id de obra -> {entidad -> true}. "entidad" es el id de un
+## colono (int) o "avatar". Con permiso, la entidad ignora la colisión con los
+## fantasmas de ESA obra hasta que sale de su volumen; sin él, los fantasmas
+## son sólidos (no se puede entrar). Mientras haya alguno, la obra no puede
+## avanzar (ver surtir_construccion()).
+var permisos_salida: Dictionary = {}
+
+## Volumen de cada obra: id -> {"min": Vector3i, "max": Vector3i}, la caja
+## envolvente de todas sus celdas (estructura y preparación del terreno).
+var edificio_volumen: Dictionary = {}
+
+var _cuerpos_obra: Node3D = null
+
 ## Por edificio (id de VoxelWorld.registrar_edificio()): el orden FIJO de
 ## sus celdas estructurales (piso -> paredes/puertas/ventanas ->
 ## mobiliario), sus tipos, y cuántas celdas desde el inicio de ese orden
@@ -379,6 +400,13 @@ func _indexar_biblioteca() -> void:
 		var nombre: String = mesh_library.get_item_name(id)
 		_id_por_tipo[nombre] = id
 		_tipo_por_id[id] = nombre
+	# La colisión de los fantasmas la dan los cuerpos por obra (CuerposObra),
+	# no el GridMap: GridMap no permite colisión por celda ni por cara, y el
+	# permiso de salida necesita ignorar SOLO los fantasmas de una obra.
+	# ponytail: un fantasma sin obra (huérfano) queda sin colisión;
+	# eliminar_edificio() ya retira los suyos, así que no debería existir.
+	if _id_por_tipo.has("fantasma"):
+		mesh_library.set_item_shapes(_id_por_tipo["fantasma"], [])
 
 
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
@@ -1216,6 +1244,9 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 	_revertir_celda(celda_a_revertir)
 	edificio_progreso[id] = progreso - 1
 	fantasmas_cambiados.emit()
+	_sincronizar_cuerpo(id)
+	if progreso == orden.size():
+		obra_a_fantasma.emit(id)  # el edificio entero empieza a volver a fantasma
 	var vacio: bool = edificio_progreso[id] == 0
 	return {"id": id, "completa_reversion": vacio, "lista_para_remocion": vacio, "total_camas": total_camas}
 
@@ -1314,6 +1345,9 @@ func eliminar_edificio(id: int) -> Vector2i:
 			if celda_a_despeje[celda_despeje].is_empty():
 				celda_a_despeje.erase(celda_despeje)
 	edificio_despeje.erase(id)
+	cuerpos_obra().liberar(id)
+	edificio_volumen.erase(id)
+	permisos_salida.erase(id)
 	fantasmas_cambiados.emit()
 	return esquina
 
@@ -1376,7 +1410,10 @@ func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictiona
 		if not celda_a_despeje.has(celda_despeje):
 			celda_a_despeje[celda_despeje] = {}
 		celda_a_despeje[celda_despeje][id] = true
+	edificio_volumen[id] = _calcular_volumen(orden_relleno + orden_estructura)
+	_sincronizar_cuerpo(id)
 	fantasmas_cambiados.emit()
+	obra_a_fantasma.emit(id)
 	return id
 
 
@@ -1400,6 +1437,7 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 		if not celda_a_despeje.has(celda_despeje):
 			celda_a_despeje[celda_despeje] = {}
 		celda_a_despeje[celda_despeje][id] = true
+	edificio_volumen[id] = _calcular_volumen(orden)
 	return id
 
 
@@ -1474,6 +1512,98 @@ func celdas_fantasma_ocupadas() -> Array[Vector3i]:
 	return resultado
 
 
+## Nodo con los cuerpos de colisión de las obras; se crea la primera vez que
+## hace falta (así también existe en las pruebas, que no llaman a _ready()).
+func cuerpos_obra() -> Node3D:
+	if _cuerpos_obra == null:
+		_cuerpos_obra = CuerposObra.new()
+		add_child(_cuerpos_obra)
+	return _cuerpos_obra
+
+
+## El StaticBody3D con la colisión de los fantasmas de la obra, o null.
+func cuerpo_de_obra(id: int) -> Node:
+	return cuerpos_obra().cuerpo_de(id)
+
+
+## Celdas de la obra "id" que hoy son "fantasma": las pendientes de su
+## estructura y las de su cola de preparación del terreno.
+func _celdas_fantasma_de(id: int) -> Array[Vector3i]:
+	var resultado: Array[Vector3i] = []
+	for celda: Vector3i in edificio_orden.get(id, []):
+		if obtener_tipo(celda) == "fantasma":
+			resultado.append(celda)
+	if edificio_relleno_cola.has(id):
+		for celda: Vector3i in Construccion.celdas_pendientes(edificio_relleno_cola[id]):
+			if obtener_tipo(celda) == "fantasma":
+				resultado.append(celda)
+	return resultado
+
+
+## Deja el cuerpo de colisión de la obra "id" con una caja por fantasma
+## pendiente. Se llama tras cada operación que cambia sus fantasmas.
+func _sincronizar_cuerpo(id: int) -> void:
+	cuerpos_obra().sincronizar(id, _celdas_fantasma_de(id))
+
+
+static func _calcular_volumen(celdas: Array) -> Dictionary:
+	if celdas.is_empty():
+		return {}
+	var minimo: Vector3i = celdas[0]
+	var maximo: Vector3i = celdas[0]
+	for celda: Vector3i in celdas:
+		minimo = Vector3i(mini(minimo.x, celda.x), mini(minimo.y, celda.y), mini(minimo.z, celda.z))
+		maximo = Vector3i(maxi(maximo.x, celda.x), maxi(maximo.y, celda.y), maxi(maximo.z, celda.z))
+	return {"min": minimo, "max": maximo}
+
+
+func volumen_de_obra(id: int) -> Dictionary:
+	return edificio_volumen.get(id, {})
+
+
+func celda_en_volumen(id: int, celda: Vector3i) -> bool:
+	var volumen: Dictionary = edificio_volumen.get(id, {})
+	if volumen.is_empty():
+		return false
+	var minimo: Vector3i = volumen["min"]
+	var maximo: Vector3i = volumen["max"]
+	return celda.x >= minimo.x and celda.x <= maximo.x \
+		and celda.y >= minimo.y and celda.y <= maximo.y \
+		and celda.z >= minimo.z and celda.z <= maximo.z
+
+
+func otorgar_permiso_salida(id_obra: int, entidad) -> void:
+	if not permisos_salida.has(id_obra):
+		permisos_salida[id_obra] = {}
+	permisos_salida[id_obra][entidad] = true
+
+
+func revocar_permiso_salida(id_obra: int, entidad) -> void:
+	if not permisos_salida.has(id_obra):
+		return
+	permisos_salida[id_obra].erase(entidad)
+	if permisos_salida[id_obra].is_empty():
+		permisos_salida.erase(id_obra)
+
+
+func tiene_permiso_salida(id_obra: int, entidad) -> bool:
+	return permisos_salida.has(id_obra) and permisos_salida[id_obra].has(entidad)
+
+
+## true si alguien sigue dentro de la obra (con permiso vigente): mientras
+## tanto no se puede iniciar ni avanzar.
+func hay_ocupantes(id_obra: int) -> bool:
+	return permisos_salida.has(id_obra)
+
+
+func obras_con_permiso(entidad) -> Array[int]:
+	var resultado: Array[int] = []
+	for id_obra: int in permisos_salida:
+		if permisos_salida[id_obra].has(entidad):
+			resultado.append(id_obra)
+	return resultado
+
+
 ## Aplica un paso ya avanzado de la cola de preparación del terreno (ver
 ## Construccion.avanzar()): "resultado" trae {"celda", "tipo"}. "tierra"
 ## (relleno) convierte la celda —fantasma, agua o follaje— en bloque real (ver
@@ -1522,11 +1652,19 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 	if id == -1:
 		return {}
 
+	# Alguien sigue dentro del sitio (tiene permiso de salida): la obra no
+	# puede iniciarse ni avanzar hasta que salga. Se devuelve un diccionario NO
+	# vacío para que Player._colocar() no lo confunda con "esto no es una obra"
+	# y termine colocando un bloque nuevo contra el fantasma.
+	if hay_ocupantes(id):
+		return {"bloqueada": true}
+
 	if edificio_relleno_cola.has(id):
 		var id_cola_relleno: int = edificio_relleno_cola[id]
 		var resultado_grupo: Dictionary = Construccion.avanzar(id_cola_relleno)
 		if not resultado_grupo.is_empty():
 			_aplicar_paso_cola(resultado_grupo)
+			_sincronizar_cuerpo(id)
 			if resultado_grupo["completa"]:
 				edificio_relleno_cola.erase(id)
 			return {"completa": false, "metadata": {}}
@@ -1543,6 +1681,7 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 	_despejar_follaje_de_columna(Vector2i(celda_a_surtir.x, celda_a_surtir.z))
 	_reemplazar_celda(celda_a_surtir, tipo)
 	edificio_progreso[id] = progreso + 1
+	_sincronizar_cuerpo(id)
 	fantasmas_cambiados.emit()
 	var completa: bool = edificio_progreso[id] == orden.size()
 	if completa:

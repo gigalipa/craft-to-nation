@@ -10,6 +10,14 @@ const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
 ## Mundo mínimo: solo sabe decir qué hay en una celda ("" si está vacía).
 class MundoFalso extends RefCounted:
 	var celdas: Dictionary = {}
+	var ids: Dictionary = {}  # Vector3i -> int: la obra a la que pertenece cada fantasma
+
+	func id_de_edificio(celda: Vector3i) -> int:
+		return ids.get(celda, -1)
+
+	func poner_fantasma(celda: Vector3i, id_obra: int) -> void:
+		celdas[celda] = "fantasma"
+		ids[celda] = id_obra
 
 	func obtener_tipo(celda: Vector3i) -> String:
 		return celdas.get(celda, "")
@@ -182,4 +190,37 @@ func ejecutar_pruebas() -> void:
 	for i in range(1, ruta14.size()):
 		assert(_adyacentes(ruta14[i - 1], ruta14[i]), "pasos contiguos en el cruce largo")
 
-	print("\n=== Las 14 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== TEST 15: Un fantasma solo se atraviesa con el permiso de SU obra ===")
+	var m15 := MundoFalso.new()
+	_llano(m15, 6, 1)  # una sola fila
+	m15.poner_fantasma(Vector3i(2, 1, 0), 7)
+	m15.poner_fantasma(Vector3i(2, 2, 0), 7)
+	var b15 := BuscadorRutas.new(m15)
+	assert(not b15.es_transitable(Vector3i(2, 1, 0)), "sin permiso, un fantasma es sólido")
+	assert(b15.es_transitable(Vector3i(2, 1, 0), [7]), "con el permiso de su obra, es libre")
+	assert(not b15.es_transitable(Vector3i(2, 1, 0), [8]), "el permiso de otra obra no sirve")
+	assert(b15.buscar_ruta(Vector3i(0, 1, 0), Vector3i(4, 1, 0)).is_empty())
+	var ruta15: Array[Vector3i] = b15.buscar_ruta(Vector3i(0, 1, 0), Vector3i(4, 1, 0), {"ignorar_fantasmas": [7]})
+	assert(ruta15.size() == 4 and ruta15.has(Vector3i(2, 1, 0)), "con permiso cruza la pared fantasma")
+	assert(b15.buscar_ruta(Vector3i(0, 1, 0), Vector3i(4, 1, 0), {"ignorar_fantasmas": [8]}).is_empty())
+
+	print("\n=== TEST 16: buscar_salida() lleva desde dentro de la obra hasta la primera celda de fuera ===")
+	var m16 := MundoFalso.new()
+	_llano(m16, 7, 7)
+	for x in range(2, 5):  # un cubo fantasma macizo de 3x3x2
+		for z in range(2, 5):
+			m16.poner_fantasma(Vector3i(x, 1, z), 7)
+			m16.poner_fantasma(Vector3i(x, 2, z), 7)
+	var b16 := BuscadorRutas.new(m16)
+	var esta_dentro := func(celda: Vector3i) -> bool:
+		return celda.x >= 2 and celda.x <= 4 and celda.z >= 2 and celda.z <= 4
+	var salida16: Array[Vector3i] = b16.buscar_salida(Vector3i(3, 1, 3), esta_dentro, {"ignorar_fantasmas": [7]})
+	print("Ruta de salida: ", salida16)
+	assert(salida16.size() == 2, "del centro al borde del cubo y un paso más")
+	assert(not esta_dentro.call(salida16.back()), "termina fuera del volumen")
+	assert(b16.buscar_salida(Vector3i(3, 1, 3), esta_dentro).is_empty(), "sin permiso, el origen es un sólido: no hay ruta")
+
+	print("\n=== TEST 17: Si el origen ya está fuera, no hay nada que recorrer ===")
+	assert(b16.buscar_salida(Vector3i(0, 1, 0), esta_dentro).is_empty())
+
+	print("\n=== Las 17 pruebas de BuscadorRutas pasaron correctamente ===")

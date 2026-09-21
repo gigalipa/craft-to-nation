@@ -1,14 +1,16 @@
 extends RefCounted
 
 ## A* a pie sobre el mundo voxel. Ver spec:
-## docs/superpowers/specs/2026-09-20-colonos-pathfinding-design.md (Sección 2).
+## docs/superpowers/specs/2026-09-20-colonos-pathfinding-design.md (Secciones
+## 2 y 6).
 ##
 ## No usa NavigationServer3D: exige hornear una malla y este mundo cambia
 ## continuamente (minado, construcción fantasma, agua que fluye). Aquí los
 ## vecinos se evalúan consultando "mundo" en el momento, así que siempre se
 ## ve el mundo actual y no hay nada que invalidar.
 ##
-## "mundo" solo necesita obtener_tipo(celda: Vector3i) -> String ("" = vacía).
+## "mundo" necesita obtener_tipo(celda: Vector3i) -> String ("" = vacía) y,
+## solo si se usa ignorar_fantasmas, id_de_edificio(celda: Vector3i) -> int.
 ## Clase pura (RefCounted), sin nodos: se prueba con un mundo falso.
 
 ## Tope de nodos expandidos por consulta: suficiente para cruzar el mapa de
@@ -37,8 +39,15 @@ func _init(p_mundo: Object) -> void:
 	mundo = p_mundo
 
 
-func _libre(celda: Vector3i) -> bool:
-	return TIPOS_LIBRES.has(mundo.obtener_tipo(celda))
+## "ignorar" son ids de obra cuyos bloques "fantasma" cuentan como libres para
+## quien pregunta (los que tienen permiso de salida, ver VoxelWorld). Solo
+## afecta al cuerpo del NPC; el suelo (ver es_transitable()) sigue viendo un
+## fantasma como sólido.
+func _libre(celda: Vector3i, ignorar: Array = []) -> bool:
+	var tipo: String = mundo.obtener_tipo(celda)
+	if TIPOS_LIBRES.has(tipo):
+		return true
+	return tipo == "fantasma" and not ignorar.is_empty() and ignorar.has(mundo.id_de_edificio(celda))
 
 
 ## Un NPC puede estar en "celda" si ella y la de arriba están libres y la de
@@ -46,11 +55,11 @@ func _libre(celda: Vector3i) -> bool:
 ## libre (agua de 1 bloque de profundidad; con 2 o más ya no se camina, se
 ## nadaría, y los colonos no nadan). Una cama o un baúl es suelo, así que un
 ## colono puede pararse encima.
-func es_transitable(celda: Vector3i) -> bool:
+func es_transitable(celda: Vector3i, ignorar: Array = []) -> bool:
 	var tipo: String = mundo.obtener_tipo(celda)
-	if not (TIPOS_LIBRES.has(tipo) or tipo == "agua"):
+	if not (_libre(celda, ignorar) or tipo == "agua"):
 		return false
-	if not _libre(celda + ARRIBA):
+	if not _libre(celda + ARRIBA, ignorar):
 		return false
 	var suelo: String = mundo.obtener_tipo(celda - ARRIBA)
 	return suelo != "agua" and not TIPOS_LIBRES.has(suelo)
@@ -58,24 +67,24 @@ func es_transitable(celda: Vector3i) -> bool:
 
 ## Celdas transitables a un paso de "celda": mismo nivel, subiendo 1 bloque o
 ## cayendo hasta CAIDA_MAXIMA. Sin diagonales.
-func vecinos(celda: Vector3i) -> Array[Vector3i]:
+func vecinos(celda: Vector3i, ignorar: Array = []) -> Array[Vector3i]:
 	var resultado: Array[Vector3i] = []
 	for direccion in DIRECCIONES:
 		var columna: Vector3i = celda + direccion
-		if es_transitable(columna):
+		if es_transitable(columna, ignorar):
 			resultado.append(columna)
 			continue
 		var sobre_columna: Vector3i = columna + ARRIBA
-		if es_transitable(sobre_columna) and _libre(celda + ARRIBA * 2):
+		if es_transitable(sobre_columna, ignorar) and _libre(celda + ARRIBA * 2, ignorar):
 			resultado.append(sobre_columna)
 			continue
-		if _libre(columna) and _libre(sobre_columna):
+		if _libre(columna, ignorar) and _libre(sobre_columna, ignorar):
 			for caida in range(1, CAIDA_MAXIMA + 1):
 				var abajo: Vector3i = columna - ARRIBA * caida
-				if es_transitable(abajo):
+				if es_transitable(abajo, ignorar):
 					resultado.append(abajo)
 					break
-				if not _libre(abajo):
+				if not _libre(abajo, ignorar):
 					break
 	return resultado
 
@@ -84,13 +93,42 @@ func vecinos(celda: Vector3i) -> Array[Vector3i]:
 ## hay ruta (origen o destino no transitables, destino bloqueado, sin camino o
 ## tope de nodos agotado). opciones.bloqueadas: Dictionary (Vector3i -> true)
 ## con celdas que no se pueden pisar (otros colonos, el avatar).
-## Coste de un paso = 1 + |dy| y heurística Manhattan 3D: admisible.
+## opciones.ignorar_fantasmas: Array de ids de obra cuyos fantasmas son libres
+## para este solicitante.
 func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {}) -> Array[Vector3i]:
+	var vacia: Array[Vector3i] = []
+	var bloqueadas: Dictionary = opciones.get("bloqueadas", {})
+	var ignorar: Array = opciones.get("ignorar_fantasmas", [])
+	if origen == destino or bloqueadas.has(destino) or not es_transitable(destino, ignorar):
+		return vacia
+	return _buscar(
+		origen,
+		func(celda: Vector3i) -> bool: return celda == destino,
+		func(celda: Vector3i) -> int: return _heuristica(celda, destino),
+		opciones
+	)
+
+
+## Ruta más corta desde "origen" hasta la primera celda transitable para la
+## que esta_dentro.call(celda) es false (la salida de un volumen). Sin
+## incluir el origen; [] si no hay ruta o si el origen ya está fuera.
+func buscar_salida(origen: Vector3i, esta_dentro: Callable, opciones: Dictionary = {}) -> Array[Vector3i]:
+	return _buscar(
+		origen,
+		func(celda: Vector3i) -> bool: return not esta_dentro.call(celda),
+		func(_celda: Vector3i) -> int: return 0,
+		opciones
+	)
+
+
+## Búsqueda de coste uniforme/A*: es_meta(celda) -> bool y heuristica(celda) ->
+## int. Coste de un paso = 1 + |dy| (así la heurística Manhattan 3D de
+## buscar_ruta() es admisible).
+func _buscar(origen: Vector3i, es_meta: Callable, heuristica: Callable, opciones: Dictionary) -> Array[Vector3i]:
 	var ruta: Array[Vector3i] = []
 	var bloqueadas: Dictionary = opciones.get("bloqueadas", {})
-	if origen == destino or bloqueadas.has(destino):
-		return ruta
-	if not es_transitable(origen) or not es_transitable(destino):
+	var ignorar: Array = opciones.get("ignorar_fantasmas", [])
+	if not es_transitable(origen, ignorar):
 		return ruta
 
 	var costo: Dictionary = {origen: 0}
@@ -98,15 +136,15 @@ func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {})
 	var cerrados: Dictionary = {}
 	var abiertos: Array = []
 	var desempate := 0
-	var h_origen: int = _heuristica(origen, destino)
+	var h_origen: int = heuristica.call(origen)
 	_meter(abiertos, [h_origen, h_origen, desempate, origen])
 	var expandidos := 0
 	while not abiertos.is_empty():
 		var actual: Vector3i = _sacar(abiertos)[3]
 		if cerrados.has(actual):
 			continue
-		if actual == destino:
-			var celda: Vector3i = destino
+		if es_meta.call(actual):
+			var celda: Vector3i = actual
 			while celda != origen:
 				ruta.append(celda)
 				celda = padre[celda]
@@ -116,7 +154,7 @@ func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {})
 		expandidos += 1
 		if expandidos > max_nodos:
 			return ruta
-		for vecino in vecinos(actual):
+		for vecino in vecinos(actual, ignorar):
 			if cerrados.has(vecino) or bloqueadas.has(vecino):
 				continue
 			var nuevo_costo: int = costo[actual] + 1 + absi(vecino.y - actual.y)
@@ -124,7 +162,7 @@ func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {})
 				costo[vecino] = nuevo_costo
 				padre[vecino] = actual
 				desempate += 1
-				var h: int = _heuristica(vecino, destino)
+				var h: int = heuristica.call(vecino)
 				_meter(abiertos, [nuevo_costo + h, h, desempate, vecino])
 	return ruta
 

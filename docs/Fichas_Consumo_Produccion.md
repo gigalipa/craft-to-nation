@@ -44,15 +44,15 @@ Fuente: hoja "Puestos" de `docs/Recursos.xlsx` (tasas base de la hoja "Relacion"
 | Mina — carbón | Carbón | 5 | **Implementado** |
 | Mina — tierras raras | Tierras raras | 5 | **Implementado** |
 | Maderero | Madera (Tronco) | 5 | **Implementado** |
-| Caza y recolección — caza | Comida | 10 (balance del 2026-09-21; reemplaza el venado 15 del Excel, que sigue en la hoja "Relacion") | **Implementado** |
-| Caza y recolección — frutos | Comida | 5 (columna "Árbol (obj)" del Excel, Comida 5; interpretada como frutos) | **Implementado** |
+| Caza y recolección — caza | Comida | 14 (decisión del usuario, 2026-09-21: 10 en el primer balance del mismo día; reemplaza el venado 15 del Excel, que sigue en la hoja "Relacion") | **Implementado** |
+| Caza y recolección — frutos | Comida | 8 (la columna "Árbol (obj)" del Excel decía Comida 5, interpretada como frutos; cambiado a 8 por decisión del usuario, 2026-09-21) | **Implementado** |
 | Pesca y frutos del mar — pesca | Comida | 12 (balance del 2026-09-21) | **Implementado** |
 | Pesca y frutos del mar — algas | Comida | 3 (balance del 2026-09-21) | **Implementado** |
 | Caza — conejo | Comida | 8 | Propuesta (Excel), no implementada |
 | Pozo de petróleo | Crudo | 2 | Propuesta (Excel), no implementada |
 | Pozo de agua | Agua | 2 | Propuesta (Excel), no implementada |
 
-**Meta de balance de comida (2026-09-21):** a densidad media (0,5) cada recolector de comida aporta 7,5/h (caza + frutos = 10 x 0,5 + 5 x 0,5; pesca + algas = 12 x 0,5 + 3 x 0,5): 5 para sí mismo (consume 5/h) + 2,5 que sostienen a medio acarreador. Tres obreros (2 recolectores + 1 acarreador) se sostienen solos; con el 4.º recolector sobran 2,5/h para el avatar (5/h a nivel 1). Un puesto más lejano del núcleo rinde menos, porque el acarreador tarda más en cada viaje.
+**Meta de balance de comida (2026-09-21):** cada recolector de comida debe aportar al menos 7,5/h: 5 para sí mismo (consume 5/h) + 2,5 que sostienen a medio acarreador. Con pesca 12 y algas 3 a densidad media 0,5 da 7,5/h (12 x 0,5 + 3 x 0,5). Con el primer balance de caza 10 y frutos 5 el mundo real (semilla 12345, densidad media de fauna 0,45 y de frutal 0,46) daba solo 6,83/h por recolector (p10 5,34, p90 7,95) frente a 8,56/h de la pesca (p10 8,07, p90 9,07), así que el usuario subió caza a 14 y frutos a 8 (2026-09-21): 14 x 0,45 + 8 x 0,46 = ~10,0/h. La meta se cumple con margen: caza y recolección ~10,0/h, pesca ~8,6/h en el mundo actual. Tres obreros (2 recolectores + 1 acarreador) se sostienen solos; con el 4.º recolector sobran 2,5/h para el avatar (5/h a nivel 1). Un puesto más lejano del núcleo rinde menos, porque el acarreador tarda más en cada viaje.
 
 **Fórmula vigente** (`Recoleccion.gd`, `Economia.gd`): la tasa de un recurso = tasa base del Excel × fracción (minerales) o densidad (madera, fauna, frutal, peces, algas) detectada en el área de acción del puesto, por trabajador presente y hora. Un minero reparte su esfuerzo entre los minerales según la composición del área; en caza/recolección y en pesca las dos señales se producen a la vez y se suman en `comida`. El `TASA_BASE_POR_CIUDADANO = 2.0` genérico ya no existe.
 
@@ -128,7 +128,7 @@ Fuente: hoja "Relacion", columnas J–M ("Consumo por Objeto"). El GDD (Sección
 ## Pendientes
 
 - Conciliar la tabla de comida por tipo de unidad (Sección 1) con la tasa de hambre por nivel de avatar (hoja "Niveles") — hoy son dos sistemas de comida sin relacionar en el GDD.
-- Confirmar que la columna `Árbol (obj)` (Comida 5) del Excel es la tasa de frutos.
+- La tasa de frutos parte de la columna `Árbol (obj)` (Comida 5) del Excel, interpretada como frutos; hoy vale 8 por decisión del usuario (2026-09-21).
 - Balance del acarreo (`CAPACIDAD_CARGA`, cupos) tras jugar.
-- Verificar jugando que 2 recolectores + 1 acarreador se sostienen (los 7,5/h por recolector suponen densidad media 0,5; con menos densidad, por ejemplo mucha agua profunda sin algas o poca fauna, o con un puesto más lejano, no se cumple).
+- Verificar jugando que 2 recolectores + 1 acarreador se sostienen (la meta de 7,5/h por recolector se cumple con margen en el mundo actual, caza y recolección ~10,0/h y pesca ~8,6/h; con menos densidad, por ejemplo mucha agua profunda sin algas o poca fauna, o con un puesto más lejano, puede no cumplirse).
 - Definir personal máximo/costo de construcción/ciclo para: Aserradero, Carbonera, Refinería petrolera, Licuefactora de hidrocarburo, Central termoeléctrica, y el edificio "Fábrica" genérico — cada uno como su propio sub-proyecto/PoC, según el roadmap de la Sección 11 del GDD.

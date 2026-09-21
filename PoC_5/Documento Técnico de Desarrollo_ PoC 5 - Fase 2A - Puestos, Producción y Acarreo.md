@@ -54,8 +54,8 @@ Decisiones confirmadas con el usuario (2026-09-21): asignación manual desde la 
 | `Economia.CAPACIDAD_CARGA` | 150 unidades por viaje | Placeholder (perilla principal); balance de comida del 2026-09-21 |
 | Tasa mineral por trabajador y hora | tierra 1; piedra, hierro, cobre, carbón y tierras raras 5 | Excel, `Recoleccion.TASAS_BASE_MINERAL` |
 | Madera | 5 | Excel, `TASA_BASE_MADERERO_POR_CIUDADANO` |
-| Caza | 10 | Balance del 2026-09-21 (reemplaza el venado 15 del Excel, que sigue en la hoja `Relacion`); `TASA_BASE_CAZA_POR_CIUDADANO` |
-| Frutos | 5 | Excel, columna "Árbol (obj)" (Comida 5), **interpretación** del diseño: pendiente de confirmar por el usuario; `TASA_BASE_FRUTOS_POR_CIUDADANO` |
+| Caza | 14 | Decisión del usuario, 2026-09-21 (el primer balance del día dejó 10; reemplaza el venado 15 del Excel, que sigue en la hoja `Relacion`); `TASA_BASE_CAZA_POR_CIUDADANO` |
+| Frutos | 8 | Partía de la columna "Árbol (obj)" del Excel (Comida 5, interpretada como frutos); cambiado a 8 por decisión del usuario, 2026-09-21; `TASA_BASE_FRUTOS_POR_CIUDADANO` |
 | Pesca | 12 | Balance del 2026-09-21; `TASA_BASE_PESCA_POR_CIUDADANO` |
 | Algas | 3 | Balance del 2026-09-21; `TASA_BASE_ALGAS_POR_CIUDADANO` (la densidad de algas depende de la profundidad, así que el promedio de 0,5 es aproximado) |
 | Stock central: límite | 1000 por recurso; comida 10000 | Placeholder; `Ciudad.almacen` |
@@ -80,7 +80,7 @@ La tasa de un recurso es la tasa base del Excel multiplicada por su fracción (m
 
 ### **3.2 Balance esperado**
 
-Un tick son 2 s reales y un colono camina 2,5 celdas/s, es decir 5 celdas por hora de juego. Meta de diseño (2026-09-21): a densidad media (0,5) cada recolector de comida aporta 7,5 unidades/h (caza + frutos = 10 × 0,5 + 5 × 0,5; pesca + algas = 12 × 0,5 + 3 × 0,5): 5 para sí mismo (consume 5/h como obrero) + 2,5 que sostienen a medio acarreador. Con un puesto a unas 20 celdas del núcleo el viaje redondo dura unas 9 h, así que con carga 150 un acarreador mueve unas 16 unidades/h, es decir 1 acarreador por cada 2 recolectores. Tres obreros (2 recolectores + 1 acarreador) se sostienen solos; con el 4.º recolector sobran 2,5/h para el avatar (5/h a nivel 1). Un puesto más lejano rinde menos, porque el acarreador tarda más en cada viaje (a 40 celdas, 16 h de viaje redondo, mueve unas 9 unidades/h); ese coste da el incentivo para las carreteras y carretas futuras. Los 7,5/h dependen de la densidad media: con menos densidad (poca fauna, algas escasas por profundidad) no se cumple. Pendiente: verificar jugando que 2 recolectores + 1 acarreador se sostienen. La perilla es `CAPACIDAD_CARGA`; los cupos son la otra.
+Un tick son 2 s reales y un colono camina 2,5 celdas/s, es decir 5 celdas por hora de juego. Meta de diseño (2026-09-21): cada recolector de comida debe aportar al menos 7,5 unidades/h: 5 para sí mismo (consume 5/h como obrero) + 2,5 que sostienen a medio acarreador. Con un puesto a unas 20 celdas del núcleo el viaje redondo dura unas 9 h, así que con carga 150 un acarreador mueve unas 16 unidades/h, es decir 1 acarreador por cada 2 recolectores. Tres obreros (2 recolectores + 1 acarreador) se sostienen solos; con el 4.º recolector sobran 2,5/h para el avatar (5/h a nivel 1). Un puesto más lejano rinde menos, porque el acarreador tarda más en cada viaje (a 40 celdas, 16 h de viaje redondo, mueve unas 9 unidades/h); ese coste da el incentivo para las carreteras y carretas futuras. Medido en el mundo real (semilla 12345, rejilla de 540 centros de tierra y 52 de agua): la densidad media de fauna es 0,45 y la de frutal 0,46. Con caza 10 y frutos 5, caza + frutos daba 6,83/h por recolector (p10 5,34, p90 7,95) frente a 8,56/h de la pesca (p10 8,07, p90 9,07), es decir, no cumplía la meta y cazar salía peor que pescar; por eso el usuario subió caza a 14 y frutos 8 (2026-09-21), lo que da ~10,0/h (14 × 0,45 + 8 × 0,46), con margen sobre la meta y por encima de la pesca (~8,6/h). Con menos densidad (poca fauna, algas escasas por profundidad) o un puesto más lejano puede no cumplirse. Pendiente: verificar jugando que 2 recolectores + 1 acarreador se sostienen. La perilla es `CAPACIDAD_CARGA`; los cupos son la otra.
 
 ### **3.3 Pruebas**
 
@@ -97,7 +97,7 @@ Un tick son 2 s reales y un colono camina 2,5 celdas/s, es decir 5 celdas por ho
 
 ### **3.5 Supuestos que el usuario puede corregir**
 
-- Tasa de frutos de 5/h, tomada de la columna `Árbol (obj)` del Excel (Comida 5) e interpretada como frutos.
+- Tasa de frutos: partía de la columna `Árbol (obj)` del Excel (Comida 5), interpretada como frutos; el usuario la cambió a 8/h (2026-09-21) junto con la caza a 14/h.
 - Capacidad de carga de 150 unidades por viaje.
 - Un recolector de caza/recolección o de pesca produce las dos señales a la vez, sumadas en comida.
 - La producción usa las tasas tomadas al colocar el puesto (no se recalculan mientras no haya agotamiento; eso es la 2B).

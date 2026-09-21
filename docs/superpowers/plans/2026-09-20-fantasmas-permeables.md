@@ -50,7 +50,7 @@ Pasa si imprime una única línea `=== Las N pruebas de ... pasaron correctament
 | `godot/scripts/Player.gd` | Modificar | Tratar `bloqueada`, permiso y excepción de colisión del avatar |
 | `godot/scripts/Main.gd` | Modificar | Conectar `obra_a_fantasma` al jugador |
 | `godot/scripts/Colonos.gd` | Modificar | Evacuación y uso de `ignorar_fantasmas` |
-| `godot/scripts/ColonosTest.gd` | Modificar | Pruebas 14-15 (evacuación) |
+| `godot/scripts/ColonosTest.gd` | Modificar | Pruebas 15-16 (evacuación) |
 | GDD Sección 5, `PoC_8/…` | Modificar | Documentación |
 
 ---
@@ -370,7 +370,7 @@ GD="/c/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt
 "$GD" --headless --path godot res://scenes/ColonosTest.tscn --quit-after 300 2>&1 | grep -E "pasaron correctamente|Assertion|SCRIPT ERROR|Parse Error"
 ```
 
-Expected: `=== Las 17 pruebas de BuscadorRutas pasaron correctamente ===` y `=== Las 13 pruebas de Colonos pasaron correctamente ===` (Colonos usa el buscador; no debe romperse).
+Expected: `=== Las 17 pruebas de BuscadorRutas pasaron correctamente ===` y `=== Las 14 pruebas de Colonos pasaron correctamente ===` (Colonos usa el buscador; no debe romperse).
 
 - [ ] **Step 5: Commit**
 
@@ -1043,7 +1043,7 @@ git commit -m "feat: el avatar sale de una obra que se emplaza sobre él y no pu
 - Consumes: `BuscadorRutas.buscar_salida`, `es_transitable(celda, ignorar)`, `buscar_ruta(..., {"ignorar_fantasmas"})` (Tarea 1); `VoxelWorld.obra_a_fantasma`, `celda_en_volumen`, `otorgar_permiso_salida`, `revocar_permiso_salida` (Tarea 3).
 - Produces: cada colono gana los campos `"evacuando": int` (id de la obra que evacúa, `-1` si no) y `"ruta_de_evacuacion": bool`. `Colonos._on_obra_a_fantasma(id_obra: int)`.
 
-- [ ] **Step 1: Ampliar el mundo falso y agregar las pruebas 14 y 15 (fallarán)**
+- [ ] **Step 1: Ampliar el mundo falso y agregar las pruebas 15 y 16 (fallarán)**
 
 En `ColonosTest.gd`, dentro de `class MundoFalso extends RefCounted:`, agregar:
 
@@ -1079,10 +1079,10 @@ En `ColonosTest.gd`, dentro de `class MundoFalso extends RefCounted:`, agregar:
 				permisos.erase(id_obra)
 ```
 
-Antes del `print` final, agregar (y cambiar el final a `Las 15 pruebas`):
+Antes del `print` final, agregar (y cambiar el final a `Las 16 pruebas`):
 
 ```gdscript
-	print("\n=== TEST 14: Un colono dentro de una obra recibe permiso, sale y no puede volver a entrar ===")
+	print("\n=== TEST 15: Un colono dentro de una obra recibe permiso, sale y no puede volver a entrar ===")
 	var mundo_evac := _mundo_llano()
 	for x in range(3, 6):  # cubo fantasma macizo de 3x3x2 (obra 7)
 		for z in range(3, 6):
@@ -1107,7 +1107,7 @@ Antes del `print` final, agregar (y cambiar el final a `Las 15 pruebas`):
 		colonos_evac.avanzar(0.1)
 		assert(not mundo_evac.celda_en_volumen(7, c_evac["celda"]), "no vuelve a entrar")
 
-	print("\n=== TEST 15: Un colono fuera de la obra no recibe permiso ni cambia lo que hace ===")
+	print("\n=== TEST 16: Un colono fuera de la obra no recibe permiso ni cambia lo que hace ===")
 	var mundo_fuera := _mundo_llano()
 	mundo_fuera.poner_fantasma(Vector3i(4, 1, 4), 9)
 	mundo_fuera.volumenes[9] = {"min": Vector3i(4, 1, 4), "max": Vector3i(4, 1, 4)}
@@ -1116,10 +1116,10 @@ Antes del `print` final, agregar (y cambiar el final a `Las 15 pruebas`):
 	colonos_fuera._on_obra_a_fantasma(9)
 	assert(colonos_fuera.colonos[id_fuera]["evacuando"] == -1 and not mundo_fuera.permisos.has(9))
 
-	print("\n=== Las 15 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== Las 16 pruebas de Colonos pasaron correctamente ===")
 ```
 
-y borrar la línea `print("\n=== Las 13 pruebas de Colonos pasaron correctamente ===")`.
+y borrar la línea `print("\n=== Las 14 pruebas de Colonos pasaron correctamente ===")`.
 
 - [ ] **Step 2: Ejecutar y verificar que falla**
 
@@ -1251,7 +1251,7 @@ GD="/c/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt
 "$GD" --headless --path godot res://scenes/ColonosTest.tscn --quit-after 300 2>&1 | grep -E "pasaron correctamente|Assertion|SCRIPT ERROR|Parse Error"
 ```
 
-Expected: PASS con `=== Las 15 pruebas de Colonos pasaron correctamente ===`.
+Expected: PASS con `=== Las 16 pruebas de Colonos pasaron correctamente ===`.
 
 - [ ] **Step 5: Commit**
 

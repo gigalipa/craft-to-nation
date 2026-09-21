@@ -151,6 +151,10 @@ const ALTURA_SOBRE_SUPERFICIE_AREA_ACCION := 1.001
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
 @onready var hud: CanvasLayer = get_node("../HUDLayer")
 
+## Modo zonificación (tecla `Z`): mientras está activo, el clic izquierdo pinta
+## zona (dos esquinas) y `1`/`2`/`0` eligen la zona A, la zona B o borrar. Sin
+## este modo (ni otro) el clic solo abre/cierra el panel de un puesto.
+var modo_zonificar := false
 var tipo_zona_seleccionada: String = Zonificacion.ZONAS_PINTABLES[0]
 var esperando_segunda_esquina := false
 var primera_esquina := Vector2i.ZERO
@@ -1096,15 +1100,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
-		if tecla.pressed and tecla.keycode == KEY_1:
-			tipo_zona_seleccionada = Zonificacion.ZONAS_PINTABLES[0]
-			print("Zona seleccionada: ", tipo_zona_seleccionada)
-		elif tecla.pressed and tecla.keycode == KEY_2:
-			tipo_zona_seleccionada = Zonificacion.ZONAS_PINTABLES[1]
-			print("Zona seleccionada: ", tipo_zona_seleccionada)
-		elif tecla.pressed and tecla.keycode == KEY_0:
-			tipo_zona_seleccionada = Zonificacion.MARCADOR_BORRAR
-			print("Modo borrar zona seleccionado.")
+		if tecla.pressed and tecla.keycode == KEY_ESCAPE:
+			salir_de_todos_los_modos()
+		elif tecla.pressed and tecla.keycode == KEY_Z:
+			_alternar_modo_zonificar()
+		elif tecla.pressed and modo_zonificar and tecla.keycode == KEY_1:
+			_elegir_zona(Zonificacion.ZONAS_PINTABLES[0])
+		elif tecla.pressed and modo_zonificar and tecla.keycode == KEY_2:
+			_elegir_zona(Zonificacion.ZONAS_PINTABLES[1])
+		elif tecla.pressed and modo_zonificar and tecla.keycode == KEY_0:
+			_elegir_zona(Zonificacion.MARCADOR_BORRAR)
 		elif tecla.pressed and tecla.keycode == KEY_M:
 			_alternar_modo_colocar_puesto("mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 		elif tecla.pressed and tecla.keycode == KEY_H:
@@ -1123,8 +1128,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_procesar_clic_blueprint(boton.position)
 			elif modo_colocar_puesto:
 				_procesar_clic_puesto(boton.position)
-			else:
+			elif modo_zonificar:
 				_procesar_clic(boton.position)
+			else:
+				_procesar_clic_interaccion(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
 			_cancelar_pintado_zona()
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -1169,6 +1176,7 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 		return
 	# Ver el comentario equivalente en _alternar_modo_colocar_blueprint(): los
 	# modos son mutuamente excluyentes.
+	_salir_de_modo_zonificar()
 	if modo_colocar_blueprint:
 		_salir_de_modo_colocar_blueprint()
 	hud.ocultar_ficha_mina()
@@ -1272,6 +1280,7 @@ func _alternar_modo_colocar_blueprint() -> void:
 	if blueprint.is_empty():
 		print("No hay ningún blueprint guardado todavía — declara un edificio primero.")
 		return
+	_salir_de_modo_zonificar()
 	if modo_colocar_puesto:
 		_salir_de_modo_colocar_puesto()
 	# Duplicado (no la misma referencia): _rotar_blueprint() reemplaza
@@ -1307,7 +1316,7 @@ func _salir_de_modo_colocar_blueprint() -> void:
 func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
-	_cancelar_pintado_zona()
+	_salir_de_modo_zonificar()
 	hud.cerrar_panel_puesto()
 
 
@@ -1411,17 +1420,52 @@ func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 	return Vector2i(celda.x, celda.z)
 
 
+## Activa/desactiva el modo zonificación (tecla `Z`). Es excluyente con los
+## modos de colocación de puesto y de blueprint. Conserva la última zona elegida.
+func _alternar_modo_zonificar() -> void:
+	if modo_zonificar:
+		_salir_de_modo_zonificar()
+		return
+	_salir_de_modo_colocar_blueprint()
+	_salir_de_modo_colocar_puesto()
+	hud.cerrar_panel_puesto()
+	modo_zonificar = true
+	hud.mostrar_modo_zonificacion(_nombre_zona_seleccionada())
+
+
+func _salir_de_modo_zonificar() -> void:
+	modo_zonificar = false
+	hud.ocultar_modo_zonificacion()
+	_cancelar_pintado_zona()
+
+
+func _elegir_zona(tipo: String) -> void:
+	tipo_zona_seleccionada = tipo
+	# Cambiar de zona a medio rectángulo lo descarta, como cancelar con clic derecho.
+	_cancelar_pintado_zona()
+	hud.mostrar_modo_zonificacion(_nombre_zona_seleccionada())
+
+
+func _nombre_zona_seleccionada() -> String:
+	if tipo_zona_seleccionada == Zonificacion.MARCADOR_BORRAR:
+		return "Borrar"
+	return "Zona A" if tipo_zona_seleccionada == Zonificacion.ZONAS_PINTABLES[0] else "Zona B"
+
+
+## Clic sin ningún modo activo: sobre un puesto de trabajo abre su panel; en
+## cualquier otro sitio lo cierra.
+func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
+	var esquina_puesto := Recoleccion.esquina_de_puesto_en(_celda_bajo_mouse(posicion_pantalla))
+	if esquina_puesto != Recoleccion.SIN_PUESTO:
+		hud.abrir_panel_puesto(esquina_puesto)
+	else:
+		hud.cerrar_panel_puesto()
+
+
+## Clic con el modo zonificación activo: primera esquina o cierre del rectángulo.
 func _procesar_clic(posicion_pantalla: Vector2) -> void:
 	var celda := _celda_bajo_mouse(posicion_pantalla)
 	if not esperando_segunda_esquina:
-		# Sin un rectángulo de zona a medias, un clic sobre un puesto de trabajo
-		# abre su panel (salvo con la herramienta de borrar zona activa); en cualquier
-		# otro sitio lo cierra y empieza la zona.
-		var esquina_puesto := Recoleccion.esquina_de_puesto_en(celda)
-		if esquina_puesto != Recoleccion.SIN_PUESTO and tipo_zona_seleccionada != Zonificacion.MARCADOR_BORRAR:
-			hud.abrir_panel_puesto(esquina_puesto)
-			return
-		hud.cerrar_panel_puesto()
 		primera_esquina = celda
 		esperando_segunda_esquina = true
 		print("Primera esquina de la zona: ", primera_esquina)

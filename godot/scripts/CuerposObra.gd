@@ -32,6 +32,7 @@ func sincronizar(id: int, celdas: Array) -> void:
 	if not _cuerpos.has(id):
 		var nuevo := StaticBody3D.new()
 		nuevo.name = "Obra_%d" % id
+		nuevo.collision_layer = 1
 		add_child(nuevo)
 		_cuerpos[id] = nuevo
 		_formas[id] = {}
@@ -52,6 +53,9 @@ func sincronizar(id: int, celdas: Array) -> void:
 			formas[celda] = forma
 
 
+## Usa free() inmediato (no queue_free) para poder recrear un cuerpo con el mismo
+## id en el mismo frame; llamarla fuera de callbacks de consulta de física — hoy
+## se invoca desde surtir/deconstruir en _physics_process, que está permitido.
 func liberar(id: int) -> void:
 	if not _cuerpos.has(id):
 		return

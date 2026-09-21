@@ -359,6 +359,19 @@ func _elegir_destino(c: Dictionary) -> void:
 	# congelado: se reubica en lo alto de su propia columna. (No hay reserva en
 	# vuelo: aquí solo se llega con "moviendo" en falso.)
 	if not _buscador.es_transitable(c["celda"]):
+		# Atrapado en un fantasma SIN permiso: (a) a medio paso, su celda reservada
+		# cayó en un volumen que pasó a fantasma (_on_obra_a_fantasma solo mira
+		# c["celda"]); o (b) una puerta donde estaba revirtió a fantasma al
+		# deconstruir, tras la única emisión. Se le da el permiso y evacúa (lo
+		# retoma _avanzar_evacuacion). Solo se comprueba la celda de los pies: un
+		# fantasma únicamente sobre su cabeza no se trata aquí.
+		if mundo.obtener_tipo(c["celda"]) == "fantasma":
+			var id_obra: int = mundo.id_de_edificio(c["celda"])
+			if id_obra != -1 and mundo.celda_en_volumen(id_obra, c["celda"]):
+				mundo.otorgar_permiso_salida(id_obra, c["id"])
+				c["evacuando"] = id_obra
+				c["ruta_de_evacuacion"] = false
+				return
 		var reubicada := Vector3i(c["celda"].x, mundo.altura_en(c["celda"].x, c["celda"].z) + 1, c["celda"].z)
 		if not _buscador.es_transitable(reubicada) or _ocupada_por_otro(reubicada, c["id"]):
 			c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)

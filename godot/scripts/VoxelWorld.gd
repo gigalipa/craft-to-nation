@@ -1655,9 +1655,10 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 	# Alguien sigue dentro del sitio (tiene permiso de salida): la obra no
 	# puede iniciarse ni avanzar hasta que salga. Se devuelve un diccionario NO
 	# vacío para que Player._colocar() no lo confunda con "esto no es una obra"
-	# y termine colocando un bloque nuevo contra el fantasma.
+	# y termine colocando un bloque nuevo contra el fantasma. Lleva el id de la
+	# obra para que el aviso pueda decir de cuál se trata.
 	if hay_ocupantes(id):
-		return {"bloqueada": true}
+		return {"bloqueada": true, "id": id}
 
 	if edificio_relleno_cola.has(id):
 		var id_cola_relleno: int = edificio_relleno_cola[id]

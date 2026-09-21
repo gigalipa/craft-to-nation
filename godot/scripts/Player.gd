@@ -83,6 +83,7 @@ var tipo_seleccionado := 0
 var mundo: Node  # asignada por Main.gd al iniciar la escena
 @onready var hud: CanvasLayer = get_node("../HUDLayer")
 
+var _excepciones_obra: Dictionary = {}  # int (id de obra) -> cuerpo con el que el avatar tiene excepción
 var _minando := false
 var _colocando := false
 var _temporizador_accion := 0.0
@@ -260,21 +261,44 @@ func _on_obra_a_fantasma(id_obra: int) -> void:
 		mundo.otorgar_permiso_salida(id_obra, "avatar")
 
 
+## true si los pies o la cabeza están dentro del volumen de la obra ampliado 1
+## celda en x y z: la cápsula (radio 0.4) aún solapa las cajas del borde cuando
+## la celda de los pies ya salió, y quitar la excepción en ese momento la
+## empujaría. Solo para mantener/revocar el permiso; otorgarlo usa _dentro_de_obra().
+func _cerca_de_obra(id_obra: int) -> bool:
+	var pies: Vector3i = _celda_en(global_position + Vector3.UP * 0.1)
+	for dx in range(-1, 2):
+		for dz in range(-1, 2):
+			var columna := pies + Vector3i(dx, 0, dz)
+			if mundo.celda_en_volumen(id_obra, columna) or mundo.celda_en_volumen(id_obra, columna + Vector3i(0, 1, 0)):
+				return true
+	return false
+
+
 ## Mantiene la excepción de colisión del avatar con las obras donde tiene
-## permiso vigente, y lo revoca (para siempre) al salir de su volumen: desde
-## fuera los fantasmas vuelven a ser sólidos y no se puede volver a entrar.
-## Se llama cada frame de física (add_collision_exception_with es idempotente,
-## y el cuerpo de la obra puede haberse recreado desde el frame anterior).
+## permiso vigente, y lo revoca (para siempre) al salir de su volumen (con
+## margen, ver _cerca_de_obra()): desde fuera los fantasmas vuelven a ser
+## sólidos y no se puede volver a entrar. Se llama cada frame de física.
+## _excepciones_obra recuerda con qué cuerpo se añadió cada excepción: así se
+## quita la excepción correcta aunque la obra se destruya o su cuerpo se recree.
 func _actualizar_permisos_avatar() -> void:
 	for id_obra in mundo.obras_con_permiso("avatar"):
-		var cuerpo: Node = mundo.cuerpo_de_obra(id_obra)
-		if _dentro_de_obra(id_obra):
-			if cuerpo != null:
+		if _cerca_de_obra(id_obra):
+			var cuerpo: Node = mundo.cuerpo_de_obra(id_obra)
+			if cuerpo != null and _excepciones_obra.get(id_obra) != cuerpo:
 				add_collision_exception_with(cuerpo)
+				_excepciones_obra[id_obra] = cuerpo
 		else:
 			mundo.revocar_permiso_salida(id_obra, "avatar")
-			if cuerpo != null:
-				remove_collision_exception_with(cuerpo)
+	# Excepciones registradas cuyo permiso ya no existe (se revocó o la obra se
+	# destruyó) o cuyo cuerpo ya no es el vigente (se recreó).
+	var vigentes: Array[int] = mundo.obras_con_permiso("avatar")
+	for id_obra in _excepciones_obra.keys():
+		var registrado = _excepciones_obra[id_obra]
+		if not vigentes.has(id_obra) or registrado != mundo.cuerpo_de_obra(id_obra):
+			if is_instance_valid(registrado):
+				remove_collision_exception_with(registrado)
+			_excepciones_obra.erase(id_obra)
 
 
 ## Empuje de corriente de río/cascada (ver EMPUJE_RIO_MINIMO más arriba):
@@ -491,7 +515,7 @@ func _colocar() -> void:
 	var resultado: Dictionary = mundo.surtir_construccion(celda)
 	if not resultado.is_empty():
 		if resultado.get("bloqueada", false):
-			print("Hay alguien dentro del sitio de la obra: deben salir antes de iniciarla.")
+			print("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
 		elif resultado.get("completa", false):
 			_completar_construccion(resultado["metadata"])
 		return

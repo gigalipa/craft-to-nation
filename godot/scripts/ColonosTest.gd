@@ -362,4 +362,23 @@ func ejecutar_pruebas() -> void:
 	colonos_fuera._on_obra_a_fantasma(9)
 	assert(colonos_fuera.colonos[id_fuera]["evacuando"] == -1 and not mundo_fuera.permisos.has(9))
 
-	print("\n=== Las 16 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 17: Un colono atrapado en un fantasma sin permiso recibe permiso y sale ===")
+	var mundo_atr := _mundo_llano()
+	var colonos_atr: Node = _nuevo(mundo_atr, CiudadScript.new())
+	var id_atr: int = colonos_atr.agregar_colono("obrero", Vector3i(4, 1, 4))
+	var c_atr: Dictionary = colonos_atr.colonos[id_atr]
+	# Su celda pasa a fantasma de una obra SIN emitir obra_a_fantasma (a medio paso,
+	# o una puerta que revierte a fantasma al deconstruir): no tiene permiso.
+	mundo_atr.poner_fantasma(Vector3i(4, 1, 4), 7)
+	mundo_atr.poner_fantasma(Vector3i(4, 2, 4), 7)
+	mundo_atr.volumenes[7] = {"min": Vector3i(3, 1, 3), "max": Vector3i(5, 2, 5)}
+	colonos_atr.avanzar(0.1)
+	assert(c_atr["evacuando"] == 7 and mundo_atr.permisos[7].has(id_atr), "al elegir destino recibe permiso y evacúa")
+	for i in range(200):
+		colonos_atr.avanzar(0.1)
+		if c_atr["evacuando"] == -1:
+			break
+	assert(not mundo_atr.celda_en_volumen(7, c_atr["celda"]), "sale del volumen atrapado")
+	assert(not mundo_atr.permisos.has(7), "el permiso se revocó al salir")
+
+	print("\n=== Las 17 pruebas de Colonos pasaron correctamente ===")

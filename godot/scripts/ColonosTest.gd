@@ -517,4 +517,24 @@ func ejecutar_pruebas() -> void:
 			break
 	assert(salio23 and not mundo23.celda_en_volumen(7, colonos23.colonos[id23]["celda"]), "sale de la obra aunque tenga trabajo")
 
-	print("\n=== Las 23 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 24: un trabajador dentro de un sólido se reubica y luego llega a su puesto ===")
+	var ciudad24: Node = CiudadScript.new()
+	var colonos24: Node = _nuevo_con_puesto(ciudad24)
+	var id24: int = colonos24.agregar_colono("desempleado", Vector3i(6, 1, 6))
+	ciudad24.demografia["desempleado"] = 1
+	assert(colonos24.contratar(Vector2i(2, 2), "recolector"))
+	var c24: Dictionary = colonos24.colonos[id24]
+	# Como en la prueba 14: su celda pasa a ser sólida sin ninguna señal de obra.
+	colonos24.mundo.poner(Vector3i(6, 1, 6), "pared")
+	colonos24.mundo.poner(Vector3i(6, 2, 6), "pared")
+	colonos24.avanzar(0.1)
+	assert(c24["celda"] == Vector3i(6, 3, 6), "se reubica sobre la pared, en lo alto de su columna")
+	var llego24 := false
+	for i in range(600):
+		colonos24.avanzar(0.1)
+		if colonos24.economia.trabajadores_de(Vector2i(2, 2))["presentes"] == 1:
+			llego24 = true
+			break
+	assert(llego24, "tras reubicarse llega a su puesto y se marca presente")
+
+	print("\n=== Las 24 pruebas de Colonos pasaron correctamente ===")

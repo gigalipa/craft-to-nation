@@ -369,10 +369,10 @@ func _esquivar(c: Dictionary) -> void:
 		c["ruta"] = nueva
 
 
-## Elige el siguiente destino: la mitad de las veces su casa (si tiene), el
-## resto un punto de la zona de influencia. Prueba INTENTOS_DESTINO veces hasta
-## dar con uno alcanzable; si no, espera y reintenta.
-func _elegir_destino(c: Dictionary) -> void:
+## Recuperación de un colono atrapado, común a deambular y a trabajar. true si
+## puede seguir planificando (su celda es transitable o se reubicó); false si
+## quien llama debe volver (recibió permiso y evacúa, o no pudo reubicarse y espera).
+func _recuperar_si_atrapado(c: Dictionary) -> bool:
 	# Si algo se volvió sólido sobre el colono (bloque, agua, fantasma), la
 	# búsqueda de ruta falla siempre desde un origen no transitable y quedaría
 	# congelado: se reubica en lo alto de su propia columna. (No hay reserva en
@@ -390,15 +390,24 @@ func _elegir_destino(c: Dictionary) -> void:
 				mundo.otorgar_permiso_salida(id_obra, c["id"])
 				c["evacuando"] = id_obra
 				c["ruta_de_evacuacion"] = false
-				return
+				return false
 		var reubicada := Vector3i(c["celda"].x, mundo.altura_en(c["celda"].x, c["celda"].z) + 1, c["celda"].z)
 		if not _buscador.es_transitable(reubicada) or _ocupada_por_otro(reubicada, c["id"]):
 			c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
-			return
+			return false
 		ocupadas.erase(c["celda"])
 		c["celda"] = reubicada
 		c["posicion"] = _centro_de(reubicada)
 		ocupadas[reubicada] = c["id"]
+	return true
+
+
+## Elige el siguiente destino: la mitad de las veces su casa (si tiene), el
+## resto un punto de la zona de influencia. Prueba INTENTOS_DESTINO veces hasta
+## dar con uno alcanzable; si no, espera y reintenta.
+func _elegir_destino(c: Dictionary) -> void:
+	if not _recuperar_si_atrapado(c):
+		return
 	var opciones := _opciones_ruta(c)
 	var a_casa: bool = c["hogar"] != -1 and _rng.randf() < PROBABILIDAD_CASA
 	for i in range(INTENTOS_DESTINO):
@@ -534,6 +543,8 @@ func _dejar_lo_que_hacia(c: Dictionary) -> void:
 ## recolector va a su puesto y se queda (presente); un acarreador cicla
 ## puesto -> núcleo -> puesto.
 func _decidir_trabajo(c: Dictionary) -> void:
+	if not _recuperar_si_atrapado(c):
+		return
 	var esquina: Vector2i = c["trabajo"]["puesto"]
 	var huella_puesto: Array = economia.huella_de(esquina)
 	if huella_puesto.is_empty():

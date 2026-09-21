@@ -131,9 +131,13 @@ static func validar_aberturas(piso: Dictionary) -> Array:
 ## Límites de vivienda por nivel de ciudad (GDD Sección 5, decisión del
 ## usuario 2026-09-20): cuántos pisos puede tener una casa y cuántas camas
 ## cabe por piso. "limites" es Ciudad.NIVELES_VIVIENDA[nivel]:
-## {"camas_por_piso": int, "pisos": int}. Solo aplica a la zona residencial;
-## una fábrica o un cuartel no tienen límite de pisos habitables. Evita, por
-## ejemplo, un "barracón" de un piso con camas ilimitadas.
+## {"camas_por_piso": int, "pisos": int}. La guarda de zona se conserva para
+## cuando exista zonificación por tipo de edificio (Fase 2); hoy no filtra
+## nada: estructura_a_blueprint etiqueta toda estructura como
+## "residencial_investigacion" y validar_camas_y_almacenamiento exige al menos
+## 1 cama en cualquier blueprint, así que todo edificio declarable es de facto
+## una casa y el tope aplica a todos. Evita, por ejemplo, un "barracón" de un
+## piso con camas ilimitadas.
 static func validar_limites_vivienda(blueprint: Dictionary, limites: Dictionary) -> Array:
 	if blueprint.get("zona_permitida", "") != "residencial_investigacion":
 		return []

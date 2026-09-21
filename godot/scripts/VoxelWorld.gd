@@ -1194,11 +1194,9 @@ func ordenar_celdas_edificio(celdas_mundo: Dictionary) -> Array:
 ## número de "cama_cabecera" del edificio, PERO SOLO tiene sentido cuando
 ## esta llamada cruza el borde de "edificio recién terminado" hacia
 ## "edificio ya no completo" (progreso pasa de orden.size() a
-## orden.size() - 1); en cualquier otra llamada vale 0, para no
-## contabilizar camas más de una vez si se deconstruye y se vuelve a
-## completar varias veces (ver Ciudad.registrar_edificio_residencial(),
-## que no es idempotente). "lista_para_remocion"/"completa_reversion" son
-## true cuando el progreso llega a 0.
+## orden.size() - 1); en cualquier otra llamada vale 0.
+## "lista_para_remocion"/"completa_reversion" son true cuando el progreso
+## llega a 0.
 func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 	var id: int = id_de_edificio(celda)
 	if id == -1 or not edificio_orden.has(id):

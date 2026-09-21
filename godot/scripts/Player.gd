@@ -389,8 +389,8 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		_ticks_listo_para_remocion = 0
 		return
 
+	Ciudad.retirar_edificio_residencial(resultado["id"])  # idempotente
 	if resultado["total_camas"] > 0:
-		Ciudad.retirar_edificio_residencial(resultado["id"])
 		print("Deconstrucción iniciada: ", resultado["total_camas"], " cama(s) retiradas de Ciudad.")
 
 	if not resultado["lista_para_remocion"]:

@@ -51,8 +51,11 @@ const NIVELES_VIVIENDA := {
 ## el bucle de regular_densidad_vertical() siempre termina.
 const ORDEN_DESAHUCIO := ["desempleado", "ciudadano", "obrero", "tecnico", "especialista", "investigador", "militar"]
 
-## A quién quita primero la hambruna (igual que antes de la taxonomía nueva).
-const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico"]
+## A quién quita primero la hambruna: militar, obrero y técnico como antes de
+## la taxonomía nueva; desempleado y ciudadano al final, porque la migración
+## solo produce desempleados y sin ellos una ciudad hambrienta no sufriría
+## bajas y nunca se recuperaría.
+const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico", "desempleado", "ciudadano"]
 
 ## Colonos que llegan por hora de juego (placeholder sin balance real). Llega
 ## un "desempleado" cada vez que el acumulador llega a 1, si hay vivienda

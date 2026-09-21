@@ -78,6 +78,7 @@ func ejecutar_pruebas() -> void:
 	res = urbe.simular_tick(jugador.tasa_hambre)
 	print("Nivel Potencial Tras Ataque: ", res["nivel_potencial"], " | Nivel Efectivo: ", res["nivel_ciudad"])
 	print("Ciudadanos Desahuciados: ", urbe.desahuciados)
+	assert(urbe.desahuciados == 0, "con 20 camas de sobra, nadie se desahucia")
 	print("Censo Restante en Viviendas Legales: ", urbe.censo_total)
 
 	print("\n=== TEST 6: Sucesión del Avatar ===")
@@ -109,7 +110,7 @@ func ejecutar_pruebas() -> void:
 	vivienda.retirar_edificio_residencial(999)  # un id desconocido no hace nada
 	assert(vivienda.capacidad_camas_construida == 3)
 	vivienda.retirar_edificio_residencial(2)
-	assert(vivienda.capacidad_camas_construida == 0, "Nunca debe bajar de 0")
+	assert(vivienda.capacidad_camas_construida == 0, "Retirar el último edificio deja la capacidad en 0")
 
 	print("\n=== TEST 9: Vivienda Fraccionaria (x Cama) ===")
 	var v: Node = CiudadScript.new()
@@ -208,4 +209,15 @@ func ejecutar_pruebas() -> void:
 	senal.simular_tick(5.0)
 	assert(contador[0] == 2)
 
-	print("\n=== Las 15 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 16: La hambruna también cobra bajas entre los desempleados ===")
+	var famelica: Node = CiudadScript.new()
+	famelica.registrar_edificio_residencial(1, [2, 2])
+	famelica.migracion_activa = false
+	famelica.demografia["desempleado"] = 8
+	famelica.almacen["comida"].cantidad = 0.0
+	famelica.simular_tick(5.0)
+	print("Desempleados tras la hambruna: ", famelica.demografia["desempleado"])
+	assert(famelica.demografia["desempleado"] < 8, "la hambruna debe quitar desempleados")
+	assert(famelica.demografia["desempleado"] == 6, "bajas = max(1, int(8 * 0.25)) = 2")
+
+	print("\n=== Las 16 pruebas de Ciudad pasaron correctamente ===")

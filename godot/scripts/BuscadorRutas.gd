@@ -98,10 +98,11 @@ func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {})
 	var cerrados: Dictionary = {}
 	var abiertos: Array = []
 	var desempate := 0
-	_meter(abiertos, [_heuristica(origen, destino), desempate, origen])
+	var h_origen: int = _heuristica(origen, destino)
+	_meter(abiertos, [h_origen, h_origen, desempate, origen])
 	var expandidos := 0
 	while not abiertos.is_empty():
-		var actual: Vector3i = _sacar(abiertos)[2]
+		var actual: Vector3i = _sacar(abiertos)[3]
 		if cerrados.has(actual):
 			continue
 		if actual == destino:
@@ -123,7 +124,8 @@ func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {})
 				costo[vecino] = nuevo_costo
 				padre[vecino] = actual
 				desempate += 1
-				_meter(abiertos, [nuevo_costo + _heuristica(vecino, destino), desempate, vecino])
+				var h: int = _heuristica(vecino, destino)
+				_meter(abiertos, [nuevo_costo + h, h, desempate, vecino])
 	return ruta
 
 
@@ -131,10 +133,17 @@ static func _heuristica(a: Vector3i, b: Vector3i) -> int:
 	return absi(a.x - b.x) + absi(a.y - b.y) + absi(a.z - b.z)
 
 
-## Cola de prioridad: monticulo binario de [f, orden_de_inserción, celda]. El
-## orden de inserción desempata y hace determinista la búsqueda.
+## Cola de prioridad: monticulo binario de [f, h, orden_de_inserción, celda].
+## Desempata por menor h (más cerca del destino) y luego por orden de inserción,
+## que hace determinista la búsqueda. Sin el desempate por h, en terreno llano
+## abierto todas las celdas del rectángulo origen-destino tienen el mismo f y
+## A* degenera en búsqueda en anchura (agota el tope en rutas largas).
 static func _menor(a: Array, b: Array) -> bool:
-	return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1])
+	if a[0] != b[0]:
+		return a[0] < b[0]
+	if a[1] != b[1]:
+		return a[1] < b[1]
+	return a[2] < b[2]
 
 
 static func _meter(monticulo: Array, elemento: Array) -> void:

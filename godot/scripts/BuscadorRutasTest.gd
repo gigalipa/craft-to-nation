@@ -171,4 +171,15 @@ func ejecutar_pruebas() -> void:
 	for i in range(1, ruta2.size()):
 		assert(_adyacentes(ruta2[i - 1], ruta2[i]), "pasos contiguos")
 
-	print("\n=== Las 13 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== TEST 14: Cruce largo en campo abierto con el tope por defecto ===")
+	var m14 := MundoFalso.new()
+	_llano(m14, 150, 150)
+	var t14 := Time.get_ticks_msec()
+	var ruta14: Array[Vector3i] = BuscadorRutas.new(m14).buscar_ruta(Vector3i(0, 1, 0), Vector3i(149, 1, 149))
+	print("Ruta larga: ", ruta14.size(), " pasos en ", Time.get_ticks_msec() - t14, " ms")
+	assert(not ruta14.is_empty(), "la diagonal de 150x150 no agota el tope")
+	assert(ruta14.size() == 298 and ruta14.back() == Vector3i(149, 1, 149), "298 pasos hasta el destino")
+	for i in range(1, ruta14.size()):
+		assert(_adyacentes(ruta14[i - 1], ruta14[i]), "pasos contiguos en el cruce largo")
+
+	print("\n=== Las 14 pruebas de BuscadorRutas pasaron correctamente ===")

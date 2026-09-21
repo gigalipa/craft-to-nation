@@ -80,10 +80,10 @@ class Recurso:
 	var nombre: String
 	var cantidad: float
 	var limite: float
-	## Cambio neto de "cantidad" en el último simular_tick() (positivo =
-	## ganancia, negativo = consumo neto). Ver Ciudad.simular_tick(), que
-	## toma una foto de "cantidad" antes y después de aplicar las
-	## transacciones del tick. Usado por el HUD (comida, recurso crítico).
+	## Cambio neto de "cantidad" entre el cierre del simular_tick() anterior y
+	## el de este (positivo = ganancia, negativo = consumo neto): así incluye lo
+	## que llega entre ticks, como las entregas de los acarreadores. Usado por
+	## el HUD (lista de recursos).
 	var tasa_neta: float = 0.0
 
 	func _init(p_nombre: String, p_cantidad: float, p_limite: float) -> void:
@@ -143,6 +143,9 @@ var edificios_residenciales: Dictionary = {}
 ## que fijan la demografía a mano).
 var migracion_activa := true
 var _migrantes_acumulados := 0.0
+## Cantidad de cada recurso al cierre del último simular_tick(); base de
+## Recurso.tasa_neta (ver simular_tick()).
+var _cantidad_al_cierre: Dictionary = {}
 
 var _timer: Timer
 
@@ -157,6 +160,12 @@ func _init() -> void:
 		# hambruna, lo que bloquea para siempre la migración de colonos.
 		"comida": Recurso.new("Comida", 2000, 2000),
 		"hierro": Recurso.new("Hierro", 50, 1000),
+		# Recursos que llegan de los puestos (sub-proyecto 2A): empiezan en 0.
+		"tierra": Recurso.new("Tierra", 0, 1000),
+		"piedra": Recurso.new("Piedra", 0, 1000),
+		"cobre": Recurso.new("Cobre", 0, 1000),
+		"carbon": Recurso.new("Carbón", 0, 1000),
+		"tierras_raras": Recurso.new("Tierras raras", 0, 1000),
 	}
 	for categoria in CATEGORIAS_COMIDA:
 		fuentes_comida_activas[categoria] = 0.0
@@ -287,6 +296,17 @@ func regular_densidad_vertical() -> void:
 			break
 
 
+## Mueve un habitante de un tipo de población a otro (p. ej. desempleado ->
+## obrero al asignarlo a un puesto). Falso, sin cambios, si no queda ninguno
+## del tipo de origen.
+func reasignar_tipo(de: String, a: String) -> bool:
+	if demografia[de] <= 0:
+		return false
+	demografia[de] -= 1
+	demografia[a] += 1
+	return true
+
+
 ## Registra un edificio residencial completo (ver
 ## Player.gd::_completar_construccion). "id" es el id de edificio de
 ## VoxelWorld y "camas_por_piso" las camas de cada piso, en orden. Idempotente
@@ -357,9 +377,13 @@ func _migrar(hambruna: bool) -> int:
 
 ## Ejecuta un ciclo horario verificando alimentación, habitabilidad e investigación.
 func simular_tick(avatar_consumo: float) -> Dictionary:
-	var cantidad_antes: Dictionary = {}
-	for clave in almacen:
-		cantidad_antes[clave] = (almacen[clave] as Recurso).cantidad
+	# tasa_neta se mide entre cierres de tick consecutivos, no dentro de un
+	# tick: así incluye lo que se agrega entre ticks (entregas de acarreadores).
+	# El primer tick no tiene cierre previo y usa la cantidad con la que empieza.
+	var referencia: Dictionary = _cantidad_al_cierre.duplicate()
+	if referencia.is_empty():
+		for clave in almacen:
+			referencia[clave] = (almacen[clave] as Recurso).cantidad
 
 	regular_densidad_vertical()
 	actualizar_investigacion()
@@ -390,7 +414,8 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 
 	for clave in almacen:
 		var recurso: Recurso = almacen[clave]
-		recurso.tasa_neta = recurso.cantidad - float(cantidad_antes[clave])
+		recurso.tasa_neta = recurso.cantidad - float(referencia[clave])
+		_cantidad_al_cierre[clave] = recurso.cantidad
 
 	var resultado := {
 		"gasto_comida": gasto_total,

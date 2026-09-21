@@ -233,4 +233,34 @@ func ejecutar_pruebas() -> void:
 	print("Comida tras 300 ticks: ", recien_nacida.almacen["comida"].cantidad)
 	assert(not hubo_hambruna, "no debe haber hambruna en los primeros 10 minutos")
 
-	print("\n=== Las 17 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 18: el almacén tiene los 8 recursos de la economía ===")
+	var ocho: Node = CiudadScript.new()
+	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras"]:
+		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
+	assert(ocho.almacen.size() == 8)
+	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 1000.0)
+	assert(ocho.almacen["comida"].limite == 2000.0)
+
+	print("\n=== TEST 19: reasignar_tipo() mueve un habitante de un tipo a otro ===")
+	var reasig: Node = CiudadScript.new()
+	reasig.demografia["desempleado"] = 2
+	assert(reasig.reasignar_tipo("desempleado", "obrero"))
+	assert(reasig.demografia["desempleado"] == 1 and reasig.demografia["obrero"] == 1)
+	assert(reasig.censo_total == 2, "el censo total no cambia")
+	assert(reasig.reasignar_tipo("desempleado", "obrero"))
+	assert(not reasig.reasignar_tipo("desempleado", "obrero"), "sin desempleados no reasigna")
+	assert(reasig.demografia["desempleado"] == 0 and reasig.demografia["obrero"] == 2)
+
+	print("\n=== TEST 20: tasa_neta se mide entre cierres de tick consecutivos ===")
+	var neta: Node = CiudadScript.new()
+	neta.migracion_activa = false
+	neta.simular_tick(0.0)  # primer tick: sin consumo, todas las tasas en 0
+	assert(neta.almacen["madera"].tasa_neta == 0.0)
+	# Una entrega ENTRE ticks (la de un acarreador) debe verse en la tasa del siguiente.
+	neta.almacen["madera"].agregar(30.0)
+	neta.simular_tick(0.0)
+	assert(is_equal_approx(neta.almacen["madera"].tasa_neta, 30.0), "la entrega entre ticks cuenta")
+	neta.simular_tick(0.0)
+	assert(neta.almacen["madera"].tasa_neta == 0.0, "sin entregas, vuelve a 0")
+
+	print("\n=== Las 20 pruebas de Ciudad pasaron correctamente ===")

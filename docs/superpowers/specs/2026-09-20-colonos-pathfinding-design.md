@@ -340,8 +340,10 @@ construcción mientras haya alguien dentro.
   transitable más cercana fuera del volumen, calculan la ruta con
   `ignorar_fantasmas` y la recorren; no hacen otra cosa hasta salir.
 - **Puerta de inicio de obra:** `VoxelWorld.surtir_construccion()` se niega
-  (devuelve `{}`, con aviso al jugador: "hay alguien dentro del sitio; deben
-  salir antes de iniciar la obra") mientras cualquier entidad conserve
+  (devuelve `{"bloqueada": true, "id": id}`, con aviso al jugador: "hay alguien
+  dentro del sitio de la obra N; deben salir antes de iniciarla"; no `{}`,
+  que significa "esto no es una obra" y haría que `Player._colocar()`
+  colocara un bloque nuevo contra el fantasma) mientras cualquier entidad conserve
   permiso vigente sobre esa obra. La regla se evalúa en el primer paso de
   la obra (cuando todavía todos sus bloques son fantasma), incluido el
   relleno y la excavación. Los obreros NPC futuros (sub-proyecto 3) usan la

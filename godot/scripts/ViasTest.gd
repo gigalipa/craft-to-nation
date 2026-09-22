@@ -45,7 +45,10 @@ class MundoFalsoVias:
 	var escalon_en_x := 999999
 	var altura_escalon := 0
 	var colocado_por_jugador: Dictionary = {}
-	var _ids: Dictionary = {"tierra": 1, "cuna_recta": 2, "cuna_esquina": 3}
+	var _ids: Dictionary = {
+		"tierra": 1, "cuna_recta": 2, "cuna_esquina": 3,
+		"cuna_diag_bajo": 4, "cuna_diag_arriba": 5, "cuna_diag_lat_izq": 6, "cuna_diag_lat_der": 7,
+	}
 
 	func altura_en(x: int, _z: int) -> int:
 		return altura_escalon if x >= escalon_en_x else 0
@@ -144,17 +147,22 @@ func ejecutar_pruebas() -> void:
 	assert(plan_recto["y_base"] == 0)
 	assert(plan_recto["relleno_extra"].is_empty())
 
-	print("\n=== TEST 11: plan_transicion() paso diagonal, desnivel 1 -> cuña de esquina + 2 rectas del lado bajo ===")
+	print("\n=== TEST 11: plan_transicion() paso diagonal, desnivel 1 -> rampa completa de 7 piezas ===")
 	var plan_diagonal: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 6))
-	# 1 columna de solape (cuna_esquina) + 2 vecinas de arista del bloque
-	# BAJO (cuna_recta, ver decisión del usuario jugando en vivo) — el 4º
-	# vecino del bloque bajo (diagonal-opuesto a la esquina) sigue plano.
-	assert(plan_diagonal["cunas"].size() == 3)
+	# 1 esquina (solape) + 2 bajo (vecinas de arista del bloque BAJO) + 2
+	# arriba (vecinas de arista del bloque ALTO) + 2 remates laterales del
+	# "diamante" de 3x3 — ver sistema completo de rampa diagonal
+	# (docs/Rampa_CtN.obj). Las 2 columnas diagonal-opuestas de cada
+	# bloque (una por bloque) siguen planas.
+	assert(plan_diagonal["cunas"].size() == 7)
 	var tipos_diagonal: Dictionary = {}
 	for dato: Dictionary in plan_diagonal["cunas"]:
 		tipos_diagonal[dato["tipo"]] = tipos_diagonal.get(dato["tipo"], 0) + 1
 	assert(tipos_diagonal.get("cuna_esquina", 0) == 1)
-	assert(tipos_diagonal.get("cuna_recta", 0) == 2)
+	assert(tipos_diagonal.get("cuna_diag_bajo", 0) == 2)
+	assert(tipos_diagonal.get("cuna_diag_arriba", 0) == 2)
+	assert(tipos_diagonal.get("cuna_diag_lat_izq", 0) == 1)
+	assert(tipos_diagonal.get("cuna_diag_lat_der", 0) == 1)
 
 	print("\n=== TEST 12: plan_transicion() con desnivel 3 -> relleno_extra hasta quedar a 1 ===")
 	# GeneradorEscalonAlto: altura 0 para x<=5, altura 3 para x>5.
@@ -165,13 +173,17 @@ func ejecutar_pruebas() -> void:
 	for columna in plan_alto["relleno_extra"]:
 		assert(plan_alto["relleno_extra"][columna] == 2)
 
-	print("\n=== TEST 13: la MeshLibrary tiene cuna_recta y cuna_esquina ===")
+	print("\n=== TEST 13: la MeshLibrary tiene todas las piezas de cuña ===")
 	var biblioteca: MeshLibrary = preload("res://assets/BlockLibrary.res")
 	var nombres: Dictionary = {}
 	for id in biblioteca.get_item_list():
 		nombres[biblioteca.get_item_name(id)] = true
 	assert(nombres.has("cuna_recta"))
 	assert(nombres.has("cuna_esquina"))
+	assert(nombres.has("cuna_diag_bajo"))
+	assert(nombres.has("cuna_diag_arriba"))
+	assert(nombres.has("cuna_diag_lat_izq"))
+	assert(nombres.has("cuna_diag_lat_der"))
 
 	print("\n=== TEST 14: TrazadorVias — vecinos() da hasta 8 direcciones en terreno plano libre ===")
 	var mundo_falso := MundoFalsoVias.new()
@@ -261,7 +273,7 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 
-	print("\n=== TEST 25: ConstructorVias.construir() con paso diagonal coloca cuna_esquina en la celda correcta ===")
+	print("\n=== TEST 25: ConstructorVias.construir() con paso diagonal arma la rampa completa de 7 piezas ===")
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	var mundo_diagonal_construir := MundoFalsoVias.new()
@@ -269,18 +281,23 @@ func ejecutar_pruebas() -> void:
 	mundo_diagonal_construir.altura_escalon = 1
 	var vertices_diagonal: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 1)]
 	assert(ConstructorVias.construir(mundo_diagonal_construir, vertices_diagonal, sin_choque))
-	# nivel(vertice (0,0)) = 0, nivel(vertice (1,1)) = 1 -> y_base = 0, la
-	# cuña queda en y_base+1 = 1 (mismo criterio que TEST 22). El solape
-	# diagonal entre ambos bloques es una sola columna: (0,0). Además, sus
-	# 2 vecinas de arista del bloque BAJO ((0,-1) y (-1,0)) también se
-	# vuelven cuna_recta (ver decisión del usuario jugando en vivo); la
-	# vecina diagonal-opuesta (-1,-1) sigue plana.
+	# nivel(vertice (0,0)) = 0, nivel(vertice (1,1)) = 1 -> y_base = 0,
+	# todas las cuñas quedan en y_base+1 = 1. El solape diagonal es la
+	# columna (0,0). Sistema completo de rampa diagonal (ver
+	# docs/Rampa_CtN.obj): 2 vecinas de arista del bloque BAJO ((0,-1) y
+	# (-1,0)) llevan cuna_diag_bajo; 2 del bloque ALTO ((1,0) y (0,1))
+	# llevan cuna_diag_arriba; los 2 remates del "diamante" de 3x3 ((1,-1)
+	# y (-1,1)) llevan cuna_diag_lat_izq/cuna_diag_lat_der. Las 2 columnas
+	# diagonal-opuestas de cada bloque ((-1,-1) y (1,1)) siguen planas.
 	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 1, 0), "") == "cuna_esquina")
-	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 0, 0), "") != "cuna_esquina")
-	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 1, -1), "") == "cuna_recta")
-	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, 0), "") == "cuna_recta")
-	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, -1), "") != "cuna_recta")
-	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, -1), "") != "cuna_esquina")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 1, -1), "") == "cuna_diag_bajo")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, 0), "") == "cuna_diag_bajo")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(1, 1, 0), "") == "cuna_diag_arriba")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 1, 1), "") == "cuna_diag_arriba")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(1, 1, -1), "") == "cuna_diag_lat_izq")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, 1), "") == "cuna_diag_lat_der")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 0, -1), "") == "")  # diagonal-opuesta del bloque bajo (nivel 0), plana
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(1, 1, 1), "") == "")  # diagonal-opuesta del bloque alto (nivel 1), plana
 
 	print("\n=== TEST 26: ConstructorVias.construir() con desnivel de 3 rellena hasta y_base antes de la cuña ===")
 	Vias.celdas.clear()

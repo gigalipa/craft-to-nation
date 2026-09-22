@@ -37,6 +37,20 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 			if not columnas_totales.has(col):
 				columnas_totales.append(col)
 
+	# Los planes de transición se calculan ANTES del choque: en un paso
+	# diagonal, las columnas de remate (cuna_diag_lat_izq/der) caen FUERA
+	# del bloque de soporte de cualquiera de los dos vértices — sin esto,
+	# el choque nunca las comprobaría contra edificios/puestos existentes.
+	var planes: Array[Dictionary] = []
+	for i in range(vertices.size() - 1):
+		var plan: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1])
+		planes.append(plan)
+		if plan.is_empty():
+			continue
+		for dato: Dictionary in plan["cunas"]:
+			if not columnas_totales.has(dato["columna"]):
+				columnas_totales.append(dato["columna"])
+
 	if choca.call(columnas_totales):
 		return false
 
@@ -47,8 +61,7 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 			objetivo_relleno[col] = maxi(objetivo_relleno.get(col, nivel), nivel)
 
 	var cunas: Dictionary = {}  # Vector2i -> Dictionary
-	for i in range(vertices.size() - 1):
-		var plan: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1])
+	for plan: Dictionary in planes:
 		if plan.is_empty():
 			continue
 		for col in plan["relleno_extra"]:
@@ -72,7 +85,7 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 		# (ver C3 de la revisión final — colocarla en "y" cavaba una zanja de
 		# un bloque en vez de tender un puente).
 		var celda_cuna := Vector3i(col.x, datos["y"] + 1, col.y)
-		mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(datos["tipo"]), _orientacion(datos["direccion_alta"], datos["tipo"] == "cuna_esquina"))
+		mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(datos["tipo"]), _orientacion(datos["direccion_alta"], datos["tipo"]))
 		mundo.colocado_por_jugador[celda_cuna] = true
 		celdas_soporte.append(celda_cuna)
 
@@ -103,18 +116,35 @@ static func _nivelar_columna(mundo: Object, col: Vector2i, y_objetivo: int) -> v
 			mundo.colocar_bloque(celda, "tierra", true)
 
 
+## Dirección de referencia con la que se modeló cada tipo de cuña (ver
+## Task 4 y el sistema de rampa diagonal completo, geometría exacta de
+## docs/Rampa_CtN.obj): "cuna_recta" con su lado alto hacia +Z;
+## "cuna_esquina" con su esquina alta hacia +X+Z; las 4 piezas del
+## sistema de rampa diagonal (cuna_diag_bajo/arriba/lat_izq/lat_der) se
+## modelaron juntas para UNA sola direccion_alta de referencia, (1,-1) —
+## deben rotar SIEMPRE las 4 con el mismo ángulo entre esa referencia y
+## la direccion_alta real, para que la rampa completa gire como una sola
+## unidad (ver spec de vías, decisión del usuario jugando en vivo,
+## 2026-09-22).
+const REFERENCIA_POR_TIPO := {
+	"cuna_recta": Vector2(0, 1),
+	"cuna_esquina": Vector2(1, 1),
+	"cuna_diag_bajo": Vector2(1, -1),
+	"cuna_diag_arriba": Vector2(1, -1),
+	"cuna_diag_lat_izq": Vector2(1, -1),
+	"cuna_diag_lat_der": Vector2(1, -1),
+}
+
+
 ## Índice de orientación de GridMap (0-23) para que el lado ALTO de una
-## cuña quede orientado hacia "direccion_alta" (Vector2i en XZ). La
-## referencia depende de QUÉ pieza se orienta (ver Task 4): "cuna_recta"
-## se modeló con su lado alto hacia +Z, pero "cuna_esquina" se modeló con
-## su esquina alta hacia +X+Z — usar la referencia de cuna_recta para una
-## cuna_esquina da un ángulo de 45°, que no es múltiplo de 90° y hace que
-## get_orthogonal_index_from_basis() falle (ver I1 de la revisión final).
-## ponytail: el signo de la rotación se fija visualmente en el editor
-## real (Task 9); si sale espejado, invertir "-angulo" a "angulo" aquí es
-## el único cambio necesario.
-static func _orientacion(direccion_alta: Vector2i, diagonal: bool) -> int:
-	var referencia := Vector2(1, 1) if diagonal else Vector2(0, 1)
+## cuña de tipo "tipo" quede orientado hacia "direccion_alta" (Vector2i
+## en XZ) — usar la referencia equivocada da un ángulo que no es múltiplo
+## de 90° y hace que get_orthogonal_index_from_basis() falle (ver I1 de
+## la revisión final). ponytail: el signo de la rotación se fija
+## visualmente en el editor real (Task 9); si sale espejado, invertir
+## "-angulo" a "angulo" aquí es el único cambio necesario.
+static func _orientacion(direccion_alta: Vector2i, tipo: String) -> int:
+	var referencia: Vector2 = REFERENCIA_POR_TIPO[tipo]
 	var angulo: float = referencia.angle_to(Vector2(direccion_alta.x, direccion_alta.y))
 	# get_orthogonal_index_from_basis() no es estático en Godot 4.7: hace
 	# falta una instancia de GridMap (descartable, nunca en el árbol) para

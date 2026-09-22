@@ -77,15 +77,23 @@ func _relleno_absoluto(columnas: Array[Vector2i], tope: int) -> Dictionary:
 ## entrada por celda que se vuelve cuña.
 ##
 ## En un paso RECTO, "cunas" trae las 2 columnas de solape (ver
-## bloque_de_vertice()), ambas cuna_recta con la misma direccion_alta. En
-## un paso DIAGONAL, la columna de solape es una sola y se vuelve
-## cuna_esquina — pero sola deja un borde brusco contra el lado bajo: su
-## altura varía de 0 a 0.5 en las dos aristas que no tocan ni el vértice
-## bajo ni el alto (ver spec). Por eso los 2 vecinos de ARISTA de esa
-## columna que pertenecen al bloque BAJO (no el diagonal-opuesto, que
-## sigue plano) también se vuelven cuna_recta, mirando hacia la esquina —
-## decisión del usuario jugando en vivo (2026-09-22): solo el lado bajo
-## se extiende, el lado alto ya está a su altura final.
+## bloque_de_vertice()), ambas cuna_recta con la misma direccion_alta.
+##
+## En un paso DIAGONAL, la columna de solape se vuelve cuna_esquina, pero
+## sola deja bordes bruscos contra los 4 lados (su altura varía de 0 a
+## 0.5 en las dos aristas que no tocan ni el vértice bajo ni el alto —
+## ver spec). El sistema completo (geometría exacta de
+## docs/Rampa_CtN.obj, decisión del usuario jugando en vivo, 2026-09-22)
+## agrega, alrededor de la esquina, las 4 columnas de ARISTA de los dos
+## bloques (2 cuna_diag_bajo del lado bajo, 2 cuna_diag_arriba del lado
+## alto) más 2 columnas de remate en las esquinas del "diamante" de 3x3
+## que forman ambos bloques juntos (cuna_diag_lat_izq/cuna_diag_lat_der,
+## en las direcciones (dz,-dx) y (-dz,dx) desde la esquina — las 2
+## esquinas del diamante que NO están sobre el eje de direccion_alta).
+## Las 2 columnas restantes del diamante (las diagonal-opuestas dentro de
+## cada bloque) siguen planas. Las piezas *_bajo/*_arriba/*_lat_* se
+## modelaron para direccion_alta=(1,-1); _orientacion() las rota para
+## cualquier otra diagonal.
 func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 	var paso: Vector2i = vertice_b - vertice_a
 	var bloque_a: Array[Vector2i] = bloque_de_vertice(vertice_a)
@@ -113,6 +121,8 @@ func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 	var columnas_extra: Array[Vector2i] = []
 	if diagonal:
 		var columna_solape: Vector2i = solape[0]
+		var dx: int = direccion_alta.x
+		var dz: int = direccion_alta.y
 		for col in bloque_de_vertice(vertice_bajo):
 			if col == columna_solape:
 				continue
@@ -120,7 +130,16 @@ func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 			if absi(delta.x) + absi(delta.y) != 1:
 				continue  # solo vecinos de ARISTA — el 4º, diagonal-opuesto, sigue plano
 			columnas_extra.append(col)
-			cunas.append({"columna": col, "tipo": "cuna_recta", "direccion_alta": delta})
+			cunas.append({"columna": col, "tipo": "cuna_diag_bajo", "direccion_alta": direccion_alta})
+		for col in bloque_de_vertice(vertice_bajo + direccion_alta):  # bloque del vértice ALTO
+			if col == columna_solape:
+				continue
+			var delta: Vector2i = col - columna_solape
+			if absi(delta.x) + absi(delta.y) != 1:
+				continue  # solo vecinos de ARISTA — el 4º, diagonal-opuesto, sigue plano
+			cunas.append({"columna": col, "tipo": "cuna_diag_arriba", "direccion_alta": direccion_alta})
+		cunas.append({"columna": columna_solape + Vector2i(dz, -dx), "tipo": "cuna_diag_lat_izq", "direccion_alta": direccion_alta})
+		cunas.append({"columna": columna_solape + Vector2i(-dz, dx), "tipo": "cuna_diag_lat_der", "direccion_alta": direccion_alta})
 
 	var y_base: int = nivel_bajo
 	var relleno_extra: Dictionary = {}

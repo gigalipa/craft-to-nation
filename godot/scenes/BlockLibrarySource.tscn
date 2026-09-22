@@ -211,6 +211,78 @@ _surfaces = [{
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_mewrc"]
 points = PackedVector3Array(-0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0, -0.5, 0.5, 0.5, 0.5, -0.5, 0, 0.5)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nyjc0"]
+cull_mode = 2
+albedo_color = Color(0.58, 0.48, 0.37, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_mewrc"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 0.5, 1),
+"format": 34359738375,
+"material": SubResource("StandardMaterial3D_nyjc0"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 12,
+"vertex_data": PackedByteArray("AAAAPwAAAL8AAAA/AAAAPwAAAAAAAAC/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAAAAAAC/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAPwAAAAAAAAC/AAAAPwAAAL8AAAC//1//v1RVqar/X/+/VFWpqv9f/79UVamq////f/9//7////9//3//v////3//f/+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+///////9/AID//////38AgP//////fwCA")
+}]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_lawda"]
+points = PackedVector3Array(0.5, -0.5, 0.5, 0.5, 0, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aj37d"]
+cull_mode = 2
+albedo_color = Color(0.58, 0.48, 0.37, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_f72v2"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1),
+"format": 34359738375,
+"material": SubResource("StandardMaterial3D_aj37d"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 36,
+"vertex_data": PackedByteArray("AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAAAAAAA/AAAAvwAAAL8AAAC/AAAAvwAAAAAAAAA/AAAAvwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAvwAAAAAAAAA/AAAAvwAAAL8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8AAAA/AAAAvwAAAAAAAAA/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+/////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3///wAA/7//f///AAD/v/9///8AAP+//1//v1RVqar/X/+/VFWpqv9f/79UVamq/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCA")
+}]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_fkge6"]
+points = PackedVector3Array(-0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nbssg"]
+cull_mode = 2
+albedo_color = Color(0.58, 0.48, 0.37, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_7272k"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1),
+"format": 34359738375,
+"material": SubResource("StandardMaterial3D_nbssg"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 18,
+"vertex_data": PackedByteArray("AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAA/AAAAPwAAAAAAAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAPwAAAL8AAAA/AAAAPwAAAAAAAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAAAAAAA/AAAAPwAAAL8AAAC/AAAAPwAAAAAAAAA/AAAAPwAAAL8AAAA//1//v1RVqar/X/+/VFWpqv9f/79UVamqAAD/v1RVqaoAAP+/VFWpqgAA/79UVamq/38AAAAA/7//fwAAAAD/v/9/AAAAAP+//3//f/9/AID/f/9//38AgP9//3//fwCA////f/9//7////9//3//v////3//f/+/////f/9//7////9//3//v////3//f/+/")
+}]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_7jvjv"]
+points = PackedVector3Array(0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8l07e"]
+cull_mode = 2
+albedo_color = Color(0.58, 0.48, 0.37, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_hxoss"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1),
+"format": 34359738375,
+"material": SubResource("StandardMaterial3D_8l07e"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 18,
+"vertex_data": PackedByteArray("AAAAvwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAAAAAAC/AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAAAAAAC/AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAAAAAAC//7//f1RVqar/v/9/VFWpqv+//39UVamq/38AAAAA/7//fwAAAAD/v/9/AAAAAP+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCAAAD/f/9//78AAP9//3//vwAA/3//f/+//1//v1RVqar/X/+/VFWpqv9f/79UVamq")
+}]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_fcx83"]
+points = PackedVector3Array(-0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0, -0.5)
+
 [node name="BlockLibrarySource" type="Node3D" unique_id=221191729]
 
 [node name="pared" type="MeshInstance3D" parent="." unique_id=1472954888]
@@ -359,3 +431,27 @@ mesh = SubResource("ArrayMesh_vvkr6")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_esquina" unique_id=1125284760]
 shape = SubResource("ConvexPolygonShape3D_mewrc")
+
+[node name="cuna_diag_bajo" type="MeshInstance3D" parent="." unique_id=376191214]
+mesh = SubResource("ArrayMesh_mewrc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_diag_bajo" unique_id=1511036286]
+shape = SubResource("ConvexPolygonShape3D_lawda")
+
+[node name="cuna_diag_arriba" type="MeshInstance3D" parent="." unique_id=665658770]
+mesh = SubResource("ArrayMesh_f72v2")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_diag_arriba" unique_id=1425360526]
+shape = SubResource("ConvexPolygonShape3D_fkge6")
+
+[node name="cuna_diag_lat_izq" type="MeshInstance3D" parent="." unique_id=594322872]
+mesh = SubResource("ArrayMesh_7272k")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_diag_lat_izq" unique_id=1957218581]
+shape = SubResource("ConvexPolygonShape3D_7jvjv")
+
+[node name="cuna_diag_lat_der" type="MeshInstance3D" parent="." unique_id=707993400]
+mesh = SubResource("ArrayMesh_hxoss")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_diag_lat_der" unique_id=1751035190]
+shape = SubResource("ConvexPolygonShape3D_fcx83")

@@ -133,7 +133,7 @@ func _indexar_materiales() -> void:
 ## altura_agua_en()): la cara de ARRIBA se dibuja a "h_superior", y una cara
 ## lateral solo cubre el tramo [h_inferior, h_superior]. Los valores por
 ## defecto dan el cubo completo de siempre.
-func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i, h_inferior: float = 0.0, h_superior: float = 1.0) -> void:
+static func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i, h_inferior: float = 0.0, h_superior: float = 1.0) -> void:
 	var esquinas: Array[Vector3] = _esquinas_cara(centro, direccion)
 	var base_y: float = centro.y - 0.5
 	for i in range(esquinas.size()):

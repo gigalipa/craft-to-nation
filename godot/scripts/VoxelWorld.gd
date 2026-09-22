@@ -122,6 +122,18 @@ func material_real(tipo: String) -> String:
 	return MATERIAL_REAL.get(tipo, tipo)
 
 
+## Id numérico de "tipo" en la MeshLibrary indexada (ver
+## _indexar_biblioteca()), o GridMap.INVALID_CELL_ITEM si no existe —
+## acceso público de solo lectura a _id_por_tipo para quien necesite
+## colocar una celda con GridMap.set_cell_item() directamente (con
+## orientación), sin pasar por colocar_bloque() — que no soporta
+## orientación y se niega a sobrescribir una celda ya ocupada. Usado por
+## ConstructorVias.gd al reemplazar un relleno recién colocado por su
+## cuña (ver spec de vías Sección 5).
+func id_de_tipo(tipo: String) -> int:
+	return _id_por_tipo.get(tipo, GridMap.INVALID_CELL_ITEM)
+
+
 ## Tipos de bloque generados por _generar_arboles() — ver altura_en() más
 ## abajo. Bug reportado por el usuario jugando en vivo: altura_en()
 ## contaba cualquier bloque sólido como "el suelo", así que el overlay de
@@ -393,6 +405,10 @@ func _ready() -> void:
 	var destacados: Node3D = get_node("FantasmasDestacados")
 	destacados.voxel_world = self
 	fantasmas_cambiados.connect(destacados.marcar_sucio)
+	var vias_renderer: Node3D = get_node("ViasRenderer")
+	vias_renderer.voxel_world = self
+	Vias.vias_cambiadas.connect(vias_renderer._on_vias_cambiadas)
+	vias_renderer.reconstruir_todo()
 
 
 func _indexar_biblioteca() -> void:
@@ -617,6 +633,7 @@ func _retirar_bloque(celda: Vector3i) -> void:
 			vecinos_agua.append(vecino)
 	if not vecinos_agua.is_empty():
 		_escurrir_agua_desde(vecinos_agua)
+	Vias.quitar([celda])
 
 
 func obtener_tipo(celda: Vector3i) -> String:

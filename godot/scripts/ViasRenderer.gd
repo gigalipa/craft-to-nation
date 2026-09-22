@@ -17,7 +17,7 @@ const EPSILON_Y := 0.01  # margen contra z-fighting, ver I3 de la revisión fina
 ## Tipos de cuña cuya propia superficie ya es la cara visible — no llevan
 ## overlay plano encima (ver spec Sección 3 y el sistema de rampa
 ## diagonal completo).
-const TIPOS_CUNA := ["cuna_recta", "cuna_esquina", "cuna_diag_bajo", "cuna_diag_arriba", "cuna_diag_lat_izq", "cuna_diag_lat_der"]
+const TIPOS_CUNA := ["cuna_recta", "cuna_esquina", "cuna_diag_bajo", "cuna_diag_arriba", "cuna_diag_lat_izq", "cuna_diag_lat_der", "diag_lat"]
 
 ## Las 4 esquinas LOCALES de una celda (0 o 1 en cada eje), en el orden
 ## que usa Vias.notch_en() — ver notches_de_paso().

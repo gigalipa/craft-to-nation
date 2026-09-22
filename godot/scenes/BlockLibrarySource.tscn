@@ -283,6 +283,24 @@ _surfaces = [{
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_fcx83"]
 points = PackedVector3Array(-0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0, -0.5)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vvkr6"]
+cull_mode = 2
+albedo_color = Color(0.58, 0.48, 0.37, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_lawda"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1),
+"format": 34359738375,
+"material": SubResource("StandardMaterial3D_vvkr6"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 24,
+"vertex_data": PackedByteArray("AAAAvwAAAL8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAD8AAAA/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAA/AAAAvwAAAD8AAAC/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAC/AAAAPwAAAL8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAC/AAAAvwAAAD8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAA/AAAAPwAAAL8AAAC/AAAAPwAAAD8AAAC/AAAAvwAAAL8AAAA/AAAAPwAAAD8AAAC/AAAAvwAAAD8AAAA/AAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA/3///wAA/7//f///AAD/v/9///8AAP+//7//f1RVqar/v/9/VFWpqv+//39UVamq/7//f1RVqar/v/9/VFWpqv+//39UVamq")
+}]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_aj37d"]
+points = PackedVector3Array(-0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5)
+
 [node name="BlockLibrarySource" type="Node3D" unique_id=221191729]
 
 [node name="pared" type="MeshInstance3D" parent="." unique_id=1472954888]
@@ -455,3 +473,9 @@ mesh = SubResource("ArrayMesh_hxoss")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_diag_lat_der" unique_id=1751035190]
 shape = SubResource("ConvexPolygonShape3D_fcx83")
+
+[node name="diag_lat" type="MeshInstance3D" parent="." unique_id=62680468]
+mesh = SubResource("ArrayMesh_lawda")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="diag_lat" unique_id=527560520]
+shape = SubResource("ConvexPolygonShape3D_aj37d")

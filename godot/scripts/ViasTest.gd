@@ -48,6 +48,7 @@ class MundoFalsoVias:
 	var _ids: Dictionary = {
 		"tierra": 1, "cuna_recta": 2, "cuna_esquina": 3,
 		"cuna_diag_bajo": 4, "cuna_diag_arriba": 5, "cuna_diag_lat_izq": 6, "cuna_diag_lat_der": 7,
+		"diag_lat": 8,
 	}
 
 	func altura_en(x: int, _z: int) -> int:
@@ -365,6 +366,26 @@ func ejecutar_pruebas() -> void:
 	assert(Vias.notch_en(Vector3i(2, 0, 2)) == Vector2i(1, 1))
 	assert(Vias.notch_en(Vector3i(0, 0, 0)) == Vector2i(-1, -1))  # bisagra interior, no notch
 	assert(Vias.notch_en(Vector3i(1, 0, 1)) == Vector2i(-1, -1))  # bisagra interior, no notch
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+
+	print("\n=== TEST 31: ConstructorVias.construir() coloca diag_lat solo donde el terreno natural no llega a la altura alta ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var mundo_diag_lat := MundoFalsoVias.new()
+	mundo_diag_lat.escalon_en_x = 1
+	mundo_diag_lat.altura_escalon = 3
+	var vertices_diag_lat: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 1)]
+	assert(ConstructorVias.construir(mundo_diag_lat, vertices_diag_lat, sin_choque))
+	# nivel(vertice (0,0))=0 (x=0,-1<1), nivel(vertice (1,1))=3 (x=1>=1)
+	# -> desnivel 3, y_base=nivel_alto-1=2. Columnas candidatas a
+	# diag_lat: solape+(2,0)=(2,0) y solape+(0,2)=(0,2). Terreno natural
+	# en (2,0): x=2>=1 -> altura 3, NO por debajo de y_base(2) -> sin
+	# diag_lat ahí. Terreno natural en (0,2): x=0<1 -> altura 0, SÍ por
+	# debajo de y_base(2) -> diag_lat en y_base+1=3.
+	assert(mundo_diag_lat.celdas.get(Vector3i(0, 3, 2), "") == "diag_lat")
+	assert(mundo_diag_lat.celdas.get(Vector3i(2, 3, 0), "") != "diag_lat")
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	Vias.notches.clear()

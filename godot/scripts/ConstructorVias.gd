@@ -158,6 +158,7 @@ const REFERENCIA_POR_TIPO := {
 	"cuna_diag_arriba": Vector2(1, -1),
 	"cuna_diag_lat_izq": Vector2(1, -1),
 	"cuna_diag_lat_der": Vector2(1, -1),
+	"diag_lat": Vector2(1, -1),
 }
 
 

@@ -123,6 +123,7 @@ func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 	var nivel_alto: int = maxi(nivel_a, nivel_b)
 	var diagonal: bool = paso.x != 0 and paso.y != 0
 	var direccion_alta: Vector2i = paso if nivel_b > nivel_a else -paso
+	var y_base: int = nivel_alto - 1 if nivel_alto - nivel_bajo > 1 else nivel_bajo
 
 	var cunas: Array[Dictionary] = []
 	for col in solape:
@@ -151,10 +152,19 @@ func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 		cunas.append({"columna": columna_solape + Vector2i(dz, -dx), "tipo": "cuna_diag_lat_izq", "direccion_alta": direccion_alta})
 		cunas.append({"columna": columna_solape + Vector2i(-dz, dx), "tipo": "cuna_diag_lat_der", "direccion_alta": direccion_alta})
 
-	var y_base: int = nivel_bajo
+		# diag_lat: relleno opcional 1 celda más allá de cada cuna_diag_arriba
+		# (misma dirección), SOLO si el terreno natural ahí no llega a la
+		# altura alta de la rampa — sin esto, esa esquina de la rampa
+		# quedaría con un hueco visible contra el terreno real (decisión del
+		# usuario jugando en vivo, 2026-09-22). Si el terreno ya llega solo,
+		# no se toca nada ahí.
+		for offset in [Vector2i(2 * dx, 0), Vector2i(0, 2 * dz)]:
+			var col_diag_lat: Vector2i = columna_solape + offset
+			if _generador.altura_en(col_diag_lat.x, col_diag_lat.y) < y_base:
+				cunas.append({"columna": col_diag_lat, "tipo": "diag_lat", "direccion_alta": direccion_alta})
+
 	var relleno_extra: Dictionary = {}
 	if nivel_alto - nivel_bajo > 1:
-		y_base = nivel_alto - 1
 		var columnas_a_rellenar: Array[Vector2i] = []
 		for col in bloque_de_vertice(vertice_bajo):
 			if not solape.has(col) and not columnas_extra.has(col):

@@ -7,7 +7,7 @@ extends Node
 
 # Preloads for future tasks (Task 2, 3, 4):
 const NiveladorVia = preload("res://scripts/NiveladorVia.gd")
-# const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
+const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 # const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
 
 ## Generador falso: altura = x + z (una pendiente diagonal simple para
@@ -33,6 +33,54 @@ class GeneradorEscalon:
 class GeneradorEscalonAlto:
 	func altura_en(x: int, _z: int) -> int:
 		return 3 if x > 5 else 0
+
+
+## Mundo falso para TrazadorVias/ConstructorVias: terreno plano en
+## altura_en() = 0, salvo un escalón opcional en X (escalon_en_x/
+## altura_escalon), con columnas de agua/edificio marcables a mano.
+class MundoFalsoVias:
+	var celdas: Dictionary = {}  # Vector3i -> String
+	var agua: Dictionary = {}  # Vector2i -> true
+	var edificios: Dictionary = {}  # Vector2i -> true
+	var escalon_en_x := 999999
+	var altura_escalon := 0
+	var colocado_por_jugador: Dictionary = {}
+	var _ids: Dictionary = {"tierra": 1, "cuna_recta": 2, "cuna_esquina": 3}
+
+	func altura_en(x: int, _z: int) -> int:
+		return altura_escalon if x >= escalon_en_x else 0
+
+	func obtener_tipo(celda: Vector3i) -> String:
+		var xz := Vector2i(celda.x, celda.z)
+		if agua.get(xz, false) and celda.y == altura_en(celda.x, celda.z) + 1:
+			return "agua"
+		return celdas.get(celda, "")
+
+	func id_de_edificio(celda: Vector3i) -> int:
+		var xz := Vector2i(celda.x, celda.z)
+		return 1 if edificios.get(xz, false) else -1
+
+	func colocar_bloque(celda: Vector3i, tipo: String, _por_jugador: bool = false) -> bool:
+		celdas[celda] = tipo
+		return true
+
+	func talar_bloque_de_arbol(celda: Vector3i, _dano: int) -> bool:
+		if celdas.get(celda, "") != "madera":
+			return false
+		celdas.erase(celda)
+		return true
+
+	func eliminar_follaje(celda: Vector3i) -> void:
+		celdas.erase(celda)
+
+	func set_cell_item(celda: Vector3i, id: int, _orientacion: int) -> void:
+		for tipo in _ids:
+			if _ids[tipo] == id:
+				celdas[celda] = tipo
+				return
+
+	func id_de_tipo(tipo: String) -> int:
+		return _ids.get(tipo, -1)
 
 
 func _ready() -> void:
@@ -116,3 +164,36 @@ func ejecutar_pruebas() -> void:
 		nombres[biblioteca.get_item_name(id)] = true
 	assert(nombres.has("cuna_recta"))
 	assert(nombres.has("cuna_esquina"))
+
+	print("\n=== TEST 14: TrazadorVias — vecinos() da hasta 8 direcciones en terreno plano libre ===")
+	var mundo_falso := MundoFalsoVias.new()
+	var trazador := TrazadorVias.new(mundo_falso)
+	var vecinos_5_5: Array[Vector2i] = trazador.vecinos(Vector2i(5, 5))
+	assert(vecinos_5_5.size() == 8)
+
+	print("\n=== TEST 15: TrazadorVias — un vértice con agua en su bloque no es transitable ===")
+	mundo_falso.agua[Vector2i(4, 4)] = true  # una de las 4 columnas del bloque de (5,5)
+	assert(not trazador.vertice_transitable(Vector2i(5, 5)))
+	mundo_falso.agua.clear()
+
+	print("\n=== TEST 16: TrazadorVias — un vértice con un edificio en su bloque no es transitable ===")
+	mundo_falso.edificios[Vector2i(4, 4)] = true
+	assert(not trazador.vertice_transitable(Vector2i(5, 5)))
+	mundo_falso.edificios.clear()
+
+	print("\n=== TEST 17: TrazadorVias — un árbol NO bloquea (se tala al confirmar) ===")
+	mundo_falso.celdas[Vector3i(4, 1, 4)] = "madera"
+	assert(trazador.vertice_transitable(Vector2i(5, 5)))
+	mundo_falso.celdas.clear()
+
+	print("\n=== TEST 18: TrazadorVias — buscar_ruta() en terreno plano ===")
+	var ruta: Array[Vector2i] = trazador.buscar_ruta(Vector2i(0, 0), Vector2i(3, 0))
+	assert(ruta.size() == 3)
+	assert(ruta[-1] == Vector2i(3, 0))
+
+	print("\n=== TEST 19: TrazadorVias — buscar_ruta() rechaza desnivel > 3 ===")
+	var mundo_escalon := MundoFalsoVias.new()
+	mundo_escalon.escalon_en_x = 3
+	mundo_escalon.altura_escalon = 5  # desnivel de 5 entre x=2 y x=3, por encima del límite de 3
+	var trazador_escalon := TrazadorVias.new(mundo_escalon)
+	assert(trazador_escalon.buscar_ruta(Vector2i(0, 0), Vector2i(5, 0)).is_empty())

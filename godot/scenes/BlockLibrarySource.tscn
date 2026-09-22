@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=4]
 
 [sub_resource type="StandardMaterial3D" id="Mat_pared"]
 albedo_color = Color(0.55, 0.55, 0.55, 1)
@@ -159,8 +159,6 @@ material = SubResource("Mat_fantasma")
 
 [sub_resource type="ArrayMesh" id="Mesh_agua"]
 
-[sub_resource type="BoxShape3D" id="Shape_agua"]
-
 [sub_resource type="StandardMaterial3D" id="Mat_madera"]
 albedo_color = Color(0.4, 0.26, 0.13, 1)
 
@@ -176,6 +174,42 @@ albedo_color = Color(0.15, 0.5, 0.2, 1)
 material = SubResource("Mat_follaje")
 
 [sub_resource type="BoxShape3D" id="Shape_follaje"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_grb4k"]
+cull_mode = 2
+albedo_color = Color(0.32, 0.21, 0.1, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_nyjc0"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 1, 1, 1),
+"format": 34359738375,
+"material": SubResource("StandardMaterial3D_grb4k"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 24,
+"vertex_data": PackedByteArray("AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAgD8AAIA/AAAAAAAAAAAAAAAAAACAPwAAgD8AAIA/AAAAAAAAgD8AAIA/AAAAAAAAAAAAAIA/AACAPwAAAAAAAIA/AACAPwAAgD8AAIA/AAAAAAAAAAAAAIA/AACAPwAAgD8AAIA/AAAAAAAAgD8AAIA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AACAPwAAgD8AAIA//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//3//P6oqVJX/f/8/qipUlf9//z+qKlSV/3//P6oqVJX/f/8/qipUlf9//z+qKlSV/3//f/9/AID/f/9//38AgP9//3//fwCA/3//f/9/AID/f/9//38AgP9//3//fwCAAAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+/")
+}]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_vvkr6"]
+points = PackedVector3Array(0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mewrc"]
+cull_mode = 2
+albedo_color = Color(0.32, 0.21, 0.1, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_lawda"]
+_surfaces = [{
+"aabb": AABB(0, 0, 0, 1, 1, 1),
+"format": 34359738375,
+"material": SubResource("StandardMaterial3D_mewrc"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 30,
+"vertex_data": PackedByteArray("AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAD8AAAAAAACAPwAAgD8AAIA/AAAAAAAAAAAAAAAAAACAPwAAgD8AAIA/AAAAAAAAAD8AAIA/AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAD8AAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AACAPwAAgD8AAIA/AACAPwAAAAAAAAAAAACAPwAAgD8AAIA/AACAPwAAAD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAD8AAIA/AACAPwAAAAAAAIA/AAAAAAAAAD8AAIA/AACAPwAAgD8AAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAAD8AAIA//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//38AAAAA/7//fwAAAAD/v/9/AAAAAP+//5//P6oqjaP/n/8/qiqNo/+f/z+qKo2j/5//P6oqjaP/n/8/qiqNo/+f/z+qKo2j/3//f/9/AID/f/9//38AgP9//3//fwCAAAD/f/9//78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//vwAA/3//f/+///////9/AID//////38AgP//////fwCA//////9/AID//////38AgP//////fwCA////f/9//7////9//3//v////3//f/+/")
+}]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_aj37d"]
+points = PackedVector3Array(0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0.5, 0, 1, 1, 1, 0, 0.5, 1)
 
 [node name="BlockLibrarySource" type="Node3D" unique_id=221191729]
 
@@ -245,28 +279,28 @@ mesh = SubResource("Mesh_hierro")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="hierro" unique_id=194053609]
 shape = SubResource("Shape_hierro")
 
-[node name="carbon" type="MeshInstance3D" parent="."]
+[node name="carbon" type="MeshInstance3D" parent="." unique_id=1898826473]
 mesh = SubResource("Mesh_carbon")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="carbon"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="carbon" unique_id=208225284]
 shape = SubResource("Shape_carbon")
 
-[node name="cobre" type="MeshInstance3D" parent="."]
+[node name="cobre" type="MeshInstance3D" parent="." unique_id=268489291]
 mesh = SubResource("Mesh_cobre")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="cobre"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cobre" unique_id=830898956]
 shape = SubResource("Shape_cobre")
 
-[node name="tierras_raras" type="MeshInstance3D" parent="."]
+[node name="tierras_raras" type="MeshInstance3D" parent="." unique_id=1534973078]
 mesh = SubResource("Mesh_tierras_raras")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="tierras_raras"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="tierras_raras" unique_id=1389446947]
 shape = SubResource("Shape_tierras_raras")
 
-[node name="bedrock" type="MeshInstance3D" parent="."]
+[node name="bedrock" type="MeshInstance3D" parent="." unique_id=1642140929]
 mesh = SubResource("Mesh_bedrock")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="bedrock"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="bedrock" unique_id=1699240009]
 shape = SubResource("Shape_bedrock")
 
 [node name="mina" type="MeshInstance3D" parent="." unique_id=2068785627]
@@ -287,10 +321,10 @@ mesh = SubResource("Mesh_puesto_madero")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="puesto_madero" unique_id=417295068]
 shape = SubResource("Shape_puesto_madero")
 
-[node name="puesto_pesca" type="MeshInstance3D" parent="."]
+[node name="puesto_pesca" type="MeshInstance3D" parent="." unique_id=1877281103]
 mesh = SubResource("Mesh_puesto_pesca")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="puesto_pesca"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="puesto_pesca" unique_id=466877036]
 shape = SubResource("Shape_puesto_pesca")
 
 [node name="fantasma" type="MeshInstance3D" parent="." unique_id=215850103]
@@ -313,3 +347,15 @@ mesh = SubResource("Mesh_follaje")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="follaje" unique_id=334056746]
 shape = SubResource("Shape_follaje")
+
+[node name="cuna_recta" type="MeshInstance3D" parent="." unique_id=2009214964]
+mesh = SubResource("ArrayMesh_nyjc0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_recta" unique_id=750248105]
+shape = SubResource("ConvexPolygonShape3D_vvkr6")
+
+[node name="cuna_esquina" type="MeshInstance3D" parent="." unique_id=1711220654]
+mesh = SubResource("ArrayMesh_lawda")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="cuna_esquina" unique_id=1125284760]
+shape = SubResource("ConvexPolygonShape3D_aj37d")

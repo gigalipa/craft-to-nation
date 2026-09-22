@@ -108,3 +108,11 @@ func ejecutar_pruebas() -> void:
 	assert(not plan_alto["relleno_extra"].is_empty())
 	for columna in plan_alto["relleno_extra"]:
 		assert(plan_alto["relleno_extra"][columna] == 2)
+
+	print("\n=== TEST 13: la MeshLibrary tiene cuna_recta y cuna_esquina ===")
+	var biblioteca: MeshLibrary = preload("res://assets/BlockLibrary.res")
+	var nombres: Dictionary = {}
+	for id in biblioteca.get_item_list():
+		nombres[biblioteca.get_item_name(id)] = true
+	assert(nombres.has("cuna_recta"))
+	assert(nombres.has("cuna_esquina"))

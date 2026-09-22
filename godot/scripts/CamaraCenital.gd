@@ -1647,7 +1647,8 @@ func _vertice_pertenece_a_via(vertice: Vector2i) -> bool:
 ## dibuja solo su propio bloque 2x2, sin ninguna ruta.
 func _actualizar_preview_vertice_inicial() -> void:
 	var vertice := _vertice_bajo_mouse(get_viewport().get_mouse_position())
-	via_preview.previsualizar_tramo([vertice, vertice], _trazador_via.vertice_transitable(vertice))
+	var vertices: Array[Vector2i] = [vertice, vertice]
+	via_preview.previsualizar_tramo(vertices, _trazador_via.vertice_transitable(vertice))
 
 
 ## Vista previa en vivo del trazo actual (origen fijado + ruta hasta el

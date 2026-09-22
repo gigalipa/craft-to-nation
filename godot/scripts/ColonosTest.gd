@@ -565,4 +565,24 @@ func ejecutar_pruebas() -> void:
 		assert(esperas25[i] >= esperas25[i - 1] and esperas25[i] <= 8.0, "espera no decreciente y con tope de 8 s")
 	assert(colonos25.economia.trabajadores_de(Vector2i(2, 2))["presentes"] == 0, "nunca llega a su puesto")
 
+	print("\n=== TEST bono de velocidad: un colono sobre una vía avanza 1.35x más rápido ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var colonos_bono: Node = _nuevo(_mundo_llano(), CiudadScript.new())
+	var id_bono: int = colonos_bono.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var c_bono: Dictionary = colonos_bono.colonos[id_bono]
+	c_bono["ruta"] = [Vector3i(2, 1, 1)]
+	colonos_bono.avanzar(0.2)  # 0.2 s x 2.5 celdas/s x bono 1.0 = 0.5 progreso, sin vía
+	assert(is_equal_approx(c_bono["progreso"], 0.5), "sin vía: progreso 0.5")
+
+	var colonos_bono2: Node = _nuevo(_mundo_llano(), CiudadScript.new())
+	var id_bono2: int = colonos_bono2.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var c_bono2: Dictionary = colonos_bono2.colonos[id_bono2]
+	c_bono2["ruta"] = [Vector3i(2, 1, 1)]
+	Vias.agregar([Vector3i(1, 0, 1)], "tierra_pisada")  # soporte bajo la celda de partida (1,1,1)
+	colonos_bono2.avanzar(0.2)  # 0.2 s x 2.5 celdas/s x bono 1.35 = 0.675 progreso, con vía
+	assert(is_equal_approx(c_bono2["progreso"], 0.675), "con vía: progreso 0.675 (1.35x el caso sin vía)")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+
 	print("\n=== Las 25 pruebas de Colonos pasaron correctamente ===")

@@ -184,10 +184,13 @@ func _physics_process(delta: float) -> void:
 		direccion += transform.basis.x
 	direccion = direccion.normalized()
 
-	velocity.x = direccion.x * VELOCIDAD
-	velocity.z = direccion.z * VELOCIDAD
 	var nadando := _profundidad_agua_en_pies() >= 2
 	var celda_pies: Vector3i = _celda_en(global_position) if mundo != null else Vector3i.ZERO
+	var bono := 1.0
+	if mundo != null:
+		bono = Vias.bono_en(celda_pies - Vector3i(0, 1, 0))
+	velocity.x = direccion.x * VELOCIDAD * bono
+	velocity.z = direccion.z * VELOCIDAD * bono
 	if nadando:
 		if Input.is_key_pressed(KEY_SPACE):
 			velocity.y = VELOCIDAD_NATACION

@@ -235,7 +235,8 @@ func _iniciar_paso(c: Dictionary, delta: float) -> void:
 
 
 func _completar_paso(c: Dictionary, delta: float) -> void:
-	c["progreso"] += delta * VELOCIDAD_COLONO
+	var soporte: Vector3i = c["celda"] + Vector3i(0, -1, 0)
+	c["progreso"] += delta * VELOCIDAD_COLONO * Vias.bono_en(soporte)
 	var siguiente: Vector3i = c["ruta"][0]
 	var t: float = minf(c["progreso"], 1.0)
 	c["posicion"] = _centro_de(c["celda"]).lerp(_centro_de(siguiente), t)

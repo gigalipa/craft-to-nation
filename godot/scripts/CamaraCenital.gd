@@ -793,6 +793,8 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i])
 		var xz := Vector2i(esquina.x + rel.x, esquina.y + rel.y)
 		if Recoleccion.celda_dentro_de_algun_puesto(xz):
 			return true
+		if Vias.hay_via_en_columna(xz):
+			return true
 		var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
 		if mundo.id_de_edificio(celda_superficie) != -1 or Construccion.construccion_de(celda_superficie) != -1:
 			return true
@@ -1606,10 +1608,24 @@ func _actualizar_preview_via() -> void:
 	via_preview.previsualizar_tramo(tramo, not ruta.is_empty())
 
 
-## Confirma el/los tramo(s) fijados como vía real — placeholder: el choque
-## inverso y la llamada a ConstructorVias se implementan en Task 9.
+## Confirma TODOS los tramos acumulados (_tramos_fijos) de una sola vez —
+## ver spec de vías Sección 5. Deduplica vértices consecutivos repetidos
+## (el punto de cierre de un tramo es también el inicio del siguiente).
 func _confirmar_trazo_via() -> void:
-	pass  # completado en Task 9
+	var vertices: Array[Vector2i] = []
+	for tramo in _tramos_fijos:
+		for v in tramo:
+			if vertices.is_empty() or vertices[-1] != v:
+				vertices.append(v)
+
+	var choca := func(columnas_abs: Array[Vector2i]) -> bool:
+		if columnas_abs.is_empty():
+			return false
+		var esquina: Vector2i = columnas_abs[0]
+		return _huella_choca_con_otro_puesto(esquina, _columnas_relativas(esquina, columnas_abs))
+
+	if not ConstructorVias.construir(mundo, vertices, choca):
+		print("Trazado rechazado: choca con un edificio, puesto u obra existente.")
 
 
 ## Tasas por trabajador y hora del puesto activo en "centro" (las mismas

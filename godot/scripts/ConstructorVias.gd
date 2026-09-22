@@ -53,9 +53,8 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 			continue
 		for col in plan["relleno_extra"]:
 			objetivo_relleno[col] = maxi(objetivo_relleno.get(col, 0), plan["y_base"])
-		var tipo_cuna: String = "cuna_esquina" if plan["diagonal"] else "cuna_recta"
-		for col in plan["solape"]:
-			cunas[col] = {"y": plan["y_base"], "tipo": tipo_cuna, "direccion_alta": plan["direccion_alta"]}
+		for dato: Dictionary in plan["cunas"]:
+			cunas[dato["columna"]] = {"y": plan["y_base"], "tipo": dato["tipo"], "direccion_alta": dato["direccion_alta"]}
 	for col in cunas:
 		objetivo_relleno.erase(col)
 

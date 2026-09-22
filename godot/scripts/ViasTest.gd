@@ -132,21 +132,29 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 9: plan_transicion() con desnivel 0 -> {} ===")
 	assert(nivelador_plano.plan_transicion(Vector2i(5, 5), Vector2i(6, 5)).is_empty())
 
-	print("\n=== TEST 10: plan_transicion() paso recto, desnivel 1 -> cuña recta, sin relleno extra ===")
+	print("\n=== TEST 10: plan_transicion() paso recto, desnivel 1 -> 2 cuñas rectas, sin relleno extra ===")
 	# GeneradorEscalon: altura 0 para x<=5, altura 1 para x>5 (un escalón).
 	var nivelador_escalon := NiveladorVia.new(GeneradorEscalon.new())
 	var plan_recto: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 5))
 	assert(not plan_recto.is_empty())
-	assert(plan_recto["solape"].size() == 2)  # paso recto: 2 columnas de solape
-	assert(not plan_recto["diagonal"])
+	assert(plan_recto["cunas"].size() == 2)  # paso recto: 2 columnas de solape, ambas cuna_recta
+	for dato: Dictionary in plan_recto["cunas"]:
+		assert(dato["tipo"] == "cuna_recta")
+		assert(dato["direccion_alta"] == Vector2i(1, 0))
 	assert(plan_recto["y_base"] == 0)
-	assert(plan_recto["direccion_alta"] == Vector2i(1, 0))
 	assert(plan_recto["relleno_extra"].is_empty())
 
-	print("\n=== TEST 11: plan_transicion() paso diagonal, desnivel 1 -> cuña de esquina ===")
+	print("\n=== TEST 11: plan_transicion() paso diagonal, desnivel 1 -> cuña de esquina + 2 rectas del lado bajo ===")
 	var plan_diagonal: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 6))
-	assert(plan_diagonal["solape"].size() == 1)  # paso diagonal: 1 columna de solape
-	assert(plan_diagonal["diagonal"])
+	# 1 columna de solape (cuna_esquina) + 2 vecinas de arista del bloque
+	# BAJO (cuna_recta, ver decisión del usuario jugando en vivo) — el 4º
+	# vecino del bloque bajo (diagonal-opuesto a la esquina) sigue plano.
+	assert(plan_diagonal["cunas"].size() == 3)
+	var tipos_diagonal: Dictionary = {}
+	for dato: Dictionary in plan_diagonal["cunas"]:
+		tipos_diagonal[dato["tipo"]] = tipos_diagonal.get(dato["tipo"], 0) + 1
+	assert(tipos_diagonal.get("cuna_esquina", 0) == 1)
+	assert(tipos_diagonal.get("cuna_recta", 0) == 2)
 
 	print("\n=== TEST 12: plan_transicion() con desnivel 3 -> relleno_extra hasta quedar a 1 ===")
 	# GeneradorEscalonAlto: altura 0 para x<=5, altura 3 para x>5.
@@ -263,9 +271,16 @@ func ejecutar_pruebas() -> void:
 	assert(ConstructorVias.construir(mundo_diagonal_construir, vertices_diagonal, sin_choque))
 	# nivel(vertice (0,0)) = 0, nivel(vertice (1,1)) = 1 -> y_base = 0, la
 	# cuña queda en y_base+1 = 1 (mismo criterio que TEST 22). El solape
-	# diagonal entre ambos bloques es una sola columna: (0,0).
+	# diagonal entre ambos bloques es una sola columna: (0,0). Además, sus
+	# 2 vecinas de arista del bloque BAJO ((0,-1) y (-1,0)) también se
+	# vuelven cuna_recta (ver decisión del usuario jugando en vivo); la
+	# vecina diagonal-opuesta (-1,-1) sigue plana.
 	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 1, 0), "") == "cuna_esquina")
 	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 0, 0), "") != "cuna_esquina")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 1, -1), "") == "cuna_recta")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, 0), "") == "cuna_recta")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, -1), "") != "cuna_recta")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(-1, 1, -1), "") != "cuna_esquina")
 
 	print("\n=== TEST 26: ConstructorVias.construir() con desnivel de 3 rellena hasta y_base antes de la cuña ===")
 	Vias.celdas.clear()

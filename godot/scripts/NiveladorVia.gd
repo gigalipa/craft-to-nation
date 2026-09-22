@@ -68,14 +68,24 @@ func _relleno_absoluto(columnas: Array[Vector2i], tope: int) -> Dictionary:
 
 ## Plan de transición entre dos bloques de vía consecutivos (un paso, 8
 ## direcciones — ver spec Sección 2): {} si el desnivel es 0. Si no:
-## "solape" son las columnas compartidas por ambos bloques (2 en paso
-## recto, 1 en diagonal — ver bloque_de_vertice()); "y_base" es la altura
-## del lado bajo de la cuña que va ahí; "diagonal" indica qué pieza usar
-## (cuna_esquina si true, cuna_recta si false); "direccion_alta" apunta
-## del vértice bajo al alto (para orientar la pieza); "relleno_extra"
-## (columnas del bloque bajo, sin las de solape) solo tiene entradas si
-## el desnivel es 2 o 3: sube ese bloque hasta quedar a 1 del alto, antes
-## de que la cuña resuelva el último escalón.
+## "y_base" es la altura del lado bajo de las cuñas que van ahí;
+## "relleno_extra" (columnas del bloque bajo, sin las que se vuelven
+## cuña) solo tiene entradas si el desnivel es 2 o 3: sube ese bloque
+## hasta quedar a 1 del alto, antes de que las cuñas resuelvan el último
+## escalón; "cunas" es un Array de {"columna": Vector2i, "tipo": String
+## ("cuna_recta"/"cuna_esquina"), "direccion_alta": Vector2i} — una
+## entrada por celda que se vuelve cuña.
+##
+## En un paso RECTO, "cunas" trae las 2 columnas de solape (ver
+## bloque_de_vertice()), ambas cuna_recta con la misma direccion_alta. En
+## un paso DIAGONAL, la columna de solape es una sola y se vuelve
+## cuna_esquina — pero sola deja un borde brusco contra el lado bajo: su
+## altura varía de 0 a 0.5 en las dos aristas que no tocan ni el vértice
+## bajo ni el alto (ver spec). Por eso los 2 vecinos de ARISTA de esa
+## columna que pertenecen al bloque BAJO (no el diagonal-opuesto, que
+## sigue plano) también se vuelven cuna_recta, mirando hacia la esquina —
+## decisión del usuario jugando en vivo (2026-09-22): solo el lado bajo
+## se extiende, el lado alto ya está a su altura final.
 func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 	var paso: Vector2i = vertice_b - vertice_a
 	var bloque_a: Array[Vector2i] = bloque_de_vertice(vertice_a)
@@ -93,20 +103,37 @@ func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 	var vertice_bajo: Vector2i = vertice_a if nivel_a < nivel_b else vertice_b
 	var nivel_bajo: int = mini(nivel_a, nivel_b)
 	var nivel_alto: int = maxi(nivel_a, nivel_b)
+	var diagonal: bool = paso.x != 0 and paso.y != 0
+	var direccion_alta: Vector2i = paso if nivel_b > nivel_a else -paso
+
+	var cunas: Array[Dictionary] = []
+	for col in solape:
+		cunas.append({"columna": col, "tipo": "cuna_esquina" if diagonal else "cuna_recta", "direccion_alta": direccion_alta})
+
+	var columnas_extra: Array[Vector2i] = []
+	if diagonal:
+		var columna_solape: Vector2i = solape[0]
+		for col in bloque_de_vertice(vertice_bajo):
+			if col == columna_solape:
+				continue
+			var delta: Vector2i = columna_solape - col
+			if absi(delta.x) + absi(delta.y) != 1:
+				continue  # solo vecinos de ARISTA — el 4º, diagonal-opuesto, sigue plano
+			columnas_extra.append(col)
+			cunas.append({"columna": col, "tipo": "cuna_recta", "direccion_alta": delta})
+
 	var y_base: int = nivel_bajo
 	var relleno_extra: Dictionary = {}
 	if nivel_alto - nivel_bajo > 1:
 		y_base = nivel_alto - 1
 		var columnas_a_rellenar: Array[Vector2i] = []
 		for col in bloque_de_vertice(vertice_bajo):
-			if not solape.has(col):
+			if not solape.has(col) and not columnas_extra.has(col):
 				columnas_a_rellenar.append(col)
 		relleno_extra = _relleno_absoluto(columnas_a_rellenar, y_base)
 
 	return {
-		"solape": solape,
 		"y_base": y_base,
-		"diagonal": paso.x != 0 and paso.y != 0,
-		"direccion_alta": paso if nivel_b > nivel_a else -paso,
 		"relleno_extra": relleno_extra,
+		"cunas": cunas,
 	}

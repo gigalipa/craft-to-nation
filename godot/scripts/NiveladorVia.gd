@@ -52,3 +52,61 @@ func bloque_de_vertice(vertice: Vector2i) -> Array[Vector2i]:
 ## máximo entre sus 4 columnas (nunca se cava, ver spec Sección 2).
 func nivel_de_bloque(vertice: Vector2i) -> int:
 	return _nivelador_terreno.altura_objetivo(_esquina_de(vertice), COLUMNAS_BLOQUE)
+
+
+## Columnas absolutas de "columnas" que hace falta rellenar (relativo a
+## sí mismas, sin pasar por esquina/relativo de NiveladorTerreno — mismo
+## cálculo que calcular_relleno_hasta() pero con columnas ya absolutas).
+func _relleno_absoluto(columnas: Array[Vector2i], tope: int) -> Dictionary:
+	var relleno: Dictionary = {}
+	for col in columnas:
+		var faltante: int = tope - _generador.altura_en(col.x, col.y)
+		if faltante > 0:
+			relleno[col] = faltante
+	return relleno
+
+
+## Plan de transición entre dos bloques de vía consecutivos (un paso, 8
+## direcciones — ver spec Sección 2): {} si el desnivel es 0. Si no:
+## "solape" son las columnas compartidas por ambos bloques (2 en paso
+## recto, 1 en diagonal — ver bloque_de_vertice()); "y_base" es la altura
+## del lado bajo de la cuña que va ahí; "diagonal" indica qué pieza usar
+## (cuna_esquina si true, cuna_recta si false); "direccion_alta" apunta
+## del vértice bajo al alto (para orientar la pieza); "relleno_extra"
+## (columnas del bloque bajo, sin las de solape) solo tiene entradas si
+## el desnivel es 2 o 3: sube ese bloque hasta quedar a 1 del alto, antes
+## de que la cuña resuelva el último escalón.
+func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
+	var paso: Vector2i = vertice_b - vertice_a
+	var bloque_a: Array[Vector2i] = bloque_de_vertice(vertice_a)
+	var bloque_b: Array[Vector2i] = bloque_de_vertice(vertice_b)
+	var solape: Array[Vector2i] = []
+	for col in bloque_a:
+		if bloque_b.has(col):
+			solape.append(col)
+
+	var nivel_a: int = nivel_de_bloque(vertice_a)
+	var nivel_b: int = nivel_de_bloque(vertice_b)
+	if nivel_a == nivel_b:
+		return {}
+
+	var vertice_bajo: Vector2i = vertice_a if nivel_a < nivel_b else vertice_b
+	var nivel_bajo: int = mini(nivel_a, nivel_b)
+	var nivel_alto: int = maxi(nivel_a, nivel_b)
+	var y_base: int = nivel_bajo
+	var relleno_extra: Dictionary = {}
+	if nivel_alto - nivel_bajo > 1:
+		y_base = nivel_alto - 1
+		var columnas_a_rellenar: Array[Vector2i] = []
+		for col in bloque_de_vertice(vertice_bajo):
+			if not solape.has(col):
+				columnas_a_rellenar.append(col)
+		relleno_extra = _relleno_absoluto(columnas_a_rellenar, y_base)
+
+	return {
+		"solape": solape,
+		"y_base": y_base,
+		"diagonal": paso.x != 0 and paso.y != 0,
+		"direccion_alta": paso if nivel_b > nivel_a else -paso,
+		"relleno_extra": relleno_extra,
+	}

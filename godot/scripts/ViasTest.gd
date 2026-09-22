@@ -23,6 +23,18 @@ class GeneradorPlano:
 		return 10
 
 
+## Escalón: altura 0 para x<=5, altura 1 para x>5 (desnivel de 1 bloque).
+class GeneradorEscalon:
+	func altura_en(x: int, _z: int) -> int:
+		return 1 if x > 5 else 0
+
+
+## Escalón alto: altura 0 para x<=5, altura 3 para x>5 (desnivel de 3).
+class GeneradorEscalonAlto:
+	func altura_en(x: int, _z: int) -> int:
+		return 3 if x > 5 else 0
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 	print("=== TODAS LAS PRUEBAS DE ViasTest PASARON ===")
@@ -68,3 +80,31 @@ func ejecutar_pruebas() -> void:
 	var nivelador_diagonal := NiveladorVia.new(GeneradorPendienteDiagonal.new())
 	# Vértice (1,1): columnas (0,0)=0, (1,0)=1, (0,1)=1, (1,1)=2 -> máximo 2.
 	assert(nivelador_diagonal.nivel_de_bloque(Vector2i(1, 1)) == 2)
+
+	print("\n=== TEST 9: plan_transicion() con desnivel 0 -> {} ===")
+	assert(nivelador_plano.plan_transicion(Vector2i(5, 5), Vector2i(6, 5)).is_empty())
+
+	print("\n=== TEST 10: plan_transicion() paso recto, desnivel 1 -> cuña recta, sin relleno extra ===")
+	# GeneradorEscalon: altura 0 para x<5, altura 1 para x>=5 (un escalón).
+	var nivelador_escalon := NiveladorVia.new(GeneradorEscalon.new())
+	var plan_recto: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 5))
+	assert(not plan_recto.is_empty())
+	assert(plan_recto["solape"].size() == 2)  # paso recto: 2 columnas de solape
+	assert(not plan_recto["diagonal"])
+	assert(plan_recto["y_base"] == 0)
+	assert(plan_recto["direccion_alta"] == Vector2i(1, 0))
+	assert(plan_recto["relleno_extra"].is_empty())
+
+	print("\n=== TEST 11: plan_transicion() paso diagonal, desnivel 1 -> cuña de esquina ===")
+	var plan_diagonal: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 6))
+	assert(plan_diagonal["solape"].size() == 1)  # paso diagonal: 1 columna de solape
+	assert(plan_diagonal["diagonal"])
+
+	print("\n=== TEST 12: plan_transicion() con desnivel 3 -> relleno_extra hasta quedar a 1 ===")
+	# GeneradorEscalonAlto: altura 0 para x<5, altura 3 para x>=5.
+	var nivelador_alto := NiveladorVia.new(GeneradorEscalonAlto.new())
+	var plan_alto: Dictionary = nivelador_alto.plan_transicion(Vector2i(5, 5), Vector2i(6, 5))
+	assert(plan_alto["y_base"] == 2)  # nivel_alto(3) - 1
+	assert(not plan_alto["relleno_extra"].is_empty())
+	for columna in plan_alto["relleno_extra"]:
+		assert(plan_alto["relleno_extra"][columna] == 2)

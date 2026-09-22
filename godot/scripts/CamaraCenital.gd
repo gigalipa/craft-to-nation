@@ -169,6 +169,17 @@ var _vertice_inicio_tramo := Vector2i.ZERO
 var _tramos_fijos: Array = []  # Array[Array[Vector2i]]
 var _trazador_via: RefCounted = null
 
+## Último origen/vértice bajo el mouse para los que se corrió
+## buscar_ruta() en _actualizar_preview_via() — evita repetir la A*
+## completa cada fotograma cuando ninguno cambió (ver I2 de la revisión
+## final: un objetivo inalcanzable expandía hasta MAX_NODOS_EXPANDIDOS
+## cada fotograma). Vector2i(999999, 999999): centinela que nunca es un
+## vértice real del mundo, así la primera llamada siempre recalcula.
+const SIN_VERTICE_PREVIO := Vector2i(999999, 999999)
+var _ultimo_origen_preview := SIN_VERTICE_PREVIO
+var _ultimo_vertice_preview := SIN_VERTICE_PREVIO
+var _ultima_ruta_preview: Array[Vector2i] = []
+
 var nivelador_puesto: RefCounted
 
 ## Modo de colocación de puesto periférico (mina: tecla `M`; caza y
@@ -788,12 +799,17 @@ func _huella_en_zona_correcta(esquina: Vector2i, columnas: Array[Vector2i], zona
 ## _columnas_rectangulo(ancho, alto); una huella irregular (un edificio en
 ## L) pasa sus columnas reales, así que el hueco de la L nunca exige estar
 ## libre.
-func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i]) -> bool:
+## "ignorar_vias" salta el rechazo por Vias.hay_via_en_columna() — usado
+## SOLO por _confirmar_trazo_via() (ver spec de vías Sección 4/6): un
+## trazo que cierra sobre una vía YA CONSTRUIDA (intersección/red) debe
+## poder unirse a ella, aunque puesto/blueprint sigan rechazando colocarse
+## sobre una vía (llamadores por defecto, sin pasar este parámetro).
+func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i], ignorar_vias := false) -> bool:
 	for rel in columnas:
 		var xz := Vector2i(esquina.x + rel.x, esquina.y + rel.y)
 		if Recoleccion.celda_dentro_de_algun_puesto(xz):
 			return true
-		if Vias.hay_via_en_columna(xz):
+		if not ignorar_vias and Vias.hay_via_en_columna(xz):
 			return true
 		var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
 		if mundo.id_de_edificio(celda_superficie) != -1 or Construccion.construccion_de(celda_superficie) != -1:
@@ -1567,9 +1583,14 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 
 	var tramo: Array[Vector2i] = [_vertice_inicio_tramo]
 	tramo.append_array(ruta)
+	# Se comprueba ANTES de agregar "tramo" a _tramos_fijos: el tramo recién
+	# trazado siempre termina en "vertice" por construcción, así que
+	# comprobar después haría que cualquier clic "cerrara" contra su propio
+	# destino — ver spec de vías Sección 4 y el autochequeo de C1.
+	var cierra_trazo := _vertice_pertenece_a_via(vertice)
 	_tramos_fijos.append(tramo)
 
-	if _vertice_pertenece_a_via(vertice):
+	if cierra_trazo:
 		_confirmar_trazo_via()
 		_hay_tramo_en_curso = false
 		_tramos_fijos.clear()
@@ -1588,21 +1609,41 @@ func _cancelar_tramo_via() -> void:
 
 
 ## true si CUALQUIER columna del bloque de soporte de "vertice" ya tiene
-## una vía registrada — usado para saber si el clic cierra el trazo como
-## intersección (ver spec de vías Sección 4).
+## una vía registrada, O si "vertice" ya aparece en algún tramo de
+## _tramos_fijos (la vista previa acumulada del trazo en curso) — usado
+## para saber si el clic cierra el trazo, como intersección con una vía
+## construida o como cierre sobre la propia ruta acumulada (ver spec de
+## vías Sección 4). Llamar SIEMPRE antes de agregar el tramo recién
+## trazado a _tramos_fijos (ver _procesar_clic_via()).
 func _vertice_pertenece_a_via(vertice: Vector2i) -> bool:
 	for col in _trazador_via.bloque_de_vertice(vertice):
 		var y: int = mundo.altura_en(col.x, col.y)
 		if Vias.es_via(Vector3i(col.x, y, col.y)):
 			return true
+	for tramo: Array[Vector2i] in _tramos_fijos:
+		if tramo.has(vertice):
+			return true
 	return false
 
 
 ## Vista previa en vivo del trazo actual (origen fijado + ruta hasta el
-## cursor) — ver _process(). Se completa en Task 9.
+## cursor) — ver _process(). Cachea el último origen/vértice consultados
+## (ver I2 de la revisión final) para no repetir buscar_ruta() (hasta
+## TrazadorVias.MAX_NODOS_EXPANDIDOS nodos, cada uno con varias consultas
+## al mundo) en cada fotograma mientras el cursor sigue sobre el mismo
+## vértice — solo reaplica el último resultado.
 func _actualizar_preview_via() -> void:
 	var vertice := _vertice_bajo_mouse(get_viewport().get_mouse_position())
+	if vertice == _ultimo_vertice_preview and _vertice_inicio_tramo == _ultimo_origen_preview:
+		var tramo_cacheado: Array[Vector2i] = [_vertice_inicio_tramo]
+		tramo_cacheado.append_array(_ultima_ruta_preview)
+		via_preview.previsualizar_tramo(tramo_cacheado, not _ultima_ruta_preview.is_empty())
+		return
+
 	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
+	_ultimo_origen_preview = _vertice_inicio_tramo
+	_ultimo_vertice_preview = vertice
+	_ultima_ruta_preview = ruta
 	var tramo: Array[Vector2i] = [_vertice_inicio_tramo]
 	tramo.append_array(ruta)
 	via_preview.previsualizar_tramo(tramo, not ruta.is_empty())
@@ -1622,7 +1663,7 @@ func _confirmar_trazo_via() -> void:
 		if columnas_abs.is_empty():
 			return false
 		var esquina: Vector2i = columnas_abs[0]
-		return _huella_choca_con_otro_puesto(esquina, _columnas_relativas(esquina, columnas_abs))
+		return _huella_choca_con_otro_puesto(esquina, _columnas_relativas(esquina, columnas_abs), true)
 
 	if not ConstructorVias.construir(mundo, vertices, choca):
 		print("Trazado rechazado: choca con un edificio, puesto u obra existente.")

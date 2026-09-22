@@ -43,7 +43,11 @@ func _reconstruir_chunk(chunk: Vector3i) -> void:
 				var tipo: String = voxel_world.obtener_tipo(celda)
 				if tipo == "cuna_recta" or tipo == "cuna_esquina":
 					continue
-				TranslucidosRenderer._agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF, ARRIBA)
+				# +0.01 en Y: sin este margen el overlay queda exactamente
+				# coplanar con la cara superior del terreno -> z-fighting
+				# (ver I3 de la revisión final; mismo margen que usan
+				# ZonaOverlay.gd/ViaPreviewOverlay.gd para el mismo problema).
+				TranslucidosRenderer._agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF + Vector3(0, 0.01, 0), ARRIBA)
 				hay_caras = true
 
 	if not hay_caras:

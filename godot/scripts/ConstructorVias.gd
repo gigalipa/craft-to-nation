@@ -17,8 +17,10 @@ const TIPO_VIA := "tierra_pisada"
 ## vértices consecutivos repetidos). "mundo" necesita altura_en(x,z),
 ## obtener_tipo(celda), colocar_bloque(celda,tipo,por_jugador),
 ## talar_bloque_de_arbol(celda,dano), eliminar_follaje(celda),
-## set_cell_item(celda,id,orientacion) e id_de_tipo(tipo) — VoxelWorld
-## real los tiene todos (id_de_tipo() nuevo, ver Task 5). "choca" es
+## set_cell_item(celda,id,orientacion), id_de_tipo(tipo) — VoxelWorld
+## real los tiene todos (id_de_tipo() nuevo, ver Task 5) — y
+## colocado_por_jugador, un Dictionary ESCRIBIBLE (esta función escribe
+## directo ahí para cada cuña colocada). "choca" es
 ## Callable(columnas_absolutas: Array[Vector2i]) -> bool, inyectada por
 ## el llamador (CamaraCenital._huella_choca_con_otro_puesto — ver spec
 ## Sección 6) para no acoplar esta clase a Recoleccion/Construccion.
@@ -65,8 +67,13 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 	for col in cunas:
 		var datos: Dictionary = cunas[col]
 		_nivelar_columna(mundo, col, datos["y"])
-		var celda_cuna := Vector3i(col.x, datos["y"], col.y)
-		mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(datos["tipo"]), _orientacion(datos["direccion_alta"]))
+		# La cuña va UNA celda por encima de "y" (= y_base, la superficie del
+		# lado bajo): su cara inferior descansa sobre la cara superior real
+		# del lado bajo (mundo Y = y_base+1), no sobre la celda de piso en sí
+		# (ver C3 de la revisión final — colocarla en "y" cavaba una zanja de
+		# un bloque en vez de tender un puente).
+		var celda_cuna := Vector3i(col.x, datos["y"] + 1, col.y)
+		mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(datos["tipo"]), _orientacion(datos["direccion_alta"], datos["tipo"] == "cuna_esquina"))
 		mundo.colocado_por_jugador[celda_cuna] = true
 		celdas_soporte.append(celda_cuna)
 
@@ -98,14 +105,17 @@ static func _nivelar_columna(mundo: Object, col: Vector2i, y_objetivo: int) -> v
 
 
 ## Índice de orientación de GridMap (0-23) para que el lado ALTO de una
-## cuña quede orientado hacia "direccion_alta" (Vector2i en XZ) — las
-## piezas se modelaron con su lado alto hacia +Z (ver Task 4), así que
-## basta rotar alrededor de Y el ángulo entre esa referencia y
-## "direccion_alta". ponytail: el signo de la rotación se fija
-## visualmente en el editor real (Task 9); si sale espejado, invertir
-## "-angulo" a "angulo" aquí es el único cambio necesario.
-static func _orientacion(direccion_alta: Vector2i) -> int:
-	var referencia := Vector2(0, 1)
+## cuña quede orientado hacia "direccion_alta" (Vector2i en XZ). La
+## referencia depende de QUÉ pieza se orienta (ver Task 4): "cuna_recta"
+## se modeló con su lado alto hacia +Z, pero "cuna_esquina" se modeló con
+## su esquina alta hacia +X+Z — usar la referencia de cuna_recta para una
+## cuna_esquina da un ángulo de 45°, que no es múltiplo de 90° y hace que
+## get_orthogonal_index_from_basis() falle (ver I1 de la revisión final).
+## ponytail: el signo de la rotación se fija visualmente en el editor
+## real (Task 9); si sale espejado, invertir "-angulo" a "angulo" aquí es
+## el único cambio necesario.
+static func _orientacion(direccion_alta: Vector2i, diagonal: bool) -> int:
+	var referencia := Vector2(1, 1) if diagonal else Vector2(0, 1)
 	var angulo: float = referencia.angle_to(Vector2(direccion_alta.x, direccion_alta.y))
 	# get_orthogonal_index_from_basis() no es estático en Godot 4.7: hace
 	# falta una instancia de GridMap (descartable, nunca en el árbol) para

@@ -5,7 +5,7 @@ extends Node
 ## no lance ningún assert(). Mismo patrón que ZonificacionTest.gd/
 ## NiveladorTerrenoTest.gd.
 
-# Preloads for future tasks (Task 2, 3, 4):
+# Preloads de las clases de lógica pura probadas en este archivo:
 const NiveladorVia = preload("res://scripts/NiveladorVia.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
@@ -133,7 +133,7 @@ func ejecutar_pruebas() -> void:
 	assert(nivelador_plano.plan_transicion(Vector2i(5, 5), Vector2i(6, 5)).is_empty())
 
 	print("\n=== TEST 10: plan_transicion() paso recto, desnivel 1 -> cuña recta, sin relleno extra ===")
-	# GeneradorEscalon: altura 0 para x<5, altura 1 para x>=5 (un escalón).
+	# GeneradorEscalon: altura 0 para x<=5, altura 1 para x>5 (un escalón).
 	var nivelador_escalon := NiveladorVia.new(GeneradorEscalon.new())
 	var plan_recto: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 5))
 	assert(not plan_recto.is_empty())
@@ -149,7 +149,7 @@ func ejecutar_pruebas() -> void:
 	assert(plan_diagonal["diagonal"])
 
 	print("\n=== TEST 12: plan_transicion() con desnivel 3 -> relleno_extra hasta quedar a 1 ===")
-	# GeneradorEscalonAlto: altura 0 para x<5, altura 3 para x>=5.
+	# GeneradorEscalonAlto: altura 0 para x<=5, altura 3 para x>5.
 	var nivelador_alto := NiveladorVia.new(GeneradorEscalonAlto.new())
 	var plan_alto: Dictionary = nivelador_alto.plan_transicion(Vector2i(5, 5), Vector2i(6, 5))
 	assert(plan_alto["y_base"] == 2)  # nivel_alto(3) - 1
@@ -219,7 +219,7 @@ func ejecutar_pruebas() -> void:
 	assert(not ConstructorVias.construir(mundo_construir, vertices_rectos, con_choque))
 	assert(Vias.celdas.is_empty())
 
-	print("\n=== TEST 22: ConstructorVias.construir() con desnivel de 1 coloca una cuna_recta ===")
+	print("\n=== TEST 22: ConstructorVias.construir() con desnivel de 1 coloca cuna_recta en la celda correcta ===")
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	var mundo_escalon_construir := MundoFalsoVias.new()
@@ -227,11 +227,16 @@ func ejecutar_pruebas() -> void:
 	mundo_escalon_construir.altura_escalon = 1
 	var vertices_escalon: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0)]
 	assert(ConstructorVias.construir(mundo_escalon_construir, vertices_escalon, sin_choque))
-	var hay_cuna := false
-	for celda_escalon in mundo_escalon_construir.celdas:
-		if mundo_escalon_construir.celdas[celda_escalon] == "cuna_recta":
-			hay_cuna = true
-	assert(hay_cuna)
+	# nivel(vertice (0,0)) = 0, nivel(vertice (1,0)) = 1 -> y_base = 0. La
+	# cuña debe quedar en y_base+1 = 1 (ver C3): su cara inferior descansa
+	# sobre la cara superior real del lado bajo (mundo Y=1), tendiendo el
+	# puente hasta la cara superior del lado alto (mundo Y=2) — colocarla
+	# en y_base=0 cavaría una zanja en vez de tender un puente. El solape
+	# recto entre ambos bloques son las columnas (0,-1) y (0,0).
+	assert(mundo_escalon_construir.celdas.get(Vector3i(0, 1, -1), "") == "cuna_recta")
+	assert(mundo_escalon_construir.celdas.get(Vector3i(0, 1, 0), "") == "cuna_recta")
+	assert(mundo_escalon_construir.celdas.get(Vector3i(0, 0, -1), "") != "cuna_recta")
+	assert(mundo_escalon_construir.celdas.get(Vector3i(0, 0, 0), "") != "cuna_recta")
 
 	print("\n=== TEST 23: ConstructorVias.construir() tala un árbol en el camino ===")
 	Vias.celdas.clear()
@@ -247,3 +252,36 @@ func ejecutar_pruebas() -> void:
 	assert(Vias.celdas.is_empty())
 	Vias.celdas.clear()
 	Vias._columnas.clear()
+
+	print("\n=== TEST 25: ConstructorVias.construir() con paso diagonal coloca cuna_esquina en la celda correcta ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var mundo_diagonal_construir := MundoFalsoVias.new()
+	mundo_diagonal_construir.escalon_en_x = 1
+	mundo_diagonal_construir.altura_escalon = 1
+	var vertices_diagonal: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 1)]
+	assert(ConstructorVias.construir(mundo_diagonal_construir, vertices_diagonal, sin_choque))
+	# nivel(vertice (0,0)) = 0, nivel(vertice (1,1)) = 1 -> y_base = 0, la
+	# cuña queda en y_base+1 = 1 (mismo criterio que TEST 22). El solape
+	# diagonal entre ambos bloques es una sola columna: (0,0).
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 1, 0), "") == "cuna_esquina")
+	assert(mundo_diagonal_construir.celdas.get(Vector3i(0, 0, 0), "") != "cuna_esquina")
+
+	print("\n=== TEST 26: ConstructorVias.construir() con desnivel de 3 rellena hasta y_base antes de la cuña ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var mundo_alto_construir := MundoFalsoVias.new()
+	mundo_alto_construir.escalon_en_x = 1
+	mundo_alto_construir.altura_escalon = 3
+	var vertices_alto: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0)]
+	assert(ConstructorVias.construir(mundo_alto_construir, vertices_alto, sin_choque))
+	# nivel(vertice (0,0)) = 0, nivel(vertice (1,0)) = 3 -> desnivel 3,
+	# y_base = nivel_alto - 1 = 2. Las columnas del lado bajo que NO son
+	# solape ((-1,-1) y (-1,0)) se rellenan de tierra hasta y=2; la cuña
+	# (columnas de solape (0,-1) y (0,0)) queda en y_base+1 = 3.
+	assert(mundo_alto_construir.celdas.get(Vector3i(-1, 1, -1), "") == "tierra")
+	assert(mundo_alto_construir.celdas.get(Vector3i(-1, 2, -1), "") == "tierra")
+	assert(mundo_alto_construir.celdas.get(Vector3i(-1, 1, 0), "") == "tierra")
+	assert(mundo_alto_construir.celdas.get(Vector3i(-1, 2, 0), "") == "tierra")
+	assert(mundo_alto_construir.celdas.get(Vector3i(0, 3, -1), "") == "cuna_recta")
+	assert(mundo_alto_construir.celdas.get(Vector3i(0, 3, 0), "") == "cuna_recta")

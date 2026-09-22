@@ -8,7 +8,7 @@ extends Node
 # Preloads for future tasks (Task 2, 3, 4):
 const NiveladorVia = preload("res://scripts/NiveladorVia.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
-# const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
+const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
 
 ## Generador falso: altura = x + z (una pendiente diagonal simple para
 ## probar niveles de bloque distintos entre vértices vecinos).
@@ -197,3 +197,53 @@ func ejecutar_pruebas() -> void:
 	mundo_escalon.altura_escalon = 5  # desnivel de 5 entre x=2 y x=3, por encima del límite de 3
 	var trazador_escalon := TrazadorVias.new(mundo_escalon)
 	assert(trazador_escalon.buscar_ruta(Vector2i(0, 0), Vector2i(5, 0)).is_empty())
+
+	print("\n=== TEST 20: ConstructorVias.construir() en terreno plano registra la vía ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var mundo_construir := MundoFalsoVias.new()
+	var sin_choque := func(_c: Array) -> bool: return false
+	var vertices_rectos: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
+	assert(ConstructorVias.construir(mundo_construir, vertices_rectos, sin_choque))
+	# 3 vértices en línea recta: bloques (−1..0,−1..0), (0..1,−1..0), (1..2,−1..0)
+	# se solapan de a 2 columnas -> 8 columnas de soporte distintas en total.
+	var columnas_registradas: Dictionary = {}
+	for celda_via in Vias.celdas:
+		columnas_registradas[Vector2i(celda_via.x, celda_via.z)] = true
+	assert(columnas_registradas.size() == 8)
+
+	print("\n=== TEST 21: ConstructorVias.construir() rechaza si choca ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var con_choque := func(_c: Array) -> bool: return true
+	assert(not ConstructorVias.construir(mundo_construir, vertices_rectos, con_choque))
+	assert(Vias.celdas.is_empty())
+
+	print("\n=== TEST 22: ConstructorVias.construir() con desnivel de 1 coloca una cuna_recta ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var mundo_escalon_construir := MundoFalsoVias.new()
+	mundo_escalon_construir.escalon_en_x = 1
+	mundo_escalon_construir.altura_escalon = 1
+	var vertices_escalon: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0)]
+	assert(ConstructorVias.construir(mundo_escalon_construir, vertices_escalon, sin_choque))
+	var hay_cuna := false
+	for celda_escalon in mundo_escalon_construir.celdas:
+		if mundo_escalon_construir.celdas[celda_escalon] == "cuna_recta":
+			hay_cuna = true
+	assert(hay_cuna)
+
+	print("\n=== TEST 23: ConstructorVias.construir() tala un árbol en el camino ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	var mundo_arbol := MundoFalsoVias.new()
+	mundo_arbol.celdas[Vector3i(0, 1, 0)] = "madera"  # dentro del bloque de vertice (0,0) o (1,0)
+	assert(ConstructorVias.construir(mundo_arbol, [Vector2i(0, 0), Vector2i(1, 0)], sin_choque))
+	assert(mundo_arbol.celdas.get(Vector3i(0, 1, 0), "") != "madera")
+
+	print("\n=== TEST 24: ConstructorVias.construir() con menos de 2 vértices no hace nada ===")
+	Vias.celdas.clear()
+	assert(not ConstructorVias.construir(mundo_construir, [Vector2i(0, 0)], sin_choque))
+	assert(Vias.celdas.is_empty())
+	Vias.celdas.clear()
+	Vias._columnas.clear()

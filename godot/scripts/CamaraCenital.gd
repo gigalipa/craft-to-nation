@@ -3,6 +3,8 @@ extends Camera3D
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
 const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
+const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
+const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
 
 ## Envoltorio para NiveladorTerreno: siempre llama a altura_en(x, z, true)
 ## (ignora agua). NiveladorTerreno solo necesita .altura_en(x, z) por duck
@@ -149,6 +151,7 @@ const ALTURA_SOBRE_SUPERFICIE_AREA_ACCION := 1.001
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
+@onready var via_preview: Node3D = get_node("../ViaPreviewOverlay")
 @onready var hud: CanvasLayer = get_node("../HUDLayer")
 
 ## Modo zonificación (tecla `Z`): mientras está activo, el clic izquierdo pinta
@@ -158,6 +161,13 @@ var modo_zonificar := false
 var tipo_zona_seleccionada: String = Zonificacion.ZONAS_PINTABLES[0]
 var esperando_segunda_esquina := false
 var primera_esquina := Vector2i.ZERO
+
+## Modo trazador de vías (tecla `V`) — ver spec de vías Sección 4.
+var modo_trazar_via := false
+var _hay_tramo_en_curso := false
+var _vertice_inicio_tramo := Vector2i.ZERO
+var _tramos_fijos: Array = []  # Array[Array[Vector2i]]
+var _trazador_via: RefCounted = null
 
 var nivelador_puesto: RefCounted
 
@@ -510,6 +520,8 @@ func _process(delta: float) -> void:
 			_actualizar_previsualizacion_puesto()
 		elif esperando_segunda_esquina:
 			_actualizar_previsualizacion_zona()
+		elif modo_trazar_via and _hay_tramo_en_curso:
+			_actualizar_preview_via()
 		return
 
 	# Estado tentativo: se aplican todos los controles activos este
@@ -1120,6 +1132,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_alternar_modo_colocar_puesto("pesca_frutos_mar", Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
 		elif tecla.pressed and tecla.keycode == KEY_B:
 			_alternar_modo_colocar_blueprint()
+		elif tecla.pressed and tecla.keycode == KEY_V:
+			_alternar_modo_trazar_via()
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
@@ -1130,9 +1144,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				_procesar_clic_puesto(boton.position)
 			elif modo_zonificar:
 				_procesar_clic(boton.position)
+			elif modo_trazar_via:
+				_procesar_clic_via(boton.position)
 			else:
 				_procesar_clic_interaccion(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
+			if modo_trazar_via:
+				_cancelar_tramo_via()
 			_cancelar_pintado_zona()
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
 			if modo_colocar_puesto and Input.is_key_pressed(KEY_CTRL):
@@ -1317,6 +1335,7 @@ func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_zonificar()
+	_salir_de_modo_trazar_via()
 	hud.cerrar_panel_puesto()
 
 
@@ -1420,6 +1439,26 @@ func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 	return Vector2i(celda.x, celda.z)
 
 
+## Igual que _celda_bajo_mouse() pero redondea al VÉRTICE (esquina entre
+## 4 celdas) más cercano en vez de a la celda — ver spec de vías Sección
+## 1/4. Sin el desplazamiento "hacia adentro de la cara" que usa
+## _celda_bajo_mouse(): aquí interesa el punto de impacto real.
+func _vertice_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
+	var origen := project_ray_origin(posicion_pantalla)
+	var direccion := project_ray_normal(posicion_pantalla)
+	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
+	consulta.collision_mask = MASCARA_MUNDO
+	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
+	var punto: Vector3
+	if resultado.is_empty():
+		var distancia: float = -origen.y / direccion.y
+		punto = origen + direccion * distancia
+	else:
+		punto = resultado["position"]
+	var local: Vector3 = mundo.to_local(punto)
+	return Vector2i(roundi(local.x), roundi(local.z))
+
+
 ## Activa/desactiva el modo zonificación (tecla `Z`). Es excluyente con los
 ## modos de colocación de puesto y de blueprint. Conserva la última zona elegida.
 func _alternar_modo_zonificar() -> void:
@@ -1437,6 +1476,29 @@ func _salir_de_modo_zonificar() -> void:
 	modo_zonificar = false
 	hud.ocultar_modo_zonificacion()
 	_cancelar_pintado_zona()
+
+
+## Activa/desactiva el modo trazador de vías (tecla `V`). Excluyente con
+## los demás modos — ver spec de vías Sección 4.
+func _alternar_modo_trazar_via() -> void:
+	if modo_trazar_via:
+		_salir_de_modo_trazar_via()
+		return
+	_salir_de_modo_colocar_blueprint()
+	_salir_de_modo_colocar_puesto()
+	_salir_de_modo_zonificar()
+	hud.cerrar_panel_puesto()
+	modo_trazar_via = true
+	_trazador_via = TrazadorVias.new(mundo)
+	_tramos_fijos.clear()
+	_hay_tramo_en_curso = false
+
+
+func _salir_de_modo_trazar_via() -> void:
+	modo_trazar_via = false
+	_hay_tramo_en_curso = false
+	_tramos_fijos.clear()
+	via_preview.limpiar()
 
 
 func _elegir_zona(tipo: String) -> void:
@@ -1482,6 +1544,72 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 			print("Todavía no existe una zona de influencia — declara tu primer edificio residencial primero.")
 	esperando_segunda_esquina = false
 	overlay.reconstruir()
+
+
+## Clic con el modo trazador activo — ver spec de vías Sección 4.
+func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
+	var vertice := _vertice_bajo_mouse(posicion_pantalla)
+	if not _hay_tramo_en_curso:
+		_vertice_inicio_tramo = vertice
+		_hay_tramo_en_curso = true
+		return
+
+	if vertice == _vertice_inicio_tramo:
+		_cancelar_tramo_via()
+		return
+
+	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
+	if ruta.is_empty():
+		print("Trazado rechazado: no hay ruta posible hasta ese punto.")
+		return
+
+	var tramo: Array[Vector2i] = [_vertice_inicio_tramo]
+	tramo.append_array(ruta)
+	_tramos_fijos.append(tramo)
+
+	if _vertice_pertenece_a_via(vertice):
+		_confirmar_trazo_via()
+		_hay_tramo_en_curso = false
+		_tramos_fijos.clear()
+		via_preview.limpiar()
+		return
+
+	_vertice_inicio_tramo = vertice
+
+
+func _cancelar_tramo_via() -> void:
+	if not _hay_tramo_en_curso:
+		return
+	_hay_tramo_en_curso = false
+	via_preview.limpiar()
+	print("Trazado de vía cancelado.")
+
+
+## true si CUALQUIER columna del bloque de soporte de "vertice" ya tiene
+## una vía registrada — usado para saber si el clic cierra el trazo como
+## intersección (ver spec de vías Sección 4).
+func _vertice_pertenece_a_via(vertice: Vector2i) -> bool:
+	for col in _trazador_via.bloque_de_vertice(vertice):
+		var y: int = mundo.altura_en(col.x, col.y)
+		if Vias.es_via(Vector3i(col.x, y, col.y)):
+			return true
+	return false
+
+
+## Vista previa en vivo del trazo actual (origen fijado + ruta hasta el
+## cursor) — ver _process(). Se completa en Task 9.
+func _actualizar_preview_via() -> void:
+	var vertice := _vertice_bajo_mouse(get_viewport().get_mouse_position())
+	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
+	var tramo: Array[Vector2i] = [_vertice_inicio_tramo]
+	tramo.append_array(ruta)
+	via_preview.previsualizar_tramo(tramo, not ruta.is_empty())
+
+
+## Confirma el/los tramo(s) fijados como vía real — placeholder: el choque
+## inverso y la llamada a ConstructorVias se implementan en Task 9.
+func _confirmar_trazo_via() -> void:
+	pass  # completado en Task 9
 
 
 ## Tasas por trabajador y hora del puesto activo en "centro" (las mismas

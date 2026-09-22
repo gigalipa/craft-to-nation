@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/FantasmasDestacados.gd" id="9"]
 [ext_resource type="Script" path="res://scripts/ColonosRenderer.gd" id="10"]
 [ext_resource type="Script" path="res://scripts/ViasRenderer.gd" id="11"]
+[ext_resource type="Script" path="res://scripts/ViaPreviewOverlay.gd" id="12"]
 
 [node name="Main" type="Node3D" unique_id=1572763968]
 script = ExtResource("3")
@@ -41,6 +42,9 @@ script = ExtResource("6")
 [node name="ZonaOverlay" type="Node3D" parent="." unique_id=124459786]
 visible = false
 script = ExtResource("7")
+
+[node name="ViaPreviewOverlay" type="Node3D" parent="."]
+script = ExtResource("12")
 
 [node name="Luz" type="DirectionalLight3D" parent="." unique_id=1480571523]
 transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 5, 0)

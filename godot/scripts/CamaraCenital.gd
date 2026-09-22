@@ -1651,27 +1651,35 @@ func _actualizar_preview_vertice_inicial() -> void:
 	via_preview.previsualizar_tramo(vertices, _trazador_via.vertice_transitable(vertice))
 
 
-## Vista previa en vivo del trazo actual (origen fijado + ruta hasta el
-## cursor) — ver _process(). Cachea el último origen/vértice consultados
-## (ver I2 de la revisión final) para no repetir buscar_ruta() (hasta
-## TrazadorVias.MAX_NODOS_EXPANDIDOS nodos, cada uno con varias consultas
-## al mundo) en cada fotograma mientras el cursor sigue sobre el mismo
-## vértice — solo reaplica el último resultado.
+## Vista previa en vivo del trazo actual: los tramos YA fijados
+## (_tramos_fijos) permanecen visibles (spec de vías Sección 4: "la
+## anterior quedando 'fija' como previsualización") seguidos del tramo en
+## curso (origen fijado + ruta hasta el cursor) — ver _process(). Cachea
+## el último origen/vértice consultados (ver I2 de la revisión final)
+## para no repetir buscar_ruta() (hasta TrazadorVias.MAX_NODOS_EXPANDIDOS
+## nodos, cada uno con varias consultas al mundo) en cada fotograma
+## mientras el cursor sigue sobre el mismo vértice — solo reaplica el
+## último resultado.
 func _actualizar_preview_via() -> void:
 	var vertice := _vertice_bajo_mouse(get_viewport().get_mouse_position())
+	var ruta: Array[Vector2i]
 	if vertice == _ultimo_vertice_preview and _vertice_inicio_tramo == _ultimo_origen_preview:
-		var tramo_cacheado: Array[Vector2i] = [_vertice_inicio_tramo]
-		tramo_cacheado.append_array(_ultima_ruta_preview)
-		via_preview.previsualizar_tramo(tramo_cacheado, not _ultima_ruta_preview.is_empty())
-		return
+		ruta = _ultima_ruta_preview
+	else:
+		ruta = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
+		_ultimo_origen_preview = _vertice_inicio_tramo
+		_ultimo_vertice_preview = vertice
+		_ultima_ruta_preview = ruta
 
-	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
-	_ultimo_origen_preview = _vertice_inicio_tramo
-	_ultimo_vertice_preview = vertice
-	_ultima_ruta_preview = ruta
-	var tramo: Array[Vector2i] = [_vertice_inicio_tramo]
-	tramo.append_array(ruta)
-	via_preview.previsualizar_tramo(tramo, not ruta.is_empty())
+	var vertices: Array[Vector2i] = []
+	for tramo_fijo: Array[Vector2i] in _tramos_fijos:
+		for v in tramo_fijo:
+			if vertices.is_empty() or vertices[-1] != v:
+				vertices.append(v)
+	if vertices.is_empty() or vertices[-1] != _vertice_inicio_tramo:
+		vertices.append(_vertice_inicio_tramo)
+	vertices.append_array(ruta)
+	via_preview.previsualizar_tramo(vertices, not ruta.is_empty())
 
 
 ## Confirma TODOS los tramos acumulados (_tramos_fijos) de una sola vez —

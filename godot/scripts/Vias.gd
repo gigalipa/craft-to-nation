@@ -30,6 +30,13 @@ var celdas: Dictionary = {}  # Vector3i -> String
 ## sin recorrer "celdas" entero — mantenido en agregar()/quitar().
 var _columnas: Dictionary = {}  # Vector2i -> int (cuántas celdas de esa columna hay en "celdas")
 
+## Celda de soporte -> esquina LOCAL (0 o 1 en cada eje) que su overlay
+## plano debe OMITIR, dibujando un triángulo en vez de un cuadrado
+## completo — para que el borde visual de una vía diagonal quede recto
+## en vez de escalonado (ver NiveladorVia.notches_de_paso(), spec de vías
+## Sección 1). Sin entrada = celda normal, overlay cuadrado completo.
+var notches: Dictionary = {}  # Vector3i -> Vector2i
+
 ## Emitida cuando agregar()/quitar() cambian el registro — ViasRenderer la
 ## escucha para reconstruir solo los chunks afectados (ver spec Sección 3).
 signal vias_cambiadas(celdas: Array)
@@ -56,6 +63,17 @@ func hay_via_en_columna(xz: Vector2i) -> bool:
 	return _columnas.get(xz, 0) > 0
 
 
+## Esquina local (0 o 1 en cada eje) que el overlay de "soporte" debe
+## omitir, o Vector2i(-1, -1) si no es una celda "notch" (overlay
+## cuadrado normal) — ver "notches" más arriba.
+func notch_en(soporte: Vector3i) -> Vector2i:
+	return notches.get(soporte, Vector2i(-1, -1))
+
+
+func marcar_notch(soporte: Vector3i, esquina_omitida: Vector2i) -> void:
+	notches[soporte] = esquina_omitida
+
+
 func agregar(celdas_nuevas: Array, tipo: String) -> void:
 	for celda: Vector3i in celdas_nuevas:
 		if not celdas.has(celda):
@@ -71,6 +89,7 @@ func quitar(celdas_a_quitar: Array) -> void:
 		if not celdas.has(celda):
 			continue
 		celdas.erase(celda)
+		notches.erase(celda)
 		var xz := Vector2i(celda.x, celda.z)
 		_columnas[xz] = _columnas.get(xz, 1) - 1
 		if _columnas[xz] <= 0:

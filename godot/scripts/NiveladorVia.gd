@@ -156,3 +156,37 @@ func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 		"relleno_extra": relleno_extra,
 		"cunas": cunas,
 	}
+
+
+## Para un paso DIAGONAL entre "vertice_a" y "vertice_b" (8 direcciones,
+## ambos componentes de la diferencia no nulos), las 2 columnas "notch" —
+## la diagonal-opuesta a la de solape dentro de cada uno de los dos
+## bloques (ver plan_transicion(): son las que siguen planas incluso con
+## desnivel) — junto con la esquina LOCAL de esa columna (0 o 1 en cada
+## eje) que su overlay plano debe OMITIR, para que el borde visual de una
+## vía diagonal quede recto en vez de escalonado (spec de vías Sección 1,
+## decisión del usuario jugando en vivo, 2026-09-22). La esquina omitida
+## es siempre la más alejada de la columna de solape: en la columna
+## "detrás" de vertice_a, la que apunta en -paso; en la de "delante" de
+## vertice_b, la que apunta en +paso. [] si el paso no es diagonal — NO
+## depende de si hay desnivel (a diferencia de plan_transicion(), que
+## devuelve {} sin desnivel): el recorte del overlay hace falta igual.
+func notches_de_paso(vertice_a: Vector2i, vertice_b: Vector2i) -> Array[Dictionary]:
+	var paso: Vector2i = vertice_b - vertice_a
+	if paso.x == 0 or paso.y == 0:
+		return []
+
+	var bloque_a: Array[Vector2i] = bloque_de_vertice(vertice_a)
+	var bloque_b: Array[Vector2i] = bloque_de_vertice(vertice_b)
+	var columna_solape: Vector2i = Vector2i.ZERO
+	for col in bloque_a:
+		if bloque_b.has(col):
+			columna_solape = col
+			break
+
+	var esquina_a := Vector2i((1 - signi(paso.x)) / 2, (1 - signi(paso.y)) / 2)
+	var esquina_b := Vector2i((1 + signi(paso.x)) / 2, (1 + signi(paso.y)) / 2)
+	return [
+		{"columna": columna_solape - paso, "esquina_omitida": esquina_a},
+		{"columna": columna_solape + paso, "esquina_omitida": esquina_b},
+	]

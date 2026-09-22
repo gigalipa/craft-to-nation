@@ -42,9 +42,11 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 	# del bloque de soporte de cualquiera de los dos vértices — sin esto,
 	# el choque nunca las comprobaría contra edificios/puestos existentes.
 	var planes: Array[Dictionary] = []
+	var notches: Array[Dictionary] = []
 	for i in range(vertices.size() - 1):
 		var plan: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1])
 		planes.append(plan)
+		notches.append_array(nivelador.notches_de_paso(vertices[i], vertices[i + 1]))
 		if plan.is_empty():
 			continue
 		for dato: Dictionary in plan["cunas"]:
@@ -90,6 +92,15 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 		celdas_soporte.append(celda_cuna)
 
 	Vias.agregar(celdas_soporte, TIPO_VIA)
+
+	# Marca las celdas "notch" (siempre planas, ver notches_de_paso())
+	# para que ViasRenderer dibuje un triángulo en vez de un cuadrado
+	# completo ahí — borde recto en diagonal en vez de escalonado.
+	for dato: Dictionary in notches:
+		var col: Vector2i = dato["columna"]
+		if objetivo_relleno.has(col):
+			Vias.marcar_notch(Vector3i(col.x, objetivo_relleno[col], col.y), dato["esquina_omitida"])
+
 	return true
 
 

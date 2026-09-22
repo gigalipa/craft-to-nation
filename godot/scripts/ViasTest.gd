@@ -317,3 +317,33 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_alto_construir.celdas.get(Vector3i(-1, 2, 0), "") == "tierra")
 	assert(mundo_alto_construir.celdas.get(Vector3i(0, 3, -1), "") == "cuna_recta")
 	assert(mundo_alto_construir.celdas.get(Vector3i(0, 3, 0), "") == "cuna_recta")
+
+	print("\n=== TEST 27: notches_de_paso() da la esquina a omitir en cada celda notch ===")
+	# Paso diagonal (1,1): la columna de solape entre bloque(5,5) y
+	# bloque(6,6) es (5,5). notch_a = (5,5)-(1,1) = (4,4), notch_b =
+	# (5,5)+(1,1) = (6,6) — las diagonal-opuestas de cada bloque. La
+	# esquina a omitir es siempre la más alejada de la columna de solape.
+	var notches_diag: Array[Dictionary] = nivelador_plano.notches_de_paso(Vector2i(5, 5), Vector2i(6, 6))
+	assert(notches_diag.size() == 2)
+	assert(notches_diag[0]["columna"] == Vector2i(4, 4))
+	assert(notches_diag[0]["esquina_omitida"] == Vector2i(0, 0))
+	assert(notches_diag[1]["columna"] == Vector2i(6, 6))
+	assert(notches_diag[1]["esquina_omitida"] == Vector2i(1, 1))
+
+	print("\n=== TEST 28: notches_de_paso() en un paso recto no genera notches ===")
+	assert(nivelador_plano.notches_de_paso(Vector2i(5, 5), Vector2i(6, 5)).is_empty())
+
+	print("\n=== TEST 29: ConstructorVias.construir() registra las celdas notch de un paso diagonal ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+	var mundo_notch := MundoFalsoVias.new()
+	assert(ConstructorVias.construir(mundo_notch, [Vector2i(0, 0), Vector2i(1, 1)], sin_choque))
+	# Terreno plano (sin desnivel): el solape es (0,0); notch_a=(-1,-1)
+	# (bloque de (0,0)), notch_b=(1,1) (bloque de (1,1)), ambos a nivel 0.
+	assert(Vias.notch_en(Vector3i(-1, 0, -1)) == Vector2i(0, 0))
+	assert(Vias.notch_en(Vector3i(1, 0, 1)) == Vector2i(1, 1))
+	assert(Vias.notch_en(Vector3i(0, 0, 0)) == Vector2i(-1, -1))  # la esquina/solape no es notch
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()

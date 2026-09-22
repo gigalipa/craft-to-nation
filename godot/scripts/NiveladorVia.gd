@@ -54,6 +54,21 @@ func nivel_de_bloque(vertice: Vector2i) -> int:
 	return _nivelador_terreno.altura_objetivo(_esquina_de(vertice), COLUMNAS_BLOQUE)
 
 
+## Las columnas compartidas por los bloques de soporte de "vertice_a" y
+## "vertice_b" (2 en un paso recto, 1 en diagonal — ver
+## bloque_de_vertice()) — las columnas "bisagra" que conectan ambos
+## tramos. Reutilizada por plan_transicion() y por quien necesite saber
+## qué columnas NO son un extremo suelto del trazo (ver ConstructorVias).
+func columnas_solape(vertice_a: Vector2i, vertice_b: Vector2i) -> Array[Vector2i]:
+	var bloque_a: Array[Vector2i] = bloque_de_vertice(vertice_a)
+	var bloque_b: Array[Vector2i] = bloque_de_vertice(vertice_b)
+	var solape: Array[Vector2i] = []
+	for col in bloque_a:
+		if bloque_b.has(col):
+			solape.append(col)
+	return solape
+
+
 ## Columnas absolutas de "columnas" que hace falta rellenar (relativo a
 ## sí mismas, sin pasar por esquina/relativo de NiveladorTerreno — mismo
 ## cálculo que calcular_relleno_hasta() pero con columnas ya absolutas).
@@ -96,12 +111,7 @@ func _relleno_absoluto(columnas: Array[Vector2i], tope: int) -> Dictionary:
 ## cualquier otra diagonal.
 func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
 	var paso: Vector2i = vertice_b - vertice_a
-	var bloque_a: Array[Vector2i] = bloque_de_vertice(vertice_a)
-	var bloque_b: Array[Vector2i] = bloque_de_vertice(vertice_b)
-	var solape: Array[Vector2i] = []
-	for col in bloque_a:
-		if bloque_b.has(col):
-			solape.append(col)
+	var solape: Array[Vector2i] = columnas_solape(vertice_a, vertice_b)
 
 	var nivel_a: int = nivel_de_bloque(vertice_a)
 	var nivel_b: int = nivel_de_bloque(vertice_b)
@@ -176,13 +186,7 @@ func notches_de_paso(vertice_a: Vector2i, vertice_b: Vector2i) -> Array[Dictiona
 	if paso.x == 0 or paso.y == 0:
 		return []
 
-	var bloque_a: Array[Vector2i] = bloque_de_vertice(vertice_a)
-	var bloque_b: Array[Vector2i] = bloque_de_vertice(vertice_b)
-	var columna_solape: Vector2i = Vector2i.ZERO
-	for col in bloque_a:
-		if bloque_b.has(col):
-			columna_solape = col
-			break
+	var columna_solape: Vector2i = columnas_solape(vertice_a, vertice_b)[0]
 
 	var esquina_a := Vector2i((1 - signi(paso.x)) / 2, (1 - signi(paso.y)) / 2)
 	var esquina_b := Vector2i((1 + signi(paso.x)) / 2, (1 + signi(paso.y)) / 2)

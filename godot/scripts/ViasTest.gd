@@ -347,3 +347,24 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	Vias.notches.clear()
+
+	print("\n=== TEST 30: ConstructorVias.construir() no recorta las bisagras internas de un trazo diagonal largo ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+	var mundo_notch_largo := MundoFalsoVias.new()
+	var vertices_diagonal_largo: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 1), Vector2i(2, 2)]
+	assert(ConstructorVias.construir(mundo_notch_largo, vertices_diagonal_largo, sin_choque))
+	# 2 tramos seguidos en la misma diagonal: el notch_b del primer tramo
+	# ((1,1)) coincide con el solape del segundo, y el notch_a del segundo
+	# ((0,0)) coincide con el solape del primero — ninguna de esas 2
+	# bisagras internas se recorta (reportado jugando en vivo: sin este
+	# filtro, un trazo diagonal largo salía en damero). Solo los 2
+	# extremos sueltos de todo el trazo, (-1,-1) y (2,2), sí se recortan.
+	assert(Vias.notch_en(Vector3i(-1, 0, -1)) == Vector2i(0, 0))
+	assert(Vias.notch_en(Vector3i(2, 0, 2)) == Vector2i(1, 1))
+	assert(Vias.notch_en(Vector3i(0, 0, 0)) == Vector2i(-1, -1))  # bisagra interior, no notch
+	assert(Vias.notch_en(Vector3i(1, 0, 1)) == Vector2i(-1, -1))  # bisagra interior, no notch
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()

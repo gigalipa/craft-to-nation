@@ -43,10 +43,14 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 	# el choque nunca las comprobaría contra edificios/puestos existentes.
 	var planes: Array[Dictionary] = []
 	var notches: Array[Dictionary] = []
+	var solapes_totales: Array[Vector2i] = []
 	for i in range(vertices.size() - 1):
 		var plan: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1])
 		planes.append(plan)
 		notches.append_array(nivelador.notches_de_paso(vertices[i], vertices[i + 1]))
+		for col in nivelador.columnas_solape(vertices[i], vertices[i + 1]):
+			if not solapes_totales.has(col):
+				solapes_totales.append(col)
 		if plan.is_empty():
 			continue
 		for dato: Dictionary in plan["cunas"]:
@@ -95,9 +99,19 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 
 	# Marca las celdas "notch" (siempre planas, ver notches_de_paso())
 	# para que ViasRenderer dibuje un triángulo en vez de un cuadrado
-	# completo ahí — borde recto en diagonal en vez de escalonado.
+	# completo ahí — borde recto en diagonal en vez de escalonado. Salvo
+	# que esa misma columna sea TAMBIÉN la bisagra (solape) de OTRO tramo
+	# del trazo — en un tramo diagonal largo (3+ vértices seguidos), el
+	# notch_b de un paso coincide con el solape del siguiente: ahí hace
+	# falta el cuadrado completo para conectar ambos tramos, no un
+	# triángulo — solo los 2 extremos sueltos de todo el trazo se
+	# recortan (reportado jugando en vivo: sin este filtro, cada bisagra
+	# interior se recortaba también, dando un patrón en damero en vez de
+	# una línea recta).
 	for dato: Dictionary in notches:
 		var col: Vector2i = dato["columna"]
+		if solapes_totales.has(col):
+			continue
 		if objetivo_relleno.has(col):
 			Vias.marcar_notch(Vector3i(col.x, objetivo_relleno[col], col.y), dato["esquina_omitida"])
 

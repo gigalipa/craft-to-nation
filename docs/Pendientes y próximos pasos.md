@@ -40,7 +40,14 @@ Después de cerrar la Fase 3:
 
 
 
-1\. Vías de "tierra pisada" y carretas (sub-proyecto 6).
+~~1\. Vías de "tierra pisada" y carretas (sub-proyecto 6).~~
+
+Implementado (2026-09-22): trazador de vías de tierra pisada en la cámara
+cenital (tecla `V`), overlay 2x2, cuñas para desnivel de 1 y relleno para
+2-3, bono de velocidad +35% para colonos y avatar — ver
+`docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`. Las
+carretas quedan pendientes (dependen de vehículos/unidades, fuera de
+alcance de esta pieza).
 
 &#x20;  - Por qué: es el cuello de botella de fondo. A 18–26 celdas el acarreo a pie limita todo.
 

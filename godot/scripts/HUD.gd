@@ -68,6 +68,7 @@ var _panel_puesto: PanelContainer
 
 @onready var modo_deconstruccion_label: Label = $ModoDeconstruccionLabel
 @onready var modo_zonificacion_label: Label = $ModoZonificacionLabel
+@onready var modo_trazar_via_label: Label = $ModoTrazarViaLabel
 
 @onready var oxigeno_label: Label = $OxigenoLabel
 @onready var materiales_ficha: Label = $MaterialesFicha
@@ -242,6 +243,17 @@ func mostrar_modo_zonificacion(nombre_zona: String) -> void:
 
 func ocultar_modo_zonificacion() -> void:
 	modo_zonificacion_label.visible = false
+
+
+## Aviso del modo trazador de vías (tecla V en la cenital, ver
+## CamaraCenital._alternar_modo_trazar_via()).
+func mostrar_modo_trazar_via() -> void:
+	modo_trazar_via_label.text = "Trazar vía: clic para fijar puntos · doble clic para confirmar · Esc para salir"
+	modo_trazar_via_label.visible = true
+
+
+func ocultar_modo_trazar_via() -> void:
+	modo_trazar_via_label.visible = false
 
 
 ## Llamada cada física por Player._procesar_oxigeno() mientras el jugador

@@ -190,6 +190,14 @@ offset_right = 620.0
 offset_bottom = 560.0
 text = "Zonificación"
 
+[node name="ModoTrazarViaLabel" type="Label" parent="HUDLayer"]
+visible = false
+offset_left = 12.0
+offset_top = 570.0
+offset_right = 700.0
+offset_bottom = 600.0
+text = "Trazar vía"
+
 [node name="OxigenoLabel" type="Label" parent="HUDLayer"]
 visible = false
 offset_left = 12.0

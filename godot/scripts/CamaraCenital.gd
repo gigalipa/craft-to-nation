@@ -533,6 +533,8 @@ func _process(delta: float) -> void:
 			_actualizar_previsualizacion_zona()
 		elif modo_trazar_via and _hay_tramo_en_curso:
 			_actualizar_preview_via()
+		elif modo_trazar_via and not _hay_tramo_en_curso:
+			_actualizar_preview_vertice_inicial()
 		return
 
 	# Estado tentativo: se aplican todos los controles activos este
@@ -1510,6 +1512,7 @@ func _alternar_modo_trazar_via() -> void:
 	_trazador_via = TrazadorVias.new(mundo)
 	_tramos_fijos.clear()
 	_hay_tramo_en_curso = false
+	hud.mostrar_modo_trazar_via()
 
 
 func _salir_de_modo_trazar_via() -> void:
@@ -1517,6 +1520,7 @@ func _salir_de_modo_trazar_via() -> void:
 	_hay_tramo_en_curso = false
 	_tramos_fijos.clear()
 	via_preview.limpiar()
+	hud.ocultar_modo_trazar_via()
 
 
 func _elegir_zona(tipo: String) -> void:
@@ -1573,7 +1577,18 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 		return
 
 	if vertice == _vertice_inicio_tramo:
-		_cancelar_tramo_via()
+		# Doble clic sobre el mismo punto sin haberse movido: si ya hay algún
+		# tramo fijado (el jugador "presiona nuevamente sobre el bloque
+		# final" que acaba de fijar, ver spec de vías Sección 4), esto
+		# confirma TODO lo acumulado. Sin ningún tramo fijado todavía
+		# (recién se puso el origen), no hay nada que confirmar: cancela.
+		if _tramos_fijos.is_empty():
+			_cancelar_tramo_via()
+		else:
+			_confirmar_trazo_via()
+			_hay_tramo_en_curso = false
+			_tramos_fijos.clear()
+			via_preview.limpiar()
 		return
 
 	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
@@ -1624,6 +1639,15 @@ func _vertice_pertenece_a_via(vertice: Vector2i) -> bool:
 		if tramo.has(vertice):
 			return true
 	return false
+
+
+## Vista previa del bloque de soporte bajo el cursor ANTES del primer clic
+## (todavía no hay origen fijado) — para que el jugador vea dónde caería el
+## inicio del trazo. previsualizar_tramo() acepta el mismo vértice repetido:
+## dibuja solo su propio bloque 2x2, sin ninguna ruta.
+func _actualizar_preview_vertice_inicial() -> void:
+	var vertice := _vertice_bajo_mouse(get_viewport().get_mouse_position())
+	via_preview.previsualizar_tramo([vertice, vertice], _trazador_via.vertice_transitable(vertice))
 
 
 ## Vista previa en vivo del trazo actual (origen fijado + ruta hasta el

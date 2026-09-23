@@ -53,6 +53,10 @@ func _agregar_plano(col: Vector2i, color: Color) -> void:
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = color
+	# Por encima de ZonaOverlay.gd (prioridad 1-2) Y del overlay de vía ya
+	# construida (mat_tierra_pisada.tres, prioridad 3) — la previsualización
+	# activa siempre debe verse, sin importar qué haya debajo.
+	material.render_priority = 4
 	var plano := MeshInstance3D.new()
 	plano.mesh = malla
 	plano.material_override = material

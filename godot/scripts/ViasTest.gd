@@ -196,19 +196,26 @@ func ejecutar_pruebas() -> void:
 	assert(vecinos_5_5.size() == 8)
 
 	print("\n=== TEST 15: TrazadorVias — un vértice con agua en su bloque no es transitable ===")
-	mundo_falso.agua[Vector2i(4, 4)] = true  # una de las 4 columnas del bloque de (5,5)
-	assert(not trazador.vertice_transitable(Vector2i(5, 5)))
-	mundo_falso.agua.clear()
+	# TrazadorVias nuevo (no el "trazador" de TEST 14): vertice_transitable()
+	# ahora memoiza por vértice (ver _cache_transitable, optimización de
+	# rendimiento jugando en vivo) — reusar la misma instancia mientras se
+	# muta mundo_falso entre aserciones devolvería el resultado viejo en
+	# caché, no el real. En una sesión de juego real esto nunca pasa: una
+	# instancia nueva se crea recién al activar el modo trazador y el mundo
+	# no cambia mientras ese modo sigue activo.
+	var mundo_agua := MundoFalsoVias.new()
+	mundo_agua.agua[Vector2i(4, 4)] = true  # una de las 4 columnas del bloque de (5,5)
+	assert(not TrazadorVias.new(mundo_agua).vertice_transitable(Vector2i(5, 5)))
 
 	print("\n=== TEST 16: TrazadorVias — un vértice con un edificio en su bloque no es transitable ===")
-	mundo_falso.edificios[Vector2i(4, 4)] = true
-	assert(not trazador.vertice_transitable(Vector2i(5, 5)))
-	mundo_falso.edificios.clear()
+	var mundo_edificio := MundoFalsoVias.new()
+	mundo_edificio.edificios[Vector2i(4, 4)] = true
+	assert(not TrazadorVias.new(mundo_edificio).vertice_transitable(Vector2i(5, 5)))
 
 	print("\n=== TEST 17: TrazadorVias — un árbol NO bloquea (se tala al confirmar) ===")
-	mundo_falso.celdas[Vector3i(4, 1, 4)] = "madera"
-	assert(trazador.vertice_transitable(Vector2i(5, 5)))
-	mundo_falso.celdas.clear()
+	var mundo_arbol_trazador := MundoFalsoVias.new()
+	mundo_arbol_trazador.celdas[Vector3i(4, 1, 4)] = "madera"
+	assert(TrazadorVias.new(mundo_arbol_trazador).vertice_transitable(Vector2i(5, 5)))
 
 	print("\n=== TEST 18: TrazadorVias — buscar_ruta() en terreno plano ===")
 	var ruta: Array[Vector2i] = trazador.buscar_ruta(Vector2i(0, 0), Vector2i(3, 0))

@@ -25,6 +25,21 @@ const DIRECCIONES: Array[Vector2i] = [
 var mundo: Object
 var _nivelador: RefCounted
 
+## Memoización de vertice_transitable()/nivel_de_bloque() por vértice —
+## reportado jugando en vivo (2026-09-23): sin esto, vecinos() recalcula
+## vertice_transitable(actual) hasta 8 veces (una por dirección) en la
+## MISMA llamada, y cada vértice visitado por más de un nodo del A* (algo
+## común: dos nodos vecinos comparten varios de sus propios vecinos) lo
+## recalculaba otra vez desde cero — con el tope de 5000 nodos expandidos
+## en un destino inalcanzable, eso son cientos de miles de consultas al
+## mundo por fotograma mientras se traza, y el juego se congelaba unos
+## instantes. Vive mientras viva esta instancia (una por sesión de
+## trazado — ver CamaraCenital._alternar_modo_trazar_via()): el terreno
+## no cambia mientras el modo trazador está activo (es excluyente con
+## minar/construir), así que no hay riesgo de quedar desactualizada.
+var _cache_transitable: Dictionary = {}  # Vector2i -> bool
+var _cache_nivel: Dictionary = {}  # Vector2i -> int
+
 
 func _init(p_mundo: Object) -> void:
 	mundo = p_mundo
@@ -43,13 +58,23 @@ func bloque_de_vertice(vertice: Vector2i) -> Array[Vector2i]:
 ## real del mundo (mundo.altura_en(x, z) + 1), igual que
 ## CamaraCenital._huella_choca_con_otro_puesto().
 func vertice_transitable(vertice: Vector2i) -> bool:
+	if _cache_transitable.has(vertice):
+		return _cache_transitable[vertice]
+	var transitable := true
 	for col in _nivelador.bloque_de_vertice(vertice):
 		var superficie := Vector3i(col.x, mundo.altura_en(col.x, col.y) + 1, col.y)
-		if mundo.obtener_tipo(superficie) == "agua":
-			return false
-		if mundo.id_de_edificio(superficie) != -1:
-			return false
-	return true
+		if mundo.obtener_tipo(superficie) == "agua" or mundo.id_de_edificio(superficie) != -1:
+			transitable = false
+			break
+	_cache_transitable[vertice] = transitable
+	return transitable
+
+
+## nivel_de_bloque() cacheado — ver _cache_nivel más arriba.
+func _nivel_cacheado(vertice: Vector2i) -> int:
+	if not _cache_nivel.has(vertice):
+		_cache_nivel[vertice] = _nivelador.nivel_de_bloque(vertice)
+	return _cache_nivel[vertice]
 
 
 ## true si se puede pasar de "a" a "b" (adyacentes, 1 paso de
@@ -58,7 +83,7 @@ func vertice_transitable(vertice: Vector2i) -> bool:
 func paso_valido(a: Vector2i, b: Vector2i) -> bool:
 	if not (vertice_transitable(a) and vertice_transitable(b)):
 		return false
-	var desnivel: int = absi(_nivelador.nivel_de_bloque(b) - _nivelador.nivel_de_bloque(a))
+	var desnivel: int = absi(_nivel_cacheado(b) - _nivel_cacheado(a))
 	return desnivel <= NiveladorVia.LIMITE_DESNIVEL_VIA
 
 
@@ -74,8 +99,13 @@ func vecinos(vertice: Vector2i) -> Array[Vector2i]:
 
 ## Ruta más corta de "origen" a "destino" (SIN incluir el origen); [] si
 ## no hay ruta, si origen == destino, o si origen/destino no son
-## transitables.
-func buscar_ruta(origen: Vector2i, destino: Vector2i) -> Array[Vector2i]:
+## transitables. "max_nodos" (por defecto MAX_NODOS_EXPANDIDOS) permite un
+## tope más bajo para la vista previa en vivo (ver CamaraCenital.
+## _actualizar_preview_via()): un destino genuinamente inalcanzable (agua,
+## acantilado) igual agota el tope completo cada vez que se consulta por
+## primera vez, y 5000 nodos por fotograma se sentía pesado jugando en
+## vivo — la búsqueda real al confirmar sigue usando el tope completo.
+func buscar_ruta(origen: Vector2i, destino: Vector2i, max_nodos: int = MAX_NODOS_EXPANDIDOS) -> Array[Vector2i]:
 	var vacia: Array[Vector2i] = []
 	if origen == destino:
 		return vacia
@@ -103,7 +133,7 @@ func buscar_ruta(origen: Vector2i, destino: Vector2i) -> Array[Vector2i]:
 			return ruta
 		cerrados[actual] = true
 		expandidos += 1
-		if expandidos > MAX_NODOS_EXPANDIDOS:
+		if expandidos > max_nodos:
 			return vacia
 		for vecino in vecinos(actual):
 			if cerrados.has(vecino):

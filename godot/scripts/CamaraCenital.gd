@@ -178,7 +178,16 @@ var _trazador_via: RefCounted = null
 const SIN_VERTICE_PREVIO := Vector2i(999999, 999999)
 var _ultimo_origen_preview := SIN_VERTICE_PREVIO
 var _ultimo_vertice_preview := SIN_VERTICE_PREVIO
-var _ultima_ruta_preview: Array[Vector2i] = []
+
+## Tope de nodos expandidos de la búsqueda de la VISTA PREVIA (no la del
+## clic real, que sigue usando TrazadorVias.MAX_NODOS_EXPANDIDOS) —
+## reportado jugando en vivo (2026-09-23): un destino inalcanzable agota
+## el tope completo (5000) cada vez que se consulta por primera vez, y
+## eso se sentía pesado incluso con la memoización de TrazadorVias. Con
+## un tope más bajo, "sin ruta" se confirma más rápido mientras se traza;
+## el clic real (una sola vez, no cada fotograma) sigue con el tope
+## completo para no perder alcance real de trazado.
+const MAX_NODOS_PREVIEW_VIA := 600
 
 var nivelador_puesto: RefCounted
 
@@ -1543,6 +1552,8 @@ func _alternar_modo_trazar_via() -> void:
 	_trazador_via = TrazadorVias.new(mundo)
 	_tramos_fijos.clear()
 	_hay_tramo_en_curso = false
+	_ultimo_origen_preview = SIN_VERTICE_PREVIO
+	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	hud.mostrar_modo_trazar_via()
 
 
@@ -1693,14 +1704,17 @@ func _actualizar_preview_vertice_inicial() -> void:
 ## último resultado.
 func _actualizar_preview_via() -> void:
 	var vertice := _vertice_bajo_mouse(get_viewport().get_mouse_position())
-	var ruta: Array[Vector2i]
 	if vertice == _ultimo_vertice_preview and _vertice_inicio_tramo == _ultimo_origen_preview:
-		ruta = _ultima_ruta_preview
-	else:
-		ruta = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
-		_ultimo_origen_preview = _vertice_inicio_tramo
-		_ultimo_vertice_preview = vertice
-		_ultima_ruta_preview = ruta
+		# Ni el vértice bajo el mouse ni el origen del tramo cambiaron desde
+		# el fotograma anterior: la malla de la vista previa ya está al día,
+		# no hace falta reconstruirla (reportado jugando en vivo, ver
+		# MAX_NODOS_PREVIEW_VIA — esto evita el costo de reconstrucción de
+		# ViaPreviewOverlay.previsualizar_tramo() además del de la A*).
+		return
+
+	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice, MAX_NODOS_PREVIEW_VIA)
+	_ultimo_origen_preview = _vertice_inicio_tramo
+	_ultimo_vertice_preview = vertice
 
 	var vertices: Array[Vector2i] = []
 	for tramo_fijo: Array[Vector2i] in _tramos_fijos:

@@ -26,6 +26,18 @@ const COLOR_BORRAR := Color(0.5, 0.5, 0.5, 0.3)
 const ALTURA_SOBRE_SUPERFICIE := 1.01
 const DESF := 0.5
 
+## Dos planos distintos pueden coincidir en la MISMA celda a la MISMA
+## altura (una celda con zona pintada lleva su plano de zona de
+## influencia Y su plano de zona específica encima, ver reconstruir()) —
+## sin diferenciar su render_priority, competían entre sí por transparencia
+## (reportado jugando en vivo, 2026-09-23, junto con la pelea contra el
+## overlay de vías: ver su propio render_priority más alto en
+## ViasRenderer.gd/ViaPreviewOverlay.gd, que debe quedar por encima de
+## AMBOS). La zona específica (A/B/borrar) siempre se ve por encima de la
+## zona de influencia, que es solo un tinte de fondo.
+const PRIORIDAD_INFLUENCIA := 1
+const PRIORIDAD_ZONA := 2
+
 @onready var mundo: Node = get_node("../VoxelWorld")
 
 ## Planos de la previsualización en vivo de la zona que se está pintando
@@ -52,12 +64,12 @@ func reconstruir() -> void:
 			for z in range(Zonificacion.influencia_min.y, Zonificacion.influencia_max.y + 1):
 				var celda := Vector2i(x, z)
 				if Zonificacion.dentro_de_influencia(celda):
-					_agregar_plano(celda, COLOR_ZONA_INFLUENCIA)
+					_agregar_plano(celda, COLOR_ZONA_INFLUENCIA, PRIORIDAD_INFLUENCIA)
 
 	for celda in Zonificacion.zonas:
 		var tipo: String = Zonificacion.zonas[celda]
 		var color: Color = COLOR_POR_ZONA.get(tipo, Color.WHITE)
-		_agregar_plano(celda, color)
+		_agregar_plano(celda, color, PRIORIDAD_ZONA)
 
 
 ## Dibuja (sin modificar Zonificacion.zonas) el rectángulo entre "esquina_a"
@@ -77,7 +89,7 @@ func previsualizar(esquina_a: Vector2i, esquina_b: Vector2i, tipo: String) -> vo
 		for z in range(z_min, z_max + 1):
 			var celda := Vector2i(x, z)
 			if Zonificacion.dentro_de_influencia(celda):
-				var plano: MeshInstance3D = _agregar_plano(celda, color)
+				var plano: MeshInstance3D = _agregar_plano(celda, color, PRIORIDAD_ZONA)
 				if plano != null:
 					_planos_previsualizacion.append(plano)
 
@@ -92,7 +104,7 @@ func limpiar_previsualizacion() -> void:
 ## (superficie estructural — ver el chequeo de es_celda_estructural() más
 ## abajo). El valor de retorno solo lo usa previsualizar(), para poder
 ## limpiar exactamente sus propios planos sin tocar el resto de hijos.
-func _agregar_plano(celda: Vector2i, color: Color) -> MeshInstance3D:
+func _agregar_plano(celda: Vector2i, color: Color, prioridad: int = PRIORIDAD_ZONA) -> MeshInstance3D:
 	# Altura REAL de la superficie (VoxelWorld.altura_en(), no
 	# GeneradorMundo.altura_en()): esta última nunca se actualiza tras
 	# minar/construir/nivelar, así que una celda ya modificada por el
@@ -117,6 +129,15 @@ func _agregar_plano(celda: Vector2i, color: Color) -> MeshInstance3D:
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = color
 	material.no_depth_test = false
+	# El orden de dibujo entre dos superficies translúcidas casi coplanares
+	# NO lo decide de forma confiable un margen de altura mínimo (el
+	# ordenamiento por transparencia de Godot es por distancia a la cámara,
+	# no por altura — con la cenital en ángulo, ambos criterios no siempre
+	# coinciden). Ver PRIORIDAD_INFLUENCIA/PRIORIDAD_ZONA más arriba; el
+	# overlay de vías (ViasRenderer.gd/ViaPreviewOverlay.gd) usa un
+	# render_priority más alto todavía, para quedar siempre por encima de
+	# AMBOS sin importar el ángulo de cámara.
+	material.render_priority = prioridad
 
 	var plano := MeshInstance3D.new()
 	plano.mesh = malla

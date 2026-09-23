@@ -31,6 +31,13 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 		return false
 
 	var nivelador := NiveladorVia.new(mundo)
+	# Suavizado de "V" (decisión del usuario jugando en vivo, 2026-09-23):
+	# un vértice interior más bajo que sus dos vecinos se sube al más alto
+	# de ellos, ANTES de calcular ningún plan de transición — así toda la
+	# ruta usa el mismo nivel por vértice de punta a punta, en vez de que
+	# cada tramo recalcule su propio nivel bruto por separado.
+	var niveles: Array[int] = nivelador.niveles_efectivos(vertices)
+
 	var columnas_totales: Array[Vector2i] = []
 	for v in vertices:
 		for col in nivelador.bloque_de_vertice(v):
@@ -45,7 +52,7 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 	var notches: Array[Dictionary] = []
 	var solapes_totales: Array[Vector2i] = []
 	for i in range(vertices.size() - 1):
-		var plan: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1])
+		var plan: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1], niveles[i], niveles[i + 1])
 		planes.append(plan)
 		notches.append_array(nivelador.notches_de_paso(vertices[i], vertices[i + 1]))
 		for col in nivelador.columnas_solape(vertices[i], vertices[i + 1]):
@@ -61,9 +68,9 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 		return false
 
 	var objetivo_relleno: Dictionary = {}  # Vector2i -> int
-	for v in vertices:
-		var nivel: int = nivelador.nivel_de_bloque(v)
-		for col in nivelador.bloque_de_vertice(v):
+	for i in range(vertices.size()):
+		var nivel: int = niveles[i]
+		for col in nivelador.bloque_de_vertice(vertices[i]):
 			objetivo_relleno[col] = maxi(objetivo_relleno.get(col, nivel), nivel)
 
 	var cunas: Dictionary = {}  # Vector2i -> Dictionary

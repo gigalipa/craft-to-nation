@@ -44,6 +44,7 @@ class MundoFalsoVias:
 	var edificios: Dictionary = {}  # Vector2i -> true
 	var escalon_en_x := 999999
 	var altura_escalon := 0
+	var alturas_custom: Dictionary = {}  # Vector2i -> int, prioridad sobre el escalón (para fabricar un valle en V)
 	var colocado_por_jugador: Dictionary = {}
 	var _ids: Dictionary = {
 		"tierra": 1, "cuna_recta": 2, "cuna_esquina": 3,
@@ -51,7 +52,9 @@ class MundoFalsoVias:
 		"diag_lat": 8,
 	}
 
-	func altura_en(x: int, _z: int) -> int:
+	func altura_en(x: int, z: int) -> int:
+		if alturas_custom.has(Vector2i(x, z)):
+			return alturas_custom[Vector2i(x, z)]
 		return altura_escalon if x >= escalon_en_x else 0
 
 	func obtener_tipo(celda: Vector3i) -> String:
@@ -134,12 +137,12 @@ func ejecutar_pruebas() -> void:
 	assert(nivelador_diagonal.nivel_de_bloque(Vector2i(1, 1)) == 2)
 
 	print("\n=== TEST 9: plan_transicion() con desnivel 0 -> {} ===")
-	assert(nivelador_plano.plan_transicion(Vector2i(5, 5), Vector2i(6, 5)).is_empty())
+	assert(nivelador_plano.plan_transicion(Vector2i(5, 5), Vector2i(6, 5), 0, 0).is_empty())
 
 	print("\n=== TEST 10: plan_transicion() paso recto, desnivel 1 -> 2 cuñas rectas, sin relleno extra ===")
 	# GeneradorEscalon: altura 0 para x<=5, altura 1 para x>5 (un escalón).
 	var nivelador_escalon := NiveladorVia.new(GeneradorEscalon.new())
-	var plan_recto: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 5))
+	var plan_recto: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 5), nivelador_escalon.nivel_de_bloque(Vector2i(5, 5)), nivelador_escalon.nivel_de_bloque(Vector2i(6, 5)))
 	assert(not plan_recto.is_empty())
 	assert(plan_recto["cunas"].size() == 2)  # paso recto: 2 columnas de solape, ambas cuna_recta
 	for dato: Dictionary in plan_recto["cunas"]:
@@ -149,7 +152,7 @@ func ejecutar_pruebas() -> void:
 	assert(plan_recto["relleno_extra"].is_empty())
 
 	print("\n=== TEST 11: plan_transicion() paso diagonal, desnivel 1 -> rampa completa de 7 piezas ===")
-	var plan_diagonal: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 6))
+	var plan_diagonal: Dictionary = nivelador_escalon.plan_transicion(Vector2i(5, 5), Vector2i(6, 6), nivelador_escalon.nivel_de_bloque(Vector2i(5, 5)), nivelador_escalon.nivel_de_bloque(Vector2i(6, 6)))
 	# 1 esquina (solape) + 2 bajo (vecinas de arista del bloque BAJO) + 2
 	# arriba (vecinas de arista del bloque ALTO) + 2 remates laterales del
 	# "diamante" de 3x3 — ver sistema completo de rampa diagonal
@@ -168,7 +171,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 12: plan_transicion() con desnivel 3 -> relleno_extra hasta quedar a 1 ===")
 	# GeneradorEscalonAlto: altura 0 para x<=5, altura 3 para x>5.
 	var nivelador_alto := NiveladorVia.new(GeneradorEscalonAlto.new())
-	var plan_alto: Dictionary = nivelador_alto.plan_transicion(Vector2i(5, 5), Vector2i(6, 5))
+	var plan_alto: Dictionary = nivelador_alto.plan_transicion(Vector2i(5, 5), Vector2i(6, 5), nivelador_alto.nivel_de_bloque(Vector2i(5, 5)), nivelador_alto.nivel_de_bloque(Vector2i(6, 5)))
 	assert(plan_alto["y_base"] == 2)  # nivel_alto(3) - 1
 	assert(not plan_alto["relleno_extra"].is_empty())
 	for columna in plan_alto["relleno_extra"]:
@@ -386,6 +389,41 @@ func ejecutar_pruebas() -> void:
 	# debajo de y_base(2) -> diag_lat en y_base+1=3.
 	assert(mundo_diag_lat.celdas.get(Vector3i(0, 3, 2), "") == "diag_lat")
 	assert(mundo_diag_lat.celdas.get(Vector3i(2, 3, 0), "") != "diag_lat")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+
+	print("\n=== TEST 32: niveles_efectivos() sube un mínimo local (una V) al nivel más alto de sus vecinos ===")
+	var mundo_valle := MundoFalsoVias.new()
+	# Vecinos exclusivos de v0=(0,0) y v2=(2,0) a altura 2; las 4 columnas
+	# compartidas entre v0-v1 y v1-v2 a altura 0 -> nivel(v0)=2, nivel(v1)=0
+	# (una V), nivel(v2)=2.
+	mundo_valle.alturas_custom = {
+		Vector2i(-1, -1): 2, Vector2i(-1, 0): 2, Vector2i(2, -1): 2, Vector2i(2, 0): 2,
+		Vector2i(0, -1): 0, Vector2i(0, 0): 0, Vector2i(1, -1): 0, Vector2i(1, 0): 0,
+	}
+	var nivelador_valle := NiveladorVia.new(mundo_valle)
+	var vertices_valle: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
+	assert(nivelador_valle.nivel_de_bloque(Vector2i(0, 0)) == 2)
+	assert(nivelador_valle.nivel_de_bloque(Vector2i(1, 0)) == 0)  # antes de suavizar, el mínimo bruto
+	assert(nivelador_valle.nivel_de_bloque(Vector2i(2, 0)) == 2)
+	var niveles_suavizados: Array[int] = nivelador_valle.niveles_efectivos(vertices_valle)
+	assert(niveles_suavizados == [2, 2, 2])
+
+	print("\n=== TEST 33: ConstructorVias.construir() nivela una V completa en vez de dos rampas ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+	assert(ConstructorVias.construir(mundo_valle, vertices_valle, sin_choque))
+	# Con la V nivelada a 2, no hace falta ninguna cuña: las 4 columnas
+	# centrales (que naturalmente estaban a 0) se rellenan de tierra hasta
+	# 2, igual que las de los extremos (que ya estaban a 2).
+	assert(mundo_valle.celdas.get(Vector3i(0, 1, -1), "") == "tierra")
+	assert(mundo_valle.celdas.get(Vector3i(0, 2, -1), "") == "tierra")
+	assert(mundo_valle.celdas.get(Vector3i(1, 1, -1), "") == "tierra")
+	assert(mundo_valle.celdas.get(Vector3i(1, 2, -1), "") == "tierra")
+	for celda_valle: Vector3i in mundo_valle.celdas:
+		assert(mundo_valle.celdas[celda_valle] != "cuna_recta" and mundo_valle.celdas[celda_valle] != "cuna_esquina")
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	Vias.notches.clear()

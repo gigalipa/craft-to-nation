@@ -54,6 +54,27 @@ func nivel_de_bloque(vertice: Vector2i) -> int:
 	return _nivelador_terreno.altura_objetivo(_esquina_de(vertice), COLUMNAS_BLOQUE)
 
 
+## Los niveles de "vertices" (mismo orden) después de suavizar los
+## mínimos locales — decisión del usuario jugando en vivo, 2026-09-23: un
+## vértice interior más bajo que SUS DOS VECINOS INMEDIATOS en el trazo
+## ya confirmado (una "V": baja y vuelve a subir) se sube al nivel MÁS
+## ALTO de esos dos vecinos, en vez de bajar y volver a subir con dos
+## rampas — mismo criterio de "nunca cavar" que ya sigue el resto del
+## sistema. Solo mira vecinos INMEDIATOS: una "V" ancha (2+ vértices
+## seguidos por debajo de sus hombros) no se nivela de punta a punta.
+## ponytail: si hace falta ese caso más ancho, agregar una pasada que
+## propague el nivel hacia los vecinos hasta encontrar un punto que ya
+## no sea mínimo local.
+func niveles_efectivos(vertices: Array[Vector2i]) -> Array[int]:
+	var niveles: Array[int] = []
+	for v in vertices:
+		niveles.append(nivel_de_bloque(v))
+	for i in range(1, niveles.size() - 1):
+		if niveles[i] < niveles[i - 1] and niveles[i] < niveles[i + 1]:
+			niveles[i] = maxi(niveles[i - 1], niveles[i + 1])
+	return niveles
+
+
 ## Las columnas compartidas por los bloques de soporte de "vertice_a" y
 ## "vertice_b" (2 en un paso recto, 1 en diagonal — ver
 ## bloque_de_vertice()) — las columnas "bisagra" que conectan ambos
@@ -82,7 +103,11 @@ func _relleno_absoluto(columnas: Array[Vector2i], tope: int) -> Dictionary:
 
 
 ## Plan de transición entre dos bloques de vía consecutivos (un paso, 8
-## direcciones — ver spec Sección 2): {} si el desnivel es 0. Si no:
+## direcciones — ver spec Sección 2). "nivel_a"/"nivel_b" son los niveles
+## YA CALCULADOS de cada vértice (ver niveles_efectivos() — el llamador
+## los suaviza para toda la ruta ANTES de pedir cada plan, así una "V" se
+## nivela una sola vez en vez de que cada plan recalcule el nivel bruto
+## por su cuenta). {} si el desnivel es 0. Si no:
 ## "y_base" es la altura del lado bajo de las cuñas que van ahí;
 ## "relleno_extra" (columnas del bloque bajo, sin las que se vuelven
 ## cuña) solo tiene entradas si el desnivel es 2 o 3: sube ese bloque
@@ -109,12 +134,10 @@ func _relleno_absoluto(columnas: Array[Vector2i], tope: int) -> Dictionary:
 ## cada bloque) siguen planas. Las piezas *_bajo/*_arriba/*_lat_* se
 ## modelaron para direccion_alta=(1,-1); _orientacion() las rota para
 ## cualquier otra diagonal.
-func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i) -> Dictionary:
+func plan_transicion(vertice_a: Vector2i, vertice_b: Vector2i, nivel_a: int, nivel_b: int) -> Dictionary:
 	var paso: Vector2i = vertice_b - vertice_a
 	var solape: Array[Vector2i] = columnas_solape(vertice_a, vertice_b)
 
-	var nivel_a: int = nivel_de_bloque(vertice_a)
-	var nivel_b: int = nivel_de_bloque(vertice_b)
 	if nivel_a == nivel_b:
 		return {}
 

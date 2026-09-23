@@ -38,6 +38,8 @@ const DESF := 0.5
 const PRIORIDAD_INFLUENCIA := 1
 const PRIORIDAD_ZONA := 2
 
+const ViasRenderer = preload("res://scripts/ViasRenderer.gd")
+
 @onready var mundo: Node = get_node("../VoxelWorld")
 
 ## Planos de la previsualización en vivo de la zona que se está pintando
@@ -119,6 +121,16 @@ func _agregar_plano(celda: Vector2i, color: Color, prioridad: int = PRIORIDAD_ZO
 	# Si la celda superior de esta columna pertenece a un edificio, no se
 	# dibuja ningún plano aquí.
 	if mundo.es_celda_estructural(Vector3i(celda.x, altura_superficie, celda.y)):
+		return null
+
+	# Mismo motivo que TIPOS_CUNA en ViasRenderer.gd: la superficie de una
+	# cuña de vía (rampa/diagonal) ya es la cara visible de esa columna —
+	# el tinte de zona pintado encima quedaba flotando sobre la rampa en
+	# vez de ocultarse detrás de su geometría (reportado jugando en vivo,
+	# 2026-09-23: el plano de zona SIEMPRE se dibuja por encima de la caja
+	# delimitadora de la celda, sin importar la profundidad real de una
+	# superficie inclinada dentro de esa caja).
+	if ViasRenderer.TIPOS_CUNA.has(mundo.obtener_tipo(Vector3i(celda.x, altura_superficie, celda.y))):
 		return null
 
 	var malla := PlaneMesh.new()

@@ -970,6 +970,33 @@ func _celdas_mundo_blueprint(esquina: Vector2i, base_y: int) -> Dictionary:
 ## del clic, el resumen de materiales y los overlays. "excavacion" son celdas
 ## de terreno REAL (sin las ya vacías), huella primero; "relleno" es columna
 ## mundial -> cantidad de bloques.
+## "Levanta" cualquier vía dentro de las columnas de "fachada" (Vector2i
+## absoluto -> nivel objetivo, ver NiveladorTerreno.calcular_nivelacion_
+## fachada()) y la vuelve a registrar de inmediato a ese nivel — decisión
+## del usuario jugando en vivo, 2026-09-23: "eliminarla, nivelar el
+## terreno y volverla a colocar". Si el soporte era una cuña
+## (cuna_recta/cuna_esquina/cuna_diag_*/diag_lat), la reemplaza por
+## "tierra" plana primero, para que la cola de excavación/relleno normal
+## (que solo entiende bloques de terreno genéricos) la trate como
+## cualquier otra columna. El relleno/excavación real bajo la vía sigue
+## el proceso gradual de siempre (fantasma -> surtir); solo el registro y
+## el overlay de Vias.gd se actualizan al instante, así que pueden verse
+## un momento por delante del terreno real mientras se completa la cola.
+func _despejar_vias_de_fachada(fachada: Dictionary) -> void:
+	for columna: Vector2i in fachada:
+		var altura_actual: int = mundo.altura_en(columna.x, columna.y)
+		var celda_actual := Vector3i(columna.x, altura_actual, columna.y)
+		if not Vias.es_via(celda_actual):
+			continue
+		var tipo_via: String = Vias.tipo_en(celda_actual)
+		Vias.quitar([celda_actual])
+		var tipo_bloque: String = mundo.obtener_tipo(celda_actual)
+		if tipo_bloque.begins_with("cuna_") or tipo_bloque == "diag_lat":
+			mundo.set_cell_item(celda_actual, mundo.id_de_tipo("tierra"), 0)
+		var nivel_objetivo: int = fachada[columna]
+		Vias.agregar([Vector3i(columna.x, nivel_objetivo, columna.y)], tipo_via)
+
+
 func _plan_nivelacion(esquina: Vector2i, columnas: Array[Vector2i], base_y: int, fachada: Dictionary) -> Dictionary:
 	var excavacion: Array[Vector3i] = _celdas_excavacion(esquina, columnas, base_y)
 	var relleno: Dictionary = nivelador_puesto.calcular_relleno_hasta(esquina, columnas, base_y - 1)
@@ -1006,7 +1033,11 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas_union),
 		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, _altura_blueprint(_blueprint_activo)),
 		"resultado_fachada": mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA),
-		"choca": _huella_choca_con_otro_puesto(esquina, columnas_union),
+		# La huella ESTRUCTURAL sí rechaza sobre una vía (no se puede construir
+		# encima de una ruta); el despeje de puertas/ventanas la ignora —
+		# el frente de una puerta sobre una vía es justo lo esperado, no un
+		# choque (reportado jugando en vivo, 2026-09-23).
+		"choca": _huella_choca_con_otro_puesto(esquina, columnas) or _huella_choca_con_otro_puesto(esquina, columnas_fachada, true),
 		"en_tierra": _huella_tiene_columna_en_tierra(esquina, columnas),
 		"despejes_ok": mundo.verificar_despejes(celdas_mundo, fachada),
 	}
@@ -1891,6 +1922,13 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var fachada: Dictionary = ev["fachada"]
 	var base_y: int = ev["resultado_base"]["base_y"]
 	var celdas_mundo: Dictionary = ev["celdas_mundo"]
+
+	# Si alguna columna de la fachada ya tiene una vía, "levantarla" antes
+	# de nivelar (ver _despejar_vias_de_fachada()) — el despeje de puertas
+	# ya ignora vías al validar el choque (ver _evaluar_blueprint()), así
+	# que una construcción puede quedar frente a una ruta existente; sin
+	# esto, la vía se veía enterrada o flotando sobre el nuevo nivel.
+	_despejar_vias_de_fachada(fachada)
 
 	# Cola de "preparación del terreno" (ver VoxelWorld._aplicar_paso_cola()):
 	# primero se CAVA (terreno real sobre la losa y sobre el nivel de la

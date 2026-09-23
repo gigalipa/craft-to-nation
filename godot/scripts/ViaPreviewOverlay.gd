@@ -8,7 +8,10 @@ extends Node3D
 
 const COLOR_VALIDO := Color(1.0, 0.85, 0.0, 0.4)
 const COLOR_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
-const ALTURA_SOBRE_SUPERFICIE := 1.01
+## 1.02, no 1.01 como ZonaOverlay.gd: con el mismo margen, ambos overlays
+## quedaban coplanares en la vista cenital (mismo z-fighting que
+## ViasRenderer.gd, ver su comentario en EPSILON_Y).
+const ALTURA_SOBRE_SUPERFICIE := 1.02
 const DESF := 0.5
 
 @onready var mundo: Node = get_node("../VoxelWorld")

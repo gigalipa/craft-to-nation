@@ -12,7 +12,12 @@ const TranslucidosRenderer = preload("res://scripts/TranslucidosRenderer.gd")
 const CHUNK_SIZE := 16
 const DESF := 0.5
 const ARRIBA := Vector3i(0, 1, 0)
-const EPSILON_Y := 0.01  # margen contra z-fighting, ver I3 de la revisión final
+## Margen contra z-fighting (ver I3 de la revisión final) — 0.02, no 0.01
+## como ZonaOverlay.gd/ViaPreviewOverlay.gd: con el mismo margen que el
+## overlay de zonas, ambos quedaban exactamente coplanares y competían
+## por encima en la vista cenital (reportado jugando en vivo). El overlay
+## de vía debe verse SIEMPRE por encima del de zona.
+const EPSILON_Y := 0.02
 
 ## Tipos de cuña cuya propia superficie ya es la cara visible — no llevan
 ## overlay plano encima (ver spec Sección 3 y el sistema de rampa

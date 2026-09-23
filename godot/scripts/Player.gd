@@ -108,6 +108,15 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	raycast.target_position = Vector3(0, 0, -ALCANCE_RAYCAST)
 	_altura_camara_base = camara.position.y
+	# Las rampas de las vías (cuna_recta/cuna_diag_*) suben 1 bloque en 1
+	# celda de distancia horizontal — una pendiente de 45° EXACTOS, justo
+	# en el límite del floor_max_angle por defecto de CharacterBody3D
+	# (también 45°). Justo en ese límite, pequeñas variaciones de punto
+	# flotante en la normal de contacto hacen que Godot trate la rampa
+	# como pared en vez de piso al azar, bloqueando el paso (reportado
+	# jugando en vivo: "a veces" hay que saltar para pasar). Con margen
+	# de sobra por encima de 45° esto no depende de la suerte.
+	floor_max_angle = deg_to_rad(50.0)
 
 
 func _input(event: InputEvent) -> void:

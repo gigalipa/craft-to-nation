@@ -79,11 +79,16 @@ func _reconstruir_chunk(chunk: Vector3i) -> void:
 				if esquina_omitida != Vector2i(-1, -1):
 					_agregar_triangulo_notch(st, celda, esquina_omitida)
 				else:
-					# +0.01 en Y: sin este margen el overlay queda exactamente
+					# EPSILON_Y en Y: sin este margen el overlay queda exactamente
 					# coplanar con la cara superior del terreno -> z-fighting
-					# (ver I3 de la revisión final; mismo margen que usan
-					# ZonaOverlay.gd/ViaPreviewOverlay.gd para el mismo problema).
-					TranslucidosRenderer._agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF + Vector3(0, 0.01, 0), ARRIBA)
+					# (ver I3 de la revisión final). Antes usaba un 0.01 fijo en
+					# vez de esta constante -- quedaba exactamente coplanar con
+					# el plano de ZonaOverlay.gd (altura_superficie + 1.01),
+					# que es la causa real del parpadeo contra las zonas A/B
+					# reportado jugando en vivo (2026-09-23): el bump de
+					# EPSILON_Y a 0.02 nunca llegó a esta rama, solo a la del
+					# triángulo de notch.
+					TranslucidosRenderer._agregar_cara(st, Vector3(celda) + Vector3.ONE * DESF + Vector3(0, EPSILON_Y, 0), ARRIBA)
 				hay_caras = true
 
 	if not hay_caras:

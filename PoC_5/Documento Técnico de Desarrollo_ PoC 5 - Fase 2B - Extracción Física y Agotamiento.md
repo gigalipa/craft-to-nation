@@ -25,7 +25,7 @@ Decisiones confirmadas con el usuario (2026-09-24):
 - Consumo abstracto por tick: cada unidad producida se descuenta de un bloque en curso del entorno.
 - Rendimiento 10/1/2 y tres capas: bloque de extracción → unidad de recurso → bloque de construcción (el cobro de construcción queda fuera). Sólidos y tronco rinden 10, tierra 1, agua y petróleo 2 (reservado).
 - La mina extrae solo desde `GROSOR_TIERRA - 2` bajo la superficie natural (profundidad 2 en adelante), para no dejar terreno flotando.
-- Caza/recolección escala con los árboles vivos y no los consume; la pesca escala con el agua conectada.
+- Caza/recolección escala con los árboles vivos y no los consume; la pesca se recalcula con el mapa de agua generado (no con el agua real).
 - Minado con tiempo por bloque y barra de avance (reinicio al soltar o cambiar de bloque).
 - Inventario 500 por recurso y 5000 de comida, que se duplica al declarar el núcleo y suma +100 (comida +400) por baúl de un edificio residencial posterior al núcleo.
 - El núcleo urbano no es habitable (no registra camas); los colonos llegan con el siguiente edificio residencial.
@@ -88,14 +88,14 @@ Decisiones confirmadas con el usuario (2026-09-24):
 - **Extracción por hora.** La producción sigue como en 2A (recolectores presentes × tasa). Cada puesto que consume (`Economia.TIPOS_QUE_CONSUMEN`: mina y maderero) guarda por recurso un **bloque en curso** `{celda, restante}`; las unidades producidas se restan de `restante` y, al llegar a 0, el bloque se retira del mundo y se elige el siguiente (un tick puede agotar varios). Sin material en el área la producción se acota a lo disponible (llega a 0). Los bloques puestos por el jugador o de edificios nunca cuentan.
 - **Mina.** Solo minerales de su elipsoide, desde la profundidad 2; primero el bloque más cercano al centro y, a igual distancia, el menos profundo.
 - **Maderero.** Tala árboles enteros dentro de su radio (12) con `GeneradorArbol.danar`; cada punto de salud rinde 10 de madera y al agotarse cae el árbol.
-- **Caza/recolección y pesca.** No consumen bloques: la caza/recolección multiplica su tasa por `árboles vivos / árboles al colocar` (tope 1); la pesca se recalcula con el agua conectada y su escala por tamaño.
+- **Caza/recolección y pesca.** No consumen bloques: la caza/recolección multiplica su tasa por `árboles vivos / árboles al colocar` (tope 1); la pesca se recalcula con el mapa de agua generado (`celdas_agua_conectadas()` sobre el generador, no sobre los vóxeles reales) y su escala por tamaño; por tanto drenar o conectar agua todavía no cambia su tasa (ver supuestos pendientes).
 - **Recálculo.** Cada `TICKS_RECALCULO` = 6 horas de juego `Economia` recalcula las tasas de cada puesto con `Recoleccion.entorno_de_puesto` y `tasas_de_entorno` (lógica trasladada desde `CamaraCenital`, que ahora usa las mismas funciones al previsualizar y colocar). `Economia.mundo` es inyectable.
 - **Avatar.** Minado con tiempo (`TIEMPO_MINADO[tipo] × MULTIPLICADOR_HERRAMIENTA`, reinicio al soltar o cambiar de bloque), tala por salud (el daño se conserva) y frutos con rebrote; todo con una barra de avance en el HUD (`ProgresoAccion`), que también usa la deconstrucción. Los bloques puestos por el jugador no rinden recursos.
 - **Inventario y núcleo.** El inventario es `Ciudad.almacen`. Límite = `base × factor_núcleo + baúles × bono`. `Ciudad.ampliar_almacen()` (idempotente) se llama al declarar el núcleo. Los baúles se cuentan al completar un edificio residencial y se restan al deconstruirlo; los del núcleo no suman. Si el límite baja, el stock excedente se conserva pero no entra nada nuevo. El primer edificio declarado es el núcleo y no registra camas; el siguiente residencial trae los primeros colonos.
 
 ### **3.2 Pruebas**
 
-`EconomiaTest` (consumo, agotamiento, recálculo, caza/pesca según entorno), `RecoleccionTest` (rendimiento, selección de mina), `CiudadTest` (topes, `ampliar_almacen()`, baúles, núcleo sin camas), `GeneradorArbolTest` (consultas del registro de árboles), `BlueprintValidatorTest` (`contar_baules()`) y `ExtraccionTest` (nueva: `ProgresoAccion`, tiempos, extracción del avatar y frutos). Ejecución obligatoria (CLAUDE.md): `godot/scenes/Test.tscn` más las escenas afectadas (`ColonosTest`, `ConstruccionTest`, `ZonificacionTest`) y `Main.tscn` sin errores de script. Resultado del cierre de la fase (2026-09-24, Godot 4.7 headless): todas las escenas pasan.
+`EconomiaTest` (consumo, agotamiento, recálculo de mina y de caza/recolección; carga parcial de un puesto agotado; bloque en curso reemplazado por uno del jugador), `RecoleccionTest` (rendimiento, selección de mina, maderero sin árboles con tasa 0), `CiudadTest` (topes, `ampliar_almacen()`, baúles), `GeneradorArbolTest` (consultas del registro de árboles), `BlueprintValidatorTest` (`contar_baules()`) y `ExtraccionTest` (nueva: `ProgresoAccion`, tiempos, extracción del avatar, frutos y `altura_natural_en()` bajo un río). Sin prueba automática: el recálculo de la pesca y la regla de núcleo sin camas (vive en `Player._completar_construccion`), que solo se verifican a mano. Ejecución obligatoria (CLAUDE.md): `godot/scenes/Test.tscn` más las escenas afectadas (`ColonosTest`, `ConstruccionTest`, `ZonificacionTest`) y `Main.tscn` sin errores de script. Resultado del cierre de la fase (2026-09-24, Godot 4.7 headless): todas las escenas pasan.
 
 ### **3.3 Verificación manual (pendiente para el usuario, en el editor con Godot 4.7)**
 
@@ -105,7 +105,11 @@ Nadie ha ejecutado todavía estas comprobaciones en el editor; **quedan pendient
 2. Empezar a minar y apuntar a otro bloque (o soltar el clic): la barra se reinicia.
 3. Mantener clic sobre un árbol: la barra naranja muestra la salud restante y baja cada segundo; al soltar y volver, el daño se conserva; el árbol cae entero al llegar a 0 y la madera sube.
 4. Mantener `E` sobre un árbol: la barra sube y suma comida; repetirlo enseguida en el mismo árbol no da nada (rebrote de 24 h).
-5. `G` (deconstrucción) sobre un edificio: la barra naranja avanza con el contador de "sostener".
+5. `G` (deconstrucción) sobre un edificio: la barra naranja se vacía con el contador de "sostener".
+
+**Supuestos y pendientes conocidos.**
+
+- La pesca se recalcula contra el mapa de agua generado, no contra los vóxeles reales. Que su tasa siga el agua real (drenar o conectar) queda pendiente y necesita su propio diseño: la plataforma y los pilotes del propio puesto están sobre su extremo de agua y un lector ingenuo de vóxeles podría dejar la tasa en 0.
 6. Mirar agua o el cielo con el clic mantenido: no pasa nada ni hay errores en consola.
 7. Colocar un maderero y una mina, asignarles recolectores y ver bajar la tasa en el panel al talar o agotar el área.
 8. Jugada completa desde la partida vacía hasta la llegada de los primeros colonos con el segundo edificio residencial (núcleo primero, sin colonos; topes 500/5000 que se duplican al declararlo; baúles que amplían el tope).

@@ -49,7 +49,7 @@ Por tipo:
 - **Mina.** Solo bloques del mineral correspondiente dentro de su elipsoide (`detectar_recursos`), a partir de la profundidad `GROSOR_TIERRA - 2` bajo la superficie de cada columna (con `GROSOR_TIERRA = 4`: profundidad 2 en adelante). Las profundidades 0 y 1 quedan intactas para que el terreno no quede flotando. Se elige primero el bloque más cercano al centro del puesto y, a igual distancia, el menos profundo.
 - **Maderero.** Tala árboles enteros dentro de su radio (12). Reutiliza `GeneradorArbol.danar`: la salud del árbol es su cantidad de celdas de tronco y cada punto rinde 10 de madera. Al agotarse se borra el árbol completo (`talar_bloque_de_arbol`).
 - **Caza/recolección.** No consume nada. Su tasa (fauna y frutos) se multiplica por `árboles vivos en el área / árboles al colocar el puesto`, con tope 1: la fauna y los frutos dependen del bosque, así que talarlo los reduce. El puesto guarda el número de referencia al colocarse.
-- **Pesca.** No consume bloques. Se recalcula con `celdas_agua_conectadas` y su escala por tamaño, así que drenar agua la reduce y conectar cuerpos la aumenta.
+- **Pesca.** No consume bloques. Se recalcula con `celdas_agua_conectadas` y su escala por tamaño. Nota: en 2B el recálculo lee el mapa de agua generado, no el agua real; que drenar o conectar agua cambie la tasa queda pendiente (la plataforma y los pilotes del propio puesto están sobre su agua y confundirían a un lector de vóxeles).
 - **Bomba extractora (futuro).** Su tasa dependerá de los bloques de petróleo del pozo bajo ella.
 
 ## 4. Recálculo periódico
@@ -108,9 +108,9 @@ Cada archivo conserva sus responsabilidades actuales (`Economia` no toca el mund
 
 Se siguen los patrones existentes (escenas `*Test.tscn` con dobles falsos donde ya se usan). Se ejecuta `godot/scenes/Test.tscn` y solo las escenas afectadas.
 
-- `EconomiaTest`: descuento del bloque en curso, un tick que agota varios bloques, agotamiento total (producción 0), recálculo cada `TICKS_RECALCULO`, caza/recolección que baja con menos árboles, pesca que cambia con el agua.
+- `EconomiaTest`: descuento del bloque en curso, un tick que agota varios bloques, agotamiento total (producción 0), recálculo cada `TICKS_RECALCULO`, caza/recolección que baja con menos árboles (la pesca contra el agua real no se probó en 2B).
 - `RecoleccionTest`: rendimiento por bloque, selección de mina desde profundidad 2 (nunca 0 ni 1), orden de elección (cercano y menos profundo), bloques puestos por el jugador excluidos.
-- `CiudadTest`: topes iniciales, `ampliar_almacen()` idempotente, bono por baúles al registrar y retirar, stock que excede el límite tras bajar, núcleo sin camas y primer residencial con camas.
+- `CiudadTest`: topes iniciales, `ampliar_almacen()` idempotente, bono por baúles al registrar y retirar, stock que excede el límite tras bajar (núcleo sin camas y primer residencial con camas: solo verificación manual).
 - Pruebas de mundo: extracción por tipo, tala parcial con daño conservado, rebrote de frutos.
 - Prueba del contador de progreso (avance, reinicio al soltar o cambiar de bloque, indicador hacia atrás en la deconstrucción).
 - Verificación manual (Godot 4.7): minar y talar con barra, frutos, jugada completa desde la partida vacía hasta la llegada de los primeros colonos, y ver bajar la tasa de un maderero al talar su bosque.

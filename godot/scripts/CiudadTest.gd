@@ -225,7 +225,7 @@ func ejecutar_pruebas() -> void:
 	# avatar coma 10 minutos (300 ticks de 2 s) sin hambruna.
 	var recien_nacida: Node = CiudadScript.new()
 	recien_nacida.migracion_activa = false
-	assert(recien_nacida.almacen["comida"].cantidad == recien_nacida.almacen["comida"].limite, "la comida inicial debe ser igual a su límite")
+	assert(recien_nacida.almacen["comida"].cantidad == recien_nacida.COMIDA_INICIAL, "la comida inicial es COMIDA_INICIAL")
 	var hubo_hambruna := false
 	for i in range(300):
 		if recien_nacida.simular_tick(5.0)["hambruna"]:
@@ -238,9 +238,9 @@ func ejecutar_pruebas() -> void:
 	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras"]:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
 	assert(ocho.almacen.size() == 8)
-	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 1000.0)
-	assert(ocho.almacen["comida"].cantidad == ocho.almacen["comida"].limite, "la comida inicial es su límite")
-	assert(ocho.almacen["comida"].limite > 1000.0, "el límite de comida supera el de los demás")
+	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
+	assert(ocho.almacen["comida"].cantidad == ocho.COMIDA_INICIAL, "la comida inicial es COMIDA_INICIAL")
+	assert(ocho.almacen["comida"].limite == 5000.0, "el tope inicial de comida es 5000")
 
 	print("\n=== TEST 19: reasignar_tipo() mueve un habitante de un tipo a otro ===")
 	var reasig: Node = CiudadScript.new()
@@ -284,4 +284,27 @@ func ejecutar_pruebas() -> void:
 		prom.simular_tick(0.0)
 	assert(prom.almacen["madera"].tasa_neta_promedio == 0.0, "la ventana descarta las muestras viejas")
 
-	print("\n=== Las 21 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 22: topes iniciales, ampliar_almacen(), bono por baúles y stock que excede el tope ===")
+	var lim: Node = CiudadScript.new()
+	assert(lim.almacen["piedra"].limite == 500.0 and lim.almacen["comida"].limite == 5000.0)
+	lim.ampliar_almacen()
+	assert(lim.almacen["piedra"].limite == 1000.0 and lim.almacen["comida"].limite == 10000.0, "declarar el núcleo duplica los topes")
+	lim.ampliar_almacen()
+	assert(lim.almacen["piedra"].limite == 1000.0, "ampliar_almacen() es idempotente")
+	lim.registrar_edificio_residencial(7, [2], 3)
+	assert(lim.almacen["piedra"].limite == 1300.0 and lim.almacen["comida"].limite == 11200.0, "3 baúles: +300 (+1200 comida)")
+	lim.registrar_edificio_residencial(7, [2], 3)
+	assert(lim.almacen["piedra"].limite == 1300.0, "registrar dos veces el mismo edificio no duplica sus baúles")
+	lim.registrar_edificio_residencial(8, [1])
+	assert(lim.almacen["piedra"].limite == 1300.0, "sin baúles no cambia el tope")
+	lim.almacen["piedra"].cantidad = 1250.0
+	lim.retirar_edificio_residencial(7)
+	assert(lim.almacen["piedra"].limite == 1000.0, "deconstruir el edificio quita su bono")
+	assert(lim.almacen["piedra"].cantidad == 1250.0, "el stock que excede el nuevo tope se conserva")
+	assert(lim.almacen["piedra"].agregar(50.0) == 0.0 and lim.almacen["piedra"].cantidad == 1250.0, "sin espacio no entra nada y nada se destruye")
+	assert(lim.horas_juego == 0)
+	lim.simular_tick(0.0)
+	lim.simular_tick(0.0)
+	assert(lim.horas_juego == 2, "cada tick es una hora de juego")
+
+	print("\n=== Las 22 pruebas de Ciudad pasaron correctamente ===")

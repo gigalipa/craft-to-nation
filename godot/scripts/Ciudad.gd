@@ -78,6 +78,18 @@ const VENTANA_TASA_PROMEDIO := 10
 const BONO_MORAL_MAXIMO := 15.0
 const VELOCIDAD_SUAVIZADO_MORAL := 0.15
 
+## Inventario del avatar = almacén central (ver docs/superpowers/specs/
+## 2026-09-24-extraccion-fisica-agotamiento-design.md, Sección 6). Al empezar
+## la partida los topes son bajos; declarar el núcleo los duplica y cada baúl
+## de un edificio residencial posterior suma un bono. Placeholders de balance.
+const LIMITE_BASE := 500.0
+const LIMITE_BASE_COMIDA := 5000.0
+const FACTOR_NUCLEO := 2.0
+const BONO_BAUL := 100.0
+const BONO_BAUL_COMIDA := 400.0
+## Comida con la que empieza la partida: 300 ticks de un avatar (5/h) sin producción.
+const COMIDA_INICIAL := 1500.0
+
 
 class Recurso:
 	var nombre: String
@@ -111,7 +123,7 @@ class Recurso:
 		tasa_neta_promedio = suma / _historial_tasa.size()
 
 	func agregar(monto: float) -> float:
-		var espacio_libre: float = limite - cantidad
+		var espacio_libre: float = max(0.0, limite - cantidad)
 		var ingreso_real: float = min(espacio_libre, monto)
 		cantidad += ingreso_real
 		return ingreso_real
@@ -157,6 +169,13 @@ var periodo_elecciones_restante := 0
 ## VoxelWorld) -> Array[int] con las camas de CADA piso. Ver
 ## registrar_edificio_residencial().
 var edificios_residenciales: Dictionary = {}
+## id de edificio residencial -> cantidad de baúles (cada uno suma al tope del
+## almacén, ver recalcular_limites()).
+var baules_por_edificio: Dictionary = {}
+## true desde que se declara el núcleo urbano (duplica los topes).
+var almacen_ampliado := false
+## Horas de juego transcurridas (1 por simular_tick); reloj de los frutos del avatar.
+var horas_juego := 0
 
 ## Si es false, simular_tick() no hace llegar colonos (lo usan las pruebas
 ## que fijan la demografía a mano).
@@ -173,18 +192,15 @@ func _init() -> void:
 	for tipo in TIPOS_POBLACION:
 		demografia[tipo] = 0
 	almacen = {
-		"madera": Recurso.new("Madera", 200, 1000),
-		# Placeholder hasta que exista producción de comida: con 150 el avatar
-		# (5 por tick de 2 s) la agotaba en 60 s y, sin comida, cada tick es
-		# hambruna, lo que bloquea para siempre la migración de colonos.
-		"comida": Recurso.new("Comida", 10000, 10000),
-		"hierro": Recurso.new("Hierro", 50, 1000),
-		# Recursos que llegan de los puestos (sub-proyecto 2A): empiezan en 0.
-		"tierra": Recurso.new("Tierra", 0, 1000),
-		"piedra": Recurso.new("Piedra", 0, 1000),
-		"cobre": Recurso.new("Cobre", 0, 1000),
-		"carbon": Recurso.new("Carbón", 0, 1000),
-		"tierras_raras": Recurso.new("Tierras raras", 0, 1000),
+		"madera": Recurso.new("Madera", 200, LIMITE_BASE),
+		"comida": Recurso.new("Comida", COMIDA_INICIAL, LIMITE_BASE_COMIDA),
+		"hierro": Recurso.new("Hierro", 50, LIMITE_BASE),
+		# Recursos que llegan de los puestos y del avatar: empiezan en 0.
+		"tierra": Recurso.new("Tierra", 0, LIMITE_BASE),
+		"piedra": Recurso.new("Piedra", 0, LIMITE_BASE),
+		"cobre": Recurso.new("Cobre", 0, LIMITE_BASE),
+		"carbon": Recurso.new("Carbón", 0, LIMITE_BASE),
+		"tierras_raras": Recurso.new("Tierras raras", 0, LIMITE_BASE),
 	}
 	for categoria in CATEGORIAS_COMIDA:
 		fuentes_comida_activas[categoria] = 0.0
@@ -331,8 +347,10 @@ func reasignar_tipo(de: String, a: String) -> bool:
 ## VoxelWorld y "camas_por_piso" las camas de cada piso, en orden. Idempotente
 ## por id: registrar dos veces el mismo edificio (p. ej. al deconstruirlo y
 ## volver a completarlo) no duplica sus camas.
-func registrar_edificio_residencial(id: int, camas_por_piso: Array) -> void:
+func registrar_edificio_residencial(id: int, camas_por_piso: Array, baules: int = 0) -> void:
 	edificios_residenciales[id] = camas_por_piso.duplicate()
+	baules_por_edificio[id] = baules
+	recalcular_limites()
 
 
 ## Retira las camas de un edificio residencial que empieza a deconstruirse
@@ -343,6 +361,29 @@ func registrar_edificio_residencial(id: int, camas_por_piso: Array) -> void:
 ## hace nada.
 func retirar_edificio_residencial(id: int) -> void:
 	edificios_residenciales.erase(id)
+	baules_por_edificio.erase(id)
+	recalcular_limites()
+
+
+## Se declaró el núcleo urbano: los topes del almacén se duplican. Idempotente.
+func ampliar_almacen() -> void:
+	almacen_ampliado = true
+	recalcular_limites()
+
+
+## tope = base x (FACTOR_NUCLEO si el núcleo está declarado) + baúles x bono.
+## Si el tope baja por debajo del stock (se deconstruyó un edificio), el stock
+## se conserva y simplemente no entra nada nuevo (ver Recurso.agregar()).
+func recalcular_limites() -> void:
+	var factor: float = FACTOR_NUCLEO if almacen_ampliado else 1.0
+	var baules := 0
+	for cantidad in baules_por_edificio.values():
+		baules += cantidad
+	for clave in almacen:
+		var comida: bool = clave == "comida"
+		var base: float = LIMITE_BASE_COMIDA if comida else LIMITE_BASE
+		var bono: float = BONO_BAUL_COMIDA if comida else BONO_BAUL
+		(almacen[clave] as Recurso).limite = base * factor + baules * bono
 
 
 ## Aplica la sucesión del avatar tras su muerte (GDD Sección 9).
@@ -445,5 +486,6 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 		"bono_moral_variedad": snapped(bono_moral_variedad, 0.01),
 		"migrantes": migrantes,
 	}
+	horas_juego += 1
 	tick_simulado.emit()
 	return resultado

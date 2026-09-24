@@ -6,9 +6,6 @@ extends Node
 ## escena (PlayerOxigenoTest.tscn) con F6 y revisa el panel "Output": debe
 ## imprimir las 4 pruebas y no debe lanzar ningún error de assert().
 
-const Player = preload("res://scripts/Player.gd")
-
-
 func _ready() -> void:
 	ejecutar_pruebas()
 

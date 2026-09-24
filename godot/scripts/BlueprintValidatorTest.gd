@@ -1,6 +1,5 @@
 extends Node
 
-const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")  # TEMP: ver nota de verificación tras mover el proyecto a godot/
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 
 ## Equivalente GDScript de ejecutar_pruebas() en PoC_2 (tests 1-6), más

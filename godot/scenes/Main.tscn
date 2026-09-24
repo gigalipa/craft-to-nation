@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1"]
 [ext_resource type="Script" uid="uid://bljafw3iua3x0" path="res://scripts/VoxelWorld.gd" id="2"]
 [ext_resource type="Script" uid="uid://djo58ryeofic5" path="res://scripts/Main.gd" id="3"]
-[ext_resource type="MeshLibrary" uid="uid://b47cswj0aixp3" path="res://assets/BlockLibrary.res" id="4"]
+[ext_resource type="MeshLibrary" path="res://assets/BlockLibrary.res" id="4"]
 [ext_resource type="Script" uid="uid://dyx7ud7wfqpeg" path="res://scripts/HUD.gd" id="5"]
 [ext_resource type="Script" uid="uid://dv3grllxpedej" path="res://scripts/CamaraCenital.gd" id="6"]
 [ext_resource type="Script" uid="uid://b3dtjvjivtjbv" path="res://scripts/ZonaOverlay.gd" id="7"]

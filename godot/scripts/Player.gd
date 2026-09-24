@@ -1,7 +1,6 @@
 extends CharacterBody3D
 class_name Player
 
-const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")  # TEMP: ver nota de verificación tras mover el proyecto a godot/
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación

@@ -2,7 +2,6 @@ extends Camera3D
 
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
-const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
 

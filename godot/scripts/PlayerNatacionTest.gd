@@ -7,7 +7,6 @@ extends Node
 ## (PlayerNatacionTest.tscn) con F6 y revisa el panel "Output": debe imprimir
 ## las 9 pruebas y no debe lanzar ningún error de assert().
 
-const Player = preload("res://scripts/Player.gd")
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 
 

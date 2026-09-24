@@ -221,7 +221,9 @@ func notches_de_paso(vertice_a: Vector2i, vertice_b: Vector2i) -> Array[Dictiona
 
 	var columna_solape: Vector2i = columnas_solape(vertice_a, vertice_b)[0]
 
+	@warning_ignore("integer_division")
 	var esquina_a := Vector2i((1 - signi(paso.x)) / 2, (1 - signi(paso.y)) / 2)
+	@warning_ignore("integer_division")
 	var esquina_b := Vector2i((1 + signi(paso.x)) / 2, (1 + signi(paso.y)) / 2)
 	return [
 		{"columna": columna_solape - paso, "esquina_omitida": esquina_a},

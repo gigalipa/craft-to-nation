@@ -67,11 +67,12 @@ const OXIGENO_MAXIMO := 10.0
 const TASA_CONSUMO_OXIGENO := 1.0
 const TASA_RECUPERACION_OXIGENO := 2.0
 
-## Intervalo entre repeticiones de minar/colocar mientras se mantiene el
-## click presionado. Placeholder único para todo tipo de bloque/herramienta
-## — a futuro cada bloque tendrá su propia "vida"/tiempo de minado (como
-## Minecraft) y esto dependerá también de la herramienta equipada.
+## Intervalo entre repeticiones de colocar (y de deconstruir, con su contador de
+## "sostener") mientras se mantiene el click presionado. Minar, talar y recolectar
+## frutos ya no repiten: avanzan por tiempo con ProgresoAccion (ver Recoleccion.
+## tiempo_minado_de()).
 const INTERVALO_ACCION_REPETIDA := 0.20
+const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
 
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
@@ -86,6 +87,8 @@ var _excepciones_obra: Dictionary = {}  # int (id de obra) -> cuerpo con el que 
 var _minando := false
 var _colocando := false
 var _temporizador_accion := 0.0
+var _progreso_accion: RefCounted = ProgresoAccionScript.new()
+var _recolectando_frutos := false  # tecla E mantenida
 
 var modo_deconstruccion := false
 var _id_listo_para_remocion := -1
@@ -136,6 +139,8 @@ func _input(event: InputEvent) -> void:
 			_alternar_modo_deconstruccion()
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
+		if tecla.keycode == KEY_E:
+			_recolectando_frutos = tecla.pressed
 		if tecla.pressed:
 			var indice: int = tecla.keycode - KEY_1
 			if indice >= 0 and indice < tipos_disponibles.size():
@@ -152,9 +157,9 @@ func _input(event: InputEvent) -> void:
 		var boton := event as InputEventMouseButton
 		if boton.button_index == MOUSE_BUTTON_LEFT:
 			_minando = boton.pressed
-			if boton.pressed:
+			if boton.pressed and modo_deconstruccion:
 				_temporizador_accion = 0.0
-				_minar()
+				_deconstruir()
 		elif boton.button_index == MOUSE_BUTTON_RIGHT:
 			_colocando = boton.pressed
 			if boton.pressed:
@@ -162,21 +167,110 @@ func _input(event: InputEvent) -> void:
 				_colocar()
 
 
-## Mientras el jugador mantiene el click, repite minar/colocar cada
-## INTERVALO_ACCION_REPETIDA — un solo temporizador compartido porque nunca
-## se puede minar y colocar al mismo tiempo (son botones distintos, pero la
-## intención del jugador en un instante dado es una sola acción).
+## Mientras el jugador mantiene un botón: E recolecta frutos, el clic izquierdo
+## mina/tala (por tiempo) o deconstruye (por repetición, con su contador) y el
+## derecho coloca (por repetición). Prioridad frutos > izquierdo > derecho, como
+## antes lo era izquierdo > derecho: la intención del jugador en un instante es
+## una sola acción. Sin ninguna, el avance se pierde y la barra se oculta.
 func _procesar_accion_repetida(delta: float) -> void:
-	if not _minando and not _colocando:
+	if _recolectando_frutos:
+		_procesar_frutos(delta)
+		return
+	if _minando:
+		_procesar_minado(delta)
+		return
+	_progreso_accion.soltar()
+	hud.ocultar_progreso()
+	if not _colocando:
 		return
 	_temporizador_accion += delta
 	if _temporizador_accion < INTERVALO_ACCION_REPETIDA:
 		return
 	_temporizador_accion = 0.0
-	if _minando:
-		_minar()
-	elif _colocando:
-		_colocar()
+	_colocar()
+
+
+## Guarda en el inventario (= almacén central) lo que rindió una extracción del
+## avatar; lo que no cabe por tope lleno se pierde, como las entregas de los acarreadores.
+func _guardar_en_inventario(rendido: Dictionary) -> void:
+	if rendido.is_empty():
+		return
+	Economia.entregar(rendido)
+	print("Recolectado: ", rendido)
+
+
+## Un frame de clic izquierdo mantenido: deconstruir (repetición + contador),
+## talar (si el objetivo es un árbol) o minar (por tiempo del tipo de bloque).
+func _procesar_minado(delta: float) -> void:
+	if modo_deconstruccion:
+		_temporizador_accion += delta
+		if _temporizador_accion >= INTERVALO_ACCION_REPETIDA:
+			_temporizador_accion = 0.0
+			_deconstruir()
+		if _ticks_listo_para_remocion > 0:
+			hud.mostrar_progreso(float(_ticks_listo_para_remocion) / TICKS_REMOCION_FINAL, true)
+		else:
+			hud.ocultar_progreso()
+		return
+	if not raycast.is_colliding() or mundo == null:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var celda := _celda_impactada()
+	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
+		_procesar_tala(celda, delta)
+		return
+	if not mundo.es_minable(celda):
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var duracion: float = Recoleccion.tiempo_minado_de(mundo.material_real(mundo.obtener_tipo(celda)))
+	if _progreso_accion.avanzar("celda:%s" % celda, duracion, delta):
+		_guardar_en_inventario(mundo.extraer_por_avatar(celda))
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+	else:
+		hud.mostrar_progreso(_progreso_accion.fraccion(), false)
+
+
+## Talar: cada TIEMPO_TALA_POR_SALUD segundos sostenidos resta 1 de salud al árbol
+## y rinde 10 de madera. El daño se conserva al soltar (la salud vive en el árbol);
+## la barra muestra la salud que le queda.
+func _procesar_tala(celda: Vector3i, delta: float) -> void:
+	var id: int = mundo.arboles.obtener_arbol_de(celda)
+	if id == -1:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	if _progreso_accion.avanzar("arbol:%d" % id, Recoleccion.TIEMPO_TALA_POR_SALUD, delta):
+		var derribado: bool = mundo.talar_bloque_de_arbol(celda, DANO_TALA)
+		_guardar_en_inventario({"madera": Recoleccion.rendimiento_de("madera") * DANO_TALA})
+		if derribado:
+			_progreso_accion.soltar()
+			hud.ocultar_progreso()
+			return
+	hud.mostrar_progreso(float(mundo.arboles.salud_de(id)) / mundo.arboles.salud_maxima_de(id), true)
+
+
+## Frutos: mantener E sobre un árbol con frutos. No consume el árbol (ver
+## VoxelWorld.recolectar_frutos()).
+func _procesar_frutos(delta: float) -> void:
+	if not raycast.is_colliding() or mundo == null:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var celda := _celda_impactada()
+	if mundo.frutos_disponibles(celda, Ciudad.horas_juego) <= 0.0:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var id: int = mundo.arboles.obtener_arbol_de(celda)
+	if _progreso_accion.avanzar("frutos:%d" % id, Recoleccion.TIEMPO_RECOLECCION_FRUTOS, delta):
+		_guardar_en_inventario({"comida": mundo.recolectar_frutos(celda, Ciudad.horas_juego)})
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+	else:
+		hud.mostrar_progreso(_progreso_accion.fraccion(), false)
 
 
 func _physics_process(delta: float) -> void:
@@ -452,20 +546,15 @@ func _alternar_modo_deconstruccion() -> void:
 	_ticks_listo_para_remocion = 0
 
 
-func _minar() -> void:
+## Un intento de deconstrucción sobre el bloque bajo la mira (modo G). Minar y
+## talar ahora van por tiempo (ver _procesar_minado()).
+func _deconstruir() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
-	var celda := _celda_impactada()
-	if modo_deconstruccion:
-		_procesar_deconstruccion(celda)
-		return
-	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
-		mundo.talar_bloque_de_arbol(celda, DANO_TALA)
-	else:
-		mundo.minar_bloque(celda)
+	_procesar_deconstruccion(_celda_impactada())
 
 
-## Se llama en cada click/repetición de _minar() mientras modo_deconstruccion
+## Se llama en cada click/repetición de _deconstruir() mientras modo_deconstruccion
 ## está activo. Delega toda la lógica de "qué revertir" en
 ## VoxelWorld.procesar_deconstruccion() — aquí solo se maneja lo que le
 ## corresponde al jugador/Ciudad/Zonificacion/Recoleccion: negarse sobre el

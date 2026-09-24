@@ -53,6 +53,24 @@ const RENDIMIENTO_POR_BLOQUE := {
 	"carbon": 10.0, "tierras_raras": 10.0, "madera": 10.0,
 }
 
+## Segundos que el avatar tarda en minar un bloque por tipo (material real,
+## "piso" cuenta como "tierra"), como en Minecraft. Los tipos sin entrada
+## (construcciones del jugador) usan TIEMPO_MINADO_DEFECTO. Placeholders.
+const TIEMPO_MINADO := {
+	"tierra": 0.4, "piedra": 1.2, "carbon": 1.2,
+	"hierro": 1.6, "cobre": 1.6, "tierras_raras": 2.4,
+}
+const TIEMPO_MINADO_DEFECTO := 0.6
+## Sin herramientas todavía: cuando existan, dividirá el tiempo de minado.
+const MULTIPLICADOR_HERRAMIENTA := 1.0
+## Segundos de golpes sostenidos por cada punto de salud (una celda de tronco) de un árbol.
+const TIEMPO_TALA_POR_SALUD := 1.0
+## Frutos que el avatar recolecta de un árbol (no lo consume): segundos, comida a
+## densidad frutal 1.0 y horas de juego que el árbol tarda en volver a dar frutos.
+const TIEMPO_RECOLECCION_FRUTOS := 2.0
+const COMIDA_POR_RECOLECCION := 60.0
+const HORAS_REBROTE_FRUTOS := 24
+
 ## Una mina solo extrae bloques al menos a esta profundidad bajo la superficie
 ## natural de su columna (GROSOR_TIERRA - 2), para que el terreno de arriba no
 ## quede flotando ni con un hueco en la superficie.
@@ -243,6 +261,12 @@ func _es_extraible(mundo: Object, celda: Vector3i) -> bool:
 ## Unidades de recurso que rinde un bloque del tipo "tipo" (0.0 si no rinde).
 func rendimiento_de(tipo: String) -> float:
 	return RENDIMIENTO_POR_BLOQUE.get(tipo, 0.0)
+
+
+
+## Segundos que tarda el avatar en minar un bloque del material "tipo".
+func tiempo_minado_de(tipo: String) -> float:
+	return TIEMPO_MINADO.get(tipo, TIEMPO_MINADO_DEFECTO) * MULTIPLICADOR_HERRAMIENTA
 
 
 ## Tasa de recolección prevista por ciudadano y tipo de recurso, a partir

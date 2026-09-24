@@ -608,16 +608,20 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 	return true
 
 
-func minar_bloque(celda: Vector3i) -> bool:
-	if obtener_tipo(celda) == "agua":
-		return false
-	# "bedrock" es el piso absoluto del mundo (PISO_MUNDO) — inminable a
-	# propósito, para que el jugador nunca pueda cavar hasta el vacío.
-	if obtener_tipo(celda) == "bedrock":
+## true si el avatar puede minar "celda": ni agua, ni "bedrock" (el piso
+## absoluto del mundo, inminable a propósito para que nadie cave hasta el
+## vacío), ni parte de un edificio, ni una celda vacía.
+func es_minable(celda: Vector3i) -> bool:
+	var tipo: String = obtener_tipo(celda)
+	if tipo == "agua" or tipo == "bedrock":
 		return false
 	if celda_a_edificio.has(celda):
 		return false
-	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
+	return get_cell_item(celda) != GridMap.INVALID_CELL_ITEM
+
+
+func minar_bloque(celda: Vector3i) -> bool:
+	if not es_minable(celda):
 		return false
 	_retirar_bloque(celda)
 	return true
@@ -656,6 +660,48 @@ func _retirar_bloque(celda: Vector3i) -> void:
 func retirar_bloque_extraido(celda: Vector3i) -> void:
 	if get_cell_item(celda) != GridMap.INVALID_CELL_ITEM:
 		_retirar_bloque(celda)
+
+
+## El avatar termina de minar "celda": la retira y devuelve las unidades que
+## rinde ({recurso: unidades}). Solo rinde el terreno natural: un bloque puesto
+## por el jugador se retira pero no rinde (colocar es gratis todavía; si
+## rindiera, colocar y minar en bucle crearía recursos de la nada). {} si no se
+## pudo minar o no rinde.
+func extraer_por_avatar(celda: Vector3i) -> Dictionary:
+	var natural: bool = es_terreno_natural(celda) and not colocado_por_jugador.has(celda)
+	var recurso: String = material_real(obtener_tipo(celda))
+	if not minar_bloque(celda):
+		return {}
+	var unidades: float = Recoleccion.rendimiento_de(recurso)
+	if not natural or unidades <= 0.0:
+		return {}
+	return {recurso: unidades}
+
+
+## Hora de juego a partir de la cual cada árbol vuelve a dar frutos (id de
+## árbol -> hora). Ausente = ya tiene frutos.
+var _rebrote_frutos: Dictionary = {}
+
+
+## Comida que daría recolectar los frutos del árbol de "celda" ahora (0.0 si
+## no es un árbol, ya se recolectó hace menos de HORAS_REBROTE_FRUTOS horas, o
+## no hay frutales en la zona). Sale de la misma señal de densidad frutal que
+## usan los puestos de caza/recolección.
+func frutos_disponibles(celda: Vector3i, hora: int) -> float:
+	var id: int = arboles.obtener_arbol_de(celda)
+	if id == -1 or hora < _rebrote_frutos.get(id, 0):
+		return 0.0
+	return Recoleccion.COMIDA_POR_RECOLECCION * generador.densidad_frutal_en(celda.x, celda.z)
+
+
+## Recolecta los frutos del árbol de "celda": devuelve la comida y deja al
+## árbol sin frutos HORAS_REBROTE_FRUTOS horas. No consume el árbol.
+func recolectar_frutos(celda: Vector3i, hora: int) -> float:
+	var comida: float = frutos_disponibles(celda, hora)
+	if comida <= 0.0:
+		return 0.0
+	_rebrote_frutos[arboles.obtener_arbol_de(celda)] = hora + Recoleccion.HORAS_REBROTE_FRUTOS
+	return comida
 
 
 func obtener_tipo(celda: Vector3i) -> String:

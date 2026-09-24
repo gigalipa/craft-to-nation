@@ -88,7 +88,6 @@ var _minando := false
 var _colocando := false
 var _temporizador_accion := 0.0
 var _progreso_accion: RefCounted = ProgresoAccionScript.new()
-var _recolectando_frutos := false  # tecla E mantenida
 
 var modo_deconstruccion := false
 var _id_listo_para_remocion := -1
@@ -139,8 +138,6 @@ func _input(event: InputEvent) -> void:
 			_alternar_modo_deconstruccion()
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
-		if tecla.keycode == KEY_E:
-			_recolectando_frutos = tecla.pressed
 		if tecla.pressed:
 			var indice: int = tecla.keycode - KEY_1
 			if indice >= 0 and indice < tipos_disponibles.size():
@@ -173,7 +170,11 @@ func _input(event: InputEvent) -> void:
 ## antes lo era izquierdo > derecho: la intención del jugador en un instante es
 ## una sola acción. Sin ninguna, el avance se pierde y la barra se oculta.
 func _procesar_accion_repetida(delta: float) -> void:
-	if _recolectando_frutos:
+	if not camara.current:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	if Input.is_key_pressed(KEY_E):
 		_procesar_frutos(delta)
 		return
 	if _minando:
@@ -208,7 +209,7 @@ func _procesar_minado(delta: float) -> void:
 			_temporizador_accion = 0.0
 			_deconstruir()
 		if _ticks_listo_para_remocion > 0:
-			hud.mostrar_progreso(float(_ticks_listo_para_remocion) / TICKS_REMOCION_FINAL, true)
+			hud.mostrar_progreso(1.0 - float(_ticks_listo_para_remocion) / TICKS_REMOCION_FINAL, true)
 		else:
 			hud.ocultar_progreso()
 		return

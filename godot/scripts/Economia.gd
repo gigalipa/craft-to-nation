@@ -274,7 +274,7 @@ func _siguiente_bloque(p: Dictionary, recurso: String) -> Dictionary:
 		var celda: Vector3i = Recoleccion.siguiente_bloque_mina(mundo, entorno["centro"], entorno["altura"], recurso)
 		if celda == Recoleccion.SIN_BLOQUE:
 			return {}
-		return {"tipo": "bloque", "celda": celda, "restante": Recoleccion.rendimiento_de(recurso)}
+		return {"tipo": "bloque", "celda": celda, "recurso": recurso, "restante": Recoleccion.rendimiento_de(recurso)}
 	var id: int = mundo.arboles.mas_cercano_en_radio(entorno["centro"], entorno["radio_arboles"])
 	if id == -1:
 		return {}
@@ -284,7 +284,8 @@ func _siguiente_bloque(p: Dictionary, recurso: String) -> Dictionary:
 ## Sigue existiendo el bloque o árbol "en curso" (el avatar pudo quitarlo antes).
 func _en_curso_valido(actual: Dictionary) -> bool:
 	if actual["tipo"] == "bloque":
-		return mundo.obtener_tipo(actual["celda"]) != ""
+		var celda: Vector3i = actual["celda"]
+		return mundo.material_real(mundo.obtener_tipo(celda)) == actual["recurso"] and Recoleccion.es_extraible(mundo, celda)
 	return mundo.arboles.salud_de(actual["id"]) > 0
 
 
@@ -311,7 +312,8 @@ func recoger(esquina: Vector2i, capacidad: float) -> Dictionary:
 	var total := _total(p["almacen"])
 	if total <= 1e-9:
 		return {}
-	if total < capacidad and not p["presentes"].is_empty():
+	# Carga parcial: solo sin recolectores o si el puesto ya no produce (resto de un área agotada).
+	if total < capacidad and not p["presentes"].is_empty() and _total(produccion_por_hora(esquina)) > 0.0:
 		return {}
 	var carga: Dictionary = {}
 	var restante := capacidad

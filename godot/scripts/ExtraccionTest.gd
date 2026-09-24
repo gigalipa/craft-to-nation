@@ -16,6 +16,13 @@ class GeneradorFrutalFalso:
 		return densidad
 
 
+## Generador falso: altura fija (bajo un río es la superficie del agua).
+class GeneradorAlturaFalso:
+	var altura := 20
+	func altura_en(_x: int, _z: int) -> int:
+		return altura
+
+
 func _mundo_nuevo() -> Node:
 	var mundo: Node = VoxelWorld.new()
 	mundo.mesh_library = load("res://assets/BlockLibrary.res")
@@ -92,4 +99,12 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_f.frutos_disponibles(tronco, 1000) == 0.0, "sin frutales en la zona no hay frutos")
 	assert(mundo_f.recolectar_frutos(Vector3i(50, 5, 50), 1000) == 0.0, "una celda sin árbol no da frutos")
 
-	print("\n=== Las 5 pruebas de la extracción del avatar pasaron correctamente ===")
+	print("\n=== TEST 6: altura_natural_en() no pasa del lecho real bajo un río ===")
+	var mundo_h: Node = _mundo_nuevo()
+	assert(mundo_h.altura_natural_en(7, 7) == mundo_h.ALTURA_BUSQUEDA_MIN, "sin generador: el escaneo")
+	mundo_h.generador = GeneradorAlturaFalso.new()
+	assert(mundo_h.altura_natural_en(7, 7) == 20, "columna vacía: la altura del generador")
+	mundo_h.colocar_bloque(Vector3i(7, 8, 7), "piedra")
+	assert(mundo_h.altura_natural_en(7, 7) == 8, "el lecho real está bajo la superficie que da el generador")
+
+	print("\n=== Las 6 pruebas de la extracción del avatar pasaron correctamente ===")

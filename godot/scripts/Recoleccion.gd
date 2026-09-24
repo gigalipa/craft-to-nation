@@ -228,7 +228,7 @@ func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: in
 	for dx in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
 		for dz in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
 			# "profundidad_minima" > 0: solo cuenta bloques extraíbles, por debajo de
-			# la superficie natural de esta columna y naturales (ver _es_extraible()).
+			# la superficie natural de esta columna y naturales (ver es_extraible()).
 			var techo: int = 1 << 30
 			if profundidad_minima > 0:
 				techo = mundo.altura_natural_en(centro_xz.x + dx, centro_xz.y + dz) - profundidad_minima
@@ -240,7 +240,7 @@ func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: in
 				if celda.y > techo:
 					continue
 				var tipo: String = mundo.material_real(mundo.obtener_tipo(celda))
-				if TIPOS_MINERALES.has(tipo) and (profundidad_minima == 0 or _es_extraible(mundo, celda)):
+				if TIPOS_MINERALES.has(tipo) and (profundidad_minima == 0 or es_extraible(mundo, celda)):
 					conteo[tipo] = conteo.get(tipo, 0) + 1
 	return conteo
 
@@ -254,7 +254,7 @@ func detectar_recursos_extraibles(mundo: Object, centro_xz: Vector2i, altura_sup
 
 ## Un bloque es extraíble por una mina si es terreno natural (ni árbol, ni
 ## estructura, ni parte de un edificio, ni agua) y no lo colocó el jugador.
-func _es_extraible(mundo: Object, celda: Vector3i) -> bool:
+func es_extraible(mundo: Object, celda: Vector3i) -> bool:
 	return mundo.es_terreno_natural(celda) and not mundo.colocado_por_jugador.has(celda)
 
 
@@ -428,7 +428,7 @@ func siguiente_bloque_mina(mundo: Object, centro_xz: Vector2i, altura_superficie
 				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
 				if celda.y > techo:
 					continue
-				if mundo.material_real(mundo.obtener_tipo(celda)) != recurso or not _es_extraible(mundo, celda):
+				if mundo.material_real(mundo.obtener_tipo(celda)) != recurso or not es_extraible(mundo, celda):
 					continue
 				var distancia := float(dx * dx + dy * dy + dz * dz)
 				if distancia < mejor_distancia or (distancia == mejor_distancia and celda.y > mejor.y):
@@ -480,6 +480,9 @@ func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary) -> Dicti
 		var celdas_agua: Dictionary = celdas_agua_conectadas(mundo.generador, entorno["centro_agua"], RADIO_AREA_PESCA_FRUTOS_MAR)
 		return tasas_pesca_frutos_mar(detectar_pesca_frutos_mar(mundo.generador, celdas_agua))
 	var tasas: Dictionary
+	# Un maderero sin árboles al colocarse no tiene nada que talar (factor_arboles() da 1.0 ahí).
+	if tipo == "maderero" and entorno.get("arboles_ref", 0) <= 0:
+		return {"madera": 0.0}
 	if tipo == "caza_recoleccion":
 		tasas = tasas_caza_recoleccion(detectar_fauna_frutal(mundo.generador, centro))
 	else:

@@ -484,6 +484,9 @@ func ejecutar_pruebas() -> void:
 	var esperado_agua: Dictionary = Recoleccion.tasas_pesca_frutos_mar(Recoleccion.detectar_pesca_frutos_mar(mundo_agua.generador, celdas_agua_ent))
 	assert(Recoleccion.tasas_de_entorno("pesca_frutos_mar", mundo_agua, entorno_agua) == esperado_agua)
 	assert(Recoleccion.tasas_de_entorno("pesca_frutos_mar", mundo_agua, Recoleccion.entorno_de_puesto("pesca_frutos_mar", mundo_agua, Vector2i(2, 2), 5)).is_empty())
+	assert(Recoleccion.tasas_de_entorno("maderero", mundo_sin, entorno_sin)["madera"] == 0.0, "maderero sin árboles al colocarse: tasa 0")
+	var entorno_caza_sin: Dictionary = Recoleccion.entorno_de_puesto("caza_recoleccion", mundo_sin, Vector2i(0, 0), 5)
+	assert(Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_sin, entorno_caza_sin)["caza"] > 0.0, "caza/recolección sin árboles conserva su tasa")
 	print("OK: entorno y tasas de un puesto se recalculan desde el mundo.")
 
 	print("\n=== Las 27 pruebas de Recoleccion pasaron correctamente ===")

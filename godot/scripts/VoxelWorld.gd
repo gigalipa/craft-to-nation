@@ -573,9 +573,13 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 ## Sin generador (mundos de prueba armados a mano) usa el bloque más alto
 ## real, ignorando el agua.
 func altura_natural_en(x: int, z: int) -> int:
+	var real := altura_en(x, z, true)
 	if generador != null:
-		return generador.altura_en(x, z)
-	return altura_en(x, z, true)
+		# Bajo un río el generador da la superficie del agua: el lecho real es el tope.
+		if real <= ALTURA_BUSQUEDA_MIN:
+			return generador.altura_en(x, z)
+		return mini(generador.altura_en(x, z), real)
+	return real
 
 
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:

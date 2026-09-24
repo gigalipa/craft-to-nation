@@ -332,4 +332,36 @@ func ejecutar_pruebas() -> void:
 	e15b.recalcular_tasas(esq15)
 	assert(is_equal_approx(e15b.produccion_por_hora(esq15)["comida"], comida_llena * 0.5), "la mitad de los árboles: la mitad de la comida")
 
-	print("\n=== Las 15 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 16: con el área agotada se acarrea el resto aunque haya recolectores; produciendo, la carga parcial se rechaza ===")
+	var mundo16: Node = _mundo_con_veta()
+	var e16: Node = EconomiaScript.new()
+	e16.ciudad = CiudadScript.new()
+	e16.mundo = mundo16
+	e16.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e16.asignar(ESQ, "recolector", 1)
+	e16.marcar_presente(1, true)
+	e16.simular_hora()
+	assert(e16.recoger(ESQ, 150.0).is_empty(), "produciendo con recolectores: no se da una carga parcial")
+	for celda in [Vector3i(500, 7, 500), Vector3i(501, 7, 500), Vector3i(500, 6, 500)]:
+		mundo16.minar_bloque(celda)
+	e16.recalcular_tasas(ESQ)
+	var carga16: Dictionary = e16.recoger(ESQ, 150.0)
+	assert(carga16.has("hierro") and is_equal_approx(carga16["hierro"], 5.0), "agotado: se acarrea el resto")
+
+	print("\n=== TEST 17: un bloque en curso reemplazado por uno del jugador no se retira ni rinde ===")
+	var mundo17: Node = _mundo_con_veta()
+	var e17: Node = EconomiaScript.new()
+	e17.ciudad = CiudadScript.new()
+	e17.mundo = mundo17
+	e17.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e17.asignar(ESQ, "recolector", 1)
+	e17.marcar_presente(1, true)
+	e17.simular_hora()  # deja (500,7,500) a medias
+	mundo17.minar_bloque(Vector3i(500, 7, 500))
+	mundo17.colocar_bloque(Vector3i(500, 7, 500), "hierro", true)
+	e17.simular_hora()
+	assert(mundo17.obtener_tipo(Vector3i(500, 7, 500)) == "hierro", "el bloque del jugador no se retira")
+	assert(mundo17.obtener_tipo(Vector3i(501, 7, 500)) == "hierro", "el siguiente natural sigue a medias")
+	assert(is_equal_approx(e17.almacen_local(ESQ)["hierro"], 10.0), "solo rindió el natural")
+
+	print("\n=== Las 17 pruebas de Economia pasaron correctamente ===")

@@ -585,4 +585,83 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 
-	print("\n=== Las 26 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 27: con celda de servicio, los recolectores se reparten por la zona de servicio de la puerta ===")
+	var ciudad27: Node = CiudadScript.new()
+	var economia27: Node = EconomiaScript.new()
+	economia27.ciudad = ciudad27
+	# Maderero 2x2 en (2,2) con celda de servicio LEJOS del anillo de la huella, en (7,3): zona x 5..9, z 1..5.
+	economia27.registrar_puesto(Vector2i(2, 2), "maderero", 2, 2, {"madera": 3.0}, {}, Vector2i(7, 3))
+	var colonos27: Node = _nuevo(_mundo_llano(), ciudad27)
+	colonos27.economia = economia27
+	var ids27: Array[int] = []
+	for celda27 in [Vector3i(0, 1, 7), Vector3i(0, 1, 8), Vector3i(0, 1, 9)]:
+		ids27.append(colonos27.agregar_colono("desempleado", celda27))
+	ciudad27.demografia["desempleado"] = 3
+	for i in range(3):
+		assert(colonos27.contratar(Vector2i(2, 2), "recolector"))
+	var todos27 := false
+	for i in range(600):
+		colonos27.avanzar(0.1)
+		if economia27.trabajadores_de(Vector2i(2, 2))["presentes"] == 3:
+			todos27 = true
+			break
+	assert(todos27, "los tres llegan a la zona de servicio y quedan presentes")
+	var celdas27: Dictionary = {}
+	for id27 in ids27:
+		var c27: Dictionary = colonos27.colonos[id27]
+		assert(absi(c27["celda"].x - 7) <= 2 and absi(c27["celda"].z - 3) <= 2, "dentro de la zona de servicio")
+		assert(not (c27["celda"].x in [2, 3] and c27["celda"].z in [2, 3]), "no dentro de la huella")
+		celdas27[c27["celda"]] = true
+	assert(celdas27.size() == 3, "cada uno en su propia celda")
+
+	print("\n=== TEST 28: agotamiento/desactivación: el recolector vuelve a desempleado y el acarreador con carga termina el viaje ===")
+	var ciudad28: Node = CiudadScript.new()
+	var colonos28: Node = _nuevo_con_puesto(ciudad28)
+	var id_rec28: int = colonos28.agregar_colono("desempleado", Vector3i(6, 1, 1))
+	var id_acar28: int = colonos28.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad28.demografia["desempleado"] = 2
+	assert(colonos28.contratar(Vector2i(2, 2), "recolector"))
+	assert(colonos28.contratar(Vector2i(2, 2), "acarreador"))
+	# contratar() toma al desempleado de id menor: el recolector es id_rec28 y el acarreador id_acar28.
+	var recolector28: Dictionary = colonos28.colonos[id_rec28]
+	var acarreador28: Dictionary = colonos28.colonos[id_acar28]
+	assert(recolector28["trabajo"]["rol"] == "recolector" and acarreador28["trabajo"]["rol"] == "acarreador")
+	acarreador28["fase"] = "entregar"
+	acarreador28["carga"] = {"madera": 50.0}
+	var madera28: float = ciudad28.almacen["madera"].cantidad
+	colonos28.economia.desactivar_puesto(Vector2i(2, 2))
+	assert(recolector28["tipo"] == "desempleado" and recolector28["trabajo"].is_empty(), "el recolector queda libre al instante")
+	assert(acarreador28["tipo"] == "obrero" and acarreador28.get("retirar_al_entregar", false), "el acarreador cargado sigue hasta entregar")
+	var entrego28 := false
+	for i in range(1500):
+		colonos28.avanzar(0.1)
+		if acarreador28["tipo"] == "desempleado":
+			entrego28 = true
+			break
+	assert(entrego28, "entrega y queda libre (aunque el puesto siga inactivo)")
+	assert(is_equal_approx(ciudad28.almacen["madera"].cantidad, madera28 + 50.0), "la carga llegó al núcleo")
+	assert(acarreador28["carga"].is_empty() and not acarreador28.get("retirar_al_entregar", false))
+
+	print("\n=== TEST 29: un acarreador con carga cuyo puesto se quita entretanto sigue entregando ===")
+	var ciudad29: Node = CiudadScript.new()
+	var colonos29: Node = _nuevo_con_puesto(ciudad29)
+	var id29: int = colonos29.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad29.demografia["desempleado"] = 1
+	assert(colonos29.contratar(Vector2i(2, 2), "acarreador"))
+	var c29: Dictionary = colonos29.colonos[id29]
+	c29["fase"] = "entregar"
+	c29["carga"] = {"madera": 30.0}
+	colonos29.economia.liberar(id29)  # lo que hace Economia._liberar_de() al agotarse el puesto...
+	colonos29.economia.trabajadores_liberados.emit([id29])  # ...con carga a cuestas
+	colonos29.economia.quitar_puesto(Vector2i(2, 2))  # y el puesto desaparece antes de que llegue (ya no lo lista entre sus trabajadores)
+	assert(c29["tipo"] == "obrero" and c29["carga"].size() == 1, "quitar el puesto no le quita la carga")
+	var madera29: float = ciudad29.almacen["madera"].cantidad
+	var llego29 := false
+	for i in range(1500):
+		colonos29.avanzar(0.1)
+		if c29["tipo"] == "desempleado":
+			llego29 = true
+			break
+	assert(llego29 and is_equal_approx(ciudad29.almacen["madera"].cantidad, madera29 + 30.0), "no se atasca aunque el puesto ya no exista")
+
+	print("\n=== Las 29 pruebas de Colonos pasaron correctamente ===")

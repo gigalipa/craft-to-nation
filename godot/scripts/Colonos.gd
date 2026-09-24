@@ -28,6 +28,7 @@ const INTENTOS_APARICION := 200
 const PROBABILIDAD_CASA := 0.5  # de deambular hacia su hogar en vez de por la ciudad
 const ESPERA_TRABAJO := 1.0  # segundos que espera un recolector/acarreador antes de volver a decidir
 const INTENTOS_SERVICIO := 6  # celdas junto a una huella que se prueban al buscar ruta
+const RADIO_SERVICIO := 2  # celdas (Chebyshev) alrededor de la celda de servicio de un puesto con puerta
 
 ## El mundo (VoxelWorld en el juego). Asignarlo crea el buscador de rutas.
 var mundo: Object = null:
@@ -42,11 +43,15 @@ var ciudad: Object = null  # Ciudad
 var zona: Object = null  # Zonificacion
 var economia: Object = null:  # Economia
 	set(valor):
-		if economia != null and economia.puesto_quitado.is_connected(_on_puesto_quitado):
-			economia.puesto_quitado.disconnect(_on_puesto_quitado)
+		if economia != null:
+			if economia.puesto_quitado.is_connected(_on_puesto_quitado):
+				economia.puesto_quitado.disconnect(_on_puesto_quitado)
+			if economia.trabajadores_liberados.is_connected(_on_trabajadores_liberados):
+				economia.trabajadores_liberados.disconnect(_on_trabajadores_liberados)
 		economia = valor
 		if valor != null:
 			valor.puesto_quitado.connect(_on_puesto_quitado)
+			valor.trabajadores_liberados.connect(_on_trabajadores_liberados)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
 ## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase", "fallos_servicio"}. "celda" es la celda donde está parado;
@@ -531,11 +536,26 @@ func _on_puesto_quitado(ids: Array) -> void:
 			_volver_a_desempleado(colonos[id])
 
 
+## Trabajadores liberados de un puesto que sigue en pie (agotado o desactivado):
+## vuelven a desempleado, salvo un acarreador que lleva carga, que primero
+## termina el viaje y la entrega en el núcleo (ver _decidir_trabajo()).
+func _on_trabajadores_liberados(ids: Array) -> void:
+	for id in ids:
+		if not colonos.has(id):
+			continue
+		var c: Dictionary = colonos[id]
+		if c["fase"] == "entregar" and not c["carga"].is_empty():
+			c["retirar_al_entregar"] = true
+		else:
+			_volver_a_desempleado(c)
+
+
 func _volver_a_desempleado(c: Dictionary) -> void:
 	c["trabajo"] = {}
 	c["carga"] = {}
 	c["fase"] = ""
 	c["fallos_servicio"] = 0
+	c["retirar_al_entregar"] = false
 	c["tipo"] = "desempleado"
 	ciudad.reasignar_tipo("obrero", "desempleado")
 	_dejar_lo_que_hacia(c)
@@ -557,30 +577,31 @@ func _dejar_lo_que_hacia(c: Dictionary) -> void:
 func _decidir_trabajo(c: Dictionary) -> void:
 	if not _recuperar_si_atrapado(c):
 		return
+	if c.get("retirar_al_entregar", false):
+		# Ya no trabaja en el puesto (agotado o desactivado), pero termina su viaje.
+		if _llevar_al_nucleo(c):
+			_volver_a_desempleado(c)
+		return
 	var esquina: Vector2i = c["trabajo"]["puesto"]
 	var huella_puesto: Array = economia.huella_de(esquina)
 	if huella_puesto.is_empty():
 		c["espera"] = ESPERA_TRABAJO  # el puesto ya no existe: Economia avisará
 		return
+	var servicio: Vector2i = economia.servicio_de(esquina)
 	if c["trabajo"]["rol"] == "recolector":
-		if _junto_a(c["celda"], huella_puesto):
+		if _junto_a(c["celda"], huella_puesto, servicio):
 			economia.marcar_presente(c["id"], true)
 			c["espera"] = ESPERA_TRABAJO
 		else:
-			_ir_junto_a(c, huella_puesto)
+			_ir_junto_a(c, huella_puesto, servicio)
 		return
-	var huella_nucleo: Array = zona.huella_del_nucleo()
 	if c["fase"] == "entregar":
-		if _junto_a(c["celda"], huella_nucleo):
-			economia.entregar(c["carga"])
-			c["carga"] = {}
+		if _llevar_al_nucleo(c):
 			c["fase"] = "recoger"
-		else:
-			_ir_junto_a(c, huella_nucleo)
 		return
 	# fase "" o "recoger": ir al puesto y pedir la carga.
-	if not _junto_a(c["celda"], huella_puesto):
-		_ir_junto_a(c, huella_puesto)
+	if not _junto_a(c["celda"], huella_puesto, servicio):
+		_ir_junto_a(c, huella_puesto, servicio)
 		return
 	var carga: Dictionary = economia.recoger(esquina, economia.CAPACIDAD_CARGA)
 	if carga.is_empty():
@@ -590,12 +611,27 @@ func _decidir_trabajo(c: Dictionary) -> void:
 	c["fase"] = "entregar"
 
 
+## Un paso hacia el núcleo urbano con la carga del colono: si ya está junto a él,
+## la entrega y devuelve true; si no, planifica la ruta y devuelve false.
+func _llevar_al_nucleo(c: Dictionary) -> bool:
+	var huella_nucleo: Array = zona.huella_del_nucleo()
+	if _junto_a(c["celda"], huella_nucleo):
+		economia.entregar(c["carga"])
+		c["carga"] = {}
+		return true
+	_ir_junto_a(c, huella_nucleo)
+	return false
+
+
 ## true si "celda" está en la columna pegada (4 direcciones) a alguna celda de
-## la huella y no dentro de ella.
-func _junto_a(celda: Vector3i, huella: Array) -> bool:
+## la huella y no dentro de ella. Con "servicio" (celda de la puerta de un
+## puesto), en cambio: dentro de la zona de servicio (RADIO_SERVICIO) y fuera de la huella.
+func _junto_a(celda: Vector3i, huella: Array, servicio: Vector2i = Vector2i.MAX) -> bool:
 	var xz := Vector2i(celda.x, celda.z)
 	if huella.has(xz):
 		return false
+	if servicio != Vector2i.MAX:
+		return absi(xz.x - servicio.x) <= RADIO_SERVICIO and absi(xz.y - servicio.y) <= RADIO_SERVICIO
 	for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if huella.has(xz + direccion):
 			return true
@@ -622,10 +658,29 @@ func _celdas_junto_a(huella: Array) -> Array[Vector3i]:
 	return celdas
 
 
-## Planifica una ruta hasta la celda libre más cercana junto a la huella; si
-## ninguna de las INTENTOS_SERVICIO más cercanas es alcanzable, espera y reintenta.
-func _ir_junto_a(c: Dictionary, huella: Array) -> void:
-	var candidatas: Array[Vector3i] = _celdas_junto_a(huella)
+## Celdas transitables de la zona de servicio de un puesto (fuera de la huella,
+## sobre la superficie).
+func _celdas_de_servicio(servicio: Vector2i, huella: Array) -> Array[Vector3i]:
+	var celdas: Array[Vector3i] = []
+	for dx in range(-RADIO_SERVICIO, RADIO_SERVICIO + 1):
+		for dz in range(-RADIO_SERVICIO, RADIO_SERVICIO + 1):
+			var xz := servicio + Vector2i(dx, dz)
+			if huella.has(xz):
+				continue
+			var altura: int = mundo.altura_en(xz.x, xz.y)
+			if altura < 0:
+				continue
+			var candidata := Vector3i(xz.x, altura + 1, xz.y)
+			if _buscador.es_transitable(candidata):
+				celdas.append(candidata)
+	return celdas
+
+
+## Planifica una ruta hasta la celda libre más cercana junto a la huella (o en la
+## zona de servicio, si el puesto tiene puerta); si ninguna de las
+## INTENTOS_SERVICIO más cercanas es alcanzable, espera y reintenta.
+func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX) -> void:
+	var candidatas: Array[Vector3i] = _celdas_junto_a(huella) if servicio == Vector2i.MAX else _celdas_de_servicio(servicio, huella)
 	var origen: Vector3i = c["celda"]
 	candidatas.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
 		return (a - origen).length_squared() < (b - origen).length_squared())

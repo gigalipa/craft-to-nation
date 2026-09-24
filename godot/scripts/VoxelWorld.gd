@@ -1001,9 +1001,14 @@ func colocar_cama(base: Vector3i, direccion: Vector3i) -> bool:
 ## colocado por el jugador (p.ej. relleno de terreno bajo el edificio) ni se
 ## incluye ni propaga el flood-fill, aunque sea colocado_por_jugador.
 ## Devuelve {} si "origen" no es un bloque estructural colocado por el
-## jugador (p.ej. es terreno, o es "piso").
+## jugador (p.ej. es terreno, o es "piso"), o si ya pertenece a un edificio
+## registrado (celda_a_edificio) — sin este chequeo, declarar dos veces la
+## misma puerta (Player._declarar_edificio()) volvía a detectar y registrar
+## la misma estructura física bajo un segundo id_edificio, duplicando sus
+## camas y demás metadata aunque solo exista un edificio real (reportado
+## jugando en vivo, 2026-09-23).
 func detectar_estructura(origen: Vector3i) -> Dictionary:
-	if not es_celda_estructural(origen):
+	if not es_celda_estructural(origen) or celda_a_edificio.has(origen):
 		return {}
 
 	var visitados: Dictionary = {}  # Vector3i -> String (tipo)

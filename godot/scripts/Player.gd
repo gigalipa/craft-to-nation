@@ -581,6 +581,9 @@ func _declarar_edificio() -> void:
 	if tipo_apuntado != "puerta_inferior" and tipo_apuntado != "puerta_superior":
 		print("Declarar edificio: apunta a la puerta principal de la estructura.")
 		return
+	if mundo.id_de_edificio(celda) != -1:
+		print("Declarar edificio: ese edificio ya fue declarado.")
+		return
 	var celdas: Dictionary = mundo.detectar_estructura(celda)
 	if celdas.is_empty():
 		print("Declarar edificio: esa puerta no fue colocada por el jugador.")

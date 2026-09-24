@@ -87,8 +87,8 @@ const LIMITE_BASE_COMIDA := 5000.0
 const FACTOR_NUCLEO := 2.0
 const BONO_BAUL := 100.0
 const BONO_BAUL_COMIDA := 400.0
-## Comida con la que empieza la partida: 300 ticks de un avatar (5/h) sin producción.
-const COMIDA_INICIAL := 1500.0
+## Comida con la que empieza la partida: el tope base (el inventario inicia lleno).
+const COMIDA_INICIAL := 5000.0
 
 
 class Recurso:

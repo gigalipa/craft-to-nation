@@ -343,17 +343,23 @@ func tasa_maderero(promedio_arbol: float) -> Dictionary:
 	return {"madera": promedio_arbol * TASA_BASE_MADERERO_POR_CIUDADANO}
 
 
-## Flood-fill acotado: todas las celdas de agua (mar/lago/río, ver
-## GeneradorMundo.es_agua_o_rio_en()) alcanzables desde "centro_xz"
-## siguiendo solo adyacencia real (4 direcciones), sin nunca salir del
-## círculo de radio "radio". Devuelve un Dictionary (Vector2i -> true) para
-## membresía O(1) — usado tanto por el círculo visual
-## (CamaraCenital._actualizar_area_accion_agua()) como por
-## detectar_pesca_frutos_mar(), para que ambos vean exactamente el mismo
-## conjunto de celdas. Vacío si "centro_xz" mismo no es agua.
-func celdas_agua_conectadas(generador: Object, centro_xz: Vector2i, radio: int) -> Dictionary:
+## Flood-fill acotado sobre el agua REAL del mundo (bloques "agua", no el
+## generador): las columnas (X,Z) alcanzables desde "centro_xz" por la
+## superficie del agua, en 4 direcciones y sin salir del círculo de "radio".
+## La superficie es la del bloque de agua más alto del centro; una columna
+## vecina entra si tiene agua a ese nivel (o, si ahí hay aire, un escalón más
+## abajo — río que baja). Así, un piso o tierra puesto en la superficie, o un
+## drenaje, la corta; y agua que el jugador conecta la une. Devuelve
+## Vector2i -> true, usado tanto por el círculo visual como por las tasas.
+## Vacío si el centro no tiene agua.
+func celdas_agua_conectadas(mundo: Object, centro_xz: Vector2i, radio: int) -> Dictionary:
 	var visitadas: Dictionary = {}
-	if not generador.es_agua_o_rio_en(centro_xz.x, centro_xz.y):
+	var y_superficie: int = mundo.ALTURA_BUSQUEDA_MIN - 1
+	for y in range(mundo.ALTURA_BUSQUEDA_MAX, mundo.ALTURA_BUSQUEDA_MIN, -1):
+		if mundo.obtener_tipo(Vector3i(centro_xz.x, y, centro_xz.y)) == "agua":
+			y_superficie = y
+			break
+	if y_superficie < mundo.ALTURA_BUSQUEDA_MIN:
 		return visitadas
 	var pendientes: Array[Vector2i] = [centro_xz]
 	visitadas[centro_xz] = true
@@ -362,11 +368,10 @@ func celdas_agua_conectadas(generador: Object, centro_xz: Vector2i, radio: int) 
 		var actual: Vector2i = pendientes.pop_back()
 		for dir in direcciones:
 			var vecino: Vector2i = actual + dir
-			if visitadas.has(vecino):
+			if visitadas.has(vecino) or Vector2(vecino - centro_xz).length() > radio:
 				continue
-			if Vector2(vecino - centro_xz).length() > radio:
-				continue
-			if not generador.es_agua_o_rio_en(vecino.x, vecino.y):
+			var a_nivel: String = mundo.obtener_tipo(Vector3i(vecino.x, y_superficie, vecino.y))
+			if a_nivel != "agua" and not (a_nivel == "" and mundo.obtener_tipo(Vector3i(vecino.x, y_superficie - 1, vecino.y)) == "agua"):
 				continue
 			visitadas[vecino] = true
 			pendientes.append(vecino)
@@ -477,7 +482,7 @@ func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary) -> Dicti
 	if tipo == "pesca_frutos_mar":
 		if not entorno.has("centro_agua"):
 			return {}
-		var celdas_agua: Dictionary = celdas_agua_conectadas(mundo.generador, entorno["centro_agua"], RADIO_AREA_PESCA_FRUTOS_MAR)
+		var celdas_agua: Dictionary = celdas_agua_conectadas(mundo, entorno["centro_agua"], RADIO_AREA_PESCA_FRUTOS_MAR)
 		return tasas_pesca_frutos_mar(detectar_pesca_frutos_mar(mundo.generador, celdas_agua))
 	var tasas: Dictionary
 	# Un maderero sin árboles al colocarse no tiene nada que talar (factor_arboles() da 1.0 ahí).

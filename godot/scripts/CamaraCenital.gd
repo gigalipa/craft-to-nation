@@ -880,7 +880,7 @@ func _actualizar_previsualizacion_puesto() -> void:
 			var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 			@warning_ignore("integer_division")
 			var centro_agua := esquina + celdas_extremo[celdas_extremo.size() / 2]
-			var celdas_agua: Dictionary = Recoleccion.celdas_agua_conectadas(mundo.generador, centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+			var celdas_agua: Dictionary = Recoleccion.celdas_agua_conectadas(mundo, centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
 			var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, celdas_agua)
 			var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar(promedios)
 			hud.actualizar_tasas_pesca(tasas_pesca)

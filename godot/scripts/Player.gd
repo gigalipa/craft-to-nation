@@ -181,14 +181,26 @@ func _procesar_accion_repetida(delta: float) -> void:
 		_procesar_minado(delta)
 		return
 	_progreso_accion.soltar()
-	hud.ocultar_progreso()
 	if not _colocando:
+		hud.ocultar_progreso()
 		return
 	_temporizador_accion += delta
-	if _temporizador_accion < INTERVALO_ACCION_REPETIDA:
-		return
-	_temporizador_accion = 0.0
-	_colocar()
+	if _temporizador_accion >= INTERVALO_ACCION_REPETIDA:
+		_temporizador_accion = 0.0
+		_colocar()
+	_mostrar_progreso_de_obra(false)
+
+
+## Barra del avance de la obra apuntada (construye: avanza; deconstruye: retrocede).
+## Solo se muestra si la obra está a medias; completa o sin obra, se oculta.
+func _mostrar_progreso_de_obra(retrocede: bool) -> void:
+	var fraccion := -1.0
+	if raycast.is_colliding() and mundo != null:
+		fraccion = mundo.fraccion_de_obra(_celda_impactada())
+	if fraccion < 0.0 or (not retrocede and fraccion >= 1.0) or (retrocede and fraccion <= 0.0):
+		hud.ocultar_progreso()
+	else:
+		hud.mostrar_progreso(fraccion, retrocede)
 
 
 ## Guarda en el inventario (= almacén central) lo que rindió una extracción del
@@ -211,7 +223,7 @@ func _procesar_minado(delta: float) -> void:
 		if _ticks_listo_para_remocion > 0:
 			hud.mostrar_progreso(1.0 - float(_ticks_listo_para_remocion) / TICKS_REMOCION_FINAL, true)
 		else:
-			hud.ocultar_progreso()
+			_mostrar_progreso_de_obra(true)
 		return
 	if not raycast.is_colliding() or mundo == null:
 		_progreso_accion.soltar()

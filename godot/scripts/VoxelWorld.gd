@@ -1345,6 +1345,15 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 	return {"id": id, "completa_reversion": vacio, "lista_para_remocion": vacio, "total_camas": total_camas}
 
 
+## Avance de la obra a la que pertenece "celda" (celdas construidas / totales),
+## para la barra de progreso del HUD. -1.0 si no pertenece a ningún edificio.
+func fraccion_de_obra(celda: Vector3i) -> float:
+	var id: int = id_de_edificio(celda)
+	if id == -1 or not edificio_orden.has(id) or edificio_orden[id].is_empty():
+		return -1.0
+	return float(edificio_progreso[id]) / edificio_orden[id].size()
+
+
 ## Convierte "celda" (una celda real) de vuelta a "fantasma" — no marca
 ## colocado_por_jugador (igual que iniciar_construccion_fantasma()) y
 ## limpia cualquier entrada previa de esa celda en colocado_por_jugador

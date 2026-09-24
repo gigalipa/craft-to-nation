@@ -672,20 +672,28 @@ func _completar_construccion(metadata: Dictionary) -> void:
 	if metadata.is_empty():
 		return
 	var blueprint: Dictionary = metadata["blueprint"]
+
+	# El primer edificio declarado es el núcleo urbano: no es habitable, así que
+	# no suma camas (no llegan colonos todavía) ni baúles al tope del almacén; en
+	# cambio, declararlo duplica los topes del inventario.
+	if not Zonificacion.nucleo_declarado:
+		Zonificacion.declarar_nucleo(metadata["huella_xz"])
+		Ciudad.ampliar_almacen()
+		print("Núcleo urbano declarado (no habitable: no llegan colonos todavía). Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max, ". Topes del inventario duplicados.")
+		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
+		return
+
 	var camas_por_piso: Array[int] = []
 	var total_camas := 0
 	for piso in blueprint["pisos"]:
 		var camas: int = (piso.get("camas", []) as Array).size()
 		camas_por_piso.append(camas)
 		total_camas += camas
-	Ciudad.registrar_edificio_residencial(metadata["id_edificio"], camas_por_piso)
-	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (capacidad de camas actual: ", Ciudad.capacidad_camas_construida, ")")
+	var baules: int = BlueprintValidator.contar_baules(blueprint)
+	Ciudad.registrar_edificio_residencial(metadata["id_edificio"], camas_por_piso, baules)
+	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (capacidad de camas actual: ", Ciudad.capacidad_camas_construida, "), baúles: ", baules)
 
-	if not Zonificacion.nucleo_declarado:
-		Zonificacion.declarar_nucleo(metadata["huella_xz"])
-		print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
-	else:
-		Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
-		print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
+	Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
+	print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])

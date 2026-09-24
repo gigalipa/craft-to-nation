@@ -1686,4 +1686,12 @@ func ejecutar_pruebas() -> void:
 	var res_limites: Dictionary = BlueprintValidator.validar_blueprint(bp_limites, "", {}, {}, limites_cero)
 	assert(not res_limites["valido"], "con límites imposibles el blueprint válido queda rechazado")
 
-	print("\n=== Las 63 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 64: contar_baules() suma los baúles de todos los pisos ===")
+	var bp_baules := {"pisos": [
+		{"celdas": {Vector3i(0, 0, 0): "baul", Vector3i(1, 0, 0): "pared", Vector3i(2, 0, 0): "baul"}},
+		{"celdas": {Vector3i(0, 0, 0): "baul"}},
+	]}
+	assert(BlueprintValidator.contar_baules(bp_baules) == 3)
+	assert(BlueprintValidator.contar_baules({"pisos": []}) == 0)
+
+	print("\n=== Las 64 pruebas de BlueprintValidator pasaron correctamente ===")

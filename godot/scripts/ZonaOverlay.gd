@@ -42,19 +42,45 @@ const ViasRenderer = preload("res://scripts/ViasRenderer.gd")
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 
-## Planos de la previsualización en vivo de la zona que se está pintando
-## (ver previsualizar()/limpiar_previsualizacion(), usados por CamaraCenital
-## entre el primer y el segundo click). Se rastrean aparte del resto de
-## hijos porque se recrean cada fotograma mientras el jugador mueve el
-## mouse, sin pasar por reconstruir() completo (recorrer toda la zona de
-## influencia cada fotograma sería más costoso de lo necesario).
+## Pool de planos de la previsualización en vivo de la zona que se está
+## pintando (ver previsualizar()/limpiar_previsualizacion(), usados por
+## CamaraCenital entre el primer y el segundo click, una vez por fotograma
+## mientras el jugador mueve el mouse). Se reutilizan de un fotograma al
+## siguiente en vez de destruir y recrear cada MeshInstance3D — con un
+## rectángulo grande (más de la mitad de la zona de influencia, cientos de
+## celdas) recrear todo cada fotograma se sentía como una ralentización
+## progresiva al "estirar" la selección (reportado jugando en vivo,
+## 2026-09-23). Los planos sobrantes de un fotograma con menos celdas que el
+## anterior solo se ocultan (visible = false), no se liberan: vuelven a
+## usarse si la selección vuelve a crecer.
 var _planos_previsualizacion: Array[MeshInstance3D] = []
+var _usados_previsualizacion := 0
+
+## Malla compartida por todos los planos (todos miden 1x1) y caché de
+## materiales por color — evita crear un PlaneMesh y un StandardMaterial3D
+## nuevos por celda y por fotograma (ver _obtener_material()).
+var _malla_plano: PlaneMesh
+var _materiales: Dictionary = {}
+
+## Caché de altura_en()/es_celda_estructural()/TIPOS_CUNA por celda (Vector2i
+## -> [altura_superficie, dibuja]), válida solo DENTRO de una misma sesión de
+## previsualizar() (el terreno no cambia mientras se arrastra la selección:
+## zonificación es un modo excluyente con nivelar/construir/minar). Sin esto,
+## con la selección "estirada" sobre terreno con árboles (troncos y follaje
+## apilados), altura_en() debe saltar cada bloque de árbol en CADA celda y EN
+## CADA FOTOGRAMA — el pool de nodos ya evita recrear la geometría, pero no
+## evita repetir esa búsqueda (reportado jugando en vivo, 2026-09-23: seguía
+## notándose sobre todo al pintar zonas con árboles). Se limpia al iniciar una
+## nueva selección (ver previsualizar()) y en reconstruir(), que se llama
+## tras cualquier cambio real de terreno.
+var _cache_altura: Dictionary = {}
 
 
 func reconstruir() -> void:
 	for hijo in get_children():
 		hijo.queue_free()
 	_planos_previsualizacion.clear()
+	_cache_altura.clear()
 
 	if Zonificacion.nucleo_declarado:
 		# influencia_min/max es solo la caja delimitadora de TODA la zona
@@ -79,7 +105,8 @@ func reconstruir() -> void:
 ## — misma lógica de recorte que Zonificacion.pintar_zona(), sin escribir
 ## nada todavía. Reemplaza cualquier previsualización anterior.
 func previsualizar(esquina_a: Vector2i, esquina_b: Vector2i, tipo: String) -> void:
-	limpiar_previsualizacion()
+	if esquina_a == esquina_b:
+		_cache_altura.clear()  # primer click: arranca una nueva sesión de selección
 	var color: Color = COLOR_BORRAR if tipo == Zonificacion.MARCADOR_BORRAR else COLOR_POR_ZONA.get(tipo, Color.WHITE)
 
 	var x_min: int = min(esquina_a.x, esquina_b.x)
@@ -87,19 +114,71 @@ func previsualizar(esquina_a: Vector2i, esquina_b: Vector2i, tipo: String) -> vo
 	var z_min: int = min(esquina_a.y, esquina_b.y)
 	var z_max: int = max(esquina_a.y, esquina_b.y)
 
+	_usados_previsualizacion = 0
 	for x in range(x_min, x_max + 1):
 		for z in range(z_min, z_max + 1):
 			var celda := Vector2i(x, z)
 			if Zonificacion.dentro_de_influencia(celda):
-				var plano: MeshInstance3D = _agregar_plano(celda, color, PRIORIDAD_ZONA)
-				if plano != null:
-					_planos_previsualizacion.append(plano)
+				_dibujar_plano_pool(celda, color, PRIORIDAD_ZONA)
+
+	for i in range(_usados_previsualizacion, _planos_previsualizacion.size()):
+		_planos_previsualizacion[i].visible = false
+
+
+## Dibuja (o reutiliza) el plano en "_planos_previsualizacion[_usados_previsualizacion]"
+## para "celda"; lo deja oculto y no cuenta como usado si la celda no se
+## dibuja (superficie estructural o cuña de vía, igual que _agregar_plano()).
+func _dibujar_plano_pool(celda: Vector2i, color: Color, prioridad: int) -> void:
+	if not _cache_altura.has(celda):
+		var altura: int = mundo.altura_en(celda.x, celda.y, true)
+		var columna := Vector3i(celda.x, altura, celda.y)
+		var dibuja: bool = not mundo.es_celda_estructural(columna) and not ViasRenderer.TIPOS_CUNA.has(mundo.obtener_tipo(columna))
+		_cache_altura[celda] = [altura, dibuja]
+	var entrada: Array = _cache_altura[celda]
+	var altura_superficie: int = entrada[0]
+	if not entrada[1]:
+		return
+
+	var plano: MeshInstance3D
+	if _usados_previsualizacion < _planos_previsualizacion.size():
+		plano = _planos_previsualizacion[_usados_previsualizacion]
+	else:
+		plano = MeshInstance3D.new()
+		plano.mesh = _malla_compartida()
+		add_child(plano)
+		_planos_previsualizacion.append(plano)
+
+	plano.material_override = _obtener_material(color, prioridad)
+	plano.position = Vector3(celda.x + DESF, altura_superficie + ALTURA_SOBRE_SUPERFICIE, celda.y + DESF)
+	plano.visible = true
+	_usados_previsualizacion += 1
 
 
 func limpiar_previsualizacion() -> void:
 	for plano in _planos_previsualizacion:
 		plano.queue_free()
 	_planos_previsualizacion.clear()
+	_usados_previsualizacion = 0
+
+
+func _malla_compartida() -> PlaneMesh:
+	if _malla_plano == null:
+		_malla_plano = PlaneMesh.new()
+		_malla_plano.size = Vector2(1.0, 1.0)
+	return _malla_plano
+
+
+func _obtener_material(color: Color, prioridad: int) -> StandardMaterial3D:
+	var clave := "%s|%d" % [color, prioridad]
+	if not _materiales.has(clave):
+		var material := StandardMaterial3D.new()
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.albedo_color = color
+		material.no_depth_test = false
+		material.render_priority = prioridad
+		_materiales[clave] = material
+	return _materiales[clave]
 
 
 ## Devuelve el MeshInstance3D creado, o null si la celda no se dibujó
@@ -133,14 +212,6 @@ func _agregar_plano(celda: Vector2i, color: Color, prioridad: int = PRIORIDAD_ZO
 	if ViasRenderer.TIPOS_CUNA.has(mundo.obtener_tipo(Vector3i(celda.x, altura_superficie, celda.y))):
 		return null
 
-	var malla := PlaneMesh.new()
-	malla.size = Vector2(1.0, 1.0)
-
-	var material := StandardMaterial3D.new()
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = color
-	material.no_depth_test = false
 	# El orden de dibujo entre dos superficies translúcidas casi coplanares
 	# NO lo decide de forma confiable un margen de altura mínimo (el
 	# ordenamiento por transparencia de Godot es por distancia a la cámara,
@@ -149,11 +220,9 @@ func _agregar_plano(celda: Vector2i, color: Color, prioridad: int = PRIORIDAD_ZO
 	# overlay de vías (ViasRenderer.gd/ViaPreviewOverlay.gd) usa un
 	# render_priority más alto todavía, para quedar siempre por encima de
 	# AMBOS sin importar el ángulo de cámara.
-	material.render_priority = prioridad
-
 	var plano := MeshInstance3D.new()
-	plano.mesh = malla
-	plano.material_override = material
+	plano.mesh = _malla_compartida()
+	plano.material_override = _obtener_material(color, prioridad)
 	plano.position = Vector3(celda.x + DESF, altura_superficie + ALTURA_SOBRE_SUPERFICIE, celda.y + DESF)
 	add_child(plano)
 	return plano

@@ -385,3 +385,82 @@ func tasas_pesca_frutos_mar(promedios: Dictionary) -> Dictionary:
 		"pesca": promedios["peces"] * TASA_BASE_PESCA_POR_CIUDADANO * promedios["escala"],
 		"frutos_mar": promedios["algas"] * TASA_BASE_ALGAS_POR_CIUDADANO * promedios["escala"],
 	}
+
+
+## Siguiente bloque de "recurso" (p. ej. "hierro") que una mina extrae: el más
+## cercano al centro del puesto y, a igual distancia, el menos profundo. Solo
+## subsuelo natural desde PROFUNDIDAD_MINIMA_EXTRACCION (ver
+## detectar_recursos()). SIN_BLOQUE si no queda ninguno.
+func siguiente_bloque_mina(mundo: Object, centro_xz: Vector2i, altura_superficie: int, recurso: String, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1) -> Vector3i:
+	var mejor := SIN_BLOQUE
+	var mejor_distancia := INF
+	for dx in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
+		for dz in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
+			var techo: int = mundo.altura_natural_en(centro_xz.x + dx, centro_xz.y + dz) - PROFUNDIDAD_MINIMA_EXTRACCION
+			for dy in range(0, profundidad + 1):
+				var normalizado := Vector3(float(dx) / RADIO_AREA_MINA, float(dy) / profundidad, float(dz) / RADIO_AREA_MINA)
+				if normalizado.length() > 1.0:
+					continue
+				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
+				if celda.y > techo:
+					continue
+				if mundo.material_real(mundo.obtener_tipo(celda)) != recurso or not _es_extraible(mundo, celda):
+					continue
+				var distancia := float(dx * dx + dy * dy + dz * dz)
+				if distancia < mejor_distancia or (distancia == mejor_distancia and celda.y > mejor.y):
+					mejor_distancia = distancia
+					mejor = celda
+	return mejor
+
+
+## Árboles vivos registrados a "radio" celdas o menos de "centro".
+func arboles_vivos_en(mundo: Object, centro: Vector2i, radio: int) -> int:
+	return mundo.arboles.ids_en_radio(centro, radio).size()
+
+
+## Lo que un puesto necesita recordar del mundo para recalcular sus tasas y
+## extraer: "centro" y "altura" (superficie en el centro al colocarlo);
+## "centro_agua" (pesca); "radio_arboles" y "arboles_ref" (árboles vivos en su
+## área al colocarlo — caza/recolección y maderero).
+func entorno_de_puesto(tipo: String, mundo: Object, centro: Vector2i, altura: int, centro_agua: Vector2i = SIN_CENTRO) -> Dictionary:
+	var entorno := {"centro": centro, "altura": altura}
+	if centro_agua != SIN_CENTRO:
+		entorno["centro_agua"] = centro_agua
+	if tipo == "caza_recoleccion" or tipo == "maderero":
+		var radio: int = RADIO_AREA_MADERERO if tipo == "maderero" else RADIO_AREA_CAZA_RECOLECCION
+		entorno["radio_arboles"] = radio
+		entorno["arboles_ref"] = arboles_vivos_en(mundo, centro, radio)
+	return entorno
+
+
+## Fracción de los árboles de su área que sigue en pie (tope 1.0). Sin árboles
+## de referencia al colocar el puesto no hay nada que escalar: 1.0.
+func factor_arboles(mundo: Object, entorno: Dictionary) -> float:
+	var referencia: int = entorno.get("arboles_ref", 0)
+	if referencia <= 0:
+		return 1.0
+	return minf(1.0, float(arboles_vivos_en(mundo, entorno["centro"], entorno["radio_arboles"])) / float(referencia))
+
+
+## Tasas por trabajador y hora de un puesto según el estado ACTUAL del mundo
+## (mismas claves que tasas_recoleccion()/tasas_caza_recoleccion()/
+## tasa_maderero()/tasas_pesca_frutos_mar()). Caza/recolección y maderero se
+## escalan con factor_arboles(): talar el bosque reduce fauna, frutos y madera.
+func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary) -> Dictionary:
+	var centro: Vector2i = entorno["centro"]
+	if tipo == "mina":
+		return tasas_recoleccion(detectar_recursos_extraibles(mundo, centro, entorno["altura"]))
+	if tipo == "pesca_frutos_mar":
+		if not entorno.has("centro_agua"):
+			return {}
+		var celdas_agua: Dictionary = celdas_agua_conectadas(mundo.generador, entorno["centro_agua"], RADIO_AREA_PESCA_FRUTOS_MAR)
+		return tasas_pesca_frutos_mar(detectar_pesca_frutos_mar(mundo.generador, celdas_agua))
+	var tasas: Dictionary
+	if tipo == "caza_recoleccion":
+		tasas = tasas_caza_recoleccion(detectar_fauna_frutal(mundo.generador, centro))
+	else:
+		tasas = tasa_maderero(detectar_arbol(mundo.generador, centro))
+	var factor := factor_arboles(mundo, entorno)
+	for clave in tasas:
+		tasas[clave] *= factor
+	return tasas

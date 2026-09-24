@@ -60,6 +60,12 @@ class GeneradorProfundidadFalso:
 		return 0.9 if z < 10 else 0.1
 
 
+## Mundo falso para las tasas de un puesto: solo lo que tasas_de_entorno() lee de él.
+class MundoFalso:
+	var generador
+	var arboles
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -413,4 +419,71 @@ func ejecutar_pruebas() -> void:
 	assert(extraible.get("hierro", 0) == 2, "solo y=7 e y=6: no y=8 (profundidad 1) ni el bloque del jugador")
 	print("OK: la mina solo ve subsuelo natural desde la profundidad 2.")
 
-	print("\n=== Las 25 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 26: siguiente_bloque_mina() elige el más cercano al centro, sin tocar la superficie ===")
+	var mundo_sig: Node = VoxelWorld.new()
+	mundo_sig.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_sig.cell_size = Vector3.ONE * 1.0
+	mundo_sig._indexar_biblioteca()
+	var c_sig := Vector2i(400, 400)
+	mundo_sig.colocar_bloque(Vector3i(400, 9, 400), "piedra")
+	mundo_sig.colocar_bloque(Vector3i(401, 9, 400), "piedra")
+	mundo_sig.colocar_bloque(Vector3i(400, 8, 400), "hierro")  # profundidad 1: intocable
+	mundo_sig.colocar_bloque(Vector3i(400, 7, 400), "hierro")  # distancia² 9
+	mundo_sig.colocar_bloque(Vector3i(401, 7, 400), "hierro")  # distancia² 10
+	mundo_sig.colocar_bloque(Vector3i(400, 6, 400), "hierro")  # distancia² 16
+	var tasas_mina: Dictionary = Recoleccion.tasas_de_entorno("mina", mundo_sig, {"centro": c_sig, "altura": 10})
+	assert(tasas_mina.size() == 1 and is_equal_approx(tasas_mina["hierro"], Recoleccion.TASAS_BASE_MINERAL["hierro"]), "solo hierro extraíble: 3 bloques")
+	assert(Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "piedra") == Recoleccion.SIN_BLOQUE, "la piedra está en la superficie")
+	var b1: Vector3i = Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro")
+	assert(b1 == Vector3i(400, 7, 400))
+	mundo_sig.minar_bloque(b1)
+	var b2: Vector3i = Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro")
+	assert(b2 == Vector3i(401, 7, 400))
+	mundo_sig.minar_bloque(b2)
+	assert(Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro") == Vector3i(400, 6, 400))
+	mundo_sig.minar_bloque(Vector3i(400, 6, 400))
+	assert(Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro") == Recoleccion.SIN_BLOQUE)
+	assert(Recoleccion.tasas_de_entorno("mina", mundo_sig, {"centro": c_sig, "altura": 10}).is_empty(), "mina agotada: sin tasas")
+
+	print("\n=== TEST 27: entorno_de_puesto() y tasas_de_entorno() escalan con los árboles vivos ===")
+	var mundo_arb := MundoFalso.new()
+	mundo_arb.generador = GeneradorBiomaFalso.new()
+	mundo_arb.arboles = preload("res://scripts/GeneradorArbol.gd").new()
+	var ids_arb: Array = []
+	for i in range(1, 5):
+		ids_arb.append(mundo_arb.arboles.registrar([Vector3i(i, 5, i)], 3))
+	var entorno_caza: Dictionary = Recoleccion.entorno_de_puesto("caza_recoleccion", mundo_arb, Vector2i(0, 0), 5)
+	assert(entorno_caza["arboles_ref"] == 4 and entorno_caza["radio_arboles"] == Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
+	assert(not entorno_caza.has("centro_agua"))
+	var tasas_caza_llena: Dictionary = Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_arb, entorno_caza)
+	assert(is_equal_approx(tasas_caza_llena["caza"], 0.8 * Recoleccion.TASA_BASE_CAZA_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_caza_llena["recoleccion"], 0.4 * Recoleccion.TASA_BASE_FRUTOS_POR_CIUDADANO))
+	mundo_arb.arboles.eliminar(ids_arb[0])
+	mundo_arb.arboles.eliminar(ids_arb[1])
+	assert(Recoleccion.factor_arboles(mundo_arb, entorno_caza) == 0.5)
+	var tasas_caza_mitad: Dictionary = Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_arb, entorno_caza)
+	assert(is_equal_approx(tasas_caza_mitad["caza"], 0.5 * tasas_caza_llena["caza"]), "talar el bosque reduce la caza")
+	assert(is_equal_approx(tasas_caza_mitad["recoleccion"], 0.5 * tasas_caza_llena["recoleccion"]), "y los frutos")
+	var entorno_mad: Dictionary = Recoleccion.entorno_de_puesto("maderero", mundo_arb, Vector2i(0, 0), 5)
+	assert(entorno_mad["arboles_ref"] == 2 and entorno_mad["radio_arboles"] == Recoleccion.RADIO_AREA_MADERERO)
+	assert(is_equal_approx(Recoleccion.tasas_de_entorno("maderero", mundo_arb, entorno_mad)["madera"], 0.6 * Recoleccion.TASA_BASE_MADERERO_POR_CIUDADANO))
+	mundo_arb.arboles.eliminar(ids_arb[2])
+	assert(Recoleccion.factor_arboles(mundo_arb, entorno_mad) == 0.5)
+	# Sin árboles al colocar el puesto: factor 1, sin dividir por cero.
+	var mundo_sin := MundoFalso.new()
+	mundo_sin.generador = GeneradorBiomaFalso.new()
+	mundo_sin.arboles = preload("res://scripts/GeneradorArbol.gd").new()
+	var entorno_sin: Dictionary = Recoleccion.entorno_de_puesto("maderero", mundo_sin, Vector2i(0, 0), 5)
+	assert(entorno_sin["arboles_ref"] == 0 and Recoleccion.factor_arboles(mundo_sin, entorno_sin) == 1.0)
+	# Pesca: recalcula con el agua conectada; sin centro de agua no hay tasas.
+	var mundo_agua := MundoFalso.new()
+	mundo_agua.generador = GeneradorAguaConectadaFalso.new()
+	mundo_agua.arboles = preload("res://scripts/GeneradorArbol.gd").new()
+	var entorno_agua: Dictionary = Recoleccion.entorno_de_puesto("pesca_frutos_mar", mundo_agua, Vector2i(2, 2), 5, Vector2i(2, 2))
+	var celdas_agua_ent: Dictionary = Recoleccion.celdas_agua_conectadas(mundo_agua.generador, Vector2i(2, 2), Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+	var esperado_agua: Dictionary = Recoleccion.tasas_pesca_frutos_mar(Recoleccion.detectar_pesca_frutos_mar(mundo_agua.generador, celdas_agua_ent))
+	assert(Recoleccion.tasas_de_entorno("pesca_frutos_mar", mundo_agua, entorno_agua) == esperado_agua)
+	assert(Recoleccion.tasas_de_entorno("pesca_frutos_mar", mundo_agua, Recoleccion.entorno_de_puesto("pesca_frutos_mar", mundo_agua, Vector2i(2, 2), 5)).is_empty())
+	print("OK: entorno y tasas de un puesto se recalculan desde el mundo.")
+
+	print("\n=== Las 27 pruebas de Recoleccion pasaron correctamente ===")

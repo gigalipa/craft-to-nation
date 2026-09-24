@@ -37,10 +37,10 @@ Script sin autoload y sin `class_name` (se carga con `preload`), con datos y fun
 - La rotación pasa de un intercambio ancho/alto a un contador de **4 giros** (`Ctrl` + rueda avanza uno). Ancho y alto se derivan de la plantilla girada. La pesca fija su giro para que el edificio caiga en el extremo de tierra (el extremo de agua ya se calcula hoy); el resto de tipos gira libremente.
 - Nivelado, drenaje, pilotes, relleno, huella e influencia no cambian.
 - El paso que hoy estampa el bloque marcador estampa la plantilla girada sobre `objetivo + 1`.
-- **Validación nueva:** cada celda de la plantilla debe estar libre (aire o follaje; el follaje se elimina como hoy) y la celda de servicio debe ser transitable y quedar fuera de la huella. No se aplica `verificar_despejes` de los residenciales.
+- **Validación nueva:** cada celda de la plantilla debe estar libre (aire o follaje; el follaje se elimina como hoy). Se reutiliza `verificar_huella_libre` con la altura de la plantilla más `NiveladorTerreno.LIMITE_PENDIENTE`, porque el terreno puede quedar hasta 2 bloques por debajo del nivel objetivo. La celda de servicio debe quedar a lo sumo 1 bloque de desnivel respecto del nivel objetivo, no ser agua y no caer en otro puesto. No se aplica `verificar_despejes` de los residenciales (un dosel de follaje frente a la puerta bloquearía colocar madereros en un bosque).
 - El fantasma de colocación sigue mostrando la huella actual; no se previsualizan los bloques de la plantilla.
 - Se registra con `mundo.registrar_edificio_completo(celdas_mundo, metadata)` con `metadata = {"puesto": esquina}`, de modo que el puesto tiene `edificio_orden`/`edificio_progreso` y se deconstruye bloque a bloque por el mismo camino que un residencial (revierte a fantasma, se retira al llegar a 0).
-- Antes de implementar hay que verificar cómo se deconstruye hoy un puesto (`VoxelWorld.procesar_deconstruccion` documenta que un puesto «nunca pasa por aquí») y qué hace `Player._procesar_deconstruccion` con la esquina que devuelve `eliminar_edificio`.
+- Verificado leyendo el código: hoy un puesto se registra con `registrar_edificio()` sin `edificio_orden`, así que `procesar_deconstruccion` devuelve `{}` y un puesto no se puede deconstruir. Con el registro completo sí. Como `eliminar_edificio` devuelve la esquina mínima de las celdas registradas (que en la pesca puede no ser la esquina del puesto), `Player` toma la esquina de `metadata["puesto"]` antes de eliminar el edificio.
 
 ## 3. Desactivar y reactivar por deconstrucción
 
@@ -57,14 +57,15 @@ Script sin autoload y sin `class_name` (se carga con `preload`), con datos y fun
 - Los acarreadores siguen ciclando mientras quede algo en el almacén local. Cuando el almacén local queda vacío (y el puesto está agotado), se liberan también.
 - El puesto agotado no se elimina: sigue en pie, con `[+]` de recolectores deshabilitado, y el panel indica «Agotado». Si más adelante la tasa vuelve a ser mayor que 0 (p. ej. crece un árbol), deja de estar agotado y el jugador contrata a mano.
 - `Economia.recoger` ya devuelve el resto de un puesto que no produce (carga parcial sin recolectores presentes), así que un almacén con resto sale sin cambios en esa función.
-- Un acarreador que ya lleva carga al núcleo termina su viaje y entrega antes de quedar libre (no se le retira la carga).
+- Un acarreador que ya lleva carga al núcleo termina su viaje y entrega antes de quedar libre (no se le retira la carga), aunque el puesto se desactive o desaparezca entretanto.
+- Los acarreadores se liberan al vaciarse el almacén local en el siguiente `simular_hora` (no dentro de `recoger`, para no soltar a quien acaba de recibir su carga).
 
 ## 5. Puerta de servicio y depósito
 
 - `Economia.registrar_puesto` recibe `servicio` (celda X,Z de servicio en el mundo) y `deposito` (celda 3D del baúl).
-- `Colonos._ir_junto_a` usa la celda de servicio como destino de recolectores y acarreadores (una sola celda en vez de las `INTENTOS_SERVICIO` celdas más cercanas del anillo). Si no es alcanzable, espera y reintenta como hoy.
+- `Colonos` usa una **zona de servicio**: las celdas transitables a distancia de Chebyshev ≤ 2 de la celda de servicio, fuera de la huella (constante `RADIO_SERVICIO`). Una sola celda no basta: `Colonos.ocupadas` no admite dos colonos en la misma celda y un puesto tiene hasta 7 trabajadores. Recolector «presente» = dentro de esa zona. Si no es alcanzable, espera y reintenta como hoy.
 - Nueva señal `Economia.trabajadores_liberados(ids)`, conectada al mismo `_on_puesto_quitado` de `Colonos` (que ya devuelve a desempleado a cada id). La usan la desactivación y el agotamiento.
-- **Depósito interactivo:** apuntar al baúl del puesto y pulsar la tecla de interactuar transfiere al inventario del avatar lo que quepa del almacén local. Pendiente de cerrar al implementar: qué mecanismo/tecla de interacción existe hoy en `Player.gd`; si no hay ninguno reutilizable, se añade el mínimo (tecla `E` sobre el baúl del puesto).
+- **Depósito interactivo:** la tecla `E` (que ya recolecta frutos) apuntando al baúl del puesto transfiere al inventario del avatar lo que quepa del almacén local; lo que no cabe se queda en el puesto (nada se pierde).
 
 ## 6. Pruebas y documentación
 

@@ -1910,7 +1910,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 ## orden de la estructura del edificio (VoxelWorld.edificio_orden, ver
 ## VoxelWorld.ordenar_celdas_edificio()) — la finalización real ocurre
 ## después, celda por celda, cuando el jugador la surte (ver
-## Player._minar()/_completar_construccion()); la estructura solo avanza
+## Player._completar_construccion()); la estructura solo avanza
 ## cuando la cola de preparación se agota.
 func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)

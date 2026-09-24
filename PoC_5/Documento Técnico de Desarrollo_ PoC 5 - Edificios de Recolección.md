@@ -1,0 +1,86 @@
+# **Documento Técnico de Desarrollo: PoC 5 - Edificios de Recolección (plantillas)**
+
+**Identificador del Módulo:** POC-05-ECONOMIA-EDIFICIOS
+
+**Motor:** Godot Engine 4.7 (GDScript), sobre el proyecto compartido `godot/` (ver convención de carpetas en el GDD, Sección 11).
+
+**Dependencias de Diseño:** GDD Sección 3 ("Área de Acción de los Puestos de Recolección" y su bullet "Producción y Acarreo") y Sección 5 (edificios de bloques, puertas y baúles).
+
+**Dependencias Técnicas:** autoloads `Economia` (puestos, trabajadores, almacén local), `Recoleccion` (huellas y registro de puestos) y `Colonos` (movimiento a pie); `VoxelWorld` (edificios completos, deconstrucción por bloques) y `CamaraCenital` (colocación). Fases previas: 2A (`PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2A - Puestos, Producción y Acarreo.md`) y 2B (`PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`).
+
+Spec de esta fase: `docs/superpowers/specs/2026-09-24-edificios-recoleccion-plantillas-design.md`. Plan: `docs/superpowers/plans/2026-09-24-edificios-recoleccion-plantillas.md`.
+
+---
+
+## **FASE 1: IDEACIÓN**
+
+### **1.1 Objetivo**
+
+Que un puesto de recolección deje de ser un slab de bloques marcador y pase a ser un **edificio de bloques con forma propia, puerta de servicio y depósito físico**, que se desactiva al empezar a deconstruirse (igual que un residencial) y que despide a sus recolectores cuando se agota.
+
+Decisiones confirmadas con el usuario (2026-09-24):
+- Plantillas **prediseñadas**, una por tipo de puesto, colocadas al instante y sin costo (la construcción con costo y obreros NPC es el punto 6 del roadmap).
+- Elementos funcionales: forma propia por tipo, puerta de servicio, depósito físico y deconstruible por bloques.
+- El arte lo hará el usuario en SketchUp; un conversor offline de `.obj` (paso aparte) generará el mismo formato de datos que las plantillas provisionales escritas a mano aquí.
+- Un puesto se **desactiva** en cuanto empieza a deconstruirse, como los residenciales.
+- Un puesto **agotado** despide a sus recolectores y conserva a sus acarreadores hasta que se vacía su almacén local.
+
+### **1.2 Fuera de Alcance / Siguiente**
+
+- **Puertas interactivas:** hoy las puertas son bloques sólidos para el avatar (los colonos las ignoran en su búsqueda de rutas). Para que el avatar entre a un puesto y llegue a su baúl hace falta una puerta que se abra y sea transitable solo abierta (estado, colisión, tecla de interacción, migración de los residenciales). Es el siguiente sub-proyecto; hasta entonces el depósito físico no es alcanzable por el avatar, aunque el puesto funciona por completo con colonos.
+- Costo de construcción y obreros NPC (punto 6 del roadmap), conversor `.obj`, HUD por modos y edificios de transformación (2C).
+
+---
+
+## **FASE 2: PLANEACIÓN**
+
+### **2.1 Arquitectura**
+
+- **`PlantillasPuesto.gd` (sin autoload ni `class_name`, se carga con `preload`).** Datos y funciones estáticas: por tipo, capas de bloques en texto (de abajo hacia arriba; la capa 0 va en `objetivo + 1`), con un carácter por bloque (`#` pared, `V` ventana, `B` baúl, `d`/`D` puerta inferior/superior, `.` vacío). API: `dimensiones`, `altura`, `huella`, `celdas`, `en_mundo`, `celda_de_servicio`, `celda_deposito`, `indice_extremo_agua` (pesca).
+- **Colocación (`CamaraCenital._procesar_clic_puesto`).** Nivelado, drenaje, pilotes y relleno no cambian; en vez del bloque marcador se estampa la plantilla girada y se registra con `VoxelWorld.registrar_edificio_completo(celdas, {"puesto": esquina})`, así el puesto tiene orden y progreso de bloques y se deconstruye igual que un residencial. La rotación (`Ctrl` + rueda) pasa de intercambiar ancho/alto a un contador de 4 giros (`_giros_puesto`).
+- **`Economia.gd`.** Cada puesto gana `activo`, `agotado`, `servicio` (celda X,Z frente a la puerta) y `deposito` (celda del baúl); nuevas `desactivar_puesto`, `reactivar_puesto`, `servicio_de`, `puesto_con_deposito`, `retirar_deposito` y la señal `trabajadores_liberados(ids)`.
+- **`Colonos.gd`.** Un puesto con celda de servicio usa una **zona de servicio** (celdas transitables a distancia de Chebyshev ≤ `RADIO_SERVICIO` = 2 de esa celda, fuera de la huella): una sola celda no basta, porque `ocupadas` no admite dos colonos en la misma celda y un puesto tiene hasta 7 trabajadores. Un puesto sin celda de servicio conserva el anillo junto a la huella. Un acarreador liberado con carga (`retirar_al_entregar`) termina el viaje y entrega antes de quedar desempleado.
+- **`Player.gd` y `PanelPuesto.gd`.** El primer bloque que se quita de un puesto lo desactiva; al eliminarlo del todo se usa la esquina de su metadata (no la esquina mínima de las celdas); al volver a completarlo se reactiva. `E` apuntando al baúl pasa al inventario lo que quepa del almacén local. El panel indica «(inactivo)» o «(agotado)» y deshabilita los `[+]` correspondientes.
+
+### **2.2 Constantes y convenciones**
+
+| Constante | Valor | Origen |
+|---|---|---|
+| Huellas base (ancho × alto) | mina 5×5, caza/recolección 4×4, maderero 3×4, pesca 4×6 | `Recoleccion.ANCHO_HUELLA_*`/`ALTO_HUELLA_*` |
+| Puerta de la plantilla base | fila `z = 0`, mira a −Z; `puerta_inferior` en la capa 0 y `puerta_superior` en la capa 1 | `PlantillasPuesto.gd` |
+| Giro horario de 90° | `(x, z) → (alto − 1 − z, x)` | misma fórmula que `CamaraCenital._rotar_blueprint` |
+| `RADIO_SERVICIO` | 2 | `Colonos.gd` |
+| Recálculo de tasas (agotamiento) | cada `TICKS_RECALCULO` = 6 h de juego | `Economia.gd` |
+
+---
+
+## **FASE 3: DESARROLLO**
+
+### **3.1 Reglas**
+
+- **Colocación.** Se rechaza (con mensaje, antes de tocar el mundo) si las celdas de la plantilla no están libres (se comprueban hasta `altura de la plantilla + NiveladorTerreno.LIMITE_PENDIENTE` sobre la superficie), o si la celda de servicio tiene más de 1 bloque de desnivel respecto del nivel objetivo, es agua o cae dentro de otro puesto. En la pesca, si el extremo de agua detectado no coincide con el de la plantilla girada, se gira 180° para que el edificio caiga del lado de tierra.
+- **Desactivar.** Al pasar el edificio de «completo» a «incompleto» (primer bloque quitado, siempre el baúl) el puesto queda `activo = false`: libera a todos sus trabajadores, deja de producir y no admite contratar. Conserva su almacén local hasta que se elimina del todo. Idempotente.
+- **Reactivar.** Al volver a completarse la obra queda `activo = true`, sin trabajadores, y recalcula sus tasas (puede quedar agotado).
+- **Agotamiento.** Un puesto con todas las tasas en 0 tras `recalcular_tasas` (solo puestos con `entorno` y `mundo`) está `agotado`: se liberan todos los recolectores y no se contratan más; los acarreadores se conservan mientras quede algo en el almacén local y se liberan en cuanto se vacía (comprobado cada hora en `simular_hora`, no dentro de `recoger`). Un acarreador que ya lleva carga entrega antes de quedar libre, aunque el puesto desaparezca entretanto. El puesto no se elimina; si su tasa vuelve a ser positiva deja de estar agotado y se contrata a mano.
+- **Depósito.** `retirar_deposito` pasa al stock central solo lo que quepa (`Ciudad.almacen[r].agregar`) y deja el resto en el puesto.
+
+### **3.2 Pruebas**
+
+`PlantillasPuestoTest` (nueva, 8 pruebas: huellas, puerta y baúl, 4 giros, celda de servicio, `en_mundo`, extremo de agua de la pesca por giro, bloques existentes en la biblioteca y el ciclo real estampar → deconstruir → volver a completar sobre un `VoxelWorld`), `EconomiaTest` (17 → 21: activo/agotado, desactivar/reactivar, depósito con el stock casi lleno, agotamiento) y `ColonosTest` (26 → 29: zona de servicio, acarreador con carga liberado). Ejecución obligatoria (CLAUDE.md): `godot/scenes/Test.tscn` más las escenas afectadas.
+
+### **3.3 Verificación manual pendiente (en el editor con Godot 4.7)**
+
+Comprobado ya con un conductor headless sobre `Main.tscn` (colocación real de mina, caza/recolección, maderero y pesca, incluido el caso con giro extra; primer paso de deconstrucción → inactivo y trabajadores libres; eliminación completa; re-completar → reactivado). Falta verlo jugando:
+
+1. Colocar cada puesto (`M`, `H`, `L`, `F`): se ve la plantilla con su puerta; `Ctrl` + rueda gira la puerta a los 4 lados; la colocación se rechaza si la puerta da a agua, acantilado u otro puesto.
+2. Contratar recolectores y acarreadores: se reparten por la zona junto a la puerta, producen y acarrean.
+3. `E` sobre el baúl del puesto (requiere poder llegar al baúl: depende de las puertas interactivas).
+4. Deconstruir (`G`): el panel dice «(inactivo)»; al terminar, el puesto desaparece; al volver a completar la obra se reactiva.
+5. Agotar el área (talar el bosque de un maderero o minar la veta de una mina): tras el siguiente recálculo el panel dice «(agotado)», los recolectores quedan libres y, al vaciarse el almacén, los acarreadores también.
+
+### **3.4 Supuestos que el usuario puede corregir**
+
+- El almacén local se conserva mientras el puesto está desactivado (se pierde al eliminarlo).
+- `RADIO_SERVICIO` = 2.
+- Las plantillas actuales son provisionales (una cabaña por tipo).
+- Con el follaje de las columnas de la huella se elimina también el de hasta `LIMITE_PENDIENTE` bloques por encima de la altura de la plantilla (efecto colateral de reutilizar `verificar_huella_libre` con una altura mayor).

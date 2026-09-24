@@ -664,4 +664,48 @@ func ejecutar_pruebas() -> void:
 			break
 	assert(llego29 and is_equal_approx(ciudad29.almacen["madera"].cantidad, madera29 + 30.0), "no se atasca aunque el puesto ya no exista")
 
-	print("\n=== Las 29 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 30: los colonos entran por la puerta al edificio del puesto; el que no cabe dentro espera en la zona de servicio ===")
+	var ciudad30: Node = CiudadScript.new()
+	var mundo30: MundoFalso = _mundo_llano()
+	# Edificio 3x4 en (3,2)-(5,5): paredes en y=1 y 2, puerta en (4,2) mirando a -Z, techo en y=3
+	# e interior de 2 celdas ((4,3) y (4,4)).
+	for x30 in range(3, 6):
+		for z30 in range(2, 6):
+			mundo30.poner(Vector3i(x30, 3, z30), "pared")
+			var es_interior30: bool = x30 == 4 and z30 in [3, 4]
+			var es_puerta30: bool = x30 == 4 and z30 == 2
+			if es_interior30:
+				continue
+			for y30 in [1, 2]:
+				mundo30.poner(Vector3i(x30, y30, z30), "puerta_inferior" if es_puerta30 and y30 == 1 else ("puerta_superior" if es_puerta30 else "pared"))
+	var economia30: Node = EconomiaScript.new()
+	economia30.ciudad = ciudad30
+	economia30.registrar_puesto(Vector2i(3, 2), "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(4, 1), EconomiaScript.SIN_DEPOSITO, 1)
+	var colonos30: Node = _nuevo(mundo30, ciudad30)
+	colonos30.economia = economia30
+	var ids30: Array[int] = []
+	for celda30 in [Vector3i(0, 1, 7), Vector3i(0, 1, 8), Vector3i(0, 1, 9)]:
+		ids30.append(colonos30.agregar_colono("desempleado", celda30))
+	ciudad30.demografia["desempleado"] = 3
+	for i in range(3):
+		assert(colonos30.contratar(Vector2i(3, 2), "recolector"))
+	var todos30 := false
+	for i in range(900):
+		colonos30.avanzar(0.1)
+		if economia30.trabajadores_de(Vector2i(3, 2))["presentes"] == 3:
+			todos30 = true
+			break
+	assert(todos30, "los tres quedan presentes")
+	var dentro30 := 0
+	for id30 in ids30:
+		var c30: Vector3i = colonos30.colonos[id30]["celda"]
+		if c30.x == 4 and c30.z in [3, 4] and c30.y == 1:
+			dentro30 += 1
+		else:
+			assert(absi(c30.x - 4) <= 2 and absi(c30.z - 1) <= 2, "el que no cabe dentro espera en la zona de servicio")
+	assert(dentro30 == 2, "dos entran al edificio por la puerta (dentro: %d)" % dentro30)
+	for id30 in ids30:
+		assert(colonos30.colonos[id30]["celda"] != Vector3i(4, 1, 2), "nadie se queda parado en la puerta")
+		assert(colonos30.colonos[id30]["celda"] != Vector3i(4, 1, 1), "ni en la celda frente a la puerta")
+
+	print("\n=== Las 30 pruebas de Colonos pasaron correctamente ===")

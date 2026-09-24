@@ -23,6 +23,8 @@ signal trabajadores_liberados(ids: Array)
 ## (celda del baúl) de un puesto sin plantilla.
 const SIN_SERVICIO := Vector2i.MAX
 const SIN_DEPOSITO := Vector3i.MAX
+## Sin piso interior conocido (puesto sin plantilla): los colonos solo esperan fuera.
+const SIN_SUELO := -1
 
 ## Unidades que un acarreador lleva por viaje (placeholder). Con ~20 celdas de ruta
 ## un acarreador mueve ~16 comida/h, es decir 1 acarreador por cada 2 recolectores;
@@ -77,8 +79,10 @@ func _ready() -> void:
 ## Recoleccion.entorno_de_puesto() ({} = el puesto no consume ni recalcula).
 ## "servicio" (X, Z) es la celda exterior frente a su puerta y "deposito" la
 ## celda de su baúl (ver PlantillasPuesto.gd); sin ellas Colonos usa el anillo
-## que rodea la huella y no hay depósito físico.
-func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO) -> void:
+## que rodea la huella y no hay depósito físico. "suelo" es la altura Y del piso
+## interior (la capa 0 de la plantilla): los colonos entran a trabajar a las
+## celdas libres de esa capa.
+func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO) -> void:
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
 		"cupo": Recoleccion.cupo_de(tipo),
@@ -89,7 +93,7 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"recolectores": [], "acarreadores": [],
 		"presentes": {}, "almacen": {},
 		"activo": true, "agotado": false,
-		"servicio": servicio, "deposito": deposito,
+		"servicio": servicio, "deposito": deposito, "suelo": suelo,
 	}
 
 
@@ -362,6 +366,11 @@ func entregar(carga: Dictionary) -> void:
 ## Celda (X, Z) de servicio del puesto (frente a su puerta) o SIN_SERVICIO.
 func servicio_de(esquina: Vector2i) -> Vector2i:
 	return puestos[esquina]["servicio"] if puestos.has(esquina) else SIN_SERVICIO
+
+
+## Altura Y del piso interior del puesto o SIN_SUELO.
+func suelo_de(esquina: Vector2i) -> int:
+	return puestos[esquina]["suelo"] if puestos.has(esquina) else SIN_SUELO
 
 
 ## Esquina del puesto cuyo baúl (depósito) está en "celda", o Recoleccion.SIN_PUESTO.

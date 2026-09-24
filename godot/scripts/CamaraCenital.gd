@@ -1814,11 +1814,12 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if _tipo_puesto_activo == "pesca_frutos_mar" and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
 		giros = (giros + 2) % 4
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
-	# La puerta debe dar a suelo firme: a lo sumo 1 bloque de desnivel, sin agua ni otro puesto.
+	# La puerta debe dar a un suelo por el que se pueda entrar: a su altura o 1 bloque más
+	# abajo (desde 1 más arriba, el dintel de pared impide el paso), sin agua ni otro puesto.
 	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
 	var altura_servicio: int = mundo.altura_en(servicio.x, servicio.y)
-	if absi(altura_servicio - objetivo) > 1 or mundo.obtener_tipo(Vector3i(servicio.x, altura_servicio, servicio.y)) == "agua" or Recoleccion.celda_dentro_de_algun_puesto(servicio):
-		print("Colocación rechazada: la puerta del puesto no da a suelo firme y libre.")
+	if altura_servicio > objetivo or altura_servicio < objetivo - 1 or mundo.obtener_tipo(Vector3i(servicio.x, altura_servicio, servicio.y)) == "agua" or Recoleccion.celda_dentro_de_algun_puesto(servicio):
+		print("Colocación rechazada: la puerta del puesto debe dar a un suelo libre, a su altura o 1 bloque más abajo (gira el puesto con Ctrl + rueda).")
 		return
 
 	var centro_agua := Recoleccion.SIN_CENTRO
@@ -1884,7 +1885,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 
 	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)
-	Economia.registrar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo, tasas_puesto, entorno_puesto, servicio, deposito)
+	Economia.registrar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo, tasas_puesto, entorno_puesto, servicio, deposito, y_base)
 	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])
 
 	_salir_de_modo_colocar_puesto()

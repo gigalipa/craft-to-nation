@@ -588,20 +588,21 @@ func _decidir_trabajo(c: Dictionary) -> void:
 		c["espera"] = ESPERA_TRABAJO  # el puesto ya no existe: Economia avisará
 		return
 	var servicio: Vector2i = economia.servicio_de(esquina)
+	var suelo: int = economia.suelo_de(esquina)
 	if c["trabajo"]["rol"] == "recolector":
-		if _junto_a(c["celda"], huella_puesto, servicio):
+		if _en_puesto(c["celda"], huella_puesto, servicio, suelo):
 			economia.marcar_presente(c["id"], true)
 			c["espera"] = ESPERA_TRABAJO
 		else:
-			_ir_junto_a(c, huella_puesto, servicio)
+			_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo))
 		return
 	if c["fase"] == "entregar":
 		if _llevar_al_nucleo(c):
 			c["fase"] = "recoger"
 		return
 	# fase "" o "recoger": ir al puesto y pedir la carga.
-	if not _junto_a(c["celda"], huella_puesto, servicio):
-		_ir_junto_a(c, huella_puesto, servicio)
+	if not _en_puesto(c["celda"], huella_puesto, servicio, suelo):
+		_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo))
 		return
 	var carga: Dictionary = economia.recoger(esquina, economia.CAPACIDAD_CARGA)
 	if carga.is_empty():
@@ -623,6 +624,30 @@ func _llevar_al_nucleo(c: Dictionary) -> bool:
 	return false
 
 
+## true si el colono está "en el puesto": dentro del edificio (piso interior, a
+## la altura "suelo" de su plantilla) o, si no cupo dentro, en la zona de servicio
+## junto a la puerta (ver _junto_a()).
+func _en_puesto(celda: Vector3i, huella: Array, servicio: Vector2i, suelo: int) -> bool:
+	if suelo != economia.SIN_SUELO and huella.has(Vector2i(celda.x, celda.z)):
+		# Parado en la puerta no cuenta (taponaría la entrada): solo el piso libre interior.
+		return celda.y == suelo and mundo.obtener_tipo(celda) == ""
+	return _junto_a(celda, huella, servicio)
+
+
+## Celdas libres y transitables del piso interior (altura "suelo") del edificio de
+## un puesto: donde entran a trabajar los colonos. Sin las de bloque (puerta,
+## baúl, pared). [] si el puesto no tiene plantilla.
+func _celdas_interiores(huella: Array, suelo: int) -> Array[Vector3i]:
+	var celdas: Array[Vector3i] = []
+	if suelo == economia.SIN_SUELO:
+		return celdas
+	for xz: Vector2i in huella:
+		var celda := Vector3i(xz.x, suelo, xz.y)
+		if mundo.obtener_tipo(celda) == "" and _buscador.es_transitable(celda):
+			celdas.append(celda)
+	return celdas
+
+
 ## true si "celda" está en la columna pegada (4 direcciones) a alguna celda de
 ## la huella y no dentro de ella. Con "servicio" (celda de la puerta de un
 ## puesto), en cambio: dentro de la zona de servicio (RADIO_SERVICIO) y fuera de la huella.
@@ -631,7 +656,8 @@ func _junto_a(celda: Vector3i, huella: Array, servicio: Vector2i = Vector2i.MAX)
 	if huella.has(xz):
 		return false
 	if servicio != Vector2i.MAX:
-		return absi(xz.x - servicio.x) <= RADIO_SERVICIO and absi(xz.y - servicio.y) <= RADIO_SERVICIO
+		# La celda frente a la puerta no cuenta: quien espere ahí la taponaría.
+		return xz != servicio and absi(xz.x - servicio.x) <= RADIO_SERVICIO and absi(xz.y - servicio.y) <= RADIO_SERVICIO
 	for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if huella.has(xz + direccion):
 			return true
@@ -665,7 +691,7 @@ func _celdas_de_servicio(servicio: Vector2i, huella: Array) -> Array[Vector3i]:
 	for dx in range(-RADIO_SERVICIO, RADIO_SERVICIO + 1):
 		for dz in range(-RADIO_SERVICIO, RADIO_SERVICIO + 1):
 			var xz := servicio + Vector2i(dx, dz)
-			if huella.has(xz):
+			if huella.has(xz) or xz == servicio:
 				continue
 			var altura: int = mundo.altura_en(xz.x, xz.y)
 			if altura < 0:
@@ -676,17 +702,33 @@ func _celdas_de_servicio(servicio: Vector2i, huella: Array) -> Array[Vector3i]:
 	return celdas
 
 
-## Planifica una ruta hasta la celda libre más cercana junto a la huella (o en la
-## zona de servicio, si el puesto tiene puerta); si ninguna de las
-## INTENTOS_SERVICIO más cercanas es alcanzable, espera y reintenta.
-func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX) -> void:
+## Planifica una ruta hasta una celda libre del interior del edificio (si el puesto
+## tiene plantilla), o hasta la más cercana junto a la huella (en la zona de
+## servicio, si el puesto tiene puerta); si ninguna de las INTENTOS_SERVICIO de
+## cada grupo es alcanzable, espera y reintenta.
+func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX, interiores: Array[Vector3i] = []) -> void:
 	var candidatas: Array[Vector3i] = _celdas_junto_a(huella) if servicio == Vector2i.MAX else _celdas_de_servicio(servicio, huella)
 	var origen: Vector3i = c["celda"]
 	candidatas.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
 		return (a - origen).length_squared() < (b - origen).length_squared())
+	# Primero el interior del edificio (si hay celda libre): las más alejadas de la
+	# puerta antes, para llenarlo desde el fondo sin taponar la entrada; después,
+	# la zona junto a la puerta para el que no cupo.
+	var dentro: Array[Vector3i] = []
+	for celda in interiores:
+		if not _ocupada_por_otro(celda, c["id"]):
+			dentro.append(celda)
+	dentro.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
+		return (Vector2i(a.x, a.z) - servicio).length_squared() > (Vector2i(b.x, b.z) - servicio).length_squared())
+	var libres_fuera: Array[Vector3i] = []
+	for celda in candidatas:
+		if not _ocupada_por_otro(celda, c["id"]):
+			libres_fuera.append(celda)
+	var elegidas: Array[Vector3i] = dentro.slice(0, INTENTOS_SERVICIO)
+	elegidas.append_array(libres_fuera.slice(0, INTENTOS_SERVICIO))
 	var opciones := _opciones_ruta(c)
-	for i in range(mini(candidatas.size(), INTENTOS_SERVICIO)):
-		var ruta: Array[Vector3i] = _buscador.buscar_ruta(origen, candidatas[i], opciones)
+	for destino in elegidas:
+		var ruta: Array[Vector3i] = _buscador.buscar_ruta(origen, destino, opciones)
 		if not ruta.is_empty():
 			c["ruta"] = ruta
 			c["fallos_servicio"] = 0

@@ -369,6 +369,7 @@ func ejecutar_pruebas() -> void:
 	assert(e18.puestos[ESQ]["activo"] and not e18.puestos[ESQ]["agotado"])
 	assert(e18.servicio_de(ESQ) == EconomiaScript.SIN_SERVICIO, "sin celda de servicio, Colonos usa el anillo de la huella")
 	assert(e18.puestos[ESQ]["deposito"] == EconomiaScript.SIN_DEPOSITO)
+	assert(e18.suelo_de(ESQ) == EconomiaScript.SIN_SUELO, "sin plantilla no hay piso interior")
 	assert(e18.servicio_de(Vector2i(0, 0)) == EconomiaScript.SIN_SERVICIO, "puesto inexistente")
 
 	print("\n=== TEST 19: desactivar_puesto() libera a todos, es idempotente, conserva el almacén y no admite contratar ===")
@@ -398,7 +399,8 @@ func ejecutar_pruebas() -> void:
 	var ciudad20: Node = CiudadScript.new()
 	var e20: Node = EconomiaScript.new()
 	e20.ciudad = ciudad20
-	e20.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11))
+	e20.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11), 5)
+	assert(e20.suelo_de(ESQ) == 5, "la altura del piso interior (capa 0) se guarda")
 	assert(e20.puesto_con_deposito(Vector3i(11, 5, 11)) == ESQ)
 	assert(e20.puesto_con_deposito(Vector3i(0, 0, 0)) == Recoleccion.SIN_PUESTO)
 	assert(e20.servicio_de(ESQ) == Vector2i(11, 9))

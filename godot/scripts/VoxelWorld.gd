@@ -647,6 +647,13 @@ func _retirar_bloque(celda: Vector3i) -> void:
 	Vias.quitar([celda])
 
 
+## Retira "celda" porque un puesto la extrajo (sin las guardas de minar_bloque()).
+## No-op si ya está vacía (p. ej. el avatar la minó antes).
+func retirar_bloque_extraido(celda: Vector3i) -> void:
+	if get_cell_item(celda) != GridMap.INVALID_CELL_ITEM:
+		_retirar_bloque(celda)
+
+
 func obtener_tipo(celda: Vector3i) -> String:
 	return _tipo_por_id.get(get_cell_item(celda), "")
 

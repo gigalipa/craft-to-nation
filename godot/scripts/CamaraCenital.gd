@@ -1879,13 +1879,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	# La plantilla del puesto: bloques reales sobre el terreno nivelado, registrados
 	# como edificio completo (se deconstruye bloque a bloque, como un residencial).
 	var y_base := objetivo + 1
-	var celdas_plantilla: Dictionary = PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, esquina, y_base)
-	var celdas_puesto: Dictionary = {}
-	for celda_plantilla in celdas_plantilla:
-		if mundo.colocar_bloque(celda_plantilla, celdas_plantilla[celda_plantilla]):
-			celdas_puesto[celda_plantilla] = celdas_plantilla[celda_plantilla]
-	mundo.registrar_edificio_completo(celdas_puesto, {"puesto": esquina})
-	mundo.reemparejar_construccion(celdas_puesto.keys())
+	mundo.estampar_puesto(PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, esquina, y_base), esquina)
 	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
 	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 

@@ -113,11 +113,11 @@ func ejecutar_pruebas() -> void:
 	var mundo8: Node = _mundo()
 	var esquina8 := Vector2i(20, 20)
 	var celdas8: Dictionary = PlantillasPuesto.en_mundo("maderero", 0, esquina8, 5)
-	for celda in celdas8:
-		assert(mundo8.colocar_bloque(celda, celdas8[celda]), "se puede colocar " + str(celda))
-	var id8: int = mundo8.registrar_edificio_completo(celdas8, {"puesto": esquina8})
-	mundo8.reemparejar_construccion(celdas8.keys())
+	var id8: int = mundo8.estampar_puesto(celdas8, esquina8)
 	assert(mundo8.edificio_metadata[id8]["puesto"] == esquina8)
+	for celda in celdas8:
+		assert(mundo8.obtener_tipo(celda) == celdas8[celda], "se estampó " + str(celda))
+		assert(mundo8.es_celda_estructural(celda), "cuenta como estructura (el overlay de zonas no pinta sobre su techo): " + str(celda))
 	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito("maderero", 0)
 	var deposito8 := Vector3i(esquina8.x + deposito_local.x, 5 + deposito_local.y, esquina8.y + deposito_local.z)
 	assert(mundo8.obtener_tipo(deposito8) == "baul")

@@ -13,7 +13,7 @@ const LADO_TRONCO_MIN := 1
 const LADO_TRONCO_MAX := 2
 
 var _siguiente_id := 0
-var _arboles: Dictionary = {}  # int -> {"celdas": Array, "salud": int}
+var _arboles: Dictionary = {}  # int -> {"celdas": Array, "salud": int, "salud_max": int, "xz": Vector2i}
 var _celda_a_arbol: Dictionary = {}  # Vector3i -> int
 
 
@@ -92,7 +92,10 @@ func generar_forma_aleatoria(semilla_arbol: int) -> Dictionary:
 func registrar(celdas_mundiales: Array, salud_maxima: int) -> int:
 	var id: int = _siguiente_id
 	_siguiente_id += 1
-	_arboles[id] = {"celdas": celdas_mundiales, "salud": salud_maxima}
+	var referencia := Vector2i.ZERO
+	if not celdas_mundiales.is_empty():
+		referencia = Vector2i(celdas_mundiales[0].x, celdas_mundiales[0].z)
+	_arboles[id] = {"celdas": celdas_mundiales, "salud": salud_maxima, "salud_max": salud_maxima, "xz": referencia}
 	for celda in celdas_mundiales:
 		_celda_a_arbol[celda] = id
 	return id
@@ -144,3 +147,39 @@ func eliminar_celda(id: int, celda: Vector3i) -> void:
 		return
 	_arboles[id]["celdas"].erase(celda)
 	_celda_a_arbol.erase(celda)
+
+
+## Salud restante del árbol "id" (0 si no existe o ya está talado).
+func salud_de(id: int) -> int:
+	if not _arboles.has(id):
+		return 0
+	return maxi(0, _arboles[id]["salud"])
+
+
+## Salud con la que se registró el árbol "id" (0 si no existe).
+func salud_maxima_de(id: int) -> int:
+	if not _arboles.has(id):
+		return 0
+	return _arboles[id]["salud_max"]
+
+
+## Ids de los árboles cuya columna de referencia (la de su primera celda)
+## cae a "radio" celdas o menos de "centro", en orden de registro.
+func ids_en_radio(centro: Vector2i, radio: int) -> Array:
+	var ids: Array = []
+	for id in _arboles:
+		if Vector2(_arboles[id]["xz"] - centro).length() <= radio:
+			ids.append(id)
+	return ids
+
+
+## Id del árbol más cercano a "centro" dentro de "radio", o -1 si no hay.
+func mas_cercano_en_radio(centro: Vector2i, radio: int) -> int:
+	var mejor := -1
+	var mejor_distancia := INF
+	for id in ids_en_radio(centro, radio):
+		var distancia: float = Vector2(_arboles[id]["xz"] - centro).length_squared()
+		if distancia < mejor_distancia:
+			mejor_distancia = distancia
+			mejor = id
+	return mejor

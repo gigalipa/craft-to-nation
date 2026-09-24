@@ -42,6 +42,27 @@ const ALTO_HUELLA_MINA := 5
 ## para no requerir tocar este archivo cuando se agreguen sus vetas.
 const TIPOS_MINERALES := ["tierra", "piedra", "hierro", "cobre", "carbon", "tierras_raras"]
 
+const GeneradorMundoScript = preload("res://scripts/GeneradorMundo.gd")
+
+## Unidades de recurso que rinde un bloque de extracción (sub-proyecto 2B, ver
+## docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md).
+## "madera" es por celda de tronco. Placeholders de balance; agua (2) y
+## petróleo (2) quedan reservados para el sub-proyecto de fluidos.
+const RENDIMIENTO_POR_BLOQUE := {
+	"tierra": 1.0, "piedra": 10.0, "hierro": 10.0, "cobre": 10.0,
+	"carbon": 10.0, "tierras_raras": 10.0, "madera": 10.0,
+}
+
+## Una mina solo extrae bloques al menos a esta profundidad bajo la superficie
+## natural de su columna (GROSOR_TIERRA - 2), para que el terreno de arriba no
+## quede flotando ni con un hueco en la superficie.
+const PROFUNDIDAD_MINIMA_EXTRACCION := GeneradorMundoScript.GROSOR_TIERRA - 2
+
+## Centinela: "no hay centro de agua" en entorno_de_puesto().
+const SIN_CENTRO := Vector2i(-99999, -99999)
+## Centinela: "no queda ningún bloque que extraer" en siguiente_bloque_mina().
+const SIN_BLOQUE := Vector3i(-99999, -99999, -99999)
+
 ## Ejemplo "mina manual, Tipo 1" del GDD (Sección 3) — puramente
 ## informativo por ahora: colocar una mina no cobra nada todavía (mismo
 ## alcance reducido que la nivelación de terreno, el juego no tiene
@@ -184,19 +205,44 @@ func esquina_de_puesto_en(celda: Vector2i) -> Vector2i:
 ## .obtener_tipo(Vector3i) -> String) — mismo patrón que NiveladorTerreno con
 ## .altura_en(), para poder probar esta función con un VoxelWorld real sin
 ## depender de generación de ruido.
-func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: int, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1) -> Dictionary:
+func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: int, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1, profundidad_minima: int = 0) -> Dictionary:
 	var conteo: Dictionary = {}  # String (tipo) -> int
 	for dx in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
 		for dz in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
+			# "profundidad_minima" > 0: solo cuenta bloques extraíbles, por debajo de
+			# la superficie natural de esta columna y naturales (ver _es_extraible()).
+			var techo: int = 1 << 30
+			if profundidad_minima > 0:
+				techo = mundo.altura_natural_en(centro_xz.x + dx, centro_xz.y + dz) - profundidad_minima
 			for dy in range(0, profundidad + 1):
 				var normalizado := Vector3(float(dx) / RADIO_AREA_MINA, float(dy) / profundidad, float(dz) / RADIO_AREA_MINA)
 				if normalizado.length() > 1.0:
 					continue
 				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
+				if celda.y > techo:
+					continue
 				var tipo: String = mundo.material_real(mundo.obtener_tipo(celda))
-				if TIPOS_MINERALES.has(tipo):
+				if TIPOS_MINERALES.has(tipo) and (profundidad_minima == 0 or _es_extraible(mundo, celda)):
 					conteo[tipo] = conteo.get(tipo, 0) + 1
 	return conteo
+
+
+## detectar_recursos() tal como lo ve la mina real: solo subsuelo natural desde
+## PROFUNDIDAD_MINIMA_EXTRACCION. Es lo que usan la previsualización, las tasas
+## del puesto y la extracción, para que tasa y consumo coincidan.
+func detectar_recursos_extraibles(mundo: Object, centro_xz: Vector2i, altura_superficie: int, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1) -> Dictionary:
+	return detectar_recursos(mundo, centro_xz, altura_superficie, profundidad, PROFUNDIDAD_MINIMA_EXTRACCION)
+
+
+## Un bloque es extraíble por una mina si es terreno natural (ni árbol, ni
+## estructura, ni parte de un edificio, ni agua) y no lo colocó el jugador.
+func _es_extraible(mundo: Object, celda: Vector3i) -> bool:
+	return mundo.es_terreno_natural(celda) and not mundo.colocado_por_jugador.has(celda)
+
+
+## Unidades de recurso que rinde un bloque del tipo "tipo" (0.0 si no rinde).
+func rendimiento_de(tipo: String) -> float:
+	return RENDIMIENTO_POR_BLOQUE.get(tipo, 0.0)
 
 
 ## Tasa de recolección prevista por ciudadano y tipo de recurso, a partir

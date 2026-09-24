@@ -563,6 +563,17 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 	return generador.altura_en(x, z)  # respaldo, no debería alcanzarse nunca
 
 
+## Altura de la superficie NATURAL de la columna (x,z): la del generador, sin
+## contar lo que el jugador construyó ni los árboles (una mina mide su
+## profundidad desde aquí, ver Recoleccion.PROFUNDIDAD_MINIMA_EXTRACCION).
+## Sin generador (mundos de prueba armados a mano) usa el bloque más alto
+## real, ignorando el agua.
+func altura_natural_en(x: int, z: int) -> int:
+	if generador != null:
+		return generador.altura_en(x, z)
+	return altura_en(x, z, true)
+
+
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:
 	var actual: int = get_cell_item(celda)
 	var tipo_anterior: String = _tipo_por_id.get(actual, "")

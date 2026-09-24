@@ -560,7 +560,11 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 		if ignorar_agua and tipo == "agua":
 			continue
 		return y
-	return generador.altura_en(x, z)  # respaldo, no debería alcanzarse nunca
+	# Último recurso (columna vacía): el generador si hay; los mundos de prueba
+	# armados a mano no tienen, y ahí el fondo de la búsqueda.
+	if generador != null:
+		return generador.altura_en(x, z)
+	return ALTURA_BUSQUEDA_MIN
 
 
 ## Altura de la superficie NATURAL de la columna (x,z): la del generador, sin

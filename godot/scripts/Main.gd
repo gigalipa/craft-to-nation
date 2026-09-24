@@ -13,6 +13,7 @@ func _ready() -> void:
 	jugador.mundo = mundo
 	Zonificacion.limite_mundo = Vector2i(mundo.ANCHO_MUNDO, mundo.LARGO_MUNDO)
 	Colonos.mundo = mundo
+	Economia.mundo = mundo
 	mundo.obra_a_fantasma.connect(jugador._on_obra_a_fantasma)
 	var centro_x: int = mundo.ANCHO_MUNDO / 2
 	var centro_z: int = mundo.LARGO_MUNDO / 2

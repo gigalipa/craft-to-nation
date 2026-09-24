@@ -403,6 +403,14 @@ func _recuperar_si_atrapado(c: Dictionary) -> bool:
 	return true
 
 
+## Tope de nodos para el deambular exploratorio de _elegir_destino(): los
+## candidatos son locales (casa o zona de influencia), así que no hace falta
+## el tope general de BuscadorRutas.MAX_NODOS_EXPANDIDOS — con él, un
+## candidato inalcanzable (p. ej. al otro lado del agua) cuesta ~650 ms cada
+## vez y, con hasta INTENTOS_DESTINO intentos por colono, se sentía como un
+## freeze cada pocos segundos con varios colonos deambulando a la vez.
+const TOPE_NODOS_DESTINO := 2500
+
 ## Elige el siguiente destino: la mitad de las veces su casa (si tiene), el
 ## resto un punto de la zona de influencia. Prueba INTENTOS_DESTINO veces hasta
 ## dar con uno alcanzable; si no, espera y reintenta.
@@ -410,6 +418,7 @@ func _elegir_destino(c: Dictionary) -> void:
 	if not _recuperar_si_atrapado(c):
 		return
 	var opciones := _opciones_ruta(c)
+	opciones["max_nodos"] = TOPE_NODOS_DESTINO
 	var a_casa: bool = c["hogar"] != -1 and _rng.randf() < PROBABILIDAD_CASA
 	for i in range(INTENTOS_DESTINO):
 		var destino: Vector3i = _candidato_en_casa(c["hogar"]) if a_casa else _candidato_exterior()

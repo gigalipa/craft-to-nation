@@ -131,6 +131,7 @@ func _buscar(origen: Vector3i, es_meta: Callable, heuristica: Callable, opciones
 	if not es_transitable(origen, ignorar):
 		return ruta
 
+	var tope: int = opciones.get("max_nodos", max_nodos)
 	var costo: Dictionary = {origen: 0}
 	var padre: Dictionary = {}
 	var cerrados: Dictionary = {}
@@ -152,7 +153,7 @@ func _buscar(origen: Vector3i, es_meta: Callable, heuristica: Callable, opciones
 			return ruta
 		cerrados[actual] = true
 		expandidos += 1
-		if expandidos > max_nodos:
+		if expandidos > tope:
 			return ruta
 		for vecino in vecinos(actual, ignorar):
 			if cerrados.has(vecino) or bloqueadas.has(vecino):

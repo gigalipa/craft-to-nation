@@ -42,6 +42,45 @@ const ALTO_HUELLA_MINA := 5
 ## para no requerir tocar este archivo cuando se agreguen sus vetas.
 const TIPOS_MINERALES := ["tierra", "piedra", "hierro", "cobre", "carbon", "tierras_raras"]
 
+const GeneradorMundoScript = preload("res://scripts/GeneradorMundo.gd")
+
+## Unidades de recurso que rinde un bloque de extracción (sub-proyecto 2B, ver
+## docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md).
+## "madera" es por celda de tronco. Placeholders de balance; agua (2) y
+## petróleo (2) quedan reservados para el sub-proyecto de fluidos.
+const RENDIMIENTO_POR_BLOQUE := {
+	"tierra": 1.0, "piedra": 10.0, "hierro": 10.0, "cobre": 10.0,
+	"carbon": 10.0, "tierras_raras": 10.0, "madera": 10.0,
+}
+
+## Segundos que el avatar tarda en minar un bloque por tipo (material real,
+## "piso" cuenta como "tierra"), como en Minecraft. Los tipos sin entrada
+## (construcciones del jugador) usan TIEMPO_MINADO_DEFECTO. Placeholders.
+const TIEMPO_MINADO := {
+	"tierra": 0.4, "piedra": 1.2, "carbon": 1.2,
+	"hierro": 1.6, "cobre": 1.6, "tierras_raras": 2.4,
+}
+const TIEMPO_MINADO_DEFECTO := 0.6
+## Sin herramientas todavía: cuando existan, dividirá el tiempo de minado.
+const MULTIPLICADOR_HERRAMIENTA := 1.0
+## Segundos de golpes sostenidos por cada punto de salud (una celda de tronco) de un árbol.
+const TIEMPO_TALA_POR_SALUD := 1.0
+## Frutos que el avatar recolecta de un árbol (no lo consume): segundos, comida a
+## densidad frutal 1.0 y horas de juego que el árbol tarda en volver a dar frutos.
+const TIEMPO_RECOLECCION_FRUTOS := 2.0
+const COMIDA_POR_RECOLECCION := 60.0
+const HORAS_REBROTE_FRUTOS := 24
+
+## Una mina solo extrae bloques al menos a esta profundidad bajo la superficie
+## natural de su columna (GROSOR_TIERRA - 2), para que el terreno de arriba no
+## quede flotando ni con un hueco en la superficie.
+const PROFUNDIDAD_MINIMA_EXTRACCION := GeneradorMundoScript.GROSOR_TIERRA - 2
+
+## Centinela: "no hay centro de agua" en entorno_de_puesto().
+const SIN_CENTRO := Vector2i(-99999, -99999)
+## Centinela: "no queda ningún bloque que extraer" en siguiente_bloque_mina().
+const SIN_BLOQUE := Vector3i(-99999, -99999, -99999)
+
 ## Ejemplo "mina manual, Tipo 1" del GDD (Sección 3) — puramente
 ## informativo por ahora: colocar una mina no cobra nada todavía (mismo
 ## alcance reducido que la nivelación de terreno, el juego no tiene
@@ -184,19 +223,50 @@ func esquina_de_puesto_en(celda: Vector2i) -> Vector2i:
 ## .obtener_tipo(Vector3i) -> String) — mismo patrón que NiveladorTerreno con
 ## .altura_en(), para poder probar esta función con un VoxelWorld real sin
 ## depender de generación de ruido.
-func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: int, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1) -> Dictionary:
+func detectar_recursos(mundo: Object, centro_xz: Vector2i, altura_superficie: int, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1, profundidad_minima: int = 0) -> Dictionary:
 	var conteo: Dictionary = {}  # String (tipo) -> int
 	for dx in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
 		for dz in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
+			# "profundidad_minima" > 0: solo cuenta bloques extraíbles, por debajo de
+			# la superficie natural de esta columna y naturales (ver es_extraible()).
+			var techo: int = 1 << 30
+			if profundidad_minima > 0:
+				techo = mundo.altura_natural_en(centro_xz.x + dx, centro_xz.y + dz) - profundidad_minima
 			for dy in range(0, profundidad + 1):
 				var normalizado := Vector3(float(dx) / RADIO_AREA_MINA, float(dy) / profundidad, float(dz) / RADIO_AREA_MINA)
 				if normalizado.length() > 1.0:
 					continue
 				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
+				if celda.y > techo:
+					continue
 				var tipo: String = mundo.material_real(mundo.obtener_tipo(celda))
-				if TIPOS_MINERALES.has(tipo):
+				if TIPOS_MINERALES.has(tipo) and (profundidad_minima == 0 or es_extraible(mundo, celda)):
 					conteo[tipo] = conteo.get(tipo, 0) + 1
 	return conteo
+
+
+## detectar_recursos() tal como lo ve la mina real: solo subsuelo natural desde
+## PROFUNDIDAD_MINIMA_EXTRACCION. Es lo que usan la previsualización, las tasas
+## del puesto y la extracción, para que tasa y consumo coincidan.
+func detectar_recursos_extraibles(mundo: Object, centro_xz: Vector2i, altura_superficie: int, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1) -> Dictionary:
+	return detectar_recursos(mundo, centro_xz, altura_superficie, profundidad, PROFUNDIDAD_MINIMA_EXTRACCION)
+
+
+## Un bloque es extraíble por una mina si es terreno natural (ni árbol, ni
+## estructura, ni parte de un edificio, ni agua) y no lo colocó el jugador.
+func es_extraible(mundo: Object, celda: Vector3i) -> bool:
+	return mundo.es_terreno_natural(celda) and not mundo.colocado_por_jugador.has(celda)
+
+
+## Unidades de recurso que rinde un bloque del tipo "tipo" (0.0 si no rinde).
+func rendimiento_de(tipo: String) -> float:
+	return RENDIMIENTO_POR_BLOQUE.get(tipo, 0.0)
+
+
+
+## Segundos que tarda el avatar en minar un bloque del material "tipo".
+func tiempo_minado_de(tipo: String) -> float:
+	return TIEMPO_MINADO.get(tipo, TIEMPO_MINADO_DEFECTO) * MULTIPLICADOR_HERRAMIENTA
 
 
 ## Tasa de recolección prevista por ciudadano y tipo de recurso, a partir
@@ -273,17 +343,23 @@ func tasa_maderero(promedio_arbol: float) -> Dictionary:
 	return {"madera": promedio_arbol * TASA_BASE_MADERERO_POR_CIUDADANO}
 
 
-## Flood-fill acotado: todas las celdas de agua (mar/lago/río, ver
-## GeneradorMundo.es_agua_o_rio_en()) alcanzables desde "centro_xz"
-## siguiendo solo adyacencia real (4 direcciones), sin nunca salir del
-## círculo de radio "radio". Devuelve un Dictionary (Vector2i -> true) para
-## membresía O(1) — usado tanto por el círculo visual
-## (CamaraCenital._actualizar_area_accion_agua()) como por
-## detectar_pesca_frutos_mar(), para que ambos vean exactamente el mismo
-## conjunto de celdas. Vacío si "centro_xz" mismo no es agua.
-func celdas_agua_conectadas(generador: Object, centro_xz: Vector2i, radio: int) -> Dictionary:
+## Flood-fill acotado sobre el agua REAL del mundo (bloques "agua", no el
+## generador): las columnas (X,Z) alcanzables desde "centro_xz" por la
+## superficie del agua, en 4 direcciones y sin salir del círculo de "radio".
+## La superficie es la del bloque de agua más alto del centro; una columna
+## vecina entra si tiene agua a ese nivel (o, si ahí hay aire, un escalón más
+## abajo — río que baja). Así, un piso o tierra puesto en la superficie, o un
+## drenaje, la corta; y agua que el jugador conecta la une. Devuelve
+## Vector2i -> true, usado tanto por el círculo visual como por las tasas.
+## Vacío si el centro no tiene agua.
+func celdas_agua_conectadas(mundo: Object, centro_xz: Vector2i, radio: int) -> Dictionary:
 	var visitadas: Dictionary = {}
-	if not generador.es_agua_o_rio_en(centro_xz.x, centro_xz.y):
+	var y_superficie: int = mundo.ALTURA_BUSQUEDA_MIN - 1
+	for y in range(mundo.ALTURA_BUSQUEDA_MAX, mundo.ALTURA_BUSQUEDA_MIN, -1):
+		if mundo.obtener_tipo(Vector3i(centro_xz.x, y, centro_xz.y)) == "agua":
+			y_superficie = y
+			break
+	if y_superficie < mundo.ALTURA_BUSQUEDA_MIN:
 		return visitadas
 	var pendientes: Array[Vector2i] = [centro_xz]
 	visitadas[centro_xz] = true
@@ -292,11 +368,10 @@ func celdas_agua_conectadas(generador: Object, centro_xz: Vector2i, radio: int) 
 		var actual: Vector2i = pendientes.pop_back()
 		for dir in direcciones:
 			var vecino: Vector2i = actual + dir
-			if visitadas.has(vecino):
+			if visitadas.has(vecino) or Vector2(vecino - centro_xz).length() > radio:
 				continue
-			if Vector2(vecino - centro_xz).length() > radio:
-				continue
-			if not generador.es_agua_o_rio_en(vecino.x, vecino.y):
+			var a_nivel: String = mundo.obtener_tipo(Vector3i(vecino.x, y_superficie, vecino.y))
+			if a_nivel != "agua" and not (a_nivel == "" and mundo.obtener_tipo(Vector3i(vecino.x, y_superficie - 1, vecino.y)) == "agua"):
 				continue
 			visitadas[vecino] = true
 			pendientes.append(vecino)
@@ -339,3 +414,85 @@ func tasas_pesca_frutos_mar(promedios: Dictionary) -> Dictionary:
 		"pesca": promedios["peces"] * TASA_BASE_PESCA_POR_CIUDADANO * promedios["escala"],
 		"frutos_mar": promedios["algas"] * TASA_BASE_ALGAS_POR_CIUDADANO * promedios["escala"],
 	}
+
+
+## Siguiente bloque de "recurso" (p. ej. "hierro") que una mina extrae: el más
+## cercano al centro del puesto y, a igual distancia, el menos profundo. Solo
+## subsuelo natural desde PROFUNDIDAD_MINIMA_EXTRACCION (ver
+## detectar_recursos()). SIN_BLOQUE si no queda ninguno.
+func siguiente_bloque_mina(mundo: Object, centro_xz: Vector2i, altura_superficie: int, recurso: String, profundidad: int = PROFUNDIDAD_MINA_NIVEL_1) -> Vector3i:
+	var mejor := SIN_BLOQUE
+	var mejor_distancia := INF
+	for dx in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
+		for dz in range(-RADIO_AREA_MINA, RADIO_AREA_MINA + 1):
+			var techo: int = mundo.altura_natural_en(centro_xz.x + dx, centro_xz.y + dz) - PROFUNDIDAD_MINIMA_EXTRACCION
+			for dy in range(0, profundidad + 1):
+				var normalizado := Vector3(float(dx) / RADIO_AREA_MINA, float(dy) / profundidad, float(dz) / RADIO_AREA_MINA)
+				if normalizado.length() > 1.0:
+					continue
+				var celda := Vector3i(centro_xz.x + dx, altura_superficie - dy, centro_xz.y + dz)
+				if celda.y > techo:
+					continue
+				if mundo.material_real(mundo.obtener_tipo(celda)) != recurso or not es_extraible(mundo, celda):
+					continue
+				var distancia := float(dx * dx + dy * dy + dz * dz)
+				if distancia < mejor_distancia or (distancia == mejor_distancia and celda.y > mejor.y):
+					mejor_distancia = distancia
+					mejor = celda
+	return mejor
+
+
+## Árboles vivos registrados a "radio" celdas o menos de "centro".
+func arboles_vivos_en(mundo: Object, centro: Vector2i, radio: int) -> int:
+	return mundo.arboles.ids_en_radio(centro, radio).size()
+
+
+## Lo que un puesto necesita recordar del mundo para recalcular sus tasas y
+## extraer: "centro" y "altura" (superficie en el centro al colocarlo);
+## "centro_agua" (pesca); "radio_arboles" y "arboles_ref" (árboles vivos en su
+## área al colocarlo — caza/recolección y maderero).
+func entorno_de_puesto(tipo: String, mundo: Object, centro: Vector2i, altura: int, centro_agua: Vector2i = SIN_CENTRO) -> Dictionary:
+	var entorno := {"centro": centro, "altura": altura}
+	if centro_agua != SIN_CENTRO:
+		entorno["centro_agua"] = centro_agua
+	if tipo == "caza_recoleccion" or tipo == "maderero":
+		var radio: int = RADIO_AREA_MADERERO if tipo == "maderero" else RADIO_AREA_CAZA_RECOLECCION
+		entorno["radio_arboles"] = radio
+		entorno["arboles_ref"] = arboles_vivos_en(mundo, centro, radio)
+	return entorno
+
+
+## Fracción de los árboles de su área que sigue en pie (tope 1.0). Sin árboles
+## de referencia al colocar el puesto no hay nada que escalar: 1.0.
+func factor_arboles(mundo: Object, entorno: Dictionary) -> float:
+	var referencia: int = entorno.get("arboles_ref", 0)
+	if referencia <= 0:
+		return 1.0
+	return minf(1.0, float(arboles_vivos_en(mundo, entorno["centro"], entorno["radio_arboles"])) / float(referencia))
+
+
+## Tasas por trabajador y hora de un puesto según el estado ACTUAL del mundo
+## (mismas claves que tasas_recoleccion()/tasas_caza_recoleccion()/
+## tasa_maderero()/tasas_pesca_frutos_mar()). Caza/recolección y maderero se
+## escalan con factor_arboles(): talar el bosque reduce fauna, frutos y madera.
+func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary) -> Dictionary:
+	var centro: Vector2i = entorno["centro"]
+	if tipo == "mina":
+		return tasas_recoleccion(detectar_recursos_extraibles(mundo, centro, entorno["altura"]))
+	if tipo == "pesca_frutos_mar":
+		if not entorno.has("centro_agua"):
+			return {}
+		var celdas_agua: Dictionary = celdas_agua_conectadas(mundo, entorno["centro_agua"], RADIO_AREA_PESCA_FRUTOS_MAR)
+		return tasas_pesca_frutos_mar(detectar_pesca_frutos_mar(mundo.generador, celdas_agua))
+	var tasas: Dictionary
+	# Un maderero sin árboles al colocarse no tiene nada que talar (factor_arboles() da 1.0 ahí).
+	if tipo == "maderero" and entorno.get("arboles_ref", 0) <= 0:
+		return {"madera": 0.0}
+	if tipo == "caza_recoleccion":
+		tasas = tasas_caza_recoleccion(detectar_fauna_frutal(mundo.generador, centro))
+	else:
+		tasas = tasa_maderero(detectar_arbol(mundo.generador, centro))
+	var factor := factor_arboles(mundo, entorno)
+	for clave in tasas:
+		tasas[clave] *= factor
+	return tasas

@@ -158,6 +158,18 @@ static func validar_limites_vivienda(blueprint: Dictionary, limites: Dictionary)
 	return errores
 
 
+## Cantidad total de baúles de un blueprint, en todos sus pisos. Cada baúl de
+## un edificio residencial sube el tope del almacén de la ciudad (ver
+## Ciudad.recalcular_limites()).
+static func contar_baules(blueprint: Dictionary) -> int:
+	var total := 0
+	for piso in blueprint["pisos"]:
+		for tipo in (piso["celdas"] as Dictionary).values():
+			if tipo == "baul":
+				total += 1
+	return total
+
+
 ## Regla de almacenamiento: al menos 1 baúl por cada cama EN TODO EL EDIFICIO,
 ## sin exigir que cada cama tenga "su" baúl emparejado por posición. Esto da
 ## libertad de diseño: un barracón puede tener varias camas juntas y una

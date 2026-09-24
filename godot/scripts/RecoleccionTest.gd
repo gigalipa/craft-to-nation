@@ -60,8 +60,31 @@ class GeneradorProfundidadFalso:
 		return 0.9 if z < 10 else 0.1
 
 
+## Mundo falso para las tasas de un puesto: solo lo que tasas_de_entorno() lee de él.
+class MundoFalso:
+	var generador
+	var arboles
+	var ALTURA_BUSQUEDA_MIN := -34
+	var ALTURA_BUSQUEDA_MAX := 165
+	var tipos: Dictionary = {}
+	func obtener_tipo(celda: Vector3i) -> String:
+		return tipos.get(celda, "")
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
+
+
+## Mundo real (sin generador) con un rectángulo ancho x largo de agua a la altura "y".
+func _mundo_con_agua(ancho: int, largo: int, y: int) -> Node:
+	var mundo: Node = VoxelWorld.new()
+	mundo.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo.cell_size = Vector3.ONE * 1.0
+	mundo._indexar_biblioteca()
+	for x in range(ancho):
+		for z in range(largo):
+			mundo.colocar_bloque(Vector3i(x, y, z), "agua")
+	return mundo
 
 
 func ejecutar_pruebas() -> void:
@@ -300,23 +323,42 @@ func ejecutar_pruebas() -> void:
 	var tasas_pesca_chica: Dictionary = Recoleccion.tasas_pesca_frutos_mar({"peces": 0.5, "algas": 0.3, "escala": 0.4})
 	assert(is_equal_approx(tasas_pesca_chica["pesca"], 3.4) and is_equal_approx(tasas_pesca_chica["frutos_mar"], 0.36))
 
-	print("\n=== TEST 17: celdas_agua_conectadas() sigue solo agua conectada por adyacencia, ignora un charco aislado dentro del mismo radio ===")
-	var generador_conectada := GeneradorAguaConectadaFalso.new()
-	var celdas: Dictionary = Recoleccion.celdas_agua_conectadas(generador_conectada, Vector2i(0, 0), 25)
+	print("
+=== TEST 17: celdas_agua_conectadas() lee el agua real: cuadrado conectado sí, charco aislado no, un piso en la superficie la corta ===")
+	var mundo_agua_real := _mundo_con_agua(6, 6, 5)
+	mundo_agua_real.colocar_bloque(Vector3i(10, 5, 10), "agua")  # charco aislado
+	var celdas: Dictionary = Recoleccion.celdas_agua_conectadas(mundo_agua_real, Vector2i(0, 0), 25)
 	assert(celdas.size() == 36)
-	for x in range(6):
-		for z in range(6):
-			assert(celdas.has(Vector2i(x, z)))
 	assert(not celdas.has(Vector2i(10, 10)))
-	print("OK: celdas_agua_conectadas() encontró las 36 celdas del cuadrado conectado e ignoró el charco aislado en (10,10).")
+	# Un piso sobre la superficie de una columna la saca del conjunto.
+	mundo_agua_real.colocar_bloque(Vector3i(3, 5, 3), "piso")
+	assert(not Recoleccion.celdas_agua_conectadas(mundo_agua_real, Vector2i(0, 0), 25).has(Vector2i(3, 3)))
+	# Una barrera de piso en la superficie encierra el agua: la parte de afuera deja de contar.
+	for z in range(6):
+		mundo_agua_real.colocar_bloque(Vector3i(2, 5, z), "piso")
+	var encerrada: Dictionary = Recoleccion.celdas_agua_conectadas(mundo_agua_real, Vector2i(0, 0), 25)
+	assert(encerrada.size() == 12 and not encerrada.has(Vector2i(4, 0)))
+	# Conectar otro cuerpo de agua lo suma.
+	var mundo_dos := _mundo_con_agua(3, 3, 5)
+	for x in range(6, 9):
+		for z in range(3):
+			mundo_dos.colocar_bloque(Vector3i(x, 5, z), "agua")
+	assert(Recoleccion.celdas_agua_conectadas(mundo_dos, Vector2i(0, 0), 25).size() == 9)
+	for x in range(3, 6):
+		mundo_dos.colocar_bloque(Vector3i(x, 5, 1), "agua")
+	assert(Recoleccion.celdas_agua_conectadas(mundo_dos, Vector2i(0, 0), 25).size() == 9 + 3 + 9)
+	# Sin agua en el centro: vacío.
+	assert(Recoleccion.celdas_agua_conectadas(mundo_dos, Vector2i(50, 50), 25).is_empty())
+	print("OK: celdas_agua_conectadas() sigue el agua real (islas, pisos, barreras y conexiones).")
 
-	print("\n=== TEST 18: celdas_agua_conectadas() nunca sale del radio, aunque el agua siga conectada más allá ===")
-	var generador_infinita := GeneradorAguaFalso.new()
-	var celdas_acotadas: Dictionary = Recoleccion.celdas_agua_conectadas(generador_infinita, Vector2i(0, 0), 5)
+	print("
+=== TEST 18: celdas_agua_conectadas() nunca sale del radio, aunque el agua siga conectada más allá ===")
+	var mundo_larga := _mundo_con_agua(40, 1, 5)
+	var celdas_acotadas: Dictionary = Recoleccion.celdas_agua_conectadas(mundo_larga, Vector2i(0, 0), 5)
 	assert(celdas_acotadas.size() > 0)
 	for xz in celdas_acotadas:
 		assert(Vector2(xz).length() <= 5.0)
-	print("OK: celdas_agua_conectadas() respeta el radio como tope, aunque el agua siga conectada más allá (GeneradorAguaFalso es infinito en x>=0).")
+	print("OK: celdas_agua_conectadas() respeta el radio como tope.")
 
 	print("\n=== TEST 19: cupo_de() y capacidad_almacen_de() por tipo de puesto ===")
 	assert(Recoleccion.cupo_de("maderero") == 5)
@@ -389,4 +431,101 @@ func ejecutar_pruebas() -> void:
 	assert(total_costa > 3.0 * total_lago, "el tamaño y la profundidad del agua deben importar")
 	print("OK: el rendimiento de la pesca ya no es casi constante: depende del tamaño y la profundidad del agua.")
 
-	print("\n=== Las 24 pruebas de Recoleccion pasaron correctamente ===")
+	print("\n=== TEST 25: detectar_recursos_extraibles() solo cuenta subsuelo natural desde la profundidad mínima ===")
+	assert(Recoleccion.PROFUNDIDAD_MINIMA_EXTRACCION == 2, "GROSOR_TIERRA (4) - 2")
+	assert(Recoleccion.rendimiento_de("tierra") == 1.0 and Recoleccion.rendimiento_de("piedra") == 10.0)
+	assert(Recoleccion.rendimiento_de("madera") == 10.0 and Recoleccion.rendimiento_de("agua") == 0.0)
+	var mundo_ext: Node = VoxelWorld.new()
+	mundo_ext.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_ext.cell_size = Vector3.ONE * 1.0
+	mundo_ext._indexar_biblioteca()
+	var c_ext := Vector2i(300, 300)
+	# Superficie en y=9 (dos columnas). Bajo el centro: hierro a profundidad 1 (y=8, intocable)
+	# y a profundidad 2 y 3 (y=7 y y=6). En la otra columna, un hierro puesto por el jugador (y=5).
+	mundo_ext.colocar_bloque(Vector3i(300, 9, 300), "piedra")
+	mundo_ext.colocar_bloque(Vector3i(301, 9, 300), "piedra")
+	mundo_ext.colocar_bloque(Vector3i(300, 8, 300), "hierro")
+	mundo_ext.colocar_bloque(Vector3i(300, 7, 300), "hierro")
+	mundo_ext.colocar_bloque(Vector3i(300, 6, 300), "hierro")
+	mundo_ext.colocar_bloque(Vector3i(301, 5, 300), "hierro", true)
+	var todo_ext: Dictionary = Recoleccion.detectar_recursos(mundo_ext, c_ext, 10)
+	assert(todo_ext.get("piedra", 0) == 2 and todo_ext.get("hierro", 0) == 4, "por defecto cuenta todo, como antes")
+	var extraible: Dictionary = Recoleccion.detectar_recursos_extraibles(mundo_ext, c_ext, 10)
+	assert(not extraible.has("piedra"), "la superficie (profundidad 0) no se toca")
+	assert(extraible.get("hierro", 0) == 2, "solo y=7 e y=6: no y=8 (profundidad 1) ni el bloque del jugador")
+	print("OK: la mina solo ve subsuelo natural desde la profundidad 2.")
+
+	print("\n=== TEST 26: siguiente_bloque_mina() elige el más cercano al centro, sin tocar la superficie ===")
+	var mundo_sig: Node = VoxelWorld.new()
+	mundo_sig.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_sig.cell_size = Vector3.ONE * 1.0
+	mundo_sig._indexar_biblioteca()
+	var c_sig := Vector2i(400, 400)
+	mundo_sig.colocar_bloque(Vector3i(400, 9, 400), "piedra")
+	mundo_sig.colocar_bloque(Vector3i(401, 9, 400), "piedra")
+	mundo_sig.colocar_bloque(Vector3i(400, 8, 400), "hierro")  # profundidad 1: intocable
+	mundo_sig.colocar_bloque(Vector3i(400, 7, 400), "hierro")  # distancia² 9
+	mundo_sig.colocar_bloque(Vector3i(401, 7, 400), "hierro")  # distancia² 10
+	mundo_sig.colocar_bloque(Vector3i(400, 6, 400), "hierro")  # distancia² 16
+	var tasas_mina: Dictionary = Recoleccion.tasas_de_entorno("mina", mundo_sig, {"centro": c_sig, "altura": 10})
+	assert(tasas_mina.size() == 1 and is_equal_approx(tasas_mina["hierro"], Recoleccion.TASAS_BASE_MINERAL["hierro"]), "solo hierro extraíble: 3 bloques")
+	assert(Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "piedra") == Recoleccion.SIN_BLOQUE, "la piedra está en la superficie")
+	var b1: Vector3i = Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro")
+	assert(b1 == Vector3i(400, 7, 400))
+	mundo_sig.minar_bloque(b1)
+	var b2: Vector3i = Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro")
+	assert(b2 == Vector3i(401, 7, 400))
+	mundo_sig.minar_bloque(b2)
+	assert(Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro") == Vector3i(400, 6, 400))
+	mundo_sig.minar_bloque(Vector3i(400, 6, 400))
+	assert(Recoleccion.siguiente_bloque_mina(mundo_sig, c_sig, 10, "hierro") == Recoleccion.SIN_BLOQUE)
+	assert(Recoleccion.tasas_de_entorno("mina", mundo_sig, {"centro": c_sig, "altura": 10}).is_empty(), "mina agotada: sin tasas")
+
+	print("\n=== TEST 27: entorno_de_puesto() y tasas_de_entorno() escalan con los árboles vivos ===")
+	var mundo_arb := MundoFalso.new()
+	mundo_arb.generador = GeneradorBiomaFalso.new()
+	mundo_arb.arboles = preload("res://scripts/GeneradorArbol.gd").new()
+	var ids_arb: Array = []
+	for i in range(1, 5):
+		ids_arb.append(mundo_arb.arboles.registrar([Vector3i(i, 5, i)], 3))
+	var entorno_caza: Dictionary = Recoleccion.entorno_de_puesto("caza_recoleccion", mundo_arb, Vector2i(0, 0), 5)
+	assert(entorno_caza["arboles_ref"] == 4 and entorno_caza["radio_arboles"] == Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
+	assert(not entorno_caza.has("centro_agua"))
+	var tasas_caza_llena: Dictionary = Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_arb, entorno_caza)
+	assert(is_equal_approx(tasas_caza_llena["caza"], 0.8 * Recoleccion.TASA_BASE_CAZA_POR_CIUDADANO))
+	assert(is_equal_approx(tasas_caza_llena["recoleccion"], 0.4 * Recoleccion.TASA_BASE_FRUTOS_POR_CIUDADANO))
+	mundo_arb.arboles.eliminar(ids_arb[0])
+	mundo_arb.arboles.eliminar(ids_arb[1])
+	assert(Recoleccion.factor_arboles(mundo_arb, entorno_caza) == 0.5)
+	var tasas_caza_mitad: Dictionary = Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_arb, entorno_caza)
+	assert(is_equal_approx(tasas_caza_mitad["caza"], 0.5 * tasas_caza_llena["caza"]), "talar el bosque reduce la caza")
+	assert(is_equal_approx(tasas_caza_mitad["recoleccion"], 0.5 * tasas_caza_llena["recoleccion"]), "y los frutos")
+	var entorno_mad: Dictionary = Recoleccion.entorno_de_puesto("maderero", mundo_arb, Vector2i(0, 0), 5)
+	assert(entorno_mad["arboles_ref"] == 2 and entorno_mad["radio_arboles"] == Recoleccion.RADIO_AREA_MADERERO)
+	assert(is_equal_approx(Recoleccion.tasas_de_entorno("maderero", mundo_arb, entorno_mad)["madera"], 0.6 * Recoleccion.TASA_BASE_MADERERO_POR_CIUDADANO))
+	mundo_arb.arboles.eliminar(ids_arb[2])
+	assert(Recoleccion.factor_arboles(mundo_arb, entorno_mad) == 0.5)
+	# Sin árboles al colocar el puesto: factor 1, sin dividir por cero.
+	var mundo_sin := MundoFalso.new()
+	mundo_sin.generador = GeneradorBiomaFalso.new()
+	mundo_sin.arboles = preload("res://scripts/GeneradorArbol.gd").new()
+	var entorno_sin: Dictionary = Recoleccion.entorno_de_puesto("maderero", mundo_sin, Vector2i(0, 0), 5)
+	assert(entorno_sin["arboles_ref"] == 0 and Recoleccion.factor_arboles(mundo_sin, entorno_sin) == 1.0)
+	# Pesca: recalcula con el agua conectada; sin centro de agua no hay tasas.
+	var mundo_agua := MundoFalso.new()
+	mundo_agua.generador = GeneradorAguaConectadaFalso.new()
+	for x in range(6):
+		for z in range(6):
+			mundo_agua.tipos[Vector3i(x, 5, z)] = "agua"
+	mundo_agua.arboles = preload("res://scripts/GeneradorArbol.gd").new()
+	var entorno_agua: Dictionary = Recoleccion.entorno_de_puesto("pesca_frutos_mar", mundo_agua, Vector2i(2, 2), 5, Vector2i(2, 2))
+	var celdas_agua_ent: Dictionary = Recoleccion.celdas_agua_conectadas(mundo_agua, Vector2i(2, 2), Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
+	var esperado_agua: Dictionary = Recoleccion.tasas_pesca_frutos_mar(Recoleccion.detectar_pesca_frutos_mar(mundo_agua.generador, celdas_agua_ent))
+	assert(Recoleccion.tasas_de_entorno("pesca_frutos_mar", mundo_agua, entorno_agua) == esperado_agua)
+	assert(Recoleccion.tasas_de_entorno("pesca_frutos_mar", mundo_agua, Recoleccion.entorno_de_puesto("pesca_frutos_mar", mundo_agua, Vector2i(2, 2), 5)).is_empty())
+	assert(Recoleccion.tasas_de_entorno("maderero", mundo_sin, entorno_sin)["madera"] == 0.0, "maderero sin árboles al colocarse: tasa 0")
+	var entorno_caza_sin: Dictionary = Recoleccion.entorno_de_puesto("caza_recoleccion", mundo_sin, Vector2i(0, 0), 5)
+	assert(Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_sin, entorno_caza_sin)["caza"] > 0.0, "caza/recolección sin árboles conserva su tasa")
+	print("OK: entorno y tasas de un puesto se recalculan desde el mundo.")
+
+	print("\n=== Las 27 pruebas de Recoleccion pasaron correctamente ===")

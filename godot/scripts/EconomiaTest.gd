@@ -6,8 +6,26 @@ extends Node
 
 const EconomiaScript = preload("res://scripts/Economia.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
+const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
+const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
 
 const ESQ := Vector2i(10, 10)
+
+
+## Generador falso: fauna 0.8 y frutal 0.4 en todas partes.
+class GeneradorFaunaFalso:
+	func densidad_fauna_en(_x: int, _z: int) -> float:
+		return 0.8
+	func densidad_frutal_en(_x: int, _z: int) -> float:
+		return 0.4
+	func densidad_arbol_en(_x: int, _z: int) -> float:
+		return 0.6
+
+
+## Solo lo que tasas_de_entorno() lee del mundo para caza/recolección.
+class MundoBosqueFalso:
+	var generador = GeneradorFaunaFalso.new()
+	var arboles = preload("res://scripts/GeneradorArbol.gd").new()
 
 
 func _ready() -> void:
@@ -20,6 +38,39 @@ func _nueva(ciudad: Node) -> Node:
 	economia.ciudad = ciudad
 	economia.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0})
 	return economia
+
+
+## Un VoxelWorld sin _ready() (mismo patrón que RecoleccionTest.gd) con el registro de árboles listo.
+func _mundo_nuevo() -> Node:
+	var mundo: Node = VoxelWorld.new()
+	mundo.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo.cell_size = Vector3.ONE * 1.0
+	mundo._indexar_biblioteca()
+	mundo.arboles = GeneradorArbolScript.new()
+	return mundo
+
+
+## Veta de 3 bloques de hierro (30 unidades) bajo (500,500): superficie en y=9 y un hierro a
+## profundidad 1 (y=8) que la mina no toca; extraíbles: (500,7,500), (501,7,500) y (500,6,500), en ese orden.
+func _mundo_con_veta() -> Node:
+	var mundo: Node = _mundo_nuevo()
+	mundo.colocar_bloque(Vector3i(500, 9, 500), "piedra")
+	mundo.colocar_bloque(Vector3i(501, 9, 500), "piedra")
+	mundo.colocar_bloque(Vector3i(500, 8, 500), "hierro")
+	mundo.colocar_bloque(Vector3i(500, 7, 500), "hierro")
+	mundo.colocar_bloque(Vector3i(501, 7, 500), "hierro")
+	mundo.colocar_bloque(Vector3i(500, 6, 500), "hierro")
+	return mundo
+
+
+## Un árbol de 3 troncos (salud 3 = 30 unidades de madera) en (600,600), registrado en el mundo.
+func _mundo_con_arbol() -> Array:
+	var mundo: Node = _mundo_nuevo()
+	var celdas: Array = [Vector3i(600, 5, 600), Vector3i(600, 6, 600), Vector3i(600, 7, 600)]
+	for celda in celdas:
+		mundo.colocar_bloque(celda, "madera")
+	var id: int = mundo.arboles.registrar(celdas, 3)
+	return [mundo, id]
 
 
 func ejecutar_pruebas() -> void:
@@ -161,4 +212,156 @@ func ejecutar_pruebas() -> void:
 	ciudad10.simular_tick(0.0)
 	assert(is_equal_approx(e10.almacen_local(ESQ)["madera"], 3.0))
 
-	print("\n=== Las 10 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 11: una mina consume sus bloques y se agota ===")
+	var mundo11: Node = _mundo_con_veta()
+	var e11: Node = EconomiaScript.new()
+	e11.ciudad = CiudadScript.new()
+	e11.mundo = mundo11
+	var esq11 := Vector2i(50, 50)
+	e11.registrar_puesto(esq11, "mina", 5, 5, {"hierro": 12.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e11.asignar(esq11, "recolector", 1)
+	e11.marcar_presente(1, true)
+	e11.simular_hora()
+	assert(is_equal_approx(e11.almacen_local(esq11)["hierro"], 12.0))
+	assert(mundo11.obtener_tipo(Vector3i(500, 7, 500)) == "", "el bloque más cercano ya se retiró")
+	assert(mundo11.obtener_tipo(Vector3i(501, 7, 500)) == "hierro", "el segundo va a medias (8 de 10)")
+	assert(mundo11.obtener_tipo(Vector3i(500, 8, 500)) == "hierro", "la profundidad 1 nunca se toca")
+	e11.simular_hora()
+	assert(is_equal_approx(e11.almacen_local(esq11)["hierro"], 24.0))
+	assert(mundo11.obtener_tipo(Vector3i(501, 7, 500)) == "", "una hora agotó un bloque y empezó el siguiente")
+	e11.simular_hora()
+	assert(is_equal_approx(e11.almacen_local(esq11)["hierro"], 30.0), "solo quedaban 6 unidades de las 12 pedidas")
+	assert(mundo11.obtener_tipo(Vector3i(500, 6, 500)) == "")
+	e11.simular_hora()
+	assert(is_equal_approx(e11.almacen_local(esq11)["hierro"], 30.0), "mina agotada: no produce nada más")
+	assert(mundo11.obtener_tipo(Vector3i(500, 8, 500)) == "hierro" and mundo11.obtener_tipo(Vector3i(500, 9, 500)) == "piedra")
+
+	print("\n=== TEST 12: un maderero tala árboles enteros y se agota ===")
+	var datos12: Array = _mundo_con_arbol()
+	var mundo12: Node = datos12[0]
+	var id12: int = datos12[1]
+	var e12: Node = EconomiaScript.new()
+	e12.ciudad = CiudadScript.new()
+	e12.mundo = mundo12
+	var entorno12 := {"centro": Vector2i(600, 600), "altura": 5, "radio_arboles": 12, "arboles_ref": 1}
+	e12.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 12.0}, entorno12)
+	e12.asignar(ESQ, "recolector", 1)
+	e12.marcar_presente(1, true)
+	e12.simular_hora()
+	assert(is_equal_approx(e12.almacen_local(ESQ)["madera"], 12.0))
+	assert(mundo12.arboles.salud_de(id12) == 2, "un tronco (10 unidades) ya se consumió")
+	e12.simular_hora()
+	assert(is_equal_approx(e12.almacen_local(ESQ)["madera"], 24.0))
+	assert(mundo12.arboles.salud_de(id12) == 1)
+	e12.simular_hora()
+	assert(is_equal_approx(e12.almacen_local(ESQ)["madera"], 30.0), "el árbol solo rendía 30")
+	assert(mundo12.arboles.salud_de(id12) == 0 and mundo12.obtener_tipo(Vector3i(600, 5, 600)) == "", "el árbol cayó entero")
+	e12.simular_hora()
+	assert(is_equal_approx(e12.almacen_local(ESQ)["madera"], 30.0), "sin árboles no hay madera")
+
+	print("\n=== TEST 13: si el avatar tala el árbol o mina el bloque en curso, el puesto no produce gratis ===")
+	var datos13: Array = _mundo_con_arbol()
+	var e13: Node = EconomiaScript.new()
+	e13.ciudad = CiudadScript.new()
+	e13.mundo = datos13[0]
+	e13.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 12.0}, {"centro": Vector2i(600, 600), "altura": 5, "radio_arboles": 12, "arboles_ref": 1})
+	e13.asignar(ESQ, "recolector", 1)
+	e13.marcar_presente(1, true)
+	e13.simular_hora()
+	datos13[0].talar_bloque_de_arbol(Vector3i(600, 5, 600), 99)  # el avatar lo derriba
+	e13.simular_hora()
+	assert(is_equal_approx(e13.almacen_local(ESQ)["madera"], 12.0), "el bloque en curso ya no existe: no suma")
+	var mundo13b: Node = _mundo_con_veta()
+	var e13b: Node = EconomiaScript.new()
+	e13b.ciudad = CiudadScript.new()
+	e13b.mundo = mundo13b
+	e13b.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e13b.asignar(ESQ, "recolector", 1)
+	e13b.marcar_presente(1, true)
+	e13b.simular_hora()  # deja (500,7,500) a medias
+	mundo13b.minar_bloque(Vector3i(500, 7, 500))  # el avatar lo mina
+	e13b.simular_hora()
+	assert(mundo13b.obtener_tipo(Vector3i(501, 7, 500)) == "hierro", "el puesto pasa al siguiente bloque sin retirarlo entero")
+	assert(is_equal_approx(e13b.almacen_local(ESQ)["hierro"], 10.0))
+
+	print("\n=== TEST 14: las tasas se recalculan cada TICKS_RECALCULO horas ===")
+	assert(EconomiaScript.TICKS_RECALCULO == 6)
+	var e14: Node = EconomiaScript.new()
+	e14.ciudad = CiudadScript.new()
+	e14.mundo = _mundo_con_veta()
+	# Tasa desactualizada a propósito (1/h): al recalcular, hierro vale 5 (1 tipo x tasa base 5).
+	e14.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 1.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e14.asignar(ESQ, "recolector", 1)
+	e14.marcar_presente(1, true)
+	for i in range(EconomiaScript.TICKS_RECALCULO - 1):
+		e14.simular_hora()
+	assert(is_equal_approx(e14.produccion_por_hora(ESQ)["hierro"], 1.0), "todavía no toca recalcular")
+	e14.simular_hora()
+	assert(is_equal_approx(e14.produccion_por_hora(ESQ)["hierro"], Recoleccion.TASAS_BASE_MINERAL["hierro"]))
+
+	print("\n=== TEST 15: recalcular_tasas() con el área agotada deja la producción en 0, y caza/recolección sigue los árboles ===")
+	var e15: Node = EconomiaScript.new()
+	e15.ciudad = CiudadScript.new()
+	var mundo15: Node = _mundo_con_veta()
+	e15.mundo = mundo15
+	e15.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e15.asignar(ESQ, "recolector", 1)
+	e15.marcar_presente(1, true)
+	for celda in [Vector3i(500, 7, 500), Vector3i(501, 7, 500), Vector3i(500, 6, 500)]:
+		mundo15.minar_bloque(celda)
+	e15.recalcular_tasas(ESQ)
+	assert(e15.produccion_por_hora(ESQ).is_empty(), "sin bloques extraíbles no hay tasas")
+	e15.simular_hora()
+	assert(e15.almacen_local(ESQ).is_empty())
+	e15.recalcular_tasas(Vector2i(0, 0))  # puesto inexistente: no falla
+	var mundo_bosque := MundoBosqueFalso.new()
+	var ids15: Array = []
+	for i in range(1, 5):
+		ids15.append(mundo_bosque.arboles.registrar([Vector3i(i, 5, i)], 3))
+	var e15b: Node = EconomiaScript.new()
+	e15b.ciudad = CiudadScript.new()
+	e15b.mundo = mundo_bosque
+	var esq15 := Vector2i(70, 70)
+	var entorno15: Dictionary = Recoleccion.entorno_de_puesto("caza_recoleccion", mundo_bosque, Vector2i(0, 0), 5)
+	e15b.registrar_puesto(esq15, "caza_recoleccion", 4, 4, Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_bosque, entorno15), entorno15)
+	e15b.asignar(esq15, "recolector", 1)
+	e15b.marcar_presente(1, true)
+	var comida_llena: float = e15b.produccion_por_hora(esq15)["comida"]
+	mundo_bosque.arboles.eliminar(ids15[0])
+	mundo_bosque.arboles.eliminar(ids15[1])
+	e15b.recalcular_tasas(esq15)
+	assert(is_equal_approx(e15b.produccion_por_hora(esq15)["comida"], comida_llena * 0.5), "la mitad de los árboles: la mitad de la comida")
+
+	print("\n=== TEST 16: con el área agotada se acarrea el resto aunque haya recolectores; produciendo, la carga parcial se rechaza ===")
+	var mundo16: Node = _mundo_con_veta()
+	var e16: Node = EconomiaScript.new()
+	e16.ciudad = CiudadScript.new()
+	e16.mundo = mundo16
+	e16.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e16.asignar(ESQ, "recolector", 1)
+	e16.marcar_presente(1, true)
+	e16.simular_hora()
+	assert(e16.recoger(ESQ, 150.0).is_empty(), "produciendo con recolectores: no se da una carga parcial")
+	for celda in [Vector3i(500, 7, 500), Vector3i(501, 7, 500), Vector3i(500, 6, 500)]:
+		mundo16.minar_bloque(celda)
+	e16.recalcular_tasas(ESQ)
+	var carga16: Dictionary = e16.recoger(ESQ, 150.0)
+	assert(carga16.has("hierro") and is_equal_approx(carga16["hierro"], 5.0), "agotado: se acarrea el resto")
+
+	print("\n=== TEST 17: un bloque en curso reemplazado por uno del jugador no se retira ni rinde ===")
+	var mundo17: Node = _mundo_con_veta()
+	var e17: Node = EconomiaScript.new()
+	e17.ciudad = CiudadScript.new()
+	e17.mundo = mundo17
+	e17.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e17.asignar(ESQ, "recolector", 1)
+	e17.marcar_presente(1, true)
+	e17.simular_hora()  # deja (500,7,500) a medias
+	mundo17.minar_bloque(Vector3i(500, 7, 500))
+	mundo17.colocar_bloque(Vector3i(500, 7, 500), "hierro", true)
+	e17.simular_hora()
+	assert(mundo17.obtener_tipo(Vector3i(500, 7, 500)) == "hierro", "el bloque del jugador no se retira")
+	assert(mundo17.obtener_tipo(Vector3i(501, 7, 500)) == "hierro", "el siguiente natural sigue a medias")
+	assert(is_equal_approx(e17.almacen_local(ESQ)["hierro"], 10.0), "solo rindió el natural")
+
+	print("\n=== Las 17 pruebas de Economia pasaron correctamente ===")

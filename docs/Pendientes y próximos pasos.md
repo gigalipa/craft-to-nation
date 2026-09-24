@@ -2,37 +2,31 @@
 
 ## Ruta a seguir
 
-### 1. PoC 5, sub-proyecto 2B — extracción física y agotamiento (siguiente pieza recomendada)
+### 1. Edificios de recolección jugables reales
 
-Los cuatro puestos de recolección ya asignan trabajadores, producen al almacén local y acarrean al núcleo (2A), pero las tasas se fijan al colocar el puesto y no se recalculan: los colonos no retiran bloques ni árboles reales, y el bosque/mina no se agota. Los puestos consumirían de verdad los bloques y árboles del mundo, y no solo producirían una tasa fija. Es previo a 2C porque la transformación necesita materia prima que de verdad se consuma.
+Diseño e implementación de edificios de recolección jugables reales (no solo un slab de bloques). Van tras 2B (ya implementado, existe la extracción real) y antes de 2C, que necesita edificios de transformación de verdad.
 
-- Recolección y consumo reales de parte del avatar (comparte mecánica de extracción con 2B; conviene diseñarlos juntos).
-
-### 2. Edificios de recolección jugables reales
-
-Diseño e implementación de edificios de recolección jugables reales (no solo un slab de bloques). Van tras 2B, cuando ya existe la extracción real, y antes de 2C, que necesita edificios de transformación de verdad.
-
-### 3. HUD visual interactivo
+### 2. HUD visual interactivo
 
 Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir, zonas, vías, etc.) con sus accesos directos, y no por edificios particulares: habrá demasiados como para asignar una tecla a cada uno. Va tras los edificios de recolección jugables para definir la interfaz con ellos ya presentes, y antes de 2C y de las demás mecánicas para no rehacerla.
 
-### 4. Declaración de edificios por volumen interno
+### 3. Declaración de edificios por volumen interno
 
 En este punto el jugador ya debe poder declarar y registrar distintos edificios residenciales. Pendiente de revisar: un edificio de dos niveles con una cama en cada nivel no fue reconocido por la declaración. El sistema debería cambiar a uno que detecte el **volumen interno** de una construcción, para permitir edificios personalizados de formas variadas (pirámides, cilindros, irregulares).
 
-### 5. PoC 5, sub-proyecto 2C — transformación
+### 4. PoC 5, sub-proyecto 2C — transformación
 
 Aserradero, carbonera, siderúrgica y refinería de tierras raras convertirían recursos crudos en procesados, con recetas.
 
-### 6. Resto del catálogo general de PoC 5
+### 5. Resto del catálogo general de PoC 5
 
 Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`: sub-proyecto 2 (madera), 3 (fluidos: agua/crudo/combustible) y 4 (energía). El sub-proyecto 1 (minerales) ya está completo.
 
-### 7. Construcción/deconstrucción asistida por NPCs
+### 6. Construcción/deconstrucción asistida por NPCs
 
-Los colonos participan en construir y deconstruir. Se apoya en el acarreo (2A) y en la extracción real (2B).
+Los colonos participan en construir y deconstruir. Se apoya en el acarreo (2A) y en la extracción real (2B, ya implementada).
 
-### 8. Cola de pendientes menores de la Fase 3 (PoC 6) — no bloqueantes
+### 7. Cola de pendientes menores de la Fase 3 (PoC 6) — no bloqueantes
 
 Pueden intercalarse en cualquier momento.
 
@@ -49,6 +43,11 @@ Pueden intercalarse en cualquier momento.
 
 ## Hecho
 
+- ~~**PoC 5, sub-proyecto 2B: extracción física y agotamiento** (2026-09-24).~~ Los puestos de mina y maderero consumen bloques y árboles reales (la mina solo desde el subsuelo, no la superficie), las tasas de todos los puestos se recalculan cada 6 horas de juego según su entorno (árboles, bloques minerales y agua conectada), y el avatar mina, tala y recolecta frutos con tiempo e indicador de avance sobre un inventario limitado que arranca la partida — ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`. La bomba extractora y el petróleo quedan para el sub-proyecto de fluidos.
+  - Consideraciones originales del usuario para este punto (ya implementadas):
+    > Algunas consideraciones para esta sección:
+    > 1. Una mina no debe extraer los bloques de la superficie, solo los del subsuelo, principalmente para no quedar flotando en el aire.
+    > 2. Los edificios de producción deben recalcular y actualizar su tasa de producción cada cierta cantidad de ticks, para que la tasa tenga sentido, es decir: madereros y caza&recolección según la cantidad de árboles presentes en su área de acción, minas según la cantidad de bloques minerales que aún queden en el subsuelo dentro de su volúmen de acción, bombas extractoras según la cantidad de bloques de petróleo que haya en el pozo sobre el cuál se encuentren, pesca según la cantidad de bloques de agua en su área de acción (porque el jugador podría construir algo en el agua, drenando bloques de agua, o incluso podría conectar cuerpos de agua aumentando el volúmen de agua conectada).
 - ~~Fase 3 (PoC 6): efecto visual/de jugabilidad para cascadas (`es_cascada_en()`).~~
 - ~~Fase 3 (PoC 6): reglas de flotación/natación.~~
 - ~~Fase 3 (PoC 6): puesto maderero jugable y puesto de pesca/frutos del mar.~~

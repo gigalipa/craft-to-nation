@@ -24,7 +24,7 @@ Decisiones confirmadas con el usuario (2026-09-21): asignación manual desde la 
 
 ### **1.2 Fuera de Alcance / Siguiente**
 
-- **2B — extracción física y agotamiento:** los colonos retiran bloques reales (minas, canteras) y talan árboles; la comida se recalcula según el entorno; el bosque puede agotarse. Hoy las tasas se fijan al colocar el puesto y no se recalculan.
+- **2B — extracción física y agotamiento:** (**implementado**, ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`) los colonos retiran bloques reales (minas, canteras) y talan árboles; la comida se recalcula según el entorno; el bosque puede agotarse. Hasta la fase 2A las tasas se fijaban al colocar el puesto y no se recalculaban.
 - **2C — transformación:** aserradero, carbonera, siderúrgica y refinería de tierras raras (recetas de `CadenaMinerales`), luego fluidos y energía.
 - Moral y nivel del puesto (subirán la eficiencia con el mismo personal) y drones o unidades de transporte de la automatización futura.
 - Carretas y carreteras (sub-proyecto 6), almacenes dedicados, costo de construcción de los puestos y obreros NPC que construyen (sub-proyecto 3), agua, petróleo, combustible y energía.
@@ -105,4 +105,4 @@ Un tick son 2 s reales y un colono camina 2,5 celdas/s, es decir 5 celdas por ho
 - Tasa de frutos: partía de la columna `Árbol (obj)` del Excel (Comida 5), interpretada como frutos; el usuario la cambió a 8/h (2026-09-21) junto con la caza a 14/h, y después a 10/h con la caza a 17/h.
 - Capacidad de carga de 150 unidades por viaje.
 - Un recolector de caza/recolección o de pesca produce las dos señales a la vez, sumadas en comida.
-- La producción usa las tasas tomadas al colocar el puesto (no se recalculan mientras no haya agotamiento; eso es la 2B).
+- Las tasas se guardan al colocar el puesto y se recalculan cada 6 horas de juego según el entorno (fase 2B).

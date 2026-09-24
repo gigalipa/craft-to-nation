@@ -67,11 +67,12 @@ const OXIGENO_MAXIMO := 10.0
 const TASA_CONSUMO_OXIGENO := 1.0
 const TASA_RECUPERACION_OXIGENO := 2.0
 
-## Intervalo entre repeticiones de minar/colocar mientras se mantiene el
-## click presionado. Placeholder único para todo tipo de bloque/herramienta
-## — a futuro cada bloque tendrá su propia "vida"/tiempo de minado (como
-## Minecraft) y esto dependerá también de la herramienta equipada.
+## Intervalo entre repeticiones de colocar (y de deconstruir, con su contador de
+## "sostener") mientras se mantiene el click presionado. Minar, talar y recolectar
+## frutos ya no repiten: avanzan por tiempo con ProgresoAccion (ver Recoleccion.
+## tiempo_minado_de()).
 const INTERVALO_ACCION_REPETIDA := 0.20
+const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
 
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
@@ -86,6 +87,7 @@ var _excepciones_obra: Dictionary = {}  # int (id de obra) -> cuerpo con el que 
 var _minando := false
 var _colocando := false
 var _temporizador_accion := 0.0
+var _progreso_accion: RefCounted = ProgresoAccionScript.new()
 
 var modo_deconstruccion := false
 var _id_listo_para_remocion := -1
@@ -152,9 +154,9 @@ func _input(event: InputEvent) -> void:
 		var boton := event as InputEventMouseButton
 		if boton.button_index == MOUSE_BUTTON_LEFT:
 			_minando = boton.pressed
-			if boton.pressed:
+			if boton.pressed and modo_deconstruccion:
 				_temporizador_accion = 0.0
-				_minar()
+				_deconstruir()
 		elif boton.button_index == MOUSE_BUTTON_RIGHT:
 			_colocando = boton.pressed
 			if boton.pressed:
@@ -162,21 +164,126 @@ func _input(event: InputEvent) -> void:
 				_colocar()
 
 
-## Mientras el jugador mantiene el click, repite minar/colocar cada
-## INTERVALO_ACCION_REPETIDA — un solo temporizador compartido porque nunca
-## se puede minar y colocar al mismo tiempo (son botones distintos, pero la
-## intención del jugador en un instante dado es una sola acción).
+## Mientras el jugador mantiene un botón: E recolecta frutos, el clic izquierdo
+## mina/tala (por tiempo) o deconstruye (por repetición, con su contador) y el
+## derecho coloca (por repetición). Prioridad frutos > izquierdo > derecho, como
+## antes lo era izquierdo > derecho: la intención del jugador en un instante es
+## una sola acción. Sin ninguna, el avance se pierde y la barra se oculta.
 func _procesar_accion_repetida(delta: float) -> void:
-	if not _minando and not _colocando:
+	if not camara.current:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	if Input.is_key_pressed(KEY_E):
+		_procesar_frutos(delta)
+		return
+	if _minando:
+		_procesar_minado(delta)
+		return
+	_progreso_accion.soltar()
+	if not _colocando:
+		hud.ocultar_progreso()
 		return
 	_temporizador_accion += delta
-	if _temporizador_accion < INTERVALO_ACCION_REPETIDA:
-		return
-	_temporizador_accion = 0.0
-	if _minando:
-		_minar()
-	elif _colocando:
+	if _temporizador_accion >= INTERVALO_ACCION_REPETIDA:
+		_temporizador_accion = 0.0
 		_colocar()
+	_mostrar_progreso_de_obra(false)
+
+
+## Barra del avance de la obra apuntada (construye: avanza; deconstruye: retrocede).
+## Solo se muestra si la obra está a medias; completa o sin obra, se oculta.
+func _mostrar_progreso_de_obra(retrocede: bool) -> void:
+	var fraccion := -1.0
+	if raycast.is_colliding() and mundo != null:
+		fraccion = mundo.fraccion_de_obra(_celda_impactada())
+	if fraccion < 0.0 or (not retrocede and fraccion >= 1.0) or (retrocede and fraccion <= 0.0):
+		hud.ocultar_progreso()
+	else:
+		hud.mostrar_progreso(fraccion, retrocede)
+
+
+## Guarda en el inventario (= almacén central) lo que rindió una extracción del
+## avatar; lo que no cabe por tope lleno se pierde, como las entregas de los acarreadores.
+func _guardar_en_inventario(rendido: Dictionary) -> void:
+	if rendido.is_empty():
+		return
+	Economia.entregar(rendido)
+	print("Recolectado: ", rendido)
+
+
+## Un frame de clic izquierdo mantenido: deconstruir (repetición + contador),
+## talar (si el objetivo es un árbol) o minar (por tiempo del tipo de bloque).
+func _procesar_minado(delta: float) -> void:
+	if modo_deconstruccion:
+		_temporizador_accion += delta
+		if _temporizador_accion >= INTERVALO_ACCION_REPETIDA:
+			_temporizador_accion = 0.0
+			_deconstruir()
+		if _ticks_listo_para_remocion > 0:
+			hud.mostrar_progreso(1.0 - float(_ticks_listo_para_remocion) / TICKS_REMOCION_FINAL, true)
+		else:
+			_mostrar_progreso_de_obra(true)
+		return
+	if not raycast.is_colliding() or mundo == null:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var celda := _celda_impactada()
+	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
+		_procesar_tala(celda, delta)
+		return
+	if not mundo.es_minable(celda):
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var duracion: float = Recoleccion.tiempo_minado_de(mundo.material_real(mundo.obtener_tipo(celda)))
+	if _progreso_accion.avanzar("celda:%s" % celda, duracion, delta):
+		_guardar_en_inventario(mundo.extraer_por_avatar(celda))
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+	else:
+		hud.mostrar_progreso(_progreso_accion.fraccion(), false)
+
+
+## Talar: cada TIEMPO_TALA_POR_SALUD segundos sostenidos resta 1 de salud al árbol
+## y rinde 10 de madera. El daño se conserva al soltar (la salud vive en el árbol);
+## la barra muestra la salud que le queda.
+func _procesar_tala(celda: Vector3i, delta: float) -> void:
+	var id: int = mundo.arboles.obtener_arbol_de(celda)
+	if id == -1:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	if _progreso_accion.avanzar("arbol:%d" % id, Recoleccion.TIEMPO_TALA_POR_SALUD, delta):
+		var derribado: bool = mundo.talar_bloque_de_arbol(celda, DANO_TALA)
+		_guardar_en_inventario({"madera": Recoleccion.rendimiento_de("madera") * DANO_TALA})
+		if derribado:
+			_progreso_accion.soltar()
+			hud.ocultar_progreso()
+			return
+	hud.mostrar_progreso(float(mundo.arboles.salud_de(id)) / mundo.arboles.salud_maxima_de(id), true)
+
+
+## Frutos: mantener E sobre un árbol con frutos. No consume el árbol (ver
+## VoxelWorld.recolectar_frutos()).
+func _procesar_frutos(delta: float) -> void:
+	if not raycast.is_colliding() or mundo == null:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var celda := _celda_impactada()
+	if mundo.frutos_disponibles(celda, Ciudad.horas_juego) <= 0.0:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	var id: int = mundo.arboles.obtener_arbol_de(celda)
+	if _progreso_accion.avanzar("frutos:%d" % id, Recoleccion.TIEMPO_RECOLECCION_FRUTOS, delta):
+		_guardar_en_inventario({"comida": mundo.recolectar_frutos(celda, Ciudad.horas_juego)})
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+	else:
+		hud.mostrar_progreso(_progreso_accion.fraccion(), false)
 
 
 func _physics_process(delta: float) -> void:
@@ -452,20 +559,15 @@ func _alternar_modo_deconstruccion() -> void:
 	_ticks_listo_para_remocion = 0
 
 
-func _minar() -> void:
+## Un intento de deconstrucción sobre el bloque bajo la mira (modo G). Minar y
+## talar ahora van por tiempo (ver _procesar_minado()).
+func _deconstruir() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
-	var celda := _celda_impactada()
-	if modo_deconstruccion:
-		_procesar_deconstruccion(celda)
-		return
-	if mundo.TIPOS_ARBOL.has(mundo.obtener_tipo(celda)):
-		mundo.talar_bloque_de_arbol(celda, DANO_TALA)
-	else:
-		mundo.minar_bloque(celda)
+	_procesar_deconstruccion(_celda_impactada())
 
 
-## Se llama en cada click/repetición de _minar() mientras modo_deconstruccion
+## Se llama en cada click/repetición de _deconstruir() mientras modo_deconstruccion
 ## está activo. Delega toda la lógica de "qué revertir" en
 ## VoxelWorld.procesar_deconstruccion() — aquí solo se maneja lo que le
 ## corresponde al jugador/Ciudad/Zonificacion/Recoleccion: negarse sobre el
@@ -672,20 +774,28 @@ func _completar_construccion(metadata: Dictionary) -> void:
 	if metadata.is_empty():
 		return
 	var blueprint: Dictionary = metadata["blueprint"]
+
+	# El primer edificio declarado es el núcleo urbano: no es habitable, así que
+	# no suma camas (no llegan colonos todavía) ni baúles al tope del almacén; en
+	# cambio, declararlo duplica los topes del inventario.
+	if not Zonificacion.nucleo_declarado:
+		Zonificacion.declarar_nucleo(metadata["huella_xz"])
+		Ciudad.ampliar_almacen()
+		print("Núcleo urbano declarado (no habitable: no llegan colonos todavía). Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max, ". Topes del inventario duplicados.")
+		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
+		return
+
 	var camas_por_piso: Array[int] = []
 	var total_camas := 0
 	for piso in blueprint["pisos"]:
 		var camas: int = (piso.get("camas", []) as Array).size()
 		camas_por_piso.append(camas)
 		total_camas += camas
-	Ciudad.registrar_edificio_residencial(metadata["id_edificio"], camas_por_piso)
-	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (capacidad de camas actual: ", Ciudad.capacidad_camas_construida, ")")
+	var baules: int = BlueprintValidator.contar_baules(blueprint)
+	Ciudad.registrar_edificio_residencial(metadata["id_edificio"], camas_por_piso, baules)
+	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (capacidad de camas actual: ", Ciudad.capacidad_camas_construida, "), baúles: ", baules)
 
-	if not Zonificacion.nucleo_declarado:
-		Zonificacion.declarar_nucleo(metadata["huella_xz"])
-		print("Núcleo urbano declarado. Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
-	else:
-		Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
-		print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
+	Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
+	print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])

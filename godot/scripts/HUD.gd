@@ -41,6 +41,7 @@ const NOMBRES_PESCA_FRUTOS_MAR := {
 
 var _recursos_labels := {}  # clave de Ciudad.almacen -> Label
 var _panel_puesto: PanelContainer
+var _barra_progreso: ProgressBar
 
 @onready var mina_ficha: VBoxContainer = $MinaFicha
 @onready var mina_costo_label: Label = $MinaFicha/CostoLabel
@@ -82,6 +83,17 @@ func _ready() -> void:
 		_recursos_labels[clave] = etiqueta
 	_panel_puesto = PanelPuestoScript.new()
 	add_child(_panel_puesto)
+
+	# Barra de progreso de minar/talar/recolectar/deconstruir, bajo la mira.
+	_barra_progreso = ProgressBar.new()
+	_barra_progreso.show_percentage = false
+	_barra_progreso.set_anchors_preset(Control.PRESET_CENTER)
+	_barra_progreso.offset_left = -90
+	_barra_progreso.offset_right = 90
+	_barra_progreso.offset_top = 40
+	_barra_progreso.offset_bottom = 54
+	_barra_progreso.visible = false
+	add_child(_barra_progreso)
 
 
 func _process(_delta: float) -> void:
@@ -313,3 +325,15 @@ func abrir_panel_puesto(esquina: Vector2i) -> void:
 
 func cerrar_panel_puesto() -> void:
 	_panel_puesto.cerrar()
+
+
+## Muestra la barra de progreso bajo la mira. "retrocede" (tala, deconstrucción)
+## la pinta en naranja: indica lo que le queda a lo que se está desmontando.
+func mostrar_progreso(fraccion: float, retrocede: bool = false) -> void:
+	_barra_progreso.value = clampf(fraccion, 0.0, 1.0) * 100.0
+	_barra_progreso.modulate = Color(1.0, 0.6, 0.2) if retrocede else Color(0.4, 1.0, 0.4)
+	_barra_progreso.visible = true
+
+
+func ocultar_progreso() -> void:
+	_barra_progreso.visible = false

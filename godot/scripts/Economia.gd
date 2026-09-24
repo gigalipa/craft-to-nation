@@ -21,6 +21,14 @@ const CAPACIDAD_CARGA := 150.0
 
 const ROLES := ["recolector", "acarreador"]
 
+## Tipos de puesto que consumen el mundo al producir; caza/recolección y pesca
+## no consumen bloques (sus tasas dependen del entorno, ver recalcular_tasas()).
+const TIPOS_QUE_CONSUMEN := ["mina", "maderero"]
+
+## Cada cuántas horas de juego se recalculan las tasas de todos los puestos
+## según lo que queda en su entorno (árboles, bloques de mina, agua).
+const TICKS_RECALCULO := 6
+
 ## Las tasas de un puesto usan las claves de Recoleccion.tasas_*(); estas cuatro
 ## son formas de obtener comida y se suman en el recurso "comida". El resto de
 ## claves (minerales, "madera") ya son el nombre del recurso.
@@ -30,9 +38,16 @@ const RECURSO_DE_TASA := {
 }
 
 var ciudad: Object = null  # Ciudad
+## VoxelWorld, inyectable (Main.gd lo asigna). Sin él los puestos producen sin
+## consumir el mundo.
+var mundo: Object = null
+var _horas_desde_recalculo := 0
 
 ## Vector2i (esquina de la huella) -> {"tipo", "ancho", "alto", "cupo",
 ## "capacidad", "tasas" (clave de tasa -> unidades por recolector y hora),
+## "entorno" (lo que Recoleccion.entorno_de_puesto() recordó del mundo al
+## colocarlo), "en_curso" (recurso -> {"tipo": "bloque"|"arbol", "restante"
+## en unidades, y "celda" o "id"}: el bloque o árbol que se está agotando),
 ## "recolectores": Array[int], "acarreadores": Array[int],
 ## "presentes": Dictionary (id de recolector -> true),
 ## "almacen": Dictionary (recurso -> float)}.
@@ -48,14 +63,16 @@ func _ready() -> void:
 
 
 ## Registra un puesto recién colocado, sin trabajadores. "tasas" son las de
-## Recoleccion.tasas_*() calculadas al colocarlo (no se recalculan mientras no
-## haya agotamiento de recursos).
-func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary) -> void:
+## Recoleccion.tasas_de_entorno() al colocarlo y "entorno" el de
+## Recoleccion.entorno_de_puesto() ({} = el puesto no consume ni recalcula).
+func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}) -> void:
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
 		"cupo": Recoleccion.cupo_de(tipo),
 		"capacidad": Recoleccion.capacidad_almacen_de(tipo),
 		"tasas": tasas.duplicate(),
+		"entorno": entorno.duplicate(),
+		"en_curso": {},
 		"recolectores": [], "acarreadores": [],
 		"presentes": {}, "almacen": {},
 	}
@@ -177,9 +194,11 @@ static func _total(almacen: Dictionary) -> float:
 
 
 ## Una hora de juego de producción en todos los puestos: cada recolector
-## presente suma su tasa al almacén local. Si el total local llegaría a
-## pasar de la capacidad, solo entra lo que cabe, en proporción (el exceso se
-## pierde: la producción se frena contra el tope y avisa de que falta acarreo).
+## presente suma su tasa al almacén local, pero solo lo que el entorno permita
+## extraer (mina y maderero consumen bloques y árboles reales; ver _extraer()).
+## Si el total local llegaría a pasar de la capacidad, solo entra lo que cabe,
+## en proporción (el exceso se pierde: la producción se frena contra el tope y
+## avisa de que falta acarreo).
 func simular_hora() -> void:
 	for esquina in puestos:
 		var p: Dictionary = puestos[esquina]
@@ -192,7 +211,93 @@ func simular_hora() -> void:
 			continue
 		var factor: float = minf(1.0, espacio / total_producido)
 		for recurso in producido:
-			p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + producido[recurso] * factor
+			var concedido: float = _extraer(esquina, recurso, producido[recurso] * factor)
+			if concedido > 0.0:
+				p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + concedido
+	_horas_desde_recalculo += 1
+	if _horas_desde_recalculo >= TICKS_RECALCULO:
+		_horas_desde_recalculo = 0
+		recalcular_todas()
+
+
+## Vuelve a medir el entorno de cada puesto y actualiza sus tasas.
+func recalcular_todas() -> void:
+	for esquina in puestos:
+		recalcular_tasas(esquina)
+
+
+## Actualiza las tasas de un puesto con el estado actual del mundo (ver
+## Recoleccion.tasas_de_entorno()). No-op sin mundo, sin entorno o si el puesto
+## no existe.
+func recalcular_tasas(esquina: Vector2i) -> void:
+	if mundo == null or not puestos.has(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	if p["entorno"].is_empty():
+		return
+	p["tasas"] = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"])
+
+
+## Descuenta del mundo hasta "unidades" de "recurso" para el puesto y devuelve
+## cuántas se pudieron extraer de verdad (menos si el área se agotó). Trabaja
+## sobre el bloque o árbol "en curso" del recurso: cuando se agota, se retira
+## del mundo y se pasa al siguiente. Sin mundo o sin entorno, o en puestos que
+## no consumen, devuelve "unidades" sin tocar nada.
+func _extraer(esquina: Vector2i, recurso: String, unidades: float) -> float:
+	var p: Dictionary = puestos[esquina]
+	if mundo == null or p["entorno"].is_empty() or not TIPOS_QUE_CONSUMEN.has(p["tipo"]):
+		return unidades
+	var extraido := 0.0
+	while unidades - extraido > 1e-9:
+		var actual: Dictionary = p["en_curso"].get(recurso, {})
+		if not actual.is_empty() and not _en_curso_valido(actual):
+			actual = {}  # el avatar lo derribó o lo minó: se descarta
+		if actual.is_empty():
+			actual = _siguiente_bloque(p, recurso)
+			if actual.is_empty():
+				p["en_curso"].erase(recurso)
+				break
+			p["en_curso"][recurso] = actual
+		var tomado: float = minf(unidades - extraido, actual["restante"])
+		actual["restante"] -= tomado
+		extraido += tomado
+		if actual["restante"] <= 1e-9:
+			_terminar_bloque(actual)
+			p["en_curso"].erase(recurso)
+	return extraido
+
+
+## Bloque de mina o árbol siguiente para "recurso" ({} si no queda ninguno).
+func _siguiente_bloque(p: Dictionary, recurso: String) -> Dictionary:
+	var entorno: Dictionary = p["entorno"]
+	if p["tipo"] == "mina":
+		var celda: Vector3i = Recoleccion.siguiente_bloque_mina(mundo, entorno["centro"], entorno["altura"], recurso)
+		if celda == Recoleccion.SIN_BLOQUE:
+			return {}
+		return {"tipo": "bloque", "celda": celda, "recurso": recurso, "restante": Recoleccion.rendimiento_de(recurso)}
+	var id: int = mundo.arboles.mas_cercano_en_radio(entorno["centro"], entorno["radio_arboles"])
+	if id == -1:
+		return {}
+	return {"tipo": "arbol", "id": id, "restante": Recoleccion.rendimiento_de("madera")}
+
+
+## Sigue existiendo el bloque o árbol "en curso" (el avatar pudo quitarlo antes).
+func _en_curso_valido(actual: Dictionary) -> bool:
+	if actual["tipo"] == "bloque":
+		var celda: Vector3i = actual["celda"]
+		return mundo.material_real(mundo.obtener_tipo(celda)) == actual["recurso"] and Recoleccion.es_extraible(mundo, celda)
+	return mundo.arboles.salud_de(actual["id"]) > 0
+
+
+## Un bloque quedó agotado: se retira del mundo; un árbol pierde 1 de salud
+## (una celda de tronco, 10 unidades) y cae entero al llegar a 0.
+func _terminar_bloque(actual: Dictionary) -> void:
+	if actual["tipo"] == "bloque":
+		mundo.retirar_bloque_extraido(actual["celda"])
+		return
+	var celdas: Array = mundo.arboles.celdas_de(actual["id"])
+	if not celdas.is_empty():
+		mundo.talar_bloque_de_arbol(celdas[0], 1)
 
 
 ## Un acarreador que está en el puesto pide su carga: hasta "capacidad"
@@ -207,7 +312,8 @@ func recoger(esquina: Vector2i, capacidad: float) -> Dictionary:
 	var total := _total(p["almacen"])
 	if total <= 1e-9:
 		return {}
-	if total < capacidad and not p["presentes"].is_empty():
+	# Carga parcial: solo sin recolectores o si el puesto ya no produce (resto de un área agotada).
+	if total < capacidad and not p["presentes"].is_empty() and _total(produccion_por_hora(esquina)) > 0.0:
 		return {}
 	var carga: Dictionary = {}
 	var restante := capacidad

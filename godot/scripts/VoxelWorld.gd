@@ -560,7 +560,26 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 		if ignorar_agua and tipo == "agua":
 			continue
 		return y
-	return generador.altura_en(x, z)  # respaldo, no debería alcanzarse nunca
+	# Último recurso (columna vacía): el generador si hay; los mundos de prueba
+	# armados a mano no tienen, y ahí el fondo de la búsqueda.
+	if generador != null:
+		return generador.altura_en(x, z)
+	return ALTURA_BUSQUEDA_MIN
+
+
+## Altura de la superficie NATURAL de la columna (x,z): la del generador, sin
+## contar lo que el jugador construyó ni los árboles (una mina mide su
+## profundidad desde aquí, ver Recoleccion.PROFUNDIDAD_MINIMA_EXTRACCION).
+## Sin generador (mundos de prueba armados a mano) usa el bloque más alto
+## real, ignorando el agua.
+func altura_natural_en(x: int, z: int) -> int:
+	var real := altura_en(x, z, true)
+	if generador != null:
+		# Bajo un río el generador da la superficie del agua: el lecho real es el tope.
+		if real <= ALTURA_BUSQUEDA_MIN:
+			return generador.altura_en(x, z)
+		return mini(generador.altura_en(x, z), real)
+	return real
 
 
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:
@@ -593,16 +612,20 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 	return true
 
 
-func minar_bloque(celda: Vector3i) -> bool:
-	if obtener_tipo(celda) == "agua":
-		return false
-	# "bedrock" es el piso absoluto del mundo (PISO_MUNDO) — inminable a
-	# propósito, para que el jugador nunca pueda cavar hasta el vacío.
-	if obtener_tipo(celda) == "bedrock":
+## true si el avatar puede minar "celda": ni agua, ni "bedrock" (el piso
+## absoluto del mundo, inminable a propósito para que nadie cave hasta el
+## vacío), ni parte de un edificio, ni una celda vacía.
+func es_minable(celda: Vector3i) -> bool:
+	var tipo: String = obtener_tipo(celda)
+	if tipo == "agua" or tipo == "bedrock":
 		return false
 	if celda_a_edificio.has(celda):
 		return false
-	if get_cell_item(celda) == GridMap.INVALID_CELL_ITEM:
+	return get_cell_item(celda) != GridMap.INVALID_CELL_ITEM
+
+
+func minar_bloque(celda: Vector3i) -> bool:
+	if not es_minable(celda):
 		return false
 	_retirar_bloque(celda)
 	return true
@@ -634,6 +657,55 @@ func _retirar_bloque(celda: Vector3i) -> void:
 	if not vecinos_agua.is_empty():
 		_escurrir_agua_desde(vecinos_agua)
 	Vias.quitar([celda])
+
+
+## Retira "celda" porque un puesto la extrajo (sin las guardas de minar_bloque()).
+## No-op si ya está vacía (p. ej. el avatar la minó antes).
+func retirar_bloque_extraido(celda: Vector3i) -> void:
+	if get_cell_item(celda) != GridMap.INVALID_CELL_ITEM:
+		_retirar_bloque(celda)
+
+
+## El avatar termina de minar "celda": la retira y devuelve las unidades que
+## rinde ({recurso: unidades}). Solo rinde el terreno natural: un bloque puesto
+## por el jugador se retira pero no rinde (colocar es gratis todavía; si
+## rindiera, colocar y minar en bucle crearía recursos de la nada). {} si no se
+## pudo minar o no rinde.
+func extraer_por_avatar(celda: Vector3i) -> Dictionary:
+	var natural: bool = es_terreno_natural(celda) and not colocado_por_jugador.has(celda)
+	var recurso: String = material_real(obtener_tipo(celda))
+	if not minar_bloque(celda):
+		return {}
+	var unidades: float = Recoleccion.rendimiento_de(recurso)
+	if not natural or unidades <= 0.0:
+		return {}
+	return {recurso: unidades}
+
+
+## Hora de juego a partir de la cual cada árbol vuelve a dar frutos (id de
+## árbol -> hora). Ausente = ya tiene frutos.
+var _rebrote_frutos: Dictionary = {}
+
+
+## Comida que daría recolectar los frutos del árbol de "celda" ahora (0.0 si
+## no es un árbol, ya se recolectó hace menos de HORAS_REBROTE_FRUTOS horas, o
+## no hay frutales en la zona). Sale de la misma señal de densidad frutal que
+## usan los puestos de caza/recolección.
+func frutos_disponibles(celda: Vector3i, hora: int) -> float:
+	var id: int = arboles.obtener_arbol_de(celda)
+	if id == -1 or hora < _rebrote_frutos.get(id, 0):
+		return 0.0
+	return Recoleccion.COMIDA_POR_RECOLECCION * generador.densidad_frutal_en(celda.x, celda.z)
+
+
+## Recolecta los frutos del árbol de "celda": devuelve la comida y deja al
+## árbol sin frutos HORAS_REBROTE_FRUTOS horas. No consume el árbol.
+func recolectar_frutos(celda: Vector3i, hora: int) -> float:
+	var comida: float = frutos_disponibles(celda, hora)
+	if comida <= 0.0:
+		return 0.0
+	_rebrote_frutos[arboles.obtener_arbol_de(celda)] = hora + Recoleccion.HORAS_REBROTE_FRUTOS
+	return comida
 
 
 func obtener_tipo(celda: Vector3i) -> String:
@@ -1271,6 +1343,15 @@ func procesar_deconstruccion(celda: Vector3i) -> Dictionary:
 		obra_a_fantasma.emit(id)  # el edificio entero empieza a volver a fantasma
 	var vacio: bool = edificio_progreso[id] == 0
 	return {"id": id, "completa_reversion": vacio, "lista_para_remocion": vacio, "total_camas": total_camas}
+
+
+## Avance de la obra a la que pertenece "celda" (celdas construidas / totales),
+## para la barra de progreso del HUD. -1.0 si no pertenece a ningún edificio.
+func fraccion_de_obra(celda: Vector3i) -> float:
+	var id: int = id_de_edificio(celda)
+	if id == -1 or not edificio_orden.has(id) or edificio_orden[id].is_empty():
+		return -1.0
+	return float(edificio_progreso[id]) / edificio_orden[id].size()
 
 
 ## Convierte "celda" (una celda real) de vuelta a "fantasma" — no marca

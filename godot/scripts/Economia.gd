@@ -14,6 +14,16 @@ extends Node
 ## (Colonos.gd los vuelve a desempleado).
 signal puesto_quitado(ids: Array)
 
+## Ids de colonos que dejan de trabajar en un puesto que sigue en pie (se
+## desactivó por deconstrucción, o se agotó: Colonos.gd los devuelve a
+## desempleado, salvo a un acarreador con carga, que termina su viaje).
+signal trabajadores_liberados(ids: Array)
+
+## Valores «ninguno» de la celda de servicio (X, Z de la puerta) y del depósito
+## (celda del baúl) de un puesto sin plantilla.
+const SIN_SERVICIO := Vector2i.MAX
+const SIN_DEPOSITO := Vector3i.MAX
+
 ## Unidades que un acarreador lleva por viaje (placeholder). Con ~20 celdas de ruta
 ## un acarreador mueve ~16 comida/h, es decir 1 acarreador por cada 2 recolectores;
 ## los puestos más lejanos rinden menos.
@@ -65,7 +75,10 @@ func _ready() -> void:
 ## Registra un puesto recién colocado, sin trabajadores. "tasas" son las de
 ## Recoleccion.tasas_de_entorno() al colocarlo y "entorno" el de
 ## Recoleccion.entorno_de_puesto() ({} = el puesto no consume ni recalcula).
-func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}) -> void:
+## "servicio" (X, Z) es la celda exterior frente a su puerta y "deposito" la
+## celda de su baúl (ver PlantillasPuesto.gd); sin ellas Colonos usa el anillo
+## que rodea la huella y no hay depósito físico.
+func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO) -> void:
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
 		"cupo": Recoleccion.cupo_de(tipo),
@@ -75,6 +88,8 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"en_curso": {},
 		"recolectores": [], "acarreadores": [],
 		"presentes": {}, "almacen": {},
+		"activo": true, "agotado": false,
+		"servicio": servicio, "deposito": deposito,
 	}
 
 
@@ -118,9 +133,12 @@ func cupo_libre(esquina: Vector2i) -> int:
 func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 	if not puestos.has(esquina) or not ROLES.has(rol) or _puesto_de.has(colono_id):
 		return false
+	var p: Dictionary = puestos[esquina]
+	if not p["activo"] or (p["agotado"] and rol == "recolector"):
+		return false  # inactivo (se está deconstruyendo) o agotado: sin recolectores nuevos
 	if cupo_libre(esquina) <= 0:
 		return false
-	puestos[esquina]["recolectores" if rol == "recolector" else "acarreadores"].append(colono_id)
+	p["recolectores" if rol == "recolector" else "acarreadores"].append(colono_id)
 	_puesto_de[colono_id] = esquina
 	return true
 
@@ -202,6 +220,9 @@ static func _total(almacen: Dictionary) -> float:
 func simular_hora() -> void:
 	for esquina in puestos:
 		var p: Dictionary = puestos[esquina]
+		if not p["activo"]:
+			continue
+		_liberar_acarreadores_si_agotado(esquina)
 		var producido: Dictionary = produccion_por_hora(esquina)
 		var total_producido := _total(producido)
 		if total_producido <= 0.0:
@@ -236,6 +257,7 @@ func recalcular_tasas(esquina: Vector2i) -> void:
 	if p["entorno"].is_empty():
 		return
 	p["tasas"] = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"])
+	_actualizar_agotamiento(esquina)
 
 
 ## Descuenta del mundo hasta "unidades" de "recurso" para el puesto y devuelve
@@ -335,3 +357,88 @@ func entregar(carga: Dictionary) -> void:
 	for recurso in carga:
 		if ciudad.almacen.has(recurso):
 			ciudad.almacen[recurso].agregar(carga[recurso])
+
+
+## Celda (X, Z) de servicio del puesto (frente a su puerta) o SIN_SERVICIO.
+func servicio_de(esquina: Vector2i) -> Vector2i:
+	return puestos[esquina]["servicio"] if puestos.has(esquina) else SIN_SERVICIO
+
+
+## Esquina del puesto cuyo baúl (depósito) está en "celda", o Recoleccion.SIN_PUESTO.
+func puesto_con_deposito(celda: Vector3i) -> Vector2i:
+	for esquina in puestos:
+		if puestos[esquina]["deposito"] == celda:
+			return esquina
+	return Recoleccion.SIN_PUESTO
+
+
+## El avatar toma del depósito: pasa al stock central lo que quepa (el resto se
+## queda en el almacén local). Devuelve lo transferido, {} si nada.
+func retirar_deposito(esquina: Vector2i) -> Dictionary:
+	var tomado: Dictionary = {}
+	if not puestos.has(esquina):
+		return tomado
+	var local: Dictionary = puestos[esquina]["almacen"]
+	for recurso in local.keys():
+		if not ciudad.almacen.has(recurso):
+			continue
+		var ingreso: float = ciudad.almacen[recurso].agregar(local[recurso])
+		if ingreso <= 1e-9:
+			continue
+		tomado[recurso] = ingreso
+		local[recurso] -= ingreso
+		if local[recurso] <= 1e-9:
+			local.erase(recurso)
+	return tomado
+
+
+## El puesto empieza a deconstruirse: deja de funcionar y todos sus trabajadores
+## quedan libres. Conserva el almacén local (se pierde al eliminar el puesto).
+## Idempotente; no-op si el puesto no existe.
+func desactivar_puesto(esquina: Vector2i) -> void:
+	if not puestos.has(esquina) or not puestos[esquina]["activo"]:
+		return
+	var p: Dictionary = puestos[esquina]
+	p["activo"] = false
+	_liberar_de(esquina, p["recolectores"] + p["acarreadores"])
+
+
+## La obra del puesto volvió a completarse: vuelve a funcionar, sin trabajadores.
+## Recalcula el entorno por si el recurso se agotó mientras tanto.
+func reactivar_puesto(esquina: Vector2i) -> void:
+	if not puestos.has(esquina):
+		return
+	puestos[esquina]["activo"] = true
+	recalcular_tasas(esquina)
+
+
+static func _sin_tasas(tasas: Dictionary) -> bool:
+	for tasa in tasas.values():
+		if tasa > 0.0:
+			return false
+	return true
+
+
+## Un puesto sin ninguna tasa positiva está agotado: pierde a sus recolectores
+## (y a sus acarreadores en cuanto su almacén local se vacía).
+func _actualizar_agotamiento(esquina: Vector2i) -> void:
+	var p: Dictionary = puestos[esquina]
+	p["agotado"] = _sin_tasas(p["tasas"])
+	if p["agotado"]:
+		_liberar_de(esquina, p["recolectores"].duplicate())
+		_liberar_acarreadores_si_agotado(esquina)
+
+
+func _liberar_acarreadores_si_agotado(esquina: Vector2i) -> void:
+	var p: Dictionary = puestos[esquina]
+	if p["agotado"] and _total(p["almacen"]) <= 1e-9:
+		_liberar_de(esquina, p["acarreadores"].duplicate())
+
+
+## Libera a "ids" (copia, no la lista viva del puesto) y avisa a Colonos.
+func _liberar_de(_esquina: Vector2i, ids: Array) -> void:
+	if ids.is_empty():
+		return
+	for id in ids:
+		liberar(id)
+	trabajadores_liberados.emit(ids)

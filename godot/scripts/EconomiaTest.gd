@@ -364,4 +364,96 @@ func ejecutar_pruebas() -> void:
 	assert(mundo17.obtener_tipo(Vector3i(501, 7, 500)) == "hierro", "el siguiente natural sigue a medias")
 	assert(is_equal_approx(e17.almacen_local(ESQ)["hierro"], 10.0), "solo rindió el natural")
 
-	print("\n=== Las 17 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 18: un puesto se registra activo, sin agotar y, sin celda de servicio ni depósito, con los valores «ninguno» ===")
+	var e18: Node = _nueva(CiudadScript.new())
+	assert(e18.puestos[ESQ]["activo"] and not e18.puestos[ESQ]["agotado"])
+	assert(e18.servicio_de(ESQ) == EconomiaScript.SIN_SERVICIO, "sin celda de servicio, Colonos usa el anillo de la huella")
+	assert(e18.puestos[ESQ]["deposito"] == EconomiaScript.SIN_DEPOSITO)
+	assert(e18.servicio_de(Vector2i(0, 0)) == EconomiaScript.SIN_SERVICIO, "puesto inexistente")
+
+	print("\n=== TEST 19: desactivar_puesto() libera a todos, es idempotente, conserva el almacén y no admite contratar ===")
+	var e19: Node = _nueva(CiudadScript.new())
+	e19.asignar(ESQ, "recolector", 1)
+	e19.asignar(ESQ, "acarreador", 2)
+	e19.marcar_presente(1, true)
+	e19.puestos[ESQ]["almacen"]["madera"] = 5.0
+	var liberados19: Array = []
+	e19.trabajadores_liberados.connect(func(ids: Array) -> void: liberados19.append_array(ids))
+	e19.desactivar_puesto(ESQ)
+	liberados19.sort()
+	assert(liberados19 == [1, 2], "los dos quedan libres")
+	assert(not e19.puestos[ESQ]["activo"] and e19.cupo_libre(ESQ) == 5)
+	assert(is_equal_approx(e19.almacen_local(ESQ)["madera"], 5.0), "el almacén local se conserva")
+	e19.desactivar_puesto(ESQ)
+	assert(liberados19.size() == 2, "desactivar dos veces no vuelve a emitir")
+	assert(not e19.asignar(ESQ, "recolector", 3) and not e19.asignar(ESQ, "acarreador", 3), "inactivo: no se contrata")
+	e19.marcar_presente(1, true)
+	e19.simular_hora()
+	assert(is_equal_approx(e19.almacen_local(ESQ)["madera"], 5.0), "inactivo no produce")
+	e19.reactivar_puesto(ESQ)
+	assert(e19.puestos[ESQ]["activo"] and e19.asignar(ESQ, "recolector", 3), "reactivado: se contrata de nuevo")
+	e19.desactivar_puesto(Vector2i(0, 0))  # inexistente: no falla
+
+	print("\n=== TEST 20: retirar_deposito() pasa al stock central solo lo que cabe y deja el resto en el puesto ===")
+	var ciudad20: Node = CiudadScript.new()
+	var e20: Node = EconomiaScript.new()
+	e20.ciudad = ciudad20
+	e20.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11))
+	assert(e20.puesto_con_deposito(Vector3i(11, 5, 11)) == ESQ)
+	assert(e20.puesto_con_deposito(Vector3i(0, 0, 0)) == Recoleccion.SIN_PUESTO)
+	assert(e20.servicio_de(ESQ) == Vector2i(11, 9))
+	ciudad20.almacen["madera"].cantidad = ciudad20.almacen["madera"].limite - 40.0
+	e20.puestos[ESQ]["almacen"]["madera"] = 100.0
+	var tomado20: Dictionary = e20.retirar_deposito(ESQ)
+	assert(is_equal_approx(tomado20["madera"], 40.0), "solo cabían 40")
+	assert(is_equal_approx(e20.almacen_local(ESQ)["madera"], 60.0), "el resto queda en el puesto")
+	assert(e20.retirar_deposito(ESQ).is_empty(), "con el stock lleno no pasa nada")
+	assert(e20.retirar_deposito(Vector2i(0, 0)).is_empty(), "puesto inexistente")
+
+	print("\n=== TEST 21: al agotarse el área se liberan los recolectores, los acarreadores siguen hasta vaciar el almacén y reactivar recalcula el agotamiento ===")
+	var mundo21: Node = _mundo_con_veta()
+	var e21: Node = EconomiaScript.new()
+	e21.ciudad = CiudadScript.new()
+	e21.mundo = mundo21
+	e21.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e21.asignar(ESQ, "recolector", 1)
+	e21.asignar(ESQ, "recolector", 2)
+	e21.asignar(ESQ, "acarreador", 3)
+	e21.marcar_presente(1, true)
+	e21.marcar_presente(2, true)
+	var liberados21: Array = []
+	e21.trabajadores_liberados.connect(func(ids: Array) -> void: liberados21.append_array(ids))
+	e21.recalcular_tasas(ESQ)
+	assert(liberados21.is_empty() and not e21.puestos[ESQ]["agotado"], "con veta no se agota")
+	for celda in [Vector3i(500, 7, 500), Vector3i(501, 7, 500), Vector3i(500, 6, 500)]:
+		mundo21.minar_bloque(celda)
+	e21.puestos[ESQ]["almacen"]["hierro"] = 20.0
+	e21.recalcular_tasas(ESQ)
+	assert(e21.puestos[ESQ]["agotado"], "sin bloques minerales, todas las tasas son 0")
+	liberados21.sort()
+	assert(liberados21 == [1, 2], "se liberan los recolectores")
+	assert(e21.trabajadores_de(ESQ)["recolectores"] == 0 and e21.trabajadores_de(ESQ)["acarreadores"] == 1, "el acarreador se queda")
+	assert(not e21.asignar(ESQ, "recolector", 4), "agotado: no se contratan recolectores")
+	e21.simular_hora()
+	assert(e21.trabajadores_de(ESQ)["acarreadores"] == 1, "con almacén no se libera al acarreador")
+	var carga21: Dictionary = e21.recoger(ESQ, 150.0)
+	assert(is_equal_approx(carga21["hierro"], 20.0), "se acarrea el resto")
+	e21.simular_hora()
+	liberados21.sort()
+	assert(liberados21 == [1, 2, 3], "vacío y agotado: se libera al acarreador")
+	# Reactivar tras deconstruir con el recurso ya agotado: sigue agotado (recalcula al reactivar).
+	e21.desactivar_puesto(ESQ)
+	e21.reactivar_puesto(ESQ)
+	assert(e21.puestos[ESQ]["agotado"] and not e21.asignar(ESQ, "recolector", 5))
+	# Agotamiento con el almacén ya vacío libera a los acarreadores en el mismo recálculo.
+	var e21b: Node = EconomiaScript.new()
+	e21b.ciudad = CiudadScript.new()
+	e21b.mundo = _mundo_con_veta()
+	e21b.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e21b.asignar(ESQ, "acarreador", 7)
+	for celda in [Vector3i(500, 7, 500), Vector3i(501, 7, 500), Vector3i(500, 6, 500)]:
+		e21b.mundo.minar_bloque(celda)
+	e21b.recalcular_tasas(ESQ)
+	assert(e21b.trabajadores_de(ESQ)["acarreadores"] == 0, "agotado y sin almacén: el acarreador también se libera")
+
+	print("\n=== Las 21 pruebas de Economia pasaron correctamente ===")

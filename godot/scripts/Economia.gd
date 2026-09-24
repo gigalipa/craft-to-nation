@@ -25,6 +25,10 @@ const ROLES := ["recolector", "acarreador"]
 ## no consumen bloques (sus tasas dependen del entorno, ver recalcular_tasas()).
 const TIPOS_QUE_CONSUMEN := ["mina", "maderero"]
 
+## Cada cuántas horas de juego se recalculan las tasas de todos los puestos
+## según lo que queda en su entorno (árboles, bloques de mina, agua).
+const TICKS_RECALCULO := 6
+
 ## Las tasas de un puesto usan las claves de Recoleccion.tasas_*(); estas cuatro
 ## son formas de obtener comida y se suman en el recurso "comida". El resto de
 ## claves (minerales, "madera") ya son el nombre del recurso.
@@ -37,6 +41,7 @@ var ciudad: Object = null  # Ciudad
 ## VoxelWorld, inyectable (Main.gd lo asigna). Sin él los puestos producen sin
 ## consumir el mundo.
 var mundo: Object = null
+var _horas_desde_recalculo := 0
 
 ## Vector2i (esquina de la huella) -> {"tipo", "ancho", "alto", "cupo",
 ## "capacidad", "tasas" (clave de tasa -> unidades por recolector y hora),
@@ -209,6 +214,28 @@ func simular_hora() -> void:
 			var concedido: float = _extraer(esquina, recurso, producido[recurso] * factor)
 			if concedido > 0.0:
 				p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + concedido
+	_horas_desde_recalculo += 1
+	if _horas_desde_recalculo >= TICKS_RECALCULO:
+		_horas_desde_recalculo = 0
+		recalcular_todas()
+
+
+## Vuelve a medir el entorno de cada puesto y actualiza sus tasas.
+func recalcular_todas() -> void:
+	for esquina in puestos:
+		recalcular_tasas(esquina)
+
+
+## Actualiza las tasas de un puesto con el estado actual del mundo (ver
+## Recoleccion.tasas_de_entorno()). No-op sin mundo, sin entorno o si el puesto
+## no existe.
+func recalcular_tasas(esquina: Vector2i) -> void:
+	if mundo == null or not puestos.has(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	if p["entorno"].is_empty():
+		return
+	p["tasas"] = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"])
 
 
 ## Descuenta del mundo hasta "unidades" de "recurso" para el puesto y devuelve

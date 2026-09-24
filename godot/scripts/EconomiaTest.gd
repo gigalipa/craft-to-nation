@@ -12,6 +12,22 @@ const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
 const ESQ := Vector2i(10, 10)
 
 
+## Generador falso: fauna 0.8 y frutal 0.4 en todas partes.
+class GeneradorFaunaFalso:
+	func densidad_fauna_en(_x: int, _z: int) -> float:
+		return 0.8
+	func densidad_frutal_en(_x: int, _z: int) -> float:
+		return 0.4
+	func densidad_arbol_en(_x: int, _z: int) -> float:
+		return 0.6
+
+
+## Solo lo que tasas_de_entorno() lee del mundo para caza/recolección.
+class MundoBosqueFalso:
+	var generador = GeneradorFaunaFalso.new()
+	var arboles = preload("res://scripts/GeneradorArbol.gd").new()
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -268,4 +284,52 @@ func ejecutar_pruebas() -> void:
 	assert(mundo13b.obtener_tipo(Vector3i(501, 7, 500)) == "hierro", "el puesto pasa al siguiente bloque sin retirarlo entero")
 	assert(is_equal_approx(e13b.almacen_local(ESQ)["hierro"], 10.0))
 
-	print("\n=== Las 13 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 14: las tasas se recalculan cada TICKS_RECALCULO horas ===")
+	assert(EconomiaScript.TICKS_RECALCULO == 6)
+	var e14: Node = EconomiaScript.new()
+	e14.ciudad = CiudadScript.new()
+	e14.mundo = _mundo_con_veta()
+	# Tasa desactualizada a propósito (1/h): al recalcular, hierro vale 5 (1 tipo x tasa base 5).
+	e14.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 1.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e14.asignar(ESQ, "recolector", 1)
+	e14.marcar_presente(1, true)
+	for i in range(EconomiaScript.TICKS_RECALCULO - 1):
+		e14.simular_hora()
+	assert(is_equal_approx(e14.produccion_por_hora(ESQ)["hierro"], 1.0), "todavía no toca recalcular")
+	e14.simular_hora()
+	assert(is_equal_approx(e14.produccion_por_hora(ESQ)["hierro"], Recoleccion.TASAS_BASE_MINERAL["hierro"]))
+
+	print("\n=== TEST 15: recalcular_tasas() con el área agotada deja la producción en 0, y caza/recolección sigue los árboles ===")
+	var e15: Node = EconomiaScript.new()
+	e15.ciudad = CiudadScript.new()
+	var mundo15: Node = _mundo_con_veta()
+	e15.mundo = mundo15
+	e15.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
+	e15.asignar(ESQ, "recolector", 1)
+	e15.marcar_presente(1, true)
+	for celda in [Vector3i(500, 7, 500), Vector3i(501, 7, 500), Vector3i(500, 6, 500)]:
+		mundo15.minar_bloque(celda)
+	e15.recalcular_tasas(ESQ)
+	assert(e15.produccion_por_hora(ESQ).is_empty(), "sin bloques extraíbles no hay tasas")
+	e15.simular_hora()
+	assert(e15.almacen_local(ESQ).is_empty())
+	e15.recalcular_tasas(Vector2i(0, 0))  # puesto inexistente: no falla
+	var mundo_bosque := MundoBosqueFalso.new()
+	var ids15: Array = []
+	for i in range(1, 5):
+		ids15.append(mundo_bosque.arboles.registrar([Vector3i(i, 5, i)], 3))
+	var e15b: Node = EconomiaScript.new()
+	e15b.ciudad = CiudadScript.new()
+	e15b.mundo = mundo_bosque
+	var esq15 := Vector2i(70, 70)
+	var entorno15: Dictionary = Recoleccion.entorno_de_puesto("caza_recoleccion", mundo_bosque, Vector2i(0, 0), 5)
+	e15b.registrar_puesto(esq15, "caza_recoleccion", 4, 4, Recoleccion.tasas_de_entorno("caza_recoleccion", mundo_bosque, entorno15), entorno15)
+	e15b.asignar(esq15, "recolector", 1)
+	e15b.marcar_presente(1, true)
+	var comida_llena: float = e15b.produccion_por_hora(esq15)["comida"]
+	mundo_bosque.arboles.eliminar(ids15[0])
+	mundo_bosque.arboles.eliminar(ids15[1])
+	e15b.recalcular_tasas(esq15)
+	assert(is_equal_approx(e15b.produccion_por_hora(esq15)["comida"], comida_llena * 0.5), "la mitad de los árboles: la mitad de la comida")
+
+	print("\n=== Las 15 pruebas de Economia pasaron correctamente ===")

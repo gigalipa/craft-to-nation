@@ -1256,6 +1256,8 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_salir_de_modo_zonificar()
 	if modo_colocar_blueprint:
 		_salir_de_modo_colocar_blueprint()
+	if modo_trazar_via:
+		_salir_de_modo_trazar_via()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
 	hud.ocultar_ficha_madero()
@@ -1360,6 +1362,8 @@ func _alternar_modo_colocar_blueprint() -> void:
 	_salir_de_modo_zonificar()
 	if modo_colocar_puesto:
 		_salir_de_modo_colocar_puesto()
+	if modo_trazar_via:
+		_salir_de_modo_trazar_via()
 	# Duplicado (no la misma referencia): _rotar_blueprint() reemplaza
 	# "celdas_3d"/"huella_relativa"/"ancho"/"profundidad" en _blueprint_activo
 	# en cada rotación — sobre el dict original de Blueprints.obtener(), eso
@@ -1519,13 +1523,15 @@ func _vertice_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 
 
 ## Activa/desactiva el modo zonificación (tecla `Z`). Es excluyente con los
-## modos de colocación de puesto y de blueprint. Conserva la última zona elegida.
+## demás modos de interacción de la cenital (colocar puesto, blueprint,
+## trazar vías). Conserva la última zona elegida.
 func _alternar_modo_zonificar() -> void:
 	if modo_zonificar:
 		_salir_de_modo_zonificar()
 		return
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
+	_salir_de_modo_trazar_via()
 	hud.cerrar_panel_puesto()
 	modo_zonificar = true
 	hud.mostrar_modo_zonificacion(_nombre_zona_seleccionada())

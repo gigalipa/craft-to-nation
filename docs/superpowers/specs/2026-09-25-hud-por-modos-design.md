@@ -12,7 +12,7 @@ Reemplazar el HUD de texto plano (`godot/scripts/HUD.gd`) por un HUD visual orga
 - **Barra de modos vertical izquierda** (cenital): un botón por modo, con su tecla.
 - **Hotbar 1–6** (primera persona): los tipos de bloque actuales, con la casilla seleccionada resaltada.
 
-Estilo común: verde oscuro con marco dorado (ver capturas), definido en un solo `Theme` construido en código.
+Estilo común: verde oscuro con marco dorado (ver capturas), definido como helpers estáticos en `TemaHUD.gd` (no un recurso `Theme`).
 
 ## Fuera de alcance
 
@@ -34,7 +34,7 @@ Ningún atajo cambia. En 1ª persona: 1–6 tipo de bloque, G deconstruir, B dec
 | Pieza | Vista | Muestra | Fuente de datos |
 |---|---|---|---|
 | `BarraSuperior` | ambas | comida, madera, piedra, hierro, población `x/y`, moral y nivel | `Ciudad`, leído cada fotograma (como hoy) |
-| `PanelContextual` | ambas | miniatura opcional, nombre, costo, acciones, validez (✓/✗) y una línea opcional de tasas previstas | empujado por `CamaraCenital` (blueprint/puesto activo) y `Player` (raycast) |
+| `PanelContextual` | ambas | nombre, costo, acciones, validez ("Ubicación válida"/"no válida", opcional) y una línea opcional de tasas previstas (sin miniatura: no hay arte) | empujado por `CamaraCenital` (blueprint/puesto activo) y `Player` (raycast) |
 | `BarraModos` | cenital | Ver, Construir, Zonas, Vías, Puestos; activo resaltado y tecla | `CamaraCenital` avisa el modo activo |
 | `Hotbar` | 1ª persona | casillas 1–6 (icono/nombre), seleccionada resaltada, cantidad opcional | `Player.tipos_disponibles` y `tipo_seleccionado` |
 
@@ -42,7 +42,9 @@ Scripts nuevos en `godot/scripts/` (uno por pieza, más el `Theme`). Sin autoloa
 
 ### API nueva de `HUD.gd`
 
-- `mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: bool, extra: String = "")` / `ocultar_contexto()`
+- `mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "")` / `ocultar_contexto()` — `valido` `true`/`false` muestra la validez; `null` la oculta.
+- `mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary)` — costo, personal, almacenamiento y tasas previstas de un puesto.
+- `set_vista(primera_persona: bool)` — muestra la hotbar (1ª persona) o la barra de modos (cenital) y descarta el panel contextual.
 - `set_modo(modo: String)` — resalta el botón del modo activo (`""` = Ver).
 - `set_tipo_hotbar(indice: int)` — casilla seleccionada en 1ª persona.
 
@@ -62,7 +64,7 @@ Etiquetas de nivel/población/moral/recursos (pasan a `BarraSuperior`); `mostrar
 | Vías | trazar vía (`_alternar_modo_trazar_via`) | V |
 | Puestos | colocar puesto; tira de 4 tipos sobre el panel | M/H/L/F |
 
-Puestos abre una tira con los 4 tipos (mina, caza/recolección, maderero, pesca); elegir uno equivale a su tecla. Las teclas siguen funcionando directamente.
+Puestos despliega bajo su botón una subtira con los 4 tipos (mina, caza/recolección, maderero, pesca); elegir uno equivale a su tecla. Las teclas siguen funcionando directamente.
 
 ### 1ª persona
 

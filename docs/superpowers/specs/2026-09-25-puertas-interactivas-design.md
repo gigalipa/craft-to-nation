@@ -19,15 +19,15 @@ Que el avatar pueda entrar y salir de los edificios abriendo y cerrando puertas,
 - `VoxelWorld` sigue siendo la fuente de verdad de la ocupación: las celdas siguen siendo `puerta_inferior`/`puerta_superior`. No se tocan las más de 100 comparaciones de tipo en validador, colonos y pruebas.
 - Nodo nuevo `Puertas` (hijo de `VoxelWorld`, como `TranslucidosRenderer`) con `_puertas: Dictionary` (clave: celda inferior; valor: `abierta`, `manual`, nodo de la lámina, cuerpo). La celda superior no tiene entrada propia.
 - Los ítems `puerta_inferior`/`puerta_superior` de la MeshLibrary quedan con malla y forma vacías, en `_indexar_biblioteca()` (como `fantasma`): no hay que reexportar el `.res`.
-- Alta: una celda `puerta_inferior` con su pareja superior aparece (`colocar_puerta()` a mano, o `surtir_construccion()` al completar una obra). Nace cerrada. Las puertas ya construidas se registran al arrancar recorriendo las celdas de puerta existentes: esa es toda la migración.
+- Alta: una celda `puerta_inferior` con su pareja superior aparece (`colocar_puerta()` a mano, o `surtir_construccion()` al completar una obra; ambas pasan por `colocar_bloque()`). Nace cerrada. El registro depende solo de que ambas celdas tengan el tipo correcto, no del orden ni de `pareja`. No hay migración: el juego no tiene guardado de partidas, así que toda puerta nace en la sesión por esa vía y ya nace con estado.
 - Baja: cualquiera de sus dos celdas deja de ser puerta (minada, revertida a fantasma, edificio eliminado).
 - Un fantasma de puerta (obra sin surtir) no tiene lámina ni colisión aquí: lo cubre `CuerposObra`.
 - Señal nueva `puerta_cambiada(celda)`, emitida desde los mismos puntos que hoy emiten `bloque_translucido_cambiado` (colocar, minar, revertir a fantasma, drenar, etc.), con el filtro de tipos de puerta. `Puertas` sincroniza solo esa celda.
 
 ## Geometría y colisión
 
-- Lámina: `MeshInstance3D` con caja de 1 × 2 × 0,1 bloques y el material café-naranja de la puerta actual. Cerrada, pegada al borde exterior de la celda; abierta, el nodo gira 90° en el eje vertical central. Sin animación.
-- Orientación (sin datos nuevos, deducida al registrar): si las dos celdas laterales en ±X son sólidas, la pared corre por X; si lo son las de ±Z, por Z; sin par sólido (puerta suelta) se toma X. Cubre las puertas ya construidas y las de plantillas. El lado exterior se toma con la misma noción que `calcular_despeje()`.
+- Lámina: `MeshInstance3D` con caja de 1 × 2 × 0,1 bloques y el material café-naranja de la puerta actual. Centrada en el grosor de la celda; abierta, el nodo gira 90° en el eje vertical central (por eso no hace falta saber cuál es el lado exterior). Sin animación.
+- Orientación (sin datos nuevos, deducida de los vecinos): si las dos celdas laterales en ±X son sólidas, la pared corre por X; si lo son las de ±Z, por Z; sin par sólido (puerta suelta) se toma X. Un fantasma cuenta como sólido (es una pared aún por surtir). Se recalcula en cada chequeo periódico, porque en una obra la puerta puede surtirse antes que sus paredes.
 - Colisión: un `StaticBody3D` por puerta con una `CollisionShape3D` que cambia según el estado.
   - Cerrada: caja de 1 × 2 × 0,1 en capa 1 (mundo). Bloquea al avatar y a los raycasts de la cámara cenital.
   - Abierta: la caja girada 90° en una capa nueva (capa 4). El avatar (`collision_mask = 3`) la atraviesa; el `RayCast3D` de `Player` se amplía con la capa 4 para poder apuntarla y cerrarla.
@@ -60,7 +60,7 @@ Escena nueva `godot/scenes/PuertasTest.tscn` (mismo estilo de aserciones que `Tr
 - `alternar()` cambia estado, capa y forma del cuerpo.
 - Proximidad: un colono cerca abre; al alejarse cierra. `manual = true` no cierra sola.
 - Cierre del avatar con un colono cerca: se reabre.
-- Ciclo de vida: minar una celda destruye entrada y nodos; las puertas preexistentes se registran al arrancar.
+- Ciclo de vida: minar una celda destruye entrada y nodos; una puerta con solo una mitad no se registra, sin importar el orden de colocación.
 
 Además: `godot/scenes/Test.tscn` y las escenas afectadas (`ColonosTest`, `PlantillasPuestoTest`, `BlueprintValidatorTest`), según `CLAUDE.md`.
 

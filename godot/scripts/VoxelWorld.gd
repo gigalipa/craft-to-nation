@@ -149,6 +149,12 @@ const TIPOS_ARBOL := ["madera", "follaje"]
 ## para ocupación/colisión: esto es puramente visual.
 const TIPOS_TRANSLUCIDOS: Array[String] = ["agua", "ventana"]
 
+## Tipos de las dos celdas de una puerta. Su malla y su colisión NO las da
+## GridMap (el ítem queda vacío en _indexar_biblioteca()): las da Puertas.gd,
+## con una lámina fina por puerta. Ver
+## docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md.
+const TIPOS_PUERTA: Array[String] = ["puerta_inferior", "puerta_superior"]
+
 const VECINOS_3D: Array[Vector3i] = [
 	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
 	Vector3i(0, 1, 0), Vector3i(0, -1, 0),
@@ -177,6 +183,10 @@ var colocado_por_jugador: Dictionary = {}
 ## cualquiera de las dos celdas borra ambas — ver minar_bloque().
 var pareja: Dictionary = {}  # Vector3i -> Vector3i
 
+## Nodo Puertas (hijo de este mundo en Main.tscn), o null en escenas de prueba
+## sin él. Player lo usa para alternar puertas.
+var puertas: Node = null
+
 ## Celda -> id de edificio al que pertenece (fantasma en curso, terminado,
 ## o puesto periférico). minar_bloque() consulta este registro para negarse
 ## a minar cualquier celda que forme parte de un edificio: un edificio se
@@ -203,6 +213,11 @@ var edificio_a_celdas: Dictionary = {}  # int -> Array[Vector3i]
 ## la escucha para reconstruir solo los chunks afectados. No se emite para
 ## ningún otro cambio de bloque (la inmensa mayoría de las llamadas).
 signal bloque_translucido_cambiado(celda: Vector3i)
+
+## Emitida cuando una celda de tipo puerta entra (colocada) o sale (minada,
+## revertida a fantasma, edificio eliminado). Puertas.gd la escucha para crear
+## o destruir el nodo de la puerta. No se emite para ningún otro tipo.
+signal puerta_cambiada(celda: Vector3i)
 
 ## Emitida cuando puede haber cambiado el resultado de
 ## celdas_fantasma_destacadas() (se inicia, surte, revierte o elimina un
@@ -409,6 +424,10 @@ func _ready() -> void:
 	vias_renderer.voxel_world = self
 	Vias.vias_cambiadas.connect(vias_renderer._on_vias_cambiadas)
 	vias_renderer.reconstruir_todo()
+	puertas = get_node_or_null("Puertas")
+	if puertas != null:
+		puertas.voxel_world = self
+		puerta_cambiada.connect(puertas._on_puerta_cambiada)
 
 
 func _indexar_biblioteca() -> void:
@@ -423,6 +442,12 @@ func _indexar_biblioteca() -> void:
 	# eliminar_edificio() ya retira los suyos, así que no debería existir.
 	if _id_por_tipo.has("fantasma"):
 		mesh_library.set_item_shapes(_id_por_tipo["fantasma"], [])
+	# Igual que el fantasma: la lámina y la colisión de las puertas las da
+	# Puertas.gd, no el GridMap.
+	for tipo in TIPOS_PUERTA:
+		if _id_por_tipo.has(tipo):
+			mesh_library.set_item_mesh(_id_por_tipo[tipo], null)
+			mesh_library.set_item_shapes(_id_por_tipo[tipo], [])
 
 
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
@@ -602,6 +627,8 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 			_encolar_secado_alrededor(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo) or TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
+	if TIPOS_PUERTA.has(tipo):
+		puerta_cambiada.emit(celda)
 	# Solo si "por_jugador": _generar_terreno() coloca miles de bloques de
 	# agua uno por uno al arrancar el mundo (ver ese método) y no debe
 	# disparar un escurrimiento por cada uno — un futuro bloque de agua
@@ -641,12 +668,17 @@ func _retirar_bloque(celda: Vector3i) -> void:
 	var tipo_anterior: String = obtener_tipo(celda)
 	if pareja.has(celda):
 		var otra: Vector3i = pareja[celda]
+		var tipo_otra: String = obtener_tipo(otra)
 		set_cell_item(otra, GridMap.INVALID_CELL_ITEM)
 		colocado_por_jugador.erase(otra)
 		pareja.erase(otra)
 		pareja.erase(celda)
+		if TIPOS_PUERTA.has(tipo_otra):
+			puerta_cambiada.emit(otra)
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	colocado_por_jugador.erase(celda)
+	if TIPOS_PUERTA.has(tipo_anterior):
+		puerta_cambiada.emit(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
 	var vecinos_agua: Array[Vector3i] = []
@@ -1366,6 +1398,8 @@ func _revertir_celda(celda: Vector3i) -> void:
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	colocado_por_jugador.erase(celda)
 	colocar_bloque(celda, "fantasma")
+	if TIPOS_PUERTA.has(tipo_anterior):
+		puerta_cambiada.emit(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
 
@@ -1415,6 +1449,8 @@ func eliminar_edificio(id: int) -> Vector2i:
 		# bloque a bloque al surtirlo (excavación -> relleno -> construcción).
 		if tipo_anterior == "fantasma" or TIPOS_ESTRUCTURA.has(tipo_anterior):
 			set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+			if TIPOS_PUERTA.has(tipo_anterior):
+				puerta_cambiada.emit(celda)
 			_avisar_si_junto_a_translucido(celda)
 		celda_a_edificio.erase(celda)
 		if TIPOS_TRANSLUCIDOS.has(tipo_anterior):

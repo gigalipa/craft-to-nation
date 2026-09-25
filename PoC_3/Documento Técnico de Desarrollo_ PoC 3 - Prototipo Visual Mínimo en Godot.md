@@ -341,6 +341,19 @@ Los seis son errores de **carga/parseo o resolución de nombres** (se detectan s
 
 ---
 
+### **3.5 Puertas interactivas (2026-09-25)**
+
+Las puertas (`puerta_inferior` + `puerta_superior`) dejaron de ser bloques sólidos: son una lámina de 1 × 2 × 0,1 bloques, con su propio cuerpo de colisión, gestionada por `Puertas.gd` (hijo de `VoxelWorld`). Las celdas conservan su tipo (validador, colonos y `BuscadorRutas` no cambian); el ítem de la `MeshLibrary` queda sin malla ni forma y el estado abierta/cerrada vive en `Puertas`.
+
+- **Abrir** gira la lámina 90° al instante sobre su eje vertical central: cerrada, cubre el hueco y bloquea al avatar (capa 1); abierta, se ve de canto y el avatar la atraviesa (capa 4, que el raycast del jugador sí detecta).
+- **Avatar:** pulsar `E` apuntando a la puerta la alterna (`Player._interactuar()`). Una puerta abierta a mano solo se cierra a mano.
+- **Colonos:** no interactúan; la puerta se abre sola si hay un colono a ≤ 2 celdas (Chebyshev en XZ, ±1 de altura) y se cierra cuando se van. Si el avatar cierra una puerta con un colono al lado, se reabre en el chequeo siguiente (cada 0,25 s).
+- **Orientación:** se deduce de los vecinos laterales (pared por X o por Z; sin pared, eje X) y se recalcula en cada chequeo, porque una obra puede surtir la puerta antes que sus paredes.
+- Sin guardado de partidas no hay migración: toda puerta nace cerrada al colocarse.
+- Spec: `docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md`.
+
+---
+
 ## **Próximos Pasos de esta PoC**
 
 > 1. ~~Instalar Godot y verificar manualmente.~~ **Completado:** Godot 4.7 (Steam) instalado; `Test.tscn` y `Main.tscn` corren sin errores en modo headless; 2 bugs de carga encontrados y corregidos (ver 3.3).

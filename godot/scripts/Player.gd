@@ -86,6 +86,10 @@ var mundo: Node  # asignada por Main.gd al iniciar la escena
 var _excepciones_obra: Dictionary = {}  # int (id de obra) -> cuerpo con el que el avatar tiene excepción
 var _minando := false
 var _colocando := false
+## true desde que un toque de E alternó una puerta hasta que se suelta E: si no,
+## mantener E tras abrirla dejaría pasar el rayo al baúl de detrás (retiro
+## instantáneo del depósito sin que el jugador lo pida).
+var _e_consumida := false
 var _temporizador_accion := 0.0
 var _progreso_accion: RefCounted = ProgresoAccionScript.new()
 
@@ -172,6 +176,8 @@ func _input(event: InputEvent) -> void:
 ## antes lo era izquierdo > derecho: la intención del jugador en un instante es
 ## una sola acción. Sin ninguna, el avance se pierde y la barra se oculta.
 func _procesar_accion_repetida(delta: float) -> void:
+	if not Input.is_key_pressed(KEY_E):
+		_e_consumida = false
 	if not camara.current:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
@@ -276,6 +282,7 @@ func _interactuar() -> void:
 	var base: Vector3i = mundo.puertas.celda_de_colisionador(raycast.get_collider())
 	if base != Vector3i.MAX:
 		mundo.puertas.alternar(base)
+		_e_consumida = true
 
 
 ## Frutos: mantener E sobre un árbol con frutos, o sobre el baúl de un puesto
@@ -286,7 +293,7 @@ func _procesar_frutos(delta: float) -> void:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return
-	if mundo.puertas != null and mundo.puertas.celda_de_colisionador(raycast.get_collider()) != Vector3i.MAX:
+	if _e_consumida or (mundo.puertas != null and mundo.puertas.celda_de_colisionador(raycast.get_collider()) != Vector3i.MAX):
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return

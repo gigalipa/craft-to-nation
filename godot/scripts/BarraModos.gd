@@ -2,13 +2,13 @@ extends HBoxContainer
 
 ## Barras de modos de la cenital, en la esquina inferior izquierda: la barra
 ## principal (un botón por modo) y, a su derecha, una barra de subherramientas
-## (los 4 tipos de puesto con Puestos activo; Zona A/B/Borrar con Zonas). Solo pide
+## (Residencial y los 4 puestos con Construir activo; Zona A/B/Borrar con Zonas). Solo pide
 ## cambios (señales): el modo real lo decide CamaraCenital, que lo devuelve con
 ## HUD.set_modo(). Tras cada clic la barra se resincroniza con el modo real, así
 ## un modo que no llega a activarse no queda marcado.
 
 signal modo_pedido(modo: String)
-signal puesto_pedido(tipo: String)
+signal construccion_pedida(tipo: String)
 signal zona_pedida(tipo: String)
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
@@ -19,9 +19,10 @@ const MODOS := [
 	["construir", "Construir", "B"],
 	["zonas", "Zonas", "Z"],
 	["vias", "Vías", "V"],
-	["puestos", "Puestos", "M/H/L/F"],
 ]
-const PUESTOS := [
+## Menú de Construir: "residencial" (blueprint) y los tipos de puesto.
+const CONSTRUCCIONES := [
+	["residencial", "Residencial", "B"],
 	["mina", "Mina", "M"],
 	["caza_recoleccion", "Caza", "H"],
 	["maderero", "Madera", "L"],
@@ -38,7 +39,7 @@ var _panel_principal := PanelContainer.new()
 var _panel_sub := PanelContainer.new()
 var _panel_zonas := PanelContainer.new()
 var _botones := {}  # id de modo -> Button
-var _botones_puesto := {}  # tipo de puesto -> Button
+var _botones_construccion := {}  # "residencial" o tipo de puesto -> Button
 var _botones_zona := {}  # tipo de zona -> Button
 var _modo := ""
 var _puesto := ""
@@ -72,15 +73,15 @@ func _ready() -> void:
 		columna.add_child(boton)
 		_botones[id] = boton
 	var columna_sub := _nueva_columna(_panel_sub)
-	for puesto in PUESTOS:
+	for puesto in CONSTRUCCIONES:
 		var tipo: String = puesto[0]
 		var boton := _crear_boton("%s [%s]" % [puesto[1], puesto[2]], Vector2(88, 36))
 		boton.pressed.connect(func() -> void:
-			puesto_pedido.emit(tipo)
+			construccion_pedida.emit(tipo)
 			_refrescar()
 		)
 		columna_sub.add_child(boton)
-		_botones_puesto[tipo] = boton
+		_botones_construccion[tipo] = boton
 	var columna_zonas := _nueva_columna(_panel_zonas)
 	for zona in ZONAS:
 		var tipo: String = zona[0]
@@ -111,7 +112,7 @@ func _crear_boton(texto: String, tamano: Vector2) -> Button:
 
 
 ## "modo" es el id de MODOS ("" = Ver); "sub" la subherramienta activa: el tipo
-## de puesto con "puestos" o el tipo de zona con "zonas".
+## de construcción con "construir" (residencial o puesto) o el tipo de zona con "zonas".
 func set_modo(modo: String, sub: String = "") -> void:
 	_modo = modo
 	_puesto = sub
@@ -123,9 +124,9 @@ func _refrescar() -> void:
 	var activo := _modo if _modo != "" else "ver"
 	for id in _botones:
 		_botones[id].set_pressed_no_signal(id == activo)
-	_panel_sub.visible = _modo == "puestos"
-	for tipo in _botones_puesto:
-		_botones_puesto[tipo].set_pressed_no_signal(tipo == _puesto)
+	_panel_sub.visible = _modo == "construir"
+	for tipo in _botones_construccion:
+		_botones_construccion[tipo].set_pressed_no_signal(tipo == _puesto)
 	_panel_zonas.visible = _modo == "zonas"
 	for tipo in _botones_zona:
 		_botones_zona[tipo].set_pressed_no_signal(tipo == _puesto)
@@ -135,11 +136,11 @@ func boton_activo() -> String:
 	return _modo if _modo != "" else "ver"
 
 
-func puestos_visibles() -> bool:
-	return _modo == "puestos"
+func construccion_visible() -> bool:
+	return _modo == "construir"
 
 
-func puesto_activo() -> String:
+func construccion_activa() -> String:
 	return _puesto
 
 

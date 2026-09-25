@@ -282,7 +282,7 @@ func _ready() -> void:
 	_overlay_nivelacion = NivelacionOverlay.new()
 	add_child(_overlay_nivelacion)
 	hud.modo_pedido.connect(_on_modo_pedido)
-	hud.puesto_pedido.connect(_alternar_puesto_por_tipo)
+	hud.construccion_pedida.connect(_on_construccion_pedida)
 	hud.zona_pedida.connect(_elegir_zona)
 
 
@@ -1217,13 +1217,13 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_giros_puesto = 0
 	_giros_fantasma_puesto = -1
 	_overlay_vigente = SIN_RESUMEN
-	hud.set_modo("puestos", tipo)
+	hud.set_modo("construir", tipo)
 	hud.mostrar_contexto_puesto(tipo, false, {})
 	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
 
 
 ## Alterna el puesto de "tipo" con su huella: teclas M/H/L/F y subtira de la
-## barra de modos (HUD.puesto_pedido).
+## menú de Construir (HUD.construccion_pedida).
 func _alternar_puesto_por_tipo(tipo: String) -> void:
 	match tipo:
 		"mina": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
@@ -1239,11 +1239,15 @@ func _on_modo_pedido(modo: String) -> void:
 		"construir": _alternar_modo_colocar_blueprint()
 		"zonas": _alternar_modo_zonificar()
 		"vias": _alternar_modo_trazar_via()
-		"puestos":
-			if modo_colocar_puesto:
-				_salir_de_modo_colocar_puesto()
-			else:
-				_alternar_puesto_por_tipo("mina")
+
+
+## Clic en el menú de Construir: "residencial" alterna el blueprint; cualquier
+## otro valor es un tipo de puesto.
+func _on_construccion_pedida(tipo: String) -> void:
+	if tipo == "residencial":
+		_alternar_modo_colocar_blueprint()
+	else:
+		_alternar_puesto_por_tipo(tipo)
 
 
 func _salir_de_modo_colocar_puesto() -> void:
@@ -1349,7 +1353,7 @@ func _alternar_modo_colocar_blueprint() -> void:
 	_resumen_blueprint_vigente = SIN_RESUMEN
 	_overlay_vigente = SIN_RESUMEN
 	hud.mostrar_ficha_materiales()
-	hud.set_modo("construir")
+	hud.set_modo("construir", "residencial")
 	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar, Ctrl+rueda para rotar).")
 
 

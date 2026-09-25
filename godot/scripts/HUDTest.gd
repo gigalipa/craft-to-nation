@@ -186,8 +186,8 @@ func probar_barra_modos() -> void:
 	var barra: Control = BarraModosScript.new()
 	add_child(barra)
 	assert(barra.boton_activo() == "ver", "sin modo debe estar activo Ver")
-	assert(not barra.puestos_visibles())
-	# Los puestos van en una barra propia, a la derecha de la principal.
+	assert(not barra.construccion_visible())
+	# Residencial y los puestos van en una barra propia, a la derecha de la principal.
 	assert(not barra._panel_sub.visible)
 	assert(barra._panel_sub.get_parent() == barra and barra._panel_principal.get_parent() == barra)
 	assert(barra._panel_principal.get_index() < barra._panel_sub.get_index())
@@ -197,14 +197,16 @@ func probar_barra_modos() -> void:
 	barra.set_modo("")
 	assert(barra.boton_activo() == "ver")
 
-	barra.set_modo("puestos", "maderero")
-	assert(barra.boton_activo() == "puestos" and barra.puestos_visibles())
+	barra.set_modo("construir", "maderero")
+	assert(barra.boton_activo() == "construir" and barra.construccion_visible())
 	assert(barra._panel_sub.visible)
-	assert(barra.puesto_activo() == "maderero")
-	barra.set_modo("puestos", "caza_recoleccion")  # cambio directo M -> H
-	assert(barra.puesto_activo() == "caza_recoleccion")
+	assert(barra.construccion_activa() == "maderero")
+	barra.set_modo("construir", "residencial")  # cambio directo puesto -> blueprint
+	assert(barra.construccion_activa() == "residencial")
+	assert(barra._botones_construccion["residencial"].button_pressed)
+	assert(not barra._botones.has("puestos"), "ya no hay botón Puestos")
 	barra.set_modo("")
-	assert(not barra.puestos_visibles() and not barra._panel_sub.visible)
+	assert(not barra.construccion_visible() and not barra._panel_sub.visible)
 
 	# Un clic emite la señal; si quien la recibe no cambia el modo (p. ej.
 	# Construir sin blueprint guardado), la barra vuelve a reflejar el real.
@@ -216,11 +218,11 @@ func probar_barra_modos() -> void:
 	assert(barra.boton_activo() == "ver", "el botón debe volver al modo real, salió %s" % barra.boton_activo())
 	assert(not barra._botones["vias"].button_pressed, "el botón de Vías no debe quedar marcado")
 
-	var puestos_pedidos: Array = []
-	barra.puesto_pedido.connect(func(tipo: String) -> void: puestos_pedidos.append(tipo))
-	barra.set_modo("puestos", "mina")
-	barra._botones_puesto["pesca_frutos_mar"].pressed.emit()
-	assert(puestos_pedidos == ["pesca_frutos_mar"], "salió %s" % [puestos_pedidos])
+	var construcciones_pedidas: Array = []
+	barra.construccion_pedida.connect(func(tipo: String) -> void: construcciones_pedidas.append(tipo))
+	barra.set_modo("construir", "mina")
+	barra._botones_construccion["pesca_frutos_mar"].pressed.emit()
+	assert(construcciones_pedidas == ["pesca_frutos_mar"], "salió %s" % [construcciones_pedidas])
 	# Las zonas tienen su propia subbarra, solo visible con Zonas activo.
 	assert(not barra._panel_zonas.visible and not barra.zonas_visibles())
 	assert(barra._panel_sub.get_index() < barra._panel_zonas.get_index())

@@ -35,7 +35,7 @@ Ningún atajo cambia. En 1ª persona: 1–6 tipo de bloque, G deconstruir, B dec
 |---|---|---|---|
 | `BarraSuperior` | ambas | de lado a lado; de izquierda a derecha: población `x/y`, moral, comida (total y tasa `+x/h`), almacenamiento total (Σ cantidades / Σ límites y Σ tasas), recurso crítico (tasa más negativa o, si ninguno decrece, la menor positiva; la tasa 0 no cuenta), era y nivel | `Ciudad`, leído cada fotograma. Población y moral sin tasa (`Ciudad` no la calcula). La era es un texto fijo (`Era 1 · Prehistórica`) hasta que exista `Ciudad.era` |
 | `PanelContextual` | ambas | nombre, costo, acciones, validez ("Ubicación válida"/"no válida", opcional) y una línea opcional de tasas previstas (sin miniatura: no hay arte) | empujado por `CamaraCenital` (blueprint/puesto activo) y `Player` (raycast) |
-| `BarraModos` | cenital | esquina inferior izquierda: barra principal (Ver, Construir, Zonas, Vías, Puestos; activo resaltado y tecla) y, a su derecha, una barra de subherramientas (hoy los 4 puestos, solo con Puestos activo) | `CamaraCenital` avisa el modo activo |
+| `BarraModos` | cenital | esquina inferior izquierda: barra principal (Ver, Construir, Zonas, Vías; activo resaltado y tecla) y, a su derecha, una barra de subherramientas según el modo (Construir: Residencial y los 4 puestos; Zonas: Zona A/B/Borrar) | `CamaraCenital` avisa el modo activo |
 | `Hotbar` | 1ª persona | casillas 1–6 (icono/nombre), seleccionada resaltada, cantidad opcional | `Player.tipos_disponibles` y `tipo_seleccionado` |
 
 Scripts nuevos en `godot/scripts/` (uno por pieza, más el `Theme`). Sin autoload nuevo ni registro de modos: la lista de modos es una constante en `BarraModos`.
@@ -63,9 +63,8 @@ Etiquetas de nivel/población/moral/recursos (pasan a `BarraSuperior`); `mostrar
 | Construir | blueprint (`_alternar_modo_colocar_blueprint`) | B |
 | Zonas | zonificar (`_alternar_modo_zonificar`) | Z |
 | Vías | trazar vía (`_alternar_modo_trazar_via`) | V |
-| Puestos | colocar puesto; tira de 4 tipos sobre el panel | M/H/L/F |
 
-Puestos despliega bajo su botón una subtira con los 4 tipos (mina, caza/recolección, maderero, pesca); elegir uno equivale a su tecla. Las teclas siguen funcionando directamente.
+Construir (B) activa el blueprint residencial y despliega a su derecha el menú Residencial + los 4 puestos (mina, caza/recolección, maderero, pesca); elegir uno equivale a su tecla (B, M/H/L/F). Las teclas siguen funcionando directamente.
 
 ### 1ª persona
 

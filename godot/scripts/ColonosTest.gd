@@ -72,6 +72,19 @@ class ZonaFalsa extends RefCounted:
 		return [Vector2i(7, 7), Vector2i(8, 7), Vector2i(7, 8), Vector2i(8, 8)]
 
 
+## Buscador que anota el tope de nodos ("max_nodos") con que se le pide cada ruta.
+class BuscadorEspia extends "res://scripts/BuscadorRutas.gd":
+	var topes: Array = []
+
+	func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {}) -> Array[Vector3i]:
+		topes.append(opciones.get("max_nodos", -1))
+		return super.buscar_ruta(origen, destino, opciones)
+
+	func buscar_salida(origen: Vector3i, esta_dentro: Callable, opciones: Dictionary = {}) -> Array[Vector3i]:
+		topes.append(opciones.get("max_nodos", -1))
+		return super.buscar_salida(origen, esta_dentro, opciones)
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -708,4 +721,82 @@ func ejecutar_pruebas() -> void:
 		assert(colonos30.colonos[id30]["celda"] != Vector3i(4, 1, 2), "nadie se queda parado en la puerta")
 		assert(colonos30.colonos[id30]["celda"] != Vector3i(4, 1, 1), "ni en la celda frente a la puerta")
 
-	print("\n=== Las 30 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 31: si el suelo frente a la puerta queda muy por encima, no se buscan rutas al interior y todos esperan fuera ===")
+	var ciudad31: Node = CiudadScript.new()
+	var mundo31: MundoFalso = _mundo_llano()
+	for x31 in range(3, 6):
+		for z31 in range(2, 6):
+			mundo31.poner(Vector3i(x31, 3, z31), "pared")
+			var es_interior31: bool = x31 == 4 and z31 in [3, 4]
+			var es_puerta31: bool = x31 == 4 and z31 == 2
+			if es_interior31:
+				continue
+			for y31 in [1, 2]:
+				mundo31.poner(Vector3i(x31, y31, z31), "puerta_inferior" if es_puerta31 and y31 == 1 else ("puerta_superior" if es_puerta31 else "pared"))
+	for x31 in range(2, 7):  # el suelo frente a la puerta (fila z=1) sube 3 bloques: no se puede entrar
+		for y31 in [1, 2, 3]:
+			mundo31.poner(Vector3i(x31, y31, 1), "tierra")
+	var economia31: Node = EconomiaScript.new()
+	economia31.ciudad = ciudad31
+	economia31.registrar_puesto(Vector2i(3, 2), "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(4, 1), EconomiaScript.SIN_DEPOSITO, 1)
+	var colonos31: Node = _nuevo(mundo31, ciudad31)
+	colonos31.economia = economia31
+	assert(not colonos31._entrada_practicable(Vector2i(4, 1), 1), "la puerta no se alcanza desde ese suelo")
+	assert(colonos31._celdas_interiores(economia31.huella_de(Vector2i(3, 2)), 1, Vector2i(4, 1)).is_empty(), "sin entrada practicable no hay celdas interiores que buscar")
+	assert(colonos30._entrada_practicable(Vector2i(4, 1), 1), "en la casa normal sí se entra")
+
+	print("\n=== TEST 32: buscar el camino a un puesto inalcanzable se reparte entre fotogramas (presupuesto de nodos) en vez de congelar el juego ===")
+	var ciudad32: Node = CiudadScript.new()
+	var mundo32: MundoFalso = _mundo_llano(60)
+	for z32 in range(60):  # muro de lado a lado en x = 12: el puesto (al oeste) no se alcanza desde el este
+		for y32 in [1, 2, 3]:
+			mundo32.poner(Vector3i(12, y32, z32), "pared")
+	var economia32: Node = EconomiaScript.new()
+	economia32.ciudad = ciudad32
+	economia32.registrar_puesto(Vector2i(2, 2), "maderero", 2, 2, {"madera": 3.0})
+	var colonos32: Node = _nuevo(mundo32, ciudad32)
+	colonos32.economia = economia32
+	var ids32: Array[int] = []
+	for k32 in range(4):
+		ids32.append(colonos32.agregar_colono("desempleado", Vector3i(40 + k32, 1, 30)))
+	ciudad32.demografia["desempleado"] = 4
+	for k32 in range(4):
+		assert(colonos32.contratar(Vector2i(2, 2), "recolector"))
+	var llamadas32 := 0
+	var maximo32 := 0
+	var todos_fallaron32 := false
+	while llamadas32 < 400 and not todos_fallaron32:
+		colonos32.avanzar(0.01)
+		llamadas32 += 1
+		maximo32 = maxi(maximo32, colonos32.NODOS_POR_FRAME - colonos32._nodos_libres)
+		todos_fallaron32 = true
+		for id32 in ids32:
+			if colonos32.colonos[id32]["fallos_servicio"] == 0:
+				todos_fallaron32 = false
+	assert(todos_fallaron32, "los cuatro terminan sin ruta y pasan a esperar")
+	assert(maximo32 <= colonos32.NODOS_POR_FRAME, "cada llamada gasta como mucho el presupuesto (%d)" % maximo32)
+	assert(llamadas32 >= 6, "la búsqueda inalcanzable se repartió en varias llamadas (%d)" % llamadas32)
+
+	print("\n=== TEST 33: las búsquedas locales (esquivar, replanificar, evacuar, deambular) usan el tope de nodos reducido, no el de cruzar el mapa ===")
+	var espia33 := BuscadorEspia.new(_mundo_llano(20))
+	var colonos33: Node = _nuevo(_mundo_llano(20), CiudadScript.new())
+	colonos33._buscador = espia33
+	var id33: int = colonos33.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var c33: Dictionary = colonos33.colonos[id33]
+	c33["ruta"] = [Vector3i(5, 1, 5)]
+	colonos33._esquivar(c33)
+	assert(espia33.topes.back() == colonos33.TOPE_NODOS_DESTINO, "_esquivar usa el tope local")
+	c33["ruta"] = [Vector3i(5, 1, 5)]
+	colonos33._replanificar(c33)
+	assert(espia33.topes.back() == colonos33.TOPE_NODOS_DESTINO, "_replanificar usa el tope local")
+	c33["evacuando"] = 7
+	espia33.topes.clear()
+	colonos33._planear_evacuacion(c33)
+	assert(espia33.topes.size() == 1 and espia33.topes.back() == colonos33.TOPE_NODOS_DESTINO, "la evacuación usa el tope local")
+	c33["evacuando"] = -1
+	colonos33._nodos_libres = 0  # sin presupuesto: solo se prepara la búsqueda de deambular
+	espia33.topes.clear()
+	colonos33._elegir_destino(c33)
+	assert(not c33["busqueda"].is_empty() and c33["busqueda"]["tope"] == colonos33.TOPE_NODOS_DESTINO, "deambular se reparte por fotogramas con el tope local")
+
+	print("\n=== Las 33 pruebas de Colonos pasaron correctamente ===")

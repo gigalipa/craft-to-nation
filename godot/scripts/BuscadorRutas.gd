@@ -109,6 +109,51 @@ func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {})
 	)
 
 
+## Ruta más corta hasta la más cercana de las celdas de "destinos" que se pueda
+## alcanzar, en UNA sola búsqueda (sin incluir el origen); [] si ninguna es
+## alcanzable. Probar los destinos de uno en uno cuesta el tope de nodos por cada
+## destino inalcanzable en campo abierto (~0,5 s cada uno): un puesto con muchas
+## celdas candidatas congelaba el juego. Descarta el propio origen y los destinos
+## bloqueados o no transitables.
+func buscar_ruta_a_alguna(origen: Vector3i, destinos: Array, opciones: Dictionary = {}) -> Array[Vector3i]:
+	var busqueda := iniciar_busqueda_a_alguna(origen, destinos, opciones)
+	busqueda.avanzar(1 << 30)
+	return busqueda.ruta
+
+
+## Igual que buscar_ruta_a_alguna(), pero POR PARTES: devuelve una Busqueda a la
+## que se le va llamando avanzar(nodos) (p. ej. un presupuesto por fotograma)
+## hasta que "terminada"; si "exito", "ruta" es la ruta. Una búsqueda que falla
+## (destino inalcanzable) agota el tope de nodos (~0,5 s de golpe); repartida en
+## fotogramas no congela el juego.
+func iniciar_busqueda_a_alguna(origen: Vector3i, destinos: Array, opciones: Dictionary = {}) -> Busqueda:
+	var bloqueadas: Dictionary = opciones.get("bloqueadas", {})
+	var ignorar: Array = opciones.get("ignorar_fantasmas", [])
+	var metas: Dictionary = {}
+	for destino: Vector3i in destinos:
+		if destino != origen and not bloqueadas.has(destino) and es_transitable(destino, ignorar):
+			metas[destino] = true
+	var lista: Array = metas.keys()
+	var busqueda := Busqueda.new(
+		self, origen,
+		func(celda: Vector3i) -> bool: return metas.has(celda),
+		func(celda: Vector3i) -> int: return _distancia_minima(celda, lista),
+		opciones
+	)
+	if metas.is_empty():
+		busqueda.terminada = true
+	return busqueda
+
+
+static func _distancia_minima(celda: Vector3i, metas: Array) -> int:
+	if metas.is_empty():
+		return 0
+	var mejor: int = _heuristica(celda, metas[0])
+	for meta: Vector3i in metas:
+		mejor = mini(mejor, _heuristica(celda, meta))
+	return mejor
+
+
 ## Ruta más corta desde "origen" hasta la primera celda transitable para la
 ## que esta_dentro.call(celda) es false (la salida de un volumen). Sin
 ## incluir el origen; [] si no hay ruta o si el origen ya está fuera.
@@ -125,47 +170,87 @@ func buscar_salida(origen: Vector3i, esta_dentro: Callable, opciones: Dictionary
 ## int. Coste de un paso = 1 + |dy| (así la heurística Manhattan 3D de
 ## buscar_ruta() es admisible).
 func _buscar(origen: Vector3i, es_meta: Callable, heuristica: Callable, opciones: Dictionary) -> Array[Vector3i]:
-	var ruta: Array[Vector3i] = []
-	var bloqueadas: Dictionary = opciones.get("bloqueadas", {})
-	var ignorar: Array = opciones.get("ignorar_fantasmas", [])
-	if not es_transitable(origen, ignorar):
-		return ruta
+	var busqueda := Busqueda.new(self, origen, es_meta, heuristica, opciones)
+	busqueda.avanzar(1 << 30)
+	return busqueda.ruta
 
-	var tope: int = opciones.get("max_nodos", max_nodos)
-	var costo: Dictionary = {origen: 0}
-	var padre: Dictionary = {}
-	var cerrados: Dictionary = {}
-	var abiertos: Array = []
-	var desempate := 0
-	var h_origen: int = heuristica.call(origen)
-	_meter(abiertos, [h_origen, h_origen, desempate, origen])
-	var expandidos := 0
-	while not abiertos.is_empty():
-		var actual: Vector3i = _sacar(abiertos)[3]
-		if cerrados.has(actual):
-			continue
-		if es_meta.call(actual):
-			var celda: Vector3i = actual
-			while celda != origen:
-				ruta.append(celda)
-				celda = padre[celda]
-			ruta.reverse()
-			return ruta
-		cerrados[actual] = true
-		expandidos += 1
-		if expandidos > tope:
-			return ruta
-		for vecino in vecinos(actual, ignorar):
-			if cerrados.has(vecino) or bloqueadas.has(vecino):
+
+## Una búsqueda A* que se hace POR PARTES: avanzar(nodos) expande como mucho ese
+## número de nodos y la siguiente llamada sigue donde se quedó. terminada = ya no
+## hay nada que hacer; exito = llegó a una meta (entonces "ruta" son las celdas a
+## recorrer, sin incluir el origen). Sin ruta: origen no transitable, sin camino o
+## tope de nodos agotado.
+class Busqueda extends RefCounted:
+	var terminada := false
+	var exito := false
+	var ruta: Array[Vector3i] = []
+	var _buscador: RefCounted
+	var _origen: Vector3i
+	var _es_meta: Callable
+	var _heuristica: Callable
+	var _ignorar: Array
+	var _bloqueadas: Dictionary
+	var _tope: int
+	var _costo: Dictionary
+	var _padre: Dictionary = {}
+	var _cerrados: Dictionary = {}
+	var _abiertos: Array = []
+	var _desempate := 0
+	var _expandidos := 0
+
+	func _init(buscador: RefCounted, origen: Vector3i, es_meta: Callable, heuristica: Callable, opciones: Dictionary) -> void:
+		_buscador = buscador
+		_origen = origen
+		_es_meta = es_meta
+		_heuristica = heuristica
+		_bloqueadas = opciones.get("bloqueadas", {})
+		_ignorar = opciones.get("ignorar_fantasmas", [])
+		_tope = opciones.get("max_nodos", buscador.max_nodos)
+		if not buscador.es_transitable(origen, _ignorar):
+			terminada = true
+			return
+		_costo = {origen: 0}
+		var h_origen: int = heuristica.call(origen)
+		buscador._meter(_abiertos, [h_origen, h_origen, _desempate, origen])
+
+	## Expande como mucho "nodos" nodos; devuelve cuántos expandió (0 si ya había terminado).
+	func avanzar(nodos: int) -> int:
+		if terminada:
+			return 0
+		var usados := 0
+		while not _abiertos.is_empty():
+			if usados >= nodos:
+				return usados
+			var actual: Vector3i = _buscador._sacar(_abiertos)[3]
+			if _cerrados.has(actual):
 				continue
-			var nuevo_costo: int = costo[actual] + 1 + absi(vecino.y - actual.y)
-			if not costo.has(vecino) or nuevo_costo < costo[vecino]:
-				costo[vecino] = nuevo_costo
-				padre[vecino] = actual
-				desempate += 1
-				var h: int = heuristica.call(vecino)
-				_meter(abiertos, [nuevo_costo + h, h, desempate, vecino])
-	return ruta
+			if _es_meta.call(actual):
+				var celda: Vector3i = actual
+				while celda != _origen:
+					ruta.append(celda)
+					celda = _padre[celda]
+				ruta.reverse()
+				terminada = true
+				exito = true
+				return usados
+			_cerrados[actual] = true
+			_expandidos += 1
+			usados += 1
+			if _expandidos > _tope:
+				terminada = true
+				return usados
+			for vecino in _buscador.vecinos(actual, _ignorar):
+				if _cerrados.has(vecino) or _bloqueadas.has(vecino):
+					continue
+				var nuevo_costo: int = _costo[actual] + 1 + absi(vecino.y - actual.y)
+				if not _costo.has(vecino) or nuevo_costo < _costo[vecino]:
+					_costo[vecino] = nuevo_costo
+					_padre[vecino] = actual
+					_desempate += 1
+					var h: int = _heuristica.call(vecino)
+					_buscador._meter(_abiertos, [nuevo_costo + h, h, _desempate, vecino])
+		terminada = true
+		return usados
 
 
 static func _heuristica(a: Vector3i, b: Vector3i) -> int:

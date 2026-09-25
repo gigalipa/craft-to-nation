@@ -3,9 +3,10 @@ extends Node3D
 ## Puertas interactivas: una lámina fina (1 x 2 x 0.1) por puerta, con su propio
 ## cuerpo de colisión. Las celdas siguen siendo puerta_inferior/puerta_superior
 ## en VoxelWorld (su ítem de la MeshLibrary no dibuja ni colisiona); aquí vive
-## solo el estado abierta/cerrada. Abrir gira la lámina 90° sobre su eje
-## vertical central: de cubrir el hueco (capa 1, bloquea) a verse de canto
-## (capa 4, el avatar la atraviesa pero el raycast del jugador aún la apunta).
+## solo el estado abierta/cerrada. Abrir gira la lámina 90° y la pega a una
+## jamba del hueco: de cubrir el hueco (capa 1, bloquea) a verse de canto
+## contra el marco (capa 4, el avatar la atraviesa pero el raycast del jugador
+## aún la apunta).
 ## Ver docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md.
 ##
 ## Hijo de VoxelWorld (en el origen, celdas de 1x1x1): coordenadas locales =
@@ -15,6 +16,10 @@ const LAMINA := Vector3(1, 2, 0.1)
 const CAPA_CERRADA := 1  # capa 1: mundo (bloquea al avatar)
 const CAPA_ABIERTA := 8  # capa 4: solo el raycast del jugador
 const META_CELDA := "celda_puerta"
+## Abierta, la lámina queda de canto pegada a una jamba del hueco (dentro de la
+## celda, no en su centro): se desplaza sobre el eje de la pared hasta que su
+## grosor toca el borde de la celda.
+const DESPLAZAMIENTO_ABIERTA := 0.5 - LAMINA.z / 2.0
 const RADIO_APERTURA := 2  # celdas (Chebyshev en XZ): abre antes de que el colono llegue
 const INTERVALO := 0.25  # segundos entre chequeos de proximidad
 
@@ -108,10 +113,15 @@ func celda_de_colisionador(colisionador: Object) -> Vector3i:
 func actualizar(base: Vector3i) -> void:
 	var puerta: Dictionary = _puertas[base]
 	var cuerpo: StaticBody3D = puerta["cuerpo"]
-	var giro: float = 0.0 if _pared_por_x(base) else PI / 2.0
+	var por_x: bool = _pared_por_x(base)
+	var giro: float = 0.0 if por_x else PI / 2.0
+	var posicion := Vector3(base) + Vector3(0.5, 1.0, 0.5)
 	if puerta["abierta"]:
 		giro += PI / 2.0
+		# La jamba está sobre el eje de la pared: X si corre por X, Z si corre por Z.
+		posicion += Vector3(DESPLAZAMIENTO_ABIERTA, 0, 0) if por_x else Vector3(0, 0, DESPLAZAMIENTO_ABIERTA)
 	cuerpo.rotation.y = giro
+	cuerpo.position = posicion
 	cuerpo.collision_layer = CAPA_ABIERTA if puerta["abierta"] else CAPA_CERRADA
 
 

@@ -2,13 +2,14 @@ extends HBoxContainer
 
 ## Barras de modos de la cenital, en la esquina inferior izquierda: la barra
 ## principal (un botón por modo) y, a su derecha, una barra de subherramientas
-## (hoy los 4 tipos de puesto) que solo se ve con Puestos activo. Solo pide
+## (los 4 tipos de puesto con Puestos activo; Zona A/B/Borrar con Zonas). Solo pide
 ## cambios (señales): el modo real lo decide CamaraCenital, que lo devuelve con
 ## HUD.set_modo(). Tras cada clic la barra se resincroniza con el modo real, así
 ## un modo que no llega a activarse no queda marcado.
 
 signal modo_pedido(modo: String)
 signal puesto_pedido(tipo: String)
+signal zona_pedida(tipo: String)
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
@@ -26,11 +27,19 @@ const PUESTOS := [
 	["maderero", "Madera", "L"],
 	["pesca_frutos_mar", "Pesca", "F"],
 ]
+## [tipo de zona, nombre, tecla]
+var ZONAS := [
+	[Zonificacion.ZONAS_PINTABLES[0], "Zona A", "1"],
+	[Zonificacion.ZONAS_PINTABLES[1], "Zona B", "2"],
+	[Zonificacion.MARCADOR_BORRAR, "Borrar", "0"],
+]
 
 var _panel_principal := PanelContainer.new()
 var _panel_sub := PanelContainer.new()
+var _panel_zonas := PanelContainer.new()
 var _botones := {}  # id de modo -> Button
 var _botones_puesto := {}  # tipo de puesto -> Button
+var _botones_zona := {}  # tipo de zona -> Button
 var _modo := ""
 var _puesto := ""
 
@@ -48,7 +57,7 @@ func _ready() -> void:
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_theme_constant_override("separation", 6)
 
-	for panel in [_panel_principal, _panel_sub]:
+	for panel in [_panel_principal, _panel_sub, _panel_zonas]:
 		TemaHUD.aplicar_panel(panel)
 		panel.size_flags_vertical = Control.SIZE_SHRINK_END  # ambas alineadas abajo
 		add_child(panel)
@@ -72,6 +81,16 @@ func _ready() -> void:
 		)
 		columna_sub.add_child(boton)
 		_botones_puesto[tipo] = boton
+	var columna_zonas := _nueva_columna(_panel_zonas)
+	for zona in ZONAS:
+		var tipo: String = zona[0]
+		var boton := _crear_boton("%s [%s]" % [zona[1], zona[2]], Vector2(88, 36))
+		boton.pressed.connect(func() -> void:
+			zona_pedida.emit(tipo)
+			_refrescar()
+		)
+		columna_zonas.add_child(boton)
+		_botones_zona[tipo] = boton
 	_refrescar()
 
 
@@ -91,10 +110,11 @@ func _crear_boton(texto: String, tamano: Vector2) -> Button:
 	return boton
 
 
-## "modo" es el id de MODOS ("" = Ver); "puesto" el tipo activo cuando modo es "puestos".
-func set_modo(modo: String, puesto: String = "") -> void:
+## "modo" es el id de MODOS ("" = Ver); "sub" la subherramienta activa: el tipo
+## de puesto con "puestos" o el tipo de zona con "zonas".
+func set_modo(modo: String, sub: String = "") -> void:
 	_modo = modo
-	_puesto = puesto
+	_puesto = sub
 	if is_inside_tree():
 		_refrescar()
 
@@ -106,6 +126,9 @@ func _refrescar() -> void:
 	_panel_sub.visible = _modo == "puestos"
 	for tipo in _botones_puesto:
 		_botones_puesto[tipo].set_pressed_no_signal(tipo == _puesto)
+	_panel_zonas.visible = _modo == "zonas"
+	for tipo in _botones_zona:
+		_botones_zona[tipo].set_pressed_no_signal(tipo == _puesto)
 
 
 func boton_activo() -> String:
@@ -118,3 +141,11 @@ func puestos_visibles() -> bool:
 
 func puesto_activo() -> String:
 	return _puesto
+
+
+func zonas_visibles() -> bool:
+	return _modo == "zonas"
+
+
+func zona_activa() -> String:
+	return _puesto if _modo == "zonas" else ""

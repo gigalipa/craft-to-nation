@@ -10,6 +10,7 @@ extends CanvasLayer
 ## funciones _alternar_modo_*.
 signal modo_pedido(modo: String)
 signal puesto_pedido(tipo: String)
+signal zona_pedida(tipo: String)
 
 const COLOR_POSITIVO := Color.WHITE
 const COLOR_NEGATIVO := Color(1.0, 0.3, 0.3)
@@ -61,6 +62,7 @@ func _init() -> void:
 	_barra_modos = BarraModosScript.new()
 	_barra_modos.modo_pedido.connect(func(modo: String) -> void: modo_pedido.emit(modo))
 	_barra_modos.puesto_pedido.connect(func(tipo: String) -> void: puesto_pedido.emit(tipo))
+	_barra_modos.zona_pedida.connect(func(tipo: String) -> void: zona_pedida.emit(tipo))
 	add_child(_barra_modos)
 	_hotbar = HotbarScript.new()
 	add_child(_hotbar)
@@ -101,9 +103,9 @@ func set_tipo_hotbar(indice: int) -> void:
 	_hotbar.seleccionar(indice)
 
 
-## "modo" es el id de BarraModos.MODOS ("" = Ver); "puesto" el tipo activo si es "puestos".
-func set_modo(modo: String, puesto: String = "") -> void:
-	_barra_modos.set_modo(modo, puesto)
+## "modo" es el id de BarraModos.MODOS ("" = Ver); "sub" la subherramienta activa (puesto o zona).
+func set_modo(modo: String, sub: String = "") -> void:
+	_barra_modos.set_modo(modo, sub)
 
 
 func mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "") -> void:

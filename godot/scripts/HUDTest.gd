@@ -221,6 +221,19 @@ func probar_barra_modos() -> void:
 	barra.set_modo("puestos", "mina")
 	barra._botones_puesto["pesca_frutos_mar"].pressed.emit()
 	assert(puestos_pedidos == ["pesca_frutos_mar"], "salió %s" % [puestos_pedidos])
+	# Las zonas tienen su propia subbarra, solo visible con Zonas activo.
+	assert(not barra._panel_zonas.visible and not barra.zonas_visibles())
+	assert(barra._panel_sub.get_index() < barra._panel_zonas.get_index())
+	barra.set_modo("zonas", Zonificacion.ZONAS_PINTABLES[1])
+	assert(barra._panel_zonas.visible and not barra._panel_sub.visible)
+	assert(barra.zona_activa() == Zonificacion.ZONAS_PINTABLES[1])
+	assert(barra._botones_zona[Zonificacion.ZONAS_PINTABLES[1]].button_pressed)
+	var zonas_pedidas: Array = []
+	barra.zona_pedida.connect(func(tipo: String) -> void: zonas_pedidas.append(tipo))
+	barra._botones_zona[Zonificacion.MARCADOR_BORRAR].pressed.emit()
+	assert(zonas_pedidas == [Zonificacion.MARCADOR_BORRAR], "salió %s" % [zonas_pedidas])
+	barra.set_modo("")
+	assert(not barra._panel_zonas.visible and barra.zona_activa() == "")
 	barra.queue_free()
 
 

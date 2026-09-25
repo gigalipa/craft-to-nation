@@ -283,6 +283,7 @@ func _ready() -> void:
 	add_child(_overlay_nivelacion)
 	hud.modo_pedido.connect(_on_modo_pedido)
 	hud.puesto_pedido.connect(_alternar_puesto_por_tipo)
+	hud.zona_pedida.connect(_elegir_zona)
 
 
 ## Precalcula los offsets (dx, dz) dentro del círculo de radio
@@ -1500,7 +1501,6 @@ func _alternar_modo_zonificar() -> void:
 	_salir_de_modo_trazar_via()
 	hud.cerrar_panel_puesto()
 	modo_zonificar = true
-	hud.set_modo("zonas")
 	_mostrar_contexto_zona()
 
 
@@ -1552,6 +1552,7 @@ func _elegir_zona(tipo: String) -> void:
 
 
 func _mostrar_contexto_zona() -> void:
+	hud.set_modo("zonas", tipo_zona_seleccionada)
 	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, ["1 Zona A", "2 Zona B", "0 Borrar", "Z/Esc salir"])
 
 

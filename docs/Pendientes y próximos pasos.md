@@ -2,13 +2,13 @@
 
 ## Ruta a seguir
 
-### 1. Puertas interactivas
-
-El avatar solo puede interactuar con los objetos que se le van habilitando (ahora, los baúles de los puestos de recolección con la tecla `E`), pero para entrar a los edificios necesita puertas que se abran: hoy las puertas son bloques sólidos para el avatar y solo las ignoran los colonos en su búsqueda de rutas. Diseñar una puerta con estado (cerrada: no transitable; abierta: transitable), su colisión, la tecla de interacción y la migración de los edificios residenciales ya construidos. Hasta entonces el baúl de un puesto (su depósito físico) no es alcanzable por el avatar, aunque el puesto funciona por completo con colonos. Falta decidir su orden respecto al HUD (punto 2).
-
-### 2. HUD visual interactivo
+### 1. HUD visual interactivo
 
 Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir, zonas, vías, etc.) con sus accesos directos, y no por edificios particulares: habrá demasiados como para asignar una tecla a cada uno. Va tras los edificios de recolección jugables (ya implementados) para definir la interfaz con ellos ya presentes, y antes de 2C y de las demás mecánicas para no rehacerla.
+
+### 2. Ventana de interacción del baúl
+
+Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre una ventana similar a la de asignación de obreros, que muestra el contenido del baúl y ofrece extraer o agregar recursos. Reemplaza al retiro actual por `E` mantenida sobre el baúl (rama de `_procesar_frutos()`), que se elimina al construir la ventana; mantener `E` queda solo para los frutos. Se apoya en el despachador `_interactuar()` que ya existe en `Player.gd` (lo creó el punto de las puertas interactivas). Encaja con el HUD (punto 1).
 
 ### 3. Declaración de edificios por volumen interno
 
@@ -26,11 +26,12 @@ Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cad
 
 Los colonos participan en construir y deconstruir. Se apoya en el acarreo (2A) y en la extracción real (2B, ya implementada).
 
-### 7. Cola de pendientes menores de la Fase 3 (PoC 6) — no bloqueantes
+### 7. Cola de pendientes menores de la Fase 3 — no bloqueantes
 
 Pueden intercalarse en cualquier momento.
 
 - Cauces de río sinuosos (hoy solo ejes ortogonales del grid).
+- Corrección de pathfinding para dar mayor prioridad al uso de rutas (ignorar rutas solo si el destino no es alcanzable).
 - Percentil de nivel de mar dependiente de un "tipo de mundo" (concepto sin diseñar aún).
 - Revisar el dithering de Alpha Hash en ventanas cuando exista una textura real.
 
@@ -43,6 +44,8 @@ Pueden intercalarse en cualquier momento.
 
 ## Hecho
 
+- ~~**Previsualización de la colocación de puestos** (2026-09-25).~~ Al colocar un puesto se ve la plantilla fantasma (verde o roja según la validez, con puertas y ventanas destacadas), el despeje reservado de puertas y ventanas y el área de nivelación de la huella y del frente, con la misma evaluación que el clic (`CamaraCenital._evaluar_puesto()`). Limitación: en la pesca, la cubierta sobre agua se marca como «rellenar» aunque se coloquen pilotes — ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Edificios de Recolección.md`.
+- ~~**Puertas interactivas** (2026-09-25).~~ Las puertas son una lámina fina que gira 90° al abrirse y queda pegada a la jamba del hueco; el avatar las alterna con `E` apuntándolas y los colonos las abren por proximidad (se cierran al irse, salvo las abiertas a mano). Las celdas conservan su tipo; el estado vive en `Puertas.gd` — ver `docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md`. El baúl de un puesto sigue accesible por `E` mantenida hasta que exista su ventana (punto «Ventana de interacción del baúl»).
 - ~~**Edificios de recolección jugables reales** (2026-09-24).~~ Los cuatro puestos son edificios de bloques con plantilla por tipo (provisionales, a reemplazar con el arte de SketchUp): puerta de servicio (los colonos trabajan en una zona junto a ella), baúl como depósito físico (`E` sobre el baúl pasa al inventario lo que quepa), rotación de 4 giros, deconstrucción bloque a bloque que desactiva el puesto y libera a sus trabajadores, y agotamiento que despide a los recolectores y conserva a los acarreadores hasta vaciar el almacén local — ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Edificios de Recolección.md`.
 - ~~**PoC 5, sub-proyecto 2B: extracción física y agotamiento** (2026-09-24).~~ Los puestos de mina y maderero consumen bloques y árboles reales (la mina solo desde el subsuelo, no la superficie), las tasas de todos los puestos se recalculan cada 6 horas de juego según su entorno (árboles, bloques minerales y agua conectada), y el avatar mina, tala y recolecta frutos con tiempo e indicador de avance sobre un inventario limitado que arranca la partida — ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`. La bomba extractora y el petróleo quedan para el sub-proyecto de fluidos.
   - Consideraciones originales del usuario para este punto (ya implementadas):

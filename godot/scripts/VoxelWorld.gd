@@ -183,6 +183,10 @@ var colocado_por_jugador: Dictionary = {}
 ## cualquiera de las dos celdas borra ambas — ver minar_bloque().
 var pareja: Dictionary = {}  # Vector3i -> Vector3i
 
+## Nodo Puertas (hijo de este mundo en Main.tscn), o null en escenas de prueba
+## sin él. Player lo usa para alternar puertas.
+var puertas: Node = null
+
 ## Celda -> id de edificio al que pertenece (fantasma en curso, terminado,
 ## o puesto periférico). minar_bloque() consulta este registro para negarse
 ## a minar cualquier celda que forme parte de un edificio: un edificio se
@@ -420,6 +424,10 @@ func _ready() -> void:
 	vias_renderer.voxel_world = self
 	Vias.vias_cambiadas.connect(vias_renderer._on_vias_cambiadas)
 	vias_renderer.reconstruir_todo()
+	puertas = get_node_or_null("Puertas")
+	if puertas != null:
+		puertas.voxel_world = self
+		puerta_cambiada.connect(puertas._on_puerta_cambiada)
 
 
 func _indexar_biblioteca() -> void:

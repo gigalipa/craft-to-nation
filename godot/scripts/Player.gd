@@ -136,6 +136,8 @@ func _input(event: InputEvent) -> void:
 			_declarar_edificio()
 		if tecla.pressed and tecla.keycode == KEY_G:
 			_alternar_modo_deconstruccion()
+		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_E:
+			_interactuar()
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
 		if tecla.pressed:
@@ -265,11 +267,26 @@ func _procesar_tala(celda: Vector3i, delta: float) -> void:
 	hud.mostrar_progreso(float(mundo.arboles.salud_de(id)) / mundo.arboles.salud_maxima_de(id), true)
 
 
+## Pulsar E (no mantener) sobre el objeto apuntado. Hoy solo alterna puertas;
+## la ventana de contenido del baúl se enchufará aquí (ver "Pendientes").
+## Mantener E sigue siendo _procesar_frutos().
+func _interactuar() -> void:
+	if not raycast.is_colliding() or mundo == null or mundo.puertas == null:
+		return
+	var base: Vector3i = mundo.puertas.celda_de_colisionador(raycast.get_collider())
+	if base != Vector3i.MAX:
+		mundo.puertas.alternar(base)
+
+
 ## Frutos: mantener E sobre un árbol con frutos, o sobre el baúl de un puesto
 ## (pasa al inventario lo que quepa de su almacén local). No consume el árbol (ver
 ## VoxelWorld.recolectar_frutos()).
 func _procesar_frutos(delta: float) -> void:
 	if not raycast.is_colliding() or mundo == null:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		return
+	if mundo.puertas != null and mundo.puertas.celda_de_colisionador(raycast.get_collider()) != Vector3i.MAX:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return

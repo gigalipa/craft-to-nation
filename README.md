@@ -17,13 +17,14 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 - **Fases 4–7 — planeadas:** cámara dual y tropas, logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
-El proyecto Godot cuenta actualmente con **343 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en 19 escenas `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, economía, extracción, colonos, rutas, vías, minerales, translúcidos y jugador.
+El proyecto Godot cuenta actualmente con **380 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en 22 escenas `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas de puestos y su previsualización, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas y jugador.
 
 ## Ideas incorporadas al roadmap
 
 - **Mundo procedural finito:** implementado como primer subproyecto de PoC 6.
 - **Nivelación de terreno sobre relieve:** implementada y confirmada visualmente; los edificios con puerta toman como nivel el suelo natural frente a ella (excavación y relleno en una cola de preparación) y los puestos periféricos se nivelan al punto más alto de su huella. Sin costo de recursos todavía.
-- **Puestos de recolección y previsualización en el HUD:** minas (seis minerales por profundidad), caza y recolección, maderero y pesca y frutos del mar, colocables desde la cámara cenital con estadísticas en vivo. Producen recursos reales con trabajadores asignados y alimentan el almacén central.
+- **Puestos de recolección y previsualización en el HUD:** minas (seis minerales por profundidad), caza y recolección, maderero y pesca y frutos del mar, colocables desde la cámara cenital con estadísticas en vivo. Son edificios de bloques con plantilla propia, y al colocarlos se previsualizan la plantilla fantasma, el despeje de puertas y ventanas y la nivelación del frente, igual que un edificio declarado. Producen recursos reales con trabajadores asignados y alimentan el almacén central.
+- **Puertas interactivas:** las puertas son una lámina fina que el avatar abre y cierra con `E` (gira 90° y queda pegada a la jamba) y que los colonos abren por proximidad. Falta la ventana de interacción del baúl.
 - **Bioma y vegetación:** implementadas las señales de fauna, frutales y árboles; el mundo genera árboles procedurales talables y el jugador puede talarlos mediante acciones repetidas.
 - **Catálogo de recursos y cadenas de producción:** el subproyecto de minerales (recetas placeholder hierro→acero y tierras raras→mineral refinado) está implementado como lógica pura; el resto del catálogo sigue pendiente.
 - **Cuerpos de agua:** implementados (mares, lagos y ríos con corriente y cascadas, agua transparente y no sólida, natación con oxígeno, escurrimiento con niveles y secado). Cauces sinuosos y un nivel de mar que dependa del tipo de mundo siguen pendientes.
@@ -74,6 +75,9 @@ Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 - `godot/scenes/EconomiaTest.tscn`
 - `godot/scenes/ExtraccionTest.tscn`
 - `godot/scenes/ViasTest.tscn`
+- `godot/scenes/PlantillasPuestoTest.tscn`
+- `godot/scenes/PuertasTest.tscn`
+- `godot/scenes/PuestosPrevisualizacionTest.tscn`
 
 ## Contribuir
 

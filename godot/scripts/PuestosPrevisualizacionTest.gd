@@ -11,6 +11,7 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const CamaraCenitalScript = preload("res://scripts/CamaraCenital.gd")
 const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
+const NivelacionOverlayScript = preload("res://scripts/NivelacionOverlay.gd")
 
 const LADO := 40  # el suelo plano cubre x, z en [0, LADO)
 
@@ -42,6 +43,21 @@ func _camara(mundo: Node, tipo: String, giros: int = 0) -> Camera3D:
 	camara._alto_puesto_activo = huella.y
 	camara._giros_puesto = giros
 	return camara
+
+
+## Cada caja del fantasma está en la celda real de un bloque de la plantilla, y su
+## color es el "esperado" (o el destacado propio de puertas y ventanas si es válida).
+func _verificar_fantasma(camara: Camera3D, mundo: Node, esquina: Vector2i, ev: Dictionary, color: Color, valida: bool) -> void:
+	assert(camara._huella_blueprint.size() == ev["celdas_plantilla"].size(), "una caja por bloque de la plantilla")
+	for i in range(camara._huella_blueprint.size()):
+		var rel: Vector3i = camara._offsets_huella_blueprint[i]
+		var real := Vector3i(esquina.x + rel.x, ev["y_base"] + rel.y, esquina.y + rel.z)
+		assert(ev["celdas_plantilla"].has(real), "la caja %s cae en una celda de la plantilla" % [real])
+		var caja: MeshInstance3D = camara._huella_blueprint[i]
+		assert(caja.position.is_equal_approx(Vector3(real) + Vector3(0.5, 0.5, 0.5)), "la caja está en su celda real")
+		var tipo: String = ev["celdas_plantilla"][real]
+		var esperado: Color = mundo.COLOR_DESTACADO.get(tipo, color) if valida else color
+		assert((caja.material_override as StandardMaterial3D).albedo_color == esperado, "color de %s" % tipo)
 
 
 func ejecutar_pruebas() -> void:
@@ -102,5 +118,35 @@ func ejecutar_pruebas() -> void:
 	mundo_p.free()
 	print("OK: giro efectivo de pesca.")
 
+	print("=== TEST 4: el fantasma sigue la plantilla real y su validez ===")
+	camara = _camara(mundo, "caza_recoleccion")
+	esquina = Vector2i(14, 30)
+	ev = camara._evaluar_puesto(esquina)
+	assert(camara._mensaje_rechazo_puesto(ev) == "", "válida sobre suelo plano")
+	camara._actualizar_fantasma_puesto(esquina, ev, true)
+	_verificar_fantasma(camara, mundo, esquina, ev, CamaraCenitalScript.COLOR_PUESTO_VALIDO, true)
+	camara._actualizar_fantasma_puesto(esquina, ev, false)
+	_verificar_fantasma(camara, mundo, esquina, ev, CamaraCenitalScript.COLOR_PUESTO_INVALIDO, false)
+	# Al girar la plantilla, el fantasma se reconstruye con la plantilla girada.
+	var huella_girada: Vector2i = PlantillasPuesto.huella("caza_recoleccion", 1)
+	camara._giros_puesto = 1
+	camara._ancho_puesto_activo = huella_girada.x
+	camara._alto_puesto_activo = huella_girada.y
+	ev = camara._evaluar_puesto(esquina)
+	camara._actualizar_fantasma_puesto(esquina, ev, true)
+	assert(camara._giros_fantasma_puesto == 1, "el fantasma se reconstruyó con el giro efectivo")
+	_verificar_fantasma(camara, mundo, esquina, ev, CamaraCenitalScript.COLOR_PUESTO_VALIDO, true)
+	print("OK: fantasma del puesto.")
+
+	print("=== TEST 5: los overlays de despeje y nivelación reciben la evaluación del puesto ===")
+	camara._overlay_nivelacion = NivelacionOverlayScript.new()
+	camara._actualizar_overlays(esquina, ev)
+	var reservadas: int = mundo.calcular_despeje(ev["celdas_mundo"]).size()
+	assert(reservadas > 0, "una puerta y ventanas reservan despeje")
+	assert(camara._overlay_nivelacion.get_child_count() == reservadas + ev["columnas_union"].size(), "cajas de despeje + un plano por columna de huella y fachada")
+	camara._overlay_nivelacion.free()
+	camara.free()
+	print("OK: overlays del puesto.")
+
 	mundo.free()
-	print("\n=== Las 3 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== Las 5 pruebas de previsualización de puestos pasaron correctamente ===")

@@ -106,19 +106,11 @@ const COLOR_PUESTO_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
 ## informativo de área de acción — ver _crear_area_accion().
 const COLOR_AREA_ACCION := Color(0.3, 0.7, 1.0, 0.15)
 
-## El mayor ancho/alto entre los tipos de puesto existentes (mina 5x5, caza
-## y recolección 4x4, pesca y frutos del mar 4x6 — este último es el que fija
-## el valor actual (6)) — tamaño del pool de planos fantasma reutilizable
-## entre cualquier tipo (ver _crear_huella_puesto()).
-const MAX_ANCHO_HUELLA_PUESTO := 6
-const MAX_ALTO_HUELLA_PUESTO := 6
-
 ## El mayor radio de área de acción entre los tipos de puesto existentes
 ## (Recoleccion.RADIO_AREA_MINA = 6, RADIO_AREA_CAZA_RECOLECCION = 12,
 ## RADIO_AREA_PESCA_FRUTOS_MAR = 25 — este último es el que fija el valor
-## actual) — mismo criterio que MAX_ANCHO/ALTO_HUELLA_PUESTO: tamaño del
-## pool de planos del círculo informativo, reutilizado por cualquier tipo
-## (ver _crear_area_accion()).
+## actual) — tamaño del pool de planos del círculo informativo, reutilizado
+## por cualquier tipo (ver _crear_area_accion()).
 const RADIO_AREA_ACCION_MAX := 25
 const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
 ## Las consultas físicas de la cámara (picking del terreno, altura mínima,
@@ -192,12 +184,13 @@ const MAX_NODOS_PREVIEW_VIA := 600
 var nivelador_puesto: RefCounted
 
 ## Modo de colocación de puesto periférico (mina: tecla `M`; caza y
-## recolección: tecla `H`) — un rectángulo fantasma de
-## _ancho_puesto_activo x _alto_puesto_activo celdas sigue la celda bajo el
-## cursor (esa celda es su CENTRO, igual que la huella de nivelación),
-## dorado si las 3 validaciones (zona de influencia, relieve, huella libre +
-## sin choque con otro puesto) pasan, o rojo si alguna falla. `Ctrl` + rueda
-## del mouse rota la huella 90° (intercambia ancho/alto) — ver
+## recolección: tecla `H`; maderero: `L`; pesca: `F`) — la plantilla del puesto
+## (cajas fantasma, ver _actualizar_fantasma_puesto()) sigue la celda bajo el
+## cursor (esa celda es el CENTRO de la huella de _ancho_puesto_activo x
+## _alto_puesto_activo celdas), dorada si la evaluación completa de
+## _evaluar_puesto() pasa (la misma del clic), o roja si alguna condición falla;
+## con el despeje de puertas y ventanas y el área de nivelación como overlays.
+## `Ctrl` + rueda del mouse rota la huella 90° (intercambia ancho/alto) — ver
 ## _rotar_huella_puesto(). Mientras el modo está activo, la ficha del HUD
 ## correspondiente al tipo se actualiza cada fotograma.
 var modo_colocar_puesto := false
@@ -207,7 +200,10 @@ var _alto_puesto_activo := 0
 ## Cuartos de vuelta horarios (0-3) de la plantilla del puesto activo; Ctrl +
 ## rueda lo avanza (ver _rotar_huella_puesto()) y decide hacia dónde mira la puerta.
 var _giros_puesto := 0
-var _huella_puesto: Array[MeshInstance3D] = []
+## Giro efectivo con el que se construyó el pool de cajas fantasma del puesto
+## activo (-1 = aún sin construir): se reconstruye cuando cambia (rotación con
+## Ctrl+rueda, o el giro que corrige la pesca según dónde cae el agua).
+var _giros_fantasma_puesto := -1
 
 ## Círculo informativo del área de acción del puesto activo (radio real
 ## según el tipo — Recoleccion.RADIO_AREA_MINA o RADIO_AREA_CAZA_RECOLECCION
@@ -282,40 +278,14 @@ func _ready() -> void:
 	# del mundo (que sí refleja minado/construcción/nivelaciones previas), no
 	# el ruido original de GeneradorMundo — ver VoxelWorld.altura_en().
 	nivelador_puesto = NiveladorTerreno.new(_AlturaSinAgua.new(mundo))
-	_crear_huella_puesto()
 	_crear_area_accion()
 	_overlay_nivelacion = NivelacionOverlay.new()
 	add_child(_overlay_nivelacion)
 
 
-## Pool de planos fantasma de tamaño fijo (MAX_ANCHO_HUELLA_PUESTO x
-## MAX_ALTO_HUELLA_PUESTO), reutilizado por cualquier tipo de puesto — mismo
-## patrón de pool que _crear_huella_puesto(), para no generar basura de
-## nodos cada fotograma. Solo se muestran/reposicionan los primeros
-## ancho*alto planos de la huella activa (ver _mostrar_huella_puesto()); el
-## resto del pool queda oculto.
-func _crear_huella_puesto() -> void:
-	var malla := PlaneMesh.new()
-	malla.size = Vector2(1.0, 1.0)
-	for i in range(MAX_ANCHO_HUELLA_PUESTO * MAX_ALTO_HUELLA_PUESTO):
-		var material := StandardMaterial3D.new()
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.albedo_color = COLOR_PUESTO_VALIDO
-		material.no_depth_test = false
-
-		var plano := MeshInstance3D.new()
-		plano.mesh = malla
-		plano.material_override = material
-		plano.top_level = true
-		plano.visible = false
-		add_child(plano)
-		_huella_puesto.append(plano)
-
-
 ## Precalcula los offsets (dx, dz) dentro del círculo de radio
 ## RADIO_AREA_ACCION_MAX (el mayor radio existente) y crea un plano fantasma
-## por offset — mismo patrón de pool que _crear_huella_puesto(). Cada
+## por offset — mismo patrón de pool. Cada
 ## fotograma solo se muestran los offsets dentro del radio REAL del tipo
 ## activo (ver _actualizar_area_accion()), así que un solo pool sirve para
 ## cualquier tipo de puesto sin importar su radio.
@@ -344,10 +314,10 @@ func _crear_area_accion() -> void:
 
 
 ## (Re)crea el pool de cajas fantasma para la previsualización 3D del
-## blueprint activo, UNA POR CELDA de "celdas_3d" (a diferencia de
-## _crear_huella_puesto(), que usa planos y un pool fijo reutilizado por
-## varios tipos — aquí solo hay un blueprint activo a la vez, así que no
-## hace falta sobredimensionar). "_offsets_huella_blueprint" guarda el
+## blueprint activo (o de la plantilla del puesto activo, ver
+## _actualizar_fantasma_puesto()), UNA POR CELDA de "celdas_3d" — solo hay un
+## fantasma activo a la vez, así que no hace falta sobredimensionar el pool.
+## "_offsets_huella_blueprint" guarda el
 ## offset relativo de cada caja, en el mismo orden que _huella_blueprint,
 ## para poder reposicionarlas en _actualizar_previsualizacion_blueprint()
 ## sin depender del orden de iteración del Dictionary en cada fotograma.
@@ -839,34 +809,10 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var centro := _celda_bajo_mouse(get_viewport().get_mouse_position())
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
-	var columnas := _columnas_rectangulo(_ancho_puesto_activo, _alto_puesto_activo)
-
-	var fuera_de_influencia: bool = not Zonificacion.dentro_de_influencia(centro)
-	var relieve_valido: bool = nivelador_puesto.verificar_pendiente(esquina, columnas)
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas)
-	var huella_anclada: bool
-	var extremo_agua_indice := -1
-	if _tipo_puesto_activo == "pesca_frutos_mar":
-		extremo_agua_indice = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
-		huella_anclada = extremo_agua_indice != -1
-	else:
-		huella_anclada = _huella_tiene_columna_en_tierra(esquina, columnas)
-	var valida: bool = fuera_de_influencia and relieve_valido and resultado_huella["valida"] \
-			and not _huella_choca_con_otro_puesto(esquina, columnas) \
-			and huella_anclada
-	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
-
-	var i := 0
-	for dx in range(_ancho_puesto_activo):
-		for dz in range(_alto_puesto_activo):
-			var x: int = esquina.x + dx
-			var z: int = esquina.y + dz
-			var altura_celda: int = mundo.altura_en(x, z, true)
-			var plano: MeshInstance3D = _huella_puesto[i]
-			var material: StandardMaterial3D = plano.material_override
-			material.albedo_color = color
-			plano.position = Vector3(x + DESF, altura_celda + ALTURA_SOBRE_SUPERFICIE, z + DESF)
-			i += 1
+	var ev: Dictionary = _evaluar_puesto(esquina)
+	var extremo_agua_indice: int = ev["extremo_agua_indice"]
+	_actualizar_fantasma_puesto(esquina, ev, _mensaje_rechazo_puesto(ev) == "")
+	_actualizar_overlays(esquina, ev)
 
 	if _tipo_puesto_activo == "mina":
 		var altura_superficie: int = mundo.altura_en(centro.x, centro.y)
@@ -1266,13 +1212,13 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	hud.ocultar_ficha_caza()
 	hud.ocultar_ficha_madero()
 	hud.ocultar_ficha_pesca()
-	assert(ancho <= MAX_ANCHO_HUELLA_PUESTO and alto <= MAX_ALTO_HUELLA_PUESTO, "Huella de puesto excede el pool fijo de planos fantasma")
 	modo_colocar_puesto = true
 	_tipo_puesto_activo = tipo
 	_ancho_puesto_activo = ancho
 	_alto_puesto_activo = alto
 	_giros_puesto = 0
-	_mostrar_huella_puesto(true)
+	_giros_fantasma_puesto = -1
+	_overlay_vigente = SIN_RESUMEN
 	if tipo == "mina":
 		hud.mostrar_ficha_mina()
 	elif tipo == "caza_recoleccion":
@@ -1285,8 +1231,13 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 
 
 func _salir_de_modo_colocar_puesto() -> void:
+	if modo_colocar_puesto:
+		# El fantasma y los overlays son los mismos nodos que usa el modo blueprint.
+		_mostrar_huella_blueprint(false)
+		_overlay_nivelacion.ocultar()
+		_overlay_vigente = SIN_RESUMEN
+	_giros_fantasma_puesto = -1
 	modo_colocar_puesto = false
-	_mostrar_huella_puesto(false)
 	_ocultar_area_accion()
 	hud.ocultar_ficha_mina()
 	hud.ocultar_ficha_caza()
@@ -1309,7 +1260,7 @@ func _rotar_huella_puesto() -> void:
 	_ancho_puesto_activo = _alto_puesto_activo
 	_alto_puesto_activo = ancho_previo
 	_giros_puesto = (_giros_puesto + 1) % 4
-	_mostrar_huella_puesto(true)
+	_overlay_vigente = SIN_RESUMEN
 
 
 ## Ctrl + rueda del mouse, con un blueprint en modo colocación: rota el
@@ -1421,18 +1372,6 @@ func _cancelar_pintado_zona() -> void:
 	esperando_segunda_esquina = false
 	overlay.limpiar_previsualizacion()
 	print("Pintado de zona cancelado.")
-
-
-## Muestra los primeros _ancho_puesto_activo * _alto_puesto_activo planos
-## del pool (ver _crear_huella_puesto()) y oculta el resto; con
-## visible_ahora=false oculta todo el pool.
-func _mostrar_huella_puesto(visible_ahora: bool) -> void:
-	for plano in _huella_puesto:
-		plano.visible = false
-	if not visible_ahora:
-		return
-	for i in range(_ancho_puesto_activo * _alto_puesto_activo):
-		_huella_puesto[i].visible = true
 
 
 ## Muestra, centrados en "centro", los planos del pool de _area_accion cuyo
@@ -1779,6 +1718,26 @@ func _confirmar_trazo_via() -> void:
 ## (verificar_pendiente(), arriba) ya usa ese mismo terreno sin agua — es la
 ## que decide si la huella es demasiado empinada para nivelarse de forma
 ## razonable.
+## Previsualización 3D de la plantilla del puesto activo (una caja por bloque),
+## en la celda exacta donde quedaría el bloque real (esquina + rel, en "y_base"),
+## igual que _actualizar_previsualizacion_blueprint(): verde si la colocación es
+## válida (con puertas y ventanas destacadas) y roja si no. El pool se reconstruye
+## solo cuando cambia el giro efectivo de la plantilla.
+func _actualizar_fantasma_puesto(esquina: Vector2i, ev: Dictionary, valida: bool) -> void:
+	var giros: int = ev["giros"]
+	if giros != _giros_fantasma_puesto:
+		_giros_fantasma_puesto = giros
+		_crear_huella_blueprint(PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, Vector2i.ZERO, 0))
+	var color: Color = COLOR_PUESTO_VALIDO if valida else COLOR_PUESTO_INVALIDO
+	for i in range(_offsets_huella_blueprint.size()):
+		var rel: Vector3i = _offsets_huella_blueprint[i]
+		var real := Vector3i(esquina.x + rel.x, ev["y_base"] + rel.y, esquina.y + rel.z)
+		var caja: MeshInstance3D = _huella_blueprint[i]
+		var material: StandardMaterial3D = caja.material_override
+		material.albedo_color = mundo.COLOR_DESTACADO.get(ev["celdas_plantilla"][real], color) if valida else color
+		caja.position = Vector3(real.x + DESF, real.y + DESF, real.z + DESF)
+
+
 ## Evalúa TODAS las condiciones para colocar el puesto activo con su esquina en
 ## "esquina" sin tocar el mundo: fuente ÚNICA del clic (_procesar_clic_puesto())
 ## y de la previsualización (_actualizar_previsualizacion_puesto()), igual que

@@ -73,6 +73,7 @@ const TASA_RECUPERACION_OXIGENO := 2.0
 ## tiempo_minado_de()).
 const INTERVALO_ACCION_REPETIDA := 0.20
 const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
+const HotbarScript = preload("res://scripts/Hotbar.gd")
 
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
@@ -122,6 +123,8 @@ func _ready() -> void:
 	# jugando en vivo: "a veces" hay que saltar para pasar). Con margen
 	# de sobra por encima de 45° esto no depende de la suerte.
 	floor_max_angle = deg_to_rad(50.0)
+	hud.configurar_hotbar(tipos_disponibles)
+	hud.set_tipo_hotbar(tipo_seleccionado)
 
 
 func _input(event: InputEvent) -> void:
@@ -148,6 +151,7 @@ func _input(event: InputEvent) -> void:
 			var indice: int = tecla.keycode - KEY_1
 			if indice >= 0 and indice < tipos_disponibles.size():
 				tipo_seleccionado = indice
+				hud.set_tipo_hotbar(indice)
 				print("Tipo de bloque seleccionado: ", tipos_disponibles[tipo_seleccionado])
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -321,6 +325,7 @@ func _procesar_frutos(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_procesar_accion_repetida(delta)
+	_actualizar_contexto()
 	var direccion := Vector3.ZERO
 	if Input.is_key_pressed(KEY_W):
 		direccion -= transform.basis.z
@@ -376,6 +381,17 @@ func _physics_process(delta: float) -> void:
 		Colonos.actualizar_avatar(_celda_en(global_position + Vector3.UP * 0.1), velocity)
 	_procesar_oxigeno(delta)
 	_procesar_flotacion(delta, nadando)
+
+
+## Panel contextual de 1ª persona: el tipo de bloque seleccionado (con "hay
+## objetivo al alcance" como validez) o, en modo G, el aviso de deconstrucción.
+func _actualizar_contexto() -> void:
+	if not camara.current:
+		return
+	if modo_deconstruccion:
+		hud.mostrar_contexto("Deconstruir", {}, ["DECONSTRUIR (clic izq.)", "G para salir"])
+	else:
+		hud.mostrar_contexto(HotbarScript.nombre_de(tipos_disponibles[tipo_seleccionado]), {}, ["COLOCAR (clic der.)"], raycast.is_colliding())
 
 
 ## Cuenta cuántos bloques de agua consecutivos hay desde la celda de los pies
@@ -584,10 +600,6 @@ func _celda_impactada() -> Vector3i:
 ## vez que lo reactive.
 func _alternar_modo_deconstruccion() -> void:
 	modo_deconstruccion = not modo_deconstruccion
-	if modo_deconstruccion:
-		hud.mostrar_modo_deconstruccion()
-	else:
-		hud.ocultar_modo_deconstruccion()
 	_id_listo_para_remocion = -1
 	_ticks_listo_para_remocion = 0
 

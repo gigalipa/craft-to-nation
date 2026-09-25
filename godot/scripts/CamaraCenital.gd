@@ -281,6 +281,8 @@ func _ready() -> void:
 	_crear_area_accion()
 	_overlay_nivelacion = NivelacionOverlay.new()
 	add_child(_overlay_nivelacion)
+	hud.modo_pedido.connect(_on_modo_pedido)
+	hud.puesto_pedido.connect(_alternar_puesto_por_tipo)
 
 
 ## Precalcula los offsets (dx, dz) dentro del círculo de radio
@@ -811,19 +813,19 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
 	var ev: Dictionary = _evaluar_puesto(esquina)
 	var extremo_agua_indice: int = ev["extremo_agua_indice"]
-	_actualizar_fantasma_puesto(esquina, ev, _mensaje_rechazo_puesto(ev) == "")
+	var valida: bool = _mensaje_rechazo_puesto(ev) == ""
+	_actualizar_fantasma_puesto(esquina, ev, valida)
 	_actualizar_overlays(esquina, ev)
 
+	var tasas: Dictionary = {}
 	if _tipo_puesto_activo == "mina":
 		var altura_superficie: int = mundo.altura_en(centro.x, centro.y)
 		var conteo: Dictionary = Recoleccion.detectar_recursos_extraibles(mundo, centro, altura_superficie)
-		var tasas: Dictionary = Recoleccion.tasas_recoleccion(conteo)
-		hud.actualizar_tasas_mina(tasas)
+		tasas = Recoleccion.tasas_recoleccion(conteo)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MINA)
 	elif _tipo_puesto_activo == "caza_recoleccion":
 		var promedios: Dictionary = Recoleccion.detectar_fauna_frutal(mundo.generador, centro)
-		var tasas_caza: Dictionary = Recoleccion.tasas_caza_recoleccion(promedios)
-		hud.actualizar_tasas_caza(tasas_caza)
+		tasas = Recoleccion.tasas_caza_recoleccion(promedios)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
 	elif _tipo_puesto_activo == "pesca_frutos_mar":
 		if extremo_agua_indice != -1:
@@ -832,17 +834,15 @@ func _actualizar_previsualizacion_puesto() -> void:
 			var centro_agua := esquina + celdas_extremo[celdas_extremo.size() / 2]
 			var celdas_agua: Dictionary = Recoleccion.celdas_agua_conectadas(mundo, centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
 			var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, celdas_agua)
-			var tasas_pesca: Dictionary = Recoleccion.tasas_pesca_frutos_mar(promedios)
-			hud.actualizar_tasas_pesca(tasas_pesca)
+			tasas = Recoleccion.tasas_pesca_frutos_mar(promedios)
 			_actualizar_area_accion_agua(centro_agua, celdas_agua)
 		else:
-			hud.actualizar_tasas_pesca({})
 			_ocultar_area_accion()
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
-		var tasas_madero: Dictionary = Recoleccion.tasa_maderero(promedio_arbol)
-		hud.actualizar_tasas_madero(tasas_madero)
+		tasas = Recoleccion.tasa_maderero(promedio_arbol)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MADERERO)
+	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas)
 
 
 ## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves
@@ -1111,6 +1111,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		var tipo_celda: String = _blueprint_activo["celdas_3d"][rel]
 		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
+	hud.mostrar_contexto("Edificio residencial", {}, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida)
 	_actualizar_resumen_materiales(esquina, ev, valida)
 	_actualizar_overlays(esquina, ev)
 
@@ -1132,13 +1133,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif tecla.pressed and modo_zonificar and tecla.keycode == KEY_0:
 			_elegir_zona(Zonificacion.MARCADOR_BORRAR)
 		elif tecla.pressed and tecla.keycode == KEY_M:
-			_alternar_modo_colocar_puesto("mina", Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
+			_alternar_puesto_por_tipo("mina")
 		elif tecla.pressed and tecla.keycode == KEY_H:
-			_alternar_modo_colocar_puesto("caza_recoleccion", Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
+			_alternar_puesto_por_tipo("caza_recoleccion")
 		elif tecla.pressed and tecla.keycode == KEY_L:
-			_alternar_modo_colocar_puesto("maderero", Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
+			_alternar_puesto_por_tipo("maderero")
 		elif tecla.pressed and tecla.keycode == KEY_F:
-			_alternar_modo_colocar_puesto("pesca_frutos_mar", Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
+			_alternar_puesto_por_tipo("pesca_frutos_mar")
 		elif tecla.pressed and tecla.keycode == KEY_B:
 			_alternar_modo_colocar_blueprint()
 		elif tecla.pressed and tecla.keycode == KEY_V:
@@ -1208,10 +1209,6 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 		_salir_de_modo_colocar_blueprint()
 	if modo_trazar_via:
 		_salir_de_modo_trazar_via()
-	hud.ocultar_ficha_mina()
-	hud.ocultar_ficha_caza()
-	hud.ocultar_ficha_madero()
-	hud.ocultar_ficha_pesca()
 	modo_colocar_puesto = true
 	_tipo_puesto_activo = tipo
 	_ancho_puesto_activo = ancho
@@ -1219,18 +1216,37 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_giros_puesto = 0
 	_giros_fantasma_puesto = -1
 	_overlay_vigente = SIN_RESUMEN
-	if tipo == "mina":
-		hud.mostrar_ficha_mina()
-	elif tipo == "caza_recoleccion":
-		hud.mostrar_ficha_caza()
-	elif tipo == "maderero":
-		hud.mostrar_ficha_madero()
-	else:
-		hud.mostrar_ficha_pesca()
+	hud.set_modo("puestos", tipo)
+	hud.mostrar_contexto_puesto(tipo, false, {})
 	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
 
 
+## Alterna el puesto de "tipo" con su huella: teclas M/H/L/F y subtira de la
+## barra de modos (HUD.puesto_pedido).
+func _alternar_puesto_por_tipo(tipo: String) -> void:
+	match tipo:
+		"mina": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
+		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
+		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
+		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
+
+
+## Clic en un botón de la barra de modos: mismo efecto que su tecla.
+func _on_modo_pedido(modo: String) -> void:
+	match modo:
+		"ver": salir_de_todos_los_modos()
+		"construir": _alternar_modo_colocar_blueprint()
+		"zonas": _alternar_modo_zonificar()
+		"vias": _alternar_modo_trazar_via()
+		"puestos":
+			if modo_colocar_puesto:
+				_salir_de_modo_colocar_puesto()
+			else:
+				_alternar_puesto_por_tipo("mina")
+
+
 func _salir_de_modo_colocar_puesto() -> void:
+	var estaba := modo_colocar_puesto
 	if modo_colocar_puesto:
 		# El fantasma y los overlays son los mismos nodos que usa el modo blueprint.
 		_mostrar_huella_blueprint(false)
@@ -1239,11 +1255,10 @@ func _salir_de_modo_colocar_puesto() -> void:
 	_giros_fantasma_puesto = -1
 	modo_colocar_puesto = false
 	_ocultar_area_accion()
-	hud.ocultar_ficha_mina()
-	hud.ocultar_ficha_caza()
-	hud.ocultar_ficha_madero()
-	hud.ocultar_ficha_pesca()
 	_tipo_puesto_activo = ""
+	if estaba:
+		hud.set_modo("")
+		hud.ocultar_contexto()
 
 
 ## Ctrl + rueda del mouse, solo con un puesto en modo colocación: rota la
@@ -1333,16 +1348,21 @@ func _alternar_modo_colocar_blueprint() -> void:
 	_resumen_blueprint_vigente = SIN_RESUMEN
 	_overlay_vigente = SIN_RESUMEN
 	hud.mostrar_ficha_materiales()
+	hud.set_modo("construir")
 	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar, Ctrl+rueda para rotar).")
 
 
 func _salir_de_modo_colocar_blueprint() -> void:
+	var estaba := modo_colocar_blueprint
 	modo_colocar_blueprint = false
 	_mostrar_huella_blueprint(false)
 	_blueprint_activo = {}
 	hud.ocultar_ficha_materiales()
 	_overlay_nivelacion.ocultar()
 	_overlay_vigente = SIN_RESUMEN
+	if estaba:
+		hud.set_modo("")
+		hud.ocultar_contexto()
 
 
 ## Sale de cualquier modo de interacción de esta cámara (colocar blueprint,
@@ -1480,13 +1500,17 @@ func _alternar_modo_zonificar() -> void:
 	_salir_de_modo_trazar_via()
 	hud.cerrar_panel_puesto()
 	modo_zonificar = true
-	hud.mostrar_modo_zonificacion(_nombre_zona_seleccionada())
+	hud.set_modo("zonas")
+	_mostrar_contexto_zona()
 
 
 func _salir_de_modo_zonificar() -> void:
+	var estaba := modo_zonificar
 	modo_zonificar = false
-	hud.ocultar_modo_zonificacion()
 	_cancelar_pintado_zona()
+	if estaba:
+		hud.set_modo("")
+		hud.ocultar_contexto()
 
 
 ## Activa/desactiva el modo trazador de vías (tecla `V`). Excluyente con
@@ -1505,22 +1529,30 @@ func _alternar_modo_trazar_via() -> void:
 	_hay_tramo_en_curso = false
 	_ultimo_origen_preview = SIN_VERTICE_PREVIO
 	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
-	hud.mostrar_modo_trazar_via()
+	hud.set_modo("vias")
+	hud.mostrar_contexto("Trazar vía", {}, ["FIJAR PUNTO (clic)", "CONFIRMAR (doble clic)", "SALIR (Esc)"])
 
 
 func _salir_de_modo_trazar_via() -> void:
+	var estaba := modo_trazar_via
 	modo_trazar_via = false
 	_hay_tramo_en_curso = false
 	_tramos_fijos.clear()
 	via_preview.limpiar()
-	hud.ocultar_modo_trazar_via()
+	if estaba:
+		hud.set_modo("")
+		hud.ocultar_contexto()
 
 
 func _elegir_zona(tipo: String) -> void:
 	tipo_zona_seleccionada = tipo
 	# Cambiar de zona a medio rectángulo lo descarta, como cancelar con clic derecho.
 	_cancelar_pintado_zona()
-	hud.mostrar_modo_zonificacion(_nombre_zona_seleccionada())
+	_mostrar_contexto_zona()
+
+
+func _mostrar_contexto_zona() -> void:
+	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, ["1 Zona A", "2 Zona B", "0 Borrar", "Z/Esc salir"])
 
 
 func _nombre_zona_seleccionada() -> String:

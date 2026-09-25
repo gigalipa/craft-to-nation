@@ -5,6 +5,7 @@ extends Node3D
 @onready var camara_cenital: Camera3D = $CamaraCenital
 @onready var zona_overlay: Node3D = $ZonaOverlay
 @onready var mira_ui: CanvasLayer = $MiraUI
+@onready var hud: CanvasLayer = $HUDLayer
 
 var cenital_activa := false
 
@@ -50,3 +51,4 @@ func _alternar_camara_cenital() -> void:
 	zona_overlay.visible = cenital_activa
 	mira_ui.visible = not cenital_activa
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if cenital_activa else Input.MOUSE_MODE_CAPTURED
+	hud.set_vista(not cenital_activa)

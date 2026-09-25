@@ -9,6 +9,7 @@ const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
 const PanelContextualScript = preload("res://scripts/PanelContextual.gd")
 const BarraModosScript = preload("res://scripts/BarraModos.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
+const HUDScript = preload("res://scripts/HUD.gd")
 
 
 func _ready() -> void:
@@ -21,6 +22,7 @@ func ejecutar_pruebas() -> void:
 	probar_panel_contextual()
 	probar_barra_modos()
 	probar_hotbar()
+	probar_formateadores_hud()
 
 
 func probar_barra_superior() -> void:
@@ -132,3 +134,26 @@ func probar_hotbar() -> void:
 	assert(not hotbar.cantidad_visible(0))
 	hotbar.set_cantidad(9, 5)  # fuera de rango: ignora
 	hotbar.queue_free()
+
+
+func probar_formateadores_hud() -> void:
+	print("=== TEST 5: formateadores de HUD.gd ===")
+	assert(HUDScript.costo_de_puesto("mina") == Recoleccion.COSTO_CONSTRUCCION)
+	assert(HUDScript.costo_de_puesto("maderero") == Recoleccion.COSTO_CONSTRUCCION_MADERERO)
+	assert(HUDScript.costo_de_puesto("desconocido").is_empty())
+
+	assert(HUDScript.texto_tasas("mina", {}) == "Recolección prevista: sin recursos detectados")
+	assert(HUDScript.texto_tasas("mina", {"hierro": 2.0}) == "Recolección prevista por ciudadano:
+  2.0 hierro/h")
+	assert(HUDScript.texto_tasas("maderero", {"madera": 0.0}) == "Recolección prevista: sin árboles detectados")
+	assert(HUDScript.texto_tasas("maderero", {"madera": 12.0}) == "Recolección prevista por ciudadano:
+  12.0 madera/h")
+	assert(HUDScript.texto_tasas("caza_recoleccion", {"caza": 0.0, "recoleccion": 0.0}) == "Recolección prevista: sin fauna ni fruta detectada")
+	assert(HUDScript.texto_tasas("caza_recoleccion", {"caza": 3.0, "recoleccion": 0.0}) == "Recolección prevista por ciudadano:
+  3.0 comida/h por caza
+  0.0 comida/h por recolección")
+	# Pesca sin extremo de agua válido llega como diccionario vacío.
+	assert(HUDScript.texto_tasas("pesca_frutos_mar", {}) == "Recolección prevista: sin agua detectada")
+	assert(HUDScript.texto_tasas("pesca_frutos_mar", {"pesca": 1.5, "frutos_mar": 0.5}) == "Recolección prevista por ciudadano:
+  1.5 comida/h por pesca
+  0.5 comida/h por frutos del mar")

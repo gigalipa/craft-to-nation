@@ -30,7 +30,7 @@ func _ready() -> void:
 	visible = false
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	offset_left = -280.0
-	offset_top = 12.0
+	offset_top = 72.0
 	offset_right = -12.0
 	custom_minimum_size.x = 268.0
 	grow_horizontal = Control.GROW_DIRECTION_BEGIN  # si crece, hacia la izquierda

@@ -72,140 +72,18 @@ color = Color(1, 1, 1, 0.8)
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=157629340]
 script = ExtResource("5")
 
-[node name="HUD" type="VBoxContainer" parent="HUDLayer" unique_id=814452454]
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 260.0
-offset_bottom = 300.0
-
-[node name="NivelLabel" type="Label" parent="HUDLayer/HUD" unique_id=2052434221]
-layout_mode = 2
-text = "Nivel: 1 (potencial: 1)"
-
-[node name="PoblacionLabel" type="Label" parent="HUDLayer/HUD" unique_id=1287543733]
-layout_mode = 2
-text = "Población: 0 / 0"
-
-[node name="MoralLabel" type="Label" parent="HUDLayer/HUD" unique_id=155013072]
-layout_mode = 2
-text = "Moral (variedad): 0.0"
-
-[node name="MinaFicha" type="VBoxContainer" parent="HUDLayer" unique_id=382321728]
-visible = false
-offset_left = 12.0
-offset_top = 320.0
-offset_right = 320.0
-offset_bottom = 440.0
-
-[node name="CostoLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=1528040882]
-layout_mode = 2
-
-[node name="PersonalLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=1629101157]
-layout_mode = 2
-
-[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=128478959]
-layout_mode = 2
-
-[node name="TasasLabel" type="Label" parent="HUDLayer/MinaFicha" unique_id=981453828]
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="CazaFicha" type="VBoxContainer" parent="HUDLayer" unique_id=672351415]
-visible = false
-offset_left = 12.0
-offset_top = 320.0
-offset_right = 320.0
-offset_bottom = 440.0
-
-[node name="CostoLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=359706175]
-layout_mode = 2
-
-[node name="PersonalLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=724885069]
-layout_mode = 2
-
-[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=1670008041]
-layout_mode = 2
-
-[node name="TasasLabel" type="Label" parent="HUDLayer/CazaFicha" unique_id=785027141]
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="MaderoFicha" type="VBoxContainer" parent="HUDLayer" unique_id=1476136460]
-visible = false
-offset_left = 12.0
-offset_top = 320.0
-offset_right = 320.0
-offset_bottom = 440.0
-
-[node name="CostoLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=683074046]
-layout_mode = 2
-
-[node name="PersonalLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=1965089747]
-layout_mode = 2
-
-[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=1489597917]
-layout_mode = 2
-
-[node name="TasasLabel" type="Label" parent="HUDLayer/MaderoFicha" unique_id=728635545]
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="PescaFicha" type="VBoxContainer" parent="HUDLayer"]
-visible = false
-offset_left = 12.0
-offset_top = 320.0
-offset_right = 320.0
-offset_bottom = 440.0
-
-[node name="CostoLabel" type="Label" parent="HUDLayer/PescaFicha"]
-layout_mode = 2
-
-[node name="PersonalLabel" type="Label" parent="HUDLayer/PescaFicha"]
-layout_mode = 2
-
-[node name="AlmacenamientoLabel" type="Label" parent="HUDLayer/PescaFicha"]
-layout_mode = 2
-
-[node name="TasasLabel" type="Label" parent="HUDLayer/PescaFicha"]
-layout_mode = 2
-autowrap_mode = 2
-
 [node name="MaterialesFicha" type="Label" parent="HUDLayer" unique_id=1902384756]
 visible = false
-offset_left = 12.0
-offset_top = 320.0
-offset_right = 320.0
-offset_bottom = 440.0
+offset_left = 110.0
+offset_top = 72.0
+offset_right = 418.0
+offset_bottom = 192.0
 text = "Materiales de construcción:"
-
-[node name="ModoDeconstruccionLabel" type="Label" parent="HUDLayer" unique_id=1106098849]
-visible = false
-offset_left = 12.0
-offset_top = 450.0
-offset_right = 420.0
-offset_bottom = 480.0
-text = "Modo deconstrucción activo (G para cancelar)"
-
-[node name="ModoZonificacionLabel" type="Label" parent="HUDLayer"]
-visible = false
-offset_left = 12.0
-offset_top = 530.0
-offset_right = 620.0
-offset_bottom = 560.0
-text = "Zonificación"
-
-[node name="ModoTrazarViaLabel" type="Label" parent="HUDLayer"]
-visible = false
-offset_left = 12.0
-offset_top = 570.0
-offset_right = 700.0
-offset_bottom = 600.0
-text = "Trazar vía"
 
 [node name="OxigenoLabel" type="Label" parent="HUDLayer"]
 visible = false
 offset_left = 12.0
-offset_top = 490.0
+offset_top = 72.0
 offset_right = 260.0
-offset_bottom = 520.0
+offset_bottom = 102.0
 text = "Oxígeno: 100%"

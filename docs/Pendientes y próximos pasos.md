@@ -2,7 +2,9 @@
 
 ## Ruta a seguir
 
-### 1. HUD visual interactivo
+### 1. HUD visual interactivo — ✅ primera entrega hecha (2026-09-25)
+
+Hecho: barra superior (recursos, población, moral, nivel), barra de modos de la cenital (Ver, Construir con menú Residencial/puestos, Zonas, Vías), hotbar 1–6 y panel contextual (ambas vistas). Spec: `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`. **Queda para después:** batalla, escuadrón, salud y equipo (no hay sistema detrás); cantidades por casilla de la hotbar (cuando el inventario del avatar, el almacén central, aporte el consumo de materiales); herramientas de recolección (pala, pico, hacha); modo Demoler en la cenital; iconos (hoy son texto, cada botón admite un `icono` opcional).
 
 Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir, zonas, vías, etc.) con sus accesos directos, y no por edificios particulares: habrá demasiados como para asignar una tecla a cada uno. Va tras los edificios de recolección jugables (ya implementados) para definir la interfaz con ellos ya presentes, y antes de 2C y de las demás mecánicas para no rehacerla.
 

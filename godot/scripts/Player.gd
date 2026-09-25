@@ -73,6 +73,8 @@ const TASA_RECUPERACION_OXIGENO := 2.0
 ## tiempo_minado_de()).
 const INTERVALO_ACCION_REPETIDA := 0.20
 const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
+const HotbarScript = preload("res://scripts/Hotbar.gd")
+const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
@@ -92,6 +94,7 @@ var _colocando := false
 var _e_consumida := false
 var _temporizador_accion := 0.0
 var _progreso_accion: RefCounted = ProgresoAccionScript.new()
+var _cara_apuntada: MeshInstance3D = CaraApuntadaScript.new()
 
 var modo_deconstruccion := false
 var _id_listo_para_remocion := -1
@@ -122,6 +125,9 @@ func _ready() -> void:
 	# jugando en vivo: "a veces" hay que saltar para pasar). Con margen
 	# de sobra por encima de 45° esto no depende de la suerte.
 	floor_max_angle = deg_to_rad(50.0)
+	add_child(_cara_apuntada)
+	hud.configurar_hotbar(tipos_disponibles)
+	hud.set_tipo_hotbar(tipo_seleccionado)
 
 
 func _input(event: InputEvent) -> void:
@@ -148,6 +154,9 @@ func _input(event: InputEvent) -> void:
 			var indice: int = tecla.keycode - KEY_1
 			if indice >= 0 and indice < tipos_disponibles.size():
 				tipo_seleccionado = indice
+				hud.set_tipo_hotbar(indice)
+				if not modo_deconstruccion:
+					hud.mostrar_contexto_temporal(HotbarScript.nombre_de(tipos_disponibles[indice]), {}, ["COLOCAR (clic der.)"])
 				print("Tipo de bloque seleccionado: ", tipos_disponibles[tipo_seleccionado])
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -321,6 +330,7 @@ func _procesar_frutos(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_procesar_accion_repetida(delta)
+	_actualizar_cara_apuntada()
 	var direccion := Vector3.ZERO
 	if Input.is_key_pressed(KEY_W):
 		direccion -= transform.basis.z
@@ -376,6 +386,23 @@ func _physics_process(delta: float) -> void:
 		Colonos.actualizar_avatar(_celda_en(global_position + Vector3.UP * 0.1), velocity)
 	_procesar_oxigeno(delta)
 	_procesar_flotacion(delta, nadando)
+
+
+## Panel fijo mientras el modo deconstrucción (G) está activo. Main lo repone al
+## volver de la cenital, cuyo set_vista() descarta el panel.
+func mostrar_contexto_deconstruccion() -> void:
+	hud.mostrar_contexto("Deconstruir", {}, ["DECONSTRUIR (clic izq.)", "G para salir"])
+
+
+## Overlay verde sobre la cara apuntada, solo si el raycast golpea algo (su largo
+## es el alcance de colocar y minar).
+func _actualizar_cara_apuntada() -> void:
+	if not camara.current or mundo == null or not raycast.is_colliding():
+		_cara_apuntada.ocultar()
+		return
+	var normal := raycast.get_collision_normal()
+	var centro_celda: Vector3 = mundo.to_global(mundo.map_to_local(_celda_impactada()))
+	_cara_apuntada.mostrar_en(centro_celda + normal * 0.5 * mundo.cell_size.x, normal)
 
 
 ## Cuenta cuántos bloques de agua consecutivos hay desde la celda de los pies
@@ -585,9 +612,9 @@ func _celda_impactada() -> Vector3i:
 func _alternar_modo_deconstruccion() -> void:
 	modo_deconstruccion = not modo_deconstruccion
 	if modo_deconstruccion:
-		hud.mostrar_modo_deconstruccion()
+		mostrar_contexto_deconstruccion()
 	else:
-		hud.ocultar_modo_deconstruccion()
+		hud.ocultar_contexto()
 	_id_listo_para_remocion = -1
 	_ticks_listo_para_remocion = 0
 

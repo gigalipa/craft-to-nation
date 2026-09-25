@@ -12,7 +12,7 @@ Reemplazar el HUD de texto plano (`godot/scripts/HUD.gd`) por un HUD visual orga
 - **Barra de modos vertical izquierda** (cenital): un botón por modo, con su tecla.
 - **Hotbar 1–6** (primera persona): los tipos de bloque actuales, con la casilla seleccionada resaltada.
 
-Estilo común: verde oscuro con marco dorado (ver capturas), definido en un solo `Theme` construido en código.
+Estilo común: verde oscuro con marco dorado (ver capturas), definido como helpers estáticos en `TemaHUD.gd` (no un recurso `Theme`).
 
 ## Fuera de alcance
 
@@ -33,16 +33,19 @@ Ningún atajo cambia. En 1ª persona: 1–6 tipo de bloque, G deconstruir, B dec
 
 | Pieza | Vista | Muestra | Fuente de datos |
 |---|---|---|---|
-| `BarraSuperior` | ambas | comida, madera, piedra, hierro, población `x/y`, moral y nivel | `Ciudad`, leído cada fotograma (como hoy) |
-| `PanelContextual` | ambas | miniatura opcional, nombre, costo, acciones, validez (✓/✗) y una línea opcional de tasas previstas | empujado por `CamaraCenital` (blueprint/puesto activo) y `Player` (raycast) |
-| `BarraModos` | cenital | Ver, Construir, Zonas, Vías, Puestos; activo resaltado y tecla | `CamaraCenital` avisa el modo activo |
+| `BarraSuperior` | ambas | de lado a lado; de izquierda a derecha: población `x/y`, moral, comida (total y tasa `+x/h`), almacenamiento total (Σ cantidades / Σ límites y Σ tasas), recurso crítico (tasa más negativa o, si ninguno decrece, la menor positiva; la tasa 0 no cuenta), era y nivel | `Ciudad`, leído cada fotograma. Población y moral sin tasa (`Ciudad` no la calcula). La era es un texto fijo (`Era 1 · Prehistórica`) hasta que exista `Ciudad.era` |
+| `PanelContextual` | ambas | nombre, costo, acciones, validez ("Ubicación válida"/"no válida", opcional) y una línea opcional de tasas previstas (sin miniatura: no hay arte) | empujado por `CamaraCenital` (blueprint/puesto activo) y `Player` (raycast) |
+| `BarraModos` | cenital | esquina inferior izquierda: barra principal (Ver, Construir, Zonas, Vías; activo resaltado y tecla) y, a su derecha, una barra de subherramientas según el modo (Construir: Residencial y los 4 puestos; Zonas: Zona A/B/Borrar) | `CamaraCenital` avisa el modo activo |
 | `Hotbar` | 1ª persona | casillas 1–6 (icono/nombre), seleccionada resaltada, cantidad opcional | `Player.tipos_disponibles` y `tipo_seleccionado` |
 
 Scripts nuevos en `godot/scripts/` (uno por pieza, más el `Theme`). Sin autoload nuevo ni registro de modos: la lista de modos es una constante en `BarraModos`.
 
 ### API nueva de `HUD.gd`
 
-- `mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: bool, extra: String = "")` / `ocultar_contexto()`
+- `mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "")` / `ocultar_contexto()` — `valido` `true`/`false` muestra la validez; `null` la oculta.
+- `mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary)` — costo, personal, almacenamiento y tasas previstas de un puesto.
+- `mostrar_contexto_temporal(nombre, costo, acciones, segundos = 2.5)` — panel que aparece con fade-in deslizante hacia arriba desde la hotbar y se desvanece solo; sin validez. Lo usa `Player` al elegir 1–6. El panel de deconstrucción (G) es fijo (`mostrar_contexto`) hasta desactivar G.
+- `set_vista(primera_persona: bool)` — muestra la hotbar (1ª persona) o la barra de modos (cenital) y descarta el panel contextual.
 - `set_modo(modo: String)` — resalta el botón del modo activo (`""` = Ver).
 - `set_tipo_hotbar(indice: int)` — casilla seleccionada en 1ª persona.
 
@@ -60,13 +63,16 @@ Etiquetas de nivel/población/moral/recursos (pasan a `BarraSuperior`); `mostrar
 | Construir | blueprint (`_alternar_modo_colocar_blueprint`) | B |
 | Zonas | zonificar (`_alternar_modo_zonificar`) | Z |
 | Vías | trazar vía (`_alternar_modo_trazar_via`) | V |
-| Puestos | colocar puesto; tira de 4 tipos sobre el panel | M/H/L/F |
 
-Puestos abre una tira con los 4 tipos (mina, caza/recolección, maderero, pesca); elegir uno equivale a su tecla. Las teclas siguen funcionando directamente.
+Construir (B) activa el blueprint residencial y despliega a su derecha el menú Residencial + los 4 puestos (mina, caza/recolección, maderero, pesca); elegir uno equivale a su tecla (B, M/H/L/F). Las teclas siguen funcionando directamente.
 
 ### 1ª persona
 
 `Hotbar` muestra los 6 tipos de `Player.tipos_disponibles`. `Player` avisa la selección con `HUD.set_tipo_hotbar()`. `PanelContextual` muestra el tipo apuntado con `COLOCAR` y su validez según el raycast. G (deconstruir) sigue en G; mientras esté activo se indica en el panel. La cantidad por casilla queda vacía hasta que se defina el consumo de materiales.
+
+## Feedback de colocación en 1ª persona
+
+`CaraApuntada.gd`: quad verde translúcido y brillante (con pulso suave) sobre la cara del bloque que apunta el raycast del avatar. Solo se muestra si el raycast golpea algo (su largo, 5 bloques, es el alcance de colocar y minar). Reemplaza la línea "Ubicación válida" del panel en 1ª persona. Es un quad de 1×1: sobre piezas que no son un cubo entero (puerta, ventana) no ajusta perfecto.
 
 ## Errores y casos límite
 

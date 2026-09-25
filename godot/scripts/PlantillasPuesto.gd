@@ -34,12 +34,13 @@ const PLANTILLAS := {
 		["#D#", "#.#", "#.#", "###"],
 		["###", "###", "###", "###"],
 	]},
-	# Edificio en las filas 0-2 y muelle (cubierta de pared) en las filas 3-5; el
-	# agua queda del lado de z alto. "agua_ref" (x, z) es una celda del extremo de agua.
+	# Edificio en las filas 0-3 (interior libre en las filas 1-2, con el baúl al fondo)
+	# y muelle (cubierta de pared) en las filas 4-5; el agua queda del lado de z alto.
+	# "agua_ref" (x, z) es una celda del extremo de agua.
 	"pesca_frutos_mar": {"capas": [
-		["#d##", "#B.#", "####", "####", "####", "####"],
-		["#D##", "V..V", "####", "....", "....", "...."],
-		["####", "####", "####", "....", "....", "...."],
+		["#d##", "#..#", "#.B#", "####", "####", "####"],
+		["#D##", "V..V", "#..#", "####", "....", "...."],
+		["####", "####", "####", "####", "....", "...."],
 	], "agua_ref": Vector2i(0, 5)},
 }
 

@@ -607,6 +607,9 @@ func _decidir_trabajo(c: Dictionary) -> void:
 		if _en_puesto(c["celda"], huella_puesto, servicio, suelo):
 			economia.marcar_presente(c["id"], true)
 			c["espera"] = ESPERA_TRABAJO
+			if not huella_puesto.has(Vector2i(c["celda"].x, c["celda"].z)):
+				# Espera fuera: si mientras tanto se libera un sitio dentro, entra.
+				_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio), true)
 		else:
 			_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio))
 		return
@@ -644,8 +647,30 @@ func _llevar_al_nucleo(c: Dictionary) -> bool:
 func _en_puesto(celda: Vector3i, huella: Array, servicio: Vector2i, suelo: int) -> bool:
 	if suelo != economia.SIN_SUELO and huella.has(Vector2i(celda.x, celda.z)):
 		# Parado en la puerta no cuenta (taponaría la entrada): solo el piso libre interior.
-		return celda.y == suelo and mundo.obtener_tipo(celda) == ""
+		if celda.y != suelo or mundo.obtener_tipo(celda) != "":
+			return false
+		# Tampoco la celda pegada a la puerta por dentro (el vestíbulo), salvo que sea el único
+		# sitio libre del edificio: quien se detenga ahí a medio camino impediría entrar a los demás.
+		if _es_vestibulo(celda, huella, servicio):
+			return _celdas_interiores(huella, suelo, servicio).size() <= 1
+		return true
 	return _junto_a(celda, huella, servicio)
+
+
+## true si "celda" está dentro del edificio, pegada (a 1 celda) a la puerta que da a "servicio".
+func _es_vestibulo(celda: Vector3i, huella: Array, servicio: Vector2i) -> bool:
+	var puerta := _puerta_xz(huella, servicio)
+	return puerta != Vector2i.MAX and absi(celda.x - puerta.x) + absi(celda.z - puerta.y) <= 1
+
+
+## Columna (X, Z) de la puerta: la de la huella pegada a la celda de servicio; MAX si no hay.
+func _puerta_xz(huella: Array, servicio: Vector2i) -> Vector2i:
+	if servicio == Vector2i.MAX:
+		return Vector2i.MAX
+	for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if huella.has(servicio + direccion):
+			return servicio + direccion
+	return Vector2i.MAX
 
 
 ## true si desde la celda frente a la puerta (X, Z "servicio") se puede pasar a la
@@ -735,39 +760,55 @@ func _celdas_de_servicio(servicio: Vector2i, huella: Array) -> Array[Vector3i]:
 
 
 ## Planifica una ruta hasta una celda libre del interior del edificio (si el puesto
-## tiene plantilla), o hasta la más cercana junto a la huella (en la zona de
+## tiene plantilla; con "solo_dentro", solo eso), o hasta la más cercana junto a la huella (en la zona de
 ## servicio, si el puesto tiene puerta), con una sola búsqueda por grupo; si ninguno es
 ## alcanzable, espera y reintenta.
-func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX, interiores: Array[Vector3i] = []) -> void:
+func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX, interiores: Array[Vector3i] = [], solo_dentro := false) -> void:
 	var dentro: Array[Vector3i] = []
 	for celda in interiores:
 		if not _ocupada_por_otro(celda, c["id"]):
 			dentro.append(celda)
-	# Las celdas pegadas a la puerta por dentro se dejan para el final: así se llena el
-	# edificio desde el fondo y no se tapona la entrada.
-	var puerta_xz := Vector2i.MAX
-	for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		if servicio != Vector2i.MAX and huella.has(servicio + direccion):
-			puerta_xz = servicio + direccion
-	var fondo: Array[Vector3i] = []
-	for celda in dentro:
-		if absi(celda.x - puerta_xz.x) + absi(celda.z - puerta_xz.y) > 1:
-			fondo.append(celda)
-	if not fondo.is_empty():
+	# La celda pegada a la puerta por dentro no se ocupa (taponaría la entrada), salvo que sea
+	# el único sitio libre del edificio: se llena desde el fondo.
+	if interiores.size() > 1:
+		var fondo: Array[Vector3i] = []
+		for celda in dentro:
+			if not _es_vestibulo(celda, huella, servicio):
+				fondo.append(celda)
 		dentro = fondo
 	# UNA búsqueda por grupo (interior, luego fuera), repartida entre fotogramas: probar
 	# las celdas de una en una, o de golpe, cuesta el tope de nodos por cada inalcanzable
 	# (ver BuscadorRutas.iniciar_busqueda_a_alguna()).
-	var fuera: Array[Vector3i] = []
-	var candidatas: Array[Vector3i] = _celdas_junto_a(huella) if servicio == Vector2i.MAX else _celdas_de_servicio(servicio, huella)
-	for celda in candidatas:
-		if not _ocupada_por_otro(celda, c["id"]):
-			fuera.append(celda)
 	var grupos: Array = []
 	if not dentro.is_empty():
+		# Primero las celdas más alejadas de la puerta: llenar desde el fondo evita que los
+		# primeros en llegar (los que están más cerca) sellen la entrada desde dentro.
+		var puerta := _puerta_xz(huella, servicio)
+		var lejos := 0
+		for celda in dentro:
+			lejos = maxi(lejos, absi(celda.x - puerta.x) + absi(celda.z - puerta.y))
+		var mas_lejanas: Array[Vector3i] = []
+		for celda in dentro:
+			if absi(celda.x - puerta.x) + absi(celda.z - puerta.y) == lejos:
+				mas_lejanas.append(celda)
+		if mas_lejanas.size() < dentro.size():
+			grupos.append(mas_lejanas)
 		grupos.append(dentro)
-	grupos.append(fuera)
+	if not solo_dentro:
+		var fuera: Array[Vector3i] = []
+		var candidatas: Array[Vector3i] = _celdas_junto_a(huella) if servicio == Vector2i.MAX else _celdas_de_servicio(servicio, huella)
+		for celda in candidatas:
+			if not _ocupada_por_otro(celda, c["id"]):
+				fuera.append(celda)
+		grupos.append(fuera)
+	if grupos.is_empty():
+		return  # solo_dentro y ningún sitio libre dentro: nada que intentar
 	c["busqueda"] = {"grupos": grupos, "actual": null}
+	if solo_dentro:
+		# Reintento desde la zona de espera: cerca, así que con el tope local, y sin
+		# penalizar si falla (ya está en su sitio de trabajo).
+		c["busqueda"]["tope"] = TOPE_NODOS_DESTINO
+		c["busqueda"]["reintento"] = true
 	_avanzar_busqueda(c)
 
 
@@ -783,6 +824,8 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 				c["busqueda"] = {}
 				if b.get("deambular", false):
 					c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+				elif b.get("reintento", false):
+					c["espera"] = ESPERA_TRABAJO * 4.0
 				else:
 					c["fallos_servicio"] = mini(c["fallos_servicio"] + 1, 4)
 					c["espera"] = ESPERA_TRABAJO * pow(2.0, c["fallos_servicio"] - 1)
@@ -799,7 +842,7 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 		if busqueda.terminada:
 			if busqueda.exito:
 				c["ruta"] = busqueda.ruta
-				if not b.get("deambular", false):
+				if not b.get("deambular", false) and not b.get("reintento", false):
 					c["fallos_servicio"] = 0
 				c["busqueda"] = {}
 				return

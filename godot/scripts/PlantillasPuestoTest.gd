@@ -148,4 +148,35 @@ func ejecutar_pruebas() -> void:
 	assert(PlantillasPuesto.fachada("mina", 0).has(Vector2i(0, -2)) and PlantillasPuesto.fachada("mina", 0).has(Vector2i(4, -1)), "mina sin girar: franja x 0..4, z -2..-1")
 	assert(PlantillasPuesto.fachada("mina", 1).has(Vector2i(6, 0)) and PlantillasPuesto.fachada("mina", 1).has(Vector2i(5, 4)), "mina girada un cuarto: franja x 5..6, z 0..4")
 
-	print("\n=== Las 9 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 10: detrás de la puerta hay siempre una celda libre (con 2 de altura) y todo el interior libre es alcanzable desde ella ===")
+	for tipo in TIPOS:
+		var base10: Dictionary = PlantillasPuesto.celdas(tipo, 0)
+		var d10: Vector2i = PlantillasPuesto.dimensiones(tipo)
+		var puerta10: Vector3i = _primera(base10, "puerta_inferior")
+		var vestibulo10 := Vector3i(puerta10.x, 0, puerta10.z + 1)
+		assert(not base10.has(vestibulo10) and not base10.has(vestibulo10 + Vector3i(0, 1, 0)), tipo + ": la celda detrás de la puerta debe estar libre (no un baúl ni una pared)")
+		# Relleno por inundación desde el vestíbulo sobre las celdas libres de la capa 0 dentro de la huella.
+		var alcanzadas10 := {vestibulo10: true}
+		var pendientes10: Array[Vector3i] = [vestibulo10]
+		while not pendientes10.is_empty():
+			var actual10: Vector3i = pendientes10.pop_back()
+			for dir10 in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+				var vecina10: Vector3i = actual10 + dir10
+				if vecina10.x < 0 or vecina10.x >= d10.x or vecina10.z < 1 or vecina10.z >= d10.y:
+					continue
+				if base10.has(vecina10) or alcanzadas10.has(vecina10):
+					continue
+				alcanzadas10[vecina10] = true
+				pendientes10.append(vecina10)
+		var libres10 := 0
+		for x10 in range(d10.x):
+			for z10 in range(1, d10.y):
+				var c10 := Vector3i(x10, 0, z10)
+				var techo10: bool = PlantillasPuesto.celdas(tipo, 0).has(Vector3i(x10, PlantillasPuesto.altura(tipo) - 1, z10))
+				# libre en capa 0 y con techo encima (es interior, no el muelle abierto)
+				if not base10.has(c10) and techo10:
+					libres10 += 1
+					assert(alcanzadas10.has(c10), tipo + ": celda interior libre inalcanzable " + str(c10))
+		assert(libres10 >= 1, tipo + ": tiene interior libre")
+
+	print("\n=== Las 10 pruebas de PlantillasPuesto pasaron correctamente ===")

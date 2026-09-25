@@ -46,7 +46,7 @@ var _panel_puesto: PanelContainer
 var _barra_progreso: ProgressBar
 var _barra_superior: PanelContainer
 var _contexto: PanelContainer
-var _barra_modos: PanelContainer
+var _barra_modos: Control
 var _hotbar: PanelContainer
 
 
@@ -88,7 +88,8 @@ func _ready() -> void:
 func set_vista(primera_persona: bool) -> void:
 	_hotbar.visible = primera_persona
 	_barra_modos.visible = not primera_persona
-	_contexto.set_margen_inferior(84.0 if primera_persona else 12.0)
+	# 102 = alto de la hotbar (~82) + su margen (12) + un hueco de 8.
+	_contexto.set_margen_inferior(102.0 if primera_persona else 12.0)
 	_contexto.ocultar()
 
 
@@ -107,6 +108,12 @@ func set_modo(modo: String, puesto: String = "") -> void:
 
 func mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "") -> void:
 	_contexto.mostrar(nombre, costo, acciones, valido, extra)
+
+
+## Panel que aparece con fade-in deslizante, se desvanece solo y no muestra
+## validez (1ª persona: 1-6). Para el que debe quedarse fijo, mostrar_contexto().
+func mostrar_contexto_temporal(nombre: String, costo: Dictionary, acciones: Array, segundos: float = 2.5) -> void:
+	_contexto.mostrar_temporal(nombre, costo, acciones, segundos)
 
 
 func ocultar_contexto() -> void:

@@ -52,3 +52,5 @@ func _alternar_camara_cenital() -> void:
 	mira_ui.visible = not cenital_activa
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if cenital_activa else Input.MOUSE_MODE_CAPTURED
 	hud.set_vista(not cenital_activa)
+	if not cenital_activa and jugador.modo_deconstruccion:
+		jugador.mostrar_contexto_deconstruccion()

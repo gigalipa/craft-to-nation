@@ -2,13 +2,13 @@
 
 ## Ruta a seguir
 
-### 1. Edificios de recolección jugables reales
+### 1. Puertas interactivas
 
-Diseño e implementación de edificios de recolección jugables reales (no solo un slab de bloques). Van tras 2B (ya implementado, existe la extracción real) y antes de 2C, que necesita edificios de transformación de verdad.
+El avatar solo puede interactuar con los objetos que se le van habilitando (ahora, los baúles de los puestos de recolección con la tecla `E`), pero para entrar a los edificios necesita puertas que se abran: hoy las puertas son bloques sólidos para el avatar y solo las ignoran los colonos en su búsqueda de rutas. Diseñar una puerta con estado (cerrada: no transitable; abierta: transitable), su colisión, la tecla de interacción y la migración de los edificios residenciales ya construidos. Hasta entonces el baúl de un puesto (su depósito físico) no es alcanzable por el avatar, aunque el puesto funciona por completo con colonos. Falta decidir su orden respecto al HUD (punto 2).
 
 ### 2. HUD visual interactivo
 
-Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir, zonas, vías, etc.) con sus accesos directos, y no por edificios particulares: habrá demasiados como para asignar una tecla a cada uno. Va tras los edificios de recolección jugables para definir la interfaz con ellos ya presentes, y antes de 2C y de las demás mecánicas para no rehacerla.
+Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir, zonas, vías, etc.) con sus accesos directos, y no por edificios particulares: habrá demasiados como para asignar una tecla a cada uno. Va tras los edificios de recolección jugables (ya implementados) para definir la interfaz con ellos ya presentes, y antes de 2C y de las demás mecánicas para no rehacerla.
 
 ### 3. Declaración de edificios por volumen interno
 
@@ -43,6 +43,7 @@ Pueden intercalarse en cualquier momento.
 
 ## Hecho
 
+- ~~**Edificios de recolección jugables reales** (2026-09-24).~~ Los cuatro puestos son edificios de bloques con plantilla por tipo (provisionales, a reemplazar con el arte de SketchUp): puerta de servicio (los colonos trabajan en una zona junto a ella), baúl como depósito físico (`E` sobre el baúl pasa al inventario lo que quepa), rotación de 4 giros, deconstrucción bloque a bloque que desactiva el puesto y libera a sus trabajadores, y agotamiento que despide a los recolectores y conserva a los acarreadores hasta vaciar el almacén local — ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Edificios de Recolección.md`.
 - ~~**PoC 5, sub-proyecto 2B: extracción física y agotamiento** (2026-09-24).~~ Los puestos de mina y maderero consumen bloques y árboles reales (la mina solo desde el subsuelo, no la superficie), las tasas de todos los puestos se recalculan cada 6 horas de juego según su entorno (árboles, bloques minerales y agua conectada), y el avatar mina, tala y recolecta frutos con tiempo e indicador de avance sobre un inventario limitado que arranca la partida — ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`. La bomba extractora y el petróleo quedan para el sub-proyecto de fluidos.
   - Consideraciones originales del usuario para este punto (ya implementadas):
     > Algunas consideraciones para esta sección:

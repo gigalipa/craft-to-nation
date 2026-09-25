@@ -265,7 +265,8 @@ func _procesar_tala(celda: Vector3i, delta: float) -> void:
 	hud.mostrar_progreso(float(mundo.arboles.salud_de(id)) / mundo.arboles.salud_maxima_de(id), true)
 
 
-## Frutos: mantener E sobre un árbol con frutos. No consume el árbol (ver
+## Frutos: mantener E sobre un árbol con frutos, o sobre el baúl de un puesto
+## (pasa al inventario lo que quepa de su almacén local). No consume el árbol (ver
 ## VoxelWorld.recolectar_frutos()).
 func _procesar_frutos(delta: float) -> void:
 	if not raycast.is_colliding() or mundo == null:
@@ -273,6 +274,14 @@ func _procesar_frutos(delta: float) -> void:
 		hud.ocultar_progreso()
 		return
 	var celda := _celda_impactada()
+	var esquina_deposito: Vector2i = Economia.puesto_con_deposito(celda)
+	if esquina_deposito != Recoleccion.SIN_PUESTO:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		var tomado: Dictionary = Economia.retirar_deposito(esquina_deposito)
+		if not tomado.is_empty():
+			print("Tomado del depósito del puesto: ", tomado)
+		return
 	if mundo.frutos_disponibles(celda, Ciudad.horas_juego) <= 0.0:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
@@ -588,6 +597,9 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		return
 
 	Ciudad.retirar_edificio_residencial(resultado["id"])  # idempotente
+	var metadata_obra: Dictionary = mundo.edificio_metadata.get(resultado["id"], {})
+	if metadata_obra.has("puesto"):
+		Economia.desactivar_puesto(metadata_obra["puesto"])  # idempotente: un puesto en deconstrucción deja de funcionar
 	if resultado["total_camas"] > 0:
 		print("Deconstrucción iniciada: ", resultado["total_camas"], " cama(s) retiradas de Ciudad.")
 
@@ -604,7 +616,10 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		_ticks_listo_para_remocion = 1
 
 	if _ticks_listo_para_remocion >= TICKS_REMOCION_FINAL:
+		var metadata_final: Dictionary = mundo.edificio_metadata.get(id, {})  # eliminar_edificio() la borra
 		var esquina: Vector2i = mundo.eliminar_edificio(id)
+		if metadata_final.has("puesto"):
+			esquina = metadata_final["puesto"]  # la esquina del puesto, no la de las celdas de la plantilla
 		Zonificacion.retirar_contribucion(id)
 		Recoleccion.quitar_puesto(esquina)
 		Economia.quitar_puesto(esquina)  # libera a sus trabajadores (no-op si era un edificio)
@@ -767,11 +782,16 @@ func _ejecutar_sucesion(motivo: String) -> void:
 ## Se llama cuando VoxelWorld.surtir_construccion() indica que una
 ## construcción fantasma quedó completa. "metadata" es la que se pasó a
 ## VoxelWorld.iniciar_construccion_fantasma() al colocarla (ver
-## CamaraCenital._procesar_clic_blueprint()) — hoy siempre un edificio; un
-## puesto periférico completado (sub-proyecto B, futuro) no pasaría por
-## este registro de Ciudad/Zonificacion (metadata vacía o de otra forma).
+## CamaraCenital._procesar_clic_blueprint()) — un edificio residencial, o un
+## puesto de recolección que se volvió a completar tras deconstruirse
+## (metadata {"puesto": esquina}): este solo reactiva su Economia y no pasa
+## por el registro de Ciudad/Zonificacion.
 func _completar_construccion(metadata: Dictionary) -> void:
 	if metadata.is_empty():
+		return
+	if metadata.has("puesto"):
+		Economia.reactivar_puesto(metadata["puesto"])
+		print("Puesto reactivado en ", metadata["puesto"], ".")
 		return
 	var blueprint: Dictionary = metadata["blueprint"]
 

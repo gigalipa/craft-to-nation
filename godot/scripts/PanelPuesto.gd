@@ -92,14 +92,19 @@ func _actualizar() -> void:
 	var puesto: Dictionary = Economia.puestos[esquina]
 	var t: Dictionary = Economia.trabajadores_de(esquina)
 	var libres: int = Ciudad.demografia["desempleado"]
-	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"])
+	var estado := ""
+	if not puesto["activo"]:
+		estado = " (inactivo)"
+	elif puesto["agotado"]:
+		estado = " (agotado)"
+	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + estado
 	_filas["recolector"]["cantidad"].text = str(t["recolectores"])
 	_filas["acarreador"]["cantidad"].text = str(t["acarreadores"])
 	_filas["recolector"]["menos"].disabled = t["recolectores"] == 0
 	_filas["acarreador"]["menos"].disabled = t["acarreadores"] == 0
 	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0 or libres <= 0
-	_filas["recolector"]["mas"].disabled = sin_cupo
-	_filas["acarreador"]["mas"].disabled = sin_cupo
+	_filas["recolector"]["mas"].disabled = sin_cupo or not puesto["activo"] or puesto["agotado"]
+	_filas["acarreador"]["mas"].disabled = sin_cupo or not puesto["activo"]
 	_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
 	_libres.text = "Desempleados libres: %d" % libres
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]

@@ -223,4 +223,60 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 17: Si el origen ya está fuera, no hay nada que recorrer ===")
 	assert(b16.buscar_salida(Vector3i(0, 1, 0), esta_dentro).is_empty())
 
-	print("\n=== Las 17 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== TEST 18: buscar_ruta_a_alguna() va a la destino alcanzable más cercana y ni prueba las inalcanzables una por una ===")
+	var m18 := MundoFalso.new()
+	_llano(m18, 30, 30)
+	for x in range(20, 25):  # recinto cerrado e inalcanzable: paredes alrededor de (22, 1, 22)
+		for z in range(20, 25):
+			if x in [20, 24] or z in [20, 24]:
+				m18.poner(Vector3i(x, 1, z), "pared")
+				m18.poner(Vector3i(x, 2, z), "pared")
+	var b18 := BuscadorRutas.new(m18)
+	var cerca18 := Vector3i(3, 1, 0)
+	var cerrada18 := Vector3i(22, 1, 22)
+	assert(b18.buscar_ruta(Vector3i(0, 1, 0), cerrada18).is_empty(), "la celda del recinto es inalcanzable")
+	var ruta18: Array[Vector3i] = b18.buscar_ruta_a_alguna(Vector3i(0, 1, 0), [cerrada18, cerca18, Vector3i(9, 1, 9)])
+	assert(ruta18.size() == 3 and ruta18.back() == cerca18, "elige la más cercana alcanzable, no la primera de la lista")
+	assert(b18.buscar_ruta_a_alguna(Vector3i(0, 1, 0), [cerrada18]).is_empty(), "sin ninguna alcanzable: []")
+	assert(b18.buscar_ruta_a_alguna(Vector3i(0, 1, 0), []).is_empty(), "sin destinos: []")
+	assert(b18.buscar_ruta_a_alguna(Vector3i(0, 1, 0), [Vector3i(0, 1, 0)]).is_empty(), "el origen no cuenta como ruta")
+	var bloqueadas18 := {cerca18: true}
+	var ruta18b: Array[Vector3i] = b18.buscar_ruta_a_alguna(Vector3i(0, 1, 0), [cerca18, Vector3i(9, 1, 9)], {"bloqueadas": bloqueadas18})
+	assert(not ruta18b.is_empty() and ruta18b.back() == Vector3i(9, 1, 9), "un destino bloqueado se descarta")
+	# Una sola búsqueda: con varios destinos inalcanzables no se multiplica el coste.
+	b18.max_nodos = 500
+	var ruta18c: Array[Vector3i] = b18.buscar_ruta_a_alguna(Vector3i(0, 1, 0), [cerrada18, Vector3i(21, 1, 21), Vector3i(23, 1, 23), Vector3i(22, 1, 23)])
+	assert(ruta18c.is_empty())
+
+	print("\n=== TEST 19: una búsqueda POR PARTES llega a la misma ruta que la síncrona y no gasta más nodos que el presupuesto de cada llamada ===")
+	var m19 := MundoFalso.new()
+	_llano(m19, 30, 30)
+	for x in range(20, 25):  # recinto cerrado e inalcanzable
+		for z in range(20, 25):
+			if x in [20, 24] or z in [20, 24]:
+				m19.poner(Vector3i(x, 1, z), "pared")
+				m19.poner(Vector3i(x, 2, z), "pared")
+	var b19 := BuscadorRutas.new(m19)
+	var origen19 := Vector3i(0, 1, 0)
+	var meta19 := Vector3i(20, 1, 15)
+	var busqueda19 = b19.iniciar_busqueda_a_alguna(origen19, [meta19])
+	var pasadas19 := 0
+	while not busqueda19.terminada:
+		var usados19: int = busqueda19.avanzar(25)
+		assert(usados19 <= 25, "una llamada no pasa de su presupuesto")
+		pasadas19 += 1
+		assert(pasadas19 < 1000, "debe terminar")
+	assert(pasadas19 > 1, "una ruta larga necesita varias llamadas")
+	assert(busqueda19.exito and busqueda19.ruta == b19.buscar_ruta(origen19, meta19), "misma ruta que la búsqueda síncrona")
+	assert(busqueda19.avanzar(25) == 0, "ya terminada: no hace nada")
+	b19.max_nodos = 300
+	var fallida19 = b19.iniciar_busqueda_a_alguna(origen19, [Vector3i(22, 1, 22)])
+	var total19 := 0
+	while not fallida19.terminada:
+		total19 += fallida19.avanzar(40)
+	assert(not fallida19.exito and fallida19.ruta.is_empty(), "inalcanzable: termina sin ruta")
+	assert(total19 <= 301, "respeta el tope de nodos (%d)" % total19)
+	var vacia19 = b19.iniciar_busqueda_a_alguna(origen19, [])
+	assert(vacia19.terminada and not vacia19.exito, "sin destinos válidos termina al instante")
+
+	print("\n=== Las 19 pruebas de BuscadorRutas pasaron correctamente ===")

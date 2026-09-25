@@ -72,6 +72,19 @@ class ZonaFalsa extends RefCounted:
 		return [Vector2i(7, 7), Vector2i(8, 7), Vector2i(7, 8), Vector2i(8, 8)]
 
 
+## Buscador que anota el tope de nodos ("max_nodos") con que se le pide cada ruta.
+class BuscadorEspia extends "res://scripts/BuscadorRutas.gd":
+	var topes: Array = []
+
+	func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {}) -> Array[Vector3i]:
+		topes.append(opciones.get("max_nodos", -1))
+		return super.buscar_ruta(origen, destino, opciones)
+
+	func buscar_salida(origen: Vector3i, esta_dentro: Callable, opciones: Dictionary = {}) -> Array[Vector3i]:
+		topes.append(opciones.get("max_nodos", -1))
+		return super.buscar_salida(origen, esta_dentro, opciones)
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -585,4 +598,312 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 
-	print("\n=== Las 26 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 27: con celda de servicio, los recolectores se reparten por la zona de servicio de la puerta ===")
+	var ciudad27: Node = CiudadScript.new()
+	var economia27: Node = EconomiaScript.new()
+	economia27.ciudad = ciudad27
+	# Maderero 2x2 en (2,2) con celda de servicio LEJOS del anillo de la huella, en (7,3): zona x 5..9, z 1..5.
+	economia27.registrar_puesto(Vector2i(2, 2), "maderero", 2, 2, {"madera": 3.0}, {}, Vector2i(7, 3))
+	var colonos27: Node = _nuevo(_mundo_llano(), ciudad27)
+	colonos27.economia = economia27
+	var ids27: Array[int] = []
+	for celda27 in [Vector3i(0, 1, 7), Vector3i(0, 1, 8), Vector3i(0, 1, 9)]:
+		ids27.append(colonos27.agregar_colono("desempleado", celda27))
+	ciudad27.demografia["desempleado"] = 3
+	for i in range(3):
+		assert(colonos27.contratar(Vector2i(2, 2), "recolector"))
+	var todos27 := false
+	for i in range(600):
+		colonos27.avanzar(0.1)
+		if economia27.trabajadores_de(Vector2i(2, 2))["presentes"] == 3:
+			todos27 = true
+			break
+	assert(todos27, "los tres llegan a la zona de servicio y quedan presentes")
+	var celdas27: Dictionary = {}
+	for id27 in ids27:
+		var c27: Dictionary = colonos27.colonos[id27]
+		assert(absi(c27["celda"].x - 7) <= 2 and absi(c27["celda"].z - 3) <= 2, "dentro de la zona de servicio")
+		assert(not (c27["celda"].x in [2, 3] and c27["celda"].z in [2, 3]), "no dentro de la huella")
+		celdas27[c27["celda"]] = true
+	assert(celdas27.size() == 3, "cada uno en su propia celda")
+
+	print("\n=== TEST 28: agotamiento/desactivación: el recolector vuelve a desempleado y el acarreador con carga termina el viaje ===")
+	var ciudad28: Node = CiudadScript.new()
+	var colonos28: Node = _nuevo_con_puesto(ciudad28)
+	var id_rec28: int = colonos28.agregar_colono("desempleado", Vector3i(6, 1, 1))
+	var id_acar28: int = colonos28.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad28.demografia["desempleado"] = 2
+	assert(colonos28.contratar(Vector2i(2, 2), "recolector"))
+	assert(colonos28.contratar(Vector2i(2, 2), "acarreador"))
+	# contratar() toma al desempleado de id menor: el recolector es id_rec28 y el acarreador id_acar28.
+	var recolector28: Dictionary = colonos28.colonos[id_rec28]
+	var acarreador28: Dictionary = colonos28.colonos[id_acar28]
+	assert(recolector28["trabajo"]["rol"] == "recolector" and acarreador28["trabajo"]["rol"] == "acarreador")
+	acarreador28["fase"] = "entregar"
+	acarreador28["carga"] = {"madera": 50.0}
+	var madera28: float = ciudad28.almacen["madera"].cantidad
+	colonos28.economia.desactivar_puesto(Vector2i(2, 2))
+	assert(recolector28["tipo"] == "desempleado" and recolector28["trabajo"].is_empty(), "el recolector queda libre al instante")
+	assert(acarreador28["tipo"] == "obrero" and acarreador28.get("retirar_al_entregar", false), "el acarreador cargado sigue hasta entregar")
+	var entrego28 := false
+	for i in range(1500):
+		colonos28.avanzar(0.1)
+		if acarreador28["tipo"] == "desempleado":
+			entrego28 = true
+			break
+	assert(entrego28, "entrega y queda libre (aunque el puesto siga inactivo)")
+	assert(is_equal_approx(ciudad28.almacen["madera"].cantidad, madera28 + 50.0), "la carga llegó al núcleo")
+	assert(acarreador28["carga"].is_empty() and not acarreador28.get("retirar_al_entregar", false))
+
+	print("\n=== TEST 29: un acarreador con carga cuyo puesto se quita entretanto sigue entregando ===")
+	var ciudad29: Node = CiudadScript.new()
+	var colonos29: Node = _nuevo_con_puesto(ciudad29)
+	var id29: int = colonos29.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad29.demografia["desempleado"] = 1
+	assert(colonos29.contratar(Vector2i(2, 2), "acarreador"))
+	var c29: Dictionary = colonos29.colonos[id29]
+	c29["fase"] = "entregar"
+	c29["carga"] = {"madera": 30.0}
+	colonos29.economia.liberar(id29)  # lo que hace Economia._liberar_de() al agotarse el puesto...
+	colonos29.economia.trabajadores_liberados.emit([id29])  # ...con carga a cuestas
+	colonos29.economia.quitar_puesto(Vector2i(2, 2))  # y el puesto desaparece antes de que llegue (ya no lo lista entre sus trabajadores)
+	assert(c29["tipo"] == "obrero" and c29["carga"].size() == 1, "quitar el puesto no le quita la carga")
+	var madera29: float = ciudad29.almacen["madera"].cantidad
+	var llego29 := false
+	for i in range(1500):
+		colonos29.avanzar(0.1)
+		if c29["tipo"] == "desempleado":
+			llego29 = true
+			break
+	assert(llego29 and is_equal_approx(ciudad29.almacen["madera"].cantidad, madera29 + 30.0), "no se atasca aunque el puesto ya no exista")
+
+	print("\n=== TEST 30: los colonos entran por la puerta al edificio del puesto (sin taponar la entrada); el resto espera en la zona de servicio ===")
+	var ciudad30: Node = CiudadScript.new()
+	var mundo30: MundoFalso = _mundo_llano()
+	# Edificio 3x4 en (3,2)-(5,5): paredes en y=1 y 2, puerta en (4,2) mirando a -Z, techo en y=3
+	# e interior de 2 celdas ((4,3) y (4,4)).
+	for x30 in range(3, 6):
+		for z30 in range(2, 6):
+			mundo30.poner(Vector3i(x30, 3, z30), "pared")
+			var es_interior30: bool = x30 == 4 and z30 in [3, 4]
+			var es_puerta30: bool = x30 == 4 and z30 == 2
+			if es_interior30:
+				continue
+			for y30 in [1, 2]:
+				mundo30.poner(Vector3i(x30, y30, z30), "puerta_inferior" if es_puerta30 and y30 == 1 else ("puerta_superior" if es_puerta30 else "pared"))
+	var economia30: Node = EconomiaScript.new()
+	economia30.ciudad = ciudad30
+	economia30.registrar_puesto(Vector2i(3, 2), "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(4, 1), EconomiaScript.SIN_DEPOSITO, 1)
+	var colonos30: Node = _nuevo(mundo30, ciudad30)
+	colonos30.economia = economia30
+	var ids30: Array[int] = []
+	for celda30 in [Vector3i(0, 1, 7), Vector3i(0, 1, 8), Vector3i(0, 1, 9)]:
+		ids30.append(colonos30.agregar_colono("desempleado", celda30))
+	ciudad30.demografia["desempleado"] = 3
+	for i in range(3):
+		assert(colonos30.contratar(Vector2i(3, 2), "recolector"))
+	var todos30 := false
+	for i in range(900):
+		colonos30.avanzar(0.1)
+		if economia30.trabajadores_de(Vector2i(3, 2))["presentes"] == 3:
+			todos30 = true
+			break
+	assert(todos30, "los tres quedan presentes")
+	var dentro30 := 0
+	for id30 in ids30:
+		var c30: Vector3i = colonos30.colonos[id30]["celda"]
+		if c30.x == 4 and c30.z in [3, 4] and c30.y == 1:
+			dentro30 += 1
+		else:
+			assert(absi(c30.x - 4) <= 2 and absi(c30.z - 1) <= 2, "el que no cabe dentro espera en la zona de servicio")
+	assert(dentro30 == 1, "uno entra y se queda al fondo; la celda pegada a la puerta queda libre (dentro: %d)" % dentro30)
+	for id30 in ids30:
+		assert(colonos30.colonos[id30]["celda"] != Vector3i(4, 1, 3), "nadie se queda pegado a la puerta por dentro")
+	for id30 in ids30:
+		assert(colonos30.colonos[id30]["celda"] != Vector3i(4, 1, 2), "nadie se queda parado en la puerta")
+		assert(colonos30.colonos[id30]["celda"] != Vector3i(4, 1, 1), "ni en la celda frente a la puerta")
+
+	print("\n=== TEST 31: si el suelo frente a la puerta queda muy por encima, no se buscan rutas al interior y todos esperan fuera ===")
+	var ciudad31: Node = CiudadScript.new()
+	var mundo31: MundoFalso = _mundo_llano()
+	for x31 in range(3, 6):
+		for z31 in range(2, 6):
+			mundo31.poner(Vector3i(x31, 3, z31), "pared")
+			var es_interior31: bool = x31 == 4 and z31 in [3, 4]
+			var es_puerta31: bool = x31 == 4 and z31 == 2
+			if es_interior31:
+				continue
+			for y31 in [1, 2]:
+				mundo31.poner(Vector3i(x31, y31, z31), "puerta_inferior" if es_puerta31 and y31 == 1 else ("puerta_superior" if es_puerta31 else "pared"))
+	for x31 in range(2, 7):  # el suelo frente a la puerta (fila z=1) sube 3 bloques: no se puede entrar
+		for y31 in [1, 2, 3]:
+			mundo31.poner(Vector3i(x31, y31, 1), "tierra")
+	var economia31: Node = EconomiaScript.new()
+	economia31.ciudad = ciudad31
+	economia31.registrar_puesto(Vector2i(3, 2), "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(4, 1), EconomiaScript.SIN_DEPOSITO, 1)
+	var colonos31: Node = _nuevo(mundo31, ciudad31)
+	colonos31.economia = economia31
+	assert(not colonos31._entrada_practicable(Vector2i(4, 1), 1), "la puerta no se alcanza desde ese suelo")
+	assert(colonos31._celdas_interiores(economia31.huella_de(Vector2i(3, 2)), 1, Vector2i(4, 1)).is_empty(), "sin entrada practicable no hay celdas interiores que buscar")
+	assert(colonos30._entrada_practicable(Vector2i(4, 1), 1), "en la casa normal sí se entra")
+
+	print("\n=== TEST 32: buscar el camino a un puesto inalcanzable se reparte entre fotogramas (presupuesto de nodos) en vez de congelar el juego ===")
+	var ciudad32: Node = CiudadScript.new()
+	var mundo32: MundoFalso = _mundo_llano(60)
+	for z32 in range(60):  # muro de lado a lado en x = 12: el puesto (al oeste) no se alcanza desde el este
+		for y32 in [1, 2, 3]:
+			mundo32.poner(Vector3i(12, y32, z32), "pared")
+	var economia32: Node = EconomiaScript.new()
+	economia32.ciudad = ciudad32
+	economia32.registrar_puesto(Vector2i(2, 2), "maderero", 2, 2, {"madera": 3.0})
+	var colonos32: Node = _nuevo(mundo32, ciudad32)
+	colonos32.economia = economia32
+	var ids32: Array[int] = []
+	for k32 in range(4):
+		ids32.append(colonos32.agregar_colono("desempleado", Vector3i(40 + k32, 1, 30)))
+	ciudad32.demografia["desempleado"] = 4
+	for k32 in range(4):
+		assert(colonos32.contratar(Vector2i(2, 2), "recolector"))
+	var llamadas32 := 0
+	var maximo32 := 0
+	var todos_fallaron32 := false
+	while llamadas32 < 400 and not todos_fallaron32:
+		colonos32.avanzar(0.01)
+		llamadas32 += 1
+		maximo32 = maxi(maximo32, colonos32.NODOS_POR_FRAME - colonos32._nodos_libres)
+		todos_fallaron32 = true
+		for id32 in ids32:
+			if colonos32.colonos[id32]["fallos_servicio"] == 0:
+				todos_fallaron32 = false
+	assert(todos_fallaron32, "los cuatro terminan sin ruta y pasan a esperar")
+	assert(maximo32 <= colonos32.NODOS_POR_FRAME, "cada llamada gasta como mucho el presupuesto (%d)" % maximo32)
+	assert(llamadas32 >= 6, "la búsqueda inalcanzable se repartió en varias llamadas (%d)" % llamadas32)
+
+	print("\n=== TEST 33: las búsquedas locales (esquivar, replanificar, evacuar, deambular) usan el tope de nodos reducido, no el de cruzar el mapa ===")
+	var espia33 := BuscadorEspia.new(_mundo_llano(20))
+	var colonos33: Node = _nuevo(_mundo_llano(20), CiudadScript.new())
+	colonos33._buscador = espia33
+	var id33: int = colonos33.agregar_colono("obrero", Vector3i(1, 1, 1))
+	var c33: Dictionary = colonos33.colonos[id33]
+	c33["ruta"] = [Vector3i(5, 1, 5)]
+	colonos33._esquivar(c33)
+	assert(espia33.topes.back() == colonos33.TOPE_NODOS_DESTINO, "_esquivar usa el tope local")
+	c33["ruta"] = [Vector3i(5, 1, 5)]
+	colonos33._replanificar(c33)
+	assert(espia33.topes.back() == colonos33.TOPE_NODOS_DESTINO, "_replanificar usa el tope local")
+	c33["evacuando"] = 7
+	espia33.topes.clear()
+	colonos33._planear_evacuacion(c33)
+	assert(espia33.topes.size() == 1 and espia33.topes.back() == colonos33.TOPE_NODOS_DESTINO, "la evacuación usa el tope local")
+	c33["evacuando"] = -1
+	colonos33._nodos_libres = 0  # sin presupuesto: solo se prepara la búsqueda de deambular
+	espia33.topes.clear()
+	colonos33._elegir_destino(c33)
+	assert(not c33["busqueda"].is_empty() and c33["busqueda"]["tope"] == colonos33.TOPE_NODOS_DESTINO, "deambular se reparte por fotogramas con el tope local")
+
+	print("\n=== TEST 34: en un edificio con un solo sitio libre (pegado a la puerta) un colono sí lo ocupa ===")
+	var ciudad34: Node = CiudadScript.new()
+	var mundo34: MundoFalso = _mundo_llano()
+	for x34 in range(3, 6):
+		for z34 in range(2, 6):
+			mundo34.poner(Vector3i(x34, 3, z34), "pared")
+			var es_interior34: bool = x34 == 4 and z34 == 3  # solo (4,3), pegado a la puerta
+			var es_puerta34: bool = x34 == 4 and z34 == 2
+			if es_interior34:
+				continue
+			for y34 in [1, 2]:
+				mundo34.poner(Vector3i(x34, y34, z34), "puerta_inferior" if es_puerta34 and y34 == 1 else ("puerta_superior" if es_puerta34 else "pared"))
+	var economia34: Node = EconomiaScript.new()
+	economia34.ciudad = ciudad34
+	economia34.registrar_puesto(Vector2i(3, 2), "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(4, 1), EconomiaScript.SIN_DEPOSITO, 1)
+	var colonos34: Node = _nuevo(mundo34, ciudad34)
+	colonos34.economia = economia34
+	var ids34: Array[int] = []
+	for celda34 in [Vector3i(0, 1, 7), Vector3i(0, 1, 8)]:
+		ids34.append(colonos34.agregar_colono("desempleado", celda34))
+	ciudad34.demografia["desempleado"] = 2
+	for i in range(2):
+		assert(colonos34.contratar(Vector2i(3, 2), "recolector"))
+	var todos34 := false
+	for i in range(900):
+		colonos34.avanzar(0.1)
+		if economia34.trabajadores_de(Vector2i(3, 2))["presentes"] == 2:
+			todos34 = true
+			break
+	assert(todos34, "los dos quedan presentes")
+	var dentro34 := 0
+	for id34 in ids34:
+		if colonos34.colonos[id34]["celda"] == Vector3i(4, 1, 3):
+			dentro34 += 1
+	assert(dentro34 == 1, "uno ocupa el único sitio libre del edificio (dentro: %d)" % dentro34)
+
+	print("\n=== TEST 35: el colono que espera fuera entra al edificio en cuanto se libera un sitio dentro ===")
+	var ciudad35: Node = CiudadScript.new()
+	var mundo35: MundoFalso = _mundo_llano()
+	for x35 in range(3, 6):
+		for z35 in range(2, 6):
+			mundo35.poner(Vector3i(x35, 3, z35), "pared")
+			var es_interior35: bool = x35 == 4 and z35 in [3, 4]
+			var es_puerta35: bool = x35 == 4 and z35 == 2
+			if es_interior35:
+				continue
+			for y35 in [1, 2]:
+				mundo35.poner(Vector3i(x35, y35, z35), "puerta_inferior" if es_puerta35 and y35 == 1 else ("puerta_superior" if es_puerta35 else "pared"))
+	var economia35: Node = EconomiaScript.new()
+	economia35.ciudad = ciudad35
+	economia35.registrar_puesto(Vector2i(3, 2), "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(4, 1), EconomiaScript.SIN_DEPOSITO, 1)
+	var colonos35: Node = _nuevo(mundo35, ciudad35)
+	colonos35.economia = economia35
+	var id35: int = colonos35.agregar_colono("desempleado", Vector3i(0, 1, 7))
+	ciudad35.demografia["desempleado"] = 1
+	colonos35.ocupadas[Vector3i(4, 1, 4)] = 9999  # el único sitio del fondo está ocupado por otro
+	assert(colonos35.contratar(Vector2i(3, 2), "recolector"))
+	for i in range(300):
+		colonos35.avanzar(0.1)
+	var c35: Dictionary = colonos35.colonos[id35]
+	assert(economia35.trabajadores_de(Vector2i(3, 2))["presentes"] == 1 and not (c35["celda"].x in [3, 4, 5] and c35["celda"].z in [2, 3, 4, 5]), "primero espera fuera del edificio, presente en la zona de servicio")
+	colonos35.ocupadas.erase(Vector3i(4, 1, 4))  # se libera el sitio de dentro
+	var entro35 := false
+	for i in range(600):
+		colonos35.avanzar(0.1)
+		if c35["celda"] == Vector3i(4, 1, 4):
+			entro35 = true
+			break
+	assert(entro35, "entra al edificio al liberarse el sitio")
+
+	print("\n=== TEST 36: el edificio se llena desde el fondo: los primeros no sellan la entrada y caben todos ===")
+	var ciudad36: Node = CiudadScript.new()
+	var mundo36: MundoFalso = _mundo_llano(14)
+	# Casa 5x5 en (2,2)-(6,6): puerta en (4,2) mirando a -Z, interior libre 3x3 (x 3..5, z 3..5).
+	for x36 in range(2, 7):
+		for z36 in range(2, 7):
+			mundo36.poner(Vector3i(x36, 3, z36), "pared")
+			var es_interior36: bool = x36 in [3, 4, 5] and z36 in [3, 4, 5]
+			var es_puerta36: bool = x36 == 4 and z36 == 2
+			if es_interior36:
+				continue
+			for y36 in [1, 2]:
+				mundo36.poner(Vector3i(x36, y36, z36), "puerta_inferior" if es_puerta36 and y36 == 1 else ("puerta_superior" if es_puerta36 else "pared"))
+	var economia36: Node = EconomiaScript.new()
+	economia36.ciudad = ciudad36
+	economia36.registrar_puesto(Vector2i(2, 2), "mina", 5, 5, {"hierro": 5.0}, {}, Vector2i(4, 1), EconomiaScript.SIN_DEPOSITO, 1)
+	var colonos36: Node = _nuevo(mundo36, ciudad36)
+	colonos36.economia = economia36
+	var ids36: Array[int] = []
+	for celda36 in [Vector3i(0, 1, 9), Vector3i(0, 1, 10), Vector3i(0, 1, 11), Vector3i(0, 1, 12)]:
+		ids36.append(colonos36.agregar_colono("desempleado", celda36))
+	ciudad36.demografia["desempleado"] = 4
+	for i in range(4):
+		assert(colonos36.contratar(Vector2i(2, 2), "recolector"))
+	for i in range(1500):
+		colonos36.avanzar(0.1)
+	var dentro36 := 0
+	for id36 in ids36:
+		var c36: Vector3i = colonos36.colonos[id36]["celda"]
+		if c36.x in [3, 4, 5] and c36.z in [3, 4, 5]:
+			dentro36 += 1
+		assert(c36 != Vector3i(4, 1, 3), "nadie en el vestíbulo")
+	assert(dentro36 == 4, "los cuatro caben dentro (dentro: %d)" % dentro36)
+	assert(economia36.trabajadores_de(Vector2i(2, 2))["presentes"] == 4)
+
+	print("\n=== Las 36 pruebas de Colonos pasaron correctamente ===")

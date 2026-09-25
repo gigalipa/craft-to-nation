@@ -4,6 +4,7 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
+const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 
 ## Envoltorio para NiveladorTerreno: siempre llama a altura_en(x, z, true)
 ## (ignora agua). NiveladorTerreno solo necesita .altura_en(x, z) por duck
@@ -203,6 +204,9 @@ var modo_colocar_puesto := false
 var _tipo_puesto_activo := ""  # "mina" | "caza_recoleccion" | "maderero" | "pesca_frutos_mar"
 var _ancho_puesto_activo := 0
 var _alto_puesto_activo := 0
+## Cuartos de vuelta horarios (0-3) de la plantilla del puesto activo; Ctrl +
+## rueda lo avanza (ver _rotar_huella_puesto()) y decide hacia dónde mira la puerta.
+var _giros_puesto := 0
 var _huella_puesto: Array[MeshInstance3D] = []
 
 ## Círculo informativo del área de acción del puesto activo (radio real
@@ -1267,6 +1271,7 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_tipo_puesto_activo = tipo
 	_ancho_puesto_activo = ancho
 	_alto_puesto_activo = alto
+	_giros_puesto = 0
 	_mostrar_huella_puesto(true)
 	if tipo == "mina":
 		hud.mostrar_ficha_mina()
@@ -1291,7 +1296,8 @@ func _salir_de_modo_colocar_puesto() -> void:
 
 
 ## Ctrl + rueda del mouse, solo con un puesto en modo colocación: rota la
-## huella activa 90° (intercambia ancho/alto). Sin efecto visible en mina
+## huella activa 90° (intercambia ancho/alto) y avanza un cuarto de vuelta el
+## giro de la plantilla (_giros_puesto, 0-3), que decide hacia dónde mira la puerta. Sin efecto visible en mina
 ## (5x5) ni caza/recolección (4x4) — ambas cuadradas — pero sí en el
 ## maderero (3x4, no cuadrada) y en pesca y frutos del mar (4x6, no
 ## cuadrada) — en este último caso, además de cambiar la forma visual de la
@@ -1302,6 +1308,7 @@ func _rotar_huella_puesto() -> void:
 	var ancho_previo := _ancho_puesto_activo
 	_ancho_puesto_activo = _alto_puesto_activo
 	_alto_puesto_activo = ancho_previo
+	_giros_puesto = (_giros_puesto + 1) % 4
 	_mostrar_huella_puesto(true)
 
 
@@ -1784,7 +1791,8 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if not nivelador_puesto.verificar_pendiente(esquina, columnas):
 		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
 		return
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas)
+	var altura_plantilla: int = PlantillasPuesto.altura(_tipo_puesto_activo) + NiveladorTerreno.LIMITE_PENDIENTE
+	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas, altura_plantilla)
 	if not resultado_huella["valida"]:
 		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
 		return
@@ -1801,6 +1809,38 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
 		return
 
+	# Giro efectivo de la plantilla: en la pesca, el edificio debe caer en el extremo de tierra.
+	var giros := _giros_puesto
+	if _tipo_puesto_activo == "pesca_frutos_mar" and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
+		giros = (giros + 2) % 4
+	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
+	# Fachada, como en los edificios declarados: las 2 columnas delante de todo el lado
+	# de la puerta se nivelan a la altura de la puerta, y ahí (y frente a las ventanas)
+	# se reserva el despeje.
+	var columnas_fachada: Array[Vector2i] = PlantillasPuesto.fachada(_tipo_puesto_activo, giros)
+	var columnas_union: Array[Vector2i] = []
+	columnas_union.append_array(columnas)
+	columnas_union.append_array(columnas_fachada)
+	if not nivelador_puesto.verificar_pendiente(esquina, columnas_union):
+		print("Colocación rechazada: la pendiente de la huella (o del frente de la puerta) supera el límite permitido.")
+		return
+	var resultado_fachada: Dictionary = mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA)
+	if not resultado_fachada["valida"]:
+		print("Colocación rechazada: el frente de la puerta choca con un recurso de madera o una estructura existente.")
+		return
+	if _huella_choca_con_otro_puesto(esquina, columnas_fachada, true):
+		print("Colocación rechazada: el frente de la puerta choca con un puesto o construcción ya colocada.")
+		return
+	var fachada: Dictionary = {}  # columna mundial -> nivel del suelo (objetivo)
+	for rel_fachada in columnas_fachada:
+		fachada[esquina + rel_fachada] = objetivo
+	var y_base := objetivo + 1
+	var celdas_plantilla: Dictionary = PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, esquina, y_base)
+	if not mundo.verificar_despejes(celdas_plantilla, fachada):
+		print("Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio.")
+		return
+	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
+
 	var centro_agua := Recoleccion.SIN_CENTRO
 	if _tipo_puesto_activo == "pesca_frutos_mar":
 		var celdas_extremo_pesca := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
@@ -1812,7 +1852,6 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 
-	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	var total_relleno := 0
 	var total_pilotes := 0
 	if _tipo_puesto_activo == "pesca_frutos_mar":
@@ -1857,38 +1896,28 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if total_relleno > 0:
 		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques usados.")
 
-	var bloque_marcador: String
-	if _tipo_puesto_activo == "mina":
-		bloque_marcador = "mina"
-	elif _tipo_puesto_activo == "caza_recoleccion":
-		bloque_marcador = "puesto_caza"
-	elif _tipo_puesto_activo == "maderero":
-		bloque_marcador = "puesto_madero"
-	else:
-		bloque_marcador = "puesto_pesca"
-	var celdas_puesto: Array = []
-	for dx in range(_ancho_puesto_activo):
-		for dz in range(_alto_puesto_activo):
-			var celda_marcador := Vector3i(esquina.x + dx, objetivo + 1, esquina.y + dz)
-			if mundo.colocar_bloque(celda_marcador, bloque_marcador):
-				celdas_puesto.append(celda_marcador)
-	if _tipo_puesto_activo == "pesca_frutos_mar":
-		var eje_z := _eje_largo_pesca_es_z(_ancho_puesto_activo, _alto_puesto_activo)
-		var largo: int = _alto_puesto_activo if eje_z else _ancho_puesto_activo
-		@warning_ignore("integer_division")
-		var mitad: int = largo / 2
-		for dx in range(_ancho_puesto_activo):
-			for dz in range(_alto_puesto_activo):
-				var l: int = dz if eje_z else dx
-				var es_mitad_edificio: bool = (l >= mitad) if extremo_agua_indice == 0 else (l < mitad)
-				if es_mitad_edificio:
-					var celda_slab := Vector3i(esquina.x + dx, objetivo + 2, esquina.y + dz)
-					if mundo.colocar_bloque(celda_slab, bloque_marcador):
-						celdas_puesto.append(celda_slab)
-	mundo.registrar_edificio(celdas_puesto)
+	# Nivelar la fachada a la altura de la puerta: sin agua, se cava lo que sobresale
+	# y se rellena de tierra lo que falta (una vía que la cruce se levanta y se vuelve
+	# a colocar a ese nivel, como en los blueprints).
+	for celda_follaje in resultado_fachada["follaje_a_eliminar"]:
+		mundo.eliminar_follaje(celda_follaje)
+	_despejar_vias_de_fachada(fachada)
+	for columna_fachada: Vector2i in fachada:
+		mundo.drenar_agua(columna_fachada.x, columna_fachada.y)
+		var altura_fachada: int = mundo.altura_en(columna_fachada.x, columna_fachada.y, true)
+		for y_cavar in range(altura_fachada, objetivo, -1):
+			mundo.retirar_bloque_extraido(Vector3i(columna_fachada.x, y_cavar, columna_fachada.y))
+		for y_rellenar in range(altura_fachada + 1, objetivo + 1):
+			mundo.colocar_bloque(Vector3i(columna_fachada.x, y_rellenar, columna_fachada.y), "tierra")
+
+	# La plantilla del puesto: bloques reales sobre el terreno nivelado, registrados
+	# como edificio completo (se deconstruye bloque a bloque, como un residencial).
+	mundo.estampar_puesto(celdas_plantilla, esquina)
+	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
+	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 
 	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)
-	Economia.registrar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo, tasas_puesto, entorno_puesto)
+	Economia.registrar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo, tasas_puesto, entorno_puesto, servicio, deposito, y_base)
 	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])
 
 	_salir_de_modo_colocar_puesto()

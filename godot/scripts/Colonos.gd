@@ -27,7 +27,12 @@ const INTENTOS_DESTINO := 8
 const INTENTOS_APARICION := 200
 const PROBABILIDAD_CASA := 0.5  # de deambular hacia su hogar en vez de por la ciudad
 const ESPERA_TRABAJO := 1.0  # segundos que espera un recolector/acarreador antes de volver a decidir
-const INTENTOS_SERVICIO := 6  # celdas junto a una huella que se prueban al buscar ruta
+## Nodos de búsqueda de rutas que se reparten entre TODOS los colonos en cada llamada a
+## avanzar() (~10 ms). La ruta a un puesto se busca por partes: una búsqueda larga o
+## inalcanzable agota el tope de nodos (~0,5 s de golpe) y, con varios colonos
+## reintentando, congelaba el juego.
+const NODOS_POR_FRAME := 300
+const RADIO_SERVICIO := 2  # celdas (Chebyshev) alrededor de la celda de servicio de un puesto con puerta
 
 ## El mundo (VoxelWorld en el juego). Asignarlo crea el buscador de rutas.
 var mundo: Object = null:
@@ -42,11 +47,15 @@ var ciudad: Object = null  # Ciudad
 var zona: Object = null  # Zonificacion
 var economia: Object = null:  # Economia
 	set(valor):
-		if economia != null and economia.puesto_quitado.is_connected(_on_puesto_quitado):
-			economia.puesto_quitado.disconnect(_on_puesto_quitado)
+		if economia != null:
+			if economia.puesto_quitado.is_connected(_on_puesto_quitado):
+				economia.puesto_quitado.disconnect(_on_puesto_quitado)
+			if economia.trabajadores_liberados.is_connected(_on_trabajadores_liberados):
+				economia.trabajadores_liberados.disconnect(_on_trabajadores_liberados)
 		economia = valor
 		if valor != null:
 			valor.puesto_quitado.connect(_on_puesto_quitado)
+			valor.trabajadores_liberados.connect(_on_trabajadores_liberados)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
 ## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase", "fallos_servicio"}. "celda" es la celda donde está parado;
@@ -62,6 +71,7 @@ var celdas_avatar: Dictionary = {}
 
 var _siguiente_id := 1
 var _buscador: RefCounted = null
+var _nodos_libres := 0  # lo que queda del presupuesto NODOS_POR_FRAME en esta llamada a avanzar()
 var _rng := RandomNumberGenerator.new()
 
 
@@ -189,6 +199,7 @@ func _reasignar_hogares() -> void:
 func avanzar(delta: float) -> void:
 	if _buscador == null:
 		return
+	_nodos_libres = NODOS_POR_FRAME
 	for c in colonos.values():
 		_avanzar_colono(c, delta)
 
@@ -198,10 +209,14 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		_completar_paso(c, delta)
 		return
 	if c["evacuando"] != -1:
+		c["busqueda"] = {}  # la búsqueda en curso partió de una celda que dejará de ser la suya
 		_avanzar_evacuacion(c, delta)
 		return
 	if c["espera"] > 0.0:
 		c["espera"] -= delta
+		return
+	if not c.get("busqueda", {}).is_empty():
+		_avanzar_busqueda(c)  # sigue buscando el camino que empezó en un fotograma anterior
 		return
 	if c["ruta"].is_empty():
 		if c["trabajo"].is_empty():
@@ -247,6 +262,7 @@ func _completar_paso(c: Dictionary, delta: float) -> void:
 	c["ruta"].pop_front()
 	c["moviendo"] = false
 	c["progreso"] = 0.0
+	c["busqueda"] = {}
 	if c["ruta"].is_empty() and c["trabajo"].is_empty():
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
 
@@ -334,7 +350,9 @@ func _avanzar_evacuacion(c: Dictionary, delta: float) -> void:
 func _planear_evacuacion(c: Dictionary) -> void:
 	var id_obra: int = c["evacuando"]
 	var esta_dentro := func(celda: Vector3i) -> bool: return mundo.celda_en_volumen(id_obra, celda)
-	var ruta: Array[Vector3i] = _buscador.buscar_salida(c["celda"], esta_dentro, _opciones_ruta(c))
+	var opciones := _opciones_ruta(c)
+	opciones["max_nodos"] = TOPE_NODOS_DESTINO
+	var ruta: Array[Vector3i] = _buscador.buscar_salida(c["celda"], esta_dentro, opciones)
 	c["ruta"] = ruta
 	c["ruta_de_evacuacion"] = not ruta.is_empty()
 	if ruta.is_empty():
@@ -348,7 +366,7 @@ func _replanificar(c: Dictionary) -> void:
 	if c["ruta"].is_empty():
 		return
 	var destino: Vector3i = c["ruta"].back()
-	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"ignorar_fantasmas": _ignorar_de(c)})
+	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"ignorar_fantasmas": _ignorar_de(c), "max_nodos": TOPE_NODOS_DESTINO})
 	c["ruta"] = nueva if not nueva.is_empty() else vacia
 	if nueva.is_empty():
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
@@ -362,7 +380,9 @@ func _replanificar(c: Dictionary) -> void:
 func _esquivar(c: Dictionary) -> void:
 	var vacia: Array[Vector3i] = []
 	var destino: Vector3i = c["ruta"].back()
-	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, _opciones_ruta(c))
+	var opciones := _opciones_ruta(c)
+	opciones["max_nodos"] = TOPE_NODOS_DESTINO
+	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, opciones)
 	if nueva.is_empty():
 		c["ruta"] = vacia
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
@@ -403,12 +423,13 @@ func _recuperar_si_atrapado(c: Dictionary) -> bool:
 	return true
 
 
-## Tope de nodos para el deambular exploratorio de _elegir_destino(): los
-## candidatos son locales (casa o zona de influencia), así que no hace falta
-## el tope general de BuscadorRutas.MAX_NODOS_EXPANDIDOS — con él, un
-## candidato inalcanzable (p. ej. al otro lado del agua) cuesta ~650 ms cada
-## vez y, con hasta INTENTOS_DESTINO intentos por colono, se sentía como un
-## freeze cada pocos segundos con varios colonos deambulando a la vez.
+## Tope de nodos para las búsquedas LOCALES: el deambular exploratorio de
+## _elegir_destino() (casa o zona de influencia), rodear a otro colono
+## (_esquivar()), replanificar (_replanificar()) y evacuar una obra. No hace falta el
+## tope general de BuscadorRutas.MAX_NODOS_EXPANDIDOS (cruzar el mapa): con él, una
+## búsqueda que falla (destino inalcanzable, o una puerta de 1 celda atascada por
+## otros colonos) recorre todo el mundo y cuesta ~0,5 s cada vez, y con varios
+## colonos a la vez se sentía como un freeze cada pocos segundos.
 const TOPE_NODOS_DESTINO := 2500
 
 ## Elige el siguiente destino: la mitad de las veces su casa (si tiene), el
@@ -417,18 +438,15 @@ const TOPE_NODOS_DESTINO := 2500
 func _elegir_destino(c: Dictionary) -> void:
 	if not _recuperar_si_atrapado(c):
 		return
-	var opciones := _opciones_ruta(c)
-	opciones["max_nodos"] = TOPE_NODOS_DESTINO
 	var a_casa: bool = c["hogar"] != -1 and _rng.randf() < PROBABILIDAD_CASA
+	var grupos: Array = []
 	for i in range(INTENTOS_DESTINO):
 		var destino: Vector3i = _candidato_en_casa(c["hogar"]) if a_casa else _candidato_exterior()
-		if destino == INVALIDA:
-			continue
-		var ruta: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, opciones)
-		if not ruta.is_empty():
-			c["ruta"] = ruta
-			return
-	c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+		if destino != INVALIDA:
+			grupos.append([destino])
+	# Un destino tras otro (cada uno es un grupo de una celda), repartido entre fotogramas.
+	c["busqueda"] = {"grupos": grupos, "actual": null, "tope": TOPE_NODOS_DESTINO, "deambular": true}
+	_avanzar_busqueda(c)
 
 
 ## Una celda transitable al azar dentro de la caja envolvente de las celdas del
@@ -531,11 +549,26 @@ func _on_puesto_quitado(ids: Array) -> void:
 			_volver_a_desempleado(colonos[id])
 
 
+## Trabajadores liberados de un puesto que sigue en pie (agotado o desactivado):
+## vuelven a desempleado, salvo un acarreador que lleva carga, que primero
+## termina el viaje y la entrega en el núcleo (ver _decidir_trabajo()).
+func _on_trabajadores_liberados(ids: Array) -> void:
+	for id in ids:
+		if not colonos.has(id):
+			continue
+		var c: Dictionary = colonos[id]
+		if c["fase"] == "entregar" and not c["carga"].is_empty():
+			c["retirar_al_entregar"] = true
+		else:
+			_volver_a_desempleado(c)
+
+
 func _volver_a_desempleado(c: Dictionary) -> void:
 	c["trabajo"] = {}
 	c["carga"] = {}
 	c["fase"] = ""
 	c["fallos_servicio"] = 0
+	c["retirar_al_entregar"] = false
 	c["tipo"] = "desempleado"
 	ciudad.reasignar_tipo("obrero", "desempleado")
 	_dejar_lo_que_hacia(c)
@@ -544,6 +577,7 @@ func _volver_a_desempleado(c: Dictionary) -> void:
 ## Abandona la ruta en curso (si no está a medio paso) para que el colono
 ## decida de nuevo con su oficio nuevo o sin él.
 func _dejar_lo_que_hacia(c: Dictionary) -> void:
+	c["busqueda"] = {}
 	if c["moviendo"] or c["evacuando"] != -1:
 		return  # termina el paso o la evacuación y decide después
 	var vacia: Array[Vector3i] = []
@@ -557,30 +591,35 @@ func _dejar_lo_que_hacia(c: Dictionary) -> void:
 func _decidir_trabajo(c: Dictionary) -> void:
 	if not _recuperar_si_atrapado(c):
 		return
+	if c.get("retirar_al_entregar", false):
+		# Ya no trabaja en el puesto (agotado o desactivado), pero termina su viaje.
+		if _llevar_al_nucleo(c):
+			_volver_a_desempleado(c)
+		return
 	var esquina: Vector2i = c["trabajo"]["puesto"]
 	var huella_puesto: Array = economia.huella_de(esquina)
 	if huella_puesto.is_empty():
 		c["espera"] = ESPERA_TRABAJO  # el puesto ya no existe: Economia avisará
 		return
+	var servicio: Vector2i = economia.servicio_de(esquina)
+	var suelo: int = economia.suelo_de(esquina)
 	if c["trabajo"]["rol"] == "recolector":
-		if _junto_a(c["celda"], huella_puesto):
+		if _en_puesto(c["celda"], huella_puesto, servicio, suelo):
 			economia.marcar_presente(c["id"], true)
 			c["espera"] = ESPERA_TRABAJO
+			if not huella_puesto.has(Vector2i(c["celda"].x, c["celda"].z)):
+				# Espera fuera: si mientras tanto se libera un sitio dentro, entra.
+				_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio), true)
 		else:
-			_ir_junto_a(c, huella_puesto)
+			_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio))
 		return
-	var huella_nucleo: Array = zona.huella_del_nucleo()
 	if c["fase"] == "entregar":
-		if _junto_a(c["celda"], huella_nucleo):
-			economia.entregar(c["carga"])
-			c["carga"] = {}
+		if _llevar_al_nucleo(c):
 			c["fase"] = "recoger"
-		else:
-			_ir_junto_a(c, huella_nucleo)
 		return
 	# fase "" o "recoger": ir al puesto y pedir la carga.
-	if not _junto_a(c["celda"], huella_puesto):
-		_ir_junto_a(c, huella_puesto)
+	if not _en_puesto(c["celda"], huella_puesto, servicio, suelo):
+		_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio))
 		return
 	var carga: Dictionary = economia.recoger(esquina, economia.CAPACIDAD_CARGA)
 	if carga.is_empty():
@@ -590,12 +629,92 @@ func _decidir_trabajo(c: Dictionary) -> void:
 	c["fase"] = "entregar"
 
 
+## Un paso hacia el núcleo urbano con la carga del colono: si ya está junto a él,
+## la entrega y devuelve true; si no, planifica la ruta y devuelve false.
+func _llevar_al_nucleo(c: Dictionary) -> bool:
+	var huella_nucleo: Array = zona.huella_del_nucleo()
+	if _junto_a(c["celda"], huella_nucleo):
+		economia.entregar(c["carga"])
+		c["carga"] = {}
+		return true
+	_ir_junto_a(c, huella_nucleo)
+	return false
+
+
+## true si el colono está "en el puesto": dentro del edificio (piso interior, a
+## la altura "suelo" de su plantilla) o, si no cupo dentro, en la zona de servicio
+## junto a la puerta (ver _junto_a()).
+func _en_puesto(celda: Vector3i, huella: Array, servicio: Vector2i, suelo: int) -> bool:
+	if suelo != economia.SIN_SUELO and huella.has(Vector2i(celda.x, celda.z)):
+		# Parado en la puerta no cuenta (taponaría la entrada): solo el piso libre interior.
+		if celda.y != suelo or mundo.obtener_tipo(celda) != "":
+			return false
+		# Tampoco la celda pegada a la puerta por dentro (el vestíbulo), salvo que sea el único
+		# sitio libre del edificio: quien se detenga ahí a medio camino impediría entrar a los demás.
+		if _es_vestibulo(celda, huella, servicio):
+			return _celdas_interiores(huella, suelo, servicio).size() <= 1
+		return true
+	return _junto_a(celda, huella, servicio)
+
+
+## true si "celda" está dentro del edificio, pegada (a 1 celda) a la puerta que da a "servicio".
+func _es_vestibulo(celda: Vector3i, huella: Array, servicio: Vector2i) -> bool:
+	var puerta := _puerta_xz(huella, servicio)
+	return puerta != Vector2i.MAX and absi(celda.x - puerta.x) + absi(celda.z - puerta.y) <= 1
+
+
+## Columna (X, Z) de la puerta: la de la huella pegada a la celda de servicio; MAX si no hay.
+func _puerta_xz(huella: Array, servicio: Vector2i) -> Vector2i:
+	if servicio == Vector2i.MAX:
+		return Vector2i.MAX
+	for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if huella.has(servicio + direccion):
+			return servicio + direccion
+	return Vector2i.MAX
+
+
+## true si desde la celda frente a la puerta (X, Z "servicio") se puede pasar a la
+## puerta del edificio, a la altura "suelo". Comprobación local y barata: sin ella,
+## buscar una ruta a un interior cuya entrada es inalcanzable (p. ej. el suelo de
+## afuera queda muy por encima de la puerta) recorre todo el mundo hasta el tope de
+## nodos cada vez, y con varios colonos reintentando eso congela el juego.
+func _entrada_practicable(servicio: Vector2i, suelo: int) -> bool:
+	var altura: int = mundo.altura_en(servicio.x, servicio.y)
+	if altura < 0:
+		return false
+	var frente := Vector3i(servicio.x, altura + 1, servicio.y)
+	if not _buscador.es_transitable(frente):
+		return false
+	for vecina in _buscador.vecinos(frente):
+		if vecina.y == suelo and mundo.obtener_tipo(vecina) == "puerta_inferior":
+			return true
+	return false
+
+
+## Celdas libres y transitables del piso interior (altura "suelo") del edificio de
+## un puesto: donde entran a trabajar los colonos. Sin las de bloque (puerta,
+## baúl, pared). [] si el puesto no tiene plantilla o su entrada no es practicable.
+func _celdas_interiores(huella: Array, suelo: int, servicio: Vector2i) -> Array[Vector3i]:
+	var celdas: Array[Vector3i] = []
+	if suelo == economia.SIN_SUELO or servicio == Vector2i.MAX or not _entrada_practicable(servicio, suelo):
+		return celdas
+	for xz: Vector2i in huella:
+		var celda := Vector3i(xz.x, suelo, xz.y)
+		if mundo.obtener_tipo(celda) == "" and _buscador.es_transitable(celda):
+			celdas.append(celda)
+	return celdas
+
+
 ## true si "celda" está en la columna pegada (4 direcciones) a alguna celda de
-## la huella y no dentro de ella.
-func _junto_a(celda: Vector3i, huella: Array) -> bool:
+## la huella y no dentro de ella. Con "servicio" (celda de la puerta de un
+## puesto), en cambio: dentro de la zona de servicio (RADIO_SERVICIO) y fuera de la huella.
+func _junto_a(celda: Vector3i, huella: Array, servicio: Vector2i = Vector2i.MAX) -> bool:
 	var xz := Vector2i(celda.x, celda.z)
 	if huella.has(xz):
 		return false
+	if servicio != Vector2i.MAX:
+		# La celda frente a la puerta no cuenta: quien espere ahí la taponaría.
+		return xz != servicio and absi(xz.x - servicio.x) <= RADIO_SERVICIO and absi(xz.y - servicio.y) <= RADIO_SERVICIO
 	for direccion in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if huella.has(xz + direccion):
 			return true
@@ -622,21 +741,109 @@ func _celdas_junto_a(huella: Array) -> Array[Vector3i]:
 	return celdas
 
 
-## Planifica una ruta hasta la celda libre más cercana junto a la huella; si
-## ninguna de las INTENTOS_SERVICIO más cercanas es alcanzable, espera y reintenta.
-func _ir_junto_a(c: Dictionary, huella: Array) -> void:
-	var candidatas: Array[Vector3i] = _celdas_junto_a(huella)
-	var origen: Vector3i = c["celda"]
-	candidatas.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
-		return (a - origen).length_squared() < (b - origen).length_squared())
-	var opciones := _opciones_ruta(c)
-	for i in range(mini(candidatas.size(), INTENTOS_SERVICIO)):
-		var ruta: Array[Vector3i] = _buscador.buscar_ruta(origen, candidatas[i], opciones)
-		if not ruta.is_empty():
-			c["ruta"] = ruta
-			c["fallos_servicio"] = 0
-			return
-	# Sin ruta (o sin celda libre): retroceso exponencial (1, 2, 4, 8 s) para no
-	# repetir hasta INTENTOS_SERVICIO búsquedas costosas cada segundo.
-	c["fallos_servicio"] = mini(c["fallos_servicio"] + 1, 4)
-	c["espera"] = ESPERA_TRABAJO * pow(2.0, c["fallos_servicio"] - 1)
+## Celdas transitables de la zona de servicio de un puesto (fuera de la huella,
+## sobre la superficie).
+func _celdas_de_servicio(servicio: Vector2i, huella: Array) -> Array[Vector3i]:
+	var celdas: Array[Vector3i] = []
+	for dx in range(-RADIO_SERVICIO, RADIO_SERVICIO + 1):
+		for dz in range(-RADIO_SERVICIO, RADIO_SERVICIO + 1):
+			var xz := servicio + Vector2i(dx, dz)
+			if huella.has(xz) or xz == servicio:
+				continue
+			var altura: int = mundo.altura_en(xz.x, xz.y)
+			if altura < 0:
+				continue
+			var candidata := Vector3i(xz.x, altura + 1, xz.y)
+			if _buscador.es_transitable(candidata):
+				celdas.append(candidata)
+	return celdas
+
+
+## Planifica una ruta hasta una celda libre del interior del edificio (si el puesto
+## tiene plantilla; con "solo_dentro", solo eso), o hasta la más cercana junto a la huella (en la zona de
+## servicio, si el puesto tiene puerta), con una sola búsqueda por grupo; si ninguno es
+## alcanzable, espera y reintenta.
+func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX, interiores: Array[Vector3i] = [], solo_dentro := false) -> void:
+	var dentro: Array[Vector3i] = []
+	for celda in interiores:
+		if not _ocupada_por_otro(celda, c["id"]):
+			dentro.append(celda)
+	# La celda pegada a la puerta por dentro no se ocupa (taponaría la entrada), salvo que sea
+	# el único sitio libre del edificio: se llena desde el fondo.
+	if interiores.size() > 1:
+		var fondo: Array[Vector3i] = []
+		for celda in dentro:
+			if not _es_vestibulo(celda, huella, servicio):
+				fondo.append(celda)
+		dentro = fondo
+	# UNA búsqueda por grupo (interior, luego fuera), repartida entre fotogramas: probar
+	# las celdas de una en una, o de golpe, cuesta el tope de nodos por cada inalcanzable
+	# (ver BuscadorRutas.iniciar_busqueda_a_alguna()).
+	var grupos: Array = []
+	if not dentro.is_empty():
+		# Primero las celdas más alejadas de la puerta: llenar desde el fondo evita que los
+		# primeros en llegar (los que están más cerca) sellen la entrada desde dentro.
+		var puerta := _puerta_xz(huella, servicio)
+		var lejos := 0
+		for celda in dentro:
+			lejos = maxi(lejos, absi(celda.x - puerta.x) + absi(celda.z - puerta.y))
+		var mas_lejanas: Array[Vector3i] = []
+		for celda in dentro:
+			if absi(celda.x - puerta.x) + absi(celda.z - puerta.y) == lejos:
+				mas_lejanas.append(celda)
+		if mas_lejanas.size() < dentro.size():
+			grupos.append(mas_lejanas)
+		grupos.append(dentro)
+	if not solo_dentro:
+		var fuera: Array[Vector3i] = []
+		var candidatas: Array[Vector3i] = _celdas_junto_a(huella) if servicio == Vector2i.MAX else _celdas_de_servicio(servicio, huella)
+		for celda in candidatas:
+			if not _ocupada_por_otro(celda, c["id"]):
+				fuera.append(celda)
+		grupos.append(fuera)
+	if grupos.is_empty():
+		return  # solo_dentro y ningún sitio libre dentro: nada que intentar
+	c["busqueda"] = {"grupos": grupos, "actual": null}
+	if solo_dentro:
+		# Reintento desde la zona de espera: cerca, así que con el tope local, y sin
+		# penalizar si falla (ya está en su sitio de trabajo).
+		c["busqueda"]["tope"] = TOPE_NODOS_DESTINO
+		c["busqueda"]["reintento"] = true
+	_avanzar_busqueda(c)
+
+
+## Continúa la búsqueda del colono (c["busqueda"]) con lo que quede del presupuesto de
+## nodos de este fotograma. Al terminar con ruta, la asigna; si ningún grupo de
+## destinos es alcanzable, el que deambula espera un rato al azar y el que va a su
+## puesto espera con retroceso exponencial (1, 2, 4, 8 s).
+func _avanzar_busqueda(c: Dictionary) -> void:
+	var b: Dictionary = c["busqueda"]
+	while true:
+		if b["actual"] == null:
+			if b["grupos"].is_empty():
+				c["busqueda"] = {}
+				if b.get("deambular", false):
+					c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+				elif b.get("reintento", false):
+					c["espera"] = ESPERA_TRABAJO * 4.0
+				else:
+					c["fallos_servicio"] = mini(c["fallos_servicio"] + 1, 4)
+					c["espera"] = ESPERA_TRABAJO * pow(2.0, c["fallos_servicio"] - 1)
+				return
+			var opciones := _opciones_ruta(c)
+			if b.has("tope"):
+				opciones["max_nodos"] = b["tope"]
+			b["actual"] = _buscador.iniciar_busqueda_a_alguna(c["celda"], b["grupos"].pop_front(), opciones)
+		var busqueda = b["actual"]
+		if not busqueda.terminada:
+			if _nodos_libres <= 0:
+				return  # el resto, en el próximo fotograma
+			_nodos_libres -= busqueda.avanzar(_nodos_libres)
+		if busqueda.terminada:
+			if busqueda.exito:
+				c["ruta"] = busqueda.ruta
+				if not b.get("deambular", false) and not b.get("reintento", false):
+					c["fallos_servicio"] = 0
+				c["busqueda"] = {}
+				return
+			b["actual"] = null

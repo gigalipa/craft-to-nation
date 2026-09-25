@@ -1544,6 +1544,22 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 	return id
 
 
+## Estampa la plantilla de un puesto de recolección ("celdas": Vector3i real ->
+## bloque, ver PlantillasPuesto.en_mundo()) como bloques reales colocados por el
+## jugador —así cuentan como estructura (es_celda_estructural(): el overlay de
+## zonas no pinta sobre su techo) y no se pueden minar— y la registra como
+## edificio completo con metadata {"puesto": esquina}, para que se deconstruya
+## bloque a bloque como un residencial. Devuelve el id del edificio.
+func estampar_puesto(celdas: Dictionary, esquina: Vector2i) -> int:
+	var colocadas: Dictionary = {}
+	for celda in celdas:
+		if colocar_bloque(celda, celdas[celda], true):
+			colocadas[celda] = celdas[celda]
+	var id: int = registrar_edificio_completo(colocadas, {"puesto": esquina})
+	reemparejar_construccion(colocadas.keys())
+	return id
+
+
 ## Sustituye lo que haya en "celda" (fantasma, terreno sin cavar, agua o
 ## follaje) por un bloque real de "tipo". El agua se sobrescribe con
 ## colocar_bloque() (limpia _nivel_agua y encola el secado del agua vecina, no

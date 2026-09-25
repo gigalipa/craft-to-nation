@@ -25,6 +25,7 @@ Decisiones confirmadas con el usuario (2026-09-21): asignación manual desde la 
 ### **1.2 Fuera de Alcance / Siguiente**
 
 - **2B — extracción física y agotamiento:** (**implementado**, ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`) los colonos retiran bloques reales (minas, canteras) y talan árboles; la comida se recalcula según el entorno; el bosque puede agotarse. Hasta la fase 2A las tasas se fijaban al colocar el puesto y no se recalculaban.
+- **Edificios de recolección con plantilla:** (**implementado**, 2026-09-24, ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Edificios de Recolección.md`) los puestos son edificios de bloques con puerta de servicio y depósito físico; se desactivan al deconstruirse y despiden a sus recolectores al agotarse.
 - **2C — transformación:** aserradero, carbonera, siderúrgica y refinería de tierras raras (recetas de `CadenaMinerales`), luego fluidos y energía.
 - Moral y nivel del puesto (subirán la eficiencia con el mismo personal) y drones o unidades de transporte de la automatización futura.
 - Carretas y carreteras (sub-proyecto 6), almacenes dedicados, costo de construcción de los puestos y obreros NPC que construyen (sub-proyecto 3), agua, petróleo, combustible y energía.

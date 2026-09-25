@@ -11,6 +11,14 @@ const PuertasScript = preload("res://scripts/Puertas.gd")
 const LAMINA := Vector3(1, 2, 0.1)
 
 
+## Fuente de colonos falsa: Puertas solo lee su diccionario "colonos".
+class FuenteColonos:
+	var colonos: Dictionary = {}
+
+	func poner(id: int, celda: Vector3i) -> void:
+		colonos[id] = {"celda": celda}
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -173,6 +181,59 @@ func ejecutar_pruebas() -> void:
 	m.eliminar_edificio(id)
 	assert(not p.existe(Vector3i(9, 5, 0)), "eliminar el edificio destruye su puerta")
 	print("OK: ciclo de vida.")
+	_liberar(par)
+
+	print("=== TEST 5: la orientación se corrige cuando las paredes aparecen después de la puerta ===")
+	par = _mundo_con_puertas()
+	m = par[0]
+	p = par[1]
+	var b5 := Vector3i(10, 5, 10)
+	assert(m.colocar_puerta(b5))
+	assert(is_equal_approx(p.cuerpo_de(b5).rotation.y, 0.0), "sin paredes: eje X")
+	m.colocar_bloque(b5 + Vector3i(0, 0, -1), "pared", true)
+	m.colocar_bloque(b5 + Vector3i(0, 0, 1), "pared", true)
+	p.fuente_colonos = FuenteColonos.new()
+	p.tick()
+	assert(is_equal_approx(p.cuerpo_de(b5).rotation.y, PI / 2.0), "tras el tick, la pared por Z gira la puerta")
+	print("OK: la orientación se recalcula en cada tick.")
+	_liberar(par)
+
+	print("=== TEST 6: proximidad de colonos ===")
+	par = _mundo_con_puertas()
+	m = par[0]
+	p = par[1]
+	var fuente := FuenteColonos.new()
+	p.fuente_colonos = fuente
+	var b6 := Vector3i(10, 5, 10)
+	assert(m.colocar_puerta(b6))
+	# Sin colonos: el tick no falla ni abre nada.
+	p.tick()
+	assert(not p.esta_abierta(b6), "sin colonos, cerrada")
+	# Un colono a 2 celdas (Chebyshev en XZ, misma altura): abre, sin marcarla manual.
+	fuente.poner(1, b6 + Vector3i(2, 0, 0))
+	p.tick()
+	assert(p.esta_abierta(b6), "un colono a RADIO_APERTURA abre la puerta")
+	assert(p.cuerpo_de(b6).collision_layer == 8)
+	# Se aleja: se cierra sola.
+	fuente.poner(1, b6 + Vector3i(6, 0, 0))
+	p.tick()
+	assert(not p.esta_abierta(b6), "sin nadie cerca, se cierra sola")
+	# Otro piso (3 celdas más arriba): no cuenta.
+	fuente.poner(1, b6 + Vector3i(1, 3, 0))
+	p.tick()
+	assert(not p.esta_abierta(b6), "un colono en otro piso no la abre")
+	# Abierta a mano: no se cierra sola aunque no haya nadie.
+	fuente.colonos.clear()
+	assert(p.alternar(b6))
+	p.tick()
+	assert(p.esta_abierta(b6), "una puerta abierta a mano no se cierra sola")
+	# El avatar la cierra con un colono al lado: se reabre en el tick siguiente.
+	fuente.poner(1, b6 + Vector3i(1, 0, 0))
+	assert(p.alternar(b6))
+	assert(not p.esta_abierta(b6), "el avatar la cierra")
+	p.tick()
+	assert(p.esta_abierta(b6), "con un colono cerca se reabre")
+	print("OK: apertura y cierre por proximidad.")
 	_liberar(par)
 
 	print("\n=== Las pruebas de puertas pasaron correctamente ===")

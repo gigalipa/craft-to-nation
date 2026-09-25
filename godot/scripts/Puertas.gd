@@ -15,8 +15,16 @@ const LAMINA := Vector3(1, 2, 0.1)
 const CAPA_CERRADA := 1  # capa 1: mundo (bloquea al avatar)
 const CAPA_ABIERTA := 8  # capa 4: solo el raycast del jugador
 const META_CELDA := "celda_puerta"
+const RADIO_APERTURA := 2  # celdas (Chebyshev en XZ): abre antes de que el colono llegue
+const INTERVALO := 0.25  # segundos entre chequeos de proximidad
 
 var voxel_world: Node
+
+## Quién aporta el diccionario "colonos" (id -> {"celda": Vector3i}); null =
+## el autoload Colonos. Las pruebas inyectan una fuente falsa.
+var fuente_colonos: Object = null
+
+var _acumulado := 0.0
 
 var _puertas: Dictionary = {}  # Vector3i (celda inferior) -> Dictionary
 var _forma := BoxShape3D.new()
@@ -29,6 +37,39 @@ func _init() -> void:
 	_malla.size = LAMINA
 	_material.albedo_color = Color(0.82, 0.42, 0.0)
 	_malla.material = _material
+
+
+func _process(delta: float) -> void:
+	_acumulado += delta
+	if _acumulado >= INTERVALO:
+		_acumulado = 0.0
+		tick()
+
+
+## Un chequeo: recalcula la orientación de cada puerta (las paredes de una obra
+## pueden aparecer después) y abre/cierra según los colonos cercanos. Una puerta
+## abierta a mano (manual) nunca se cierra sola.
+func tick() -> void:
+	var fuente: Object = fuente_colonos if fuente_colonos != null else Colonos
+	var colonos: Dictionary = fuente.colonos
+	for base: Vector3i in _puertas:
+		var puerta: Dictionary = _puertas[base]
+		var cerca := _hay_colono_cerca(base, colonos)
+		if cerca and not puerta["abierta"]:
+			puerta["abierta"] = true
+			puerta["manual"] = false
+		elif not cerca and puerta["abierta"] and not puerta["manual"]:
+			puerta["abierta"] = false
+		actualizar(base)
+
+
+func _hay_colono_cerca(base: Vector3i, colonos: Dictionary) -> bool:
+	for colono: Dictionary in colonos.values():
+		var celda: Vector3i = colono["celda"]
+		if absi(celda.x - base.x) <= RADIO_APERTURA and absi(celda.z - base.z) <= RADIO_APERTURA \
+				and absi(celda.y - base.y) <= 1:
+			return true
+	return false
 
 
 func existe(base: Vector3i) -> bool:

@@ -77,6 +77,3 @@ func actualizar() -> void:
 func texto_de(clave: String) -> String:
 	return _etiquetas_recurso[clave].text
 
-
-func moral_valor() -> float:
-	return _barra_moral.value

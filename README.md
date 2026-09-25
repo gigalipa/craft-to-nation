@@ -6,7 +6,7 @@
 
 **Sitio web:** [crafttonation.netlify.app](https://crafttonation.netlify.app)
 
-El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.43](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
+El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.44](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
 
 ## Estado actual
 
@@ -17,13 +17,14 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 - **Fases 4–7 — planeadas:** cámara dual y tropas, logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
-El proyecto Godot cuenta actualmente con **380 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en 22 escenas `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas de puestos y su previsualización, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas y jugador.
+El proyecto Godot cuenta actualmente con **389 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en 23 escenas `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas de puestos y su previsualización, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas y jugador.
 
 ## Ideas incorporadas al roadmap
 
 - **Mundo procedural finito:** implementado como primer subproyecto de PoC 6.
 - **Nivelación de terreno sobre relieve:** implementada y confirmada visualmente; los edificios con puerta toman como nivel el suelo natural frente a ella (excavación y relleno en una cola de preparación) y los puestos periféricos se nivelan al punto más alto de su huella. Sin costo de recursos todavía.
 - **Puestos de recolección y previsualización en el HUD:** minas (seis minerales por profundidad), caza y recolección, maderero y pesca y frutos del mar, colocables desde la cámara cenital con estadísticas en vivo. Son edificios de bloques con plantilla propia, y al colocarlos se previsualizan la plantilla fantasma, el despeje de puertas y ventanas y la nivelación del frente, igual que un edificio declarado. Producen recursos reales con trabajadores asignados y alimentan el almacén central.
+- **HUD por modos:** barra superior de lado a lado con datos reales de la ciudad (población, moral, comida, almacén total, recurso crítico, era y nivel) y panel contextual. En la cenital, barra de modos abajo a la izquierda con subbarra (Construir: Residencial y puestos; Zonas: Zona A/B/Borrar); en primera persona, hotbar 1–6 con panel deslizante y resaltado verde de la cara apuntada. Faltan batalla, escuadrón y salud.
 - **Puertas interactivas:** las puertas son una lámina fina que el avatar abre y cierra con `E` (gira 90° y queda pegada a la jamba) y que los colonos abren por proximidad. Falta la ventana de interacción del baúl.
 - **Bioma y vegetación:** implementadas las señales de fauna, frutales y árboles; el mundo genera árboles procedurales talables y el jugador puede talarlos mediante acciones repetidas.
 - **Catálogo de recursos y cadenas de producción:** el subproyecto de minerales (recetas placeholder hierro→acero y tierras raras→mineral refinado) está implementado como lógica pura; el resto del catálogo sigue pendiente.

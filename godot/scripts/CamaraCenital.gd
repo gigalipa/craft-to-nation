@@ -1814,13 +1814,32 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if _tipo_puesto_activo == "pesca_frutos_mar" and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
 		giros = (giros + 2) % 4
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
-	# La puerta debe dar a un suelo por el que se pueda entrar: a su altura o 1 bloque más
-	# abajo (desde 1 más arriba, el dintel de pared impide el paso), sin agua ni otro puesto.
-	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
-	var altura_servicio: int = mundo.altura_en(servicio.x, servicio.y)
-	if altura_servicio > objetivo or altura_servicio < objetivo - 1 or mundo.obtener_tipo(Vector3i(servicio.x, altura_servicio, servicio.y)) == "agua" or Recoleccion.celda_dentro_de_algun_puesto(servicio):
-		print("Colocación rechazada: la puerta del puesto debe dar a un suelo libre, a su altura o 1 bloque más abajo (gira el puesto con Ctrl + rueda).")
+	# Fachada, como en los edificios declarados: las 2 columnas delante de todo el lado
+	# de la puerta se nivelan a la altura de la puerta, y ahí (y frente a las ventanas)
+	# se reserva el despeje.
+	var columnas_fachada: Array[Vector2i] = PlantillasPuesto.fachada(_tipo_puesto_activo, giros)
+	var columnas_union: Array[Vector2i] = []
+	columnas_union.append_array(columnas)
+	columnas_union.append_array(columnas_fachada)
+	if not nivelador_puesto.verificar_pendiente(esquina, columnas_union):
+		print("Colocación rechazada: la pendiente de la huella (o del frente de la puerta) supera el límite permitido.")
 		return
+	var resultado_fachada: Dictionary = mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA)
+	if not resultado_fachada["valida"]:
+		print("Colocación rechazada: el frente de la puerta choca con un recurso de madera o una estructura existente.")
+		return
+	if _huella_choca_con_otro_puesto(esquina, columnas_fachada, true):
+		print("Colocación rechazada: el frente de la puerta choca con un puesto o construcción ya colocada.")
+		return
+	var fachada: Dictionary = {}  # columna mundial -> nivel del suelo (objetivo)
+	for rel_fachada in columnas_fachada:
+		fachada[esquina + rel_fachada] = objetivo
+	var y_base := objetivo + 1
+	var celdas_plantilla: Dictionary = PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, esquina, y_base)
+	if not mundo.verificar_despejes(celdas_plantilla, fachada):
+		print("Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio.")
+		return
+	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
 
 	var centro_agua := Recoleccion.SIN_CENTRO
 	if _tipo_puesto_activo == "pesca_frutos_mar":
@@ -1877,10 +1896,23 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	if total_relleno > 0:
 		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques usados.")
 
+	# Nivelar la fachada a la altura de la puerta: sin agua, se cava lo que sobresale
+	# y se rellena de tierra lo que falta (una vía que la cruce se levanta y se vuelve
+	# a colocar a ese nivel, como en los blueprints).
+	for celda_follaje in resultado_fachada["follaje_a_eliminar"]:
+		mundo.eliminar_follaje(celda_follaje)
+	_despejar_vias_de_fachada(fachada)
+	for columna_fachada: Vector2i in fachada:
+		mundo.drenar_agua(columna_fachada.x, columna_fachada.y)
+		var altura_fachada: int = mundo.altura_en(columna_fachada.x, columna_fachada.y, true)
+		for y_cavar in range(altura_fachada, objetivo, -1):
+			mundo.retirar_bloque_extraido(Vector3i(columna_fachada.x, y_cavar, columna_fachada.y))
+		for y_rellenar in range(altura_fachada + 1, objetivo + 1):
+			mundo.colocar_bloque(Vector3i(columna_fachada.x, y_rellenar, columna_fachada.y), "tierra")
+
 	# La plantilla del puesto: bloques reales sobre el terreno nivelado, registrados
 	# como edificio completo (se deconstruye bloque a bloque, como un residencial).
-	var y_base := objetivo + 1
-	mundo.estampar_puesto(PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, esquina, y_base), esquina)
+	mundo.estampar_puesto(celdas_plantilla, esquina)
 	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
 	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 

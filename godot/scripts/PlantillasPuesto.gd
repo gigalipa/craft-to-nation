@@ -132,3 +132,25 @@ static func indice_extremo_agua(giros: int) -> int:
 	var h := huella(tipo, giros)
 	var coordenada: int = p.z if h.y > h.x else p.x
 	return 0 if coordenada == 0 else 1
+
+
+## Columnas locales (X, Z) de la fachada: las 2 columnas delante de TODO el lado de
+## la huella girada donde está la puerta, fuera de la huella (mismo criterio que
+## NiveladorTerreno.calcular_base_y() para los blueprints). Se nivelan a la altura
+## de la puerta y ahí se reserva el despeje de puertas y ventanas.
+static func fachada(tipo: String, giros: int) -> Array[Vector2i]:
+	var d := dimensiones(tipo)
+	var h := huella(tipo, giros)
+	var puerta := _girar(_buscar(tipo, "puerta_inferior"), d.x, d.y, giros)
+	var servicio := celda_de_servicio(tipo, giros)
+	var direccion := Vector2i(servicio.x - puerta.x, servicio.y - puerta.z)
+	var resultado: Array[Vector2i] = []
+	for x in range(h.x):
+		for z in range(h.y):
+			var columna := Vector2i(x, z)
+			var vecina := columna + direccion
+			if vecina.x >= 0 and vecina.x < h.x and vecina.y >= 0 and vecina.y < h.y:
+				continue  # no es del borde del lado de la puerta
+			for paso in range(1, 3):
+				resultado.append(columna + direccion * paso)
+	return resultado

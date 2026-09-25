@@ -130,4 +130,22 @@ func ejecutar_pruebas() -> void:
 	assert(avance8.get("completa", false) and avance8["metadata"]["puesto"] == esquina8, "al completarse, devuelve la metadata del puesto")
 	assert(mundo8.obtener_tipo(deposito8) == "baul", "el baúl vuelve")
 
-	print("\n=== Las 8 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 9: la fachada son las 2 columnas delante de todo el lado de la puerta, fuera de la huella, en los 4 giros ===")
+	for tipo in TIPOS:
+		for giros in range(4):
+			var h9: Vector2i = PlantillasPuesto.huella(tipo, giros)
+			var fachada9: Array[Vector2i] = PlantillasPuesto.fachada(tipo, giros)
+			var servicio9: Vector2i = PlantillasPuesto.celda_de_servicio(tipo, giros)
+			var lado9: int = h9.x if servicio9.y < 0 or servicio9.y >= h9.y else h9.y  # largo del lado de la puerta
+			assert(fachada9.size() == 2 * lado9, tipo + ": 2 columnas de fondo por todo el lado (" + str(fachada9.size()) + ")")
+			assert(fachada9.has(servicio9), tipo + ": incluye la celda de servicio")
+			for c9 in fachada9:
+				assert(c9.x < 0 or c9.x >= h9.x or c9.y < 0 or c9.y >= h9.y, tipo + ": fuera de la huella")
+			var unicas9 := {}
+			for c9 in fachada9:
+				unicas9[c9] = true
+			assert(unicas9.size() == fachada9.size(), tipo + ": sin columnas repetidas")
+	assert(PlantillasPuesto.fachada("mina", 0).has(Vector2i(0, -2)) and PlantillasPuesto.fachada("mina", 0).has(Vector2i(4, -1)), "mina sin girar: franja x 0..4, z -2..-1")
+	assert(PlantillasPuesto.fachada("mina", 1).has(Vector2i(6, 0)) and PlantillasPuesto.fachada("mina", 1).has(Vector2i(5, 4)), "mina girada un cuarto: franja x 5..6, z 0..4")
+
+	print("\n=== Las 9 pruebas de PlantillasPuesto pasaron correctamente ===")

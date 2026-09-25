@@ -1779,39 +1779,26 @@ func _confirmar_trazo_via() -> void:
 ## (verificar_pendiente(), arriba) ya usa ese mismo terreno sin agua — es la
 ## que decide si la huella es demasiado empinada para nivelarse de forma
 ## razonable.
-func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
-	var centro := _celda_bajo_mouse(posicion_pantalla)
+## Evalúa TODAS las condiciones para colocar el puesto activo con su esquina en
+## "esquina" sin tocar el mundo: fuente ÚNICA del clic (_procesar_clic_puesto())
+## y de la previsualización (_actualizar_previsualizacion_puesto()), igual que
+## _evaluar_blueprint() con los blueprints. Incluye lo que _actualizar_overlays()
+## lee de un blueprint ("resultado_base", "celdas_mundo") para reutilizarlo tal cual.
+## "giros" es el giro EFECTIVO de la plantilla: en la pesca, el edificio debe caer
+## en el extremo de tierra, así que puede diferir del giro pedido con Ctrl+rueda.
+func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 	@warning_ignore("integer_division")
-	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
+	var centro := esquina + Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
 	var columnas := _columnas_rectangulo(_ancho_puesto_activo, _alto_puesto_activo)
-
-	if Zonificacion.dentro_de_influencia(centro):
-		print("No se puede colocar un puesto dentro de la zona de influencia.")
-		return
-	if not nivelador_puesto.verificar_pendiente(esquina, columnas):
-		print("Colocación rechazada: la pendiente de esta huella supera el límite permitido.")
-		return
-	var altura_plantilla: int = PlantillasPuesto.altura(_tipo_puesto_activo) + NiveladorTerreno.LIMITE_PENDIENTE
-	var resultado_huella: Dictionary = mundo.verificar_huella_libre(esquina, columnas, altura_plantilla)
-	if not resultado_huella["valida"]:
-		print("Colocación rechazada: la huella choca con un recurso de madera o una estructura existente.")
-		return
-	if _huella_choca_con_otro_puesto(esquina, columnas):
-		print("Colocación rechazada: la huella choca con un puesto ya colocado.")
-		return
 	var extremo_agua_indice := -1
+	var en_tierra: bool
 	if _tipo_puesto_activo == "pesca_frutos_mar":
 		extremo_agua_indice = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
-		if extremo_agua_indice == -1:
-			print("Colocación rechazada: la huella necesita un extremo completo sobre agua (con su periferia despejada) y el opuesto completo sobre tierra firme.")
-			return
-	elif not _huella_tiene_columna_en_tierra(esquina, columnas):
-		print("Colocación rechazada: la huella necesita al menos una columna sobre tierra firme.")
-		return
-
-	# Giro efectivo de la plantilla: en la pesca, el edificio debe caer en el extremo de tierra.
+		en_tierra = extremo_agua_indice != -1
+	else:
+		en_tierra = _huella_tiene_columna_en_tierra(esquina, columnas)
 	var giros := _giros_puesto
-	if _tipo_puesto_activo == "pesca_frutos_mar" and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
+	if extremo_agua_indice != -1 and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
 		giros = (giros + 2) % 4
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	# Fachada, como en los edificios declarados: las 2 columnas delante de todo el lado
@@ -1821,24 +1808,82 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var columnas_union: Array[Vector2i] = []
 	columnas_union.append_array(columnas)
 	columnas_union.append_array(columnas_fachada)
-	if not nivelador_puesto.verificar_pendiente(esquina, columnas_union):
-		print("Colocación rechazada: la pendiente de la huella (o del frente de la puerta) supera el límite permitido.")
-		return
-	var resultado_fachada: Dictionary = mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA)
-	if not resultado_fachada["valida"]:
-		print("Colocación rechazada: el frente de la puerta choca con un recurso de madera o una estructura existente.")
-		return
-	if _huella_choca_con_otro_puesto(esquina, columnas_fachada, true):
-		print("Colocación rechazada: el frente de la puerta choca con un puesto o construcción ya colocada.")
-		return
 	var fachada: Dictionary = {}  # columna mundial -> nivel del suelo (objetivo)
 	for rel_fachada in columnas_fachada:
 		fachada[esquina + rel_fachada] = objetivo
 	var y_base := objetivo + 1
 	var celdas_plantilla: Dictionary = PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, esquina, y_base)
-	if not mundo.verificar_despejes(celdas_plantilla, fachada):
-		print("Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio.")
+	var altura_plantilla: int = PlantillasPuesto.altura(_tipo_puesto_activo) + NiveladorTerreno.LIMITE_PENDIENTE
+	return {
+		"centro": centro,
+		"columnas": columnas,
+		"giros": giros,
+		"objetivo": objetivo,
+		"y_base": y_base,
+		"extremo_agua_indice": extremo_agua_indice,
+		"en_tierra": en_tierra,
+		"en_influencia": Zonificacion.dentro_de_influencia(centro),
+		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas),
+		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, altura_plantilla),
+		"choca": _huella_choca_con_otro_puesto(esquina, columnas),
+		"columnas_fachada": columnas_fachada,
+		"columnas_union": columnas_union,
+		"relieve_union_valido": nivelador_puesto.verificar_pendiente(esquina, columnas_union),
+		"resultado_fachada": mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA),
+		"choca_fachada": _huella_choca_con_otro_puesto(esquina, columnas_fachada, true),
+		"fachada": fachada,
+		"celdas_plantilla": celdas_plantilla,
+		"celdas_mundo": celdas_plantilla,
+		"resultado_base": {"base_y": y_base},
+		"despejes_ok": mundo.verificar_despejes(celdas_plantilla, fachada),
+	}
+
+
+## Motivo de rechazo de una evaluación (_evaluar_puesto()), en el orden en que se
+## validaba al hacer clic; "" si es válida. La previsualización considera válida
+## exactamente lo que el clic aceptaría.
+func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
+	if ev["en_influencia"]:
+		return "No se puede colocar un puesto dentro de la zona de influencia."
+	if not ev["relieve_valido"]:
+		return "Colocación rechazada: la pendiente de esta huella supera el límite permitido."
+	if not ev["resultado_huella"]["valida"]:
+		return "Colocación rechazada: la huella choca con un recurso de madera o una estructura existente."
+	if ev["choca"]:
+		return "Colocación rechazada: la huella choca con un puesto ya colocado."
+	if not ev["en_tierra"]:
+		if _tipo_puesto_activo == "pesca_frutos_mar":
+			return "Colocación rechazada: la huella necesita un extremo completo sobre agua (con su periferia despejada) y el opuesto completo sobre tierra firme."
+		return "Colocación rechazada: la huella necesita al menos una columna sobre tierra firme."
+	if not ev["relieve_union_valido"]:
+		return "Colocación rechazada: la pendiente de la huella (o del frente de la puerta) supera el límite permitido."
+	if not ev["resultado_fachada"]["valida"]:
+		return "Colocación rechazada: el frente de la puerta choca con un recurso de madera o una estructura existente."
+	if ev["choca_fachada"]:
+		return "Colocación rechazada: el frente de la puerta choca con un puesto o construcción ya colocada."
+	if not ev["despejes_ok"]:
+		return "Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio."
+	return ""
+
+
+func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
+	var centro := _celda_bajo_mouse(posicion_pantalla)
+	@warning_ignore("integer_division")
+	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
+	var ev: Dictionary = _evaluar_puesto(esquina)
+	var rechazo: String = _mensaje_rechazo_puesto(ev)
+	if rechazo != "":
+		print(rechazo)
 		return
+	var columnas: Array[Vector2i] = ev["columnas"]
+	var resultado_huella: Dictionary = ev["resultado_huella"]
+	var resultado_fachada: Dictionary = ev["resultado_fachada"]
+	var extremo_agua_indice: int = ev["extremo_agua_indice"]
+	var giros: int = ev["giros"]
+	var objetivo: int = ev["objetivo"]
+	var fachada: Dictionary = ev["fachada"]
+	var y_base: int = ev["y_base"]
+	var celdas_plantilla: Dictionary = ev["celdas_plantilla"]
 	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
 
 	var centro_agua := Recoleccion.SIN_CENTRO

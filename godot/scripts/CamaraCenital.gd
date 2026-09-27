@@ -1001,7 +1001,7 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 		# choque (reportado jugando en vivo, 2026-09-23).
 		"choca": _huella_choca_con_otro_puesto(esquina, columnas) or _huella_choca_con_otro_puesto(esquina, columnas_fachada, true),
 		"en_tierra": _huella_tiene_columna_en_tierra(esquina, columnas),
-		"despejes_ok": mundo.verificar_despejes(celdas_mundo, fachada),
+		"motivo_despeje": mundo.motivo_despeje_invalido(celdas_mundo, fachada),
 	}
 
 
@@ -1025,8 +1025,8 @@ func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
 		return "Colocación rechazada: la huella necesita al menos una columna sobre tierra firme."
 	if not ev["resultado_base"]["valido"]:
 		return MENSAJES_BASE_Y[ev["resultado_base"]["motivo"]]
-	if not ev["despejes_ok"]:
-		return "Colocación rechazada: una ventana, puerta o cama no tiene el espacio mínimo requerido, o invade el despeje de otro edificio."
+	if ev["motivo_despeje"] != "":
+		return "Colocación rechazada: %s" % ev["motivo_despeje"]
 	return ""
 
 
@@ -1838,7 +1838,7 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		"celdas_plantilla": celdas_plantilla,
 		"celdas_mundo": celdas_plantilla,
 		"resultado_base": {"base_y": y_base},
-		"despejes_ok": mundo.verificar_despejes(celdas_plantilla, fachada),
+		"motivo_despeje": mundo.motivo_despeje_invalido(celdas_plantilla, fachada),
 	}
 
 
@@ -1864,8 +1864,8 @@ func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 		return "Colocación rechazada: el frente de la puerta choca con un recurso de madera o una estructura existente."
 	if ev["choca_fachada"]:
 		return "Colocación rechazada: el frente de la puerta choca con un puesto o construcción ya colocada."
-	if not ev["despejes_ok"]:
-		return "Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio."
+	if ev["motivo_despeje"] != "":
+		return "Colocación rechazada: %s" % ev["motivo_despeje"]
 	return ""
 
 

@@ -845,10 +845,14 @@ func _declarar_edificio() -> void:
 
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if not resultado["valido"]:
-		_notificar_rechazo("Declarar edificio: %s" % "; ".join(resultado["errores"]))
+		# Solo el primer error: unirlos todos mezclaba restricciones distintas
+		# en una sola notificación (reportado jugando en vivo, 2026-09-27) — el
+		# resto queda en la consola (print de arriba) para quien lo necesite.
+		_notificar_rechazo("Declarar edificio: %s" % resultado["errores"][0])
 		return
-	if not mundo.verificar_despejes(celdas):
-		_notificar_rechazo("Declarar edificio: una ventana, puerta o cama no tiene el espacio mínimo requerido, o invade el despeje de otro edificio.")
+	var motivo_despeje: String = mundo.motivo_despeje_invalido(celdas)
+	if motivo_despeje != "":
+		_notificar_rechazo("Declarar edificio: %s" % motivo_despeje)
 		return
 
 	Blueprints.guardar(blueprint)

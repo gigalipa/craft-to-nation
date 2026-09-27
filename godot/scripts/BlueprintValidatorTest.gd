@@ -896,7 +896,7 @@ func ejecutar_pruebas() -> void:
 	# lado, a la misma altura Y.
 	var celda_ventana_28 := Vector3i(OX16, 1, OX16)
 	var celdas_mundo_28 := {celda_ventana_28: "ventana"}
-	var despeje_28: Array = mundo.calcular_despeje(celdas_mundo_28)
+	var despeje_28: Dictionary = mundo.calcular_despeje(celdas_mundo_28)
 	assert(despeje_28.size() == 4, "Una ventana aislada (huella de 1 celda) tiene sus 4 lados externos")
 	for direccion_28 in mundo.VECINOS_ORTOGONALES_XZ:
 		var esperado_28 := Vector3i(OX16 + direccion_28.x, 1, OX16 + direccion_28.y)
@@ -915,7 +915,7 @@ func ejecutar_pruebas() -> void:
 		celda_puerta_inf_29: "puerta_inferior",
 		celda_puerta_sup_29: "puerta_superior",
 	}
-	var despeje_29: Array = mundo.calcular_despeje(celdas_mundo_29)
+	var despeje_29: Dictionary = mundo.calcular_despeje(celdas_mundo_29)
 	assert(despeje_29.size() == 16, "4 direcciones x 2 niveles x 2 celdas de profundidad = 16")
 	for direccion_29 in mundo.VECINOS_ORTOGONALES_XZ:
 		for nivel_29 in [1, 2]:
@@ -1046,6 +1046,67 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.verificar_despeje_camas(celdas_cama_34b), "con el techo despejado, vuelve a pasar")
 	assert(mundo.verificar_despejes(celdas_cama_34b), "verificar_despejes() también exige el despeje de camas")
 	print("OK: verificar_despeje_camas() exige un lado con ambos extremos libres y 2 celdas libres encima de cada extremo; verificar_despejes() lo incluye.")
+
+	print("\n=== TEST 34c: despeje_camas_invalido() no rechaza el interior de la propia huella aunque el mundo real todavía tenga terreno sin excavar (bug de colocación de blueprint, 2026-09-27) ===")
+	const OX34C := 1200
+	var celdas_cuarto_34c: Dictionary = {}
+	# Losa de piso bajo TODA la huella del cuarto (x: OX34C..OX34C+1, z: OX34C-1..
+	# OX34C+3) -- así huella_xz cubre también las columnas laterales libres de cada
+	# cama, igual que un dormitorio real con paredes propias.
+	for x in range(OX34C, OX34C + 2):
+		for z in range(OX34C - 1, OX34C + 4):
+			celdas_cuarto_34c[Vector3i(x, 0, z)] = "pared"
+	var cabecera1_34c := Vector3i(OX34C, 1, OX34C)
+	var pies1_34c := Vector3i(OX34C + 1, 1, OX34C)
+	var cabecera2_34c := Vector3i(OX34C, 1, OX34C + 2)
+	var pies2_34c := Vector3i(OX34C + 1, 1, OX34C + 2)
+	celdas_cuarto_34c[cabecera1_34c] = "cama_cabecera"
+	celdas_cuarto_34c[pies1_34c] = "cama_pies"
+	celdas_cuarto_34c[cabecera2_34c] = "cama_cabecera"
+	celdas_cuarto_34c[pies2_34c] = "cama_pies"
+	# Pared divisoria entre las dos camas (paralelas, separadas por un único
+	# bloque -- reportado por el usuario jugando en vivo): el lado que da a la
+	# otra cama queda ocupado por esta pared; cada cama debe usar su lado LIBRE
+	# (el que da hacia afuera del cuarto).
+	celdas_cuarto_34c[Vector3i(OX34C, 1, OX34C + 1)] = "pared"
+	celdas_cuarto_34c[Vector3i(OX34C + 1, 1, OX34C + 1)] = "pared"
+
+	# El sitio de emplazamiento TODAVÍA no está excavado: el mundo real tiene
+	# terreno sólido justo en las columnas laterales libres de cada cama --
+	# exactamente lo que hay ANTES de construir un blueprint nuevo, a diferencia
+	# de un edificio declarado a mano (que ya existe físicamente y por eso no
+	# reproducía el bug).
+	mundo.colocar_bloque(Vector3i(OX34C, 1, OX34C - 1), "tierra")
+	mundo.colocar_bloque(Vector3i(OX34C + 1, 1, OX34C - 1), "tierra")
+	mundo.colocar_bloque(Vector3i(OX34C, 1, OX34C + 3), "tierra")
+	mundo.colocar_bloque(Vector3i(OX34C + 1, 1, OX34C + 3), "tierra")
+
+	var motivo_34c: String = mundo.despeje_camas_invalido(celdas_cuarto_34c)
+	assert(motivo_34c == "", "el interior de la propia huella no debe rechazarse por terreno real sin excavar: " + motivo_34c)
+	print("OK: despeje_camas_invalido() no compara el interior de la propia huella contra el mundo real sin excavar, solo contra las demás celdas estructurales del mismo edificio.")
+
+	print("\n=== TEST 34d: motivo_despeje_invalido() distingue ventana, puerta, cama e invasión ajena en vez de un mensaje genérico ===")
+	const OX34D := 1210
+	var celda_ventana_34d := Vector3i(OX34D, 1, OX34D)
+	mundo.colocar_bloque(celda_ventana_34d + Vector3i(1, 0, 0), "madera")  # bloquea el despeje de la ventana
+	assert(mundo.motivo_despeje_invalido({celda_ventana_34d: "ventana"}).contains("ventana"), "el motivo debe mencionar la ventana, no un genérico")
+	mundo.minar_bloque(celda_ventana_34d + Vector3i(1, 0, 0))
+
+	var celda_puerta_34d := Vector3i(OX34D + 10, 1, OX34D)
+	mundo.colocar_bloque(celda_puerta_34d + Vector3i(1, 0, 0), "madera")  # bloquea el despeje de la puerta
+	var celdas_puerta_34d := {
+		celda_puerta_34d: "puerta_inferior",
+		celda_puerta_34d + Vector3i(0, 1, 0): "puerta_superior",
+	}
+	assert(mundo.motivo_despeje_invalido(celdas_puerta_34d).contains("puerta"), "el motivo debe mencionar la puerta, no un genérico")
+	mundo.minar_bloque(celda_puerta_34d + Vector3i(1, 0, 0))
+
+	var celda_ventana_ajena_34d := Vector3i(OX34D + 20, 1, OX34D)
+	var id_ajeno_34d: int = mundo.registrar_edificio_completo({celda_ventana_ajena_34d: "ventana"})
+	var celda_invasora_34d := celda_ventana_ajena_34d + Vector3i(1, 0, 0)  # cae en su despeje reservado
+	assert(mundo.motivo_despeje_invalido({celda_invasora_34d: "pared"}).contains("vecino"), "el motivo debe mencionar la invasión al vecino, no un genérico")
+	mundo.eliminar_edificio(id_ajeno_34d)
+	print("OK: motivo_despeje_invalido() da un mensaje específico por tipo de restricción en vez de mezclarlos.")
 
 	print("\n=== TEST 35: minar_bloque() no hace nada sobre una celda de agua ===")
 	const OX35 := 1080
@@ -1567,7 +1628,7 @@ func ejecutar_pruebas() -> void:
 		Vector3i(OX51, 1, OX51): "puerta_inferior",
 		Vector3i(OX51, 2, OX51): "puerta_superior",
 	}
-	var despeje_51: Array = mundo_d.calcular_despeje(celdas_51)
+	var despeje_51: Dictionary = mundo_d.calcular_despeje(celdas_51)
 	assert(despeje_51.size() == 16, "4 direcciones x 2 pasos x 2 niveles")
 	for celda_51 in despeje_51:
 		mundo_d.colocar_bloque(celda_51, "tierra")
@@ -1577,7 +1638,7 @@ func ejecutar_pruebas() -> void:
 	assert(not mundo_d.verificar_despejes(celdas_51), "sin nivelación, el terreno en el despeje rechaza (comportamiento anterior)")
 	assert(mundo_d.verificar_despejes(celdas_51, niveles_51), "terreno natural sobre el nivel de una columna a nivelar no bloquea")
 
-	var celda_prueba_51: Vector3i = despeje_51[0]
+	var celda_prueba_51: Vector3i = despeje_51.keys()[0]
 	var columna_prueba_51 := Vector2i(celda_prueba_51.x, celda_prueba_51.z)
 	mundo_d.set_cell_item(celda_prueba_51, GridMap.INVALID_CELL_ITEM)
 	mundo_d.colocar_bloque(celda_prueba_51, "madera")

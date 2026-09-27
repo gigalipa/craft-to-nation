@@ -327,14 +327,20 @@ func id_de_edificio(celda: Vector3i) -> int:
 ## del propio edificio (es decir, cae fuera de celdas_mundo en esa columna)
 ## es una dirección "externa". En cada dirección externa se reservan 1
 ## celda (ventana) o 2 celdas (puerta, en AMBOS niveles) a la misma altura
-## Y de la celda original. Devuelve un Array sin duplicados (una celda de
-## despeje puede quedar "pedida" por más de una ventana/puerta vecina).
-func calcular_despeje(celdas_mundo: Dictionary) -> Array:
+## Y de la celda original. Devuelve Vector3i (celda de despeje) -> tipo de la
+## celda que la pidió ("ventana"/"puerta_inferior"/"puerta_superior") — quien
+## solo necesita las celdas (Array-like: .has()/.size()/iterar claves siguen
+## funcionando igual que con un Array) puede ignorar el valor; quien necesita
+## saber CUÁL restricción pidió cada celda (ver motivo_despeje_invalido(), para
+## notificaciones precisas) lo lee de aquí en vez de adivinar. Si dos
+## ventanas/puertas piden la misma celda, gana la última procesada — no hay
+## un caso real donde eso cambie el mensaje mostrado.
+func calcular_despeje(celdas_mundo: Dictionary) -> Dictionary:
 	var huella_xz: Dictionary = {}  # Vector2i -> true
 	for celda in celdas_mundo:
 		huella_xz[Vector2i(celda.x, celda.z)] = true
 
-	var despeje: Dictionary = {}  # Vector3i -> true, para deduplicar
+	var despeje: Dictionary = {}  # Vector3i -> tipo ("ventana"/"puerta_inferior"/"puerta_superior")
 	for celda in celdas_mundo:
 		var tipo: String = celdas_mundo[celda]
 		var profundidad := 0
@@ -353,8 +359,8 @@ func calcular_despeje(celdas_mundo: Dictionary) -> Array:
 				var celda_despeje := Vector3i(
 					celda.x + direccion.x * paso, celda.y, celda.z + direccion.y * paso
 				)
-				despeje[celda_despeje] = true
-	return despeje.keys()
+				despeje[celda_despeje] = tipo
+	return despeje
 
 
 ## true si "celda" es terreno natural (suelo o subsuelo libre): ocupada y ni
@@ -383,25 +389,43 @@ func despeje_bloqueado(celda: Vector3i, terreno_a_nivelar: Dictionary = {}) -> b
 	return true
 
 
-## Valida si "celdas_mundo" (las celdas estructurales de un edificio a
-## punto de colocarse, mismo formato que calcular_despeje()) respeta la
-## regla de despeje: (a) ninguna de sus propias celdas de despeje puede
-## estar bloqueada (ver despeje_bloqueado(): cualquier bloque real tiene un
-## tipo no vacío, salvo el terreno natural que se va a nivelar), y (b)
-## ninguna de sus celdas ESTRUCTURALES puede caer dentro del despeje YA
-## RESERVADO de otro edificio (celda_a_despeje). El despeje del edificio nuevo
-## NUNCA se compara contra el despeje ajeno — dos despejes distintos pueden
-## solaparse libremente (puertas enfrentadas, ventana sobre despeje de
-## puerta ajena, etc.), ver spec punto de diseño. "terreno_a_nivelar"
-## omitido = comportamiento anterior (lo usa Player._declarar_edificio()).
+## Valida si "celdas_mundo" (las celdas estructurales de un edificio a punto
+## de colocarse, mismo formato que calcular_despeje()) respeta la regla de
+## despeje de ventanas/puertas y de camas. Ver motivo_despeje_invalido() para
+## el detalle de qué se valida — este método es solo su versión booleana, para
+## quien no necesita el motivo (p. ej. las pruebas).
 func verificar_despejes(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> bool:
-	for celda in celdas_mundo:
+	return motivo_despeje_invalido(celdas_mundo, terreno_a_nivelar) == ""
+
+
+## Motivo por el que "celdas_mundo" (las celdas estructurales de un edificio a
+## punto de colocarse) no respeta la regla de despeje — "" si es válido.
+## Devuelve UN motivo específico (el primero que falla, mismo criterio que
+## CamaraCenital._mensaje_rechazo_blueprint()) en vez de un booleano genérico,
+## para que la notificación al jugador diga QUÉ restricción exacta falló en
+## vez de mezclar ventanas, puertas y camas en un solo mensaje (reportado
+## jugando en vivo, 2026-09-27). Comprueba, en orden: (a) ninguna celda
+## ESTRUCTURAL nueva puede caer dentro del despeje YA RESERVADO de otro
+## edificio (celda_a_despeje) — el despeje del edificio nuevo NUNCA se compara
+## contra el despeje ajeno, dos despejes distintos pueden solaparse libremente
+## (puertas enfrentadas, ventana sobre despeje de puerta ajena, etc.), ver
+## spec de despeje de ventanas/puertas; (b) ninguna de sus propias celdas de
+## despeje (calcular_despeje()) puede estar físicamente bloqueada (ver
+## despeje_bloqueado()); (c) el despeje de camas (ver despeje_camas_invalido()).
+## "terreno_a_nivelar" omitido = comportamiento anterior (lo usa
+## Player._declarar_edificio()).
+func motivo_despeje_invalido(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> String:
+	for celda: Vector3i in celdas_mundo:
 		if celda_a_despeje.has(celda):
-			return false
-	for celda_despeje in calcular_despeje(celdas_mundo):
+			return "Una pared, puerta o ventana nueva cae dentro del espacio reservado de un edificio vecino."
+	var despeje: Dictionary = calcular_despeje(celdas_mundo)
+	for celda_despeje: Vector3i in despeje:
 		if despeje_bloqueado(celda_despeje, terreno_a_nivelar):
-			return false
-	return verificar_despeje_camas(celdas_mundo, terreno_a_nivelar)
+			var tipo: String = despeje[celda_despeje]
+			if tipo == "ventana":
+				return "Una ventana no tiene el espacio libre exigido hacia afuera."
+			return "Una puerta no tiene el espacio libre exigido hacia afuera."
+	return despeje_camas_invalido(celdas_mundo, terreno_a_nivelar)
 
 
 ## Valida que cada cama (par cama_cabecera/cama_pies) de "celdas_mundo" tenga
@@ -412,9 +436,23 @@ func verificar_despejes(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary 
 ## diferencia de calcular_despeje() (ventanas/puertas: solo reserva celdas
 ## EXTERNAS a la huella, para no invadir al vecino), esto es una comprobación
 ## interior: el lado/encima de una cama normalmente cae DENTRO de la propia
-## huella, así que se compara contra las demás celdas estructurales del
-## propio edificio (celdas_mundo) además del mundo real (despeje_bloqueado()).
-func verificar_despeje_camas(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> bool:
+## huella (un dormitorio real, no un edificio de 1x1 sin paredes) — así que
+## una columna que pertenece a la propia huella (huella_xz, mismo criterio que
+## calcular_despeje()) SIEMPRE se considera libre salvo que otra celda
+## estructural del propio edificio ya la ocupe (_celda_libre_junto_a_cama()):
+## ese interior todavía no existe físicamente (es terreno natural sin cavar)
+## en el momento de evaluar un blueprint, así que comparar esas columnas
+## contra el mundo real con despeje_bloqueado() rechazaba sitios válidos por
+## error (bug reportado jugando en vivo, 2026-09-27) — la excavación del
+## interior la garantiza la cola de preparación de la construcción, igual que
+## el resto del interior de cualquier habitación. Solo las columnas AJENAS a
+## la huella (p. ej. el lado libre de una cama pegada a una pared exterior)
+## se comparan contra el mundo real, igual que el despeje de ventanas/puertas.
+func despeje_camas_invalido(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> String:
+	var huella_xz: Dictionary = {}  # Vector2i -> true, mismo criterio que calcular_despeje()
+	for celda: Vector3i in celdas_mundo:
+		huella_xz[Vector2i(celda.x, celda.z)] = true
+
 	for celda: Vector3i in celdas_mundo:
 		if celdas_mundo[celda] != "cama_cabecera":
 			continue
@@ -425,17 +463,23 @@ func verificar_despeje_camas(celdas_mundo: Dictionary, terreno_a_nivelar: Dictio
 		var lados := [Vector3i(-eje.z, 0, eje.x), Vector3i(eje.z, 0, -eje.x)]
 		var lado_libre := false
 		for lado in lados:
-			if _celda_libre_junto_a_cama(celda + lado, celdas_mundo, terreno_a_nivelar) \
-			and _celda_libre_junto_a_cama(pies + lado, celdas_mundo, terreno_a_nivelar):
+			if _celda_libre_junto_a_cama(celda + lado, celdas_mundo, huella_xz, terreno_a_nivelar) \
+			and _celda_libre_junto_a_cama(pies + lado, celdas_mundo, huella_xz, terreno_a_nivelar):
 				lado_libre = true
 				break
 		if not lado_libre:
-			return false
+			return "Una cama no tiene un lado despejado para levantarse (debe ser el mismo lado junto a la cabecera y junto a los pies)."
 		for extremo in [celda, pies]:
-			if not _celda_libre_junto_a_cama(extremo + Vector3i(0, 1, 0), celdas_mundo, terreno_a_nivelar) \
-			or not _celda_libre_junto_a_cama(extremo + Vector3i(0, 2, 0), celdas_mundo, terreno_a_nivelar):
-				return false
-	return true
+			if not _celda_libre_junto_a_cama(extremo + Vector3i(0, 1, 0), celdas_mundo, huella_xz, terreno_a_nivelar) \
+			or not _celda_libre_junto_a_cama(extremo + Vector3i(0, 2, 0), celdas_mundo, huella_xz, terreno_a_nivelar):
+				return "Una cama no tiene las 2 celdas libres exigidas por encima de uno de sus extremos."
+	return ""
+
+
+## Versión booleana de despeje_camas_invalido(), para quien no necesita el
+## motivo (p. ej. las pruebas).
+func verificar_despeje_camas(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> bool:
+	return despeje_camas_invalido(celdas_mundo, terreno_a_nivelar) == ""
 
 
 ## "cabecera" -> celda vecina en celdas_mundo marcada "cama_pies" (mismo
@@ -449,9 +493,23 @@ func _pies_de_cama_en(cabecera: Vector3i, celdas_mundo: Dictionary) -> Vector3i:
 	return Vector3i.MAX
 
 
-func _celda_libre_junto_a_cama(celda: Vector3i, celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary) -> bool:
+## true si "celda" (un lado o el techo de una cama) no bloquea la regla de
+## despeje de camas: ocupada por otra celda estructural del propio edificio ->
+## bloqueada. Si no, y "celda" cae dentro de la propia huella (huella_xz) Y es
+## terreno natural sin construir (es_terreno_natural(): ni árbol, ni
+## estructura, ni parte de OTRO edificio) -> libre: ese terreno se excava
+## junto con el resto del interior al construir, igual que
+## VoxelWorld.verificar_huella_libre() nunca rechaza terreno natural bajo la
+## huella completa, solo árboles y estructuras (así se evitó el bug de
+## 2026-09-27: un "pared" ajeno puesto a propósito ahí SIGUE bloqueando,
+## dentro o fuera de la huella, porque no es terreno natural). Fuera de la
+## huella (o si no es terreno natural) se compara contra el mundo real
+## (despeje_bloqueado()), igual que el despeje de ventanas/puertas.
+func _celda_libre_junto_a_cama(celda: Vector3i, celdas_mundo: Dictionary, huella_xz: Dictionary, terreno_a_nivelar: Dictionary) -> bool:
 	if celdas_mundo.has(celda):
-		return false  # ocupada por otra celda estructural del mismo edificio
+		return false
+	if huella_xz.has(Vector2i(celda.x, celda.z)) and es_terreno_natural(celda):
+		return true
 	return not despeje_bloqueado(celda, terreno_a_nivelar)
 
 
@@ -1594,7 +1652,7 @@ func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictiona
 	edificio_tipos[id] = tipos_estructura
 	edificio_progreso[id] = 0
 	edificio_metadata[id] = metadata
-	var despeje: Array = calcular_despeje(tipos_estructura)
+	var despeje: Dictionary = calcular_despeje(tipos_estructura)
 	edificio_despeje[id] = despeje
 	for celda_despeje in despeje:
 		if not celda_a_despeje.has(celda_despeje):
@@ -1621,7 +1679,7 @@ func registrar_edificio_completo(celdas_mundo: Dictionary, metadata: Dictionary 
 	edificio_tipos[id] = celdas_mundo
 	edificio_progreso[id] = orden.size()
 	edificio_metadata[id] = metadata
-	var despeje: Array = calcular_despeje(celdas_mundo)
+	var despeje: Dictionary = calcular_despeje(celdas_mundo)
 	edificio_despeje[id] = despeje
 	for celda_despeje in despeje:
 		if not celda_a_despeje.has(celda_despeje):

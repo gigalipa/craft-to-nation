@@ -99,6 +99,18 @@ func probar_ventanas_datos() -> void:
 	ventana_poblacion.abrir()
 	assert(ventana_poblacion.visible and ventana_poblacion.abierta)
 	assert(ventana_poblacion._caja.get_child_count() > 0)
+	# Regresión: _actualizar() reconstruía TODA la ventana (título incluido)
+	# cada fotograma, destruyendo el botón de cerrar a mitad de clic (entre
+	# el press y el release) — el "pressed" nunca llegaba a emitirse. El
+	# botón debe sobrevivir intacto a varios fotogramas.
+	var boton_cerrar: Button = ventana_poblacion._caja_raiz.get_child(0).get_child(1)
+	assert(boton_cerrar.text == "X")
+	for i in range(5):
+		ventana_poblacion._process(0.0)
+	assert(ventana_poblacion._caja_raiz.get_child(0).get_child(1) == boton_cerrar, "el botón de cerrar no debe recrearse en cada _process()")
+	boton_cerrar.pressed.emit()
+	assert(not ventana_poblacion.visible and not ventana_poblacion.abierta, "pressed debe cerrar la ventana")
+	ventana_poblacion.abrir()
 	# Cambiar de vista a 1ª persona la oculta sin cerrarla ni mover su posición.
 	ventana_poblacion.position = Vector2(200, 150)
 	ventana_poblacion.ocultar_temporalmente()
@@ -140,6 +152,9 @@ func probar_ventanas_datos() -> void:
 	ventana_almacen.abrir()
 	assert(ventana_almacen.visible and ventana_almacen.abierta)
 	assert(ventana_almacen._caja.get_child_count() > 0)
+	var boton_cerrar_almacen: Button = ventana_almacen._caja_raiz.get_child(0).get_child(1)
+	ventana_almacen._process(0.0)
+	assert(ventana_almacen._caja_raiz.get_child(0).get_child(1) == boton_cerrar_almacen)
 	ventana_almacen.ocultar_temporalmente()
 	assert(not ventana_almacen.visible and ventana_almacen.abierta)
 	ventana_almacen.restaurar()

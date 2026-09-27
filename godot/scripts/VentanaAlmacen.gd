@@ -15,7 +15,13 @@ const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
 
 const POSICION_INICIAL := Vector2(16, 340)
 
+## Contenido dinámico (una fila por recurso): esto es lo único que se
+## reconstruye en cada _actualizar(). El título y su botón de cierre se
+## crean una sola vez en _ready() (ver _caja_raiz) — reconstruirlos cada
+## fotograma (como antes) destruía el botón a mitad de clic (entre el
+## press y el release), así que el "pressed" nunca llegaba a emitirse.
 var _caja := VBoxContainer.new()
+var _caja_raiz := VBoxContainer.new()
 var abierta := false
 var _arrastrando := false
 var _offset_arrastre := Vector2.ZERO
@@ -31,8 +37,11 @@ func _ready() -> void:
 	anchor_bottom = 0.0
 	position = POSICION_INICIAL
 	custom_minimum_size = Vector2(320, 0)
+	_caja_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_caja_raiz)
+	_caja_raiz.add_child(_fila_titulo("Almacén"))
 	_caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_caja)
+	_caja_raiz.add_child(_caja)
 
 
 func _gui_input(evento: InputEvent) -> void:
@@ -65,7 +74,6 @@ func restaurar() -> void:
 func _actualizar() -> void:
 	for hijo in _caja.get_children():
 		hijo.free()
-	_caja.add_child(_fila_titulo("Almacén"))
 	if Ciudad.almacen.is_empty():
 		_caja.add_child(TemaHUD.etiqueta("Vacío"))
 	for clave in Ciudad.almacen:

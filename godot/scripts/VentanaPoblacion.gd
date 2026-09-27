@@ -23,7 +23,13 @@ const NOMBRES_TIPO := {
 
 const POSICION_INICIAL := Vector2(16, 56)
 
+## Contenido dinámico (demografía/puestos): esto es lo único que se
+## reconstruye en cada _actualizar(). El título y su botón de cierre se
+## crean una sola vez en _ready() (ver _caja_raiz) — reconstruirlos cada
+## fotograma (como antes) destruía el botón a mitad de clic (entre el
+## press y el release), así que el "pressed" nunca llegaba a emitirse.
 var _caja := VBoxContainer.new()
+var _caja_raiz := VBoxContainer.new()
 ## true mientras el usuario la dejó abierta (independiente de "visible": en
 ## 1ª persona se oculta sin cambiar esto, ver ocultar_temporalmente()).
 var abierta := false
@@ -41,8 +47,11 @@ func _ready() -> void:
 	anchor_bottom = 0.0
 	position = POSICION_INICIAL
 	custom_minimum_size = Vector2(320, 0)
+	_caja_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_caja_raiz)
+	_caja_raiz.add_child(_fila_titulo("Población"))
 	_caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_caja)
+	_caja_raiz.add_child(_caja)
 
 
 func _gui_input(evento: InputEvent) -> void:
@@ -78,7 +87,6 @@ func restaurar() -> void:
 func _actualizar() -> void:
 	for hijo in _caja.get_children():
 		hijo.free()
-	_caja.add_child(_fila_titulo("Población"))
 	_caja.add_child(TemaHUD.etiqueta("Camas construidas: %d" % Ciudad.capacidad_camas_construida))
 	_caja.add_child(TemaHUD.etiqueta(""))
 	for tipo in NOMBRES_TIPO:

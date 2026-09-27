@@ -60,7 +60,12 @@ func _alternar_camara_cenital() -> void:
 	var destino: Transform3D
 	if cenital_activa:
 		origen = jugador.camara.global_transform
-		camara_cenital.posicionar_sobre(Vector2(jugador.position.x, jugador.position.z))
+		# "atrás" del avatar (opuesto a su frente, -basis.z, ver
+		# Player._direccion_cardinal()): la cenital orbita detrás de hacia
+		# dónde mira, como un seguimiento en 3ª persona.
+		var atras := jugador.global_transform.basis.z
+		var angulo_avatar := atan2(atras.x, atras.z)
+		camara_cenital.posicionar_sobre(Vector2(jugador.position.x, jugador.position.z), angulo_avatar)
 		destino = camara_cenital.global_transform
 	else:
 		origen = camara_cenital.global_transform

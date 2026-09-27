@@ -11,6 +11,9 @@ extends CanvasLayer
 signal modo_pedido(modo: String)
 signal construccion_pedida(tipo: String)
 signal zona_pedida(tipo: String)
+## "poblacion" o "almacen" (clic en la barra superior); solo lo escucha
+## CamaraCenital, que decide si tiene sentido abrir la ventana (ver dato_pedido).
+signal dato_pedido(cual: String)
 
 const COLOR_POSITIVO := Color.WHITE
 const COLOR_NEGATIVO := Color(1.0, 0.3, 0.3)
@@ -20,6 +23,8 @@ const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
 const PanelContextualScript = preload("res://scripts/PanelContextual.gd")
 const BarraModosScript = preload("res://scripts/BarraModos.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
+const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
+const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 
 ## Nombres de todos los recursos del almacén (los usa PanelPuesto).
 const NOMBRES_RECURSO := {
@@ -49,6 +54,8 @@ var _barra_superior: PanelContainer
 var _contexto: PanelContainer
 var _barra_modos: Control
 var _hotbar: PanelContainer
+var _ventana_poblacion: PanelContainer
+var _ventana_almacen: PanelContainer
 
 
 ## Los widgets se crean en _init(), no en _ready(): en Main.tscn Player y
@@ -56,7 +63,12 @@ var _hotbar: PanelContainer
 ## configurar_hotbar() y conecta las señales) corre antes que el de este nodo.
 func _init() -> void:
 	_barra_superior = BarraSuperiorScript.new()
+	_barra_superior.dato_pedido.connect(func(cual: String) -> void: dato_pedido.emit(cual))
 	add_child(_barra_superior)
+	_ventana_poblacion = VentanaPoblacionScript.new()
+	add_child(_ventana_poblacion)
+	_ventana_almacen = VentanaAlmacenScript.new()
+	add_child(_ventana_almacen)
 	_contexto = PanelContextualScript.new()
 	add_child(_contexto)
 	_barra_modos = BarraModosScript.new()
@@ -214,6 +226,17 @@ static func texto_materiales(neto: Dictionary) -> String:
 	if lineas.size() == 1:
 		lineas.append("-")
 	return "\n".join(lineas)
+
+
+## "cual" es "poblacion" o "almacen"; cierra la otra ventana si estaba abierta
+## (una a la vez, como el panel de puesto).
+func abrir_ventana_dato(cual: String) -> void:
+	if cual == "poblacion":
+		_ventana_almacen.cerrar()
+		_ventana_poblacion.abrir()
+	elif cual == "almacen":
+		_ventana_poblacion.cerrar()
+		_ventana_almacen.abrir()
 
 
 func abrir_panel_puesto(esquina: Vector2i) -> void:

@@ -284,6 +284,7 @@ func _ready() -> void:
 	hud.modo_pedido.connect(_on_modo_pedido)
 	hud.construccion_pedida.connect(_on_construccion_pedida)
 	hud.zona_pedida.connect(_elegir_zona)
+	hud.dato_pedido.connect(hud.abrir_ventana_dato)
 
 
 ## Precalcula los offsets (dx, dz) dentro del círculo de radio

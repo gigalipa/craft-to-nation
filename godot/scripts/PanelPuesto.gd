@@ -7,6 +7,7 @@ extends PanelContainer
 ## Economia/Colonos; esto solo las muestra y les pasa los clics.
 
 const HUDScript = preload("res://scripts/HUD.gd")
+const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
 const NOMBRES_PUESTO := {
 	"mina": "Mina",
@@ -17,17 +18,19 @@ const NOMBRES_PUESTO := {
 
 var esquina := Recoleccion.SIN_PUESTO
 
-var _titulo := Label.new()
-var _trabajadores := Label.new()
-var _libres := Label.new()
-var _almacen := Label.new()
-var _produccion := Label.new()
-var _distancia := Label.new()
+var _titulo := TemaHUD.etiqueta()
+var _trabajadores := TemaHUD.etiqueta()
+var _libres := TemaHUD.etiqueta()
+var _almacen := TemaHUD.etiqueta()
+var _produccion := TemaHUD.etiqueta()
+var _distancia := TemaHUD.etiqueta()
 var _filas := {}  # rol -> {"cantidad": Label, "menos": Button, "mas": Button}
 
 
 func _ready() -> void:
 	visible = false
+	TemaHUD.aplicar_panel(self)
+	mouse_filter = Control.MOUSE_FILTER_STOP  # los botones +/- necesitan capturar el clic
 	set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	offset_left = -280.0
 	offset_top = 72.0
@@ -36,6 +39,7 @@ func _ready() -> void:
 	grow_horizontal = Control.GROW_DIRECTION_BEGIN  # si crece, hacia la izquierda
 	var caja := VBoxContainer.new()
 	add_child(caja)
+	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	caja.add_child(_titulo)
 	for rol in ["recolector", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
@@ -48,17 +52,20 @@ func _ready() -> void:
 
 func _crear_fila(rol: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
-	var nombre := Label.new()
-	nombre.text = "Recolectores" if rol == "recolector" else "Acarreadores"
+	var nombre := TemaHUD.etiqueta("Recolectores" if rol == "recolector" else "Acarreadores")
 	nombre.custom_minimum_size.x = 110.0
 	var menos := Button.new()
 	menos.text = "-"
+	menos.custom_minimum_size = Vector2(28, 28)
+	TemaHUD.estilizar_boton(menos)
 	menos.pressed.connect(func() -> void: Colonos.despedir(esquina, rol))
-	var cantidad := Label.new()
+	var cantidad := TemaHUD.etiqueta()
 	cantidad.custom_minimum_size.x = 24.0
 	cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var mas := Button.new()
 	mas.text = "+"
+	mas.custom_minimum_size = Vector2(28, 28)
+	TemaHUD.estilizar_boton(mas)
 	mas.pressed.connect(func() -> void: Colonos.contratar(esquina, rol))
 	for nodo in [nombre, menos, cantidad, mas]:
 		fila.add_child(nodo)

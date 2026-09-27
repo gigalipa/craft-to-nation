@@ -20,7 +20,7 @@ Estilo común: verde oscuro con marco dorado (ver capturas), definido como helpe
 - Cantidades por casilla en la hotbar. El inventario del avatar será el almacén central (`Ciudad`/`Economia`), no los almacenes dedicados; la hotbar deja un campo de cantidad opcional, vacío por ahora.
 - Herramientas de recolección (pala, pico, hacha): llegarán después, como casillas nuevas.
 - Modo Demoler en cenital: no existe todavía (la deconstrucción solo funciona en 1ª persona con G). No se muestra su botón hasta que exista.
-- `PanelPuesto`, barra de progreso, oxígeno y ficha de materiales se conservan tal cual.
+- Barra de progreso, oxígeno y ficha de materiales se conservan tal cual. `PanelPuesto` conserva su lógica; su estilo pasó a `TemaHUD` (ver ajuste 2026-09-27).
 - Iconos: no hay arte. Los botones y casillas usan nombre + tecla; cada uno admite un `icono: Texture2D` opcional para enchufarlo después.
 
 ## Controles (sin cambios)
@@ -33,7 +33,7 @@ Ningún atajo cambia. En 1ª persona: 1–6 tipo de bloque, G deconstruir, B dec
 
 | Pieza | Vista | Muestra | Fuente de datos |
 |---|---|---|---|
-| `BarraSuperior` | ambas | de lado a lado; de izquierda a derecha: población `x/y`, moral, comida (total y tasa `+x/h`), almacenamiento total (Σ cantidades / Σ límites y Σ tasas), recurso crítico (tasa más negativa o, si ninguno decrece, la menor positiva; la tasa 0 no cuenta), era y nivel | `Ciudad`, leído cada fotograma. Población y moral sin tasa (`Ciudad` no la calcula). La era es un texto fijo (`Era 1 · Prehistórica`) hasta que exista `Ciudad.era` |
+| `BarraSuperior` | ambas | de lado a lado; de izquierda a derecha: población `censo/camas (desempleados)`, moral, comida (`cantidad/límite` propios + tasa `+x/h`), almacenamiento total (Σ cantidades / Σ límites y Σ tasas), recurso crítico (tasa más negativa o, si ninguno decrece, la menor positiva; la tasa 0 no cuenta), era y nivel. Población y Almacén son clicables (señal `dato_pedido`, ver abajo) | `Ciudad`, leído cada fotograma. Población y moral sin tasa (`Ciudad` no la calcula). La era es un texto fijo (`Era 1 · Prehistórica`) hasta que exista `Ciudad.era` |
 | `PanelContextual` | ambas | nombre, costo, acciones, validez ("Ubicación válida"/"no válida", opcional) y una línea opcional de tasas previstas (sin miniatura: no hay arte) | empujado por `CamaraCenital` (blueprint/puesto activo) y `Player` (raycast) |
 | `BarraModos` | cenital | esquina inferior izquierda: barra principal (Ver, Construir, Zonas, Vías; activo resaltado y tecla) y, a su derecha, una barra de subherramientas según el modo (Construir: Residencial y los 4 puestos; Zonas: Zona A/B/Borrar) | `CamaraCenital` avisa el modo activo |
 | `Hotbar` | 1ª persona | casillas 1–6 (icono/nombre), seleccionada resaltada, cantidad opcional | `Player.tipos_disponibles` y `tipo_seleccionado` |
@@ -90,6 +90,15 @@ Construir (B) activa el blueprint residencial y despliega a su derecha el menú 
 - botón resaltado en `BarraModos` por `set_modo`.
 
 Verificación manual en la escena principal (cenital y 1ª persona) de que cada tecla sigue activando su modo y el HUD lo refleja. Además de `HUDTest.tscn`, ejecutar `Test.tscn` y las `*Test.tscn` que toquen `Player`/`CamaraCenital`, según CLAUDE.md.
+
+## Ajuste 2026-09-27: ventanas de Población/Almacén y estilo de PanelPuesto
+
+- `BarraSuperior`: población pasa a `censo/camas (desempleados)`; comida pasa a mostrar su propio `cantidad/límite` (antes solo cantidad), ambos con su tasa.
+- Clic en "Población" o "Almacén" (solo tiene efecto en la cenital: `CamaraCenital` conecta `HUD.dato_pedido`, `Player` no) abre una ventana emergente centrada, estilo `TemaHUD`, con botón de cierre:
+  - `VentanaPoblacion.gd`: demografía por tipo (`Ciudad.demografia`), camas construidas y, por puesto (`Economia.puestos`), su tipo y cantidad de recolectores/acarreadores (`Economia.trabajadores_de`).
+  - `VentanaAlmacen.gd`: una fila por recurso de `Ciudad.almacen`, con cantidad/límite y tasa.
+  - `HUD.abrir_ventana_dato(cual)` cierra la otra ventana si estaba abierta (una a la vez).
+- `PanelPuesto.gd` (ventana de asignación de trabajadores de un puesto) pasa a usar `TemaHUD.aplicar_panel/etiqueta/estilizar_boton`, sin cambiar su lógica ni su posición.
 
 ## Documentación a actualizar
 

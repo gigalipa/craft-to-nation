@@ -4,7 +4,12 @@ extends PanelContainer
 ## izquierda a derecha: población, moral, comida (con su tasa), almacenamiento
 ## total, recurso crítico, y a la derecha la era y el nivel urbano. Lee el
 ## autoload Ciudad cada fotograma. Población en rojo si excede la vivienda
-## construida; las tasas en rojo si son negativas.
+## construida; las tasas en rojo si son negativas. Población y Almacén son
+## clicables (solo tienen efecto en la cenital, ver HUD.dato_pedido): abren
+## una ventana con el detalle.
+
+## "poblacion" o "almacen"; solo lo escucha CamaraCenital (HUD.dato_pedido).
+signal dato_pedido(cual: String)
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
@@ -23,8 +28,12 @@ var nivel := TemaHUD.etiqueta()
 var _barra_moral := ProgressBar.new()
 
 
-static func texto_poblacion(censo: int, camas: int) -> String:
-	return "Población %d/%d" % [censo, camas]
+static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String:
+	return "Población %d/%d (%d)" % [censo, camas, desempleados]
+
+
+static func texto_comida(cantidad: float, limite: float, tasa: float) -> String:
+	return "Comida %.0f/%.0f %s" % [cantidad, limite, texto_tasa(tasa)]
 
 
 ## Fracción 0-1 del bono de moral respecto al máximo (acotada).
@@ -78,6 +87,9 @@ func _ready() -> void:
 	fila.add_theme_constant_override("separation", 28)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fila)
+	poblacion.mouse_filter = Control.MOUSE_FILTER_STOP
+	poblacion.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	poblacion.gui_input.connect(_on_clic.bind("poblacion"))
 	fila.add_child(poblacion)
 	fila.add_child(moral)
 	_barra_moral.show_percentage = false
@@ -87,6 +99,9 @@ func _ready() -> void:
 	_barra_moral.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fila.add_child(_barra_moral)
 	fila.add_child(comida)
+	almacen_total.mouse_filter = Control.MOUSE_FILTER_STOP
+	almacen_total.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	almacen_total.gui_input.connect(_on_clic.bind("almacen"))
 	fila.add_child(almacen_total)
 	fila.add_child(critico)
 	var espacio := Control.new()
@@ -102,19 +117,27 @@ func _process(_delta: float) -> void:
 	actualizar()
 
 
+func _on_clic(evento: InputEvent, cual: String) -> void:
+	if evento is InputEventMouseButton and evento.pressed and evento.button_index == MOUSE_BUTTON_LEFT:
+		dato_pedido.emit(cual)
+
+
 func actualizar() -> void:
-	poblacion.text = texto_poblacion(Ciudad.censo_total, Ciudad.capacidad_camas_construida)
+	var desempleados: int = Ciudad.demografia.get("desempleado", 0)
+	poblacion.text = texto_poblacion(Ciudad.censo_total, Ciudad.capacidad_camas_construida, desempleados)
 	var excede: bool = Ciudad.vivienda_ocupada > Ciudad.capacidad_camas_construida
 	poblacion.add_theme_color_override("font_color", TemaHUD.INVALIDO if excede else TemaHUD.TEXTO)
 	moral.text = "Moral %+.1f" % Ciudad.bono_moral_variedad
 	_barra_moral.value = fraccion_moral(Ciudad.bono_moral_variedad)
 
 	var cantidad_comida := 0.0
+	var limite_comida := 0.0
 	var tasa_comida := 0.0
 	if Ciudad.almacen.has("comida"):
 		cantidad_comida = Ciudad.almacen["comida"].cantidad
+		limite_comida = Ciudad.almacen["comida"].limite
 		tasa_comida = Ciudad.almacen["comida"].tasa_neta_promedio
-	comida.text = "Comida %.0f %s" % [cantidad_comida, texto_tasa(tasa_comida)]
+	comida.text = texto_comida(cantidad_comida, limite_comida, tasa_comida)
 	_colorear_por_tasa(comida, tasa_comida)
 
 	var suma: Dictionary = totales(Ciudad.almacen)

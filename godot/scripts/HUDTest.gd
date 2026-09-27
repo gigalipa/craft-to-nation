@@ -11,6 +11,8 @@ const BarraModosScript = preload("res://scripts/BarraModos.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
+const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
+const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 
 
 ## Recurso falso: BarraSuperior solo lee estos cuatro campos (duck typing).
@@ -42,11 +44,12 @@ func ejecutar_pruebas() -> void:
 	probar_hotbar()
 	probar_formateadores_hud()
 	probar_cara_apuntada()
+	probar_ventanas_datos()
 
 
 func probar_barra_superior_calculos() -> void:
 	print("=== TEST 1a: BarraSuperior (cálculos estáticos) ===")
-	assert(BarraSuperiorScript.texto_poblacion(38, 48) == "Población 38/48")
+	assert(BarraSuperiorScript.texto_poblacion(38, 48, 5) == "Población 38/48 (5)")
 	assert(BarraSuperiorScript.fraccion_moral(Ciudad.BONO_MORAL_MAXIMO / 2.0) == 0.5)
 	# Moral fuera de rango: la barra se acota a 0-1.
 	assert(BarraSuperiorScript.fraccion_moral(-3.0) == 0.0)
@@ -54,6 +57,7 @@ func probar_barra_superior_calculos() -> void:
 	assert(BarraSuperiorScript.texto_tasa(12.0) == "+12.0/h")
 	assert(BarraSuperiorScript.texto_tasa(-3.0) == "-3.0/h")
 	assert(BarraSuperiorScript.texto_tasa(0.0) == "+0.0/h")
+	assert(BarraSuperiorScript.texto_comida(126.0, 200.0, -5.0) == "Comida 126/200 -5.0/h")
 
 	var almacen := {
 		"a": RecursoFalso.new("A", 100.0, 500.0, 2.0),
@@ -71,6 +75,42 @@ func probar_barra_superior_calculos() -> void:
 	assert(BarraSuperiorScript.clave_critica({}) == "")
 
 
+## Clic en Población/Almacén de la barra superior (dato_pedido) y las
+## ventanas que abre (VentanaPoblacion, VentanaAlmacen).
+func probar_ventanas_datos() -> void:
+	print("=== TEST 1c: dato_pedido y ventanas de Población/Almacén ===")
+	var barra: PanelContainer = BarraSuperiorScript.new()
+	add_child(barra)
+	var pedidos: Array = []
+	barra.dato_pedido.connect(func(cual: String) -> void: pedidos.append(cual))
+	var clic := InputEventMouseButton.new()
+	clic.button_index = MOUSE_BUTTON_LEFT
+	clic.pressed = true
+	barra.poblacion.emit_signal("gui_input", clic)
+	barra.almacen_total.emit_signal("gui_input", clic)
+	assert(pedidos == ["poblacion", "almacen"], "salió %s" % [pedidos])
+	barra.queue_free()
+
+	var ventana_poblacion: PanelContainer = VentanaPoblacionScript.new()
+	add_child(ventana_poblacion)
+	assert(not ventana_poblacion.visible)
+	ventana_poblacion.abrir()
+	assert(ventana_poblacion.visible)
+	assert(ventana_poblacion._caja.get_child_count() > 0)
+	ventana_poblacion.cerrar()
+	assert(not ventana_poblacion.visible)
+	ventana_poblacion.queue_free()
+
+	var ventana_almacen: PanelContainer = VentanaAlmacenScript.new()
+	add_child(ventana_almacen)
+	ventana_almacen.abrir()
+	assert(ventana_almacen.visible)
+	assert(ventana_almacen._caja.get_child_count() > 0)
+	ventana_almacen.cerrar()
+	assert(not ventana_almacen.visible)
+	ventana_almacen.queue_free()
+
+
 func probar_barra_superior() -> void:
 	print("=== TEST 1b: BarraSuperior (widget con Ciudad real) ===")
 	var barra: PanelContainer = BarraSuperiorScript.new()
@@ -83,11 +123,11 @@ func probar_barra_superior() -> void:
 	Ciudad.almacen["comida"].cantidad = 126.0
 	Ciudad.almacen["comida"].tasa_neta_promedio = -5.0
 	barra.actualizar()
-	assert(barra.comida.text == "Comida 126 -5.0/h", "salió '%s'" % barra.comida.text)
+	assert(barra.comida.text.begins_with("Comida 126/"), "salió '%s'" % barra.comida.text)
 	assert(barra.comida.get_theme_color("font_color") == BarraSuperiorScript.TemaHUD.INVALIDO)
 	Ciudad.almacen["comida"].tasa_neta_promedio = 2.0
 	barra.actualizar()
-	assert(barra.comida.text == "Comida 126 +2.0/h", "salió '%s'" % barra.comida.text)
+	assert(barra.comida.text.begins_with("Comida 126/") and barra.comida.text.ends_with("+2.0/h"), "salió '%s'" % barra.comida.text)
 	assert(barra.comida.get_theme_color("font_color") == BarraSuperiorScript.TemaHUD.TEXTO)
 
 	# Comida es la de menor tasa positiva (2.0) frente al resto en 0: es la crítica.

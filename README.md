@@ -6,7 +6,7 @@
 
 **Sitio web:** [crafttonation.netlify.app](https://crafttonation.netlify.app)
 
-El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.46](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
+El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.47](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
 
 ## Estado actual
 
@@ -17,7 +17,7 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 - **Fases 4–7 — planeadas:** cámara dual y tropas, logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
-El proyecto Godot cuenta actualmente con **392 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en 23 escenas `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas de puestos y su previsualización, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas y jugador.
+El proyecto Godot cuenta actualmente con **394 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en 23 escenas `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas de puestos y su previsualización, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas y jugador.
 
 ## Ideas incorporadas al roadmap
 

@@ -58,8 +58,11 @@ func _alternar_camara_cenital() -> void:
 	cenital_activa = not cenital_activa
 	var origen: Transform3D
 	var destino: Transform3D
+	var fov_origen: float
+	var fov_destino: float
 	if cenital_activa:
 		origen = jugador.camara.global_transform
+		fov_origen = jugador.camara.fov
 		# "atrás" del avatar (opuesto a su frente, -basis.z, ver
 		# Player._direccion_cardinal()): la cenital orbita detrás de hacia
 		# dónde mira, como un seguimiento en 3ª persona.
@@ -67,10 +70,13 @@ func _alternar_camara_cenital() -> void:
 		var angulo_avatar := atan2(atras.x, atras.z)
 		camara_cenital.posicionar_sobre(Vector2(jugador.position.x, jugador.position.z), angulo_avatar)
 		destino = camara_cenital.global_transform
+		fov_destino = camara_cenital.fov
 	else:
 		origen = camara_cenital.global_transform
+		fov_origen = camara_cenital.fov
 		camara_cenital.salir_de_todos_los_modos()
 		destino = jugador.camara.global_transform
+		fov_destino = jugador.camara.fov
 
 	_en_transicion = true
 	jugador.set_physics_process(false)
@@ -78,13 +84,21 @@ func _alternar_camara_cenital() -> void:
 	jugador.camara.current = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_camara_transicion.global_transform = origen
+	# La cenital usa un fov distinto al de 1ª persona (60° vs 75° por
+	# defecto): sin interpolarlo también, al intercambiar de cámara al
+	# principio/final del vuelo se veía un salto de encuadre (reportado por
+	# el usuario, 2026-09-27).
+	_camara_transicion.fov = fov_origen
 	_camara_transicion.current = true
 	hud.iniciar_transicion(cenital_activa, DURACION_TRANSICION)
 
 	var tween := create_tween()
+	tween.set_parallel(true)
 	tween.tween_property(_camara_transicion, "global_transform", destino, DURACION_TRANSICION) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_callback(_terminar_transicion)
+	tween.tween_property(_camara_transicion, "fov", fov_destino, DURACION_TRANSICION) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.chain().tween_callback(_terminar_transicion)
 
 
 func _terminar_transicion() -> void:

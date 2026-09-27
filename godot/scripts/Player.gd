@@ -100,6 +100,20 @@ var modo_deconstruccion := false
 var _id_listo_para_remocion := -1
 var _ticks_listo_para_remocion := 0
 
+## true justo después de que _colocar() completó una construcción (surtió su
+## última celda pendiente): bloquea nuevas colocaciones mientras el clic
+## derecho sigue sostenido, para no colocar de inmediato un bloque nuevo
+## contra la fachada recién terminada con el mismo clic que la completó
+## (reportado jugando en vivo, 2026-09-27). Se libera al soltar el botón.
+var _colocacion_bloqueada_tras_completar := false
+## Evita repetir la misma notificación de "no se puede colocar" en cada
+## repetición (INTERVALO_ACCION_REPETIDA) mientras el clic derecho sigue
+## sostenido apuntando al mismo sitio inválido.
+var _aviso_colocacion_dado := false
+## Igual que _aviso_colocacion_dado pero para "árbol sin frutos", mientras E
+## sigue sostenido.
+var _aviso_sin_frutos_dado := false
+
 var oxigeno_actual := OXIGENO_MAXIMO
 
 var _altura_camara_base := 0.0
@@ -177,6 +191,9 @@ func _input(event: InputEvent) -> void:
 			if boton.pressed:
 				_temporizador_accion = 0.0
 				_colocar()
+			else:
+				_colocacion_bloqueada_tras_completar = false
+				_aviso_colocacion_dado = false
 
 
 ## Mientras el jugador mantiene un botón: E recolecta frutos, el clic izquierdo
@@ -187,6 +204,7 @@ func _input(event: InputEvent) -> void:
 func _procesar_accion_repetida(delta: float) -> void:
 	if not Input.is_key_pressed(KEY_E):
 		_e_consumida = false
+		_aviso_sin_frutos_dado = false
 	if not camara.current:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
@@ -198,7 +216,7 @@ func _procesar_accion_repetida(delta: float) -> void:
 		_procesar_minado(delta)
 		return
 	_progreso_accion.soltar()
-	if not _colocando:
+	if not _colocando or _colocacion_bloqueada_tras_completar:
 		hud.ocultar_progreso()
 		return
 	_temporizador_accion += delta
@@ -318,6 +336,9 @@ func _procesar_frutos(delta: float) -> void:
 	if mundo.frutos_disponibles(celda, Ciudad.horas_juego) <= 0.0:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
+		if not _aviso_sin_frutos_dado and mundo.arboles.obtener_arbol_de(celda) != -1:
+			_aviso_sin_frutos_dado = true
+			hud.notificar("Este árbol no tiene frutos disponibles todavía.")
 		return
 	var id: int = mundo.arboles.obtener_arbol_de(celda)
 	if _progreso_accion.avanzar("frutos:%d" % id, Recoleccion.TIEMPO_RECOLECCION_FRUTOS, delta):
@@ -435,6 +456,32 @@ func _profundidad_agua_en(posicion: Vector3) -> int:
 ## Celda de grilla (VoxelWorld) bajo "posicion" — asume mundo != null.
 func _celda_en(posicion: Vector3) -> Vector3i:
 	return mundo.local_to_map(mundo.to_local(posicion))
+
+
+## true si "celda" es la de los pies o la cabeza del avatar (columna de 2
+## celdas que ocupa su cápsula): impide colocar un bloque ahí, que lo dejaría
+## atrapado dentro de su propio bloque recién puesto (reportado jugando en
+## vivo, 2026-09-27). Ver _colocar().
+func _celda_ocupada_por_jugador(celda: Vector3i) -> bool:
+	var pies: Vector3i = _celda_en(global_position + Vector3.UP * 0.1)
+	return celda == pies or celda == pies + Vector3i(0, 1, 0)
+
+
+## Imprime y notifica (una sola vez por clic sostenido, ver
+## _aviso_colocacion_dado) por qué no se pudo colocar/surtir algo con el clic
+## derecho.
+func _avisar_colocacion_rechazada(mensaje: String) -> void:
+	print(mensaje)
+	if not _aviso_colocacion_dado:
+		_aviso_colocacion_dado = true
+		hud.notificar(mensaje)
+
+
+## Imprime y notifica un rechazo puntual (tecla suelta, no clic sostenido:
+## no necesita el debounce de _avisar_colocacion_rechazada()).
+func _notificar_rechazo(mensaje: String) -> void:
+	print(mensaje)
+	hud.notificar(mensaje)
 
 
 ## true si los pies o la cabeza del avatar están dentro del volumen de la obra.
@@ -713,19 +760,31 @@ func _direccion_cardinal() -> Vector3i:
 ## apuntada — igual que contra cualquier otra superficie del edificio ya
 ## terminado.
 func _colocar() -> void:
-	if not raycast.is_colliding() or mundo == null:
+	if not raycast.is_colliding() or mundo == null or _colocacion_bloqueada_tras_completar:
 		return
 	var celda := _celda_impactada()
 	var resultado: Dictionary = mundo.surtir_construccion(celda)
 	if not resultado.is_empty():
 		if resultado.get("bloqueada", false):
-			print("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
+			_avisar_colocacion_rechazada("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
 		elif resultado.get("completa", false):
 			_completar_construccion(resultado["metadata"])
+			# La construcción se completó con este mismo clic sostenido: no
+			# seguir colocando bloques nuevos contra la fachada recién
+			# terminada hasta que el jugador suelte y vuelva a presionar.
+			_colocacion_bloqueada_tras_completar = true
 		return
 	var normal := raycast.get_collision_normal()
 	var celda_destino := celda + Vector3i(round(normal.x), round(normal.y), round(normal.z))
 	var tipo: String = tipos_disponibles[tipo_seleccionado]
+	var segunda_celda := celda_destino
+	if tipo == "puerta":
+		segunda_celda = celda_destino + Vector3i(0, 1, 0)
+	elif tipo == "cama":
+		segunda_celda = celda_destino + _direccion_cardinal()
+	if _celda_ocupada_por_jugador(celda_destino) or _celda_ocupada_por_jugador(segunda_celda):
+		_avisar_colocacion_rechazada("No se puede colocar un bloque donde está parado el jugador.")
+		return
 	var colocado: bool
 	if tipo == "puerta":
 		colocado = mundo.colocar_puerta(celda_destino)
@@ -734,7 +793,7 @@ func _colocar() -> void:
 	else:
 		colocado = mundo.colocar_bloque(celda_destino, tipo, true)
 	if not colocado:
-		print("No hay espacio suficiente para colocar: ", tipo)
+		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % tipo)
 
 
 ## Declara como edificio la estructura conectada al bloque apuntado. Solo se
@@ -747,14 +806,14 @@ func _declarar_edificio() -> void:
 	var celda := _celda_impactada()
 	var tipo_apuntado: String = mundo.obtener_tipo(celda)
 	if tipo_apuntado != "puerta_inferior" and tipo_apuntado != "puerta_superior":
-		print("Declarar edificio: apunta a la puerta principal de la estructura.")
+		_notificar_rechazo("Declarar edificio: apunta a la puerta principal de la estructura.")
 		return
 	if mundo.id_de_edificio(celda) != -1:
-		print("Declarar edificio: ese edificio ya fue declarado.")
+		_notificar_rechazo("Declarar edificio: ese edificio ya fue declarado.")
 		return
 	var celdas: Dictionary = mundo.detectar_estructura(celda)
 	if celdas.is_empty():
-		print("Declarar edificio: esa puerta no fue colocada por el jugador.")
+		_notificar_rechazo("Declarar edificio: esa puerta no fue colocada por el jugador.")
 		return
 	var blueprint := BlueprintValidator.estructura_a_blueprint(celdas)
 
@@ -786,9 +845,10 @@ func _declarar_edificio() -> void:
 
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if not resultado["valido"]:
+		_notificar_rechazo("Declarar edificio: %s" % "; ".join(resultado["errores"]))
 		return
 	if not mundo.verificar_despejes(celdas):
-		print("Declarar edificio: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio.")
+		_notificar_rechazo("Declarar edificio: una ventana, puerta o cama no tiene el espacio mínimo requerido, o invade el despeje de otro edificio.")
 		return
 
 	Blueprints.guardar(blueprint)
@@ -843,6 +903,7 @@ func _completar_construccion(metadata: Dictionary) -> void:
 	if metadata.has("puesto"):
 		Economia.reactivar_puesto(metadata["puesto"])
 		print("Puesto reactivado en ", metadata["puesto"], ".")
+		hud.notificar("Puesto reactivado.")
 		return
 	var blueprint: Dictionary = metadata["blueprint"]
 
@@ -853,6 +914,7 @@ func _completar_construccion(metadata: Dictionary) -> void:
 		Zonificacion.declarar_nucleo(metadata["huella_xz"])
 		Ciudad.ampliar_almacen()
 		print("Núcleo urbano declarado (no habitable: no llegan colonos todavía). Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max, ". Topes del inventario duplicados.")
+		hud.notificar("Núcleo urbano declarado.")
 		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
 		return
 
@@ -865,6 +927,7 @@ func _completar_construccion(metadata: Dictionary) -> void:
 	var baules: int = BlueprintValidator.contar_baules(blueprint)
 	Ciudad.registrar_edificio_residencial(metadata["id_edificio"], camas_por_piso, baules)
 	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (capacidad de camas actual: ", Ciudad.capacidad_camas_construida, "), baúles: ", baules)
+	hud.notificar("Edificio construido.")
 
 	Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
 	print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)

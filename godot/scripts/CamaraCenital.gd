@@ -1026,7 +1026,7 @@ func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
 	if not ev["resultado_base"]["valido"]:
 		return MENSAJES_BASE_Y[ev["resultado_base"]["motivo"]]
 	if not ev["despejes_ok"]:
-		return "Colocación rechazada: una ventana o puerta quedaría sin el despeje mínimo, o invade el despeje de otro edificio."
+		return "Colocación rechazada: una ventana, puerta o cama no tiene el espacio mínimo requerido, o invade el despeje de otro edificio."
 	return ""
 
 
@@ -1339,6 +1339,7 @@ func _alternar_modo_colocar_blueprint() -> void:
 	var blueprint: Dictionary = Blueprints.obtener("residencial_investigacion")
 	if blueprint.is_empty():
 		print("No hay ningún blueprint guardado todavía — declara un edificio primero.")
+		hud.notificar("No hay ningún blueprint guardado todavía — declara un edificio primero.")
 		return
 	_salir_de_modo_zonificar()
 	if modo_colocar_puesto:
@@ -1597,6 +1598,7 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 		print("Zona '", tipo_zona_seleccionada, "' pintada en ", pintadas, " celda(s).")
 		if pintadas == 0 and not Zonificacion.nucleo_declarado:
 			print("Todavía no existe una zona de influencia — declara tu primer edificio residencial primero.")
+			hud.notificar("Todavía no existe una zona de influencia — declara tu primer edificio residencial primero.")
 	esperando_segunda_esquina = false
 	overlay.reconstruir()
 
@@ -1627,6 +1629,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
 	if ruta.is_empty():
 		print("Trazado rechazado: no hay ruta posible hasta ese punto.")
+		hud.notificar("Trazado rechazado: no hay ruta posible hasta ese punto.")
 		return
 
 	var tramo: Array[Vector2i] = [_vertice_inicio_tramo]
@@ -1736,6 +1739,7 @@ func _confirmar_trazo_via() -> void:
 
 	if not ConstructorVias.construir(mundo, vertices, choca):
 		print("Trazado rechazado: choca con un edificio, puesto u obra existente.")
+		hud.notificar("Trazado rechazado: choca con un edificio, puesto u obra existente.")
 
 
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si
@@ -1873,6 +1877,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var rechazo: String = _mensaje_rechazo_puesto(ev)
 	if rechazo != "":
 		print(rechazo)
+		hud.notificar(rechazo)
 		return
 	var columnas: Array[Vector2i] = ev["columnas"]
 	var resultado_huella: Dictionary = ev["resultado_huella"]
@@ -1996,6 +2001,7 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var mensaje: String = _mensaje_rechazo_blueprint(ev)
 	if mensaje != "":
 		print(mensaje)
+		hud.notificar(mensaje)
 		return
 	var columnas: Array[Vector2i] = ev["columnas"]
 	var fachada: Dictionary = ev["fachada"]

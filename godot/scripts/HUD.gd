@@ -25,6 +25,7 @@ const BarraModosScript = preload("res://scripts/BarraModos.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
+const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
 
 ## Nombres de todos los recursos del almacén (los usa PanelPuesto).
 const NOMBRES_RECURSO := {
@@ -56,6 +57,7 @@ var _barra_modos: Control
 var _hotbar: PanelContainer
 var _ventana_poblacion: PanelContainer
 var _ventana_almacen: PanelContainer
+var _notificaciones: Control
 
 
 ## Los widgets se crean en _init(), no en _ready(): en Main.tscn Player y
@@ -80,6 +82,8 @@ func _init() -> void:
 	add_child(_hotbar)
 	_panel_puesto = PanelPuestoScript.new()
 	add_child(_panel_puesto)
+	_notificaciones = PanelNotificacionesScript.new()
+	add_child(_notificaciones)
 
 
 func _ready() -> void:
@@ -285,3 +289,10 @@ func mostrar_progreso(fraccion: float, retrocede: bool = false) -> void:
 
 func ocultar_progreso() -> void:
 	_barra_progreso.visible = false
+
+
+## Notificación emergente, esquina superior derecha (ver PanelNotificaciones):
+## eventos puntuales del juego (colocación rechazada, edificio construido,
+## nuevo colono, etc.), no estado continuo.
+func notificar(texto: String) -> void:
+	_notificaciones.notificar(texto)

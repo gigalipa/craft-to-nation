@@ -29,6 +29,7 @@ func _ready() -> void:
 	Colonos.mundo = mundo
 	Economia.mundo = mundo
 	mundo.obra_a_fantasma.connect(jugador._on_obra_a_fantasma)
+	Colonos.colono_creado.connect(func(_id: int) -> void: hud.notificar("Nuevo colono en la ciudad."))
 	var centro_x: int = mundo.ANCHO_MUNDO / 2
 	var centro_z: int = mundo.LARGO_MUNDO / 2
 	var altura_spawn: int = mundo.altura_en(centro_x, centro_z)

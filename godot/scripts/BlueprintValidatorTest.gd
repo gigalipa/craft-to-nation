@@ -128,7 +128,7 @@ func ejecutar_pruebas() -> void:
 	resultado = BlueprintValidator.validar_blueprint(bp_sin_baul)
 	print("Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	assert(not resultado["valido"])
-	assert(resultado["errores"][0].contains("cama(s) pero solo 0 baúl(es)"))
+	assert(resultado["errores"][0].contains("1 cama y 0 baúles"))
 
 	print("\n=== TEST 6: Colocación en Zona Incorrecta ===")
 	resultado = BlueprintValidator.validar_blueprint(bp_valido, "fabricacion_militar")
@@ -426,7 +426,7 @@ func ejecutar_pruebas() -> void:
 	assert(not resultado["valido"])
 	var tiene_error_altura := false
 	for error in resultado["errores"]:
-		if (error as String).contains("altura insuficiente"):
+		if (error as String).contains("es muy bajo"):
 			tiene_error_altura = true
 	assert(tiene_error_altura)
 
@@ -1019,6 +1019,33 @@ func ejecutar_pruebas() -> void:
 	mundo.eliminar_edificio(id_b_34)
 	assert(mundo.verificar_despejes(celdas_mundo_34_pared), "Con ambos edificios eliminados, la zona compartida debe quedar libre")
 	print("OK: celda_a_despeje conserva la reserva del vecino en pie al deconstruir uno de dos edificios con despeje compartido, y la libera solo cuando ambos desaparecen.")
+
+	print("\n=== TEST 34b: verificar_despeje_camas() exige un lado libre en AMBOS extremos de la cama (el mismo lado) y 2 celdas libres encima de cada extremo ===")
+	const OX34B := 1075
+	var cabecera_34b := Vector3i(OX34B, 1, OX34B)
+	var pies_34b := Vector3i(OX34B + 1, 1, OX34B)  # eje X: pies al este de la cabecera
+	var celdas_cama_34b := {cabecera_34b: "cama_cabecera", pies_34b: "cama_pies"}
+	assert(mundo.verificar_despeje_camas(celdas_cama_34b), "cama con ambos lados y el techo libres debe pasar")
+
+	# Bloquea el lado +Z solo en la cabecera y el lado -Z solo en los pies:
+	# cada lado tiene UNA celda libre, pero NINGÚN lado tiene las DOS libres a
+	# la vez (mismo lado en cabecera y pies) -- debe rechazarse igual
+	# (reportado jugando en vivo, 2026-09-27).
+	mundo.colocar_bloque(cabecera_34b + Vector3i(0, 0, 1), "pared")
+	mundo.colocar_bloque(pies_34b + Vector3i(0, 0, -1), "pared")
+	assert(not mundo.verificar_despeje_camas(celdas_cama_34b), "ningún lado tiene libres AMBOS extremos a la vez")
+	mundo.minar_bloque(cabecera_34b + Vector3i(0, 0, 1))
+	mundo.minar_bloque(pies_34b + Vector3i(0, 0, -1))
+	assert(mundo.verificar_despeje_camas(celdas_cama_34b), "al despejar ambos bloqueos, vuelve a pasar")
+
+	# Bloquea la 2da celda de techo sobre la cabecera: ya no hay 2 celdas
+	# libres encima de ese extremo.
+	mundo.colocar_bloque(cabecera_34b + Vector3i(0, 2, 0), "pared")
+	assert(not mundo.verificar_despeje_camas(celdas_cama_34b), "falta la 2da celda libre encima de la cabecera")
+	mundo.minar_bloque(cabecera_34b + Vector3i(0, 2, 0))
+	assert(mundo.verificar_despeje_camas(celdas_cama_34b), "con el techo despejado, vuelve a pasar")
+	assert(mundo.verificar_despejes(celdas_cama_34b), "verificar_despejes() también exige el despeje de camas")
+	print("OK: verificar_despeje_camas() exige un lado con ambos extremos libres y 2 celdas libres encima de cada extremo; verificar_despejes() lo incluye.")
 
 	print("\n=== TEST 35: minar_bloque() no hace nada sobre una celda de agua ===")
 	const OX35 := 1080

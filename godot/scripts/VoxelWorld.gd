@@ -401,7 +401,58 @@ func verificar_despejes(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary 
 	for celda_despeje in calcular_despeje(celdas_mundo):
 		if despeje_bloqueado(celda_despeje, terreno_a_nivelar):
 			return false
+	return verificar_despeje_camas(celdas_mundo, terreno_a_nivelar)
+
+
+## Valida que cada cama (par cama_cabecera/cama_pies) de "celdas_mundo" tenga
+## espacio para levantarse de ella: al menos UN lado perpendicular al eje
+## cabecera-pies con AMBAS celdas libres (junto a la cabecera Y junto a los
+## pies, el MISMO lado en los dos — reportado jugando en vivo, 2026-09-27),
+## y 2 celdas libres encima tanto de la cabecera como de los pies. A
+## diferencia de calcular_despeje() (ventanas/puertas: solo reserva celdas
+## EXTERNAS a la huella, para no invadir al vecino), esto es una comprobación
+## interior: el lado/encima de una cama normalmente cae DENTRO de la propia
+## huella, así que se compara contra las demás celdas estructurales del
+## propio edificio (celdas_mundo) además del mundo real (despeje_bloqueado()).
+func verificar_despeje_camas(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> bool:
+	for celda: Vector3i in celdas_mundo:
+		if celdas_mundo[celda] != "cama_cabecera":
+			continue
+		var pies := _pies_de_cama_en(celda, celdas_mundo)
+		if pies == Vector3i.MAX:
+			continue  # sin pareja en celdas_mundo: no debería pasar en un blueprint válido
+		var eje := pies - celda
+		var lados := [Vector3i(-eje.z, 0, eje.x), Vector3i(eje.z, 0, -eje.x)]
+		var lado_libre := false
+		for lado in lados:
+			if _celda_libre_junto_a_cama(celda + lado, celdas_mundo, terreno_a_nivelar) \
+			and _celda_libre_junto_a_cama(pies + lado, celdas_mundo, terreno_a_nivelar):
+				lado_libre = true
+				break
+		if not lado_libre:
+			return false
+		for extremo in [celda, pies]:
+			if not _celda_libre_junto_a_cama(extremo + Vector3i(0, 1, 0), celdas_mundo, terreno_a_nivelar) \
+			or not _celda_libre_junto_a_cama(extremo + Vector3i(0, 2, 0), celdas_mundo, terreno_a_nivelar):
+				return false
 	return true
+
+
+## "cabecera" -> celda vecina en celdas_mundo marcada "cama_pies" (mismo
+## criterio geométrico que reemparejar_construccion()), o Vector3i.MAX si no
+## se encuentra ninguna (mismo sentinel que Puertas.celda_de_colisionador()).
+func _pies_de_cama_en(cabecera: Vector3i, celdas_mundo: Dictionary) -> Vector3i:
+	for direccion in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+		var vecino: Vector3i = cabecera + direccion
+		if celdas_mundo.get(vecino) == "cama_pies":
+			return vecino
+	return Vector3i.MAX
+
+
+func _celda_libre_junto_a_cama(celda: Vector3i, celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary) -> bool:
+	if celdas_mundo.has(celda):
+		return false  # ocupada por otra celda estructural del mismo edificio
+	return not despeje_bloqueado(celda, terreno_a_nivelar)
 
 
 func _ready() -> void:

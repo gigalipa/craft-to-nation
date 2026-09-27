@@ -1,9 +1,12 @@
 extends RefCounted
 class_name BlueprintValidator
 
-## Puerto a GDScript del validador de PoC 2 (ver PoC_2/). Mismas reglas,
-## mismos mensajes de error, misma estructura de datos: un Blueprint parseado
-## desde JSON es un Dictionary de Godot con la misma forma que el dict de
+## Puerto a GDScript del validador de PoC 2 (ver PoC_2/). Mismas reglas y
+## misma estructura de datos; los mensajes de error que llegan al jugador
+## como notificación (ver HUD.notificar()) se reformularon a un tono
+## conversacional y ya no coinciden literalmente con los de PoC 2 (decisión
+## del usuario, 2026-09-27). Un Blueprint parseado desde JSON es un
+## Dictionary de Godot con la misma forma que el dict de
 ## Python (JSON.parse_string produce la misma jerarquía que json.loads).
 ## Deliberadamente NO lee el VoxelWorld en vivo: valida un Blueprint dado
 ## (por ahora, definido a mano o cargado de archivo), no detecta
@@ -32,6 +35,30 @@ const TIPOS_ESTRUCTURALES := ["pared", "puerta", "ventana"]
 ## del flood-fill, así que este caso ni siquiera llega a estructura_a_blueprint().
 const TIPOS_RELLENO_GENERICO := ["pared"]
 const VECINOS_ORTOGONALES := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+
+## Nombres ordinales para los mensajes de error (más conversacionales que
+## "Piso N", ver HUD.notificar() — decisión del usuario, 2026-09-27). Más
+## allá de ORDINALES.size() (poco probable: el tope de pisos por casa es 8,
+## ver Ciudad.NIVELES_VIVIENDA) se cae a "piso N" (1-indexado).
+const ORDINALES := ["primer", "segundo", "tercer", "cuarto", "quinto", "sexto", "séptimo", "octavo", "noveno", "décimo"]
+
+
+static func _texto_piso(nivel: int) -> String:
+	if nivel < ORDINALES.size():
+		return "%s piso" % ORDINALES[nivel]
+	return "piso %d" % (nivel + 1)
+
+
+## "2 camas"/"1 cama" — singular si cantidad es 1.
+static func _plural(cantidad: int, singular: String, plural: String) -> String:
+	return "%d %s" % [cantidad, singular if cantidad == 1 else plural]
+
+
+## "falta un baúl"/"faltan 3 baúles" — "un" en vez de "1" para que se lea natural.
+static func _texto_faltan(cantidad: int, singular: String, plural: String) -> String:
+	if cantidad == 1:
+		return "falta un %s" % singular
+	return "faltan %d %s" % [cantidad, plural]
 
 
 static func _parsear_celda(clave: String) -> Vector2i:
@@ -63,8 +90,8 @@ static func validar_cerramiento(piso: Dictionary) -> Array:
 
 		if not TIPOS_CELDA_SOLIDA.has(tipo):
 			errores.append(
-				"Piso %d: hueco en el perímetro en la celda (%d,%d), tipo '%s'"
-				% [piso["nivel"], pos.x, pos.y, tipo]
+				"El %s tiene un hueco en la pared cerca de (%d, %d): ahí hay '%s', que no cierra el perímetro."
+				% [_texto_piso(piso["nivel"]), pos.x, pos.y, tipo]
 			)
 			continue
 
@@ -74,8 +101,8 @@ static func validar_cerramiento(piso: Dictionary) -> Array:
 			var es_perpendicular: bool = d1 != -d2
 			if es_perpendicular and tipo != "pared":
 				errores.append(
-					"Piso %d: la esquina (%d,%d) debe ser 'pared', no '%s'"
-					% [piso["nivel"], pos.x, pos.y, tipo]
+					"La esquina (%d, %d) del %s debe ser una pared, no '%s'."
+					% [pos.x, pos.y, _texto_piso(piso["nivel"]), tipo]
 				)
 
 	return errores
@@ -93,9 +120,9 @@ static func validar_cerramiento(piso: Dictionary) -> Array:
 static func validar_techo_y_suelo(piso: Dictionary) -> Array:
 	var errores: Array = []
 	if not piso.get("suelo_completo", true):
-		errores.append("Piso %d: falta un suelo sólido debajo" % piso["nivel"])
+		errores.append("Al %s le falta un suelo sólido debajo." % _texto_piso(piso["nivel"]))
 	if not piso.get("techo_completo", true):
-		errores.append("Piso %d: falta un techo sólido encima" % piso["nivel"])
+		errores.append("Al %s le falta un techo sólido encima." % _texto_piso(piso["nivel"]))
 	return errores
 
 
@@ -112,8 +139,8 @@ static func validar_altura_piso(piso: Dictionary) -> Array:
 	var altura: int = piso.get("altura_capas", ALTURA_MINIMA_PISO)
 	if altura < ALTURA_MINIMA_PISO:
 		return [
-			"Piso %d: altura insuficiente (%d bloque(s)), mínimo %d"
-			% [piso["nivel"], altura, ALTURA_MINIMA_PISO]
+			"El %s es muy bajo (%d bloque(s) de alto); necesita al menos %d."
+			% [_texto_piso(piso["nivel"]), altura, ALTURA_MINIMA_PISO]
 		]
 	return []
 
@@ -122,9 +149,9 @@ static func validar_aberturas(piso: Dictionary) -> Array:
 	var errores: Array = []
 	var tipos_presentes: Array = piso["celdas"].values()
 	if not tipos_presentes.has("puerta"):
-		errores.append("Piso %d: falta al menos una puerta" % piso["nivel"])
+		errores.append("Falta una puerta en el %s." % _texto_piso(piso["nivel"]))
 	if not tipos_presentes.has("ventana"):
-		errores.append("Piso %d: falta al menos una ventana" % piso["nivel"])
+		errores.append("Falta una ventana en el %s." % _texto_piso(piso["nivel"]))
 	return errores
 
 
@@ -145,15 +172,15 @@ static func validar_limites_vivienda(blueprint: Dictionary, limites: Dictionary)
 	var pisos: Array = blueprint["pisos"]
 	if pisos.size() > limites["pisos"]:
 		errores.append(
-			"El Blueprint tiene %d piso(s) y el nivel actual de la ciudad permite %d por casa"
+			"Esta casa tiene %d piso(s), pero el nivel actual de la ciudad solo permite %d por casa."
 			% [pisos.size(), limites["pisos"]]
 		)
 	for piso in pisos:
 		var camas: int = (piso.get("camas", []) as Array).size()
 		if camas > limites["camas_por_piso"]:
 			errores.append(
-				"Piso %d: tiene %d cama(s), pero el nivel actual permite %d por piso"
-				% [piso["nivel"], camas, limites["camas_por_piso"]]
+				"El %s tiene %d cama(s), pero el nivel actual solo permite %d por piso."
+				% [_texto_piso(piso["nivel"]), camas, limites["camas_por_piso"]]
 			)
 	return errores
 
@@ -185,11 +212,15 @@ static func validar_camas_y_almacenamiento(blueprint: Dictionary) -> Array:
 				total_baules += 1
 
 	if total_camas == 0:
-		return ["El Blueprint no tiene ninguna cama"]
+		return ["Este edificio no tiene ninguna cama."]
 	if total_baules < total_camas:
 		return [
-			"El Blueprint tiene %d cama(s) pero solo %d baúl(es); se requiere al menos 1 baúl por cama"
-			% [total_camas, total_baules]
+			"Hay %s y %s: %s."
+			% [
+				_plural(total_camas, "cama", "camas"),
+				_plural(total_baules, "baúl", "baúles"),
+				_texto_faltan(total_camas - total_baules, "baúl", "baúles"),
+			]
 		]
 	return []
 
@@ -204,7 +235,7 @@ static func validar_zona_permitida(blueprint: Dictionary) -> Array:
 static func validar_colocacion(blueprint: Dictionary, zona_destino: String) -> Array:
 	if blueprint["zona_permitida"] != zona_destino:
 		return [
-			"El Blueprint '%s' (zona: %s) no puede colocarse en la zona '%s'"
+			"'%s' es para la zona %s; no se puede colocar en %s."
 			% [blueprint["nombre"], blueprint["zona_permitida"], zona_destino]
 		]
 	return []

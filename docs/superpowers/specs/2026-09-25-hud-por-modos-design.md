@@ -94,11 +94,13 @@ Verificación manual en la escena principal (cenital y 1ª persona) de que cada 
 ## Ajuste 2026-09-27: ventanas de Población/Almacén y estilo de PanelPuesto
 
 - `BarraSuperior`: población pasa a `censo/camas (desempleados)`; comida pasa a mostrar su propio `cantidad/límite` (antes solo cantidad), ambos con su tasa.
-- Clic en "Población" o "Almacén" (solo tiene efecto en la cenital: `CamaraCenital` conecta `HUD.dato_pedido`, `Player` no) abre una ventana emergente centrada, estilo `TemaHUD`, con botón de cierre:
+- Clic en "Población" o "Almacén" (solo tiene efecto en la cenital: `CamaraCenital` conecta `HUD.dato_pedido`, `Player` no) abre una ventana emergente, estilo `TemaHUD`, con botón de cierre:
   - `VentanaPoblacion.gd`: demografía por tipo (`Ciudad.demografia`), camas construidas y, por puesto (`Economia.puestos`), su tipo y cantidad de recolectores/acarreadores (`Economia.trabajadores_de`).
   - `VentanaAlmacen.gd`: una fila por recurso de `Ciudad.almacen`, con cantidad/límite y tasa.
   - `HUD.abrir_ventana_dato(cual)` cierra la otra ventana si estaba abierta (una a la vez).
+  - Ambas se actualizan en vivo (`_process()`) mientras están visibles, son arrastrables (clic y arrastre sobre cualquier parte que no sea el botón de cierre) y aparecen por defecto en la esquina superior izquierda (Población arriba, Almacén debajo). Al ser hijas de `HUD` (nunca se destruyen), su posición y si el usuario las dejó abiertas o cerradas persisten solas mientras dura la partida — incluida cada vez que se vuelve a la cenital: `HUD.set_vista()` las oculta con `ocultar_temporalmente()` al entrar a 1ª persona (sin tocar su posición ni marcarlas cerradas) y las restaura con `restaurar()` al volver.
 - `PanelPuesto.gd` (ventana de asignación de trabajadores de un puesto) pasa a usar `TemaHUD.aplicar_panel/etiqueta/estilizar_boton`, sin cambiar su lógica ni su posición.
+- `CamaraCenital.posicionar_sobre()` ya no reinicia `angulo_orbital`/`angulo_inclinacion`/`distancia_camara` al activarse: solo recentra el punto de mira (foco) sobre la posición actual del avatar. Orbital, inclinación y zoom quedan como estaban la última vez que se usó la cenital.
 
 ## Documentación a actualizar
 

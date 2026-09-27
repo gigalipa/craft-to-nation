@@ -105,6 +105,15 @@ func set_vista(primera_persona: bool) -> void:
 	# 102 = alto de la hotbar (~82) + su margen (12) + un hueco de 8.
 	_contexto.set_margen_inferior(102.0 if primera_persona else 12.0)
 	_contexto.ocultar()
+	# Las ventanas de Población/Almacén solo tienen sentido en la cenital;
+	# ocultarlas/restaurarlas conserva su posición y si el usuario las dejó
+	# abiertas (ver VentanaPoblacion/VentanaAlmacen).
+	if primera_persona:
+		_ventana_poblacion.ocultar_temporalmente()
+		_ventana_almacen.ocultar_temporalmente()
+	else:
+		_ventana_poblacion.restaurar()
+		_ventana_almacen.restaurar()
 
 
 func configurar_hotbar(tipos: Array) -> void:

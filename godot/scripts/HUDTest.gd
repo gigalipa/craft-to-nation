@@ -93,21 +93,58 @@ func probar_ventanas_datos() -> void:
 
 	var ventana_poblacion: PanelContainer = VentanaPoblacionScript.new()
 	add_child(ventana_poblacion)
-	assert(not ventana_poblacion.visible)
+	assert(not ventana_poblacion.visible and not ventana_poblacion.abierta)
+	assert(ventana_poblacion.position == VentanaPoblacionScript.POSICION_INICIAL, "debe abrir en la esquina superior izquierda")
 	ventana_poblacion.abrir()
-	assert(ventana_poblacion.visible)
+	assert(ventana_poblacion.visible and ventana_poblacion.abierta)
 	assert(ventana_poblacion._caja.get_child_count() > 0)
+	# Cambiar de vista a 1ª persona la oculta sin cerrarla ni mover su posición.
+	ventana_poblacion.position = Vector2(200, 150)
+	ventana_poblacion.ocultar_temporalmente()
+	assert(not ventana_poblacion.visible and ventana_poblacion.abierta)
+	ventana_poblacion.restaurar()
+	assert(ventana_poblacion.visible and ventana_poblacion.position == Vector2(200, 150))
+	# Se actualiza en vivo mientras está visible.
+	Ciudad.demografia["ciudadano"] += 1
+	ventana_poblacion._process(0.0)
+	var texto_ciudadanos := ""
+	for hijo in ventana_poblacion._caja.get_children():
+		if hijo is Label and (hijo as Label).text.begins_with("Ciudadanos:"):
+			texto_ciudadanos = (hijo as Label).text
+	assert(texto_ciudadanos == "Ciudadanos: %d" % Ciudad.demografia["ciudadano"], "salió '%s'" % texto_ciudadanos)
+	Ciudad.demografia["ciudadano"] -= 1
+	# Arrastre: mousedown, arrastrar, mouseup.
+	var abajo := InputEventMouseButton.new()
+	abajo.button_index = MOUSE_BUTTON_LEFT
+	abajo.pressed = true
+	abajo.position = Vector2(10, 10)
+	ventana_poblacion._gui_input(abajo)
+	var mover := InputEventMouseMotion.new()
+	mover.position = Vector2(40, 30)
+	ventana_poblacion._gui_input(mover)
+	assert(ventana_poblacion.position == Vector2(230, 170), "salió %s" % ventana_poblacion.position)
+	var arriba := InputEventMouseButton.new()
+	arriba.button_index = MOUSE_BUTTON_LEFT
+	arriba.pressed = false
+	ventana_poblacion._gui_input(arriba)
+	mover.position = Vector2(999, 999)
+	ventana_poblacion._gui_input(mover)  # ya no arrastra: no debe moverse
+	assert(ventana_poblacion.position == Vector2(230, 170))
 	ventana_poblacion.cerrar()
-	assert(not ventana_poblacion.visible)
+	assert(not ventana_poblacion.visible and not ventana_poblacion.abierta)
 	ventana_poblacion.queue_free()
 
 	var ventana_almacen: PanelContainer = VentanaAlmacenScript.new()
 	add_child(ventana_almacen)
 	ventana_almacen.abrir()
-	assert(ventana_almacen.visible)
+	assert(ventana_almacen.visible and ventana_almacen.abierta)
 	assert(ventana_almacen._caja.get_child_count() > 0)
+	ventana_almacen.ocultar_temporalmente()
+	assert(not ventana_almacen.visible and ventana_almacen.abierta)
+	ventana_almacen.restaurar()
+	assert(ventana_almacen.visible)
 	ventana_almacen.cerrar()
-	assert(not ventana_almacen.visible)
+	assert(not ventana_almacen.visible and not ventana_almacen.abierta)
 	ventana_almacen.queue_free()
 
 

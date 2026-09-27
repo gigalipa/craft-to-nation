@@ -2,8 +2,11 @@ extends PanelContainer
 
 ## Ventana emergente (clic en "Población" de la barra superior, solo cenital):
 ## censo por tipo, camas totales y la distribución de trabajadores por puesto.
-## Se reconstruye entera cada vez que se abre; no hace falta refrescarla en
-## vivo porque se cierra antes de volver a interactuar con el mundo.
+## Se actualiza en vivo mientras está visible. Arrastrable con el ratón;
+## aparece por defecto en la esquina superior izquierda. Es un hijo más de
+## HUD (nunca se destruye), así que su posición y si está abierta o cerrada
+## persisten solas mientras dura la partida — incluida al salir y volver a
+## entrar a la cenital (HUD.set_vista() la oculta/restaura sin tocarlas).
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
@@ -18,22 +21,63 @@ const NOMBRES_TIPO := {
 	"militar": "Militares",
 }
 
+const POSICION_INICIAL := Vector2(16, 56)
+
 var _caja := VBoxContainer.new()
+## true mientras el usuario la dejó abierta (independiente de "visible": en
+## 1ª persona se oculta sin cambiar esto, ver ocultar_temporalmente()).
+var abierta := false
+var _arrastrando := false
+var _offset_arrastre := Vector2.ZERO
 
 
 func _ready() -> void:
 	visible = false
 	TemaHUD.aplicar_panel(self)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	set_anchors_preset(Control.PRESET_CENTER)
+	anchor_left = 0.0
+	anchor_top = 0.0
+	anchor_right = 0.0
+	anchor_bottom = 0.0
+	position = POSICION_INICIAL
 	custom_minimum_size = Vector2(320, 0)
 	_caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_caja)
 
 
+func _gui_input(evento: InputEvent) -> void:
+	if evento is InputEventMouseButton and evento.button_index == MOUSE_BUTTON_LEFT:
+		_arrastrando = evento.pressed
+		_offset_arrastre = evento.position
+	elif evento is InputEventMouseMotion and _arrastrando:
+		position += evento.position - _offset_arrastre
+
+
+func _process(_delta: float) -> void:
+	if visible:
+		_actualizar()
+
+
 func abrir() -> void:
+	abierta = true
+	visible = true
+	_actualizar()
+
+
+## Oculta sin marcarla como cerrada (HUD.set_vista() al entrar a 1ª persona).
+func ocultar_temporalmente() -> void:
+	visible = false
+
+
+## Restaura la visibilidad si el usuario la había dejado abierta (HUD.set_vista()
+## al volver a la cenital).
+func restaurar() -> void:
+	visible = abierta
+
+
+func _actualizar() -> void:
 	for hijo in _caja.get_children():
-		hijo.queue_free()
+		hijo.free()
 	_caja.add_child(_fila_titulo("Población"))
 	_caja.add_child(TemaHUD.etiqueta("Camas construidas: %d" % Ciudad.capacidad_camas_construida))
 	_caja.add_child(TemaHUD.etiqueta(""))
@@ -50,10 +94,10 @@ func abrir() -> void:
 		var t: Dictionary = Economia.trabajadores_de(esquina)
 		var nombre: String = PanelPuestoScript.NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"])
 		_caja.add_child(TemaHUD.etiqueta("  %s: %d recolectores, %d acarreadores" % [nombre, t["recolectores"], t["acarreadores"]]))
-	visible = true
 
 
 func cerrar() -> void:
+	abierta = false
 	visible = false
 
 

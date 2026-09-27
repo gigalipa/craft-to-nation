@@ -358,15 +358,15 @@ func _mostrar_huella_blueprint(visible_ahora: bool) -> void:
 
 
 ## Centra el punto de mira sobre las coordenadas X/Z dadas (la posición del
-## jugador en el momento de activar la cenital) y reinicia la orientación
-## orbital, la inclinación, la distancia y el estado del gesto de
-## órbita/inclinación. Llamada por Main.gd al activar la cámara cenital.
+## jugador en el momento de activar la cenital). La orientación orbital, la
+## inclinación y el zoom NO se reinician: se conservan de la última vez que
+## se usó la cenital (decisión del usuario, 2026-09-27) — solo el punto de
+## mira cambia, porque el avatar puede haberse movido. Solo se reinicia el
+## estado del gesto de órbita/inclinación. Llamada por Main.gd al activar la
+## cámara cenital.
 func posicionar_sobre(foco_xz: Vector2) -> void:
 	var altura_inicial: int = mundo.altura_en(int(foco_xz.x), int(foco_xz.y))
 	foco = Vector3(foco_xz.x, altura_inicial, foco_xz.y)
-	angulo_orbital = 0.0
-	angulo_inclinacion = ANGULO_INCLINACION_INICIAL
-	distancia_camara = DISTANCIA_INICIAL
 	_gesto_orbital_activo = false
 	_actualizar_transform()
 	_refinar_foco_por_mira()

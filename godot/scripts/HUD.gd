@@ -116,6 +116,26 @@ func set_vista(primera_persona: bool) -> void:
 		_ventana_almacen.restaurar()
 
 
+## Crossfade entre la hotbar (1ª persona) y la barra de modos (cenital)
+## mientras Main.gd anima el vuelo de cámara: la saliente se desvanece,
+## set_vista() cambia la visibilidad real a medio camino (con alfa en 0, sin
+## salto visible) y la entrante aparece. "a_cenital" es hacia dónde va la
+## transición (mismo sentido que Main.cenital_activa).
+func iniciar_transicion(a_cenital: bool, duracion: float) -> void:
+	_contexto.ocultar()
+	var saliente: Control = _hotbar if a_cenital else _barra_modos
+	var entrante: Control = _barra_modos if a_cenital else _hotbar
+	var mitad := duracion / 2.0
+	var tween := create_tween()
+	tween.tween_property(saliente, "modulate:a", 0.0, mitad)
+	tween.tween_callback(func() -> void:
+		set_vista(not a_cenital)
+		entrante.modulate.a = 0.0
+	)
+	tween.tween_property(entrante, "modulate:a", 1.0, mitad)
+	tween.tween_callback(func() -> void: saliente.modulate.a = 1.0)
+
+
 func configurar_hotbar(tipos: Array) -> void:
 	_hotbar.configurar(tipos)
 
@@ -237,14 +257,13 @@ static func texto_materiales(neto: Dictionary) -> String:
 	return "\n".join(lineas)
 
 
-## "cual" es "poblacion" o "almacen"; cierra la otra ventana si estaba abierta
-## (una a la vez, como el panel de puesto).
+## "cual" es "poblacion" o "almacen". Ambas ventanas pueden estar abiertas a
+## la vez (decisión del usuario, 2026-09-27): cada una se coloca por defecto
+## en su propia esquina (ver POSICION_INICIAL de cada una) para no solaparse.
 func abrir_ventana_dato(cual: String) -> void:
 	if cual == "poblacion":
-		_ventana_almacen.cerrar()
 		_ventana_poblacion.abrir()
 	elif cual == "almacen":
-		_ventana_poblacion.cerrar()
 		_ventana_almacen.abrir()
 
 

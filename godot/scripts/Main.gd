@@ -9,8 +9,21 @@ extends Node3D
 
 var cenital_activa := false
 
+## Duración de la animación de cambio de cámara (segundos).
+const DURACION_TRANSICION := 0.6
+
+## Cámara "libre" que hace el vuelo de una vista a otra: durante la
+## transición es la única cámara `current`, ninguna de las dos vistas
+## procesa entrada (CamaraCenital._process()/_unhandled_input() vuelven de
+## inmediato si `current` es falso; Player usa set_physics_process() y
+## el ratón se libera, lo que también desactiva su mouse-look).
+var _camara_transicion := Camera3D.new()
+var _en_transicion := false
+
 
 func _ready() -> void:
+	_camara_transicion.current = false
+	add_child(_camara_transicion)
 	jugador.mundo = mundo
 	Zonificacion.limite_mundo = Vector2i(mundo.ANCHO_MUNDO, mundo.LARGO_MUNDO)
 	Colonos.mundo = mundo
@@ -25,32 +38,60 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
-		if tecla.pressed and tecla.keycode == KEY_C:
+		if tecla.pressed and tecla.keycode == KEY_C and not _en_transicion:
 			_alternar_camara_cenital()
 
 
-## Alterna entre la cámara en 1ª persona del jugador y la cenital: congela
-## el movimiento del jugador mientras la cenital está activa (conserva su
-## posición al volver), muestra/oculta el overlay de zonas — solo debe verse
-## desde arriba, nunca en 1ª persona —, oculta la mira (MiraUI/Mira), que
-## solo tiene sentido en 1ª persona (decisión explícita del usuario), y sale
-## de cualquier modo de interacción de la cenital (nivelación, colocar mina)
-## al volver a 1ª persona — esos modos dibujan overlays como hijos directos
-## de CamaraCenital, independientes de si esa cámara está activa, así que
-## sin esto quedaban visibles y congelados encima de la vista en 1ª persona.
+## Alterna entre la cámara en 1ª persona del jugador y la cenital, con una
+## transición animada: una cámara libre (_camara_transicion) vuela de la
+## posición de la vista saliente a la de la entrante mientras el HUD hace un
+## crossfade (ver HUD.iniciar_transicion()). Congela el jugador y la cenital
+## durante el vuelo (ver comentario de _camara_transicion) y, al llegar,
+## aplica el resto de cambios de vista: overlay de zonas — solo debe verse
+## desde arriba, nunca en 1ª persona —, mira (MiraUI/Mira, solo con sentido
+## en 1ª persona) y salida de cualquier modo de interacción de la cenital
+## (nivelación, colocar mina) al volver a 1ª persona — esos modos dibujan
+## overlays como hijos directos de CamaraCenital, independientes de si esa
+## cámara está activa, así que sin esto quedaban visibles y congelados
+## encima de la vista en 1ª persona.
 func _alternar_camara_cenital() -> void:
 	cenital_activa = not cenital_activa
+	var origen: Transform3D
+	var destino: Transform3D
 	if cenital_activa:
+		origen = jugador.camara.global_transform
 		camara_cenital.posicionar_sobre(Vector2(jugador.position.x, jugador.position.z))
-		zona_overlay.reconstruir()
+		destino = camara_cenital.global_transform
 	else:
+		origen = camara_cenital.global_transform
 		camara_cenital.salir_de_todos_los_modos()
+		destino = jugador.camara.global_transform
+
+	_en_transicion = true
+	jugador.set_physics_process(false)
+	camara_cenital.current = false
+	jugador.camara.current = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_camara_transicion.global_transform = origen
+	_camara_transicion.current = true
+	hud.iniciar_transicion(cenital_activa, DURACION_TRANSICION)
+
+	var tween := create_tween()
+	tween.tween_property(_camara_transicion, "global_transform", destino, DURACION_TRANSICION) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_callback(_terminar_transicion)
+
+
+func _terminar_transicion() -> void:
+	_en_transicion = false
+	_camara_transicion.current = false
 	camara_cenital.current = cenital_activa
 	jugador.camara.current = not cenital_activa
 	jugador.set_physics_process(not cenital_activa)
 	zona_overlay.visible = cenital_activa
+	if cenital_activa:
+		zona_overlay.reconstruir()
 	mira_ui.visible = not cenital_activa
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if cenital_activa else Input.MOUSE_MODE_CAPTURED
-	hud.set_vista(not cenital_activa)
 	if not cenital_activa and jugador.modo_deconstruccion:
 		jugador.mostrar_contexto_deconstruccion()

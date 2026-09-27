@@ -40,6 +40,7 @@ func ejecutar_pruebas() -> void:
 	probar_panel_contextual()
 	probar_panel_temporal()
 	await probar_panel_desvanece()
+	await probar_transicion_hud()
 	probar_barra_modos()
 	probar_hotbar()
 	probar_formateadores_hud()
@@ -256,6 +257,35 @@ func probar_panel_desvanece() -> void:
 	await get_tree().create_timer(0.6).timeout
 	assert(panel.visible and panel.titulo.text == "PUERTA", "el temporizador viejo no debe ocultar el panel nuevo")
 	panel.queue_free()
+
+
+## HUD.iniciar_transicion(): crossfade entre hotbar y barra de modos que
+## acompaña el vuelo de cámara de Main.gd (ver Main._alternar_camara_cenital()).
+func probar_transicion_hud() -> void:
+	print("=== TEST 2d: HUD.iniciar_transicion() (crossfade hotbar <-> barra de modos) ===")
+	var hud: CanvasLayer = HUDScript.new()
+	# HUD._ready() espera $OxigenoLabel y $MaterialesFicha (@onready): en la
+	# escena real los pone Main.tscn; aquí se agregan a mano antes de add_child.
+	var oxigeno := Label.new()
+	oxigeno.name = "OxigenoLabel"
+	hud.add_child(oxigeno)
+	var materiales := Label.new()
+	materiales.name = "MaterialesFicha"
+	hud.add_child(materiales)
+	add_child(hud)
+	await get_tree().process_frame  # deja correr _ready() (set_vista(true) inicial)
+	assert(hud._hotbar.visible and not hud._barra_modos.visible, "arranca en 1ª persona")
+
+	hud.iniciar_transicion(true, 0.1)  # hacia la cenital
+	await get_tree().create_timer(0.3).timeout
+	assert(not hud._hotbar.visible and hud._barra_modos.visible, "debe terminar en la cenital")
+	assert(is_equal_approx(hud._barra_modos.modulate.a, 1.0), "la entrante queda opaca")
+	assert(is_equal_approx(hud._hotbar.modulate.a, 1.0), "la saliente queda lista (opaca) para la próxima")
+
+	hud.iniciar_transicion(false, 0.1)  # de vuelta a 1ª persona
+	await get_tree().create_timer(0.3).timeout
+	assert(hud._hotbar.visible and not hud._barra_modos.visible, "debe volver a 1ª persona")
+	hud.queue_free()
 
 
 func probar_barra_modos() -> void:

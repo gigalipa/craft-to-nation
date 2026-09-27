@@ -97,10 +97,19 @@ Verificación manual en la escena principal (cenital y 1ª persona) de que cada 
 - Clic en "Población" o "Almacén" (solo tiene efecto en la cenital: `CamaraCenital` conecta `HUD.dato_pedido`, `Player` no) abre una ventana emergente, estilo `TemaHUD`, con botón de cierre:
   - `VentanaPoblacion.gd`: demografía por tipo (`Ciudad.demografia`), camas construidas y, por puesto (`Economia.puestos`), su tipo y cantidad de recolectores/acarreadores (`Economia.trabajadores_de`).
   - `VentanaAlmacen.gd`: una fila por recurso de `Ciudad.almacen`, con cantidad/límite y tasa.
-  - `HUD.abrir_ventana_dato(cual)` cierra la otra ventana si estaba abierta (una a la vez).
+  - `HUD.abrir_ventana_dato(cual)` abre la ventana pedida; ambas pueden estar abiertas a la vez (decisión del usuario, 2026-09-27) — cada una tiene su propia esquina por defecto para no solaparse.
   - Ambas se actualizan en vivo (`_process()`) mientras están visibles, son arrastrables (clic y arrastre sobre cualquier parte que no sea el botón de cierre) y aparecen por defecto en la esquina superior izquierda (Población arriba, Almacén debajo). Al ser hijas de `HUD` (nunca se destruyen), su posición y si el usuario las dejó abiertas o cerradas persisten solas mientras dura la partida — incluida cada vez que se vuelve a la cenital: `HUD.set_vista()` las oculta con `ocultar_temporalmente()` al entrar a 1ª persona (sin tocar su posición ni marcarlas cerradas) y las restaura con `restaurar()` al volver.
 - `PanelPuesto.gd` (ventana de asignación de trabajadores de un puesto) pasa a usar `TemaHUD.aplicar_panel/etiqueta/estilizar_boton`, sin cambiar su lógica ni su posición.
 - `CamaraCenital.posicionar_sobre()` ya no reinicia `angulo_orbital`/`angulo_inclinacion`/`distancia_camara` al activarse: solo recentra el punto de mira (foco) sobre la posición actual del avatar. Orbital, inclinación y zoom quedan como estaban la última vez que se usó la cenital.
+
+## Ajuste 2026-09-27 (2): ambas ventanas abiertas a la vez y transición animada de cámara
+
+- `HUD.abrir_ventana_dato()` ya no cierra la otra ventana: Población y Almacén pueden estar abiertas al mismo tiempo.
+- Cambiar de cámara (`C`) ya no es instantáneo: `Main._alternar_camara_cenital()` anima un vuelo de `DURACION_TRANSICION` (0.6 s) entre la vista saliente y la entrante.
+  - `Main._camara_transicion` (un `Camera3D` libre, hijo de `Main`) es la única cámara `current` durante el vuelo; su `global_transform` se interpola con un `Tween` (`TRANS_CUBIC`/`EASE_IN_OUT`) desde el transform de la cámara saliente hasta el de la entrante — el `Tween` interpola `Transform3D` con slerp de rotación de forma nativa, sin código de cuaterniones a mano.
+  - Mientras dura: `CamaraCenital.current` y `Player.camara.current` en falso (ninguna de las dos procesa: `CamaraCenital._process()`/`_unhandled_input()` vuelven de inmediato si `current` es falso), `Player.set_physics_process(false)` y el ratón liberado (`MOUSE_MODE_VISIBLE`, lo que también desactiva el mouse-look de `Player`, condicionado a `MOUSE_MODE_CAPTURED`). `Main._en_transicion` bloquea una segunda pulsación de `C` hasta terminar.
+  - `HUD.iniciar_transicion(a_cenital, duracion)` hace un crossfade: desvanece la saliente (`_hotbar` o `_barra_modos`) durante la mitad de la duración, cambia la visibilidad real con `set_vista()` en el punto medio (con alfa en 0, sin salto visible) y aparece la entrante en la segunda mitad. `_contexto` se oculta al empezar. La barra superior (común a ambas vistas) no se desvanece.
+  - Al llegar (`Main._terminar_transicion()`): se fijan las cámaras reales (`current`), se restaura `Player.set_physics_process()`, `zona_overlay`/`mira_ui` según la vista de destino y el modo mouse (capturado en 1ª persona).
 
 ## Documentación a actualizar
 

@@ -795,22 +795,55 @@ func _colocar() -> void:
 		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % tipo)
 
 
+## true si "columna" (X,Z absolutos) está encerrada por celdas de "celdas"
+## presentes EN ESE MISMO nivel Y — mismo criterio que
+## BlueprintValidator._columnas_2d_encerradas() (flood-fill 2D desde fuera de
+## una caja delimitadora +1), pero en coordenadas absolutas y restringido a
+## UN SOLO nivel Y, para no depender de la huella de TODO el edificio (que
+## mezclaba capas de otras alturas —un techo con alero, un escalón de piso—
+## y clasificaba mal una puerta externa como interna: hallado en la revisión
+## final de la rama, 2026-09-28, probado con un alero de techo y un escalón
+## de piso). x_min/x_max/z_min/z_max acotan la caja de flood-fill (pueden ser
+## los de TODO el edificio, sin problema: solo sirven de borde de búsqueda,
+## no de criterio de clasificación).
+static func _columna_encerrada_en_capa(
+	columna: Vector2i, y: int, celdas: Dictionary, x_min: int, x_max: int, z_min: int, z_max: int
+) -> bool:
+	if celdas.has(Vector3i(columna.x, y, columna.y)):
+		return false  # es estructural, no "encerrada" en este sentido
+	var alcanzada_desde_afuera: Dictionary = {}  # Vector2i -> true
+	var pendientes: Array = [Vector2i(x_min - 1, z_min - 1)]
+	while not pendientes.is_empty():
+		var actual: Vector2i = pendientes.pop_back()
+		if alcanzada_desde_afuera.has(actual):
+			continue
+		if actual.x < x_min - 1 or actual.x > x_max + 1 or actual.y < z_min - 1 or actual.y > z_max + 1:
+			continue
+		if celdas.has(Vector3i(actual.x, y, actual.y)):
+			continue
+		alcanzada_desde_afuera[actual] = true
+		for delta in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			pendientes.append(actual + delta)
+	return not alcanzada_desde_afuera.has(columna)
+
+
 ## Vestíbulos (celdas justo adentro) de cada puerta EXTERNA de "celdas" (el
 ## resultado de VoxelWorld.detectar_estructura(), Vector3i absoluto ->
-## tipo). Una puerta es EXTERNA si, en el eje perpendicular a su propio
-## muro (X o Z), un lado pertenece a la huella del edificio (unión de
-## columnas de "celdas") y el otro no; su vestíbulo es el lado que SÍ
-## pertenece a la huella (por donde entra un NPC). Se evalúan los 2 ejes
-## por separado (no los 4 vecinos sueltos): los vecinos a lo largo del
-## propio muro (paralelos a la puerta) suelen estar TAMBIÉN dentro de la
-## huella —son parte del mismo muro—, así que mezclarlos con el vecino
-## real del vestíbulo (probado con TEST 7/77: sin este criterio por eje,
-## el último vecino "dentro" evaluado ganaba y podía ser una celda de
-## muro sólida en vez del vestíbulo real) daba un vestíbulo incorrecto.
+## tipo). Una puerta es EXTERNA si al menos uno de sus 2 vecinos
+## ortogonales en XZ, evaluado SOLO en el nivel Y de la puerta (ver
+## _columna_encerrada_en_capa()), no está encerrado ahí — es decir, es
+## realmente exterior a esa altura; su vestíbulo es el vecino que SÍ está
+## encerrado en ese nivel (por donde entra un NPC).
 static func _celdas_externas_puerta(celdas: Dictionary) -> Array[Vector3i]:
-	var huella_xz: Dictionary = {}  # Vector2i -> true
+	var x_min: int = celdas.keys()[0].x
+	var x_max: int = x_min
+	var z_min: int = celdas.keys()[0].z
+	var z_max: int = z_min
 	for pos: Vector3i in celdas.keys():
-		huella_xz[Vector2i(pos.x, pos.z)] = true
+		x_min = mini(x_min, pos.x)
+		x_max = maxi(x_max, pos.x)
+		z_min = mini(z_min, pos.z)
+		z_max = maxi(z_max, pos.z)
 
 	var origenes: Array[Vector3i] = []
 	for pos: Vector3i in celdas.keys():
@@ -818,17 +851,12 @@ static func _celdas_externas_puerta(celdas: Dictionary) -> Array[Vector3i]:
 			continue
 		var es_externa := false
 		var vestibulo := Vector3i.MAX
-		for eje in [[Vector2i(1, 0), Vector2i(-1, 0)], [Vector2i(0, 1), Vector2i(0, -1)]]:
-			var lado_a := Vector2i(pos.x + eje[0].x, pos.z + eje[0].y)
-			var lado_b := Vector2i(pos.x + eje[1].x, pos.z + eje[1].y)
-			var a_dentro := huella_xz.has(lado_a)
-			var b_dentro := huella_xz.has(lado_b)
-			if a_dentro and not b_dentro:
+		for delta in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var vecino_xz := Vector2i(pos.x + delta.x, pos.z + delta.y)
+			if _columna_encerrada_en_capa(vecino_xz, pos.y, celdas, x_min, x_max, z_min, z_max):
+				vestibulo = Vector3i(vecino_xz.x, pos.y, vecino_xz.y)
+			else:
 				es_externa = true
-				vestibulo = Vector3i(lado_a.x, pos.y, lado_a.y)
-			elif b_dentro and not a_dentro:
-				es_externa = true
-				vestibulo = Vector3i(lado_b.x, pos.y, lado_b.y)
 		if es_externa and vestibulo != Vector3i.MAX:
 			origenes.append(vestibulo)
 	return origenes

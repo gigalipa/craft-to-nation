@@ -544,7 +544,6 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	var aire_interior: Dictionary = _detectar_aire_interior(
 		celdas_relevantes, x_min, x_max_abs, y_min, y_max, z_min, z_max_abs
 	)
-	var volumen_sellado: bool = not aire_interior.is_empty()
 
 	# Huella LOCAL de cada capa (índice relativo = y absoluto - y_min): unión
 	# de (a) sus propias celdas estructurales/mobiliario (celdas_por_capa),
@@ -566,6 +565,17 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		if not huella_local.has(capa_aire):
 			huella_local[capa_aire] = {}
 		huella_local[capa_aire][clave_aire] = true
+	# fugas_locales: columnas que _columnas_2d_encerradas() considera "encerradas"
+	# por el anillo de SU PROPIA capa en 2D, pero que el flood-fill 3D real
+	# (aire_interior) NO confirma como aire interior sellado — es decir, el
+	# exterior SÍ logró llegar ahí por otro lado del edificio (una fuga en
+	# ESA habitación, aunque otra parte del edificio sí esté sellada). Antes
+	# de esto, "volumen_sellado" solo exigía que EXISTIERA algún bolsillo de
+	# aire sellado en algún lugar del edificio (aire_interior no vacío), así
+	# que una habitación con un agujero real pasaba igual mientras otra
+	# habitación del mismo edificio estuviera bien sellada (hallado en la
+	# revisión final de la rama, 2026-09-28).
+	var fugas_locales: Array = []  # Vector3i (posiciones absolutas de la fuga)
 	for capa_propia in celdas_por_capa.keys():
 		if not huella_local.has(capa_propia):
 			huella_local[capa_propia] = {}
@@ -573,6 +583,18 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 			huella_local[capa_propia][clave_propia] = true
 		for clave_encerrada in _columnas_2d_encerradas(celdas_por_capa[capa_propia], x_max, z_max):
 			huella_local[capa_propia][clave_encerrada] = true
+			if not celdas_por_capa[capa_propia].has(clave_encerrada):
+				var partes_fuga: PackedStringArray = clave_encerrada.split(",")
+				var pos_fuga := Vector3i(int(partes_fuga[0]) + x_min, capa_propia + y_min, int(partes_fuga[1]) + z_min)
+				if not aire_interior.has(pos_fuga):
+					fugas_locales.append(pos_fuga)
+
+	# Sellado real: hace falta AMBAS cosas — que exista algún aire interior
+	# (no todo el edificio esté vacío/abierto) Y que ninguna capa tenga una
+	# columna que su propio anillo encierra en 2D pero el flood-fill 3D no
+	# confirma (ver fugas_locales arriba) — eso sería una fuga localizada en
+	# una sola habitación, que "aire_interior no vacío" por sí solo no detecta.
+	var volumen_sellado: bool = not aire_interior.is_empty() and fugas_locales.is_empty()
 
 	var indices_capa: Array = celdas_por_capa.keys()
 	indices_capa.sort()
@@ -721,7 +743,15 @@ static func _eje_del_muro(pos: Vector3i, celdas_relevantes: Dictionary) -> Vecto
 	for eje in [Vector2i(1, 0), Vector2i(0, 1)]:
 		var lado_a = celdas_relevantes.get(Vector3i(pos.x + eje.x, pos.y, pos.z + eje.y))
 		var lado_b = celdas_relevantes.get(Vector3i(pos.x - eje.x, pos.y, pos.z - eje.y))
-		if lado_a != null and TIPOS_ESTRUCTURALES.has(lado_a) and lado_b != null and TIPOS_ESTRUCTURALES.has(lado_b):
+		# "puerta_inferior" cuenta como sólido para este chequeo aunque no
+		# esté en TIPOS_ESTRUCTURALES (ese set es para perímetro/losas, no
+		# para "¿hay pared aquí?"): dos puertas contiguas comparten un tramo
+		# de muro igual que dos paredes — sin esto, una puerta doble se
+		# rechazaba con falsos errores de vestíbulo (hallado en la revisión
+		# final de la rama, 2026-09-28).
+		var a_es_solida: bool = lado_a != null and (TIPOS_ESTRUCTURALES.has(lado_a) or lado_a == "puerta_inferior")
+		var b_es_solida: bool = lado_b != null and (TIPOS_ESTRUCTURALES.has(lado_b) or lado_b == "puerta_inferior")
+		if a_es_solida and b_es_solida:
 			return eje
 	return Vector2i.ZERO
 
@@ -780,7 +810,14 @@ static func _calcular_errores_vestibulos(
 			var clave_col := "%d,%d" % [vecino.x - x_min, vecino.z - z_min]
 			if not huella_capa.has(clave_col):
 				continue  # este lado es "afuera", no hace falta vestíbulo
-			var libre: bool = aire_interior.has(vecino) and aire_interior.has(vecino + Vector3i(0, 1, 0))
+			# "libre" es "no ocupada físicamente" (no una celda estructural ni
+			# mobiliario), NO "confirmada por aire_interior" — si se usara
+			# aire_interior acá, una fuga en OTRA parte del edificio (que ya
+			# se reporta como error de volumen, ver fugas_locales arriba)
+			# también apagaría "aire_interior" en este vestíbulo aunque esté
+			# físicamente libre, duplicando el error con un mensaje engañoso
+			# ("falta vestíbulo" en vez de señalar la fuga real).
+			var libre: bool = not celdas_relevantes.has(vecino) and not celdas_relevantes.has(vecino + Vector3i(0, 1, 0))
 			if not libre:
 				errores.append("Al %s le falta espacio libre justo detrás de una puerta." % _texto_piso(nivel))
 	return errores

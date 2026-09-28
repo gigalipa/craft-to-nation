@@ -2161,4 +2161,130 @@ func ejecutar_pruebas() -> void:
 	print("Motivo de rechazo: '", motivo_pathfinding_80, "' (esperado: vacío)")
 	assert(motivo_pathfinding_80 == "")
 
-	print("\n=== Las 80 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 81: una habitación sellada y otra con una fuga real hacia afuera — todo el edificio debe rechazarse ===")
+	# Casa 7x5 dividida en 2 habitaciones por un muro interior sólido en x=3
+	# (sin puerta que las conecte, cada una con su propia entrada). La
+	# habitación oeste (x=0..2) está perfectamente sellada. La habitación
+	# este (x=4..6) tiene su propia puerta y mobiliario (cama+baúl), pero su
+	# muro sur (x=5, z=0) tiene un agujero real hacia afuera — SOLO en la
+	# capa y=2 (y=1 e y=3 siguen con pared ahí). Antes del fix,
+	# "volumen_sellado" solo exigía que EXISTIERA algún aire sellado en
+	# CUALQUIER lugar del edificio (aportado por la habitación oeste), así
+	# que esta fuga real en la habitación este pasaba desapercibida.
+	const OX81 := 600
+	var celdas_81: Dictionary = {}
+	for x in range(OX81, OX81 + 7):
+		for z in range(5):
+			celdas_81[Vector3i(x, 0, z)] = "pared"  # suelo
+			celdas_81[Vector3i(x, 4, z)] = "pared"  # techo
+	for y in [1, 2, 3]:
+		for x in range(OX81, OX81 + 7):
+			for z in range(5):
+				var es_borde81: bool = x == OX81 or x == OX81 + 6 or z == 0 or z == 4
+				if not es_borde81:
+					continue
+				if x == OX81 and z == 2 and y != 3:
+					continue  # puerta principal, habitación oeste (y=1,2)
+				if x == OX81 + 6 and z == 2 and y != 3:
+					continue  # puerta propia, habitación este (y=1,2)
+				if x == OX81 + 5 and z == 0 and y == 2:
+					continue  # AGUJERO REAL: falta pared del muro sur, solo en esta capa
+				celdas_81[Vector3i(x, y, z)] = "pared"
+	for y in [1, 2, 3]:
+		for z in range(5):
+			celdas_81[Vector3i(OX81 + 3, y, z)] = "pared"  # muro interior sólido, sin puerta, separa las 2 habitaciones
+	celdas_81[Vector3i(OX81, 1, 2)] = "puerta_inferior"
+	celdas_81[Vector3i(OX81, 2, 2)] = "puerta_superior"
+	celdas_81[Vector3i(OX81 + 6, 1, 2)] = "puerta_inferior"
+	celdas_81[Vector3i(OX81 + 6, 2, 2)] = "puerta_superior"
+	celdas_81[Vector3i(OX81 + 5, 1, 1)] = "cama_cabecera"
+	celdas_81[Vector3i(OX81 + 5, 1, 2)] = "cama_pies"
+	celdas_81[Vector3i(OX81 + 5, 1, 3)] = "baul"
+
+	var blueprint_81 := BlueprintValidator.estructura_a_blueprint(celdas_81)
+	print("volumen_sellado: ", blueprint_81["volumen_sellado"], " (esperado: false — la habitación este tiene una fuga real aunque la oeste esté sellada)")
+	assert(not blueprint_81["volumen_sellado"])
+	var resultado_81: Dictionary = BlueprintValidator.validar_blueprint(blueprint_81)
+	print("Válido: ", resultado_81["valido"], " | Errores: ", resultado_81["errores"])
+	assert(not resultado_81["valido"])
+
+	print("\n=== TEST 82: puerta doble (2 puertas contiguas compartiendo el mismo tramo de muro) — no debe rechazarse por falsos vestíbulos ===")
+	# Caja sellada 5x5 con 2 puertas_inferior contiguas en el muro sur
+	# (x=1 y x=2, z=0), cada una con su vestíbulo real libre por dentro.
+	# Antes del fix, _eje_del_muro() no reconocía "puerta_inferior" como
+	# sólido, así que no detectaba el eje del muro entre las 2 puertas y
+	# terminaba revisando el lado que da a la OTRA puerta como si fuera un
+	# posible vestíbulo — como ese lado nunca está "libre" (hay una puerta
+	# ahí), se rechazaba con un falso error de vestíbulo.
+	const OX82 := 700
+	var celdas_82: Dictionary = {}
+	for x in range(OX82, OX82 + 5):
+		for z in range(5):
+			celdas_82[Vector3i(x, 0, z)] = "pared"  # suelo
+			celdas_82[Vector3i(x, 4, z)] = "pared"  # techo
+	for y in [1, 2, 3]:
+		for x in range(OX82, OX82 + 5):
+			for z in range(5):
+				var es_borde82: bool = x == OX82 or x == OX82 + 4 or z == 0 or z == 4
+				if not es_borde82:
+					continue
+				if z == 0 and (x == OX82 + 1 or x == OX82 + 2) and y != 3:
+					continue  # las 2 puertas contiguas (y=1,2), lintel común en y=3
+				if x == OX82 + 4 and z == 2 and y == 2:
+					continue  # ventana
+				celdas_82[Vector3i(x, y, z)] = "pared"
+	celdas_82[Vector3i(OX82 + 1, 1, 0)] = "puerta_inferior"
+	celdas_82[Vector3i(OX82 + 1, 2, 0)] = "puerta_superior"
+	celdas_82[Vector3i(OX82 + 2, 1, 0)] = "puerta_inferior"
+	celdas_82[Vector3i(OX82 + 2, 2, 0)] = "puerta_superior"
+	celdas_82[Vector3i(OX82 + 4, 2, 2)] = "ventana"
+	celdas_82[Vector3i(OX82 + 1, 1, 3)] = "cama_cabecera"
+	celdas_82[Vector3i(OX82 + 2, 1, 3)] = "cama_pies"
+	celdas_82[Vector3i(OX82 + 3, 1, 3)] = "baul"
+
+	var blueprint_82 := BlueprintValidator.estructura_a_blueprint(celdas_82)
+	print("volumen_sellado: ", blueprint_82["volumen_sellado"], " | errores_vestibulos: ", blueprint_82["errores_vestibulos"])
+	assert(blueprint_82["volumen_sellado"])
+	assert(blueprint_82["errores_vestibulos"].is_empty(), "la puerta doble no debe generar falsos errores de vestíbulo")
+	var resultado_82: Dictionary = BlueprintValidator.validar_blueprint(blueprint_82)
+	print("Válido: ", resultado_82["valido"], " | Errores: ", resultado_82["errores"])
+	assert(resultado_82["valido"])
+
+	print("\n=== TEST 83: techo con alero (sobresale 1 celda de las paredes) — la puerta externa normal sigue siendo externa ===")
+	# Casa 5x5 normal (mundo real), pero el techo (y=OY83+4) es 1 celda más
+	# ancho que las paredes en X a cada lado (alero). Antes del fix,
+	# _celdas_externas_puerta() armaba huella_xz con la unión de columnas de
+	# TODA la altura del edificio, así que la columna del alero (fuera de
+	# las paredes) contaba como "adentro" solo por el techo, y la puerta
+	# quedaba clasificada como interna (excluida del pathfinding),
+	# rechazando un edificio válido.
+	const OY83 := 200
+	const OX83 := 800
+	for x in range(OX83, OX83 + 5):
+		for z in range(5):
+			mundo.colocar_bloque(Vector3i(x, OY83, z), "pared", true)  # suelo 5x5
+	for y in [OY83 + 1, OY83 + 2, OY83 + 3]:
+		for x in range(OX83, OX83 + 5):
+			for z in range(5):
+				var es_borde83: bool = x == OX83 or x == OX83 + 4 or z == 0 or z == 4
+				if not es_borde83:
+					continue
+				if x == OX83 and z == 2 and y != OY83 + 3:
+					continue  # puerta principal (y+1, y+2)
+				if x == OX83 + 4 and z == 2 and y == OY83 + 2:
+					continue  # ventana
+				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+	assert(mundo.colocar_puerta(Vector3i(OX83, OY83 + 1, 2)))
+	mundo.colocar_bloque(Vector3i(OX83 + 4, OY83 + 2, 2), "ventana", true)
+	for x in range(OX83 - 1, OX83 + 6):  # techo con alero: 1 celda más ancho en X a cada lado
+		for z in range(5):
+			mundo.colocar_bloque(Vector3i(x, OY83 + 4, z), "pared", true)
+	assert(mundo.colocar_cama(Vector3i(OX83 + 2, OY83 + 1, 1), Vector3i(1, 0, 0)))
+	mundo.colocar_bloque(Vector3i(OX83 + 2, OY83 + 1, 3), "baul", true)
+
+	var estructura_83: Dictionary = mundo.detectar_estructura(Vector3i(OX83, OY83 + 1, 2))
+	var motivo_83: String = Player._verificar_acceso_pathfinding(mundo, estructura_83)
+	print("Motivo de rechazo: '", motivo_83, "' (esperado: vacío — antes se rechazaba por el alero del techo)")
+	assert(motivo_83 == "")
+
+	print("\n=== Las 83 pruebas de BlueprintValidator pasaron correctamente ===")

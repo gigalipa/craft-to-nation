@@ -97,21 +97,20 @@ Decisiones confirmadas con el usuario (2026-09-24):
 
 `EconomiaTest` (consumo, agotamiento, recálculo de mina y de caza/recolección; carga parcial de un puesto agotado; bloque en curso reemplazado por uno del jugador), `RecoleccionTest` (rendimiento, selección de mina, maderero sin árboles con tasa 0), `CiudadTest` (topes, `ampliar_almacen()`, baúles), `GeneradorArbolTest` (consultas del registro de árboles), `BlueprintValidatorTest` (`contar_baules()`) y `ExtraccionTest` (nueva: `ProgresoAccion`, tiempos, extracción del avatar, frutos y `altura_natural_en()` bajo un río). Sin prueba automática: el recálculo de la pesca y la regla de núcleo sin camas (vive en `Player._completar_construccion`), que solo se verifican a mano. Ejecución obligatoria (CLAUDE.md): `godot/scenes/Test.tscn` más las escenas afectadas (`ColonosTest`, `ConstruccionTest`, `ZonificacionTest`) y `Main.tscn` sin errores de script. Resultado del cierre de la fase (2026-09-24, Godot 4.7 headless): todas las escenas pasan.
 
-### **3.3 Verificación manual (pendiente para el usuario, en el editor con Godot 4.7)**
+### **3.3 Verificación manual (Godot 4.7) — completa (2026-09-28)**
 
-Nadie ha ejecutado todavía estas comprobaciones en el editor; **quedan pendientes** y no se da ninguna por superada:
+Las 8 comprobaciones se ejecutaron en el editor y todas pasaron:
 
-1. Mantener clic izquierdo sobre tierra/piedra: la barra verde sube, al llenarse el bloque desaparece, la consola imprime `Recolectado: {...}` y la lista de recursos del HUD sube.
-2. Empezar a minar y apuntar a otro bloque (o soltar el clic): la barra se reinicia.
-3. Mantener clic sobre un árbol: la barra naranja muestra la salud restante y baja cada segundo; al soltar y volver, el daño se conserva; el árbol cae entero al llegar a 0 y la madera sube.
-4. Mantener `E` sobre un árbol: la barra sube y suma comida; repetirlo enseguida en el mismo árbol no da nada (rebrote de 24 h).
-5. `G` (deconstrucción) sobre un edificio: la barra naranja se vacía al retirar sus bloques y luego con el contador de "sostener"; al construir (clic derecho sobre las obras) se llena.
+1. ✅ Mantener clic izquierdo sobre tierra/piedra: la barra verde sube, al llenarse el bloque desaparece, la consola imprime `Recolectado: {...}` y la lista de recursos del HUD sube.
+2. ✅ Empezar a minar y apuntar a otro bloque (o soltar el clic): la barra se reinicia.
+3. ✅ Mantener clic sobre un árbol: la barra naranja muestra la salud restante y baja cada segundo; al soltar y volver, el daño se conserva; el árbol cae entero al llegar a 0 y la madera sube.
+4. ✅ Mantener `E` sobre un árbol: la barra sube y suma comida; repetirlo enseguida en el mismo árbol no da nada (rebrote de 24 h).
+5. ✅ `G` (deconstrucción) sobre un edificio: la barra naranja se vacía al retirar sus bloques y luego con el contador de "sostener"; al construir (clic derecho sobre las obras) se llena.
+6. ✅ Mirar agua o el cielo con el clic mantenido: no pasa nada ni hay errores en consola.
+7. ✅ Colocar un maderero y una mina, asignarles recolectores y ver bajar la tasa en el panel al talar o agotar el área.
+8. ✅ Jugada completa desde la partida vacía hasta la llegada de los primeros colonos con el segundo edificio residencial (núcleo primero, sin colonos; topes 500/5000 que se duplican al declararlo; baúles que amplían el tope) — "todo funcionó correctamente" (usuario, 2026-09-28).
 
-**Supuestos y pendientes conocidos.**
-
-6. Mirar agua o el cielo con el clic mantenido: no pasa nada ni hay errores en consola.
-7. Colocar un maderero y una mina, asignarles recolectores y ver bajar la tasa en el panel al talar o agotar el área.
-8. Jugada completa desde la partida vacía hasta la llegada de los primeros colonos con el segundo edificio residencial (núcleo primero, sin colonos; topes 500/5000 que se duplican al declararlo; baúles que amplían el tope).
+Con esto, la Fase 2B queda cerrada: automatizada (pruebas de escena) y manual (esta sección).
 
 ### **3.4 Supuestos que el usuario puede corregir**
 

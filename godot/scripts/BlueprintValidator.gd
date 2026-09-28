@@ -655,11 +655,26 @@ static func validar_blueprint(
 ) -> Dictionary:
 	var errores: Array = []
 
-	for piso in blueprint["pisos"]:
-		errores.append_array(validar_cerramiento(piso))
-		errores.append_array(validar_aberturas(piso))
-		errores.append_array(validar_techo_y_suelo(piso))
-		errores.append_array(validar_altura_piso(piso))
+	# Blueprints auto-detectados (estructura_a_blueprint(), con datos de
+	# voxel reales) ya vienen con su sellado verificado en 3D por
+	# volumen_sellado (ver Task 1-2 del plan de volumen interno) — no hace
+	# falta (ni es correcto) volver a validar cerramiento/techo/suelo en 2D
+	# por piso contra una huella fija, porque esa huella puede variar de
+	# capa a capa (techo a dos aguas, pirámide). Los blueprints hechos a
+	# mano (JSON de PoC 2) no tienen datos de voxel: siguen el camino 2D de
+	# siempre, sin cambios.
+	if blueprint.has("volumen_sellado"):
+		if not blueprint["volumen_sellado"]:
+			errores.append_array(blueprint.get("errores_volumen", []))
+		for piso in blueprint["pisos"]:
+			errores.append_array(validar_aberturas(piso))
+			errores.append_array(validar_altura_piso(piso))
+	else:
+		for piso in blueprint["pisos"]:
+			errores.append_array(validar_cerramiento(piso))
+			errores.append_array(validar_aberturas(piso))
+			errores.append_array(validar_techo_y_suelo(piso))
+			errores.append_array(validar_altura_piso(piso))
 
 	errores.append_array(validar_camas_y_almacenamiento(blueprint))
 	errores.append_array(validar_zona_permitida(blueprint))

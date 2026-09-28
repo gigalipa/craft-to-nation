@@ -353,13 +353,15 @@ func ejecutar_pruebas() -> void:
 	print("Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	# Esta casa tampoco tiene cama (no es el foco de este test), así que
 	# también reporta "no tiene ninguna cama" — lo relevante es que detecte
-	# el techo faltante.
+	# el techo faltante. Con el nuevo sistema (Task 3), estructura_a_blueprint()
+	# detecta que no hay volumen sellado (hay una fuga al cielo abierto), y
+	# validar_blueprint() usa ese mensaje de volumen en lugar del 2D.
 	assert(not resultado["valido"])
-	var tiene_error_techo := false
+	var tiene_error_volumen := false
 	for error in resultado["errores"]:
-		if (error as String).contains("falta un techo sólido"):
-			tiene_error_techo = true
-	assert(tiene_error_techo)
+		if (error as String).contains("El edificio no tiene ningún volumen interior sellado"):
+			tiene_error_volumen = true
+	assert(tiene_error_volumen)
 
 	print("\n=== TEST 12: Declarar Edificio - 2 Pisos con Hueco de Escalera ===")
 	# Casa de 2 historias, huella 5x5 (x:0-4, z:0-4): suelo (y=0) y techo (y=8)
@@ -1852,16 +1854,15 @@ func ejecutar_pruebas() -> void:
 				assert(aire_67.has(Vector3i(x, y, z)), "Falta celda de aire interior en (%d,%d,%d)" % [x, y, z])
 
 	print("\n=== TEST 68: estructura_a_blueprint() marca volumen_sellado=true con un techo a dos aguas más angosto que las paredes ===")
-	# Mismo edificio del TEST 67 (5x5, techo retranqueado a 3x5), pero con
-	# puerta+ventana+cama+baúl para que también pase validar_blueprint() más
-	# adelante (Task 3). Suelo y paredes en y=0..2 como TEST 67; el "piso"
-	# habitable es y=1 (huella 3x3 interior); el techo en y=3 es la losa de
-	# arriba, retranqueada.
+	# Edificio 5x5 con techo retranqueado a 3x5. Suelo (y=0) + paredes
+	# (y=1,2,3 — 3 capas para alcanzar altura mínima) + techo retranqueado
+	# (y=4). Interior habitable: y=1,2,3 (3 capas = altura_capas mínima).
+	# Puerta en y=1,2; ventana, cama y baúl en y=1; huella interior 3x3.
 	var celdas_dosaguas_68: Dictionary = {}
 	for x in range(5):
 		for z in range(5):
 			celdas_dosaguas_68[Vector3i(x, 0, z)] = "pared"  # suelo 5x5
-	for y in [1, 2]:
+	for y in [1, 2, 3]:
 		for x in range(5):
 			for z in range(5):
 				var es_borde68 := x == 0 or x == 4 or z == 0 or z == 4
@@ -1872,7 +1873,7 @@ func ejecutar_pruebas() -> void:
 				if x == 0 and z == 2 and y == 2:
 					continue  # puerta (mitad superior)
 				if x == 4 and z == 2 and y == 2:
-					continue  # ventana
+					continue  # ventana (solo en y=2)
 				celdas_dosaguas_68[Vector3i(x, y, z)] = "pared"
 	celdas_dosaguas_68[Vector3i(0, 1, 2)] = "puerta_inferior"
 	celdas_dosaguas_68[Vector3i(0, 2, 2)] = "puerta_superior"
@@ -1882,7 +1883,7 @@ func ejecutar_pruebas() -> void:
 	celdas_dosaguas_68[Vector3i(1, 1, 3)] = "baul"
 	for x in range(1, 4):
 		for z in range(5):
-			celdas_dosaguas_68[Vector3i(x, 3, z)] = "pared"  # techo 3x5, retranqueado
+			celdas_dosaguas_68[Vector3i(x, 4, z)] = "pared"  # techo 3x5, retranqueado (y=4)
 
 	var blueprint_68 := BlueprintValidator.estructura_a_blueprint(celdas_dosaguas_68)
 	print("volumen_sellado: ", blueprint_68["volumen_sellado"], " (esperado: true)")
@@ -1891,10 +1892,28 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 69: estructura_a_blueprint() marca volumen_sellado=false si el techo a dos aguas tiene una fuga real ===")
 	var celdas_fuga_69: Dictionary = celdas_dosaguas_68.duplicate()
-	celdas_fuga_69.erase(Vector3i(2, 3, 2))  # hueco en el centro del techo retranqueado
+	celdas_fuga_69.erase(Vector3i(2, 4, 2))  # hueco en el centro del techo retranqueado (y=4)
 	var blueprint_69 := BlueprintValidator.estructura_a_blueprint(celdas_fuga_69)
 	print("volumen_sellado: ", blueprint_69["volumen_sellado"], " (esperado: false)")
 	assert(not blueprint_69["volumen_sellado"])
 	assert(not blueprint_69["errores_volumen"].is_empty())
 
-	print("\n=== Las 69 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 70: validar_blueprint() acepta el techo a dos aguas usando volumen_sellado (sin cerramiento/techo_y_suelo por piso) ===")
+	var resultado_70: Dictionary = BlueprintValidator.validar_blueprint(blueprint_68)
+	print("Válido: ", resultado_70["valido"], " | Errores: ", resultado_70["errores"])
+	assert(resultado_70["valido"], "El techo retranqueado debe aceptarse: antes se rechazaba por 'falta un techo sólido'")
+
+	print("\n=== TEST 71: validar_blueprint() rechaza el techo a dos aguas con fuga real, usando el mensaje de volumen ===")
+	var resultado_71: Dictionary = BlueprintValidator.validar_blueprint(blueprint_69)
+	print("Válido: ", resultado_71["valido"], " | Errores: ", resultado_71["errores"])
+	assert(not resultado_71["valido"])
+	assert(resultado_71["errores"].has("El edificio no tiene ningún volumen interior sellado: hay una fuga hacia afuera o no hay ningún espacio interior."))
+
+	print("\n=== TEST 72: un blueprint JSON hecho a mano (sin volumen_sellado) sigue usando la validación 2D de siempre ===")
+	var bp_json_72: Dictionary = JSON.parse_string(BLUEPRINT_VALIDO_JSON)
+	assert(not bp_json_72.has("volumen_sellado"), "un blueprint JSON nunca trae esta clave")
+	var resultado_72: Dictionary = BlueprintValidator.validar_blueprint(bp_json_72, "residencial_investigacion")
+	print("Válido: ", resultado_72["valido"], " | Errores: ", resultado_72["errores"])
+	assert(resultado_72["valido"], "regresión: el blueprint JSON de siempre debe seguir validándose igual (ver TEST 1)")
+
+	print("\n=== Las 72 pruebas de BlueprintValidator pasaron correctamente ===")

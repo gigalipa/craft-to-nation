@@ -2,6 +2,7 @@ extends CharacterBody3D
 class_name Player
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
+const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
@@ -794,6 +795,82 @@ func _colocar() -> void:
 		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % tipo)
 
 
+## Vestíbulos (celdas justo adentro) de cada puerta EXTERNA de "celdas" (el
+## resultado de VoxelWorld.detectar_estructura(), Vector3i absoluto ->
+## tipo). Una puerta es EXTERNA si, en el eje perpendicular a su propio
+## muro (X o Z), un lado pertenece a la huella del edificio (unión de
+## columnas de "celdas") y el otro no; su vestíbulo es el lado que SÍ
+## pertenece a la huella (por donde entra un NPC). Se evalúan los 2 ejes
+## por separado (no los 4 vecinos sueltos): los vecinos a lo largo del
+## propio muro (paralelos a la puerta) suelen estar TAMBIÉN dentro de la
+## huella —son parte del mismo muro—, así que mezclarlos con el vecino
+## real del vestíbulo (probado con TEST 7/77: sin este criterio por eje,
+## el último vecino "dentro" evaluado ganaba y podía ser una celda de
+## muro sólida en vez del vestíbulo real) daba un vestíbulo incorrecto.
+static func _celdas_externas_puerta(celdas: Dictionary) -> Array[Vector3i]:
+	var huella_xz: Dictionary = {}  # Vector2i -> true
+	for pos: Vector3i in celdas.keys():
+		huella_xz[Vector2i(pos.x, pos.z)] = true
+
+	var origenes: Array[Vector3i] = []
+	for pos: Vector3i in celdas.keys():
+		if celdas[pos] != "puerta_inferior":
+			continue
+		var es_externa := false
+		var vestibulo := Vector3i.MAX
+		for eje in [[Vector2i(1, 0), Vector2i(-1, 0)], [Vector2i(0, 1), Vector2i(0, -1)]]:
+			var lado_a := Vector2i(pos.x + eje[0].x, pos.z + eje[0].y)
+			var lado_b := Vector2i(pos.x + eje[1].x, pos.z + eje[1].y)
+			var a_dentro := huella_xz.has(lado_a)
+			var b_dentro := huella_xz.has(lado_b)
+			if a_dentro and not b_dentro:
+				es_externa = true
+				vestibulo = Vector3i(lado_a.x, pos.y, lado_a.y)
+			elif b_dentro and not a_dentro:
+				es_externa = true
+				vestibulo = Vector3i(lado_b.x, pos.y, lado_b.y)
+		if es_externa and vestibulo != Vector3i.MAX:
+			origenes.append(vestibulo)
+	return origenes
+
+
+## Celda donde un NPC se para para usar cada cama/baúl de "celdas": encima
+## del mueble (una cama o un baúl cuenta como suelo sólido, ver
+## BuscadorRutas.es_transitable() — "Una cama o un baúl es suelo, así que
+## un colono puede pararse encima").
+static func _celdas_objetivo_muebles(celdas: Dictionary) -> Array[Vector3i]:
+	var objetivos: Array[Vector3i] = []
+	for pos: Vector3i in celdas.keys():
+		var tipo: String = celdas[pos]
+		if tipo == "cama_cabecera" or tipo == "baul":
+			objetivos.append(pos + Vector3i(0, 1, 0))
+	return objetivos
+
+
+## "" si cada cama y cada baúl de "celdas" es alcanzable, por un camino
+## transitable real (BuscadorRutas, el mismo A* que usan los colonos, que
+## ya trata puerta_inferior/puerta_superior como transitables —
+## BuscadorRutas.TIPOS_LIBRES — así que atraviesa puertas internas sin
+## tratamiento especial), desde AL MENOS UNA puerta externa del edificio;
+## si no, un mensaje de rechazo. No exige que CADA puerta externa por
+## separado llegue a todo (decisión del usuario, 2026-09-28): si hay 2
+## puertas externas y solo una tiene acceso al resto, igual se aprueba.
+static func _verificar_acceso_pathfinding(mundo: Node, celdas: Dictionary) -> String:
+	var origenes: Array[Vector3i] = _celdas_externas_puerta(celdas)
+	if origenes.is_empty():
+		return "ninguna puerta externa tiene un vestíbulo libre para entrar."
+	var buscador := BuscadorRutas.new(mundo)
+	for pos: Vector3i in celdas.keys():
+		var tipo: String = celdas[pos]
+		if tipo != "cama_cabecera" and tipo != "baul":
+			continue
+		var objetivo := pos + Vector3i(0, 1, 0)
+		if buscador.buscar_ruta_a_alguna(objetivo, origenes).is_empty():
+			var mueble: String = "Una cama" if tipo == "cama_cabecera" else "Un baúl"
+			return "%s no tiene un camino transitable hasta ninguna puerta externa." % mueble
+	return ""
+
+
 ## Declara como edificio la estructura conectada al bloque apuntado. Solo se
 ## activa apuntando a una puerta (la entrada principal), no a cualquier pared,
 ## para que "declarar" sea una acción intencional del jugador sobre un punto
@@ -851,6 +928,10 @@ func _declarar_edificio() -> void:
 	var motivo_despeje: String = mundo.motivo_despeje_invalido(celdas)
 	if motivo_despeje != "":
 		_notificar_rechazo("Declarar edificio: %s" % motivo_despeje)
+		return
+	var motivo_pathfinding: String = _verificar_acceso_pathfinding(mundo, celdas)
+	if motivo_pathfinding != "":
+		_notificar_rechazo("Declarar edificio: %s" % motivo_pathfinding)
 		return
 
 	Blueprints.guardar(blueprint)

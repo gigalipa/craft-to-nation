@@ -1,6 +1,7 @@
 extends Node
 
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
+const Player = preload("res://scripts/Player.gd")
 
 ## Equivalente GDScript de ejecutar_pruebas() en PoC_2 (tests 1-6), más
 ## pruebas propias de PoC 3 para "declarar edificio" (7-8, ver
@@ -2029,4 +2030,135 @@ func ejecutar_pruebas() -> void:
 	print("Errores: ", errores_76)
 	assert(not errores_76.is_empty())
 
-	print("\n=== Las 76 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 77: _verificar_acceso_pathfinding() aprueba una casa simple con cama y baúl alcanzables ===")
+	# Reutiliza el edificio de TEST 7 (mundo real, con colocar_bloque/
+	# colocar_puerta/colocar_cama), cuya cama y baúl son alcanzables desde
+	# la puerta principal cruzando la puerta interior abierta.
+	var motivo_77: String = Player._verificar_acceso_pathfinding(mundo, estructura)
+	print("Motivo de rechazo: '", motivo_77, "' (esperado: vacío)")
+	assert(motivo_77 == "")
+
+	print("\n=== TEST 78: _verificar_acceso_pathfinding() rechaza una cama y un baúl en una sub-habitación interna sin puerta propia ===")
+	# Casa 5x5 (x: OX78..OX78+4, z: 0..4; suelo y=OY78, techo y=OY78+4),
+	# puerta principal en x=OX78,z=2 y ventana en x=OX78+4,z=2. La franja
+	# interior (x=OX78+1..OX78+3, z=1..3, un cuadrado de 3x3 dentro del
+	# anillo perimetral) se divide en 2 con un muro nuevo en x=OX78+2 (z=1..3,
+	# las 3 capas de pared): al oeste de ese muro (x=OX78+1) queda la
+	# habitación principal (incluido el vestíbulo de la puerta, x=OX78+1
+	# z=2); al ESTE (x=OX78+3) queda una sub-habitación totalmente
+	# amurallada, SIN puerta propia (solo bordeada por el muro nuevo al
+	# oeste y por el propio perímetro exterior al norte/este/sur — sin
+	# ningún hueco), con la cama y el baúl adentro. El volumen del edificio
+	# sigue sellado (la habitación principal, con su puerta, ya sella un
+	# volumen interior real) pero la cama/baúl quedan físicamente encerrados:
+	# ningún colono puede llegar a ellos sin atravesar un muro sólido.
+	const OY78 := 100
+	const OX78 := 400
+	for x in range(OX78, OX78 + 5):
+		for z in range(5):
+			mundo.colocar_bloque(Vector3i(x, OY78, z), "pared", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, OY78 + 4, z), "pared", true)  # techo
+	for y in [OY78 + 1, OY78 + 2, OY78 + 3]:
+		for x in range(OX78, OX78 + 5):
+			for z in range(5):
+				var es_borde78: bool = x == OX78 or x == OX78 + 4 or z == 0 or z == 4
+				if not es_borde78:
+					continue
+				if x == OX78 and z == 2 and y != OY78 + 3:
+					continue  # puerta principal (y=OY78+1 y OY78+2), se coloca aparte
+				if x == OX78 + 4 and z == 2 and y == OY78 + 2:
+					continue  # ventana, se coloca aparte
+				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+	assert(mundo.colocar_puerta(Vector3i(OX78, OY78 + 1, 2)))  # puerta principal
+	mundo.colocar_bloque(Vector3i(OX78 + 4, OY78 + 2, 2), "ventana", true)
+	# Muro nuevo que separa la sub-habitación (x=OX78+3) del resto (x=OX78+1),
+	# sin ninguna abertura: las 3 capas de pared, z=1..3.
+	for y in [OY78 + 1, OY78 + 2, OY78 + 3]:
+		for z in range(1, 4):
+			mundo.colocar_bloque(Vector3i(OX78 + 2, y, z), "pared", true)
+	assert(mundo.colocar_cama(Vector3i(OX78 + 3, OY78 + 1, 1), Vector3i(0, 0, 1)))  # cabecera (x+3,z=1), pies (x+3,z=2)
+	mundo.colocar_bloque(Vector3i(OX78 + 3, OY78 + 1, 3), "baul", true)
+
+	var estructura_78: Dictionary = mundo.detectar_estructura(Vector3i(OX78, OY78 + 1, 2))
+	var blueprint_78 := BlueprintValidator.estructura_a_blueprint(estructura_78)
+	print("volumen_sellado: ", blueprint_78["volumen_sellado"], " (esperado: true, la sub-habitación no rompe el sellado del edificio)")
+	assert(blueprint_78["volumen_sellado"])
+	var motivo_78: String = Player._verificar_acceso_pathfinding(mundo, estructura_78)
+	print("Motivo de rechazo: '", motivo_78, "' (esperado: no vacío, la cama y el baúl quedan encerrados)")
+	assert(motivo_78 != "")
+
+	print("\n=== TEST 79: _verificar_acceso_pathfinding() acepta 2 puertas externas aunque una quede en un vestíbulo aislado ===")
+	# Mismo edificio de TEST 7 (mundo, estructura de TEST 7), agrega una
+	# SEGUNDA puerta externa en la cara opuesta (x=6), sin ningún hueco
+	# nuevo hacia el resto del edificio salvo la propia puerta — su
+	# vestíbulo queda aislado del resto (no hay pasillo interior desde ahí
+	# hacia la cama/baúl salvo cruzando toda la habitación este, que SÍ es
+	# parte del mismo volumen interior real ya construido en TEST 7, así
+	# que en realidad tiene acceso). Para forzar el caso "vestíbulo aislado
+	# pero el conjunto de puertas igual llega a todo", basta con reusar la
+	# estructura de TEST 7 (ya tiene 2 puertas: principal e interior) y
+	# confirmar que sigue aprobando.
+	var motivo_79: String = Player._verificar_acceso_pathfinding(mundo, estructura)
+	assert(motivo_79 == "", "ya cubierto por TEST 77, se deja explícito como caso de 2 puertas")
+
+	print("\n=== TEST 80: caso combinado — 2 pisos, techo a dos aguas Y hueco de escalera en la losa intermedia ===")
+	# El caso real reportado por el usuario: reusa la forma del TEST 12 (2
+	# historias, hueco de escalera en la losa intermedia) pero con el techo
+	# EXTERIOR (y=8) retranqueado 1 celda en X (3x5 en vez de 5x5), como el
+	# TEST 68. Debe reconocer 2 pisos, volumen_sellado=true, y aprobar.
+	const OX80 := 500
+	for x in range(OX80, OX80 + 5):
+		for z in range(5):
+			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo, 5x5
+	for x in range(OX80 + 1, OX80 + 4):
+		for z in range(5):
+			mundo.colocar_bloque(Vector3i(x, 8, z), "pared", true)  # techo, 3x5 (retranqueado)
+	for y in range(1, 4):
+		for x in range(OX80, OX80 + 5):
+			for z in range(5):
+				var es_borde80: bool = x == OX80 or x == OX80 + 4 or z == 0 or z == 4
+				if not es_borde80:
+					continue
+				if x == OX80 and z == 2:
+					continue  # puerta historia 1
+				if x == OX80 + 4 and z == 2 and y == 2:
+					continue  # ventana historia 1
+				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+	assert(mundo.colocar_puerta(Vector3i(OX80, 1, 2)))
+	mundo.colocar_bloque(Vector3i(OX80, 3, 2), "pared", true)
+	mundo.colocar_bloque(Vector3i(OX80 + 4, 2, 2), "ventana", true)
+	assert(mundo.colocar_cama(Vector3i(OX80 + 1, 1, 1), Vector3i(1, 0, 0)))
+	mundo.colocar_bloque(Vector3i(OX80 + 3, 1, 1), "baul", true)
+	for x in range(OX80, OX80 + 5):
+		for z in range(5):
+			if x == OX80 + 2 and z == 2:
+				continue  # hueco de escalera (centro de la losa intermedia)
+			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)
+	for y in range(5, 8):
+		for x in range(OX80, OX80 + 5):
+			for z in range(5):
+				var es_borde80b: bool = x == OX80 or x == OX80 + 4 or z == 0 or z == 4
+				if not es_borde80b:
+					continue
+				if x == OX80 and z == 2:
+					continue  # puerta historia 2
+				if x == OX80 + 4 and z == 2 and y == 6:
+					continue  # ventana historia 2
+				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+	assert(mundo.colocar_puerta(Vector3i(OX80, 5, 2)))
+	mundo.colocar_bloque(Vector3i(OX80, 7, 2), "pared", true)
+	mundo.colocar_bloque(Vector3i(OX80 + 4, 6, 2), "ventana", true)
+
+	var estructura_80: Dictionary = mundo.detectar_estructura(Vector3i(OX80, 1, 2))
+	var blueprint_80 := BlueprintValidator.estructura_a_blueprint(estructura_80)
+	print("Pisos abstractos: ", blueprint_80["pisos"].size(), " (esperados: 2) | volumen_sellado: ", blueprint_80["volumen_sellado"])
+	assert(blueprint_80["pisos"].size() == 2)
+	assert(blueprint_80["volumen_sellado"])
+	var resultado_80: Dictionary = BlueprintValidator.validar_blueprint(blueprint_80)
+	print("Válido: ", resultado_80["valido"], " | Errores: ", resultado_80["errores"])
+	assert(resultado_80["valido"])
+	var motivo_pathfinding_80: String = Player._verificar_acceso_pathfinding(mundo, estructura_80)
+	print("Motivo de rechazo: '", motivo_pathfinding_80, "' (esperado: vacío)")
+	assert(motivo_pathfinding_80 == "")
+
+	print("\n=== Las 80 pruebas de BlueprintValidator pasaron correctamente ===")

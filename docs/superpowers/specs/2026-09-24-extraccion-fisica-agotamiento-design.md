@@ -15,7 +15,7 @@ Decisiones confirmadas con el usuario (2026-09-24), en orden de aparición duran
 
 **Fuera (documentado, no se construye):**
 - Bomba extractora y petróleo: ni el edificio ni el recurso existen en el mundo (sub-proyecto de fluidos, punto 6 de `docs/Pendientes y próximos pasos.md`). Solo queda la regla.
-- Costo de construcción en unidades de recurso (por ejemplo 5 de piedra por pared) y el consumo de tierra 1-1-1 al construir. La distinción de tres capas (bloque de extracción → unidades de recurso → bloque de construcción) se documenta para cuando exista ese cobro.
+- Costo de construcción en unidades de recurso (por ejemplo 5 de piedra por pared) y el consumo de tierra 1-1-1 al construir. La distinción de tres capas (bloque de extracción → unidades de recurso → bloque de construcción) se documenta para cuando exista ese cobro. Decisión del usuario (2026-09-28, para cuando el sub-proyecto 2C implemente el cobro): volver a minar un bloque colocado por el jugador no debe seguir "sin rendimiento" como hoy — debe devolver las unidades que costó colocarlo (reembolso), para que colocar y minar en bucle siga sin crear recursos ni destruirlos. Requiere que `minar_bloque()`/`extraer_por_avatar()` distingan bloque colocado (reembolsa su costo) de terreno natural (rinde `RENDIMIENTO_POR_BLOQUE`); ver el punto 4 de `docs/Pendientes y próximos pasos.md`.
 - Herramientas del avatar (el multiplicador de herramienta queda fijo en 1).
 - Caza y pesca manual del avatar (solo frutos por ahora).
 - Conexión del indicador de avance con la **construcción** por fantasmas (flujo por fases, aparte).

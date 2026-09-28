@@ -15,19 +15,21 @@ Fuente: hoja "Relacion", columnas B–H (consumo por hora, filas Comida/Combusti
 
 | Unidad | Comida/h | Combustible/h | Energía/h | "x Cama" |
 |---|---|---|---|---|
-| Ciudadano | 2 | — | — | 4 |
+| Ciudadano | 2 | — | — | 5 |
 | Desempleado | 3 | — | — | 4 |
 | Obrero | 5 | — | — | 4 |
 | Técnico | 3 | — | — | 3 |
-| Especialista | 2 | 1 | 1 | 2 |
+| Especialista | 2 | — | 1 | 2 |
 | Investigador | 1 | — | 2 | 1 |
-| Militar | 4 | 3 | — | 3 |
+| Militar | 4 | 2 | — | 3 |
 
 - **Comida/h:** implementado como concepto genérico (GDD Sección 6, "Comida como Recurso Genérico"); la tasa de hambre por nivel de avatar está en la hoja "Niveles" (5/4/3 según nivel), no por tipo de unidad — estas dos tablas de comida (por tipo de unidad y por nivel de avatar) todavía no se han conciliado en el GDD.
-- **Combustible/h y Energía/h:** propuesta (Excel) — Especialista/Militar consumiendo combustible e Investigador/Especialista consumiendo energía no está descrito en el GDD todavía; ningún código las aplica.
+- **Combustible/h y Energía/h:** propuesta (Excel) — Militar consumiendo combustible e Investigador/Especialista consumiendo energía no está descrito en el GDD todavía; ningún código las aplica.
 - **"x Cama":** implementado (`Ciudad.TIPOS_POBLACION`): cuántos habitantes de ese tipo caben por cada cama construida. Cada cama aporta 1 unidad de vivienda y una persona ocupa `1 / x_cama` de ella (vivienda fraccionaria compartida, `Ciudad.vivienda_ocupada`).
 - **Obrero:** un `obrero` es ahora un desempleado asignado a un puesto de recolección (`Colonos.contratar`), así que su consumo pasa de 3 (desempleado) a 5 comida/h; combustible y energía siguen sin aplicarse.
+- **Ciudadano:** un `ciudadano` es un NPC que no está en edad de trabajar (niños/ancianos), está sin aplicarse debido a que aún no se ha implementado sistema de nacimientos o envejecimiento. Los niños aumentan la población y su "producción" aumenta en relación con la moral, la cantidada de ancianos y el superhábit de alimento. Habrá la posibilidad de desarrollar y configurar la "eutanasia" por lo que se podrá controlar la cantidad de ancianos. Los ancianos aumentan la moral y la tasa de nacimientos.
 - **Vivienda por nivel de ciudad** (hoja "Niveles", `Ciudad.NIVELES_VIVIENDA`): camas por piso × pisos máximos de una casa — nivel 1 = 2 × 2, nivel 2 = 4 × 4, nivel 3 = 4 × 8.
+- **Balance 2026-09-28:** decisión del usuario — Ciudadano sube de 4 a 5 "x Cama", Especialista deja de consumir combustible (queda solo con energía) y Militar baja de 3 a 2 combustible/h. Aplicado a `Ciudad.TIPOS_POBLACION` y a la hoja "Relacion" del Excel.
 
 ---
 
@@ -88,7 +90,27 @@ Flujo: producción de los recolectores presentes → **almacén local** del pues
 | Migración de colonos | 0,5 por hora de juego (con vivienda libre y sin hambruna) | `Ciudad.TASA_MIGRACION` |
 | Consumo de un obrero de puesto | 5 comida/h (desempleado: 3) | `Ciudad.TIPOS_POBLACION` |
 
-Todavía no existe: extracción física de bloques y agotamiento del entorno (sub-proyecto 2B), refinerías y energía (2C), carretas y carreteras (sub-proyecto 6), moral y nivel del puesto, y drones o transporte automatizado.
+Todavía no existe: costo de construcción en recursos al colocar un bloque (ver tabla de extracción abajo — colocar sigue siendo gratis), refinerías y energía completas (2C), carretas y carreteras (sub-proyecto 6), moral y nivel del puesto, y drones o transporte automatizado.
+
+---
+
+## Extracción: bloques minables, unidades de recurso y bloques colocables
+
+Fuente: hoja "Extraccion" de `docs/Recursos.xlsx` y `Recoleccion.RENDIMIENTO_POR_BLOQUE`, `Recoleccion.TIEMPO_MINADO` (sub-proyecto 2B, implementado — ver `docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md`). Modelo de tres capas: **bloque de extracción** (lo que se retira del mundo, sea por el avatar minando/talando o por un puesto) → **unidades de recurso** (lo que entra al almacén/inventario) → **bloque de construcción** (lo que se coloca de vuelta; su costo en unidades todavía no se cobra).
+
+| Bloque minable | Unidades de recurso | Bloque colocable | Unidades por bloque colocado | Estado |
+|---|---|---|---|---|
+| 1 bloque de tierra (incluye la capa "piso") | 1 tierra | 1 bloque de tierra | 1 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
+| 1 bloque de piedra | 10 piedra | pared, piso, etc. | 3 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
+| 1 bloque de hierro | 10 hierro | estructura (propuesta) | 2 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
+| 1 tronco (por celda de tronco; el follaje no rinde) | 10 madera | 1 bloque de madera | 1 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
+| Cobre, carbón, tierras raras | 10 c/u | — (no tienen bloque colocable) | — | Extracción implementada; sin bloque de construcción, sin uso todavía |
+| Agua | 2 agua | — (no tienen bloque colocable) | — | Reservado, sin uso todavía |
+| Petróleo | 2 crudo | — (no tienen bloque colocable) | — | Reservado, sin uso todavía |
+
+- **Bloques minables vs. colocados:** una mina o el avatar minando solo retira bloques del **terreno natural** (`VoxelWorld.es_terreno_natural`); un bloque que el jugador ya colocó, al volver a minarlo, regresa lo mismo que costó al colocar, para que colocar y minar en bucle no cree recursos.
+- **Cobre, carbón, tierras raras y los líquidos (agua, crudo) no se convierten en bloques colocables**: son insumos de refinería/energía (Sección 3), no material de construcción — el Excel y el código no les definen un bloque de construcción.
+- El costo en unidades de construir un bloque (columna "Unidades por bloque colocado") está documentado como ejemplo/propuesta o "por definir" a propósito: colocar sigue siendo gratis hoy (`Player._colocar`); esta tabla queda lista para cuando se implemente el cobro.
 
 ---
 
@@ -135,3 +157,4 @@ Fuente: hoja "Relacion", columnas J–M ("Consumo por Objeto"). El GDD (Sección
 - Ajustar tras jugar los parámetros de la pesca por tamaño y profundidad (`PECES_FACTOR_SOMERO` 0,5, `AGUA_REFERENCIA` 450, `ESCALA_AGUA_MIN` 0,4, `ESCALA_AGUA_MAX` 1,5, base 17): los puestos de pesca ya colocados conservan las tasas antiguas hasta reconstruirlos.
 - Verificar jugando que 2 recolectores + 1 acarreador se sostienen (la meta de 7,5/h por recolector se cumple con margen de media en el mundo actual, caza y recolección ~12,2/h y pesca ~8,6/h; pero un lago pequeño y somero rinde solo ≈2,5–3/h por la nueva escala de pesca y no la cumple; con menos densidad, por ejemplo poca fauna, o con un puesto más lejano, puede no cumplirse).
 - Definir personal máximo/costo de construcción/ciclo para: Aserradero, Carbonera, Refinería petrolera, Licuefactora de hidrocarburo, Central termoeléctrica, y el edificio "Fábrica" genérico — cada uno como su propio sub-proyecto/PoC, según el roadmap de la Sección 11 del GDD.
+- Definir el costo en unidades de recurso del bloque de madera colocable, que todavía dice "por definir" en la tabla de extracción, y decidir si se cobra al colocar (hoy `Player._colocar` no descuenta nada del almacén). Implica también programar el reembolso al volver a minar un bloque colocado (ver punto 4 de `docs/Pendientes y próximos pasos.md`).

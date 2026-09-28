@@ -18,6 +18,7 @@ En este punto el jugador ya debe poder declarar y registrar distintos edificios 
 
 ### 4. PoC 5, sub-proyecto 2C — transformación
 
+Programar el consumo de recursos según los costos de "colocación" indicados en el documento de `Fichas_Consumo_Produccion.md`, y el reembolso simétrico al volver a minar un bloque colocado por el jugador (decisión del usuario, 2026-09-28 — ver `docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md`).
 Aserradero, carbonera, siderúrgica y refinería de tierras raras convertirían recursos crudos en procesados, con recetas.
 
 ### 5. Resto del catálogo general de PoC 5

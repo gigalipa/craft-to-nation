@@ -12,9 +12,11 @@ Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir,
 
 Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre una ventana similar a la de asignación de obreros, que muestra el contenido del baúl y ofrece extraer o agregar recursos. Reemplaza al retiro actual por `E` mantenida sobre el baúl (rama de `_procesar_frutos()`), que se elimina al construir la ventana; mantener `E` queda solo para los frutos. Se apoya en el despachador `_interactuar()` que ya existe en `Player.gd` (lo creó el punto de las puertas interactivas). Encaja con el HUD (punto 1).
 
-### 3. Declaración de edificios por volumen interno
+### 3. Declaración de edificios por volumen interno — ✅ hecho (2026-09-28)
 
 En este punto el jugador ya debe poder declarar y registrar distintos edificios residenciales. Pendiente de revisar: un edificio de dos niveles con una cama en cada nivel no fue reconocido por la declaración. El sistema debería cambiar a uno que detecte el **volumen interno** de una construcción, para permitir edificios personalizados de formas variadas (pirámides, cilindros, irregulares).
+
+Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la comparación de cada losa contra la huella global del edificio), más el resto del checklist de "casa aprobable": vestíbulo libre detrás de cada puerta (externa o interna) y verificación de acceso real por pathfinding a cada cama/baúl desde al menos una puerta externa. Ver `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md` y `docs/superpowers/plans/2026-09-28-volumen-interno-edificios.md`.
 
 ### 4. PoC 5, sub-proyecto 2C — transformación
 

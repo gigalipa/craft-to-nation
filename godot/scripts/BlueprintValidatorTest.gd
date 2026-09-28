@@ -2287,4 +2287,43 @@ func ejecutar_pruebas() -> void:
 	print("Motivo de rechazo: '", motivo_83, "' (esperado: vacío — antes se rechazaba por el alero del techo)")
 	assert(motivo_83 == "")
 
-	print("\n=== Las 83 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 84: una puerta puramente INTERNA (sin ninguna puerta externa) no debe contar como origen de pathfinding ===")
+	# Regresión encontrada en la revisión final de la rama, 2026-09-28: casa
+	# 7x5 dividida en 2 habitaciones por un muro interior en x=OX84+3, con UNA
+	# ÚNICA puerta — la interior, entre ambas habitaciones — y perímetro
+	# EXTERIOR totalmente sólido (sin puerta ni ventana, ningún hueco hacia
+	# afuera). Antes del fix, _celdas_externas_puerta() trataba los 2 vecinos
+	# de la puerta que "siguen el muro" (ocupados, ni adentro ni afuera) como
+	# si fueran exteriores, así que ESTA puerta interna se clasificaba mal
+	# como externa y aprobaba el pathfinding de una casa sin ninguna entrada
+	# real. Cama+baúl en la habitación oeste (la que NO tiene puerta propia
+	# hacia afuera).
+	const OX84 := 900
+	for x in range(OX84, OX84 + 7):
+		for z in range(5):
+			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)  # techo
+	for y in [1, 2, 3]:
+		for x in range(OX84, OX84 + 7):
+			for z in range(5):
+				var es_borde84: bool = x == OX84 or x == OX84 + 6 or z == 0 or z == 4
+				if es_borde84:
+					mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)  # perímetro sólido, sin puerta ni ventana
+	for y in [1, 2, 3]:
+		for z in range(5):
+			if z == 2 and y != 3:
+				continue  # puerta interior (y=1,2)
+			mundo.colocar_bloque(Vector3i(OX84 + 3, y, z), "pared", true)  # muro interior
+	assert(mundo.colocar_puerta(Vector3i(OX84 + 3, 1, 2)))  # única puerta del edificio: INTERNA
+	assert(mundo.colocar_cama(Vector3i(OX84 + 1, 1, 1), Vector3i(0, 0, 1)))  # cabecera (x+1,z=1), pies (x+1,z=2)
+	mundo.colocar_bloque(Vector3i(OX84 + 1, 1, 3), "baul", true)
+
+	var estructura_84: Dictionary = mundo.detectar_estructura(Vector3i(OX84, 1, 0))
+	var origenes_84: Array[Vector3i] = Player._celdas_externas_puerta(estructura_84)
+	print("Orígenes de pathfinding: ", origenes_84, " (esperado: vacío, la puerta es interna)")
+	assert(origenes_84.is_empty(), "la única puerta del edificio es interna: no debe generar ningún origen de pathfinding")
+	var motivo_84: String = Player._verificar_acceso_pathfinding(mundo, estructura_84)
+	print("Motivo de rechazo: '", motivo_84, "' (esperado: no vacío, no hay ninguna puerta externa)")
+	assert(motivo_84 != "", "sin ninguna puerta externa, la cama/baúl no debe considerarse alcanzable")
+
+	print("\n=== Las 84 pruebas de BlueprintValidator pasaron correctamente ===")

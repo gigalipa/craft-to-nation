@@ -853,6 +853,15 @@ static func _celdas_externas_puerta(celdas: Dictionary) -> Array[Vector3i]:
 		var vestibulo := Vector3i.MAX
 		for delta in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 			var vecino_xz := Vector2i(pos.x + delta.x, pos.z + delta.y)
+			# _columna_encerrada_en_capa() devuelve "false" tanto si el vecino es
+			# genuinamente exterior COMO si está ocupado (sigue el mismo muro de la
+			# puerta) — ella misma no distingue los dos casos. Un vecino ocupado no
+			# es ni "adentro" ni "afuera": hay que saltarlo ANTES de preguntar, o
+			# los 2 vecinos que continúan el muro cuentan como "exterior" y CUALQUIER
+			# puerta interna (entre 2 habitaciones selladas) se clasifica mal como
+			# puerta externa.
+			if celdas.has(Vector3i(vecino_xz.x, pos.y, vecino_xz.y)):
+				continue
 			if _columna_encerrada_en_capa(vecino_xz, pos.y, celdas, x_min, x_max, z_min, z_max):
 				vestibulo = Vector3i(vecino_xz.x, pos.y, vecino_xz.y)
 			else:

@@ -35,6 +35,11 @@ const TIPOS_ESTRUCTURALES := ["pared", "puerta", "ventana"]
 ## del flood-fill, así que este caso ni siquiera llega a estructura_a_blueprint().
 const TIPOS_RELLENO_GENERICO := ["pared"]
 const VECINOS_ORTOGONALES := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+const VECINOS_3D := [
+	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
+	Vector3i(0, 1, 0), Vector3i(0, -1, 0),
+	Vector3i(0, 0, 1), Vector3i(0, 0, -1),
+]
 
 ## Nombres ordinales para los mensajes de error (más conversacionales que
 ## "Piso N", ver HUD.notificar() — decisión del usuario, 2026-09-27). Más
@@ -358,6 +363,48 @@ static func _es_losa_parcial(capa: Dictionary, huella_real: Dictionary) -> bool:
 ## PoC no tiene zonificación real todavía (esa es Fase 2) — sin esto,
 ## validar_zona_permitida() rechazaría cualquier estructura detectada. Cuando
 ## exista zonificación, pasar la zona real del terreno donde se construyó.
+
+## Flood-fill 3D (6-conexiones) del aire, sembrado desde FUERA de la caja
+## delimitadora de "celdas_solidas" (expandida +1 en cada eje, para tener un
+## "afuera" real por el que fluir). Toda celda de aire DENTRO de la caja que
+## este flood-fill exterior NO alcanza es volumen interior sellado — no
+## asume ninguna huella fija, así reconoce cualquier forma (pirámide,
+## cilindro, techo a dos aguas más angosto que las paredes de abajo). Si el
+## flood-fill exterior logra colarse hacia adentro (una pared con un hueco,
+## una losa incompleta), esas celdas quedan "alcanzadas desde afuera" y NO
+## se cuentan como interior — el edificio queda sin volumen sellado
+## (Dictionary vacío). "celdas_solidas" son celdas ABSOLUTAS (mismo sistema
+## de coordenadas que x_min/x_max/y_min/y_max/z_min/z_max); cualquier tipo
+## cuenta como sólido a efectos de este flood-fill (paredes, puertas,
+## ventanas, camas, baúles — todo lo que ocupa una celda física).
+static func _detectar_aire_interior(
+	celdas_solidas: Dictionary, x_min: int, x_max: int, y_min: int, y_max: int, z_min: int, z_max: int
+) -> Dictionary:
+	var alcanzado_desde_afuera: Dictionary = {}  # Vector3i -> true
+	var pendientes: Array = [Vector3i(x_min - 1, y_min - 1, z_min - 1)]
+	while not pendientes.is_empty():
+		var actual: Vector3i = pendientes.pop_back()
+		if alcanzado_desde_afuera.has(actual):
+			continue
+		if actual.x < x_min - 1 or actual.x > x_max + 1 \
+		or actual.y < y_min - 1 or actual.y > y_max + 1 \
+		or actual.z < z_min - 1 or actual.z > z_max + 1:
+			continue
+		if celdas_solidas.has(actual):
+			continue
+		alcanzado_desde_afuera[actual] = true
+		for delta in VECINOS_3D:
+			pendientes.append(actual + delta)
+
+	var aire_interior: Dictionary = {}  # Vector3i -> true
+	for x in range(x_min, x_max + 1):
+		for y in range(y_min, y_max + 1):
+			for z in range(z_min, z_max + 1):
+				var pos := Vector3i(x, y, z)
+				if not celdas_solidas.has(pos) and not alcanzado_desde_afuera.has(pos):
+					aire_interior[pos] = true
+	return aire_interior
+
 static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	# "puerta_superior" se remapea a "pared" (nunca se omite): físicamente
 	# tapa el muro, y si se omitiera por completo dejaría un "agujero

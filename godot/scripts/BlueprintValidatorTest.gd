@@ -1782,4 +1782,55 @@ func ejecutar_pruebas() -> void:
 	assert(BlueprintValidator.contar_baules(bp_baules) == 3)
 	assert(BlueprintValidator.contar_baules({"pisos": []}) == 0)
 
-	print("\n=== Las 64 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 65: _detectar_aire_interior() encuentra el volumen sellado de una caja hueca 3x3x3 ===")
+	# Cascarón sólido de 3x3x3 (x,y,z: 0-2), 1 sola celda de aire interior en
+	# el centro (1,1,1). 26 celdas sólidas (27 - 1 hueco).
+	var celdas_caja_65: Dictionary = {}
+	for x in range(3):
+		for y in range(3):
+			for z in range(3):
+				if x == 1 and y == 1 and z == 1:
+					continue
+				celdas_caja_65[Vector3i(x, y, z)] = "pared"
+	var aire_65: Dictionary = BlueprintValidator._detectar_aire_interior(celdas_caja_65, 0, 2, 0, 2, 0, 2)
+	print("Aire interior detectado: ", aire_65.size(), " (esperado: 1)")
+	assert(aire_65.size() == 1)
+	assert(aire_65.has(Vector3i(1, 1, 1)))
+
+	print("\n=== TEST 66: _detectar_aire_interior() no encuentra volumen sellado si hay una fuga ===")
+	# Misma caja del TEST 65, pero le quito una celda de la cara (0,1,1):
+	# el aire interior queda conectado al exterior por ese hueco.
+	var celdas_fuga_66: Dictionary = celdas_caja_65.duplicate()
+	celdas_fuga_66.erase(Vector3i(0, 1, 1))
+	var aire_66: Dictionary = BlueprintValidator._detectar_aire_interior(celdas_fuga_66, 0, 2, 0, 2, 0, 2)
+	print("Aire interior detectado: ", aire_66.size(), " (esperado: 0, hay una fuga)")
+	assert(aire_66.is_empty())
+
+	print("\n=== TEST 67: _detectar_aire_interior() reconoce un volumen alto y angosto en la parte de arriba (caso techo a dos aguas) ===")
+	# Base sólida 5x5x1 (y=0) + paredes perimetrales 5x5 en y=1..2 (aire
+	# interior 3x3 dentro) + techo MÁS ANGOSTO 3x5x1 en y=3 (retranqueado 1
+	# celda en X respecto a las paredes de abajo) — el caso real reportado
+	# por el usuario (ver captura de casa_pared_piedra_2pisos.dae).
+	var celdas_techo_67: Dictionary = {}
+	for x in range(5):
+		for z in range(5):
+			celdas_techo_67[Vector3i(x, 0, z)] = "pared"  # suelo, 5x5
+	for y in [1, 2]:
+		for x in range(5):
+			for z in range(5):
+				var es_borde := x == 0 or x == 4 or z == 0 or z == 4
+				if es_borde:
+					celdas_techo_67[Vector3i(x, y, z)] = "pared"
+	for x in range(1, 4):
+		for z in range(5):
+			celdas_techo_67[Vector3i(x, 3, z)] = "pared"  # techo, 3x5 (retranqueado en X)
+	var aire_67: Dictionary = BlueprintValidator._detectar_aire_interior(celdas_techo_67, 0, 4, 0, 3, 0, 4)
+	# Aire interior esperado: y=1,2 con x=1..3, z=1..3 (3x3 cada capa) = 18 celdas.
+	print("Aire interior detectado: ", aire_67.size(), " (esperado: 18)")
+	assert(aire_67.size() == 18)
+	for y in [1, 2]:
+		for x in range(1, 4):
+			for z in range(1, 4):
+				assert(aire_67.has(Vector3i(x, y, z)), "Falta celda de aire interior en (%d,%d,%d)" % [x, y, z])
+
+	print("\n=== Las 67 pruebas de BlueprintValidator pasaron correctamente ===")

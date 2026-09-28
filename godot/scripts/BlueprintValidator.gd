@@ -278,10 +278,10 @@ static func validar_personalizacion_produccion(blueprint_modificado: Dictionary,
 ## presentes y son de un tipo ESTRUCTURAL (pared/puerta/ventana/piso). Se
 ## exige solo para la losa más baja (cimiento) y la más alta (techo
 ## exterior) del edificio completo — nunca deben tener huecos.
-## "Huella real" es la UNIÓN de todas las capas del edificio, no solo las de
-## esta capa — un piso superior más angosto que la base sigue exigiendo que
-## el techo cubra toda la huella real, igual que antes con la caja
-## delimitadora).
+## "huella_real" es la huella que le pase quien llama (hoy: la huella local
+## de esa capa, ver estructura_a_blueprint()) — no necesariamente la unión
+## de todo el edificio, así una capa más angosta que el resto (techo a dos
+## aguas) se juzga contra su propio contorno.
 static func _es_losa_completa(capa: Dictionary, huella_real: Dictionary) -> bool:
 	for clave in huella_real:
 		var tipo = capa.get(clave)
@@ -295,6 +295,8 @@ static func _es_losa_completa(capa: Dictionary, huella_real: Dictionary) -> bool
 ## criterio que ya usa validar_cerramiento() para decidir qué celda es
 ## borde. Generaliza "no está en el anillo perimetral de la caja
 ## delimitadora" (válido solo para un rectángulo) a cualquier forma.
+## "huella_real" es la huella que le pase quien llama (hoy: la huella local
+## de esa capa, ver estructura_a_blueprint()).
 static func _es_columna_interior(pos: Vector2i, huella_real: Dictionary) -> bool:
 	for delta in VECINOS_ORTOGONALES:
 		var vecino: Vector2i = pos + delta
@@ -315,6 +317,8 @@ static func _es_columna_interior(pos: Vector2i, huella_real: Dictionary) -> bool
 ## Caso límite: si la huella real no tiene ninguna columna interior (huella
 ## demasiado angosta, en cualquier forma), no hay forma de distinguir por
 ## interior — se cae a exigir la losa completa.
+## "huella_real" es la huella que le pase quien llama (hoy: la huella local
+## de esa capa, ver estructura_a_blueprint()).
 static func _es_losa_parcial(capa: Dictionary, huella_real: Dictionary) -> bool:
 	var interiores: Array = []
 	for clave in huella_real:
@@ -405,6 +409,47 @@ static func _detectar_aire_interior(
 					aire_interior[pos] = true
 	return aire_interior
 
+## Flood-fill 2D (4-conexiones) de las columnas "x,z" (claves ya relativas,
+## 0..x_max/0..z_max) que las propias celdas tipadas de UNA capa (celda_tipos
+## = celdas_por_capa[capa]) encierran, sembrado desde fuera de la caja
+## delimitadora (expandida +1 en cada eje). Es la versión 2D, por-capa, del
+## mismo criterio que _detectar_aire_interior() usa en 3D — pero sin
+## depender de que el edificio COMPLETO esté sellado verticalmente: contesta
+## "¿el propio anillo de esta capa encierra algo?", columna por columna,
+## nada más. Existe porque huella_local (ver estructura_a_blueprint()) no
+## puede completarse solo con aire_interior (3D): un edificio sin techo
+## (nunca sellado en Y) deja huella_local reducida al anillo de cada capa de
+## pared, sin ninguna columna interior — _es_losa_parcial() entonces no
+## tiene con qué distinguir un muro (anillo completo, interior vacío) de una
+## losa (anillo + interior sólido), y cae a su respaldo de "huella angosta"
+## (exige losa completa), que malinterpreta CUALQUIER anillo cerrado como
+## losa. Esta función le da a huella_local las columnas interiores reales de
+## la capa (encerradas por su propio anillo, sean o no parte del volumen
+## sellado en 3D), sin tocar _es_losa_parcial/_es_losa_completa ni recurrir
+## a la huella global del edificio.
+static func _columnas_2d_encerradas(celda_tipos: Dictionary, x_max: int, z_max: int) -> Dictionary:
+	var alcanzadas_desde_afuera: Dictionary = {}  # Vector2i -> true
+	var pendientes: Array = [Vector2i(-1, -1)]
+	while not pendientes.is_empty():
+		var actual: Vector2i = pendientes.pop_back()
+		if alcanzadas_desde_afuera.has(actual):
+			continue
+		if actual.x < -1 or actual.x > x_max + 1 or actual.y < -1 or actual.y > z_max + 1:
+			continue
+		if celda_tipos.has("%d,%d" % [actual.x, actual.y]):
+			continue
+		alcanzadas_desde_afuera[actual] = true
+		for delta in VECINOS_ORTOGONALES:
+			pendientes.append(actual + delta)
+
+	var encerradas: Dictionary = {}  # "x,z" -> true
+	for x in range(0, x_max + 1):
+		for z in range(0, z_max + 1):
+			var clave := "%d,%d" % [x, z]
+			if not celda_tipos.has(clave) and not alcanzadas_desde_afuera.has(Vector2i(x, z)):
+				encerradas[clave] = true
+	return encerradas
+
 static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	# "puerta_superior" se remapea a "pared" (nunca se omite): físicamente
 	# tapa el muro, y si se omitiera por completo dejaría un "agujero
@@ -424,12 +469,16 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	var z_min: int = celdas_relevantes.keys()[0].z
 	var x_max: int = x_min
 	var z_max: int = z_min
+	var y_max: int = y_min
 	for pos in celdas_relevantes.keys():
 		y_min = min(y_min, pos.y)
 		x_min = min(x_min, pos.x)
 		z_min = min(z_min, pos.z)
 		x_max = max(x_max, pos.x)
 		z_max = max(z_max, pos.z)
+		y_max = max(y_max, pos.y)
+	var x_max_abs := x_max
+	var z_max_abs := z_max
 	x_max -= x_min
 	z_max -= z_min
 
@@ -446,11 +495,44 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		celdas_por_capa[capa][clave] = tipo
 		huella_real[clave] = true
 
+	var aire_interior: Dictionary = _detectar_aire_interior(
+		celdas_relevantes, x_min, x_max_abs, y_min, y_max, z_min, z_max_abs
+	)
+	var volumen_sellado: bool = not aire_interior.is_empty()
+
+	# Huella LOCAL de cada capa (índice relativo = y absoluto - y_min): unión
+	# de (a) sus propias celdas estructurales/mobiliario (celdas_por_capa),
+	# (b) sus propias celdas de aire interior sellado en 3D (aire_interior) y
+	# (c) las columnas que su propio anillo encierra en 2D
+	# (_columnas_2d_encerradas) — a diferencia de huella_real (la unión de
+	# TODO el edificio), esto permite que una capa más angosta que el resto
+	# (techo a dos aguas, pirámide) se juzgue contra SU PROPIO contorno, no
+	# el de las paredes de abajo. (c) hace falta además de (b) porque un
+	# edificio SIN sellar verticalmente (p. ej. sin techo) nunca aporta aire
+	# 3D a huella_local, aunque cada capa de pared tenga su anillo perfecto-
+	# mente cerrado — sin (c), esa capa quedaría reducida a solo su anillo
+	# (sin ninguna columna interior), y _es_losa_parcial() la confundiría
+	# con una losa (ver _columnas_2d_encerradas() para el detalle).
+	var huella_local: Dictionary = {}  # int (capa) -> Dictionary ("x,z" -> true)
+	for pos in aire_interior.keys():
+		var capa_aire: int = pos.y - y_min
+		var clave_aire := "%d,%d" % [pos.x - x_min, pos.z - z_min]
+		if not huella_local.has(capa_aire):
+			huella_local[capa_aire] = {}
+		huella_local[capa_aire][clave_aire] = true
+	for capa_propia in celdas_por_capa.keys():
+		if not huella_local.has(capa_propia):
+			huella_local[capa_propia] = {}
+		for clave_propia in celdas_por_capa[capa_propia]:
+			huella_local[capa_propia][clave_propia] = true
+		for clave_encerrada in _columnas_2d_encerradas(celdas_por_capa[capa_propia], x_max, z_max):
+			huella_local[capa_propia][clave_encerrada] = true
+
 	var indices_capa: Array = celdas_por_capa.keys()
 	indices_capa.sort()
 	var es_losa: Dictionary = {}  # int -> bool ("losa parcial": límite entre historias)
 	for capa in indices_capa:
-		es_losa[capa] = _es_losa_parcial(celdas_por_capa[capa], huella_real)
+		es_losa[capa] = _es_losa_parcial(celdas_por_capa[capa], huella_local.get(capa, {}))
 
 	# Primera pasada: encontrar las bandas (historias) sin construirlas
 	# todavía, para saber cuál es la más baja y cuál la más alta del
@@ -482,10 +564,10 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		var hay_losa_bajo: bool = es_losa.get(capa_bajo_banda, false)
 		var hay_losa_sobre: bool = es_losa.get(capa_sobre_banda, false)
 		var suelo_ok: bool = hay_losa_bajo and (
-			not es_piso_mas_bajo or _es_losa_completa(celdas_por_capa[capa_bajo_banda], huella_real)
+			not es_piso_mas_bajo or _es_losa_completa(celdas_por_capa[capa_bajo_banda], huella_local.get(capa_bajo_banda, {}))
 		)
 		var techo_ok: bool = hay_losa_sobre and (
-			not es_piso_mas_alto or _es_losa_completa(celdas_por_capa[capa_sobre_banda], huella_real)
+			not es_piso_mas_alto or _es_losa_completa(celdas_por_capa[capa_sobre_banda], huella_local.get(capa_sobre_banda, {}))
 		)
 
 		var plantilla: Dictionary = {}
@@ -545,7 +627,7 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	for clave in huella_real:
 		huella_relativa.append(_parsear_celda(clave))
 
-	return {
+	var resultado := {
 		"nombre": "Estructura_Detectada",
 		"tipo": "residencial",
 		"categoria": "residencial",  # ponytail: única categoría real declarable en esta PoC; ver Zonificacion.MARGEN_POR_CATEGORIA
@@ -555,7 +637,13 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		"ancho": x_max + 1,       # x_max ya es (máximo - x_min), ver arriba
 		"profundidad": z_max + 1,
 		"huella_relativa": huella_relativa,
+		"volumen_sellado": volumen_sellado,
 	}
+	if not volumen_sellado:
+		resultado["errores_volumen"] = [
+			"El edificio no tiene ningún volumen interior sellado: hay una fuga hacia afuera o no hay ningún espacio interior."
+		]
+	return resultado
 
 
 static func validar_blueprint(

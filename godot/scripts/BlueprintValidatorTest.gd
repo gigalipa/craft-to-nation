@@ -181,13 +181,31 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.colocar_puerta(Vector3i(3, 1, 1)))  # puerta interior (y=1 y y=2)
 	assert(mundo.colocar_cama(Vector3i(1, 1, 1), Vector3i(1, 0, 0)))  # cabecera (1,1), pies (2,1)
 
+	# Anillo perimetral completo en y=2 (16 celdas, mismo patrón de bucle que
+	# el anillo en y=3): antes de esta tarea, un anillo incompleto en una
+	# capa intermedia quedaba "tapado" al aplanar todas las capas de la
+	# banda en una sola plantilla para validar cerramiento — el punto ciego
+	# real que _detectar_aire_interior()/huella_local existen para cerrar.
+	# Se salta (0,2,1): ya es "puerta_superior" (colocar_puerta() arriba).
+	for x in [0, 6]:
+		for z in range(3):
+			if x == 0 and z == 1:
+				continue  # puerta_superior de la puerta principal
+			mundo.colocar_bloque(Vector3i(x, 2, z), "pared", true)
+	for x in range(1, 6):
+		mundo.colocar_bloque(Vector3i(x, 2, 0), "pared", true)
+		mundo.colocar_bloque(Vector3i(x, 2, 2), "pared", true)
+
 	var puerta_principal := Vector3i(0, 1, 1)
 	var estructura: Dictionary = mundo.detectar_estructura(puerta_principal)
-	# 21 (suelo) + 21 (techo) + 21 (habitación, y=1, huella completa) + 2
-	# (mitades superiores de las 2 puertas, y=2) + 16 (anillo perimetral en
-	# y=3) = 81 celdas físicas.
-	print("Celdas físicas detectadas: ", estructura.size(), " (esperadas: 81)")
-	assert(estructura.size() == 81)
+	# 21 (suelo) + 21 (techo) + 21 (habitación, y=1, huella completa) + 16
+	# (anillo perimetral completo en y=2, incluida la mitad superior de la
+	# puerta principal — la mitad superior de la puerta interior, x=3 z=1,
+	# no es del anillo, ver arriba) + 1 (mitad superior de la puerta
+	# interior, la única celda suelta que queda en y=2) + 16 (anillo
+	# perimetral en y=3) = 96 celdas físicas.
+	print("Celdas físicas detectadas: ", estructura.size(), " (esperadas: 96)")
+	assert(estructura.size() == 96)
 
 	var blueprint_detectado := BlueprintValidator.estructura_a_blueprint(estructura)
 	# Suelo y techo son losas — se descartan, queda 1 solo "piso" (la
@@ -1833,4 +1851,50 @@ func ejecutar_pruebas() -> void:
 			for z in range(1, 4):
 				assert(aire_67.has(Vector3i(x, y, z)), "Falta celda de aire interior en (%d,%d,%d)" % [x, y, z])
 
-	print("\n=== Las 67 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 68: estructura_a_blueprint() marca volumen_sellado=true con un techo a dos aguas más angosto que las paredes ===")
+	# Mismo edificio del TEST 67 (5x5, techo retranqueado a 3x5), pero con
+	# puerta+ventana+cama+baúl para que también pase validar_blueprint() más
+	# adelante (Task 3). Suelo y paredes en y=0..2 como TEST 67; el "piso"
+	# habitable es y=1 (huella 3x3 interior); el techo en y=3 es la losa de
+	# arriba, retranqueada.
+	var celdas_dosaguas_68: Dictionary = {}
+	for x in range(5):
+		for z in range(5):
+			celdas_dosaguas_68[Vector3i(x, 0, z)] = "pared"  # suelo 5x5
+	for y in [1, 2]:
+		for x in range(5):
+			for z in range(5):
+				var es_borde68 := x == 0 or x == 4 or z == 0 or z == 4
+				if not es_borde68:
+					continue
+				if x == 0 and z == 2 and y == 1:
+					continue  # puerta (mitad inferior)
+				if x == 0 and z == 2 and y == 2:
+					continue  # puerta (mitad superior)
+				if x == 4 and z == 2 and y == 2:
+					continue  # ventana
+				celdas_dosaguas_68[Vector3i(x, y, z)] = "pared"
+	celdas_dosaguas_68[Vector3i(0, 1, 2)] = "puerta_inferior"
+	celdas_dosaguas_68[Vector3i(0, 2, 2)] = "puerta_superior"
+	celdas_dosaguas_68[Vector3i(4, 2, 2)] = "ventana"
+	celdas_dosaguas_68[Vector3i(1, 1, 1)] = "cama_cabecera"
+	celdas_dosaguas_68[Vector3i(2, 1, 1)] = "cama_pies"
+	celdas_dosaguas_68[Vector3i(1, 1, 3)] = "baul"
+	for x in range(1, 4):
+		for z in range(5):
+			celdas_dosaguas_68[Vector3i(x, 3, z)] = "pared"  # techo 3x5, retranqueado
+
+	var blueprint_68 := BlueprintValidator.estructura_a_blueprint(celdas_dosaguas_68)
+	print("volumen_sellado: ", blueprint_68["volumen_sellado"], " (esperado: true)")
+	assert(blueprint_68["volumen_sellado"])
+	assert(blueprint_68["pisos"].size() == 1, "1 solo piso habitable (suelo/techo son losas)")
+
+	print("\n=== TEST 69: estructura_a_blueprint() marca volumen_sellado=false si el techo a dos aguas tiene una fuga real ===")
+	var celdas_fuga_69: Dictionary = celdas_dosaguas_68.duplicate()
+	celdas_fuga_69.erase(Vector3i(2, 3, 2))  # hueco en el centro del techo retranqueado
+	var blueprint_69 := BlueprintValidator.estructura_a_blueprint(celdas_fuga_69)
+	print("volumen_sellado: ", blueprint_69["volumen_sellado"], " (esperado: false)")
+	assert(not blueprint_69["volumen_sellado"])
+	assert(not blueprint_69["errores_volumen"].is_empty())
+
+	print("\n=== Las 69 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -62,6 +62,17 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 ## panel "Output": debe imprimir los 34 tests y no debe lanzar ningún error
 ## de assert().
 
+## Planta 3x5 (antes 3x3): se agregaron dos filas para tener tres celdas
+## interiores en vez de una sola. La puerta está en "1,0"; su vestíbulo
+## ("1,1", justo detrás) debe quedar libre (ver
+## BlueprintValidator.validar_vestibulos_puerta(), Task 4 del plan de
+## volumen interno) — por eso NO se lista: una celda ausente de "celdas" es
+## libre por definición. "1,2" es una celda de relleno ("pared", como un
+## pilar) que separa el vestíbulo libre del baúl: sin ella, el baúl (no
+## sólido) quedaría pegado a una celda ausente y validar_cerramiento lo
+## clasificaría como borde, exigiendo un tipo sólido ahí. El baúl se
+## reubicó a "1,3" (plenamente interior: sus 4 vecinos están listados) y la
+## ventana a "1,4" (antes en la fila que ahora ocupa el baúl).
 const BLUEPRINT_VALIDO_JSON := """
 {
   "nombre": "Cabana_Colono_v1",
@@ -72,10 +83,12 @@ const BLUEPRINT_VALIDO_JSON := """
       "nivel": 0,
       "celdas": {
         "0,0": "pared", "1,0": "puerta", "2,0": "pared",
-        "0,1": "pared", "1,1": "baul",   "2,1": "pared",
-        "0,2": "pared", "1,2": "ventana","2,2": "pared"
+        "0,1": "pared",                  "2,1": "pared",
+        "0,2": "pared", "1,2": "pared",  "2,2": "pared",
+        "0,3": "pared", "1,3": "baul",   "2,3": "pared",
+        "0,4": "pared", "1,4": "ventana","2,4": "pared"
       },
-      "camas": [{"pos": "1,1"}]
+      "camas": [{"pos": "1,3"}]
     }
   ]
 }
@@ -117,14 +130,14 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 4: Sin Ventana ===")
 	var bp_sin_ventana: Dictionary = JSON.parse_string(BLUEPRINT_VALIDO_JSON)
-	bp_sin_ventana["pisos"][0]["celdas"]["1,2"] = "pared"
+	bp_sin_ventana["pisos"][0]["celdas"]["1,4"] = "pared"
 	resultado = BlueprintValidator.validar_blueprint(bp_sin_ventana)
 	print("Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	assert(not resultado["valido"])
 
 	print("\n=== TEST 5: Cama sin Baúl (conteo total, no emparejado por posición) ===")
 	var bp_sin_baul: Dictionary = JSON.parse_string(BLUEPRINT_VALIDO_JSON)
-	bp_sin_baul["pisos"][0]["celdas"]["1,1"] = "piso"  # quita el único baúl del edificio
+	bp_sin_baul["pisos"][0]["celdas"]["1,3"] = "piso"  # quita el único baúl del edificio
 	resultado = BlueprintValidator.validar_blueprint(bp_sin_baul)
 	print("Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	assert(not resultado["valido"])
@@ -136,85 +149,103 @@ func ejecutar_pruebas() -> void:
 	assert(not resultado["valido"])
 
 	print("\n=== TEST 7: Declarar Edificio - Habitaciones, Puerta Interior, Cama y Baúl ===")
-	# Planta 7x3 (x:0-6, z:0-2), con suelo (y=0) y techo (y=4) reales para
-	# satisfacer la verificación de suelo/techo sólido (ver TEST 11), y 3
-	# capas de pared (y=1,2,3) para cumplir la altura mínima por piso (ver
-	# TEST 13). La habitación (y=1, la única con mobiliario) tiene puerta
-	# principal en x=0, puerta interior en
-	# x=3 (el caso que motivó este diseño: ¿el flood-fill reconoce ambos
-	# lados aunque la puerta interior esté cerrada? Sí, porque avanza por
-	# bloques sólidos contiguos, no por espacio transitable), una cama de
-	# 2 celdas (x=1,2) y un baúl (x=5) en la habitación este — habitaciones
-	# distintas, sin emparejamiento por posición, para demostrar la regla de
-	# conteo total. Puertas y cama se colocan con colocar_puerta()/
-	# colocar_cama(), no con colocar_bloque() directo, para ejercitar la
-	# verificación de espacio de 2 celdas (su mitad superior queda en y=2).
+	# Planta 9x3 (x:0-8, z:0-2; ensanchada de 7x3 a 9x3 en la Task 4 del plan
+	# de volumen interno, para que AMBAS puertas tengan su vestíbulo real —
+	# ver validar_vestibulos_puerta()/_calcular_errores_vestibulos()), con
+	# suelo (y=0) y techo (y=4) reales para satisfacer la verificación de
+	# suelo/techo sólido (ver TEST 11), y 3 capas de pared (y=1,2,3) para
+	# cumplir la altura mínima por piso (ver TEST 13). La habitación (y=1,
+	# la única con mobiliario) tiene puerta principal en x=0 y puerta
+	# interior en x=5 (el caso que motivó este diseño: ¿el flood-fill
+	# reconoce ambos lados aunque la puerta interior esté cerrada? Sí,
+	# porque avanza por bloques sólidos contiguos, no por espacio
+	# transitable). Habitación oeste (x=1..4, entre la puerta principal y
+	# la interior): x=1 vestíbulo libre de la puerta principal, x=2,3 cama
+	# (2 celdas), x=4 vestíbulo libre del lado oeste de la puerta interior
+	# — 4 celdas interiores, no 3: la puerta interior exige su propio
+	# vestíbulo a cada lado, distinto del de la puerta principal (decisión
+	# del usuario, 2026-09-28, ver _calcular_errores_vestibulos()).
+	# Habitación este (x=6,7, entre la puerta interior y el borde): x=6
+	# vestíbulo libre del lado este de la puerta interior, x=7 baúl — 2
+	# celdas interiores. Cama y baúl en habitaciones distintas, sin
+	# emparejamiento por posición, para demostrar la regla de conteo total.
+	# Puertas y cama se colocan con colocar_puerta()/colocar_cama(), no con
+	# colocar_bloque() directo, para ejercitar la verificación de espacio de
+	# 2 celdas (su mitad superior queda en y=2).
 	# Instanciar VoxelWorld.new() para evitar la generación automática del terreno (_ready() no se llamará).
 	var mundo: Node = VoxelWorld.new()
 	mundo.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo.cell_size = Vector3.ONE * 1.0
 	mundo._indexar_biblioteca()
-	for x in range(7):
+	for x in range(9):
 		for z in range(3):
 			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
 			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)  # techo
 	# Tercera capa de pared (y=3): solo el anillo perimetral, sin mobiliario
 	# ni aberturas — necesaria únicamente para llegar a la altura mínima.
-	for x in [0, 6]:
+	for x in [0, 8]:
 		for z in range(3):
 			mundo.colocar_bloque(Vector3i(x, 3, z), "pared", true)
-	for x in range(1, 6):
+	for x in range(1, 8):
 		mundo.colocar_bloque(Vector3i(x, 3, 0), "pared", true)
 		mundo.colocar_bloque(Vector3i(x, 3, 2), "pared", true)
 	var tipos_simples := {
 		Vector3i(0, 1, 0): "pared", Vector3i(1, 1, 0): "pared", Vector3i(2, 1, 0): "pared",
 		Vector3i(3, 1, 0): "pared", Vector3i(4, 1, 0): "pared", Vector3i(5, 1, 0): "pared",
-		Vector3i(6, 1, 0): "pared",
-		Vector3i(4, 1, 1): "pared", Vector3i(5, 1, 1): "baul", Vector3i(6, 1, 1): "ventana",
+		Vector3i(6, 1, 0): "pared", Vector3i(7, 1, 0): "pared", Vector3i(8, 1, 0): "pared",
+		# x=1 (vestíbulo puerta principal) y x=4 (vestíbulo oeste puerta
+		# interior) y x=6 (vestíbulo este puerta interior) quedan SIN
+		# bloque: aire transitable, libre por construcción.
+		Vector3i(7, 1, 1): "baul", Vector3i(8, 1, 1): "ventana",
 		Vector3i(0, 1, 2): "pared", Vector3i(1, 1, 2): "pared", Vector3i(2, 1, 2): "pared",
 		Vector3i(3, 1, 2): "pared", Vector3i(4, 1, 2): "pared", Vector3i(5, 1, 2): "pared",
-		Vector3i(6, 1, 2): "pared",
+		Vector3i(6, 1, 2): "pared", Vector3i(7, 1, 2): "pared", Vector3i(8, 1, 2): "pared",
 	}
 	for celda in tipos_simples.keys():
 		mundo.colocar_bloque(celda, tipos_simples[celda], true)
 	assert(mundo.colocar_puerta(Vector3i(0, 1, 1)))  # puerta principal (y=1 y y=2)
-	assert(mundo.colocar_puerta(Vector3i(3, 1, 1)))  # puerta interior (y=1 y y=2)
-	assert(mundo.colocar_cama(Vector3i(1, 1, 1), Vector3i(1, 0, 0)))  # cabecera (1,1), pies (2,1)
+	assert(mundo.colocar_puerta(Vector3i(5, 1, 1)))  # puerta interior (y=1 y y=2)
+	assert(mundo.colocar_cama(Vector3i(2, 1, 1), Vector3i(1, 0, 0)))  # cabecera (2,1), pies (3,1)
 
-	# Anillo perimetral completo en y=2 (16 celdas, mismo patrón de bucle que
+	# Anillo perimetral completo en y=2 (20 celdas, mismo patrón de bucle que
 	# el anillo en y=3): antes de esta tarea, un anillo incompleto en una
 	# capa intermedia quedaba "tapado" al aplanar todas las capas de la
 	# banda en una sola plantilla para validar cerramiento — el punto ciego
 	# real que _detectar_aire_interior()/huella_local existen para cerrar.
 	# Se salta (0,2,1): ya es "puerta_superior" (colocar_puerta() arriba).
-	for x in [0, 6]:
+	for x in [0, 8]:
 		for z in range(3):
 			if x == 0 and z == 1:
 				continue  # puerta_superior de la puerta principal
 			mundo.colocar_bloque(Vector3i(x, 2, z), "pared", true)
-	for x in range(1, 6):
+	for x in range(1, 8):
 		mundo.colocar_bloque(Vector3i(x, 2, 0), "pared", true)
 		mundo.colocar_bloque(Vector3i(x, 2, 2), "pared", true)
 
 	var puerta_principal := Vector3i(0, 1, 1)
 	var estructura: Dictionary = mundo.detectar_estructura(puerta_principal)
-	# 21 (suelo) + 21 (techo) + 21 (habitación, y=1, huella completa) + 16
-	# (anillo perimetral completo en y=2, incluida la mitad superior de la
-	# puerta principal — la mitad superior de la puerta interior, x=3 z=1,
-	# no es del anillo, ver arriba) + 1 (mitad superior de la puerta
-	# interior, la única celda suelta que queda en y=2) + 16 (anillo
-	# perimetral en y=3) = 96 celdas físicas.
-	print("Celdas físicas detectadas: ", estructura.size(), " (esperadas: 96)")
-	assert(estructura.size() == 96)
+	# 27 (suelo, 9x3) + 27 (techo) + 24 (habitación, y=1, huella completa
+	# 9x3=27 menos los 3 vestíbulos libres sin bloque: x=1,4,6) + 20 (anillo
+	# perimetral completo en y=2, incluida la mitad superior de la puerta
+	# principal — la mitad superior de la puerta interior, x=5 z=1, no es
+	# del anillo, ver arriba) + 1 (mitad superior de la puerta interior, la
+	# única celda suelta que queda en y=2) + 20 (anillo perimetral en y=3)
+	# = 119 celdas físicas.
+	print("Celdas físicas detectadas: ", estructura.size(), " (esperadas: 119)")
+	assert(estructura.size() == 119)
 
 	var blueprint_detectado := BlueprintValidator.estructura_a_blueprint(estructura)
 	# Suelo y techo son losas — se descartan, queda 1 solo "piso" (la
-	# habitación) con sus 21 celdas abstractas (las mitades superiores de
-	# puerta se remapean a "pared" y no generan celdas nuevas).
+	# habitación) con sus 27 celdas abstractas (huella completa 9x3: las
+	# mitades superiores de puerta se remapean a "pared" y no generan
+	# celdas nuevas; los 3 vestíbulos libres heredan "pared" de la
+	# plantilla de suelo/techo en esta representación aplanada — por eso
+	# _calcular_errores_vestibulos() usa aire_interior, no esta plantilla,
+	# para saber si están REALMENTE libres, ver su comentario).
 	print("Pisos abstractos: ", blueprint_detectado["pisos"].size(), " (esperados: 1)")
 	assert(blueprint_detectado["pisos"].size() == 1)
-	print("Celdas del Blueprint: ", blueprint_detectado["pisos"][0]["celdas"].size(), " (esperadas: 21)")
-	assert(blueprint_detectado["pisos"][0]["celdas"].size() == 21)
+	print("Celdas del Blueprint: ", blueprint_detectado["pisos"][0]["celdas"].size(), " (esperadas: 27)")
+	assert(blueprint_detectado["pisos"][0]["celdas"].size() == 27)
 	assert(blueprint_detectado["pisos"][0]["camas"].size() == 1)
 
 	resultado = BlueprintValidator.validar_blueprint(blueprint_detectado)
@@ -260,6 +291,10 @@ func ejecutar_pruebas() -> void:
 	# generaban "hueco en el perímetro" falso porque su vecino interior
 	# (aire, sin bloque) no estaba registrado en esa misma capa. Coordenadas
 	# desplazadas +50 en X para no chocar con los bloques de tests previos.
+	# La cama va en la columna x=OX+2 (no OX+1): con la regla de vestíbulo
+	# (Task 4), (OX+1,1,2) es el vestíbulo de la puerta principal — debe
+	# quedar libre, así que la cama (2 celdas en z, columna x=OX+1)
+	# invadiría esa celda si se dejara en su columna original.
 	const OX := 50
 	for x in range(OX, OX + 4):
 		for z in range(5):
@@ -279,7 +314,7 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.colocar_puerta(Vector3i(OX, 1, 2)))  # puerta principal (y=1 y y=2)
 	mundo.colocar_bloque(Vector3i(OX, 3, 2), "pared", true)  # pared sobre la puerta
 	mundo.colocar_bloque(Vector3i(OX + 3, 2, 2), "ventana", true)
-	assert(mundo.colocar_cama(Vector3i(OX + 1, 1, 1), Vector3i(0, 0, 1)))  # cabecera/pies interior
+	assert(mundo.colocar_cama(Vector3i(OX + 2, 1, 1), Vector3i(0, 0, 1)))  # cabecera/pies interior
 	mundo.colocar_bloque(Vector3i(OX + 1, 1, 3), "baul", true)  # a los pies de la cama
 
 	var estructura_casa: Dictionary = mundo.detectar_estructura(Vector3i(OX, 1, 2))
@@ -687,8 +722,11 @@ func ejecutar_pruebas() -> void:
 	celdas_l[Vector3i(1, 2, 0)] = "puerta_superior"
 	celdas_l[Vector3i(1, 3, 0)] = "pared"  # pared sobre la puerta
 	celdas_l[Vector3i(0, 2, 2)] = "ventana"
-	celdas_l[Vector3i(1, 1, 1)] = "cama_cabecera"
-	celdas_l[Vector3i(2, 1, 1)] = "cama_pies"
+	# La cama va en (2,1)-(3,1), no (1,1)-(2,1): con la regla de vestíbulo
+	# (Task 4), (1,1,1) es el vestíbulo de la puerta principal (1,1,0) —
+	# debe quedar libre.
+	celdas_l[Vector3i(2, 1, 1)] = "cama_cabecera"
+	celdas_l[Vector3i(3, 1, 1)] = "cama_pies"
 	celdas_l[Vector3i(2, 1, 2)] = "baul"
 
 	var blueprint_l := BlueprintValidator.estructura_a_blueprint(celdas_l)
@@ -1916,4 +1954,79 @@ func ejecutar_pruebas() -> void:
 	print("Válido: ", resultado_72["valido"], " | Errores: ", resultado_72["errores"])
 	assert(resultado_72["valido"], "regresión: el blueprint JSON de siempre debe seguir validándose igual (ver TEST 1)")
 
-	print("\n=== Las 72 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 73: estructura_a_blueprint() rechaza una puerta sin vestíbulo libre por dentro ===")
+	# Mismo edificio del TEST 68 (techo a dos aguas, válido), pero con un
+	# baúl pegado a la puerta por dentro, tapando el vestíbulo.
+	var celdas_sin_vestibulo_73: Dictionary = celdas_dosaguas_68.duplicate()
+	celdas_sin_vestibulo_73[Vector3i(1, 1, 2)] = "baul"  # celda pegada a la puerta (0,1,2) por dentro
+	var blueprint_73 := BlueprintValidator.estructura_a_blueprint(celdas_sin_vestibulo_73)
+	print("volumen_sellado: ", blueprint_73["volumen_sellado"], " | errores_vestibulos: ", blueprint_73["errores_vestibulos"])
+	assert(blueprint_73["volumen_sellado"], "el volumen sigue sellado: el baúl no abre ningún hueco")
+	assert(not blueprint_73["errores_vestibulos"].is_empty())
+	var resultado_73: Dictionary = BlueprintValidator.validar_blueprint(blueprint_73)
+	assert(not resultado_73["valido"])
+
+	print("\n=== TEST 74: estructura_a_blueprint() exige vestíbulo libre en AMBOS lados de una puerta interior ===")
+	# Casa de 7x5 dividida en 2 habitaciones por un muro interior en x=3 con
+	# su propia puerta en (3,*,2). Puerta principal en (0,*,2). Cama+baúl en
+	# la habitación este (x=4..6), alcanzable solo cruzando la puerta
+	# interior. La celda (4,1,2), pegada a la puerta interior por el lado
+	# ESTE, se tapa con una pared — debe rechazarse por vestíbulo, aunque el
+	# lado oeste (2,1,2) sí esté libre.
+	var celdas_interior_74: Dictionary = {}
+	for x in range(7):
+		for z in range(5):
+			celdas_interior_74[Vector3i(x, 0, z)] = "pared"  # suelo
+			celdas_interior_74[Vector3i(x, 4, z)] = "pared"  # techo
+	for y in [1, 2, 3]:
+		for x in range(7):
+			for z in range(5):
+				var es_borde74 := x == 0 or x == 6 or z == 0 or z == 4
+				if es_borde74:
+					if x == 0 and z == 2 and y != 3:
+						continue  # puerta principal (y=1,2)
+					if x == 6 and z == 2 and y == 2:
+						continue  # ventana
+					celdas_interior_74[Vector3i(x, y, z)] = "pared"
+	for y in [1, 2, 3]:
+		for z in range(5):
+			if z == 2 and y != 3:
+				continue  # puerta interior (y=1,2)
+			celdas_interior_74[Vector3i(3, y, z)] = "pared"  # muro interior en x=3
+	celdas_interior_74[Vector3i(0, 1, 2)] = "puerta_inferior"
+	celdas_interior_74[Vector3i(0, 2, 2)] = "puerta_superior"
+	celdas_interior_74[Vector3i(3, 1, 2)] = "puerta_inferior"
+	celdas_interior_74[Vector3i(3, 2, 2)] = "puerta_superior"
+	celdas_interior_74[Vector3i(6, 2, 2)] = "ventana"
+	celdas_interior_74[Vector3i(5, 1, 1)] = "cama_cabecera"
+	celdas_interior_74[Vector3i(5, 1, 2)] = "cama_pies"
+	celdas_interior_74[Vector3i(5, 1, 3)] = "baul"
+	celdas_interior_74[Vector3i(4, 1, 2)] = "pared"  # tapa el vestíbulo del lado este de la puerta interior
+
+	var blueprint_74 := BlueprintValidator.estructura_a_blueprint(celdas_interior_74)
+	print("errores_vestibulos: ", blueprint_74["errores_vestibulos"])
+	assert(not blueprint_74["errores_vestibulos"].is_empty(), "el lado este de la puerta interior está tapado")
+
+	print("\n=== TEST 75: estructura_a_blueprint() acepta una puerta interior con vestíbulo libre en ambos lados ===")
+	var celdas_interior_ok_75: Dictionary = celdas_interior_74.duplicate()
+	celdas_interior_ok_75.erase(Vector3i(4, 1, 2))  # libera el vestíbulo del lado este
+	var blueprint_75 := BlueprintValidator.estructura_a_blueprint(celdas_interior_ok_75)
+	print("volumen_sellado: ", blueprint_75["volumen_sellado"], " | errores_vestibulos: ", blueprint_75["errores_vestibulos"])
+	assert(blueprint_75["volumen_sellado"])
+	assert(blueprint_75["errores_vestibulos"].is_empty())
+	var resultado_75: Dictionary = BlueprintValidator.validar_blueprint(blueprint_75)
+	print("Válido: ", resultado_75["valido"], " | Errores: ", resultado_75["errores"])
+	assert(resultado_75["valido"])
+
+	print("\n=== TEST 76: validar_vestibulos_puerta() rechaza un blueprint JSON hecho a mano con la celda detrás de la puerta ocupada ===")
+	var bp_json_vestibulo_76: Dictionary = JSON.parse_string(BLUEPRINT_VALIDO_JSON)
+	# La puerta está en "1,0"; su lado de adentro es "1,1", libre por defecto
+	# (ausente de "celdas", ver BLUEPRINT_VALIDO_JSON) — se ocupa a mano para
+	# simular el bloqueo, igual que TEST 73 hace con celdas_dosaguas_68.
+	assert(not bp_json_vestibulo_76["pisos"][0]["celdas"].has("1,1"))
+	bp_json_vestibulo_76["pisos"][0]["celdas"]["1,1"] = "baul"
+	var errores_76: Array = BlueprintValidator.validar_vestibulos_puerta(bp_json_vestibulo_76["pisos"][0])
+	print("Errores: ", errores_76)
+	assert(not errores_76.is_empty())
+
+	print("\n=== Las 76 pruebas de BlueprintValidator pasaron correctamente ===")

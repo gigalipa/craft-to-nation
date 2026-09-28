@@ -160,6 +160,52 @@ static func validar_aberturas(piso: Dictionary) -> Array:
 	return errores
 
 
+## Versión 2D de _eje_del_muro() (ver su comentario), para blueprints
+## hand-authored: mismo criterio (si las dos celdas laterales en un eje son
+## estructurales, ese eje continúa el muro), operando sobre el
+## piso["celdas"] plano en vez de celdas_relevantes en 3D.
+static func _eje_del_muro_2d(pos: Vector2i, celdas: Dictionary) -> Vector2i:
+	for eje in [Vector2i(1, 0), Vector2i(0, 1)]:
+		var lado_a = celdas.get("%d,%d" % [pos.x + eje.x, pos.y + eje.y])
+		var lado_b = celdas.get("%d,%d" % [pos.x - eje.x, pos.y - eje.y])
+		if lado_a != null and TIPOS_ESTRUCTURALES.has(lado_a) and lado_b != null and TIPOS_ESTRUCTURALES.has(lado_b):
+			return eje
+	return Vector2i.ZERO
+
+
+## Versión 2D de la regla de vestíbulo, para blueprints hand-authored (sin
+## celdas_3d ni aire_interior, ver _calcular_errores_vestibulos()). En un
+## piso hand-authored, una celda AUSENTE de piso["celdas"] es libre por
+## definición (el autor solo lista paredes/aberturas/mobiliario). Igual que
+## _calcular_errores_vestibulos(), exige el lado "adentro" de cada puerta
+## (perteneciente a la huella del piso) libre — ambos lados si los dos
+## pertenecen a la huella. "Pertenecer a la huella" no alcanza (ver
+## comentario de _calcular_errores_vestibulos()): los vecinos que continúan
+## el mismo muro a los lados de la puerta también pertenecen a la huella
+## (son pared) y nunca van a estar libres, así que primero se descarta el
+## eje que continúa el muro (_eje_del_muro_2d()) — solo el eje perpendicular
+## (de apertura hacia una habitación) se revisa.
+static func validar_vestibulos_puerta(piso: Dictionary) -> Array:
+	var errores: Array = []
+	var celdas: Dictionary = piso["celdas"]
+	for clave in celdas.keys():
+		if celdas[clave] != "puerta":
+			continue
+		var pos: Vector2i = _parsear_celda(clave)
+		var eje_muro := _eje_del_muro_2d(pos, celdas)
+		for delta in VECINOS_ORTOGONALES:
+			if eje_muro != Vector2i.ZERO and (delta == eje_muro or delta == -eje_muro):
+				continue  # continúa el mismo muro, no es un lado del vestíbulo
+			var vecino: Vector2i = pos + delta
+			var clave_vecino := "%d,%d" % [vecino.x, vecino.y]
+			if not celdas.has(clave_vecino):
+				continue  # este lado no pertenece a la huella del piso: es "afuera"
+			errores.append(
+				"El %s tiene una puerta sin espacio libre justo detrás." % _texto_piso(piso["nivel"])
+			)
+	return errores
+
+
 ## Límites de vivienda por nivel de ciudad (GDD Sección 5, decisión del
 ## usuario 2026-09-20): cuántos pisos puede tener una casa y cuántas camas
 ## cabe por piso. "limites" es Ciudad.NIVELES_VIVIENDA[nivel]:
@@ -627,6 +673,10 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	for clave in huella_real:
 		huella_relativa.append(_parsear_celda(clave))
 
+	var errores_vestibulos: Array = _calcular_errores_vestibulos(
+		celdas_relevantes, pisos, bandas, indices_capa, huella_local, aire_interior, x_min, y_min, z_min
+	)
+
 	var resultado := {
 		"nombre": "Estructura_Detectada",
 		"tipo": "residencial",
@@ -638,12 +688,102 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		"profundidad": z_max + 1,
 		"huella_relativa": huella_relativa,
 		"volumen_sellado": volumen_sellado,
+		"errores_vestibulos": errores_vestibulos,
 	}
 	if not volumen_sellado:
 		resultado["errores_volumen"] = [
 			"El edificio no tiene ningún volumen interior sellado: hay una fuga hacia afuera o no hay ningún espacio interior."
 		]
 	return resultado
+
+
+## Determina qué eje (X o Z) es el que continúa el MURO donde está embebida
+## una puerta: mismo criterio que ya usa Puertas.gd para deducir la
+## orientación visual de una puerta (si las dos celdas laterales en ±X son
+## sólidas, la pared corre por X; si lo son las de ±Z, corre por Z) — se
+## reaplica acá para el mismo propósito, distinguir "el muro sigue" de "acá
+## hay paso". Ese eje NUNCA puede ser el vestíbulo (son las celdas que
+## siguen siendo parte del mismo muro a los lados de la puerta, no el paso
+## hacia una habitación) — a diferencia de solo mirar si el vecino
+## "pertenece a la huella"/es una columna interior, esto también funciona
+## para un muro INTERIOR que separa dos habitaciones selladas por ambos
+## lados (ahí, las celdas que continúan el muro tienen sus 4 vecinos
+## presentes en la huella igual que un vestíbulo real — no hay forma de
+## distinguirlas sin mirar la orientación del muro). "lado_a"/"lado_b" usan
+## `pos` (la puerta) en vez de un parámetro de altura porque _todas_ las
+## puertas de esta función son "puerta_inferior": la mitad inferior, con
+## sus paredes vecinas en la MISMA capa Y.
+## Devuelve uno de los dos deltas de VECINOS_ORTOGONALES (el eje detectado)
+## o Vector2i.ZERO si ningún eje tiene ambos lados sólidos a esta capa (caso
+## raro: puerta sin muro claro a un costado) — ahí no se excluye ningún
+## vecino, se revisan los 4 como antes.
+static func _eje_del_muro(pos: Vector3i, celdas_relevantes: Dictionary) -> Vector2i:
+	for eje in [Vector2i(1, 0), Vector2i(0, 1)]:
+		var lado_a = celdas_relevantes.get(Vector3i(pos.x + eje.x, pos.y, pos.z + eje.y))
+		var lado_b = celdas_relevantes.get(Vector3i(pos.x - eje.x, pos.y, pos.z - eje.y))
+		if lado_a != null and TIPOS_ESTRUCTURALES.has(lado_a) and lado_b != null and TIPOS_ESTRUCTURALES.has(lado_b):
+			return eje
+	return Vector2i.ZERO
+
+
+## Vestíbulo de una puerta: la celda pegada a ella por el lado de ADENTRO
+## (dentro de la huella de ALGUNA capa del edificio a esa altura), con 2
+## celdas de altura (misma altura que la puerta), debe estar libre — ni
+## pared, ni cama, ni baúl. Aplica a TODA puerta del edificio, externa o
+## interna (un muro interior con su propia puerta cuenta igual): si AMBOS
+## lados ortogonales de la puerta pertenecen a la huella (puerta entre dos
+## habitaciones), los DOS deben tener su celda libre — cada lado es
+## "adentro" de su propia habitación (decisión del usuario, 2026-09-28).
+## Usa aire_interior (verdad física del flood-fill, Task 1) en vez del
+## piso["celdas"] aplanado, porque ese aplanado rellena las celdas de aire
+## interior sin nada especial con el tipo sólido de la losa vecina (ver
+## comentario de estructura_a_blueprint() sobre la plantilla base) — no
+## sirve para saber si una celda está REALMENTE libre.
+## "Pertenecer a la huella" NO alcanza para decidir qué vecino es el
+## vestíbulo: los dos vecinos que continúan el mismo muro a los lados de la
+## puerta también pertenecen a la huella (son pared real) y nunca van a
+## estar libres — un falso positivo garantizado si no se filtran. Por eso
+## se descarta primero el eje que continúa el muro (_eje_del_muro()); solo
+## el eje perpendicular (el de apertura hacia una habitación) se revisa.
+static func _calcular_errores_vestibulos(
+	celdas_relevantes: Dictionary,
+	pisos: Array,
+	bandas: Array,
+	indices_capa: Array,
+	huella_local: Dictionary,
+	aire_interior: Dictionary,
+	x_min: int,
+	y_min: int,
+	z_min: int
+) -> Array:
+	var errores: Array = []
+	for pos: Vector3i in celdas_relevantes.keys():
+		if celdas_relevantes[pos] != "puerta_inferior":
+			continue
+		var capa: int = pos.y - y_min
+		var indice_capa: int = indices_capa.find(capa)
+		if indice_capa == -1:
+			continue
+		var nivel := -1
+		for banda_idx in range(bandas.size()):
+			if bandas[banda_idx][0] <= indice_capa and indice_capa <= bandas[banda_idx][1]:
+				nivel = pisos[banda_idx]["nivel"]
+				break
+		if nivel == -1:
+			continue
+		var huella_capa: Dictionary = huella_local.get(capa, {})
+		var eje_muro := _eje_del_muro(pos, celdas_relevantes)
+		for delta in VECINOS_ORTOGONALES:
+			if eje_muro != Vector2i.ZERO and (delta == eje_muro or delta == -eje_muro):
+				continue  # continúa el mismo muro, no es un lado del vestíbulo
+			var vecino := Vector3i(pos.x + delta.x, pos.y, pos.z + delta.y)
+			var clave_col := "%d,%d" % [vecino.x - x_min, vecino.z - z_min]
+			if not huella_capa.has(clave_col):
+				continue  # este lado es "afuera", no hace falta vestíbulo
+			var libre: bool = aire_interior.has(vecino) and aire_interior.has(vecino + Vector3i(0, 1, 0))
+			if not libre:
+				errores.append("Al %s le falta espacio libre justo detrás de una puerta." % _texto_piso(nivel))
+	return errores
 
 
 static func validar_blueprint(
@@ -666,6 +806,7 @@ static func validar_blueprint(
 	if blueprint.has("volumen_sellado"):
 		if not blueprint["volumen_sellado"]:
 			errores.append_array(blueprint.get("errores_volumen", []))
+		errores.append_array(blueprint.get("errores_vestibulos", []))
 		for piso in blueprint["pisos"]:
 			errores.append_array(validar_aberturas(piso))
 			errores.append_array(validar_altura_piso(piso))
@@ -675,6 +816,7 @@ static func validar_blueprint(
 			errores.append_array(validar_aberturas(piso))
 			errores.append_array(validar_techo_y_suelo(piso))
 			errores.append_array(validar_altura_piso(piso))
+			errores.append_array(validar_vestibulos_puerta(piso))
 
 	errores.append_array(validar_camas_y_almacenamiento(blueprint))
 	errores.append_array(validar_zona_permitida(blueprint))

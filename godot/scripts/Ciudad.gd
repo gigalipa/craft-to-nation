@@ -26,13 +26,13 @@ const SEGUNDOS_POR_TICK := 2.0
 ## ninguna fuente todavía (no hay nacimientos ni envejecimiento): los
 ## colonos llegan como "desempleado".
 const TIPOS_POBLACION := {
-	"ciudadano": {"comida": 2, "combustible": 0, "energia": 0, "x_cama": 4},
+	"ciudadano": {"comida": 2, "combustible": 0, "energia": 0, "x_cama": 5},
 	"desempleado": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 4},
 	"obrero": {"comida": 5, "combustible": 0, "energia": 0, "x_cama": 4},
 	"tecnico": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 3},
-	"especialista": {"comida": 2, "combustible": 1, "energia": 1, "x_cama": 2},
+	"especialista": {"comida": 2, "combustible": 0, "energia": 1, "x_cama": 2},
 	"investigador": {"comida": 1, "combustible": 0, "energia": 2, "x_cama": 1},
-	"militar": {"comida": 4, "combustible": 3, "energia": 0, "x_cama": 3},
+	"militar": {"comida": 4, "combustible": 2, "energia": 0, "x_cama": 3},
 }
 
 ## Límites de vivienda por nivel EFECTIVO de ciudad (decisión del usuario,

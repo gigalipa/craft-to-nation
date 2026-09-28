@@ -154,15 +154,15 @@ func ejecutar_pruebas() -> void:
 	var orden_test: Node = CiudadScript.new()
 	orden_test.registrar_edificio_residencial(1, [2, 2])  # 4 camas
 	orden_test.demografia["desempleado"] = 8  # 2.0
-	orden_test.demografia["ciudadano"] = 4  # 1.0
+	orden_test.demografia["ciudadano"] = 4  # 0.8 (x_cama 5 desde el balance 2026-09-28)
 	orden_test.demografia["obrero"] = 4  # 1.0
 	orden_test.demografia["tecnico"] = 3  # 1.0
-	orden_test.demografia["militar"] = 4  # 1.33..  -> total 6.33.., sobran 2.33..
+	orden_test.demografia["militar"] = 4  # 1.33..  -> total 6.13.., sobran 2.13..
 	orden_test.regular_densidad_vertical()
 	assert(orden_test.demografia["desempleado"] == 0, "los desempleados se desahucian primero")
-	assert(orden_test.demografia["ciudadano"] == 2, "luego los ciudadanos, solo los necesarios")
+	assert(orden_test.demografia["ciudadano"] == 3, "luego los ciudadanos, solo los necesarios")
 	assert(orden_test.demografia["obrero"] == 4 and orden_test.demografia["tecnico"] == 3 and orden_test.demografia["militar"] == 4)
-	assert(orden_test.desahuciados == 10)
+	assert(orden_test.desahuciados == 9)
 
 	print("\n=== TEST 14: Migración de colonos ===")
 	# 14a: con vivienda, llega un desempleado cada 2 ticks (0.5 colonos/h).

@@ -381,24 +381,67 @@ func puesto_con_deposito(celda: Vector3i) -> Vector2i:
 	return Recoleccion.SIN_PUESTO
 
 
+## Extrae hasta "monto" de un recurso del depósito hacia el stock central
+## (nunca más de lo que había ni de lo que cabe en el stock). Devuelve lo
+## transferido, 0.0 si nada (usado por retirar_deposito() y VentanaBaul).
+func retirar_uno(esquina: Vector2i, recurso: String, monto: float) -> float:
+	if not puestos.has(esquina) or not ciudad.almacen.has(recurso):
+		return 0.0
+	var local: Dictionary = puestos[esquina]["almacen"]
+	var disponible: float = local.get(recurso, 0.0)
+	if disponible <= 0.0:
+		return 0.0
+	var ingreso: float = ciudad.almacen[recurso].agregar(min(disponible, monto))
+	if ingreso <= 1e-9:
+		return 0.0
+	local[recurso] -= ingreso
+	if local[recurso] <= 1e-9:
+		local.erase(recurso)
+	return ingreso
+
+
+## Carga hasta "monto" de un recurso del stock central hacia el depósito
+## (nunca más de lo disponible ni de lo que cabe en el puesto). Devuelve lo
+## transferido, 0.0 si nada (usado por agregar_deposito() y VentanaBaul).
+func agregar_uno(esquina: Vector2i, recurso: String, monto: float) -> float:
+	if not puestos.has(esquina) or not ciudad.almacen.has(recurso):
+		return 0.0
+	var local: Dictionary = puestos[esquina]["almacen"]
+	var espacio: float = puestos[esquina]["capacidad"] - _total(local)
+	if espacio <= 0.0:
+		return 0.0
+	var salida: float = ciudad.almacen[recurso].quitar(min(espacio, monto))
+	if salida <= 1e-9:
+		return 0.0
+	local[recurso] = local.get(recurso, 0.0) + salida
+	return salida
+
+
 ## El avatar toma del depósito: pasa al stock central lo que quepa (el resto se
 ## queda en el almacén local). Devuelve lo transferido, {} si nada.
 func retirar_deposito(esquina: Vector2i) -> Dictionary:
 	var tomado: Dictionary = {}
 	if not puestos.has(esquina):
 		return tomado
-	var local: Dictionary = puestos[esquina]["almacen"]
-	for recurso in local.keys():
-		if not ciudad.almacen.has(recurso):
-			continue
-		var ingreso: float = ciudad.almacen[recurso].agregar(local[recurso])
-		if ingreso <= 1e-9:
-			continue
-		tomado[recurso] = ingreso
-		local[recurso] -= ingreso
-		if local[recurso] <= 1e-9:
-			local.erase(recurso)
+	for recurso in puestos[esquina]["almacen"].keys():
+		var ingreso: float = retirar_uno(esquina, recurso, INF)
+		if ingreso > 0.0:
+			tomado[recurso] = ingreso
 	return tomado
+
+
+## El avatar carga al depósito: pasa del stock central al almacén local lo
+## que quepa (el resto se queda en el stock central). Devuelve lo
+## transferido, {} si nada.
+func agregar_deposito(esquina: Vector2i) -> Dictionary:
+	var entregado: Dictionary = {}
+	if not puestos.has(esquina):
+		return entregado
+	for recurso in ciudad.almacen.keys():
+		var salida: float = agregar_uno(esquina, recurso, INF)
+		if salida > 0.0:
+			entregado[recurso] = salida
+	return entregado
 
 
 ## El puesto empieza a deconstruirse: deja de funcionar y todos sus trabajadores

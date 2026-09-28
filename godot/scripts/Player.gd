@@ -300,20 +300,26 @@ func _procesar_tala(celda: Vector3i, delta: float) -> void:
 	hud.mostrar_progreso(float(mundo.arboles.salud_de(id)) / mundo.arboles.salud_maxima_de(id), true)
 
 
-## Pulsar E (no mantener) sobre el objeto apuntado. Hoy solo alterna puertas;
-## la ventana de contenido del baúl se enchufará aquí (ver "Pendientes").
-## Mantener E sigue siendo _procesar_frutos().
+## Pulsar E (no mantener) sobre el objeto apuntado: alterna puertas o, sobre
+## el baúl de un puesto, abre su ventana de contenido (reemplaza al retiro
+## automático que hacía _procesar_frutos(), ver "Pendientes"). Mantener E
+## sigue siendo _procesar_frutos(), solo para los frutos.
 func _interactuar() -> void:
-	if not raycast.is_colliding() or mundo == null or mundo.puertas == null:
+	if not raycast.is_colliding() or mundo == null:
 		return
-	var base: Vector3i = mundo.puertas.celda_de_colisionador(raycast.get_collider())
-	if base != Vector3i.MAX:
-		mundo.puertas.alternar(base)
+	if mundo.puertas != null:
+		var base: Vector3i = mundo.puertas.celda_de_colisionador(raycast.get_collider())
+		if base != Vector3i.MAX:
+			mundo.puertas.alternar(base)
+			_e_consumida = true
+			return
+	var esquina: Vector2i = Economia.puesto_con_deposito(_celda_impactada())
+	if esquina != Recoleccion.SIN_PUESTO:
+		hud.abrir_ventana_baul(esquina)
 		_e_consumida = true
 
 
-## Frutos: mantener E sobre un árbol con frutos, o sobre el baúl de un puesto
-## (pasa al inventario lo que quepa de su almacén local). No consume el árbol (ver
+## Frutos: mantener E sobre un árbol con frutos. No consume el árbol (ver
 ## VoxelWorld.recolectar_frutos()).
 func _procesar_frutos(delta: float) -> void:
 	if not raycast.is_colliding() or mundo == null:
@@ -325,14 +331,6 @@ func _procesar_frutos(delta: float) -> void:
 		hud.ocultar_progreso()
 		return
 	var celda := _celda_impactada()
-	var esquina_deposito: Vector2i = Economia.puesto_con_deposito(celda)
-	if esquina_deposito != Recoleccion.SIN_PUESTO:
-		_progreso_accion.soltar()
-		hud.ocultar_progreso()
-		var tomado: Dictionary = Economia.retirar_deposito(esquina_deposito)
-		if not tomado.is_empty():
-			print("Tomado del depósito del puesto: ", tomado)
-		return
 	if mundo.frutos_disponibles(celda, Ciudad.horas_juego) <= 0.0:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()

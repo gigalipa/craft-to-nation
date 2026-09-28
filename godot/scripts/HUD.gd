@@ -25,6 +25,7 @@ const BarraModosScript = preload("res://scripts/BarraModos.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
+const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
 const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
 
 ## Nombres de todos los recursos del almacén (los usa PanelPuesto).
@@ -57,6 +58,7 @@ var _barra_modos: Control
 var _hotbar: PanelContainer
 var _ventana_poblacion: PanelContainer
 var _ventana_almacen: PanelContainer
+var _ventana_baul: PanelContainer
 var _notificaciones: Control
 
 
@@ -71,6 +73,8 @@ func _init() -> void:
 	add_child(_ventana_poblacion)
 	_ventana_almacen = VentanaAlmacenScript.new()
 	add_child(_ventana_almacen)
+	_ventana_baul = VentanaBaulScript.new()
+	add_child(_ventana_baul)
 	_contexto = PanelContextualScript.new()
 	add_child(_contexto)
 	_barra_modos = BarraModosScript.new()
@@ -118,6 +122,10 @@ func set_vista(primera_persona: bool) -> void:
 	else:
 		_ventana_poblacion.restaurar()
 		_ventana_almacen.restaurar()
+	# La ventana del baúl solo tiene sentido junto al baúl que la abrió: al
+	# cambiar de vista se cierra del todo (no se restaura, a diferencia de
+	# Población/Almacén).
+	_ventana_baul.cerrar()
 
 
 ## Crossfade entre la hotbar (1ª persona) y la barra de modos (cenital)
@@ -277,6 +285,16 @@ func abrir_panel_puesto(esquina: Vector2i) -> void:
 
 func cerrar_panel_puesto() -> void:
 	_panel_puesto.cerrar()
+
+
+## Ventana de interacción del baúl (E apuntando al depósito de un puesto,
+## ver Player._interactuar()).
+func abrir_ventana_baul(esquina: Vector2i) -> void:
+	_ventana_baul.abrir(esquina)
+
+
+func cerrar_ventana_baul() -> void:
+	_ventana_baul.cerrar()
 
 
 ## Muestra la barra de progreso bajo la mira. "retrocede" (tala, deconstrucción)

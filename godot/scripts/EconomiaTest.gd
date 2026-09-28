@@ -458,4 +458,40 @@ func ejecutar_pruebas() -> void:
 	e21b.recalcular_tasas(ESQ)
 	assert(e21b.trabajadores_de(ESQ)["acarreadores"] == 0, "agotado y sin almacén: el acarreador también se libera")
 
-	print("\n=== Las 21 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 22: agregar_deposito() pasa al puesto solo lo que cabe en su almacén local y deja el resto en el stock central ===")
+	var ciudad22: Node = CiudadScript.new()
+	var e22: Node = EconomiaScript.new()
+	e22.ciudad = ciudad22
+	e22.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11), 5)
+	e22.puestos[ESQ]["almacen"]["madera"] = 950.0  # capacidad del maderero: 1000 (solo caben 50 más)
+	ciudad22.almacen["madera"].cantidad = 80.0
+	var entregado22: Dictionary = e22.agregar_deposito(ESQ)
+	assert(is_equal_approx(entregado22["madera"], 50.0), "solo cabían 50")
+	assert(is_equal_approx(e22.almacen_local(ESQ)["madera"], 1000.0), "el puesto queda al tope")
+	assert(is_equal_approx(ciudad22.almacen["madera"].cantidad, 30.0), "el resto queda en el stock central")
+	assert(e22.agregar_deposito(ESQ).is_empty(), "con el puesto lleno no pasa nada")
+	assert(e22.agregar_deposito(Vector2i(0, 0)).is_empty(), "puesto inexistente")
+
+	print("\n=== TEST 23: retirar_uno()/agregar_uno() mueven de a uno (VentanaBaul, botones -/+) ===")
+	var ciudad23: Node = CiudadScript.new()
+	var e23: Node = EconomiaScript.new()
+	e23.ciudad = ciudad23
+	e23.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11), 5)
+	e23.puestos[ESQ]["almacen"]["madera"] = 15.0
+	ciudad23.almacen["madera"].cantidad = 0.0  # arranca en 200: limpiarlo simplifica los montos esperados
+	assert(is_equal_approx(e23.retirar_uno(ESQ, "madera", 10.0), 10.0), "retira lo pedido (Shift = 10)")
+	assert(is_equal_approx(e23.almacen_local(ESQ)["madera"], 5.0), "el resto queda en el puesto")
+	assert(is_equal_approx(ciudad23.almacen["madera"].cantidad, 10.0), "y lo retirado llega al stock central")
+	assert(is_equal_approx(e23.retirar_uno(ESQ, "madera", 10.0), 5.0), "no retira más de lo que había")
+	assert(e23.almacen_local(ESQ).is_empty(), "vacío: la clave se limpia")
+	assert(e23.retirar_uno(ESQ, "madera", 1.0) == 0.0, "sin nada que retirar, no pasa nada")
+	assert(e23.retirar_uno(ESQ, "recurso_inexistente", 1.0) == 0.0, "recurso inexistente")
+	ciudad23.almacen["madera"].cantidad = 10.0
+	assert(is_equal_approx(e23.agregar_uno(ESQ, "madera", 1.0), 1.0), "agrega lo pedido (sin Shift = 1)")
+	assert(is_equal_approx(e23.almacen_local(ESQ)["madera"], 1.0), "llega al puesto")
+	assert(is_equal_approx(ciudad23.almacen["madera"].cantidad, 9.0), "y sale del stock central")
+	e23.puestos[ESQ]["almacen"]["madera"] = 999.0
+	assert(is_equal_approx(e23.agregar_uno(ESQ, "madera", 10.0), 1.0), "solo cabía 1 (capacidad 1000)")
+	assert(e23.agregar_uno(Vector2i(0, 0), "madera", 1.0) == 0.0, "puesto inexistente")
+
+	print("\n=== Las 23 pruebas de Economia pasaron correctamente ===")

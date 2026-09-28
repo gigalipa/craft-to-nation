@@ -128,6 +128,14 @@ class Recurso:
 		cantidad += ingreso_real
 		return ingreso_real
 
+	## Retira hasta "monto" del stock (nunca más de lo disponible); devuelve
+	## lo realmente retirado. Simétrico a agregar(), para transferencias
+	## parciales (ver Economia.agregar_deposito()).
+	func quitar(monto: float) -> float:
+		var salida: float = min(cantidad, monto)
+		cantidad -= salida
+		return salida
+
 	func consumir(monto: float) -> bool:
 		if cantidad >= monto:
 			cantidad -= monto
@@ -194,8 +202,10 @@ func _init() -> void:
 	almacen = {
 		"madera": Recurso.new("Madera", 200, LIMITE_BASE),
 		"comida": Recurso.new("Comida", COMIDA_INICIAL, LIMITE_BASE_COMIDA),
-		"hierro": Recurso.new("Hierro", 50, LIMITE_BASE),
-		# Recursos que llegan de los puestos y del avatar: empiezan en 0.
+		# Recursos que llegan de los puestos y del avatar: empiezan en 0. El
+		# hierro no es una excepción (Era 1 Prehistórica: nada procesado
+		# todavía) — reportado jugando en vivo, 2026-09-28.
+		"hierro": Recurso.new("Hierro", 0, LIMITE_BASE),
 		"tierra": Recurso.new("Tierra", 0, LIMITE_BASE),
 		"piedra": Recurso.new("Piedra", 0, LIMITE_BASE),
 		"cobre": Recurso.new("Cobre", 0, LIMITE_BASE),

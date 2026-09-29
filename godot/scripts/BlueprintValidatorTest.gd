@@ -1852,6 +1852,15 @@ func ejecutar_pruebas() -> void:
 	assert(BlueprintValidator.contar_baules(bp_baules) == 3)
 	assert(BlueprintValidator.contar_baules({"pisos": []}) == 0)
 
+	print("\n=== TEST 64b: contar_camas() suma las camas de todos los pisos ===")
+	var bp_camas := {"pisos": [
+		{"celdas": {}, "camas": [{"pos": "0,0"}, {"pos": "2,0"}]},
+		{"celdas": {}, "camas": [{"pos": "0,0"}]},
+	]}
+	assert(BlueprintValidator.contar_camas(bp_camas) == 3)
+	assert(BlueprintValidator.contar_camas({"pisos": []}) == 0)
+	assert(BlueprintValidator.contar_camas({"pisos": [{"celdas": {}}]}) == 0, "un piso sin clave 'camas' cuenta 0")
+
 	print("\n=== TEST 65: _detectar_aire_interior() encuentra el volumen sellado de una caja hueca 3x3x3 ===")
 	# Cascarón sólido de 3x3x3 (x,y,z: 0-2), 1 sola celda de aire interior en
 	# el centro (1,1,1). 26 celdas sólidas (27 - 1 hueco).

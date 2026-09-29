@@ -260,6 +260,13 @@ static func contar_baules(blueprint: Dictionary) -> int:
 	return total
 
 
+static func contar_camas(blueprint: Dictionary) -> int:
+	var total := 0
+	for piso in blueprint["pisos"]:
+		total += (piso.get("camas", []) as Array).size()
+	return total
+
+
 ## Regla de almacenamiento: al menos 1 baúl por cada cama EN TODO EL EDIFICIO,
 ## sin exigir que cada cama tenga "su" baúl emparejado por posición. Esto da
 ## libertad de diseño: un barracón puede tener varias camas juntas y una

@@ -2436,9 +2436,9 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_econ.obtener_tipo(celda_relleno_87) == "tierra", "se rellenó")
 	assert(Ciudad.almacen["tierra"].cantidad == 0.0, "cobró la 1 tierra que costaba")
 
-	print("\n=== TEST 88: surtir la ESTRUCTURA cobra el costo individual de la celda, bloquea sin fondos, y marca la celda como pagada (el reembolso ya existente funcionará al deconstruirla) ===")
+	print("\n=== TEST 88: surtir la ESTRUCTURA cobra el costo individual de la celda, bloquea sin fondos, y DECONSTRUIRLA reembolsa lo que costó ===")
 	var celda_estructura_88 := Vector3i(OX86 + 2, 5, 0)
-	mundo_econ.iniciar_construccion_fantasma([], {}, [celda_estructura_88], {celda_estructura_88: "bloque_piedra"})
+	var id_88: int = mundo_econ.iniciar_construccion_fantasma([], {}, [celda_estructura_88], {celda_estructura_88: "bloque_piedra"})
 	Ciudad.almacen["piedra"].cantidad = 4.0  # bloque_piedra cuesta 5
 	var r_88a: Dictionary = mundo_econ.surtir_construccion(celda_estructura_88)
 	assert(r_88a.get("insuficiente", false) and r_88a["recurso"] == "piedra")
@@ -2449,6 +2449,17 @@ func ejecutar_pruebas() -> void:
 	assert(r_88b["completa"], "única celda de la estructura: se completa la obra")
 	assert(mundo_econ.obtener_tipo(celda_estructura_88) == "bloque_piedra")
 	assert(Ciudad.almacen["piedra"].cantidad == 0.0, "cobró las 5 piedra que costaba")
-	assert(mundo_econ.celdas_pagadas.has(celda_estructura_88), "queda marcada como pagada: deconstruirla la reembolsará, igual que colocarla a mano")
+	assert(mundo_econ.celdas_pagadas.has(celda_estructura_88), "queda marcada como pagada")
+	# Deconstruirla (única celda: un solo paso la revierte del todo) debe
+	# reembolsar exactamente lo que costó construirla, y eliminar_edificio()
+	# debe borrar la marca de pagada junto con el resto de su registro —
+	# antes de este arreglo, deconstruir perdía todo el costo (hallado en
+	# revisión de código, 2026-09-29).
+	var r_88c: Dictionary = mundo_econ.procesar_deconstruccion(celda_estructura_88)
+	assert(r_88c["completa_reversion"] and r_88c["lista_para_remocion"])
+	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 5.0), "deconstruir reembolsa las 5 piedra")
+	mundo_econ.eliminar_edificio(id_88)
+	assert(not mundo_econ.celdas_pagadas.has(celda_estructura_88), "eliminar_edificio() no deja la marca de pagada colgando")
+	assert(mundo_econ.obtener_tipo(celda_estructura_88) == "", "el edificio ya no existe")
 
 	print("\n=== Las 88 pruebas de BlueprintValidator pasaron correctamente ===")

@@ -1542,9 +1542,13 @@ func fraccion_de_obra(celda: Vector3i) -> float:
 ## (ya no es estructura real). No toca "pareja": una celda revertida sigue
 ## inmune al minado (celda_a_edificio no se borra hasta eliminar_edificio()),
 ## así que minar_bloque() nunca llega a consultar "pareja" para ella
-## mientras dure la deconstrucción.
+## mientras dure la deconstrucción. Reembolsa su costo si se había cobrado
+## al construirla (ver _reembolsar_si_corresponde()) — sin esto,
+## deconstruir un edificio perdía todo lo que costó levantarlo (hallado en
+## revisión de código, 2026-09-29).
 func _revertir_celda(celda: Vector3i) -> void:
 	var tipo_anterior: String = obtener_tipo(celda)
+	_reembolsar_si_corresponde(celda, tipo_anterior)
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	colocado_por_jugador.erase(celda)
 	colocar_bloque(celda, "fantasma")
@@ -1603,6 +1607,11 @@ func eliminar_edificio(id: int) -> Vector2i:
 				puerta_cambiada.emit(celda)
 			_avisar_si_junto_a_translucido(celda)
 		celda_a_edificio.erase(celda)
+		# Por si acaso esta celda seguía marcada como pagada (no debería:
+		# procesar_deconstruccion()/_revertir_celda() ya la reembolsó camino a
+		# "lista_para_remocion" antes de llegar aquí) — evita dejar una
+		# bandera de reembolso viva sobre una celda que ya no existe.
+		celdas_pagadas.erase(celda)
 		if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 			bloque_translucido_cambiado.emit(celda)
 	edificio_a_celdas.erase(id)

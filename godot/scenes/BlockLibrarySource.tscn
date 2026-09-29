@@ -8,6 +8,30 @@ material = SubResource("Mat_pared")
 
 [sub_resource type="BoxShape3D" id="Shape_pared"]
 
+[sub_resource type="StandardMaterial3D" id="Mat_tierra_compactada"]
+albedo_color = Color(0.5, 0.35, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_tierra_compactada"]
+material = SubResource("Mat_tierra_compactada")
+
+[sub_resource type="BoxShape3D" id="Shape_tierra_compactada"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_bloque_madera"]
+albedo_color = Color(0.45, 0.3, 0.15, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_bloque_madera"]
+material = SubResource("Mat_bloque_madera")
+
+[sub_resource type="BoxShape3D" id="Shape_bloque_madera"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_estructura_hierro"]
+albedo_color = Color(0.6, 0.35, 0.15, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_estructura_hierro"]
+material = SubResource("Mat_estructura_hierro")
+
+[sub_resource type="BoxShape3D" id="Shape_estructura_hierro"]
+
 [sub_resource type="StandardMaterial3D" id="Mat_puerta_inferior"]
 albedo_color = Color(0.45, 0.28, 0.12, 1)
 
@@ -303,11 +327,29 @@ points = PackedVector3Array(-0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -
 
 [node name="BlockLibrarySource" type="Node3D" unique_id=221191729]
 
-[node name="pared" type="MeshInstance3D" parent="." unique_id=1472954888]
+[node name="bloque_piedra" type="MeshInstance3D" parent="." unique_id=1472954888]
 mesh = SubResource("Mesh_pared")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="pared" unique_id=1182273984]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="bloque_piedra" unique_id=1182273984]
 shape = SubResource("Shape_pared")
+
+[node name="tierra_compactada" type="MeshInstance3D" parent="." unique_id=900000001]
+mesh = SubResource("Mesh_tierra_compactada")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="tierra_compactada" unique_id=900000002]
+shape = SubResource("Shape_tierra_compactada")
+
+[node name="bloque_madera" type="MeshInstance3D" parent="." unique_id=900000003]
+mesh = SubResource("Mesh_bloque_madera")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="bloque_madera" unique_id=900000004]
+shape = SubResource("Shape_bloque_madera")
+
+[node name="estructura_hierro" type="MeshInstance3D" parent="." unique_id=900000005]
+mesh = SubResource("Mesh_estructura_hierro")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="estructura_hierro" unique_id=900000006]
+shape = SubResource("Shape_estructura_hierro")
 
 [node name="puerta_inferior" type="MeshInstance3D" parent="." unique_id=747288938]
 mesh = SubResource("Mesh_puerta_inferior")
@@ -321,16 +363,16 @@ mesh = SubResource("Mesh_puerta_superior")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="puerta_superior" unique_id=53841975]
 shape = SubResource("Shape_puerta_superior")
 
-[node name="ventana" type="MeshInstance3D" parent="." unique_id=350918201]
+[node name="vidrio" type="MeshInstance3D" parent="." unique_id=350918201]
 mesh = SubResource("Mesh_ventana")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="ventana" unique_id=276942756]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="vidrio" unique_id=276942756]
 shape = SubResource("Shape_ventana")
 
-[node name="piso" type="MeshInstance3D" parent="." unique_id=469729591]
+[node name="hierba" type="MeshInstance3D" parent="." unique_id=469729591]
 mesh = SubResource("Mesh_piso")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="piso" unique_id=591710566]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="hierba" unique_id=591710566]
 shape = SubResource("Shape_piso")
 
 [node name="cama_cabecera" type="MeshInstance3D" parent="." unique_id=128196847]

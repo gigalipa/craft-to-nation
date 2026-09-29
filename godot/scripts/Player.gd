@@ -777,6 +777,8 @@ func _colocar() -> void:
 	if not resultado.is_empty():
 		if resultado.get("bloqueada", false):
 			_avisar_colocacion_rechazada("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
+		elif resultado.get("insuficiente", false):
+			_avisar_colocacion_rechazada("No hay suficiente %s para continuar la obra." % resultado["recurso"])
 		elif resultado.get("completa", false):
 			_completar_construccion(resultado["metadata"])
 			# La construcción se completó con este mismo clic sostenido: no

@@ -188,4 +188,23 @@ func ejecutar_pruebas() -> void:
 	mundo6.free()
 	print("OK: el resumen de materiales llega al cuadro de información sin perderse.")
 
-	print("\n=== Las 6 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("=== TEST 7: colocar un puesto arma una cola de construcción pagada, no lo estampa al instante ===")
+	var mundo7: Node = _mundo_plano()
+	var camara7: Camera3D = _camara(mundo7, "maderero")
+	camara7.hud = HUDScript.new()
+	add_child(camara7.hud)
+	var esquina7 := Vector2i(20, 20)
+	var ev7: Dictionary = camara7._evaluar_puesto(esquina7)
+	assert(camara7._mensaje_rechazo_puesto(ev7) == "", "válida sobre suelo plano")
+	for recurso7 in ["tierra", "madera", "piedra"]:
+		Ciudad.almacen[recurso7].cantidad = 0.0
+	camara7._confirmar_puesto(esquina7)
+	var celda_muro_7: Vector3i = ev7["celdas_plantilla"].keys()[0]
+	assert(mundo7.obtener_tipo(celda_muro_7) == "fantasma", "la plantilla queda como fantasma, no estampada")
+	assert(not Recoleccion.puestos.has(esquina7), "no se registra en Recoleccion hasta completarse")
+	camara7.hud.queue_free()
+	camara7.free()
+	mundo7.free()
+	print("OK: colocar un puesto solo inicia su construcción fantasma.")
+
+	print("\n=== Las 7 pruebas de previsualización de puestos pasaron correctamente ===")

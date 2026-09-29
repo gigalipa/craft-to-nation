@@ -1982,20 +1982,27 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	var centro := _celda_bajo_mouse(posicion_pantalla)
 	@warning_ignore("integer_division")
 	var esquina := centro - Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
+	_confirmar_puesto(esquina)
+
+
+## Valida y, si es válido, inicia la construcción fantasma del puesto activo
+## en "esquina" — separado de _procesar_clic_puesto() para poder probarlo
+## sin depender del mouse/cámara reales (ver PuestosPrevisualizacionTest.gd).
+func _confirmar_puesto(esquina: Vector2i) -> void:
 	var ev: Dictionary = _evaluar_puesto(esquina)
 	var rechazo: String = _mensaje_rechazo_puesto(ev)
 	if rechazo != "":
 		print(rechazo)
 		hud.notificar(rechazo)
 		return
+	var centro: Vector2i = ev["centro"]
 	var columnas: Array[Vector2i] = ev["columnas"]
-	var resultado_huella: Dictionary = ev["resultado_huella"]
-	var resultado_fachada: Dictionary = ev["resultado_fachada"]
 	var extremo_agua_indice: int = ev["extremo_agua_indice"]
 	var giros: int = ev["giros"]
 	var objetivo: int = ev["objetivo"]
 	var fachada: Dictionary = ev["fachada"]
 	var y_base: int = ev["y_base"]
+	var base_y: int = ev["resultado_base"]["base_y"]
 	var celdas_plantilla: Dictionary = ev["celdas_plantilla"]
 	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
 
@@ -2004,14 +2011,24 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 		var celdas_extremo_pesca := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 		@warning_ignore("integer_division")
 		centro_agua = esquina + celdas_extremo_pesca[celdas_extremo_pesca.size() / 2]
-	var entorno_puesto: Dictionary = Recoleccion.entorno_de_puesto(_tipo_puesto_activo, mundo, centro, mundo.altura_en(centro.x, centro.y), centro_agua)
-	var tasas_puesto: Dictionary = Recoleccion.tasas_de_entorno(_tipo_puesto_activo, mundo, entorno_puesto)
 
-	for celda_follaje in resultado_huella["follaje_a_eliminar"]:
+	# Drenar agua: instantáneo y gratis (el agua no es un recurso), igual que hoy.
+	for celda_follaje in ev["resultado_huella"]["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
+	var total_drenado := 0
+	for dx in range(_ancho_puesto_activo):
+		for dz in range(_alto_puesto_activo):
+			total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+	if total_drenado > 0:
+		print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
 
-	var total_relleno := 0
-	var total_pilotes := 0
+	# Cola de nivelación pagada: excavar acredita, rellenar cobra tierra, un
+	# pilote de pesca cobra piedra (bloque_piedra) — mismo criterio que
+	# _procesar_clic_blueprint() para un residencial (ver
+	# VoxelWorld._bloqueado_por_falta_de()/_acreditar_excavacion()).
+	var relleno_orden: Array[Vector3i] = []
+	var tipos_relleno: Dictionary = {}
+
 	if _tipo_puesto_activo == "pesca_frutos_mar":
 		var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 		var esquinas_pilote: Array[Vector2i] = [
@@ -2026,57 +2043,61 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 				var es_pilote: bool = esquinas_pilote.has(xz)
 				var es_agua_real: bool = mundo.obtener_tipo(Vector3i(x, mundo.altura_en(x, z), z)) == "agua"
 				if es_agua_real and not es_pilote:
-					continue  # agua abierta bajo la plataforma: no se toca
+					continue  # agua abierta bajo la plataforma: no se toca, no cuesta nada
 				var fondo: int = mundo.altura_en(x, z, true)
 				var bloque: String = "bloque_piedra" if es_pilote else "tierra"
 				for h in range(fondo + 1, objetivo + 1):
-					mundo.colocar_bloque(Vector3i(x, h, z), bloque)
-					if es_pilote:
-						total_pilotes += 1
-					else:
-						total_relleno += 1
-	else:
-		var total_drenado := 0
-		for dx in range(_ancho_puesto_activo):
-			for dz in range(_alto_puesto_activo):
-				total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
-		if total_drenado > 0:
-			print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
-		var relleno: Dictionary = nivelador_puesto.calcular_relleno(esquina, columnas)
-		for celda_relleno in relleno:
-			var cantidad: int = relleno[celda_relleno]
-			var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y)
+					var celda_r := Vector3i(x, h, z)
+					relleno_orden.append(celda_r)
+					tipos_relleno[celda_r] = bloque
+		var plan_fachada: Dictionary = _plan_nivelacion(esquina, [], base_y, fachada)
+		for celda_e in plan_fachada["excavacion"]:
+			relleno_orden.append(celda_e)
+			tipos_relleno[celda_e] = "fantasma" if celdas_plantilla.has(celda_e) else "aire"
+		for celda_relleno in plan_fachada["relleno"]:
+			var cantidad: int = plan_fachada["relleno"][celda_relleno]
+			var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y, true)
 			for h in range(1, cantidad + 1):
-				mundo.colocar_bloque(Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y), "tierra")
-			total_relleno += cantidad
-	if total_pilotes > 0:
-		print("Pilotes colocados bajo el puesto: ", total_pilotes, " bloques de \"pared\".")
-	if total_relleno > 0:
-		print("Terreno nivelado bajo el puesto: ", total_relleno, " bloques usados.")
+				var celda_r := Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y)
+				relleno_orden.append(celda_r)
+				tipos_relleno[celda_r] = "tierra"
+	else:
+		var plan: Dictionary = _plan_nivelacion(esquina, columnas, base_y, fachada)
+		for celda_e in plan["excavacion"]:
+			relleno_orden.append(celda_e)
+			tipos_relleno[celda_e] = "fantasma" if celdas_plantilla.has(celda_e) else "aire"
+		for celda_relleno in plan["relleno"]:
+			var cantidad: int = plan["relleno"][celda_relleno]
+			var altura_actual: int = mundo.altura_en(celda_relleno.x, celda_relleno.y, true)
+			for h in range(1, cantidad + 1):
+				var celda_r := Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y)
+				relleno_orden.append(celda_r)
+				tipos_relleno[celda_r] = "tierra"
 
-	# Nivelar la fachada a la altura de la puerta: sin agua, se cava lo que sobresale
-	# y se rellena de tierra lo que falta (una vía que la cruce se levanta y se vuelve
-	# a colocar a ese nivel, como en los blueprints).
-	for celda_follaje in resultado_fachada["follaje_a_eliminar"]:
-		mundo.eliminar_follaje(celda_follaje)
 	_despejar_vias_de_fachada(fachada)
-	for columna_fachada: Vector2i in fachada:
-		mundo.drenar_agua(columna_fachada.x, columna_fachada.y)
-		var altura_fachada: int = mundo.altura_en(columna_fachada.x, columna_fachada.y, true)
-		for y_cavar in range(altura_fachada, objetivo, -1):
-			mundo.retirar_bloque_extraido(Vector3i(columna_fachada.x, y_cavar, columna_fachada.y))
-		for y_rellenar in range(altura_fachada + 1, objetivo + 1):
-			mundo.colocar_bloque(Vector3i(columna_fachada.x, y_rellenar, columna_fachada.y), "tierra")
 
-	# La plantilla del puesto: bloques reales sobre el terreno nivelado, registrados
-	# como edificio completo (se deconstruye bloque a bloque, como un residencial).
-	mundo.estampar_puesto(celdas_plantilla, esquina)
+	var orden_estructura: Array = mundo.ordenar_celdas_edificio(celdas_plantilla)
 	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
 	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
-
-	Recoleccion.colocar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo)
-	Economia.registrar_puesto(esquina, _tipo_puesto_activo, _ancho_puesto_activo, _alto_puesto_activo, tasas_puesto, entorno_puesto, servicio, deposito, y_base)
-	print("Puesto '%s' colocado en (%d, %d)." % [_tipo_puesto_activo, esquina.x, esquina.y])
+	var metadata := {
+		"puesto_nuevo": {
+			"tipo": _tipo_puesto_activo,
+			"esquina": esquina,
+			"ancho": _ancho_puesto_activo,
+			"alto": _alto_puesto_activo,
+			"centro": centro,
+			"centro_agua": centro_agua,
+			"servicio": servicio,
+			"deposito": deposito,
+			"y_base": y_base,
+		},
+	}
+	var id_edificio: int = mundo.iniciar_construccion_fantasma(relleno_orden, tipos_relleno, orden_estructura, celdas_plantilla, metadata)
+	var follaje: Array = []
+	follaje.append_array(ev["resultado_huella"]["follaje_a_eliminar"])
+	follaje.append_array(ev["resultado_fachada"]["follaje_a_eliminar"])
+	mundo.registrar_follaje_pendiente(id_edificio, follaje)
+	print("Construcción fantasma del puesto '%s' iniciada en (%d, %d) — surtir para completarla." % [_tipo_puesto_activo, esquina.x, esquina.y])
 
 	_salir_de_modo_colocar_puesto()
 

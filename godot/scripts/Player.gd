@@ -231,10 +231,27 @@ func _procesar_accion_repetida(delta: float) -> void:
 		hud.ocultar_progreso()
 		return
 	_temporizador_accion += delta
-	if _temporizador_accion >= INTERVALO_ACCION_REPETIDA:
+	if _temporizador_accion >= _intervalo_accion_actual():
 		_temporizador_accion = 0.0
 		_colocar()
 	_mostrar_progreso_de_obra(false)
+
+
+## Intervalo de repetición hasta el próximo _colocar(): el fijo
+## (INTERVALO_ACCION_REPETIDA) para colocar a mano o surtir relleno/
+## estructura de una obra, pero el mismo tiempo que minar a mano
+## (Recoleccion.tiempo_minado_de()) si el siguiente paso es de EXCAVACIÓN
+## (ver VoxelWorld.proximo_paso_pendiente()) — nivelar un sitio no debe
+## vaciar una veta más rápido que minarla uno mismo (decisión del usuario,
+## 2026-09-29, revisión de código).
+func _intervalo_accion_actual() -> float:
+	if mundo == null or not raycast.is_colliding():
+		return INTERVALO_ACCION_REPETIDA
+	var paso: Dictionary = mundo.proximo_paso_pendiente(_celda_impactada())
+	if paso.is_empty() or (paso["tipo"] != "aire" and paso["tipo"] != "fantasma"):
+		return INTERVALO_ACCION_REPETIDA
+	var material: String = mundo.material_real(mundo.obtener_tipo(paso["celda"]))
+	return Recoleccion.tiempo_minado_de(material)
 
 
 ## Barra del avance de la obra apuntada (construye: avanza; deconstruye: retrocede).

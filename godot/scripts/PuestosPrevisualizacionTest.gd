@@ -237,4 +237,97 @@ func ejecutar_pruebas() -> void:
 	mundo7.free()
 	print("OK: el puesto se activa exactamente al completar su construcción.")
 
-	print("\n=== Las 8 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("=== TEST 9: al confirmar un puesto de pesca, el agua abierta bajo la plataforma no se drena ===")
+	# Regresión encontrada en revisión de código (2026-09-29): el drenado del
+	# footprint (antes solo para puestos NO-pesca, ver código anterior a esta
+	# rama) pasó a correr siempre — para pesca eso convertía toda el agua en
+	# tierra ANTES de que la lógica de pilotes/relleno pudiera distinguir
+	# "agua real" de "ya drenada", dejando la plataforma entera sin agua
+	# navegable (el puesto queda sin peces que pescar).
+	var mundo9: Node = _mundo_plano()
+	for x in range(9, 15):
+		for z in range(14, 20):
+			mundo9.set_cell_item(Vector3i(x, 0, z), GridMap.INVALID_CELL_ITEM)
+			mundo9.colocar_bloque(Vector3i(x, -1, z), "tierra")
+			mundo9.colocar_bloque(Vector3i(x, 0, z), "agua")
+	var esquina9 := Vector2i(10, 10)
+	var camara9: Camera3D = _camara(mundo9, "pesca_frutos_mar", 0)
+	camara9.hud = HUDScript.new()
+	add_child(camara9.hud)
+	var ev9: Dictionary = camara9._evaluar_puesto(esquina9)
+	assert(camara9._mensaje_rechazo_puesto(ev9) == "", "válida en pesca: %s" % camara9._mensaje_rechazo_puesto(ev9))
+	var extremo9: Array[Vector2i] = CamaraCenitalScript._celdas_extremo_pesca(camara9._ancho_puesto_activo, camara9._alto_puesto_activo, ev9["extremo_agua_indice"])
+	var columna_agua_abierta: Vector2i = esquina9 + extremo9[1]  # ni primera ni última: no es pilote
+	var celda_agua_abierta := Vector3i(columna_agua_abierta.x, mundo9.altura_en(columna_agua_abierta.x, columna_agua_abierta.y), columna_agua_abierta.y)
+	assert(mundo9.obtener_tipo(celda_agua_abierta) == "agua", "columna de agua abierta antes de confirmar")
+	camara9._confirmar_puesto(esquina9)
+	assert(mundo9.obtener_tipo(celda_agua_abierta) == "agua", "el agua abierta bajo la plataforma de pesca no se drena al confirmar")
+	camara9.hud.queue_free()
+	camara9.free()
+	mundo9.free()
+	print("OK: pesca conserva su agua abierta al confirmar.")
+
+	print("=== TEST 10: deconstruir un puesto nuevo lo desactiva, y reconstruirlo lo reactiva sin re-registrarlo ===")
+	# Regresión encontrada en revisión de código (2026-09-29): un puesto recién
+	# construido llevaba SOLO metadata {"puesto_nuevo": {...}} — el mecanismo
+	# existente de pausa/reanuda (Economia.desactivar_puesto()/reactivar_puesto(),
+	# que lee metadata["puesto"]) nunca se disparaba: el puesto seguía activo
+	# mientras se deconstruía, y al reconstruirlo volvía a caer en la rama
+	# "puesto_nuevo" (registrar_puesto() de nuevo, pisando el almacén local y
+	# huérfanos en _puesto_de). Fix: la metadata también lleva "puesto": esquina
+	# desde el inicio, y _completar_construccion() borra "puesto_nuevo" tras
+	# registrar — así la SEGUNDA vez que se completa (tras deconstruir y
+	# resurtir) cae en la rama "puesto" (reactivar), no en "puesto_nuevo".
+	var mundo10: Node = _mundo_plano()
+	var camara10: Camera3D = _camara(mundo10, "maderero")
+	camara10.hud = HUDScript.new()
+	add_child(camara10.hud)
+	var esquina10 := Vector2i(30, 4)
+	var ev10: Dictionary = camara10._evaluar_puesto(esquina10)
+	assert(camara10._mensaje_rechazo_puesto(ev10) == "", "válida sobre suelo plano")
+	for recurso10 in ["tierra", "madera", "piedra"]:
+		Ciudad.almacen[recurso10].cantidad = 999999.0
+	camara10._confirmar_puesto(esquina10)
+	var celda_estructura10: Vector3i = ev10["celdas_plantilla"].keys()[0]
+	var resultado10: Dictionary
+	var limite10 := 0
+	while limite10 < 2000:
+		resultado10 = mundo10.surtir_construccion(celda_estructura10)
+		limite10 += 1
+		if resultado10.get("completa", false):
+			break
+	assert(resultado10.get("completa", false), "la construcción se completó dentro del límite de pasos")
+	var metadata10: Dictionary = resultado10["metadata"]
+	var jugador10: CharacterBody3D = PlayerScript.new()
+	jugador10.mundo = mundo10
+	jugador10.hud = camara10.hud
+	jugador10._completar_construccion(metadata10)
+	assert(Economia.puestos.has(esquina10) and Economia.puestos[esquina10]["activo"], "el puesto queda activo al completarse por primera vez")
+	assert(metadata10.has("puesto"), "la metadata también lleva la clave 'puesto' desde el inicio, para el mecanismo de pausa/reanuda")
+	assert(not metadata10.has("puesto_nuevo"), "_completar_construccion() borra 'puesto_nuevo' tras registrar, para no volver a registrar al reconstruir")
+
+	var deco10: Dictionary = mundo10.procesar_deconstruccion(celda_estructura10)
+	var metadata_obra10: Dictionary = mundo10.edificio_metadata.get(deco10["id"], {})
+	assert(metadata_obra10.has("puesto"), "la obra en deconstrucción expone metadata['puesto'] para desactivarse")
+	Economia.desactivar_puesto(metadata_obra10["puesto"])
+	assert(not Economia.puestos[esquina10]["activo"], "deconstruir un puesto ya construido lo desactiva")
+
+	var resultado10b: Dictionary
+	limite10 = 0
+	while limite10 < 2000:
+		resultado10b = mundo10.surtir_construccion(celda_estructura10)
+		limite10 += 1
+		if resultado10b.get("completa", false):
+			break
+	assert(resultado10b.get("completa", false), "resurtir la celda revertida vuelve a completar la obra")
+	jugador10._completar_construccion(resultado10b["metadata"])
+	assert(Economia.puestos[esquina10]["activo"], "reconstruir un puesto ya registrado lo reactiva (rama 'puesto', no 'puesto_nuevo')")
+	assert(Recoleccion.puestos.has(esquina10), "el puesto sigue registrado")
+
+	jugador10.free()
+	camara10.hud.queue_free()
+	camara10.free()
+	mundo10.free()
+	print("OK: deconstruir/reconstruir un puesto nuevo usa el mecanismo existente de pausa/reanuda.")
+
+	print("\n=== Las 10 pruebas de previsualización de puestos pasaron correctamente ===")

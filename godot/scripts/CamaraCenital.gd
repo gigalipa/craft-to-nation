@@ -2012,13 +2012,19 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 		@warning_ignore("integer_division")
 		centro_agua = esquina + celdas_extremo_pesca[celdas_extremo_pesca.size() / 2]
 
-	# Drenar agua: instantáneo y gratis (el agua no es un recurso), igual que hoy.
+	# Drenar agua: instantáneo y gratis (el agua no es un recurso), igual que hoy
+	# — EXCEPTO bajo la huella de "pesca_frutos_mar": ahí el agua abierta debe
+	# seguir siendo agua (ver el salto "agua abierta: no se toca" más abajo),
+	# igual que hacía el código previo a esta rama (revisión de código, 2026-09-29).
 	for celda_follaje in ev["resultado_huella"]["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 	var total_drenado := 0
-	for dx in range(_ancho_puesto_activo):
-		for dz in range(_alto_puesto_activo):
-			total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+	if _tipo_puesto_activo != "pesca_frutos_mar":
+		for dx in range(_ancho_puesto_activo):
+			for dz in range(_alto_puesto_activo):
+				total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+	for columna_fachada: Vector2i in fachada:
+		total_drenado += mundo.drenar_agua(columna_fachada.x, columna_fachada.y)
 	if total_drenado > 0:
 		print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
 
@@ -2080,6 +2086,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
 	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 	var metadata := {
+		"puesto": esquina,  # habilita Economia.desactivar_puesto()/reactivar_puesto() (mismo mecanismo que un puesto ya construido) desde la primera vez que se completa — ver _completar_construccion(), que borra "puesto_nuevo" tras registrar.
 		"puesto_nuevo": {
 			"tipo": _tipo_puesto_activo,
 			"esquina": esquina,

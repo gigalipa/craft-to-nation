@@ -1094,6 +1094,7 @@ func _completar_construccion(metadata: Dictionary) -> void:
 		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"])
 		print("Puesto '%s' construido en (%d, %d)." % [info["tipo"], info["esquina"].x, info["esquina"].y])
 		hud.notificar("Puesto construido.")
+		metadata.erase("puesto_nuevo")  # a partir de aquí, un reconstruir cae en la rama "puesto" (reactivar), no en esta (evita re-registrar y huérfanos en _puesto_de — revisión de código, 2026-09-29).
 		return
 	if metadata.has("puesto"):
 		Economia.reactivar_puesto(metadata["puesto"])

@@ -63,4 +63,17 @@ func ejecutar_pruebas() -> void:
 	assert(pendientes_6.size() == 2 and pendientes_6[0] == celdas_6[1] and pendientes_6[1] == celdas_6[2])
 	assert(Construccion.celdas_pendientes(999999).is_empty(), "un id inexistente no tiene pendientes")
 
-	print("\n=== Las 6 pruebas de Construccion pasaron correctamente ===")
+	print("\n=== TEST 7: tipo_pendiente() ve el tipo de la próxima celda SIN avanzar el progreso ===")
+	var celdas_7: Array[Vector3i] = [Vector3i(30, 0, 0), Vector3i(31, 0, 0)]
+	var tipos_7 := {celdas_7[0]: "tierra", celdas_7[1]: "bloque_piedra"}
+	var id_7: int = Construccion.iniciar(celdas_7, tipos_7)
+	assert(Construccion.tipo_pendiente(id_7) == "tierra")
+	assert(Construccion.tipo_pendiente(id_7) == "tierra", "consultarlo dos veces no avanza nada")
+	assert(Construccion.celdas_pendientes(id_7).size() == 2, "seguir con las 2 celdas pendientes: no mutó el progreso")
+	Construccion.avanzar(id_7)
+	assert(Construccion.tipo_pendiente(id_7) == "bloque_piedra", "tras avanzar, ve la siguiente")
+	Construccion.avanzar(id_7)
+	assert(Construccion.tipo_pendiente(id_7) == "", "sin nada pendiente, devuelve vacío")
+	assert(Construccion.tipo_pendiente(999999) == "", "un id inexistente devuelve vacío")
+
+	print("\n=== Las 7 pruebas de Construccion pasaron correctamente ===")

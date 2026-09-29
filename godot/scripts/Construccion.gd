@@ -78,6 +78,21 @@ func descartar_pendientes(id: int, tipos_a_descartar: Array) -> Array[Vector3i]:
 	return descartadas
 
 
+## Tipo de destino de la PRÓXIMA celda pendiente de "id", sin avanzar el
+## progreso ("" si "id" no existe o ya está completa). Permite comprobar
+## algo antes de comprometerse a avanzar (p. ej. si el almacén alcanza
+## para pagarlo, ver VoxelWorld._bloqueado_por_falta_de()) sin mutar el
+## índice si la respuesta es "no".
+func tipo_pendiente(id: int) -> String:
+	if not _construcciones.has(id):
+		return ""
+	var datos: Dictionary = _construcciones[id]
+	var indice: int = datos["indice"]
+	if indice >= datos["orden"].size():
+		return ""
+	return datos["tipos"][datos["orden"][indice]]
+
+
 ## Convierte la SIGUIENTE celda pendiente de la construcción "id" (no
 ## necesariamente "celda_apuntada", que solo sirvió para identificar la
 ## construcción). Devuelve {"celda": Vector3i, "tipo": String,

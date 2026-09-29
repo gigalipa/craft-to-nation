@@ -238,9 +238,10 @@ func ejecutar_pruebas() -> void:
 	var blueprint_detectado := BlueprintValidator.estructura_a_blueprint(estructura)
 	# Suelo y techo son losas — se descartan, queda 1 solo "piso" (la
 	# habitación) con sus 27 celdas abstractas (huella completa 9x3: las
-	# mitades superiores de puerta se remapean a "tierra_compactada" (primer
-	# material de TIPOS_MURO_GENERICO, usado como relleno neutro) y no generan
-	# celdas nuevas; los 3 vestíbulos libres heredan ese mismo material de la
+	# mitades superiores de puerta se remapean a "pared" (el vocabulario
+	# abstracto del Blueprint, ver BlueprintValidator.TIPOS_MURO_REAL y
+	# estructura_a_blueprint()) y no generan celdas nuevas; los 3 vestíbulos
+	# libres heredan ese mismo material de la
 	# plantilla de suelo/techo en esta representación aplanada — por eso
 	# _calcular_errores_vestibulos() usa aire_interior, no esta plantilla,
 	# para saber si están REALMENTE libres, ver su comentario).
@@ -2329,4 +2330,50 @@ func ejecutar_pruebas() -> void:
 	print("Motivo de rechazo: '", motivo_84, "' (esperado: no vacío, no hay ninguna puerta externa)")
 	assert(motivo_84 != "", "sin ninguna puerta externa, la cama/baúl no debe considerarse alcanzable")
 
-	print("\n=== Las 84 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 85: casa con MUROS DE MATERIALES MEZCLADOS (bloque_piedra/bloque_madera/tierra_compactada/estructura_hierro) sigue siendo válida ===")
+	# Misma forma que TEST 10, pero cada lado del perímetro usa un material
+	# estructural real distinto — la validación de forma no debe distinguir
+	# entre ellos (ver BlueprintValidator.TIPOS_MURO_REAL / estructura_a_
+	# blueprint(), que remapea cualquiera de los 4 a "pared" antes de
+	# validar). Coordenadas +200 en X para no chocar con tests previos.
+	const OX85 := 1100
+	for x in range(OX85, OX85 + 4):
+		for z in range(5):
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, 4, z), "bloque_piedra", true)  # techo
+	for y in range(1, 4):
+		for x in range(OX85, OX85 + 4):
+			for z in range(5):
+				var es_borde85: bool = x == OX85 or x == OX85 + 3 or z == 0 or z == 4
+				if not es_borde85:
+					continue
+				if x == OX85 and z == 2:
+					continue  # puerta principal, se coloca aparte
+				if x == OX85 + 3 and z == 2 and y == 2:
+					continue  # ventana, se coloca aparte
+				# Lado norte/sur (z=0/z=4): bloque_madera. Lado este
+				# (x=OX85+3): estructura_hierro. Lado oeste (x=OX85):
+				# tierra_compactada. Cuatro materiales distintos en un
+				# mismo edificio.
+				var material_85: String
+				if z == 0 or z == 4:
+					material_85 = "bloque_madera"
+				elif x == OX85 + 3:
+					material_85 = "estructura_hierro"
+				else:
+					material_85 = "tierra_compactada"
+				mundo.colocar_bloque(Vector3i(x, y, z), material_85, true)
+	assert(mundo.colocar_puerta(Vector3i(OX85, 1, 2)))  # puerta principal (y=1 y y=2)
+	mundo.colocar_bloque(Vector3i(OX85, 3, 2), "tierra_compactada", true)  # pared sobre la puerta (lado oeste)
+	mundo.colocar_bloque(Vector3i(OX85 + 3, 2, 2), "vidrio", true)
+	assert(mundo.colocar_cama(Vector3i(OX85 + 2, 1, 1), Vector3i(0, 0, 1)))
+	mundo.colocar_bloque(Vector3i(OX85 + 1, 1, 3), "baul", true)
+
+	var estructura_85: Dictionary = mundo.detectar_estructura(Vector3i(OX85, 1, 2))
+	var blueprint_85 := BlueprintValidator.estructura_a_blueprint(estructura_85)
+	var resultado_85: Dictionary = BlueprintValidator.validar_blueprint(blueprint_85)
+	print("Válido: ", resultado_85["valido"], " | Errores: ", resultado_85["errores"])
+	assert(resultado_85["valido"], "4 materiales de muro distintos en el mismo edificio: debe seguir siendo válido")
+	assert(resultado_85["errores"].is_empty())
+
+	print("\n=== Las 85 pruebas de BlueprintValidator pasaron correctamente ===")

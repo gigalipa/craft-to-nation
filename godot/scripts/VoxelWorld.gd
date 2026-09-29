@@ -181,6 +181,17 @@ var _tipo_por_id: Dictionary = {}  # int -> String
 ## estructura, sin importar su tipo de bloque.
 var colocado_por_jugador: Dictionary = {}
 
+## Celdas que realmente se cobraron de Ciudad.almacen al colocarse (Vector3i
+## -> true) — Player._colocar() la marca tras un _cobrar_colocacion() exitoso
+## (ver docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md).
+## Deliberadamente DISTINTA de colocado_por_jugador: colocado_por_jugador
+## también lo marcan flujos que colocan gratis (relleno de nivelación de
+## ConstructorVias.gd, relleno/estructura de un blueprint en construcción vía
+## surtir_construccion()) — si _reembolsar_si_corresponde() reembolsara por
+## colocado_por_jugador, esos bloques gratis se podrían minar para crear
+## recursos de la nada. Solo lo que de verdad se cobró se reembolsa.
+var celdas_pagadas: Dictionary = {}
+
 ## Vínculo bidireccional entre las dos celdas de un objeto multi-celda
 ## (puerta: 2 celdas verticales; cama: 2 celdas horizontales). Minar
 ## cualquiera de las dos celdas borra ambas — ver minar_bloque().
@@ -807,12 +818,13 @@ func _retirar_bloque(celda: Vector3i) -> void:
 
 ## Reembolsa a Ciudad.almacen el costo de "tipo" (NiveladorTerreno.
 ## COSTO_POR_CELDA, por celda individual, no la clave "puerta"/"cama" de
-## acción completa) si "celda" fue colocada por el jugador. Terreno natural
-## (nunca colocado_por_jugador) y tipos sin costo (p.ej. "hierba") no
-## reembolsan nada.
+## acción completa) si "celda" fue REALMENTE cobrada al colocarse (ver
+## celdas_pagadas). Terreno natural, relleno gratis (ConstructorVias,
+## surtir_construccion) y tipos sin costo (p.ej. "hierba") no reembolsan nada.
 func _reembolsar_si_corresponde(celda: Vector3i, tipo: String) -> void:
-	if not colocado_por_jugador.get(celda, false):
+	if not celdas_pagadas.get(celda, false):
 		return
+	celdas_pagadas.erase(celda)
 	var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
 	for recurso in costo:
 		Ciudad.almacen[recurso].agregar(costo[recurso])

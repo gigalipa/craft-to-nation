@@ -8,6 +8,7 @@ extends Node
 const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
+const PlayerScript = preload("res://scripts/Player.gd")
 
 ## Generador falso: densidad frutal fija, la que se le asigne.
 class GeneradorFrutalFalso:
@@ -107,17 +108,21 @@ func ejecutar_pruebas() -> void:
 	mundo_h.colocar_bloque(Vector3i(7, 8, 7), "piedra")
 	assert(mundo_h.altura_natural_en(7, 7) == 8, "el lecho real está bajo la superficie que da el generador")
 
-	print("\n=== TEST 7: colocar un bloque con costo lo descuenta del almacén ===")
-	var mundo_costo: Node = _mundo_nuevo()
+	print("\n=== TEST 7: Player._cobrar_colocacion()/_reembolsar_colocacion() cobran y reembolsan de Ciudad.almacen ===")
+	var jugador_costo: CharacterBody3D = PlayerScript.new()
 	Ciudad.almacen["piedra"].cantidad = 5.0
-	assert(mundo_costo.colocar_bloque(Vector3i(0, 0, 0), "bloque_piedra", true))
-	assert(Ciudad.almacen["piedra"].consumir(5.0), "el bloque ya descontó las 5 de piedra: no debería quedar más que eso")
-	Ciudad.almacen["piedra"].agregar(5.0)  # deja el almacén como estaba para las siguientes pruebas
+	assert(jugador_costo._cobrar_colocacion("bloque_piedra"), "con 5 piedra alcanza para 1 bloque_piedra (5 piedra)")
+	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 0.0), "se descontaron las 5")
+	assert(not jugador_costo._cobrar_colocacion("bloque_piedra"), "sin stock, rechaza")
+	assert(Ciudad.almacen["piedra"].cantidad == 0.0, "el rechazo no descuenta nada")
+	jugador_costo._reembolsar_colocacion("bloque_piedra")
+	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 5.0), "reembolsa exactamente lo que costaba")
 
-	print("\n=== TEST 8: volver a minar un bloque colocado reembolsa exactamente su costo ===")
+	print("\n=== TEST 8: volver a minar un bloque REALMENTE pagado (celdas_pagadas) reembolsa exactamente su costo ===")
+	var mundo_costo: Node = _mundo_nuevo()
 	Ciudad.almacen["piedra"].cantidad = 0.0
 	mundo_costo.colocar_bloque(Vector3i(1, 0, 0), "bloque_piedra", true)
-	Ciudad.almacen["piedra"].cantidad = 0.0  # el colocar_bloque de la prueba no cobra: solo VoxelWorld reembolsa
+	mundo_costo.celdas_pagadas[Vector3i(1, 0, 0)] = true  # simula que Player._colocar() ya lo cobró
 	mundo_costo.minar_bloque(Vector3i(1, 0, 0))
 	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 5.0), "reembolsa 5 piedra")
 
@@ -128,10 +133,18 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_costo.obtener_tipo(Vector3i(2, 0, 0)) == "", "se minó")
 	assert(Ciudad.almacen["tierra"].cantidad == 0.0, "hierba natural no reembolsa: no pasa por COSTO_POR_CELDA")
 
-	print("\n=== TEST 10: minar una puerta por un extremo reembolsa las DOS celdas ===")
+	print("\n=== TEST 10: minar una puerta por un extremo, REALMENTE pagada, reembolsa las DOS celdas ===")
 	Ciudad.almacen["madera"].cantidad = 0.0
 	mundo_costo.colocar_puerta(Vector3i(3, 0, 0))
+	mundo_costo.celdas_pagadas[Vector3i(3, 0, 0)] = true
+	mundo_costo.celdas_pagadas[Vector3i(3, 1, 0)] = true
 	mundo_costo.minar_bloque(Vector3i(3, 0, 0))  # mina solo la mitad inferior
 	assert(is_equal_approx(Ciudad.almacen["madera"].cantidad, 2.0), "reembolsa 1 + 1 = 2 madera (inferior + superior)")
 
-	print("\n=== Las 10 pruebas de la extracción del avatar pasaron correctamente ===")
+	print("\n=== TEST 11: colocar_bloque(por_jugador=true) SIN pasar por Player._colocar() (relleno gratis de ConstructorVias/blueprints) no reembolsa al minarlo ===")
+	Ciudad.almacen["tierra"].cantidad = 0.0
+	mundo_costo.colocar_bloque(Vector3i(4, 0, 0), "tierra", true)  # colocado_por_jugador=true, pero NUNCA cobrado
+	mundo_costo.minar_bloque(Vector3i(4, 0, 0))
+	assert(Ciudad.almacen["tierra"].cantidad == 0.0, "colocado_por_jugador no basta para reembolsar: solo celdas_pagadas (evita crear tierra de la nada al nivelar vías/rellenar blueprints)")
+
+	print("\n=== Las 11 pruebas de la extracción del avatar pasaron correctamente ===")

@@ -807,6 +807,15 @@ func _colocar() -> void:
 	if not colocado:
 		_reembolsar_colocacion(tipo)
 		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % tipo)
+		return
+	# Marca como REALMENTE pagadas las celdas que se acaban de cobrar (ver
+	# VoxelWorld.celdas_pagadas) para que, y solo entonces, volver a minarlas
+	# reembolse — a diferencia de colocado_por_jugador, que también marcan
+	# flujos gratis (ConstructorVias, surtir_construccion) y por eso no sirve
+	# para decidir el reembolso (hallado en revisión de código, 2026-09-29).
+	mundo.celdas_pagadas[celda_destino] = true
+	if tipo == "puerta" or tipo == "cama":
+		mundo.celdas_pagadas[segunda_celda] = true
 
 
 ## Descuenta de Ciudad.almacen el costo de "tipo" (NiveladorTerrenoScript.

@@ -9,7 +9,7 @@ material = SubResource("Mat_pared")
 [sub_resource type="BoxShape3D" id="Shape_pared"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_tierra_compactada"]
-albedo_color = Color(0.5, 0.35, 0.2, 1)
+albedo_color = Color(0.35, 0.24, 0.12, 1)
 
 [sub_resource type="BoxMesh" id="Mesh_tierra_compactada"]
 material = SubResource("Mat_tierra_compactada")
@@ -17,7 +17,7 @@ material = SubResource("Mat_tierra_compactada")
 [sub_resource type="BoxShape3D" id="Shape_tierra_compactada"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_bloque_madera"]
-albedo_color = Color(0.45, 0.3, 0.15, 1)
+albedo_color = Color(0.65, 0.45, 0.25, 1)
 
 [sub_resource type="BoxMesh" id="Mesh_bloque_madera"]
 material = SubResource("Mat_bloque_madera")
@@ -25,7 +25,7 @@ material = SubResource("Mat_bloque_madera")
 [sub_resource type="BoxShape3D" id="Shape_bloque_madera"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_estructura_hierro"]
-albedo_color = Color(0.6, 0.35, 0.15, 1)
+albedo_color = Color(0.55, 0.55, 0.6, 1)
 
 [sub_resource type="BoxMesh" id="Mesh_estructura_hierro"]
 material = SubResource("Mat_estructura_hierro")

@@ -66,7 +66,7 @@ func ejecutar_pruebas() -> void:
 	var mundo4 := _mundo()
 	var c1 := Vector3i(10, 1, 10)
 	var c2 := Vector3i(11, 1, 10)
-	var id4: int = mundo4.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "pared", c2: "pared"})
+	var id4: int = mundo4.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "bloque_piedra", c2: "bloque_piedra"})
 	assert(mundo4.cuerpos_obra().cantidad_formas(id4) == 2)
 	assert(mundo4.cuerpo_de_obra(id4) != null)
 	mundo4.surtir_construccion(c1)  # convierte la primera celda pendiente (c1) en pared
@@ -76,7 +76,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 5: el volumen de la obra es la caja envolvente de sus celdas ===")
 	var mundo5 := _mundo()
-	var id5: int = mundo5.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "pared", c2: "pared"})
+	var id5: int = mundo5.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "bloque_piedra", c2: "bloque_piedra"})
 	assert(mundo5.volumen_de_obra(id5) == {"min": Vector3i(10, 1, 10), "max": Vector3i(11, 1, 10)})
 	assert(mundo5.celda_en_volumen(id5, Vector3i(10, 1, 10)) and mundo5.celda_en_volumen(id5, Vector3i(11, 1, 10)))
 	assert(not mundo5.celda_en_volumen(id5, Vector3i(12, 1, 10)) and not mundo5.celda_en_volumen(id5, Vector3i(10, 2, 10)))
@@ -84,7 +84,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 6: los permisos de salida bloquean el inicio de la obra hasta que se revocan ===")
 	var mundo6 := _mundo()
-	var id6: int = mundo6.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "pared", c2: "pared"})
+	var id6: int = mundo6.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "bloque_piedra", c2: "bloque_piedra"})
 	assert(not mundo6.hay_ocupantes(id6))
 	mundo6.otorgar_permiso_salida(id6, 42)
 	mundo6.otorgar_permiso_salida(id6, "avatar")
@@ -98,13 +98,13 @@ func ejecutar_pruebas() -> void:
 	mundo6.revocar_permiso_salida(id6, "avatar")
 	assert(not mundo6.hay_ocupantes(id6))
 	var avance: Dictionary = mundo6.surtir_construccion(c1)
-	assert(not avance.has("bloqueada") and mundo6.obtener_tipo(c1) == "pared", "sin ocupantes, la obra avanza")
+	assert(not avance.has("bloqueada") and mundo6.obtener_tipo(c1) == "bloque_piedra", "sin ocupantes, la obra avanza")
 
 	print("\n=== TEST 7: obra_a_fantasma se emite al emplazar y al empezar a deconstruir un edificio completo ===")
 	var mundo7 := _mundo()
 	var emitidas: Array[int] = []
 	mundo7.obra_a_fantasma.connect(func(id: int) -> void: emitidas.append(id))
-	var id7: int = mundo7.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "pared", c2: "pared"})
+	var id7: int = mundo7.iniciar_construccion_fantasma([], {}, [c1, c2], {c1: "bloque_piedra", c2: "bloque_piedra"})
 	assert(emitidas == [id7], "al emplazar")
 	mundo7.surtir_construccion(c1)
 	mundo7.surtir_construccion(c1)  # completa
@@ -117,7 +117,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 8: eliminar el edificio libera su cuerpo, su volumen y sus permisos ===")
 	var mundo8 := _mundo()
-	var id8: int = mundo8.iniciar_construccion_fantasma([], {}, [c1], {c1: "pared"})
+	var id8: int = mundo8.iniciar_construccion_fantasma([], {}, [c1], {c1: "bloque_piedra"})
 	mundo8.otorgar_permiso_salida(id8, 42)
 	mundo8.procesar_deconstruccion(c1)  # sin nada construido: lista para remoción
 	mundo8.eliminar_edificio(id8)

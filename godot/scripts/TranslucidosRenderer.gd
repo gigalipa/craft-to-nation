@@ -1,14 +1,14 @@
 extends Node3D
 
 ## Dibuja la geometría visible de los bloques translúcidos (VoxelWorld.
-## TIPOS_TRANSLUCIDOS: "agua", "ventana") con culling de caras internas —
+## TIPOS_TRANSLUCIDOS: "agua", "vidrio") con culling de caras internas —
 ## GridMap coloca la malla COMPLETA de un cubo por celda sin saber qué hay
 ## en las celdas vecinas, así que dos celdas translúcidas del mismo tipo
 ## pegadas dibujan ambas su cara compartida, y el alpha blend las combina
 ## en un "panel" visible (bug real, reportado jugando en vivo). Ver
 ## docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md.
 ## GridMap sigue siendo la ÚNICA fuente de verdad para ocupación/colisión:
-## los ítems "agua"/"ventana" de la MeshLibrary tienen una malla vacía
+## los ítems "agua"/"vidrio" de la MeshLibrary tienen una malla vacía
 ## (ver BlockLibrarySource.tscn), así que este nodo es todo lo que se ve.
 
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
@@ -124,7 +124,7 @@ static func _esquinas_cara(centro: Vector3, direccion: Vector3i) -> Array[Vector
 ## superficie de la que sacar el material original.
 func _indexar_materiales() -> void:
 	_material_por_tipo["agua"] = MATERIAL_AGUA
-	_material_por_tipo["ventana"] = MATERIAL_VENTANA
+	_material_por_tipo["vidrio"] = MATERIAL_VENTANA
 	assert(_material_por_tipo.size() == VoxelWorld.TIPOS_TRANSLUCIDOS.size(), "cada tipo en VoxelWorld.TIPOS_TRANSLUCIDOS necesita un material aquí")
 
 

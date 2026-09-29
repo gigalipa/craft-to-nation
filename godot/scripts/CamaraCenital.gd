@@ -1846,7 +1846,7 @@ func _confirmar_trazo_via() -> void:
 ## que ignora el agua, ver _AlturaSinAgua — antes de colocar el marcador,
 ## así la "construcción" siempre queda sobre terreno plano y seco, nunca
 ## sobre o bajo el agua. "pesca_frutos_mar" es de nuevo la excepción: en vez
-## de drenar, coloca pilotes (bloque "pared") bajo las dos columnas del
+## de drenar, coloca pilotes (bloque "bloque_piedra") bajo las dos columnas del
 ## extremo de agua y rellena de tierra el resto, dejando el agua abierta
 ## intacta bajo la plataforma. La validación de pendiente
 ## (verificar_pendiente(), arriba) ya usa ese mismo terreno sin agua — es la
@@ -2009,7 +2009,7 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 				if es_agua_real and not es_pilote:
 					continue  # agua abierta bajo la plataforma: no se toca
 				var fondo: int = mundo.altura_en(x, z, true)
-				var bloque: String = "pared" if es_pilote else "tierra"
+				var bloque: String = "bloque_piedra" if es_pilote else "tierra"
 				for h in range(fondo + 1, objetivo + 1):
 					mundo.colocar_bloque(Vector3i(x, h, z), bloque)
 					if es_pilote:

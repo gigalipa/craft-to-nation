@@ -34,9 +34,9 @@ const ALTO_HUELLA_MINA := 5
 ## Sección 4: "Minas — catálogo de hasta 6 tipos"). Whitelist en vez de
 ## denylist: antes solo se excluían "madera"/"follaje" (árboles), pero eso
 ## dejaba pasar cualquier otro tipo, incluyendo bloques estructurales
-## (pared, ventana, puerta, cama, baúl) si la mina quedaba bajo un
+## (muros, vidrio, puerta, cama, baúl) si la mina quedaba bajo un
 ## edificio — bug reportado por el usuario jugando en vivo (la ficha
-## mostraba "pared"/"ventana" como si la mina pudiera extraerlos). "cobre",
+## mostraba materiales de muro/vidrio como si la mina pudiera extraerlos). "cobre",
 ## "carbon" y "tierras_raras" no tienen bloque real en el mundo todavía
 ## (solo hierro/tierra/piedra — ver GeneradorMundo.gd), pero se incluyen
 ## para no requerir tocar este archivo cuando se agreguen sus vetas.
@@ -54,7 +54,7 @@ const RENDIMIENTO_POR_BLOQUE := {
 }
 
 ## Segundos que el avatar tarda en minar un bloque por tipo (material real,
-## "piso" cuenta como "tierra"), como en Minecraft. Los tipos sin entrada
+## "hierba" cuenta como "tierra"), como en Minecraft. Los tipos sin entrada
 ## (construcciones del jugador) usan TIEMPO_MINADO_DEFECTO. Placeholders.
 const TIEMPO_MINADO := {
 	"tierra": 0.4, "piedra": 1.2, "carbon": 1.2,

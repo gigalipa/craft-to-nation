@@ -58,7 +58,7 @@ func ejecutar_pruebas() -> void:
 	var arriba := Vector3i(0, 1, 0)
 
 	# Una pared no emite.
-	mundo.colocar_bloque(Vector3i(5, 0, 0), "pared", true)
+	mundo.colocar_bloque(Vector3i(5, 0, 0), "bloque_piedra", true)
 	assert(emitidas.is_empty(), "colocar una pared no debe emitir puerta_cambiada")
 
 	# colocar_puerta(): emite las dos celdas, inferior primero.
@@ -90,8 +90,8 @@ func ejecutar_pruebas() -> void:
 	var p: Node3D = par[1]
 	# Pared que corre por X: paredes en (base ± X).
 	var b_x := Vector3i(10, 5, 10)
-	m.colocar_bloque(b_x + Vector3i(-1, 0, 0), "pared", true)
-	m.colocar_bloque(b_x + Vector3i(1, 0, 0), "pared", true)
+	m.colocar_bloque(b_x + Vector3i(-1, 0, 0), "bloque_piedra", true)
+	m.colocar_bloque(b_x + Vector3i(1, 0, 0), "bloque_piedra", true)
 	assert(m.colocar_puerta(b_x))
 	assert(p.existe(b_x), "la puerta colocada debe registrarse")
 	assert(not p.esta_abierta(b_x), "nace cerrada")
@@ -103,8 +103,8 @@ func ejecutar_pruebas() -> void:
 	assert((forma.shape as BoxShape3D).size.is_equal_approx(LAMINA), "la lámina mide 1 x 2 x 0.1")
 	# Pared que corre por Z: paredes en (base ± Z).
 	var b_z := Vector3i(20, 5, 10)
-	m.colocar_bloque(b_z + Vector3i(0, 0, -1), "pared", true)
-	m.colocar_bloque(b_z + Vector3i(0, 0, 1), "pared", true)
+	m.colocar_bloque(b_z + Vector3i(0, 0, -1), "bloque_piedra", true)
+	m.colocar_bloque(b_z + Vector3i(0, 0, 1), "bloque_piedra", true)
 	assert(m.colocar_puerta(b_z))
 	assert(is_equal_approx(p.cuerpo_de(b_z).rotation.y, PI / 2.0), "pared por Z: giro de 90°")
 	# Puerta suelta (sin paredes): toma el eje X y no falla.
@@ -118,8 +118,8 @@ func ejecutar_pruebas() -> void:
 	par = _mundo_con_puertas()
 	m = par[0]
 	p = par[1]
-	m.colocar_bloque(b_x + Vector3i(-1, 0, 0), "pared", true)
-	m.colocar_bloque(b_x + Vector3i(1, 0, 0), "pared", true)
+	m.colocar_bloque(b_x + Vector3i(-1, 0, 0), "bloque_piedra", true)
+	m.colocar_bloque(b_x + Vector3i(1, 0, 0), "bloque_piedra", true)
 	assert(m.colocar_puerta(b_x))
 	cuerpo = p.cuerpo_de(b_x)
 	assert(p.alternar(b_x))
@@ -134,8 +134,8 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(cuerpo.rotation.y, 0.0))
 	assert(cuerpo.position.is_equal_approx(centro_x), "al cerrar vuelve al centro de la celda")
 	# Pared por Z: la jamba está en el eje Z.
-	m.colocar_bloque(b_z + Vector3i(0, 0, -1), "pared", true)
-	m.colocar_bloque(b_z + Vector3i(0, 0, 1), "pared", true)
+	m.colocar_bloque(b_z + Vector3i(0, 0, -1), "bloque_piedra", true)
+	m.colocar_bloque(b_z + Vector3i(0, 0, 1), "bloque_piedra", true)
 	assert(m.colocar_puerta(b_z))
 	assert(p.alternar(b_z))
 	assert(p.cuerpo_de(b_z).position.is_equal_approx(Vector3(b_z) + Vector3(0.5, 1.0, 0.5) + Vector3(0, 0, 0.45)), "pared por Z: abierta pegada a la jamba en Z")
@@ -180,11 +180,11 @@ func ejecutar_pruebas() -> void:
 	assert(not p.existe(base_4), "revertir a fantasma una celda destruye la puerta")
 	assert(p.get_child_count() == 0)
 	# eliminar_edificio(): una puerta de un edificio registrado desaparece con él.
-	m.colocar_bloque(Vector3i(8, 5, 0), "pared", true)
+	m.colocar_bloque(Vector3i(8, 5, 0), "bloque_piedra", true)
 	m.colocar_puerta(Vector3i(9, 5, 0))
 	assert(p.existe(Vector3i(9, 5, 0)))
 	var id: int = m.registrar_edificio_completo({
-		Vector3i(8, 5, 0): "pared",
+		Vector3i(8, 5, 0): "bloque_piedra",
 		Vector3i(9, 5, 0): "puerta_inferior",
 		Vector3i(9, 6, 0): "puerta_superior",
 	})
@@ -200,8 +200,8 @@ func ejecutar_pruebas() -> void:
 	var b5 := Vector3i(10, 5, 10)
 	assert(m.colocar_puerta(b5))
 	assert(is_equal_approx(p.cuerpo_de(b5).rotation.y, 0.0), "sin paredes: eje X")
-	m.colocar_bloque(b5 + Vector3i(0, 0, -1), "pared", true)
-	m.colocar_bloque(b5 + Vector3i(0, 0, 1), "pared", true)
+	m.colocar_bloque(b5 + Vector3i(0, 0, -1), "bloque_piedra", true)
+	m.colocar_bloque(b5 + Vector3i(0, 0, 1), "bloque_piedra", true)
 	p.fuente_colonos = FuenteColonos.new()
 	p.tick()
 	assert(is_equal_approx(p.cuerpo_de(b5).rotation.y, PI / 2.0), "tras el tick, la pared por Z gira la puerta")

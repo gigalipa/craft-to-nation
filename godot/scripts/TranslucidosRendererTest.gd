@@ -28,7 +28,7 @@ func ejecutar_pruebas() -> void:
 	)
 
 	# Colocar un bloque sólido (pared): NO debe emitir.
-	mundo.colocar_bloque(Vector3i(0, 0, 0), "pared", true)
+	mundo.colocar_bloque(Vector3i(0, 0, 0), "bloque_piedra", true)
 	assert(celdas_emitidas.is_empty(), "colocar un bloque sólido no debe emitir la señal")
 
 	# Colocar agua: SÍ debe emitir.
@@ -42,7 +42,7 @@ func ejecutar_pruebas() -> void:
 
 	# Colocar una ventana y minarla: ambos deben emitir.
 	celdas_emitidas.clear()
-	mundo.colocar_bloque(Vector3i(2, 0, 0), "ventana", true)
+	mundo.colocar_bloque(Vector3i(2, 0, 0), "vidrio", true)
 	assert(celdas_emitidas == [Vector3i(2, 0, 0)], "colocar una ventana debe emitir")
 	celdas_emitidas.clear()
 	mundo.minar_bloque(Vector3i(2, 0, 0))
@@ -80,13 +80,13 @@ func ejecutar_pruebas() -> void:
 	const LATERAL_T3 := Vector3i(1, 0, 0)
 	# Regla 1: un vecino sólido oculta SIEMPRE, sin excepción — incluida la
 	# cara de arriba del agua.
-	assert(TranslucidosRendererScript._cara_visible("agua", "pared", ARRIBA_T3) == false, "un vecino sólido oculta incluso la cara de arriba del agua — evita reintroducir el z-fighting")
-	assert(TranslucidosRendererScript._cara_visible("agua", "pared", LATERAL_T3) == false)
-	assert(TranslucidosRendererScript._cara_visible("ventana", "piedra", LATERAL_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("agua", "bloque_piedra", ARRIBA_T3) == false, "un vecino sólido oculta incluso la cara de arriba del agua — evita reintroducir el z-fighting")
+	assert(TranslucidosRendererScript._cara_visible("agua", "bloque_piedra", LATERAL_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("vidrio", "piedra", LATERAL_T3) == false)
 	# Regla 2 (agua, arriba/abajo): no depende del vecino, solo de la dirección.
 	assert(TranslucidosRendererScript._cara_visible("agua", "", ARRIBA_T3) == true, "arriba contra aire: se dibuja")
 	assert(TranslucidosRendererScript._cara_visible("agua", "agua", ARRIBA_T3) == true, "arriba contra OTRA celda de agua: se dibuja igual — así se apilan capas reales con la profundidad")
-	assert(TranslucidosRendererScript._cara_visible("agua", "ventana", ARRIBA_T3) == true, "arriba contra un tipo translúcido distinto: se dibuja igual")
+	assert(TranslucidosRendererScript._cara_visible("agua", "vidrio", ARRIBA_T3) == true, "arriba contra un tipo translúcido distinto: se dibuja igual")
 	assert(TranslucidosRendererScript._cara_visible("agua", "", ABAJO_T3) == false, "abajo NUNCA se dibuja, ni siquiera contra aire")
 	assert(TranslucidosRendererScript._cara_visible("agua", "agua", ABAJO_T3) == false)
 	# Regla 3 (agua, laterales — y cualquier otro tipo translúcido en
@@ -97,11 +97,11 @@ func ejecutar_pruebas() -> void:
 	# una caída real, no como pozas escalonadas.
 	assert(TranslucidosRendererScript._cara_visible("agua", "", LATERAL_T3) == true, "lateral del agua contra aire: SÍ se dibuja (necesario para cascadas)")
 	assert(TranslucidosRendererScript._cara_visible("agua", "agua", LATERAL_T3) == false, "lateral del agua contra OTRA agua: se omite (cara interna)")
-	assert(TranslucidosRendererScript._cara_visible("agua", "ventana", LATERAL_T3) == true, "lateral del agua contra un tipo translúcido distinto: se dibuja")
-	assert(TranslucidosRendererScript._cara_visible("ventana", "ventana", ARRIBA_T3) == false)
-	assert(TranslucidosRendererScript._cara_visible("ventana", "ventana", LATERAL_T3) == false)
-	assert(TranslucidosRendererScript._cara_visible("ventana", "", LATERAL_T3) == true)
-	assert(TranslucidosRendererScript._cara_visible("ventana", "agua", LATERAL_T3) == true, "ventana contra un tipo translúcido distinto (agua): se dibuja")
+	assert(TranslucidosRendererScript._cara_visible("agua", "vidrio", LATERAL_T3) == true, "lateral del agua contra un tipo translúcido distinto: se dibuja")
+	assert(TranslucidosRendererScript._cara_visible("vidrio", "vidrio", ARRIBA_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("vidrio", "vidrio", LATERAL_T3) == false)
+	assert(TranslucidosRendererScript._cara_visible("vidrio", "", LATERAL_T3) == true)
+	assert(TranslucidosRendererScript._cara_visible("vidrio", "agua", LATERAL_T3) == true, "ventana contra un tipo translúcido distinto (agua): se dibuja")
 	print("OK: sólido oculta siempre; arriba del agua siempre se dibuja (incluso contra otra agua), abajo nunca, laterales siguen la regla general (solo ocultan contra el mismo tipo).")
 
 	print("\n=== TEST 4: _esquinas_cara() da 4 esquinas en sentido CCW visto desde la dirección de la cara ===")
@@ -152,7 +152,7 @@ func ejecutar_pruebas() -> void:
 		Vector3i(0, 1, 0), Vector3i(0, -1, 0),
 		Vector3i(0, 0, 1), Vector3i(0, 0, -1),
 	]:
-		mundo_t6.colocar_bloque(Vector3i(10, 10, 10) + delta_t6, "pared", true)
+		mundo_t6.colocar_bloque(Vector3i(10, 10, 10) + delta_t6, "bloque_piedra", true)
 	var render_t6: Node3D = TranslucidosRendererScript.new()
 	render_t6.voxel_world = mundo_t6
 	render_t6._indexar_materiales()
@@ -193,10 +193,10 @@ func ejecutar_pruebas() -> void:
 	# por separado). Cada nivel solo puede mostrar su cara de ARRIBA.
 	for y_t8 in range(3):
 		mundo_t8.colocar_bloque(Vector3i(0, y_t8, 0), "agua")
-		mundo_t8.colocar_bloque(Vector3i(1, y_t8, 0), "pared", true)
-		mundo_t8.colocar_bloque(Vector3i(-1, y_t8, 0), "pared", true)
-		mundo_t8.colocar_bloque(Vector3i(0, y_t8, 1), "pared", true)
-		mundo_t8.colocar_bloque(Vector3i(0, y_t8, -1), "pared", true)
+		mundo_t8.colocar_bloque(Vector3i(1, y_t8, 0), "bloque_piedra", true)
+		mundo_t8.colocar_bloque(Vector3i(-1, y_t8, 0), "bloque_piedra", true)
+		mundo_t8.colocar_bloque(Vector3i(0, y_t8, 1), "bloque_piedra", true)
+		mundo_t8.colocar_bloque(Vector3i(0, y_t8, -1), "bloque_piedra", true)
 	var render_t8: Node3D = TranslucidosRendererScript.new()
 	render_t8.voxel_world = mundo_t8
 	render_t8._indexar_materiales()
@@ -207,7 +207,7 @@ func ejecutar_pruebas() -> void:
 
 	# Tapar la celda superior con un sólido elimina SOLO esa cara de arriba
 	# (regla 1 tiene prioridad) — las otras dos siguen intactas.
-	mundo_t8.colocar_bloque(Vector3i(0, 3, 0), "pared", true)
+	mundo_t8.colocar_bloque(Vector3i(0, 3, 0), "bloque_piedra", true)
 	render_t8.reconstruir_todo()
 	var conteo_vertices_t8b: int = render_t8._mesh_por_chunk["agua"][chunk_t8].mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size()
 	assert(conteo_vertices_t8b == 2 * 6, "tapar la celda superior con un sólido debe quitar únicamente su cara de arriba, dejando 2 caras (12 vértices)")
@@ -252,7 +252,7 @@ func ejecutar_pruebas() -> void:
 	var agua_t10 := Vector3i(0, 0, 0)
 	var fantasma_t10 := Vector3i(0, 1, 0)  # celda vacía justo encima del agua: recibe el fantasma
 	mundo_t10.colocar_bloque(agua_t10, "agua")
-	var id_t10: int = mundo_t10.iniciar_construccion_fantasma([], {}, [fantasma_t10], {fantasma_t10: "pared"})
+	var id_t10: int = mundo_t10.iniciar_construccion_fantasma([], {}, [fantasma_t10], {fantasma_t10: "bloque_piedra"})
 	# Otra celda de agua fuerza reconstruir el chunk con el fantasma ya puesto, como
 	# hace en juego el primer bloque de relleno que sustituye agua.
 	mundo_t10.colocar_bloque(Vector3i(10, 0, 0), "agua")

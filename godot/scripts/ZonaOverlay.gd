@@ -194,9 +194,9 @@ func _agregar_plano(celda: Vector2i, color: Color, prioridad: int = PRIORIDAD_ZO
 	var altura_superficie: int = mundo.altura_en(celda.x, celda.y, true)
 
 	# El overlay de zona es SOLO para el terreno — nunca debe "pintar" el
-	# techo/pared superior de un edificio (celda estructural colocada por el
-	# jugador: pared/puerta/ventana/cama/baúl; un "piso" de relleno de
-	# terreno NO cuenta como estructural, ver VoxelWorld.TIPOS_ESTRUCTURA).
+	# techo/muro superior de un edificio (celda estructural colocada por el
+	# jugador: muro/puerta/vidrio/cama/baúl; una "tierra"/"hierba" de relleno
+	# de terreno NO cuenta como estructural, ver VoxelWorld.TIPOS_ESTRUCTURA).
 	# Si la celda superior de esta columna pertenece a un edificio, no se
 	# dibuja ningún plano aquí.
 	if mundo.es_celda_estructural(Vector3i(celda.x, altura_superficie, celda.y)):

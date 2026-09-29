@@ -86,6 +86,15 @@ var tipo_seleccionado := 0
 var mundo: Node  # asignada por Main.gd al iniciar la escena
 @onready var hud: CanvasLayer = get_node("../HUDLayer")
 
+## false mientras Main.gd hace la transición animada a/desde la cenital, o
+## mientras la cenital está activa (ver Main._alternar_camara_cenital()):
+## ignora WASD/salto/nado, pero la gravedad (_physics_process de más abajo)
+## sigue corriendo siempre — si no, un avatar en caída libre quedaba
+## "flotando" en el aire al presionar C a medio salto/caída (reportado
+## jugando en vivo, 2026-09-29). Antes esto se hacía con
+## set_physics_process(false), que también congelaba la gravedad.
+var movimiento_habilitado := true
+
 var _excepciones_obra: Dictionary = {}  # int (id de obra) -> cuerpo con el que el avatar tiene excepción
 var _minando := false
 var _colocando := false
@@ -352,15 +361,16 @@ func _physics_process(delta: float) -> void:
 	_procesar_accion_repetida(delta)
 	_actualizar_cara_apuntada()
 	var direccion := Vector3.ZERO
-	if Input.is_key_pressed(KEY_W):
-		direccion -= transform.basis.z
-	if Input.is_key_pressed(KEY_S):
-		direccion += transform.basis.z
-	if Input.is_key_pressed(KEY_A):
-		direccion -= transform.basis.x
-	if Input.is_key_pressed(KEY_D):
-		direccion += transform.basis.x
-	direccion = direccion.normalized()
+	if movimiento_habilitado:
+		if Input.is_key_pressed(KEY_W):
+			direccion -= transform.basis.z
+		if Input.is_key_pressed(KEY_S):
+			direccion += transform.basis.z
+		if Input.is_key_pressed(KEY_A):
+			direccion -= transform.basis.x
+		if Input.is_key_pressed(KEY_D):
+			direccion += transform.basis.x
+		direccion = direccion.normalized()
 
 	var nadando := _profundidad_agua_en_pies() >= 2
 	var celda_pies: Vector3i = _celda_en(global_position) if mundo != null else Vector3i.ZERO
@@ -370,9 +380,9 @@ func _physics_process(delta: float) -> void:
 	velocity.x = direccion.x * VELOCIDAD * bono
 	velocity.z = direccion.z * VELOCIDAD * bono
 	if nadando:
-		if Input.is_key_pressed(KEY_SPACE):
+		if movimiento_habilitado and Input.is_key_pressed(KEY_SPACE):
 			velocity.y = VELOCIDAD_NATACION
-		elif Input.is_key_pressed(KEY_CTRL):
+		elif movimiento_habilitado and Input.is_key_pressed(KEY_CTRL):
 			velocity.y = -VELOCIDAD_NATACION
 		elif not mundo.columna_cascada_en(celda_pies.x, celda_pies.z).is_empty():
 			# Dentro de una cascada, la corriente cae tan rápido como la
@@ -383,7 +393,7 @@ func _physics_process(delta: float) -> void:
 			velocity.y = -VELOCIDAD_HUNDIMIENTO
 	elif not is_on_floor():
 		velocity.y -= GRAVEDAD * delta
-	elif Input.is_key_pressed(KEY_SPACE):
+	elif movimiento_habilitado and Input.is_key_pressed(KEY_SPACE):
 		velocity.y = VELOCIDAD_SALTO
 	else:
 		velocity.y = 0.0

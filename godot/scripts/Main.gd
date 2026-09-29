@@ -15,8 +15,9 @@ const DURACION_TRANSICION := 0.6
 ## Cámara "libre" que hace el vuelo de una vista a otra: durante la
 ## transición es la única cámara `current`, ninguna de las dos vistas
 ## procesa entrada (CamaraCenital._process()/_unhandled_input() vuelven de
-## inmediato si `current` es falso; Player usa set_physics_process() y
-## el ratón se libera, lo que también desactiva su mouse-look).
+## inmediato si `current` es falso; Player ignora WASD/salto/nado vía
+## jugador.movimiento_habilitado, pero sigue cayendo por gravedad, y el
+## ratón se libera, lo que también desactiva su mouse-look).
 var _camara_transicion := Camera3D.new()
 var _en_transicion := false
 
@@ -80,7 +81,11 @@ func _alternar_camara_cenital() -> void:
 		fov_destino = jugador.camara.fov
 
 	_en_transicion = true
-	jugador.set_physics_process(false)
+	# Solo se ignora el movimiento (WASD/salto/nado, ver Player.gd): la
+	# gravedad sigue corriendo, si no un avatar en caída libre quedaba
+	# "flotando" en el aire durante el vuelo (reportado jugando en vivo,
+	# 2026-09-29).
+	jugador.movimiento_habilitado = false
 	camara_cenital.current = false
 	jugador.camara.current = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -107,7 +112,7 @@ func _terminar_transicion() -> void:
 	_camara_transicion.current = false
 	camara_cenital.current = cenital_activa
 	jugador.camara.current = not cenital_activa
-	jugador.set_physics_process(not cenital_activa)
+	jugador.movimiento_habilitado = not cenital_activa
 	zona_overlay.visible = cenital_activa
 	if cenital_activa:
 		zona_overlay.reconstruir()

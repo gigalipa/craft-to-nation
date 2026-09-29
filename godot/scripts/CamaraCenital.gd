@@ -83,6 +83,20 @@ const DISTANCIA_MIN := 8.0
 const DISTANCIA_MAX := 60.0
 const VELOCIDAD_ZOOM := 2.5  # celdas por "tick" de rueda del ratón
 
+## Margen que se resta a la distancia de impacto en _evitar_colision_en_activacion()
+## para que la cámara quede justo delante de la pared, no pegada a su plano
+## de corte (near clipping visible).
+const MARGEN_COLISION_ACTIVACION := 1.0
+
+## Incremento de angulo_inclinacion por paso al "trepar" una montaña que
+## bloquea la vista en _evitar_colision_en_activacion() — ver su comentario.
+const PASO_INCLINACION_ESCALADA := deg_to_rad(2.0)
+
+## Margen extra de inclinación sobre el primer ángulo que despeja el raycast:
+## con pendientes muy inclinadas, ese primer ángulo libre roza la ladera tan
+## de cerca que la cámara (que no es un punto) queda igual dentro del sólido.
+const MARGEN_INCLINACION_ACTIVACION := deg_to_rad(4.0)
+
 const ANGULO_INCLINACION_INICIAL := deg_to_rad(55.0)
 const ANGULO_INCLINACION_MIN := deg_to_rad(10.0)  # casi al ras del horizonte
 const ANGULO_INCLINACION_MAX := deg_to_rad(89.9)  # cenital recta
@@ -145,6 +159,7 @@ const ALTURA_SOBRE_SUPERFICIE_AREA_ACCION := 1.001
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
 @onready var via_preview: Node3D = get_node("../ViaPreviewOverlay")
 @onready var hud: CanvasLayer = get_node("../HUDLayer")
+@onready var jugador: CharacterBody3D = get_node("../Player")
 
 ## Modo zonificación (tecla `Z`): mientras está activo, el clic izquierdo pinta
 ## zona (dos esquinas) y `1`/`2`/`0` eligen la zona A, la zona B o borrar. Sin
@@ -370,9 +385,80 @@ func posicionar_sobre(foco_xz: Vector2, angulo_avatar: float) -> void:
 	foco = Vector3(foco_xz.x, altura_inicial, foco_xz.y)
 	angulo_orbital = angulo_avatar
 	_gesto_orbital_activo = false
+	_evitar_colision_en_activacion()
 	_actualizar_transform()
 	_refinar_foco_por_mira()
 	_actualizar_transform()
+
+
+## Si el avatar está pegado a una montaña, la posición ideal (a la
+## distancia/inclinación recordadas, ver comentario de posicionar_sobre) puede
+## caer del otro lado de su pared exterior, o incluso dentro de una cavidad
+## minada (el subsuelo bajo PROFUNDIDAD_SUBSUELO es hueco — ver VoxelWorld;
+## pendiente de corregir aparte). Un sondeo por puntos discretos (reducir
+## distancia_camara en pasos y probar _posicion_libre()) podría saltarse el
+## espesor de esa pared y caer ya dentro de la cavidad, reportándose "libre"
+## sin serlo de verdad. Un raycast no tiene ese problema: se detiene en la
+## primera superficie sólida que cruce sea cual sea lo que haya más allá, así
+## que jamás puede terminar del otro lado de una pared que no atravesó.
+## Preferencia del usuario (2026-09-29): en vez de acercar la cámara al
+## avatar, "trepar" la ladera — subir angulo_inclinacion en pasos hasta
+## encontrar una vista libre A LA MISMA distancia recordada. Solo si ni
+## siquiera la inclinación más vertical libera la vista (montaña extrema) cae,
+## como último recurso, al recorte de distancia (ver bucle más abajo).
+func _evitar_colision_en_activacion() -> void:
+	# El origen NO puede ser "foco": es el índice de celda del bloque sólido
+	# superior (ver altura_en()), prácticamente el propio terreno, así que un
+	# rayo desde ahí nace ya pegado o dentro de él y golpea de inmediato en
+	# CUALQUIER lugar (reportado en campo abierto, no solo junto a montañas).
+	# La posición real del avatar sí es un punto de aire válido (la física de
+	# movimiento lo garantiza), así que el rayo nace ahí y se compensa el
+	# offset resultante para que apunte al mismo punto relativo que
+	# _posicion_ideal() calcula desde "foco".
+	var origen: Vector3 = jugador.global_position
+	var inclinacion_original := angulo_inclinacion
+	var impacto := _raycast_colision_camara(origen)
+	while not impacto.is_empty():
+		if angulo_inclinacion >= ANGULO_INCLINACION_MAX:
+			break
+		angulo_inclinacion = minf(angulo_inclinacion + PASO_INCLINACION_ESCALADA, ANGULO_INCLINACION_MAX)
+		impacto = _raycast_colision_camara(origen)
+	if impacto.is_empty():
+		# El primer ángulo libre roza la ladera de cerca en pendientes muy
+		# inclinadas: sube un margen extra (mismo rol que MARGEN_COLISION_
+		# ACTIVACION, pero en inclinación) para separar la cámara de verdad,
+		# no solo el rayo que la representa como punto.
+		angulo_inclinacion = minf(angulo_inclinacion + MARGEN_INCLINACION_ACTIVACION, ANGULO_INCLINACION_MAX)
+		return
+
+	# Último recurso: ni la vista más vertical libera la montaña. Vuelve a la
+	# inclinación original y recorta la distancia en su lugar (comportamiento
+	# anterior) — nunca se compromete a un punto sin verificar, así que se
+	# repite el raycast a esta inclinación para hallar la distancia segura.
+	angulo_inclinacion = inclinacion_original
+	var resultado := _raycast_colision_camara(origen)
+	if not resultado.is_empty():
+		var distancia_impacto: float = origen.distance_to(resultado["position"])
+		# El suelo mínimo NO puede ser DISTANCIA_MIN: si la pared está a menos
+		# de esa distancia (avatar pegado a la montaña), forzar el mínimo la
+		# empujaría de vuelta al otro lado de la pared. Evitar la colisión
+		# manda siempre sobre el límite normal de zoom.
+		distancia_camara = clampf(distancia_impacto - MARGEN_COLISION_ACTIVACION, 0.1, distancia_camara)
+
+
+## Raycast desde "origen" (posición real del avatar) hasta la posición ideal
+## ACTUAL de la cámara (según angulo_orbital/angulo_inclinacion/distancia_camara
+## vigentes), con el mismo offset relativo a "foco" que usa _posicion_ideal() —
+## ver comentario de _evitar_colision_en_activacion() sobre por qué el origen
+## del rayo no puede ser "foco" directamente.
+func _raycast_colision_camara(origen: Vector3) -> Dictionary:
+	var destino: Vector3 = origen + (_posicion_ideal() - foco)
+	var consulta := PhysicsRayQueryParameters3D.create(origen, destino)
+	consulta.collision_mask = MASCARA_MUNDO
+	# El jugador comparte la capa 1 (mundo) con el terreno: sin excluirlo, el
+	# rayo lo golpearía a él mismo en vez de viajar hasta la montaña.
+	consulta.exclude = [jugador.get_rid()]
+	return get_world_3d().direct_space_state.intersect_ray(consulta)
 
 
 ## Recalcula la posición/orientación de la cámara a partir de foco,
@@ -431,6 +517,10 @@ func _refinar_foco_por_mira() -> void:
 	var direccion := project_ray_normal(centro)
 	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
 	consulta.collision_mask = MASCARA_MUNDO
+	# Igual que _evitar_colision_en_activacion(): el jugador comparte la capa
+	# 1 con el terreno, y con la cámara cerca de él (p. ej. tras esquivar una
+	# montaña) este rayo puede golpearlo a él en vez de al relieve.
+	consulta.exclude = [jugador.get_rid()]
 	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
 	if not resultado.is_empty():
 		foco = resultado["position"]

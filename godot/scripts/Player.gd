@@ -3,6 +3,7 @@ class_name Player
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
+const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
@@ -80,7 +81,7 @@ const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
 
-var tipos_disponibles := ["pared", "puerta", "ventana", "piso", "cama", "baul"]
+var tipos_disponibles := ["tierra", "tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio", "puerta", "cama", "baul"]
 var tipo_seleccionado := 0
 
 var mundo: Node  # asignada por Main.gd al iniciar la escena
@@ -794,6 +795,8 @@ func _colocar() -> void:
 	if _celda_ocupada_por_jugador(celda_destino) or _celda_ocupada_por_jugador(segunda_celda):
 		_avisar_colocacion_rechazada("No se puede colocar un bloque donde está parado el jugador.")
 		return
+	if not _cobrar_colocacion(tipo):
+		return
 	var colocado: bool
 	if tipo == "puerta":
 		colocado = mundo.colocar_puerta(celda_destino)
@@ -802,7 +805,30 @@ func _colocar() -> void:
 	else:
 		colocado = mundo.colocar_bloque(celda_destino, tipo, true)
 	if not colocado:
+		_reembolsar_colocacion(tipo)
 		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % tipo)
+
+
+## Descuenta de Ciudad.almacen el costo de "tipo" (NiveladorTerrenoScript.
+## COSTO_POR_CELDA); true si se cobró (o si "tipo" no tiene costo definido).
+## false y sin cobrar nada si falta stock — usa el mismo recurso para
+## avisar cuál falta.
+func _cobrar_colocacion(tipo: String) -> bool:
+	var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(tipo, {})
+	for recurso in costo:
+		if not Ciudad.almacen[recurso].consumir(costo[recurso]):
+			_avisar_colocacion_rechazada("No hay suficiente %s para colocar: %s" % [recurso, tipo])
+			return false
+	return true
+
+
+## Simétrico a _cobrar_colocacion(): usado cuando el cobro tuvo éxito pero
+## colocar_puerta()/colocar_cama()/colocar_bloque() igual falló (sitio
+## ocupado) — evita perder el recurso ya descontado.
+func _reembolsar_colocacion(tipo: String) -> void:
+	var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(tipo, {})
+	for recurso in costo:
+		Ciudad.almacen[recurso].agregar(costo[recurso])
 
 
 ## true si "columna" (X,Z absolutos) está encerrada por celdas de "celdas"

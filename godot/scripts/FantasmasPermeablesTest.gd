@@ -16,6 +16,12 @@ func _ready() -> void:
 
 
 func ejecutar_pruebas() -> void:
+	# surtir_construccion() ahora cobra de Ciudad.almacen (ver
+	# VoxelWorld._bloqueado_por_falta_de()): a estas pruebas no les interesa
+	# el costo, solo la física de los cuerpos de obra — les sobra de todo.
+	for recurso_fondo in ["tierra", "madera", "piedra", "hierro"]:
+		Ciudad.almacen[recurso_fondo].cantidad = 999999.0
+
 	print("=== TEST 1: sincronizar() deja una caja por celda distinta y libera al quedar vacío ===")
 	var cuerpos := CuerposObra.new()
 	add_child(cuerpos)

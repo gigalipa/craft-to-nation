@@ -225,6 +225,12 @@ func ejecutar_pruebas() -> void:
 	mundo_superficie._indexar_biblioteca()
 	assert(mundo_superficie.material_real("hierba") == "tierra")
 	assert(mundo_superficie.material_real("piedra") == "piedra")  # sin traducción, se devuelve igual
+	# Las cuñas de vías (Vias.gd, "tierra pisada") son todas de tierra: el
+	# resumen de materiales al colocar un blueprint no debe mostrar su
+	# nombre interno de bloque (reportado jugando en vivo, "aparece
+	# cuna_recta en vez de tierra").
+	for cuna in ["cuna_recta", "cuna_esquina", "cuna_diag_bajo", "cuna_diag_arriba", "cuna_diag_lat_izq", "cuna_diag_lat_der", "diag_lat"]:
+		assert(mundo_superficie.material_real(cuna) == "tierra", cuna + " debe traducirse a tierra")
 
 	# Misma superficie plana que TEST 1, pero con la capa expuesta como
 	# "hierba" (dy=0) y "tierra" real justo debajo (dy=1) — replica lo que

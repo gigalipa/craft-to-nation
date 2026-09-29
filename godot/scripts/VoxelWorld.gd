@@ -102,7 +102,17 @@ const TIPOS_ESTRUCTURA := [
 ## "hierba" debe contarse como "tierra". No afecta renderizado ni
 ## construcción: "hierba" sigue fuera de TIPOS_ESTRUCTURA y sigue siendo un
 ## bloque distinto en la MeshLibrary.
-const MATERIAL_REAL := {"hierba": "tierra"}
+## "hierba" es la capa superficial natural; las cuñas de vías (Vias.gd,
+## "tierra pisada") son todas de tierra hoy — ambas se traducen para que el
+## resumen de materiales (CamaraCenital._material_excavado()) nunca muestre
+## un nombre de bloque interno al jugador.
+const MATERIAL_REAL := {
+	"hierba": "tierra",
+	"cuna_recta": "tierra", "cuna_esquina": "tierra",
+	"cuna_diag_bajo": "tierra", "cuna_diag_arriba": "tierra",
+	"cuna_diag_lat_izq": "tierra", "cuna_diag_lat_der": "tierra",
+	"diag_lat": "tierra",
+}
 
 ## Color con el que se destacan las puertas y ventanas de un edificio en
 ## construcción, para que se distingan del resto de sus celdas fantasma. Una

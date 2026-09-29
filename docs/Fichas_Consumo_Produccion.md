@@ -90,27 +90,29 @@ Flujo: producción de los recolectores presentes → **almacén local** del pues
 | Migración de colonos | 0,5 por hora de juego (con vivienda libre y sin hambruna) | `Ciudad.TASA_MIGRACION` |
 | Consumo de un obrero de puesto | 5 comida/h (desempleado: 3) | `Ciudad.TIPOS_POBLACION` |
 
-Todavía no existe: costo de construcción en recursos al colocar un bloque (ver tabla de extracción abajo — colocar sigue siendo gratis), refinerías y energía completas (2C), carretas y carreteras (sub-proyecto 6), moral y nivel del puesto, y drones o transporte automatizado.
+Todavía no existe: refinerías reales colocables y energía completa (segunda pieza de 2C — el costo de colocación en recursos ya está implementado, ver la tabla de extracción abajo), carretas y carreteras (sub-proyecto 6), moral y nivel del puesto, y drones o transporte automatizado.
 
 ---
 
 ## Extracción: bloques minables, unidades de recurso y bloques colocables
 
-Fuente: hoja "Extraccion" de `docs/Recursos.xlsx` y `Recoleccion.RENDIMIENTO_POR_BLOQUE`, `Recoleccion.TIEMPO_MINADO` (sub-proyecto 2B, implementado — ver `docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md`). Modelo de tres capas: **bloque de extracción** (lo que se retira del mundo, sea por el avatar minando/talando o por un puesto) → **unidades de recurso** (lo que entra al almacén/inventario) → **bloque de construcción** (lo que se coloca de vuelta; su costo en unidades todavía no se cobra).
+Fuente: hoja "Extraccion" de `docs/Recursos.xlsx`, `Recoleccion.RENDIMIENTO_POR_BLOQUE`, `Recoleccion.TIEMPO_MINADO` (sub-proyecto 2B) y `NiveladorTerreno.COSTO_POR_CELDA` (sub-proyecto 2C, parte 1, implementado — ver `docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md`). Modelo de tres capas: **bloque de extracción** (lo que se retira del mundo, sea por el avatar minando/talando o por un puesto) → **unidades de recurso** (lo que entra al almacén/inventario) → **bloque de construcción** (lo que se coloca de vuelta, cobrado de `Ciudad.almacen` al colocar y reembolsado al volver a minarlo).
 
 | Bloque minable | Unidades de recurso | Bloque colocable | Unidades por bloque colocado | Estado |
 |---|---|---|---|---|
-| 1 bloque de tierra (incluye la capa "piso") | 1 tierra | 1 bloque de tierra | 1 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
-| 1 bloque de piedra | 10 piedra | pared, piso, etc. | 3 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
-| 1 bloque de hierro | 10 hierro | estructura (propuesta) | 2 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
-| 1 tronco (por celda de tronco; el follaje no rinde) | 10 madera | 1 bloque de madera | 1 (propuesta, sin cobrar) | Extracción implementada; construcción propuesta |
+| 1 bloque de tierra (incluye la capa "hierba") | 1 tierra | `tierra` (natural) / `tierra_compactada` (estructural) | 1 tierra cada uno | **Implementado** |
+| 1 bloque de piedra | 10 piedra | `bloque_piedra` | 5 piedra | **Implementado** |
+| 1 bloque de hierro | 10 hierro | `estructura_hierro` | 5 hierro | **Implementado** |
+| 1 tronco (por celda de tronco; el follaje no rinde) | 10 madera | `bloque_madera` | 5 madera | **Implementado** |
+| — (no se mina; se fabrica) | — | `vidrio` | 1 tierra | **Implementado** |
 | Cobre, carbón, tierras raras | 10 c/u | — (no tienen bloque colocable) | — | Extracción implementada; sin bloque de construcción, sin uso todavía |
 | Agua | 2 agua | — (no tienen bloque colocable) | — | Reservado, sin uso todavía |
 | Petróleo | 2 crudo | — (no tienen bloque colocable) | — | Reservado, sin uso todavía |
 
-- **Bloques minables vs. colocados:** una mina o el avatar minando solo retira bloques del **terreno natural** (`VoxelWorld.es_terreno_natural`); un bloque que el jugador ya colocó, al volver a minarlo, regresa lo mismo que costó al colocar, para que colocar y minar en bucle no cree recursos.
+- **Bloques minables vs. colocados:** una mina o el avatar minando solo retira bloques del **terreno natural** (`VoxelWorld.es_terreno_natural`); un bloque que el jugador ya colocó, al volver a minarlo, regresa lo mismo que costó al colocar (`VoxelWorld._reembolsar_si_corresponde()`), para que colocar y minar en bucle no cree recursos.
 - **Cobre, carbón, tierras raras y los líquidos (agua, crudo) no se convierten en bloques colocables**: son insumos de refinería/energía (Sección 3), no material de construcción — el Excel y el código no les definen un bloque de construcción.
-- El costo en unidades de construir un bloque (columna "Unidades por bloque colocado") está documentado como ejemplo/propuesta o "por definir" a propósito: colocar sigue siendo gratis hoy (`Player._colocar`); esta tabla queda lista para cuando se implemente el cobro.
+- **`bloque_acero` queda pendiente**: no tiene fuente real de `acero` todavía (`CadenaMinerales` solo opera en su demo aislada, no llega al almacén real de `Ciudad`) — queda para la segunda pieza de 2C (refinerías reales colocables).
+- `puerta` (2 madera), `cama` (2 madera) y `baúl` (1 madera) también están implementados con costo real, ver la Sección 2 del spec de 2026-09-29 — coinciden con la "Ficha de Fábrica" (Sección 4 de este documento), que ya tenía estos montos correctos.
 
 ---
 
@@ -140,10 +142,10 @@ Fuente: hoja "Relacion", columnas J–M ("Consumo por Objeto"). El GDD (Sección
 
 | Objeto | Consume | Estado |
 |---|---|---|
-| Vidrio | Tierra ×1 | Propuesta (Excel) |
-| Cama | Madera ×2 | Propuesta (Excel) |
-| Puerta | Madera ×2 | Propuesta (Excel) |
-| Baúl | Madera ×1 (provee 30 de almacenamiento al colocarse) | Propuesta (Excel) |
+| Vidrio | Tierra ×1 | **Implementado** (`NiveladorTerreno.COSTO_POR_CELDA`) |
+| Cama | Madera ×2 | **Implementado** |
+| Puerta | Madera ×2 | **Implementado** |
+| Baúl | Madera ×1 (provee 30 de almacenamiento al colocarse) | **Implementado** |
 
 **Ficha de edificio "Fábrica" (genérica):** por definir — el Excel y el GDD dan el consumo por objeto, pero no personal máximo, costo de construcción, ciclo de producción ni capacidad de almacenamiento propios del edificio. No se completan aquí para no mezclar una decisión de balance con esta transcripción (ver CLAUDE.md: "no mezcles las PoC sin una decisión explícita").
 
@@ -157,4 +159,4 @@ Fuente: hoja "Relacion", columnas J–M ("Consumo por Objeto"). El GDD (Sección
 - Ajustar tras jugar los parámetros de la pesca por tamaño y profundidad (`PECES_FACTOR_SOMERO` 0,5, `AGUA_REFERENCIA` 450, `ESCALA_AGUA_MIN` 0,4, `ESCALA_AGUA_MAX` 1,5, base 17): los puestos de pesca ya colocados conservan las tasas antiguas hasta reconstruirlos.
 - Verificar jugando que 2 recolectores + 1 acarreador se sostienen (la meta de 7,5/h por recolector se cumple con margen de media en el mundo actual, caza y recolección ~12,2/h y pesca ~8,6/h; pero un lago pequeño y somero rinde solo ≈2,5–3/h por la nueva escala de pesca y no la cumple; con menos densidad, por ejemplo poca fauna, o con un puesto más lejano, puede no cumplirse).
 - Definir personal máximo/costo de construcción/ciclo para: Aserradero, Carbonera, Refinería petrolera, Licuefactora de hidrocarburo, Central termoeléctrica, y el edificio "Fábrica" genérico — cada uno como su propio sub-proyecto/PoC, según el roadmap de la Sección 11 del GDD.
-- Definir el costo en unidades de recurso del bloque de madera colocable, que todavía dice "por definir" en la tabla de extracción, y decidir si se cobra al colocar (hoy `Player._colocar` no descuenta nada del almacén). Implica también programar el reembolso al volver a minar un bloque colocado (ver punto 4 de `docs/Pendientes y próximos pasos.md`).
+- ~~Definir el costo en unidades de recurso del bloque de madera colocable... Implica también programar el reembolso al volver a minar un bloque colocado.~~ — ✅ hecho (2026-09-29): `Player._colocar()` cobra de `Ciudad.almacen` según `NiveladorTerreno.COSTO_POR_CELDA` y `VoxelWorld._retirar_bloque()` reembolsa exactamente lo cobrado al volver a minar, ver `docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md`.

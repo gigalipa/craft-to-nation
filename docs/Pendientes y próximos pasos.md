@@ -18,10 +18,11 @@ En este punto el jugador ya debe poder declarar y registrar distintos edificios 
 
 Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la comparación de cada losa contra la huella global del edificio), más el resto del checklist de "casa aprobable": vestíbulo libre detrás de cada puerta (externa o interna) y verificación de acceso real por pathfinding a cada cama/baúl desde al menos una puerta externa. Ver `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md` y `docs/superpowers/plans/2026-09-28-volumen-interno-edificios.md`.
 
-### 4. PoC 5, sub-proyecto 2C — transformación
+### 4. PoC 5, sub-proyecto 2C — transformación — parte 1 (costo de colocación) ✅ hecho (2026-09-29)
 
-Programar el consumo de recursos según los costos de "colocación" indicados en el documento de `Fichas_Consumo_Produccion.md`, y el reembolso simétrico al volver a minar un bloque colocado por el jugador (decisión del usuario, 2026-09-28 — ver `docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md`).
-Aserradero, carbonera, siderúrgica y refinería de tierras raras convertirían recursos crudos en procesados, con recetas.
+~~Programar el consumo de recursos según los costos de "colocación" indicados en el documento de `Fichas_Consumo_Produccion.md`, y el reembolso simétrico al volver a minar un bloque colocado por el jugador (decisión del usuario, 2026-09-28).~~ Hecho: el placeholder único `pared` se reemplazó por bloques estructurales reales con costo (`tierra_compactada`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`), colocar desde la hotbar del avatar cobra el recurso crudo de `Ciudad.almacen` y volver a minar un bloque colocado reembolsa exactamente lo cobrado — ver `docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md` y `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`.
+
+**Pendiente (parte 2, sin empezar):** aserradero, carbonera, siderúrgica y refinería de tierras raras como refinerías reales colocables en el mundo (hoy siderúrgica y refinería de tierras raras solo existen como lógica pura en `CadenaMinerales.gd`, sin edificio real) que conviertan recursos crudos en procesados, con receta — `bloque_acero` también queda pendiente hasta entonces (sin fuente real de acero).
 
 ### 5. Resto del catálogo general de PoC 5
 

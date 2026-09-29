@@ -12,10 +12,22 @@ extends RefCounted
 ## de .obj de SketchUp, así que el arte reemplaza estas plantillas provisionales
 ## sin tocar código.
 
-## Carácter -> bloque. "." (y cualquier otro carácter) es vacío.
+## Carácter -> bloque fijo (no depende del puesto). "." (y cualquier otro
+## carácter) es vacío. "#" es especial: se resuelve con el material propio
+## de cada plantilla (ver MATERIAL más abajo), no con un tipo fijo.
 const BLOQUES := {
-	"#": "pared", "V": "ventana", "B": "baul",
+	"V": "vidrio", "B": "baul",
 	"d": "puerta_inferior", "D": "puerta_superior",
+}
+
+## Material de muro de cada tipo de puesto (era de prehistoria: cada uno usa
+## lo que tenga más a mano según su oficio — ver docs/superpowers/specs/
+## 2026-09-29-costo-colocacion-bloques-design.md, Sección 5).
+const MATERIAL := {
+	"mina": "tierra_compactada",
+	"caza_recoleccion": "bloque_madera",
+	"maderero": "bloque_madera",
+	"pesca_frutos_mar": "bloque_piedra",
 }
 
 const PLANTILLAS := {
@@ -35,7 +47,7 @@ const PLANTILLAS := {
 		["###", "###", "###", "###"],
 	]},
 	# Edificio en las filas 0-3 (interior libre en las filas 1-2, con el baúl al fondo)
-	# y muelle (cubierta de pared) en las filas 4-5; el agua queda del lado de z alto.
+	# y muelle (cubierta de muro) en las filas 4-5; el agua queda del lado de z alto.
 	# "agua_ref" (x, z) es una celda del extremo de agua.
 	"pesca_frutos_mar": {"capas": [
 		["#d##", "#..#", "#.B#", "####", "####", "####"],
@@ -78,13 +90,17 @@ static func celdas(tipo: String, giros: int) -> Dictionary:
 	var d := dimensiones(tipo)
 	var resultado := {}
 	var capas: Array = PLANTILLAS[tipo]["capas"]
+	var material_muro: String = MATERIAL[tipo]
 	for y in range(capas.size()):
 		var filas: Array = capas[y]
 		for z in range(filas.size()):
 			var fila: String = filas[z]
 			for x in range(fila.length()):
-				if BLOQUES.has(fila[x]):
-					resultado[_girar(Vector3i(x, y, z), d.x, d.y, giros)] = BLOQUES[fila[x]]
+				var caracter: String = fila[x]
+				if caracter == "#":
+					resultado[_girar(Vector3i(x, y, z), d.x, d.y, giros)] = material_muro
+				elif BLOQUES.has(caracter):
+					resultado[_girar(Vector3i(x, y, z), d.x, d.y, giros)] = BLOQUES[caracter]
 	return resultado
 
 

@@ -86,12 +86,12 @@ func ejecutar_pruebas() -> void:
 	ev = camara._evaluar_puesto(esquina)
 	assert("pendiente" in camara._mensaje_rechazo_puesto(ev), "una columna muy alta rompe el relieve: %s" % camara._mensaje_rechazo_puesto(ev))
 	camara.free()
-	# Frente de la puerta: una pared en la fachada (mina sobre otra esquina, terreno liso).
+	# Frente de la puerta: un muro en la fachada (mina sobre otra esquina, terreno liso).
 	var esquina_b := Vector2i(24, 24)
 	camara = _camara(mundo, "mina")
 	var fachada_b: Array[Vector2i] = PlantillasPuesto.fachada("mina", 0)
 	var columna_frente: Vector2i = esquina_b + fachada_b[0]
-	mundo.colocar_bloque(Vector3i(columna_frente.x, 1, columna_frente.y), "pared", true)
+	mundo.colocar_bloque(Vector3i(columna_frente.x, 1, columna_frente.y), "bloque_piedra", true)
 	ev = camara._evaluar_puesto(esquina_b)
 	assert("frente" in camara._mensaje_rechazo_puesto(ev), "una estructura delante de la puerta la rechaza: %s" % camara._mensaje_rechazo_puesto(ev))
 	camara.free()

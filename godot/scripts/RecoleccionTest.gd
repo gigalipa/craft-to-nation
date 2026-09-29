@@ -218,16 +218,16 @@ func ejecutar_pruebas() -> void:
 	Recoleccion.quitar_puesto(Vector2i(999, 999))  # no existía, no debe fallar
 	print("OK: quitar_puesto() libera la reserva; quitar una esquina sin nada registrado no falla.")
 
-	print("\n=== TEST 11: detectar_recursos() cuenta 'piso' como 'tierra' (superficie expuesta) ===")
+	print("\n=== TEST 11: detectar_recursos() cuenta 'hierba' como 'tierra' (superficie expuesta) ===")
 	var mundo_superficie: Node = VoxelWorld.new()
 	mundo_superficie.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo_superficie.cell_size = Vector3.ONE * 1.0
 	mundo_superficie._indexar_biblioteca()
-	assert(mundo_superficie.material_real("piso") == "tierra")
+	assert(mundo_superficie.material_real("hierba") == "tierra")
 	assert(mundo_superficie.material_real("piedra") == "piedra")  # sin traducción, se devuelve igual
 
 	# Misma superficie plana que TEST 1, pero con la capa expuesta como
-	# "piso" (dy=0) y "tierra" real justo debajo (dy=1) — replica lo que
+	# "hierba" (dy=0) y "tierra" real justo debajo (dy=1) — replica lo que
 	# hace VoxelWorld._generar_terreno() en el mundo real.
 	var centro_superficie := Vector2i(100, 100)
 	var altura_sup := 10
@@ -235,14 +235,14 @@ func ejecutar_pruebas() -> void:
 		for dz in range(-Recoleccion.RADIO_AREA_MINA, Recoleccion.RADIO_AREA_MINA + 1):
 			if Vector2(dx, dz).length() > Recoleccion.RADIO_AREA_MINA:
 				continue
-			mundo_superficie.colocar_bloque(Vector3i(centro_superficie.x + dx, altura_sup, centro_superficie.y + dz), "piso")
+			mundo_superficie.colocar_bloque(Vector3i(centro_superficie.x + dx, altura_sup, centro_superficie.y + dz), "hierba")
 			mundo_superficie.colocar_bloque(Vector3i(centro_superficie.x + dx, altura_sup - 1, centro_superficie.y + dz), "tierra")
 
 	var conteo_superficie: Dictionary = Recoleccion.detectar_recursos(mundo_superficie, centro_superficie, altura_sup)
-	print("Conteo detectado (piso + tierra): ", conteo_superficie)
-	assert(not conteo_superficie.has("piso"))
+	print("Conteo detectado (hierba + tierra): ", conteo_superficie)
+	assert(not conteo_superficie.has("hierba"))
 	assert(conteo_superficie.get("tierra", 0) > 0)
-	# La celda dy=0 (el disco completo de radio 6, todas "piso") y la celda
+	# La celda dy=0 (el disco completo de radio 6, todas "hierba") y la celda
 	# dy=1 (mismo disco, todas "tierra" real) deben sumarse en un solo
 	# conteo de "tierra". No es simplemente el doble de un disco 2D: al
 	# igual que detectar_recursos(), la esfera real de acción usa distancia
@@ -257,7 +257,7 @@ func ejecutar_pruebas() -> void:
 			if Vector3(dx2, -1, dz2).length() <= Recoleccion.RADIO_AREA_MINA:
 				celdas_capa_1 += 1
 	assert(conteo_superficie["tierra"] == celdas_capa_0 + celdas_capa_1)
-	print("OK: la capa superficial 'piso' se cuenta como 'tierra', sumada a la 'tierra' real de debajo.")
+	print("OK: la capa superficial 'hierba' se cuenta como 'tierra', sumada a la 'tierra' real de debajo.")
 
 	print("\n=== TEST 12: detectar_recursos() ignora bloques estructurales de un edificio ===")
 	var mundo_edificio: Node = VoxelWorld.new()
@@ -267,15 +267,15 @@ func ejecutar_pruebas() -> void:
 	var centro_edificio := Vector2i(200, 200)
 	var altura_edificio := 10
 	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x, altura_edificio - 1, centro_edificio.y), "piedra")
-	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x, altura_edificio, centro_edificio.y), "pared")
-	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 1, altura_edificio, centro_edificio.y), "ventana")
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x, altura_edificio, centro_edificio.y), "bloque_piedra")
+	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 1, altura_edificio, centro_edificio.y), "vidrio")
 	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 2, altura_edificio, centro_edificio.y), "puerta_inferior")
 	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 3, altura_edificio, centro_edificio.y), "cama_pies")
 	mundo_edificio.colocar_bloque(Vector3i(centro_edificio.x + 4, altura_edificio, centro_edificio.y), "baul")
 	var conteo_edificio: Dictionary = Recoleccion.detectar_recursos(mundo_edificio, centro_edificio, altura_edificio)
 	print("Conteo detectado bajo un edificio: ", conteo_edificio)
-	assert(not conteo_edificio.has("pared"))
-	assert(not conteo_edificio.has("ventana"))
+	assert(not conteo_edificio.has("bloque_piedra"))
+	assert(not conteo_edificio.has("vidrio"))
 	assert(not conteo_edificio.has("puerta_inferior"))
 	assert(not conteo_edificio.has("cama_pies"))
 	assert(not conteo_edificio.has("baul"))
@@ -324,18 +324,18 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(tasas_pesca_chica["pesca"], 3.4) and is_equal_approx(tasas_pesca_chica["frutos_mar"], 0.36))
 
 	print("
-=== TEST 17: celdas_agua_conectadas() lee el agua real: cuadrado conectado sí, charco aislado no, un piso en la superficie la corta ===")
+=== TEST 17: celdas_agua_conectadas() lee el agua real: cuadrado conectado sí, charco aislado no, una hierba en la superficie la corta ===")
 	var mundo_agua_real := _mundo_con_agua(6, 6, 5)
 	mundo_agua_real.colocar_bloque(Vector3i(10, 5, 10), "agua")  # charco aislado
 	var celdas: Dictionary = Recoleccion.celdas_agua_conectadas(mundo_agua_real, Vector2i(0, 0), 25)
 	assert(celdas.size() == 36)
 	assert(not celdas.has(Vector2i(10, 10)))
-	# Un piso sobre la superficie de una columna la saca del conjunto.
-	mundo_agua_real.colocar_bloque(Vector3i(3, 5, 3), "piso")
+	# Una hierba sobre la superficie de una columna la saca del conjunto.
+	mundo_agua_real.colocar_bloque(Vector3i(3, 5, 3), "hierba")
 	assert(not Recoleccion.celdas_agua_conectadas(mundo_agua_real, Vector2i(0, 0), 25).has(Vector2i(3, 3)))
-	# Una barrera de piso en la superficie encierra el agua: la parte de afuera deja de contar.
+	# Una barrera de hierba en la superficie encierra el agua: la parte de afuera deja de contar.
 	for z in range(6):
-		mundo_agua_real.colocar_bloque(Vector3i(2, 5, z), "piso")
+		mundo_agua_real.colocar_bloque(Vector3i(2, 5, z), "hierba")
 	var encerrada: Dictionary = Recoleccion.celdas_agua_conectadas(mundo_agua_real, Vector2i(0, 0), 25)
 	assert(encerrada.size() == 12 and not encerrada.has(Vector2i(4, 0)))
 	# Conectar otro cuerpo de agua lo suma.

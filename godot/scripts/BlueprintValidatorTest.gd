@@ -12,8 +12,8 @@ const Player = preload("res://scripts/Player.gd")
 ## de un techo abierto (11, ver validar_techo_y_suelo()), un edificio de 2
 ## pisos con hueco de escalera en la losa intermedia (12, ver
 ## _es_losa_parcial()), y el rechazo de un piso con altura insuficiente (13,
-## ver validar_altura_piso()), y que "piso" nunca es material estructural,
-## ni siquiera como relleno de terreno tocando la losa de un edificio (14,
+## ver validar_altura_piso()), y que "hierba"/"tierra" nunca son material
+## estructural, ni siquiera como relleno de terreno tocando la losa de un edificio (14,
 ## ver VoxelWorld.TIPOS_ESTRUCTURA), que altura_en() ignora los bloques de
 ## árbol al buscar la celda sólida más alta (15, ver VoxelWorld.TIPOS_ARBOL),
 ## que verificar_huella_libre() detecta madera, follaje y estructura (16,
@@ -180,27 +180,27 @@ func ejecutar_pruebas() -> void:
 	mundo._indexar_biblioteca()
 	for x in range(9):
 		for z in range(3):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
-			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)  # techo
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, 4, z), "bloque_piedra", true)  # techo
 	# Tercera capa de pared (y=3): solo el anillo perimetral, sin mobiliario
 	# ni aberturas — necesaria únicamente para llegar a la altura mínima.
 	for x in [0, 8]:
 		for z in range(3):
-			mundo.colocar_bloque(Vector3i(x, 3, z), "pared", true)
+			mundo.colocar_bloque(Vector3i(x, 3, z), "bloque_piedra", true)
 	for x in range(1, 8):
-		mundo.colocar_bloque(Vector3i(x, 3, 0), "pared", true)
-		mundo.colocar_bloque(Vector3i(x, 3, 2), "pared", true)
+		mundo.colocar_bloque(Vector3i(x, 3, 0), "bloque_piedra", true)
+		mundo.colocar_bloque(Vector3i(x, 3, 2), "bloque_piedra", true)
 	var tipos_simples := {
-		Vector3i(0, 1, 0): "pared", Vector3i(1, 1, 0): "pared", Vector3i(2, 1, 0): "pared",
-		Vector3i(3, 1, 0): "pared", Vector3i(4, 1, 0): "pared", Vector3i(5, 1, 0): "pared",
-		Vector3i(6, 1, 0): "pared", Vector3i(7, 1, 0): "pared", Vector3i(8, 1, 0): "pared",
+		Vector3i(0, 1, 0): "bloque_piedra", Vector3i(1, 1, 0): "bloque_piedra", Vector3i(2, 1, 0): "bloque_piedra",
+		Vector3i(3, 1, 0): "bloque_piedra", Vector3i(4, 1, 0): "bloque_piedra", Vector3i(5, 1, 0): "bloque_piedra",
+		Vector3i(6, 1, 0): "bloque_piedra", Vector3i(7, 1, 0): "bloque_piedra", Vector3i(8, 1, 0): "bloque_piedra",
 		# x=1 (vestíbulo puerta principal) y x=4 (vestíbulo oeste puerta
 		# interior) y x=6 (vestíbulo este puerta interior) quedan SIN
 		# bloque: aire transitable, libre por construcción.
-		Vector3i(7, 1, 1): "baul", Vector3i(8, 1, 1): "ventana",
-		Vector3i(0, 1, 2): "pared", Vector3i(1, 1, 2): "pared", Vector3i(2, 1, 2): "pared",
-		Vector3i(3, 1, 2): "pared", Vector3i(4, 1, 2): "pared", Vector3i(5, 1, 2): "pared",
-		Vector3i(6, 1, 2): "pared", Vector3i(7, 1, 2): "pared", Vector3i(8, 1, 2): "pared",
+		Vector3i(7, 1, 1): "baul", Vector3i(8, 1, 1): "vidrio",
+		Vector3i(0, 1, 2): "bloque_piedra", Vector3i(1, 1, 2): "bloque_piedra", Vector3i(2, 1, 2): "bloque_piedra",
+		Vector3i(3, 1, 2): "bloque_piedra", Vector3i(4, 1, 2): "bloque_piedra", Vector3i(5, 1, 2): "bloque_piedra",
+		Vector3i(6, 1, 2): "bloque_piedra", Vector3i(7, 1, 2): "bloque_piedra", Vector3i(8, 1, 2): "bloque_piedra",
 	}
 	for celda in tipos_simples.keys():
 		mundo.colocar_bloque(celda, tipos_simples[celda], true)
@@ -218,10 +218,10 @@ func ejecutar_pruebas() -> void:
 		for z in range(3):
 			if x == 0 and z == 1:
 				continue  # puerta_superior de la puerta principal
-			mundo.colocar_bloque(Vector3i(x, 2, z), "pared", true)
+			mundo.colocar_bloque(Vector3i(x, 2, z), "bloque_piedra", true)
 	for x in range(1, 8):
-		mundo.colocar_bloque(Vector3i(x, 2, 0), "pared", true)
-		mundo.colocar_bloque(Vector3i(x, 2, 2), "pared", true)
+		mundo.colocar_bloque(Vector3i(x, 2, 0), "bloque_piedra", true)
+		mundo.colocar_bloque(Vector3i(x, 2, 2), "bloque_piedra", true)
 
 	var puerta_principal := Vector3i(0, 1, 1)
 	var estructura: Dictionary = mundo.detectar_estructura(puerta_principal)
@@ -238,8 +238,9 @@ func ejecutar_pruebas() -> void:
 	var blueprint_detectado := BlueprintValidator.estructura_a_blueprint(estructura)
 	# Suelo y techo son losas — se descartan, queda 1 solo "piso" (la
 	# habitación) con sus 27 celdas abstractas (huella completa 9x3: las
-	# mitades superiores de puerta se remapean a "pared" y no generan
-	# celdas nuevas; los 3 vestíbulos libres heredan "pared" de la
+	# mitades superiores de puerta se remapean a "tierra_compactada" (primer
+	# material de TIPOS_MURO_GENERICO, usado como relleno neutro) y no generan
+	# celdas nuevas; los 3 vestíbulos libres heredan ese mismo material de la
 	# plantilla de suelo/techo en esta representación aplanada — por eso
 	# _calcular_errores_vestibulos() usa aire_interior, no esta plantilla,
 	# para saber si están REALMENTE libres, ver su comentario).
@@ -263,27 +264,27 @@ func ejecutar_pruebas() -> void:
 	# como estructura. Simular el escenario del terreno del mundo (_generar_terreno)
 	# que nunca marca sus bloques como colocado_por_jugador.
 	var celda_terreno := Vector3i(0, -1, 0)
-	mundo.colocar_bloque(celda_terreno, "piso", false)  # no marcado como jugador
-	assert(mundo.obtener_tipo(celda_terreno) == "piso")
+	mundo.colocar_bloque(celda_terreno, "hierba", false)  # no marcado como jugador
+	assert(mundo.obtener_tipo(celda_terreno) == "hierba")
 	assert(mundo.detectar_estructura(celda_terreno).is_empty())
 	print("Correcto: el bloque no marcado como jugador no es detectado como estructura.")
 
 	print("\n=== TEST 9: Puerta y Cama Rechazadas por Falta de Espacio ===")
 	var base_puerta := Vector3i(10, 0, 0)
-	mundo.colocar_bloque(base_puerta + Vector3i(0, 1, 0), "pared", true)  # bloquea la mitad superior
+	mundo.colocar_bloque(base_puerta + Vector3i(0, 1, 0), "bloque_piedra", true)  # bloquea la mitad superior
 	assert(not mundo.colocar_puerta(base_puerta))
 	assert(mundo.obtener_tipo(base_puerta) == "")
 	print("Correcto: la puerta no se coloca sin 2 celdas verticales libres.")
 
 	var base_cama := Vector3i(20, 0, 0)
-	mundo.colocar_bloque(base_cama + Vector3i(0, 0, 1), "pared", true)  # bloquea la celda de los pies
+	mundo.colocar_bloque(base_cama + Vector3i(0, 0, 1), "bloque_piedra", true)  # bloquea la celda de los pies
 	assert(not mundo.colocar_cama(base_cama, Vector3i(0, 0, 1)))
 	assert(mundo.obtener_tipo(base_cama) == "")
 	print("Correcto: la cama no se coloca sin 2 celdas libres en la dirección indicada.")
 
 	print("\n=== TEST 10: Declarar Edificio - Casa Real Multi-Nivel (suelo+3+techo) ===")
 	# Replica el reporte de bug real: una casa de 4x5 de huella y 5 de alto,
-	# con suelo (y=0) y techo (y=4) sólidos de "pared", puerta principal
+	# con suelo (y=0) y techo (y=4) sólidos de "bloque_piedra", puerta principal
 	# (2 celdas verticales, y=1-2), ventana (y=2) y una cama+baúl en la
 	# esquina interior (y=1) — dejando el resto del espacio interior sin
 	# ningún bloque (aire transitable), tal como construiría un jugador real.
@@ -299,8 +300,8 @@ func ejecutar_pruebas() -> void:
 	const OX := 50
 	for x in range(OX, OX + 4):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
-			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)  # techo
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, 4, z), "bloque_piedra", true)  # techo
 	for y in range(1, 4):
 		for x in range(OX, OX + 4):
 			for z in range(5):
@@ -311,10 +312,10 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta principal, se coloca aparte
 				if x == OX + 3 and z == 2 and y == 2:
 					continue  # ventana, se coloca aparte
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX, 1, 2)))  # puerta principal (y=1 y y=2)
-	mundo.colocar_bloque(Vector3i(OX, 3, 2), "pared", true)  # pared sobre la puerta
-	mundo.colocar_bloque(Vector3i(OX + 3, 2, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX, 3, 2), "bloque_piedra", true)  # pared sobre la puerta
+	mundo.colocar_bloque(Vector3i(OX + 3, 2, 2), "vidrio", true)
 	assert(mundo.colocar_cama(Vector3i(OX + 2, 1, 1), Vector3i(0, 0, 1)))  # cabecera/pies interior
 	mundo.colocar_bloque(Vector3i(OX + 1, 1, 3), "baul", true)  # a los pies de la cama
 
@@ -332,7 +333,7 @@ func ejecutar_pruebas() -> void:
 	# Misma casa de TEST 10: reconstruir celdas_3d normalizado a mano y
 	# comparar contra la estructura original (también normalizada) — debe
 	# conservar los tipos SIN aplanar (puerta_inferior/superior distintos,
-	# no colapsados a "puerta"/"pared" como hace "pisos").
+	# no colapsados a los tipos abstractos "puerta"/"pared" como hace "pisos").
 	assert(blueprint_casa["ancho"] == 4)
 	assert(blueprint_casa["profundidad"] == 5)
 	assert(blueprint_casa["categoria"] == "residencial")
@@ -367,7 +368,7 @@ func ejecutar_pruebas() -> void:
 	const OX2 := 100
 	for x in range(OX2, OX2 + 4):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # solo suelo, sin techo
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # solo suelo, sin techo
 	for y in range(1, 4):
 		for x in range(OX2, OX2 + 4):
 			for z in range(5):
@@ -378,10 +379,10 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta principal
 				if x == OX2 + 3 and z == 2 and y == 2:
 					continue  # ventana
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX2, 1, 2)))
-	mundo.colocar_bloque(Vector3i(OX2, 3, 2), "pared", true)
-	mundo.colocar_bloque(Vector3i(OX2 + 3, 2, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX2, 3, 2), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX2 + 3, 2, 2), "vidrio", true)
 
 	var estructura_sin_techo: Dictionary = mundo.detectar_estructura(Vector3i(OX2, 1, 2))
 	var blueprint_sin_techo := BlueprintValidator.estructura_a_blueprint(estructura_sin_techo)
@@ -411,8 +412,8 @@ func ejecutar_pruebas() -> void:
 	const OX3 := 200
 	for x in range(OX3, OX3 + 5):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo base
-			mundo.colocar_bloque(Vector3i(x, 8, z), "pared", true)  # techo exterior
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # suelo base
+			mundo.colocar_bloque(Vector3i(x, 8, z), "bloque_piedra", true)  # techo exterior
 	for y in range(1, 4):
 		for x in range(OX3, OX3 + 5):
 			for z in range(5):
@@ -423,17 +424,17 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta historia 1
 				if x == OX3 + 4 and z == 2 and y == 2:
 					continue  # ventana historia 1
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX3, 1, 2)))
-	mundo.colocar_bloque(Vector3i(OX3, 3, 2), "pared", true)
-	mundo.colocar_bloque(Vector3i(OX3 + 4, 2, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX3, 3, 2), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX3 + 4, 2, 2), "vidrio", true)
 	assert(mundo.colocar_cama(Vector3i(OX3 + 1, 1, 1), Vector3i(1, 0, 0)))
 	mundo.colocar_bloque(Vector3i(OX3 + 3, 1, 1), "baul", true)
 	for x in range(OX3, OX3 + 5):
 		for z in range(5):
 			if x == OX3 + 2 and z == 2:
 				continue  # hueco de escalera (centro de la losa intermedia)
-			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)
+			mundo.colocar_bloque(Vector3i(x, 4, z), "bloque_piedra", true)
 	for y in range(5, 8):
 		for x in range(OX3, OX3 + 5):
 			for z in range(5):
@@ -444,10 +445,10 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta historia 2
 				if x == OX3 + 4 and z == 2 and y == 6:
 					continue  # ventana historia 2
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX3, 5, 2)))
-	mundo.colocar_bloque(Vector3i(OX3, 7, 2), "pared", true)
-	mundo.colocar_bloque(Vector3i(OX3 + 4, 6, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX3, 7, 2), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX3 + 4, 6, 2), "vidrio", true)
 
 	var estructura_2p: Dictionary = mundo.detectar_estructura(Vector3i(OX3, 1, 2))
 	var blueprint_2p := BlueprintValidator.estructura_a_blueprint(estructura_2p)
@@ -465,14 +466,14 @@ func ejecutar_pruebas() -> void:
 	const OX4 := 300
 	for x in range(OX4, OX4 + 3):
 		for z in range(3):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)
-			mundo.colocar_bloque(Vector3i(x, 3, z), "pared", true)
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)
+			mundo.colocar_bloque(Vector3i(x, 3, z), "bloque_piedra", true)
 	for y in range(1, 3):
 		for x in range(OX4, OX4 + 3):
 			for z in range(3):
 				var es_borde3: bool = x == OX4 or x == OX4 + 2 or z == 0 or z == 2
 				if es_borde3:
-					mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+					mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 
 	var estructura_baja: Dictionary = mundo.detectar_estructura(Vector3i(OX4, 0, 0))
 	var blueprint_bajo := BlueprintValidator.estructura_a_blueprint(estructura_baja)
@@ -486,49 +487,51 @@ func ejecutar_pruebas() -> void:
 			tiene_error_altura = true
 	assert(tiene_error_altura)
 
-	print("\n=== TEST 14: Declarar Edificio - 'piso' NUNCA es Estructural (ni en losas) ===")
+	print("\n=== TEST 14: Declarar Edificio - 'tierra'/'hierba' NUNCA son Estructurales (ni en losas) ===")
 	# Reemplaza el TEST 14 original (que validaba que "piso" SÍ podía ser una
 	# losa de suelo/techo real). Bug reportado por el usuario jugando en vivo:
-	# si el jugador coloca un bloque de "piso" para rellenar terreno bajo la
-	# losa de suelo de un edificio (hecha con "pared"), el flood-fill lo
-	# reconocía como parte del edificio. Decisión de diseño confirmada: "piso"
-	# deja de ser material estructural en absoluto — ni en muros, ni en losas
-	# de suelo/techo. Los materiales estructurales válidos para la PoC son
-	# solo "pared" (más adelante: madera, piedra, metal, vidrio).
-	# Casa 5x6 con suelo/techo/muros de "pared" (como TEST 10), más un bloque
-	# de "piso" colocado_por_jugador=true justo debajo de la losa de suelo,
-	# simulando el relleno de terreno del reporte del bug. Coordenadas +150 en
-	# X para no chocar con los bloques de tests previos.
+	# si el jugador coloca un bloque de tierra para rellenar terreno bajo la
+	# losa de suelo de un edificio (hecha con "bloque_piedra"), el flood-fill lo
+	# reconocía como parte del edificio. Decisión de diseño confirmada: los
+	# bloques de tierra/hierba dejan de ser material estructural en absoluto —
+	# ni en muros, ni en losas de suelo/techo. Los materiales estructurales
+	# válidos son tierra_compactada, bloque_madera, bloque_piedra y
+	# estructura_hierro (ver docs/superpowers/specs/2026-09-29-costo-
+	# colocacion-bloques-design.md).
+	# Casa 5x6 con suelo/techo/muros de "bloque_piedra" (como TEST 10), más un
+	# bloque de "tierra" colocado_por_jugador=true justo debajo de la losa de
+	# suelo, simulando el relleno de terreno del reporte del bug. Coordenadas
+	# +150 en X para no chocar con los bloques de tests previos.
 	const OX5 := 150
 	for x in range(OX5, OX5 + 5):
 		for z in range(6):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
-			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)  # techo
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, 4, z), "bloque_piedra", true)  # techo
 	for y in [1, 2, 3]:
 		for x in range(OX5, OX5 + 5):
 			for z in range(6):
 				var es_borde5: bool = x == OX5 or x == OX5 + 4 or z == 0 or z == 5
 				if es_borde5:
-					mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+					mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	mundo.minar_bloque(Vector3i(OX5, 1, 3))
 	mundo.minar_bloque(Vector3i(OX5, 2, 3))
 	assert(mundo.colocar_puerta(Vector3i(OX5, 1, 3)))
 	mundo.minar_bloque(Vector3i(OX5 + 4, 2, 2))
-	mundo.colocar_bloque(Vector3i(OX5 + 4, 2, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX5 + 4, 2, 2), "vidrio", true)
 	assert(mundo.colocar_cama(Vector3i(OX5 + 2, 1, 1), Vector3i(0, 0, 1)))
 	mundo.colocar_bloque(Vector3i(OX5 + 1, 1, 1), "baul", true)
 
-	# Relleno de terreno: un bloque de "piso" colocado por el jugador, tocando
+	# Relleno de terreno: un bloque de "tierra" colocado por el jugador, tocando
 	# físicamente la losa de suelo del edificio (y=-1, justo debajo de y=0).
 	var celda_relleno := Vector3i(OX5 + 2, -1, 3)
-	mundo.colocar_bloque(celda_relleno, "piso", true)
+	mundo.colocar_bloque(celda_relleno, "tierra", true)
 
 	var estructura_piso_real: Dictionary = mundo.detectar_estructura(Vector3i(OX5, 1, 3))
 	assert(not estructura_piso_real.has(celda_relleno))
-	print("Correcto: el relleno de 'piso' no se incluyó en la estructura detectada.")
+	print("Correcto: el relleno de 'tierra' no se incluyó en la estructura detectada.")
 
 	# El bloque de relleno tampoco puede servir de ORIGEN para declarar un
-	# edificio: "piso" nunca es estructural, así que detectar_estructura()
+	# edificio: "tierra" nunca es estructural, así que detectar_estructura()
 	# devuelve vacío aunque esté colocado_por_jugador.
 	assert(mundo.detectar_estructura(celda_relleno).is_empty())
 
@@ -552,7 +555,7 @@ func ejecutar_pruebas() -> void:
 	# el terreno, así que overlay/minas terminaban aterrizando sobre la
 	# copa de un árbol en vez del terreno real debajo.
 	const OX6 := 400
-	mundo.colocar_bloque(Vector3i(OX6, 0, 0), "piso")
+	mundo.colocar_bloque(Vector3i(OX6, 0, 0), "hierba")
 	mundo.colocar_bloque(Vector3i(OX6, 1, 0), "madera")
 	mundo.colocar_bloque(Vector3i(OX6, 2, 0), "madera")
 	mundo.colocar_bloque(Vector3i(OX6, 3, 0), "follaje")
@@ -565,7 +568,7 @@ func ejecutar_pruebas() -> void:
 	# Huella A: "madera" invalida la huella completa.
 	for dx in range(4):
 		for dz in range(4):
-			mundo.colocar_bloque(Vector3i(OX7 + dx, 0, OX7 + dz), "piso")
+			mundo.colocar_bloque(Vector3i(OX7 + dx, 0, OX7 + dz), "hierba")
 	mundo.colocar_bloque(Vector3i(OX7, 1, OX7), "madera")
 	var resultado_madera: Dictionary = mundo.verificar_huella_libre(Vector2i(OX7, OX7), _rectangulo(4, 4))
 	assert(not resultado_madera["valida"])
@@ -574,19 +577,19 @@ func ejecutar_pruebas() -> void:
 	var base_b := OX7 + 20
 	for dx in range(4):
 		for dz in range(4):
-			mundo.colocar_bloque(Vector3i(base_b + dx, 0, OX7 + dz), "piso")
+			mundo.colocar_bloque(Vector3i(base_b + dx, 0, OX7 + dz), "hierba")
 	mundo.colocar_bloque(Vector3i(base_b + 1, 1, OX7), "follaje")
 	var resultado_follaje: Dictionary = mundo.verificar_huella_libre(Vector2i(base_b, OX7), _rectangulo(4, 4))
 	assert(resultado_follaje["valida"])
 	assert(resultado_follaje["follaje_a_eliminar"].size() == 1)
 	assert(resultado_follaje["follaje_a_eliminar"][0] == Vector3i(base_b + 1, 1, OX7))
 
-	# Huella C: un bloque estructural del jugador ("pared") invalida la huella.
+	# Huella C: un bloque estructural del jugador ("bloque_piedra") invalida la huella.
 	var base_c := OX7 + 40
 	for dx in range(4):
 		for dz in range(4):
-			mundo.colocar_bloque(Vector3i(base_c + dx, 0, OX7 + dz), "piso")
-	mundo.colocar_bloque(Vector3i(base_c + 2, 1, OX7), "pared", true)
+			mundo.colocar_bloque(Vector3i(base_c + dx, 0, OX7 + dz), "hierba")
+	mundo.colocar_bloque(Vector3i(base_c + 2, 1, OX7), "bloque_piedra", true)
 	var resultado_estructura: Dictionary = mundo.verificar_huella_libre(Vector2i(base_c, OX7), _rectangulo(4, 4))
 	assert(not resultado_estructura["valida"])
 
@@ -594,7 +597,7 @@ func ejecutar_pruebas() -> void:
 	var base_d := OX7 + 60
 	for dx in range(4):
 		for dz in range(4):
-			mundo.colocar_bloque(Vector3i(base_d + dx, 0, OX7 + dz), "piso")
+			mundo.colocar_bloque(Vector3i(base_d + dx, 0, OX7 + dz), "hierba")
 	var resultado_libre: Dictionary = mundo.verificar_huella_libre(Vector2i(base_d, OX7), _rectangulo(4, 4))
 	assert(resultado_libre["valida"])
 	assert(resultado_libre["follaje_a_eliminar"].is_empty())
@@ -605,13 +608,13 @@ func ejecutar_pruebas() -> void:
 	const OX8 := 600
 	for dx in range(2):
 		for dz in range(2):
-			mundo.colocar_bloque(Vector3i(OX8 + dx, 0, OX8 + dz), "piso")
+			mundo.colocar_bloque(Vector3i(OX8 + dx, 0, OX8 + dz), "hierba")
 	var orden_18: Array[Vector3i] = [
 		Vector3i(OX8, 1, OX8), Vector3i(OX8 + 1, 1, OX8),
 	]
 	var tipos_18 := {
 		Vector3i(OX8, 1, OX8): "puerta_inferior",
-		Vector3i(OX8 + 1, 1, OX8): "pared",
+		Vector3i(OX8 + 1, 1, OX8): "bloque_piedra",
 	}
 	mundo.colocar_bloque(Vector3i(OX8, 2, OX8), "puerta_superior")  # ya real, no fantasma: completa el par de la puerta
 	mundo.iniciar_construccion_fantasma([], {}, orden_18, tipos_18)
@@ -624,7 +627,7 @@ func ejecutar_pruebas() -> void:
 	assert(not s1.get("completa", true))
 
 	var s2: Dictionary = mundo.surtir_construccion(Vector3i(OX8 + 1, 1, OX8))
-	assert(mundo.obtener_tipo(Vector3i(OX8 + 1, 1, OX8)) == "pared")
+	assert(mundo.obtener_tipo(Vector3i(OX8 + 1, 1, OX8)) == "bloque_piedra")
 	assert(s2["completa"])
 	assert(mundo.pareja.get(Vector3i(OX8, 1, OX8)) == Vector3i(OX8, 2, OX8))  # reemparejada al completarse
 	assert(mundo.pareja.get(Vector3i(OX8, 2, OX8)) == Vector3i(OX8, 1, OX8))
@@ -637,12 +640,12 @@ func ejecutar_pruebas() -> void:
 	const OX9 := 700
 	for dx in range(2):
 		for dz in range(2):
-			mundo.colocar_bloque(Vector3i(OX9 + dx, 0, OX9 + dz), "piso")
+			mundo.colocar_bloque(Vector3i(OX9 + dx, 0, OX9 + dz), "hierba")
 	mundo.colocar_bloque(Vector3i(OX9, 1, OX9), "fantasma")
 	assert(mundo.altura_en(OX9, OX9) == 0)  # salta el fantasma, ve el piso real debajo
 
 	# Una celda "madera" flotando en y=2 (con un hueco vacío en y=1, sobre el
-	# "piso" real en y=0) debe rechazar una huella de altura >= 2 que la
+	# "hierba" real en y=0) debe rechazar una huella de altura >= 2 que la
 	# alcance, aunque la huella de altura 1 (comportamiento por defecto,
 	# como usan los puestos) no llegue tan alto y no la vea.
 	mundo.colocar_bloque(Vector3i(OX9 + 1, 2, OX9), "madera")
@@ -656,7 +659,7 @@ func ejecutar_pruebas() -> void:
 
 	# Celda normal, no registrada: sigue minándose igual que siempre.
 	var celda_normal := Vector3i(800, 50, 800)
-	mundo.colocar_bloque(celda_normal, "pared", true)
+	mundo.colocar_bloque(celda_normal, "bloque_piedra", true)
 	var mineo_normal: bool = mundo.minar_bloque(celda_normal)
 	assert(mineo_normal, "Una celda normal, no registrada, debe poder minarse")
 	assert(mundo.obtener_tipo(celda_normal) == "", "La celda normal minada debe quedar vacía")
@@ -664,16 +667,16 @@ func ejecutar_pruebas() -> void:
 	# Celda registrada directamente (simula un puesto o un núcleo declarado):
 	# no debe poder minarse.
 	var celda_edificio := Vector3i(801, 50, 800)
-	mundo.colocar_bloque(celda_edificio, "pared", true)
+	mundo.colocar_bloque(celda_edificio, "bloque_piedra", true)
 	mundo.registrar_edificio([celda_edificio])
 	var mineo_edificio: bool = mundo.minar_bloque(celda_edificio)
 	assert(not mineo_edificio, "Una celda registrada como parte de un edificio no debe poder minarse")
-	assert(mundo.obtener_tipo(celda_edificio) == "pared", "La celda registrada debe seguir intacta tras intentar minarla")
+	assert(mundo.obtener_tipo(celda_edificio) == "bloque_piedra", "La celda registrada debe seguir intacta tras intentar minarla")
 
 	# Fantasma en curso: inmune desde que se inicia, antes de surtir nada.
 	var celda_fantasma := Vector3i(802, 50, 800)
 	var orden_fantasma: Array[Vector3i] = [celda_fantasma]
-	var tipos_fantasma := {celda_fantasma: "pared"}
+	var tipos_fantasma := {celda_fantasma: "bloque_piedra"}
 	mundo.iniciar_construccion_fantasma([], {}, orden_fantasma, tipos_fantasma)
 	var mineo_fantasma: bool = mundo.minar_bloque(celda_fantasma)
 	assert(not mineo_fantasma, "Una celda fantasma en curso no debe poder minarse")
@@ -684,7 +687,7 @@ func ejecutar_pruebas() -> void:
 	mundo.surtir_construccion(celda_fantasma)
 	var mineo_fantasma_completo: bool = mundo.minar_bloque(celda_fantasma)
 	assert(not mineo_fantasma_completo, "Una celda de un edificio ya terminado (vía fantasma) no debe poder minarse")
-	assert(mundo.obtener_tipo(celda_fantasma) == "pared", "La celda debe haberse convertido a su tipo real")
+	assert(mundo.obtener_tipo(celda_fantasma) == "bloque_piedra", "La celda debe haberse convertido a su tipo real")
 
 	print("OK: minar_bloque() ignora cualquier celda registrada con registrar_edificio(), sea directa, fantasma en curso, o fantasma completada.")
 
@@ -706,8 +709,8 @@ func ejecutar_pruebas() -> void:
 		for z in range(5):
 			if notch_l.has(Vector2i(x, z)):
 				continue
-			celdas_l[Vector3i(x, 0, z)] = "pared"  # suelo
-			celdas_l[Vector3i(x, 4, z)] = "pared"  # techo
+			celdas_l[Vector3i(x, 0, z)] = "bloque_piedra"  # suelo
+			celdas_l[Vector3i(x, 4, z)] = "bloque_piedra"  # techo
 	for y in range(1, 4):
 		for x in range(5):
 			for z in range(5):
@@ -718,11 +721,11 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta principal, se coloca aparte
 				if x == 0 and z == 2 and y == 2:
 					continue  # ventana, se coloca aparte
-				celdas_l[Vector3i(x, y, z)] = "pared"
+				celdas_l[Vector3i(x, y, z)] = "bloque_piedra"
 	celdas_l[Vector3i(1, 1, 0)] = "puerta_inferior"
 	celdas_l[Vector3i(1, 2, 0)] = "puerta_superior"
-	celdas_l[Vector3i(1, 3, 0)] = "pared"  # pared sobre la puerta
-	celdas_l[Vector3i(0, 2, 2)] = "ventana"
+	celdas_l[Vector3i(1, 3, 0)] = "bloque_piedra"  # pared sobre la puerta
+	celdas_l[Vector3i(0, 2, 2)] = "vidrio"
 	# La cama va en (2,1)-(3,1), no (1,1)-(2,1): con la regla de vestíbulo
 	# (Task 4), (1,1,1) es el vestíbulo de la puerta principal (1,1,0) —
 	# debe quedar libre.
@@ -751,14 +754,14 @@ func ejecutar_pruebas() -> void:
 	var celda_cabecera_22 := Vector3i(OX10 + 1, 1, OX10)
 	var celda_pies_22 := Vector3i(OX10 + 2, 1, OX10)
 	var celda_baul_22 := Vector3i(OX10 + 3, 1, OX10)
-	mundo.colocar_bloque(celda_piso_22, "piso", true)
-	mundo.colocar_bloque(celda_pared_22, "pared", true)
+	mundo.colocar_bloque(celda_piso_22, "tierra", true)
+	mundo.colocar_bloque(celda_pared_22, "bloque_piedra", true)
 	mundo.colocar_bloque(celda_cabecera_22, "cama_cabecera", true)
 	mundo.colocar_bloque(celda_pies_22, "cama_pies", true)
 	mundo.colocar_bloque(celda_baul_22, "baul", true)
 	var celdas_mundo_22 := {
-		celda_piso_22: "piso",
-		celda_pared_22: "pared",
+		celda_piso_22: "tierra",
+		celda_pared_22: "bloque_piedra",
 		celda_cabecera_22: "cama_cabecera",
 		celda_pies_22: "cama_pies",
 		celda_baul_22: "baul",
@@ -807,15 +810,15 @@ func ejecutar_pruebas() -> void:
 	var celda_pared_fantasma_23 := Vector3i(OX11 + 1, 1, OX11)
 	var orden_23: Array[Vector3i] = [celda_piso_23, celda_pared_real_23, celda_pared_fantasma_23]
 	var tipos_23 := {
-		celda_piso_23: "piso",
-		celda_pared_real_23: "pared",
-		celda_pared_fantasma_23: "pared",
+		celda_piso_23: "tierra",
+		celda_pared_real_23: "bloque_piedra",
+		celda_pared_fantasma_23: "bloque_piedra",
 	}
 	mundo.iniciar_construccion_fantasma([], {}, orden_23, tipos_23)
 	mundo.surtir_construccion(celda_piso_23)  # piso real
 	mundo.surtir_construccion(celda_piso_23)  # pared real (2da del orden); la 3ra sigue fantasma
-	assert(mundo.obtener_tipo(celda_piso_23) == "piso")
-	assert(mundo.obtener_tipo(celda_pared_real_23) == "pared")
+	assert(mundo.obtener_tipo(celda_piso_23) == "tierra")
+	assert(mundo.obtener_tipo(celda_pared_real_23) == "bloque_piedra")
 	assert(mundo.obtener_tipo(celda_pared_fantasma_23) == "fantasma", "Todavía no se surtió")
 
 	var r1_23: Dictionary = mundo.procesar_deconstruccion(celda_pared_real_23)
@@ -832,7 +835,7 @@ func ejecutar_pruebas() -> void:
 	const OX12 := 970
 	var celda_relleno_24 := Vector3i(OX12, 1, OX12)
 	var celda_estructural_24 := Vector3i(OX12 + 1, 1, OX12)
-	var tipos_24 := {celda_estructural_24: "pared"}
+	var tipos_24 := {celda_estructural_24: "bloque_piedra"}
 	mundo.iniciar_construccion_fantasma([celda_relleno_24], {celda_relleno_24: "tierra"}, [celda_estructural_24], tipos_24)
 	assert(mundo.id_de_edificio(celda_relleno_24) == -1, "El relleno nunca se registra, aunque esté en 'orden'")
 	assert(mundo.id_de_edificio(celda_estructural_24) != -1, "La celda estructural sí se registra")
@@ -847,7 +850,7 @@ func ejecutar_pruebas() -> void:
 	const OX12B := 975
 	var celda_relleno_24b := Vector3i(OX12B, 1, OX12B)
 	var celda_estructural_24b := Vector3i(OX12B + 1, 1, OX12B)
-	mundo.iniciar_construccion_fantasma([celda_relleno_24b], {celda_relleno_24b: "tierra"}, [celda_estructural_24b], {celda_estructural_24b: "pared"})
+	mundo.iniciar_construccion_fantasma([celda_relleno_24b], {celda_relleno_24b: "tierra"}, [celda_estructural_24b], {celda_estructural_24b: "bloque_piedra"})
 
 	# Apunta a la celda ESTRUCTURAL, pero como el relleno del grupo sigue
 	# pendiente, debe avanzar el relleno en su lugar -- la estructura no se
@@ -861,7 +864,7 @@ func ejecutar_pruebas() -> void:
 	# ahora sí avanza la estructura.
 	var s2_24b: Dictionary = mundo.surtir_construccion(celda_estructural_24b)
 	assert(s2_24b["completa"], "Con el relleno completo, la estructura se completa normalmente")
-	assert(mundo.obtener_tipo(celda_estructural_24b) == "pared", "Se convierte a su tipo real de estructura")
+	assert(mundo.obtener_tipo(celda_estructural_24b) == "bloque_piedra", "Se convierte a su tipo real de estructura")
 	print("OK: surtir_construccion() surte primero el relleno del grupo completo antes de avanzar la estructura, sin importar a qué celda del grupo se apunte.")
 
 	print("\n=== TEST 25: pausar una construcción, deconstruir parte, y retomarla — el progreso es el mismo índice en ambos sentidos ===")
@@ -871,13 +874,13 @@ func ejecutar_pruebas() -> void:
 	var celda_baul_25 := Vector3i(OX13 + 1, 1, OX13)
 	var orden_25: Array[Vector3i] = [celda_piso_25, celda_pared_25, celda_baul_25]
 	var tipos_25 := {
-		celda_piso_25: "piso",
-		celda_pared_25: "pared",
+		celda_piso_25: "tierra",
+		celda_pared_25: "bloque_piedra",
 		celda_baul_25: "baul",
 	}
 	mundo.iniciar_construccion_fantasma([], {}, orden_25, tipos_25)
 	mundo.surtir_construccion(celda_pared_25)  # convierte la PRIMERA celda pendiente del orden (piso), no la pared -- orden fijo
-	assert(mundo.obtener_tipo(celda_piso_25) == "piso", "El piso fue el primero en surtirse (orden fijo, no el que se apunta)")
+	assert(mundo.obtener_tipo(celda_piso_25) == "tierra", "El piso fue el primero en surtirse (orden fijo, no el que se apunta)")
 	assert(mundo.obtener_tipo(celda_pared_25) == "fantasma", "La pared todavía no se ha surtido")
 	assert(mundo.obtener_tipo(celda_baul_25) == "fantasma", "El baúl todavía no se ha surtido")
 
@@ -895,8 +898,8 @@ func ejecutar_pruebas() -> void:
 	mundo.surtir_construccion(celda_pared_25)
 	mundo.surtir_construccion(celda_pared_25)
 	mundo.surtir_construccion(celda_pared_25)
-	assert(mundo.obtener_tipo(celda_piso_25) == "piso")
-	assert(mundo.obtener_tipo(celda_pared_25) == "pared")
+	assert(mundo.obtener_tipo(celda_piso_25) == "tierra")
+	assert(mundo.obtener_tipo(celda_pared_25) == "bloque_piedra")
 	assert(mundo.obtener_tipo(celda_baul_25) == "baul")
 	print("OK: pausar, deconstruir parcialmente y retomar la construcción usa el mismo índice de progreso en ambos sentidos, sin perder ni duplicar celdas.")
 
@@ -917,13 +920,13 @@ func ejecutar_pruebas() -> void:
 	var celda_pared_27 := Vector3i(OX15, 1, OX15)
 	var celda_cabecera_27 := Vector3i(OX15 + 1, 1, OX15)
 	var celda_pies_27 := Vector3i(OX15 + 2, 1, OX15)
-	mundo.colocar_bloque(celda_piso_27, "piso", true)
-	mundo.colocar_bloque(celda_pared_27, "pared", true)
+	mundo.colocar_bloque(celda_piso_27, "tierra", true)
+	mundo.colocar_bloque(celda_pared_27, "bloque_piedra", true)
 	mundo.colocar_bloque(celda_cabecera_27, "cama_cabecera", true)
 	mundo.colocar_bloque(celda_pies_27, "cama_pies", true)
 	var celdas_mundo_27 := {
-		celda_piso_27: "piso",
-		celda_pared_27: "pared",
+		celda_piso_27: "tierra",
+		celda_pared_27: "bloque_piedra",
 		celda_cabecera_27: "cama_cabecera",
 		celda_pies_27: "cama_pies",
 	}
@@ -949,12 +952,12 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 28: calcular_despeje() de una ventana exige 1 celda hacia el lado externo ===")
 	const OX16 := 1010
-	# Edificio de 1x1: una única celda "ventana" en (OX16, 1, OX16). Su
+	# Edificio de 1x1: una única celda "vidrio" en (OX16, 1, OX16). Su
 	# huella es solo esa columna, así que sus 4 vecinos XZ son TODOS
 	# externos -- calcular_despeje() debe reservar las 4, una por cada
 	# lado, a la misma altura Y.
 	var celda_ventana_28 := Vector3i(OX16, 1, OX16)
-	var celdas_mundo_28 := {celda_ventana_28: "ventana"}
+	var celdas_mundo_28 := {celda_ventana_28: "vidrio"}
 	var despeje_28: Dictionary = mundo.calcular_despeje(celdas_mundo_28)
 	assert(despeje_28.size() == 4, "Una ventana aislada (huella de 1 celda) tiene sus 4 lados externos")
 	for direccion_28 in mundo.VECINOS_ORTOGONALES_XZ:
@@ -988,7 +991,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 30: verificar_despejes() rechaza si el propio despeje no está vacío ===")
 	const OX18 := 1030
 	var celda_ventana_30 := Vector3i(OX18, 1, OX18)
-	var celdas_mundo_30 := {celda_ventana_30: "ventana"}
+	var celdas_mundo_30 := {celda_ventana_30: "vidrio"}
 	var celda_bloqueo_30 := Vector3i(OX18 + 1, 1, OX18)  # una de las 4 celdas de despeje
 	mundo.colocar_bloque(celda_bloqueo_30, "madera")
 	assert(not mundo.verificar_despejes(celdas_mundo_30), "El despeje de la ventana está ocupado por un árbol")
@@ -999,14 +1002,14 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 31: verificar_despejes() rechaza si una celda estructural nueva invade el despeje ajeno ===")
 	const OX19 := 1040
 	var celda_ventana_31 := Vector3i(OX19, 1, OX19)
-	var celdas_mundo_31a := {celda_ventana_31: "ventana"}
-	mundo.colocar_bloque(celda_ventana_31, "ventana", true)
+	var celdas_mundo_31a := {celda_ventana_31: "vidrio"}
+	mundo.colocar_bloque(celda_ventana_31, "vidrio", true)
 	mundo.registrar_edificio_completo(celdas_mundo_31a)
 	# El despeje de esta ventana incluye Vector3i(OX19 + 1, 1, OX19). Un
 	# segundo edificio hipotético con una pared exactamente ahí debe ser
 	# rechazado.
 	var celda_pared_31 := Vector3i(OX19 + 1, 1, OX19)
-	var celdas_mundo_31b := {celda_pared_31: "pared"}
+	var celdas_mundo_31b := {celda_pared_31: "bloque_piedra"}
 	assert(not mundo.verificar_despejes(celdas_mundo_31b), "Una pared nueva no puede caer en el despeje reservado de otro edificio")
 	print("OK: verificar_despejes() rechaza una celda estructural nueva que invade el despeje reservado de otro edificio.")
 
@@ -1038,11 +1041,11 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 33: eliminar_edificio() libera la reserva de despeje ===")
 	const OX21 := 1060
 	var celda_ventana_33 := Vector3i(OX21, 1, OX21)
-	mundo.colocar_bloque(celda_ventana_33, "ventana", true)
-	var celdas_mundo_33 := {celda_ventana_33: "ventana"}
+	mundo.colocar_bloque(celda_ventana_33, "vidrio", true)
+	var celdas_mundo_33 := {celda_ventana_33: "vidrio"}
 	var id_33: int = mundo.registrar_edificio_completo(celdas_mundo_33)
 	var celda_pared_33 := Vector3i(OX21 + 1, 1, OX21)  # cae en el despeje de la ventana
-	var celdas_mundo_33b := {celda_pared_33: "pared"}
+	var celdas_mundo_33b := {celda_pared_33: "bloque_piedra"}
 	assert(not mundo.verificar_despejes(celdas_mundo_33b), "Antes de eliminar, el despeje sigue bloqueando")
 	mundo.eliminar_edificio(id_33)
 	assert(mundo.verificar_despejes(celdas_mundo_33b), "Tras eliminar el edificio, su despeje debe liberarse de inmediato")
@@ -1071,7 +1074,7 @@ func ejecutar_pruebas() -> void:
 	# Celda del hueco compartido: a 1 celda de la puerta A y 2 de la puerta
 	# B -- cae dentro del despeje (profundidad 2) de AMBAS.
 	var celda_pared_34 := Vector3i(OX22 + 1, 1, OX22)
-	var celdas_mundo_34_pared := {celda_pared_34: "pared"}
+	var celdas_mundo_34_pared := {celda_pared_34: "bloque_piedra"}
 	assert(not mundo.verificar_despejes(celdas_mundo_34_pared), "Con los dos edificios en pie, la zona compartida sigue reservada")
 	mundo.eliminar_edificio(id_a_34)
 	assert(not mundo.verificar_despejes(celdas_mundo_34_pared), "Deconstruir el edificio A no debe liberar la reserva que el edificio B (todavía en pie) tiene sobre la misma celda")
@@ -1090,8 +1093,8 @@ func ejecutar_pruebas() -> void:
 	# cada lado tiene UNA celda libre, pero NINGÚN lado tiene las DOS libres a
 	# la vez (mismo lado en cabecera y pies) -- debe rechazarse igual
 	# (reportado jugando en vivo, 2026-09-27).
-	mundo.colocar_bloque(cabecera_34b + Vector3i(0, 0, 1), "pared")
-	mundo.colocar_bloque(pies_34b + Vector3i(0, 0, -1), "pared")
+	mundo.colocar_bloque(cabecera_34b + Vector3i(0, 0, 1), "bloque_piedra")
+	mundo.colocar_bloque(pies_34b + Vector3i(0, 0, -1), "bloque_piedra")
 	assert(not mundo.verificar_despeje_camas(celdas_cama_34b), "ningún lado tiene libres AMBOS extremos a la vez")
 	mundo.minar_bloque(cabecera_34b + Vector3i(0, 0, 1))
 	mundo.minar_bloque(pies_34b + Vector3i(0, 0, -1))
@@ -1099,7 +1102,7 @@ func ejecutar_pruebas() -> void:
 
 	# Bloquea la 2da celda de techo sobre la cabecera: ya no hay 2 celdas
 	# libres encima de ese extremo.
-	mundo.colocar_bloque(cabecera_34b + Vector3i(0, 2, 0), "pared")
+	mundo.colocar_bloque(cabecera_34b + Vector3i(0, 2, 0), "bloque_piedra")
 	assert(not mundo.verificar_despeje_camas(celdas_cama_34b), "falta la 2da celda libre encima de la cabecera")
 	mundo.minar_bloque(cabecera_34b + Vector3i(0, 2, 0))
 	assert(mundo.verificar_despeje_camas(celdas_cama_34b), "con el techo despejado, vuelve a pasar")
@@ -1114,7 +1117,7 @@ func ejecutar_pruebas() -> void:
 	# cama, igual que un dormitorio real con paredes propias.
 	for x in range(OX34C, OX34C + 2):
 		for z in range(OX34C - 1, OX34C + 4):
-			celdas_cuarto_34c[Vector3i(x, 0, z)] = "pared"
+			celdas_cuarto_34c[Vector3i(x, 0, z)] = "bloque_piedra"
 	var cabecera1_34c := Vector3i(OX34C, 1, OX34C)
 	var pies1_34c := Vector3i(OX34C + 1, 1, OX34C)
 	var cabecera2_34c := Vector3i(OX34C, 1, OX34C + 2)
@@ -1127,8 +1130,8 @@ func ejecutar_pruebas() -> void:
 	# bloque -- reportado por el usuario jugando en vivo): el lado que da a la
 	# otra cama queda ocupado por esta pared; cada cama debe usar su lado LIBRE
 	# (el que da hacia afuera del cuarto).
-	celdas_cuarto_34c[Vector3i(OX34C, 1, OX34C + 1)] = "pared"
-	celdas_cuarto_34c[Vector3i(OX34C + 1, 1, OX34C + 1)] = "pared"
+	celdas_cuarto_34c[Vector3i(OX34C, 1, OX34C + 1)] = "bloque_piedra"
+	celdas_cuarto_34c[Vector3i(OX34C + 1, 1, OX34C + 1)] = "bloque_piedra"
 
 	# El sitio de emplazamiento TODAVÍA no está excavado: el mundo real tiene
 	# terreno sólido justo en las columnas laterales libres de cada cama --
@@ -1148,7 +1151,7 @@ func ejecutar_pruebas() -> void:
 	const OX34D := 1210
 	var celda_ventana_34d := Vector3i(OX34D, 1, OX34D)
 	mundo.colocar_bloque(celda_ventana_34d + Vector3i(1, 0, 0), "madera")  # bloquea el despeje de la ventana
-	assert(mundo.motivo_despeje_invalido({celda_ventana_34d: "ventana"}).contains("ventana"), "el motivo debe mencionar la ventana, no un genérico")
+	assert(mundo.motivo_despeje_invalido({celda_ventana_34d: "vidrio"}).contains("vidrio"), "el motivo debe mencionar la ventana, no un genérico")
 	mundo.minar_bloque(celda_ventana_34d + Vector3i(1, 0, 0))
 
 	var celda_puerta_34d := Vector3i(OX34D + 10, 1, OX34D)
@@ -1161,9 +1164,9 @@ func ejecutar_pruebas() -> void:
 	mundo.minar_bloque(celda_puerta_34d + Vector3i(1, 0, 0))
 
 	var celda_ventana_ajena_34d := Vector3i(OX34D + 20, 1, OX34D)
-	var id_ajeno_34d: int = mundo.registrar_edificio_completo({celda_ventana_ajena_34d: "ventana"})
+	var id_ajeno_34d: int = mundo.registrar_edificio_completo({celda_ventana_ajena_34d: "vidrio"})
 	var celda_invasora_34d := celda_ventana_ajena_34d + Vector3i(1, 0, 0)  # cae en su despeje reservado
-	assert(mundo.motivo_despeje_invalido({celda_invasora_34d: "pared"}).contains("vecino"), "el motivo debe mencionar la invasión al vecino, no un genérico")
+	assert(mundo.motivo_despeje_invalido({celda_invasora_34d: "bloque_piedra"}).contains("vecino"), "el motivo debe mencionar la invasión al vecino, no un genérico")
 	mundo.eliminar_edificio(id_ajeno_34d)
 	print("OK: motivo_despeje_invalido() da un mensaje específico por tipo de restricción en vez de mezclarlos.")
 
@@ -1465,7 +1468,7 @@ func ejecutar_pruebas() -> void:
 	mundo.colocar_bloque(celda_losa_48, "piedra")
 	var orden_prep_48: Array[Vector3i] = [celda_cavar_48, celda_losa_48, celda_relleno_48]
 	var tipos_prep_48 := {celda_cavar_48: "aire", celda_losa_48: "fantasma", celda_relleno_48: "tierra"}
-	mundo.iniciar_construccion_fantasma(orden_prep_48, tipos_prep_48, [celda_losa_48], {celda_losa_48: "pared"})
+	mundo.iniciar_construccion_fantasma(orden_prep_48, tipos_prep_48, [celda_losa_48], {celda_losa_48: "bloque_piedra"})
 	assert(mundo.obtener_tipo(celda_cavar_48) == "tierra", "el terreno a cavar sigue intacto al emplazar")
 	assert(mundo.obtener_tipo(celda_losa_48) == "piedra")
 	assert(mundo.obtener_tipo(celda_relleno_48) == "fantasma")
@@ -1488,7 +1491,7 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.obtener_tipo(celda_relleno_48) == "tierra")
 	assert(not s3_48.get("completa", false))
 	var s4_48: Dictionary = mundo.surtir_construccion(celda_losa_48)
-	assert(mundo.obtener_tipo(celda_losa_48) == "pared")
+	assert(mundo.obtener_tipo(celda_losa_48) == "bloque_piedra")
 	assert(s4_48["completa"])
 	print("OK: la cola cava (aire/fantasma) antes de rellenar y solo entonces avanza la estructura.")
 
@@ -1502,7 +1505,7 @@ func ejecutar_pruebas() -> void:
 	mundo.colocar_bloque(celda_cavar_48b, "piedra")
 	mundo.colocar_bloque(agua_48b, "agua")
 	var orden_prep_48b: Array[Vector3i] = [celda_cavar_48b]
-	mundo.iniciar_construccion_fantasma(orden_prep_48b, {celda_cavar_48b: "aire"}, [celda_estructura_48b], {celda_estructura_48b: "pared"})
+	mundo.iniciar_construccion_fantasma(orden_prep_48b, {celda_cavar_48b: "aire"}, [celda_estructura_48b], {celda_estructura_48b: "bloque_piedra"})
 	mundo.surtir_construccion(celda_cavar_48b)
 	mundo._drenar_escurrimiento_para_pruebas()
 	assert(mundo.obtener_tipo(celda_cavar_48b) == "agua", "la celda cavada bajo el agua debe llenarse (escurrimiento al retirar el bloque)")
@@ -1516,7 +1519,7 @@ func ejecutar_pruebas() -> void:
 	var celda_relleno_48c := Vector3i(OX48C + 2, 1, OX48C)  # hueco por rellenar
 	mundo.colocar_bloque(celda_cavar_48c, "tierra")
 	var orden_prep_48c: Array[Vector3i] = [celda_cavar_48c, celda_relleno_48c]
-	var id_48c: int = mundo.iniciar_construccion_fantasma(orden_prep_48c, {celda_cavar_48c: "aire", celda_relleno_48c: "tierra"}, [celda_estructura_48c], {celda_estructura_48c: "pared"})
+	var id_48c: int = mundo.iniciar_construccion_fantasma(orden_prep_48c, {celda_cavar_48c: "aire", celda_relleno_48c: "tierra"}, [celda_estructura_48c], {celda_estructura_48c: "bloque_piedra"})
 	var r_48c: Dictionary = mundo.procesar_deconstruccion(celda_estructura_48c)
 	assert(r_48c["lista_para_remocion"], "un edificio a progreso 0 ya está listo para remoción")
 	mundo.eliminar_edificio(id_48c)
@@ -1535,7 +1538,7 @@ func ejecutar_pruebas() -> void:
 	mundo.colocar_bloque(celda_cavar_48d, "tierra")
 	var orden_prep_48d: Array[Vector3i] = [celda_cavar_48d, celda_relleno_hecho_48d, celda_relleno_pendiente_48d]
 	var tipos_prep_48d := {celda_cavar_48d: "aire", celda_relleno_hecho_48d: "tierra", celda_relleno_pendiente_48d: "tierra"}
-	var id_48d: int = mundo.iniciar_construccion_fantasma(orden_prep_48d, tipos_prep_48d, [celda_estructura_48d], {celda_estructura_48d: "pared"})
+	var id_48d: int = mundo.iniciar_construccion_fantasma(orden_prep_48d, tipos_prep_48d, [celda_estructura_48d], {celda_estructura_48d: "bloque_piedra"})
 	mundo.surtir_construccion(celda_estructura_48d)  # cava
 	mundo.surtir_construccion(celda_estructura_48d)  # rellena el primero
 	assert(mundo.obtener_tipo(celda_relleno_hecho_48d) == "tierra")
@@ -1552,7 +1555,7 @@ func ejecutar_pruebas() -> void:
 	var celda_terreno_48e := Vector3i(OX48E, 1, OX48E)  # terreno real bajo una celda de la estructura (p. ej. la losa enterrada), aún sin cavar
 	var celda_pared_48e := Vector3i(OX48E + 1, 1, OX48E)  # celda de la estructura sobre aire: fantasma
 	mundo.colocar_bloque(celda_terreno_48e, "piedra")
-	var tipos_48e := {celda_terreno_48e: "pared", celda_pared_48e: "pared"}
+	var tipos_48e := {celda_terreno_48e: "bloque_piedra", celda_pared_48e: "bloque_piedra"}
 	var id_48e: int = mundo.iniciar_construccion_fantasma([celda_terreno_48e], {celda_terreno_48e: "fantasma"}, [celda_terreno_48e, celda_pared_48e], tipos_48e)
 	assert(mundo.obtener_tipo(celda_terreno_48e) == "piedra", "al emplazar no se modifica el terreno")
 	assert(mundo.obtener_tipo(celda_pared_48e) == "fantasma")
@@ -1579,8 +1582,8 @@ func ejecutar_pruebas() -> void:
 	var ventana_49 := Vector3i(OX49 + 2, 1, OX49)
 	var baul_49 := Vector3i(OX49 + 3, 1, OX49)
 	var tipos_49 := {
-		pared_49: "pared", puerta_inf_49: "puerta_inferior", puerta_sup_49: "puerta_superior",
-		ventana_49: "ventana", baul_49: "baul",
+		pared_49: "bloque_piedra", puerta_inf_49: "puerta_inferior", puerta_sup_49: "puerta_superior",
+		ventana_49: "vidrio", baul_49: "baul",
 	}
 	var orden_49: Array = mundo_d.ordenar_celdas_edificio(tipos_49)
 	var id_49: int = mundo_d.iniciar_construccion_fantasma([], {}, orden_49, tipos_49)
@@ -1588,7 +1591,7 @@ func ejecutar_pruebas() -> void:
 	assert(d_49.size() == 3, "solo puerta (2 mitades) y ventana; ni pared ni baúl")
 	assert(d_49[puerta_inf_49] == "puerta_inferior")
 	assert(d_49[puerta_sup_49] == "puerta_superior")
-	assert(d_49[ventana_49] == "ventana")
+	assert(d_49[ventana_49] == "vidrio")
 	assert(not d_49.has(pared_49) and not d_49.has(baul_49))
 
 	# Surtir en el orden fijo [pared, puerta_inf, ventana, puerta_sup, baúl]: cada
@@ -1637,7 +1640,7 @@ func ejecutar_pruebas() -> void:
 	var pared_50 := Vector3i(OX50, 1, OX50)
 	var ventana_50 := Vector3i(OX50 + 1, 1, OX50)
 	var relleno_50 := Vector3i(OX50 + 2, 1, OX50)
-	var tipos_50 := {pared_50: "pared", ventana_50: "ventana"}
+	var tipos_50 := {pared_50: "bloque_piedra", ventana_50: "vidrio"}
 	var cuenta_50: Array = [0]
 	mundo_d.fantasmas_cambiados.connect(func() -> void: cuenta_50[0] += 1)
 	var id_50: int = mundo_d.iniciar_construccion_fantasma([relleno_50], {relleno_50: "tierra"}, mundo_d.ordenar_celdas_edificio(tipos_50), tipos_50)
@@ -1663,7 +1666,7 @@ func ejecutar_pruebas() -> void:
 	var pared_50b := Vector3i(OX50B, 1, OX50B)
 	var puerta_inf_50b := Vector3i(OX50B + 1, 1, OX50B)
 	var puerta_sup_50b := Vector3i(OX50B + 1, 2, OX50B)
-	var tipos_50b := {pared_50b: "pared", puerta_inf_50b: "puerta_inferior", puerta_sup_50b: "puerta_superior"}
+	var tipos_50b := {pared_50b: "bloque_piedra", puerta_inf_50b: "puerta_inferior", puerta_sup_50b: "puerta_superior"}
 	var orden_50b: Array = mundo_d.ordenar_celdas_edificio(tipos_50b)
 	assert(orden_50b.back() == puerta_sup_50b, "la puerta superior es la última celda: se revierte primero")
 	var id_50b: int = mundo_d.iniciar_construccion_fantasma([], {}, orden_50b, tipos_50b)
@@ -1703,7 +1706,7 @@ func ejecutar_pruebas() -> void:
 	mundo_d.colocar_bloque(celda_prueba_51, "madera")
 	assert(not mundo_d.verificar_despejes(celdas_51, niveles_51), "un árbol sigue bloqueando")
 	mundo_d.set_cell_item(celda_prueba_51, GridMap.INVALID_CELL_ITEM)
-	mundo_d.colocar_bloque(celda_prueba_51, "pared")
+	mundo_d.colocar_bloque(celda_prueba_51, "bloque_piedra")
 	assert(not mundo_d.verificar_despejes(celdas_51, niveles_51), "una estructura sigue bloqueando")
 	mundo_d.set_cell_item(celda_prueba_51, GridMap.INVALID_CELL_ITEM)
 	mundo_d.colocar_bloque(celda_prueba_51, "tierra")
@@ -1724,7 +1727,7 @@ func ejecutar_pruebas() -> void:
 	mundo_d.colocar_bloque(c_tierra_52, "tierra")
 	assert(mundo_d.es_terreno_natural(c_tierra_52))
 	assert(not mundo_d.es_terreno_natural(Vector3i(OX52 + 1, 1, OX52)), "celda vacía")
-	for tipo_52 in ["madera", "follaje", "pared", "fantasma", "agua"]:
+	for tipo_52 in ["madera", "follaje", "bloque_piedra", "fantasma", "agua"]:
 		var celda_52 := Vector3i(OX52 + 2, 1, OX52)
 		mundo_d.set_cell_item(celda_52, GridMap.INVALID_CELL_ITEM)
 		mundo_d.colocar_bloque(celda_52, tipo_52)
@@ -1745,7 +1748,7 @@ func ejecutar_pruebas() -> void:
 	mundo_d.colocar_bloque(celda_agua_53, "agua")
 	mundo_d._nivel_agua[celda_agua_53] = 3  # simula agua de flujo: colocar_bloque() debe limpiar esta entrada
 	var orden_53: Array[Vector3i] = [celda_agua_53, celda_vacia_53]
-	mundo_d.iniciar_construccion_fantasma(orden_53, {celda_agua_53: "tierra", celda_vacia_53: "tierra"}, [celda_estructura_53], {celda_estructura_53: "pared"})
+	mundo_d.iniciar_construccion_fantasma(orden_53, {celda_agua_53: "tierra", celda_vacia_53: "tierra"}, [celda_estructura_53], {celda_estructura_53: "bloque_piedra"})
 	assert(mundo_d.obtener_tipo(celda_agua_53) == "agua", "al emplazar el agua no se drena ni se reemplaza por un fantasma")
 	assert(mundo_d.obtener_tipo(celda_vacia_53) == "fantasma", "la celda vacía sí recibe su fantasma")
 	var ocupadas_53: Array[Vector3i] = mundo_d.celdas_fantasma_ocupadas()
@@ -1764,7 +1767,7 @@ func ejecutar_pruebas() -> void:
 	mundo_d.colocar_bloque(follaje_a_54, "follaje")
 	mundo_d.colocar_bloque(estructura_b_54, "follaje")
 	var orden_54: Array[Vector3i] = [relleno_a_54]
-	var id_54: int = mundo_d.iniciar_construccion_fantasma(orden_54, {relleno_a_54: "tierra"}, [estructura_b_54], {estructura_b_54: "pared"})
+	var id_54: int = mundo_d.iniciar_construccion_fantasma(orden_54, {relleno_a_54: "tierra"}, [estructura_b_54], {estructura_b_54: "bloque_piedra"})
 	mundo_d.registrar_follaje_pendiente(id_54, [follaje_a_54, estructura_b_54])
 	assert(mundo_d.obtener_tipo(follaje_a_54) == "follaje" and mundo_d.obtener_tipo(estructura_b_54) == "follaje", "al emplazar el follaje sigue en pie")
 	assert(mundo_d.obtener_tipo(relleno_a_54) == "fantasma")
@@ -1775,7 +1778,7 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_d.obtener_tipo(follaje_a_54) == "", "el follaje de la columna A desaparece con su primer paso")
 	assert(mundo_d.obtener_tipo(estructura_b_54) == "follaje", "el de la columna B espera: su columna aún no tuvo ningún paso")
 	var resultado_54: Dictionary = mundo_d.surtir_construccion(estructura_b_54)  # paso de estructura, columna B
-	assert(mundo_d.obtener_tipo(estructura_b_54) == "pared", "la celda de estructura pasa de follaje a pared sólida")
+	assert(mundo_d.obtener_tipo(estructura_b_54) == "bloque_piedra", "la celda de estructura pasa de follaje a pared sólida")
 	assert(resultado_54["completa"])
 	print("OK: el follaje se retira por columna con su primer paso, y la celda de estructura liberada queda sólida.")
 
@@ -1784,7 +1787,7 @@ func ejecutar_pruebas() -> void:
 	var follaje_55 := Vector3i(OX55, 1, OX55)
 	var estructura_55 := Vector3i(OX55 + 1, 1, OX55)
 	mundo_d.colocar_bloque(follaje_55, "follaje")
-	var id_55: int = mundo_d.iniciar_construccion_fantasma([], {}, [estructura_55], {estructura_55: "pared"})
+	var id_55: int = mundo_d.iniciar_construccion_fantasma([], {}, [estructura_55], {estructura_55: "bloque_piedra"})
 	mundo_d.registrar_follaje_pendiente(id_55, [follaje_55])
 	assert(mundo_d.procesar_deconstruccion(estructura_55)["lista_para_remocion"])
 	mundo_d.eliminar_edificio(id_55)
@@ -1835,7 +1838,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 64: contar_baules() suma los baúles de todos los pisos ===")
 	var bp_baules := {"pisos": [
-		{"celdas": {Vector3i(0, 0, 0): "baul", Vector3i(1, 0, 0): "pared", Vector3i(2, 0, 0): "baul"}},
+		{"celdas": {Vector3i(0, 0, 0): "baul", Vector3i(1, 0, 0): "bloque_piedra", Vector3i(2, 0, 0): "baul"}},
 		{"celdas": {Vector3i(0, 0, 0): "baul"}},
 	]}
 	assert(BlueprintValidator.contar_baules(bp_baules) == 3)
@@ -1850,7 +1853,7 @@ func ejecutar_pruebas() -> void:
 			for z in range(3):
 				if x == 1 and y == 1 and z == 1:
 					continue
-				celdas_caja_65[Vector3i(x, y, z)] = "pared"
+				celdas_caja_65[Vector3i(x, y, z)] = "bloque_piedra"
 	var aire_65: Dictionary = BlueprintValidator._detectar_aire_interior(celdas_caja_65, 0, 2, 0, 2, 0, 2)
 	print("Aire interior detectado: ", aire_65.size(), " (esperado: 1)")
 	assert(aire_65.size() == 1)
@@ -1873,16 +1876,16 @@ func ejecutar_pruebas() -> void:
 	var celdas_techo_67: Dictionary = {}
 	for x in range(5):
 		for z in range(5):
-			celdas_techo_67[Vector3i(x, 0, z)] = "pared"  # suelo, 5x5
+			celdas_techo_67[Vector3i(x, 0, z)] = "bloque_piedra"  # suelo, 5x5
 	for y in [1, 2]:
 		for x in range(5):
 			for z in range(5):
 				var es_borde := x == 0 or x == 4 or z == 0 or z == 4
 				if es_borde:
-					celdas_techo_67[Vector3i(x, y, z)] = "pared"
+					celdas_techo_67[Vector3i(x, y, z)] = "bloque_piedra"
 	for x in range(1, 4):
 		for z in range(5):
-			celdas_techo_67[Vector3i(x, 3, z)] = "pared"  # techo, 3x5 (retranqueado en X)
+			celdas_techo_67[Vector3i(x, 3, z)] = "bloque_piedra"  # techo, 3x5 (retranqueado en X)
 	var aire_67: Dictionary = BlueprintValidator._detectar_aire_interior(celdas_techo_67, 0, 4, 0, 3, 0, 4)
 	# Aire interior esperado: y=1,2 con x=1..3, z=1..3 (3x3 cada capa) = 18 celdas.
 	print("Aire interior detectado: ", aire_67.size(), " (esperado: 18)")
@@ -1900,7 +1903,7 @@ func ejecutar_pruebas() -> void:
 	var celdas_dosaguas_68: Dictionary = {}
 	for x in range(5):
 		for z in range(5):
-			celdas_dosaguas_68[Vector3i(x, 0, z)] = "pared"  # suelo 5x5
+			celdas_dosaguas_68[Vector3i(x, 0, z)] = "bloque_piedra"  # suelo 5x5
 	for y in [1, 2, 3]:
 		for x in range(5):
 			for z in range(5):
@@ -1913,16 +1916,16 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta (mitad superior)
 				if x == 4 and z == 2 and y == 2:
 					continue  # ventana (solo en y=2)
-				celdas_dosaguas_68[Vector3i(x, y, z)] = "pared"
+				celdas_dosaguas_68[Vector3i(x, y, z)] = "bloque_piedra"
 	celdas_dosaguas_68[Vector3i(0, 1, 2)] = "puerta_inferior"
 	celdas_dosaguas_68[Vector3i(0, 2, 2)] = "puerta_superior"
-	celdas_dosaguas_68[Vector3i(4, 2, 2)] = "ventana"
+	celdas_dosaguas_68[Vector3i(4, 2, 2)] = "vidrio"
 	celdas_dosaguas_68[Vector3i(1, 1, 1)] = "cama_cabecera"
 	celdas_dosaguas_68[Vector3i(2, 1, 1)] = "cama_pies"
 	celdas_dosaguas_68[Vector3i(1, 1, 3)] = "baul"
 	for x in range(1, 4):
 		for z in range(5):
-			celdas_dosaguas_68[Vector3i(x, 4, z)] = "pared"  # techo 3x5, retranqueado (y=4)
+			celdas_dosaguas_68[Vector3i(x, 4, z)] = "bloque_piedra"  # techo 3x5, retranqueado (y=4)
 
 	var blueprint_68 := BlueprintValidator.estructura_a_blueprint(celdas_dosaguas_68)
 	print("volumen_sellado: ", blueprint_68["volumen_sellado"], " (esperado: true)")
@@ -1977,8 +1980,8 @@ func ejecutar_pruebas() -> void:
 	var celdas_interior_74: Dictionary = {}
 	for x in range(7):
 		for z in range(5):
-			celdas_interior_74[Vector3i(x, 0, z)] = "pared"  # suelo
-			celdas_interior_74[Vector3i(x, 4, z)] = "pared"  # techo
+			celdas_interior_74[Vector3i(x, 0, z)] = "bloque_piedra"  # suelo
+			celdas_interior_74[Vector3i(x, 4, z)] = "bloque_piedra"  # techo
 	for y in [1, 2, 3]:
 		for x in range(7):
 			for z in range(5):
@@ -1988,21 +1991,21 @@ func ejecutar_pruebas() -> void:
 						continue  # puerta principal (y=1,2)
 					if x == 6 and z == 2 and y == 2:
 						continue  # ventana
-					celdas_interior_74[Vector3i(x, y, z)] = "pared"
+					celdas_interior_74[Vector3i(x, y, z)] = "bloque_piedra"
 	for y in [1, 2, 3]:
 		for z in range(5):
 			if z == 2 and y != 3:
 				continue  # puerta interior (y=1,2)
-			celdas_interior_74[Vector3i(3, y, z)] = "pared"  # muro interior en x=3
+			celdas_interior_74[Vector3i(3, y, z)] = "bloque_piedra"  # muro interior en x=3
 	celdas_interior_74[Vector3i(0, 1, 2)] = "puerta_inferior"
 	celdas_interior_74[Vector3i(0, 2, 2)] = "puerta_superior"
 	celdas_interior_74[Vector3i(3, 1, 2)] = "puerta_inferior"
 	celdas_interior_74[Vector3i(3, 2, 2)] = "puerta_superior"
-	celdas_interior_74[Vector3i(6, 2, 2)] = "ventana"
+	celdas_interior_74[Vector3i(6, 2, 2)] = "vidrio"
 	celdas_interior_74[Vector3i(5, 1, 1)] = "cama_cabecera"
 	celdas_interior_74[Vector3i(5, 1, 2)] = "cama_pies"
 	celdas_interior_74[Vector3i(5, 1, 3)] = "baul"
-	celdas_interior_74[Vector3i(4, 1, 2)] = "pared"  # tapa el vestíbulo del lado este de la puerta interior
+	celdas_interior_74[Vector3i(4, 1, 2)] = "bloque_piedra"  # tapa el vestíbulo del lado este de la puerta interior
 
 	var blueprint_74 := BlueprintValidator.estructura_a_blueprint(celdas_interior_74)
 	print("errores_vestibulos: ", blueprint_74["errores_vestibulos"])
@@ -2056,8 +2059,8 @@ func ejecutar_pruebas() -> void:
 	const OX78 := 400
 	for x in range(OX78, OX78 + 5):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, OY78, z), "pared", true)  # suelo
-			mundo.colocar_bloque(Vector3i(x, OY78 + 4, z), "pared", true)  # techo
+			mundo.colocar_bloque(Vector3i(x, OY78, z), "bloque_piedra", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, OY78 + 4, z), "bloque_piedra", true)  # techo
 	for y in [OY78 + 1, OY78 + 2, OY78 + 3]:
 		for x in range(OX78, OX78 + 5):
 			for z in range(5):
@@ -2068,14 +2071,14 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta principal (y=OY78+1 y OY78+2), se coloca aparte
 				if x == OX78 + 4 and z == 2 and y == OY78 + 2:
 					continue  # ventana, se coloca aparte
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX78, OY78 + 1, 2)))  # puerta principal
-	mundo.colocar_bloque(Vector3i(OX78 + 4, OY78 + 2, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX78 + 4, OY78 + 2, 2), "vidrio", true)
 	# Muro nuevo que separa la sub-habitación (x=OX78+3) del resto (x=OX78+1),
 	# sin ninguna abertura: las 3 capas de pared, z=1..3.
 	for y in [OY78 + 1, OY78 + 2, OY78 + 3]:
 		for z in range(1, 4):
-			mundo.colocar_bloque(Vector3i(OX78 + 2, y, z), "pared", true)
+			mundo.colocar_bloque(Vector3i(OX78 + 2, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_cama(Vector3i(OX78 + 3, OY78 + 1, 1), Vector3i(0, 0, 1)))  # cabecera (x+3,z=1), pies (x+3,z=2)
 	mundo.colocar_bloque(Vector3i(OX78 + 3, OY78 + 1, 3), "baul", true)
 
@@ -2109,10 +2112,10 @@ func ejecutar_pruebas() -> void:
 	const OX80 := 500
 	for x in range(OX80, OX80 + 5):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo, 5x5
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # suelo, 5x5
 	for x in range(OX80 + 1, OX80 + 4):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, 8, z), "pared", true)  # techo, 3x5 (retranqueado)
+			mundo.colocar_bloque(Vector3i(x, 8, z), "bloque_piedra", true)  # techo, 3x5 (retranqueado)
 	for y in range(1, 4):
 		for x in range(OX80, OX80 + 5):
 			for z in range(5):
@@ -2123,17 +2126,17 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta historia 1
 				if x == OX80 + 4 and z == 2 and y == 2:
 					continue  # ventana historia 1
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX80, 1, 2)))
-	mundo.colocar_bloque(Vector3i(OX80, 3, 2), "pared", true)
-	mundo.colocar_bloque(Vector3i(OX80 + 4, 2, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX80, 3, 2), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX80 + 4, 2, 2), "vidrio", true)
 	assert(mundo.colocar_cama(Vector3i(OX80 + 1, 1, 1), Vector3i(1, 0, 0)))
 	mundo.colocar_bloque(Vector3i(OX80 + 3, 1, 1), "baul", true)
 	for x in range(OX80, OX80 + 5):
 		for z in range(5):
 			if x == OX80 + 2 and z == 2:
 				continue  # hueco de escalera (centro de la losa intermedia)
-			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)
+			mundo.colocar_bloque(Vector3i(x, 4, z), "bloque_piedra", true)
 	for y in range(5, 8):
 		for x in range(OX80, OX80 + 5):
 			for z in range(5):
@@ -2144,10 +2147,10 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta historia 2
 				if x == OX80 + 4 and z == 2 and y == 6:
 					continue  # ventana historia 2
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX80, 5, 2)))
-	mundo.colocar_bloque(Vector3i(OX80, 7, 2), "pared", true)
-	mundo.colocar_bloque(Vector3i(OX80 + 4, 6, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX80, 7, 2), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX80 + 4, 6, 2), "vidrio", true)
 
 	var estructura_80: Dictionary = mundo.detectar_estructura(Vector3i(OX80, 1, 2))
 	var blueprint_80 := BlueprintValidator.estructura_a_blueprint(estructura_80)
@@ -2175,8 +2178,8 @@ func ejecutar_pruebas() -> void:
 	var celdas_81: Dictionary = {}
 	for x in range(OX81, OX81 + 7):
 		for z in range(5):
-			celdas_81[Vector3i(x, 0, z)] = "pared"  # suelo
-			celdas_81[Vector3i(x, 4, z)] = "pared"  # techo
+			celdas_81[Vector3i(x, 0, z)] = "bloque_piedra"  # suelo
+			celdas_81[Vector3i(x, 4, z)] = "bloque_piedra"  # techo
 	for y in [1, 2, 3]:
 		for x in range(OX81, OX81 + 7):
 			for z in range(5):
@@ -2189,10 +2192,10 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta propia, habitación este (y=1,2)
 				if x == OX81 + 5 and z == 0 and y == 2:
 					continue  # AGUJERO REAL: falta pared del muro sur, solo en esta capa
-				celdas_81[Vector3i(x, y, z)] = "pared"
+				celdas_81[Vector3i(x, y, z)] = "bloque_piedra"
 	for y in [1, 2, 3]:
 		for z in range(5):
-			celdas_81[Vector3i(OX81 + 3, y, z)] = "pared"  # muro interior sólido, sin puerta, separa las 2 habitaciones
+			celdas_81[Vector3i(OX81 + 3, y, z)] = "bloque_piedra"  # muro interior sólido, sin puerta, separa las 2 habitaciones
 	celdas_81[Vector3i(OX81, 1, 2)] = "puerta_inferior"
 	celdas_81[Vector3i(OX81, 2, 2)] = "puerta_superior"
 	celdas_81[Vector3i(OX81 + 6, 1, 2)] = "puerta_inferior"
@@ -2220,8 +2223,8 @@ func ejecutar_pruebas() -> void:
 	var celdas_82: Dictionary = {}
 	for x in range(OX82, OX82 + 5):
 		for z in range(5):
-			celdas_82[Vector3i(x, 0, z)] = "pared"  # suelo
-			celdas_82[Vector3i(x, 4, z)] = "pared"  # techo
+			celdas_82[Vector3i(x, 0, z)] = "bloque_piedra"  # suelo
+			celdas_82[Vector3i(x, 4, z)] = "bloque_piedra"  # techo
 	for y in [1, 2, 3]:
 		for x in range(OX82, OX82 + 5):
 			for z in range(5):
@@ -2232,12 +2235,12 @@ func ejecutar_pruebas() -> void:
 					continue  # las 2 puertas contiguas (y=1,2), lintel común en y=3
 				if x == OX82 + 4 and z == 2 and y == 2:
 					continue  # ventana
-				celdas_82[Vector3i(x, y, z)] = "pared"
+				celdas_82[Vector3i(x, y, z)] = "bloque_piedra"
 	celdas_82[Vector3i(OX82 + 1, 1, 0)] = "puerta_inferior"
 	celdas_82[Vector3i(OX82 + 1, 2, 0)] = "puerta_superior"
 	celdas_82[Vector3i(OX82 + 2, 1, 0)] = "puerta_inferior"
 	celdas_82[Vector3i(OX82 + 2, 2, 0)] = "puerta_superior"
-	celdas_82[Vector3i(OX82 + 4, 2, 2)] = "ventana"
+	celdas_82[Vector3i(OX82 + 4, 2, 2)] = "vidrio"
 	celdas_82[Vector3i(OX82 + 1, 1, 3)] = "cama_cabecera"
 	celdas_82[Vector3i(OX82 + 2, 1, 3)] = "cama_pies"
 	celdas_82[Vector3i(OX82 + 3, 1, 3)] = "baul"
@@ -2262,7 +2265,7 @@ func ejecutar_pruebas() -> void:
 	const OX83 := 800
 	for x in range(OX83, OX83 + 5):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, OY83, z), "pared", true)  # suelo 5x5
+			mundo.colocar_bloque(Vector3i(x, OY83, z), "bloque_piedra", true)  # suelo 5x5
 	for y in [OY83 + 1, OY83 + 2, OY83 + 3]:
 		for x in range(OX83, OX83 + 5):
 			for z in range(5):
@@ -2273,12 +2276,12 @@ func ejecutar_pruebas() -> void:
 					continue  # puerta principal (y+1, y+2)
 				if x == OX83 + 4 and z == 2 and y == OY83 + 2:
 					continue  # ventana
-				mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)
+				mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)
 	assert(mundo.colocar_puerta(Vector3i(OX83, OY83 + 1, 2)))
-	mundo.colocar_bloque(Vector3i(OX83 + 4, OY83 + 2, 2), "ventana", true)
+	mundo.colocar_bloque(Vector3i(OX83 + 4, OY83 + 2, 2), "vidrio", true)
 	for x in range(OX83 - 1, OX83 + 6):  # techo con alero: 1 celda más ancho en X a cada lado
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, OY83 + 4, z), "pared", true)
+			mundo.colocar_bloque(Vector3i(x, OY83 + 4, z), "bloque_piedra", true)
 	assert(mundo.colocar_cama(Vector3i(OX83 + 2, OY83 + 1, 1), Vector3i(1, 0, 0)))
 	mundo.colocar_bloque(Vector3i(OX83 + 2, OY83 + 1, 3), "baul", true)
 
@@ -2301,19 +2304,19 @@ func ejecutar_pruebas() -> void:
 	const OX84 := 900
 	for x in range(OX84, OX84 + 7):
 		for z in range(5):
-			mundo.colocar_bloque(Vector3i(x, 0, z), "pared", true)  # suelo
-			mundo.colocar_bloque(Vector3i(x, 4, z), "pared", true)  # techo
+			mundo.colocar_bloque(Vector3i(x, 0, z), "bloque_piedra", true)  # suelo
+			mundo.colocar_bloque(Vector3i(x, 4, z), "bloque_piedra", true)  # techo
 	for y in [1, 2, 3]:
 		for x in range(OX84, OX84 + 7):
 			for z in range(5):
 				var es_borde84: bool = x == OX84 or x == OX84 + 6 or z == 0 or z == 4
 				if es_borde84:
-					mundo.colocar_bloque(Vector3i(x, y, z), "pared", true)  # perímetro sólido, sin puerta ni ventana
+					mundo.colocar_bloque(Vector3i(x, y, z), "bloque_piedra", true)  # perímetro sólido, sin puerta ni ventana
 	for y in [1, 2, 3]:
 		for z in range(5):
 			if z == 2 and y != 3:
 				continue  # puerta interior (y=1,2)
-			mundo.colocar_bloque(Vector3i(OX84 + 3, y, z), "pared", true)  # muro interior
+			mundo.colocar_bloque(Vector3i(OX84 + 3, y, z), "bloque_piedra", true)  # muro interior
 	assert(mundo.colocar_puerta(Vector3i(OX84 + 3, 1, 2)))  # única puerta del edificio: INTERNA
 	assert(mundo.colocar_cama(Vector3i(OX84 + 1, 1, 1), Vector3i(0, 0, 1)))  # cabecera (x+1,z=1), pies (x+1,z=2)
 	mundo.colocar_bloque(Vector3i(OX84 + 1, 1, 3), "baul", true)

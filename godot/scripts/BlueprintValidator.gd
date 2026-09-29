@@ -14,16 +14,27 @@ class_name BlueprintValidator
 ## (flood-fill / reconocimiento de habitaciones) queda fuera de esta PoC.
 
 const ZONAS_VALIDAS := ["residencial_investigacion", "fabricacion_militar", "periferia"]
+## Vocabulario ABSTRACTO del Blueprint (formato JSON heredado de PoC 2 y
+## resultado de estructura_a_blueprint()): "pared"/"puerta"/"ventana", fijo
+## a propósito. VoxelWorld ya tiene 4 materiales de muro reales
+## (tierra_compactada/bloque_madera/bloque_piedra/estructura_hierro) y
+## "vidrio" en vez de "ventana" (ver docs/superpowers/specs/2026-09-29-
+## costo-colocacion-bloques-design.md), pero ese detalle de material NO le
+## importa a la validación de forma (cerramiento, esquinas, aberturas): sea
+## cual sea el material real, cuenta como "pared" a estos efectos.
+## estructura_a_blueprint() es el ÚNICO lugar que traduce los tipos reales a
+## este vocabulario abstracto (ver su remapeo más abajo); todo lo demás en
+## este archivo sigue operando solo sobre "pared"/"puerta"/"ventana"/"piso",
+## sin necesidad de conocer los materiales reales.
 const TIPOS_CELDA_SOLIDA := ["pared", "puerta", "ventana"]
 ## Bloques "estructurales" (material de construcción: paredes, puertas,
 ## ventanas) vs. mobiliario (cama, baúl) vs. relleno de terreno ("piso").
 ## Se usa para reconocer losas de suelo/techo (ver
 ## _es_losa_parcial/_es_losa_completa). "piso" NUNCA es estructural, ni
 ## siquiera para una losa de suelo/techo: es material de terreno/relleno
-## (ver VoxelWorld.TIPOS_ESTRUCTURA y _generar_terreno/nivelación), nunca un
-## material de construcción — para la PoC el único material estructural es
-## "pared" (más adelante: madera, piedra, metal, vidrio). Coincide, por
-## tanto, con TIPOS_CELDA_SOLIDA (regla de perímetro 2D).
+## (real: "hierba"/"tierra" — ver VoxelWorld.TIPOS_ESTRUCTURA y
+## _generar_terreno/nivelación), nunca un material de construcción. Coincide,
+## por tanto, con TIPOS_CELDA_SOLIDA (regla de perímetro 2D).
 const TIPOS_ESTRUCTURALES := ["pared", "puerta", "ventana"]
 ## Relleno genérico sin significado especial a nivel de Blueprint: una celda
 ## con este tipo, heredada de la plantilla de suelo/techo (ver
@@ -31,8 +42,9 @@ const TIPOS_ESTRUCTURALES := ["pared", "puerta", "ventana"]
 ## de una capa de pared (aunque ese bloque también sea "pared" liso) — solo
 ## un tipo ESPECIAL (puerta/ventana/cama/baúl) ya asignado se protege de ser
 ## pisado por un "pared" posterior. "piso" ya no puede aparecer aquí (nunca
-## es estructural), pero VoxelWorld.detectar_estructura() ya excluye "piso"
-## del flood-fill, así que este caso ni siquiera llega a estructura_a_blueprint().
+## es estructural), pero VoxelWorld.detectar_estructura() ya excluye "hierba"/
+## "tierra" del flood-fill, así que este caso ni siquiera llega a
+## estructura_a_blueprint().
 const TIPOS_RELLENO_GENERICO := ["pared"]
 const VECINOS_ORTOGONALES := [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
 const VECINOS_3D := [
@@ -385,8 +397,14 @@ static func _es_losa_parcial(capa: Dictionary, huella_real: Dictionary) -> bool:
 ## x/z a locales al edificio (mínimo = 0).
 ##
 ## Remapeo de tipos físicos (VoxelWorld) a tipos abstractos (Blueprint):
-## - "puerta_inferior" -> "puerta"; "puerta_superior" se omite (es solo el
-##   volumen de altura de la puerta, no aporta información nueva).
+## - "puerta_inferior" -> "puerta"; "puerta_superior" se remapea a "pared"
+##   (ver más abajo, tapa el muro sin dejar un hueco fantasma).
+## - "vidrio" -> "ventana".
+## - Cualquiera de los 4 materiales de muro reales (tierra_compactada,
+##   bloque_madera, bloque_piedra, estructura_hierro) -> "pared": a la
+##   validación de forma (cerramiento, esquinas) no le importa el material,
+##   solo si la celda es sólida (ver docs/superpowers/specs/2026-09-29-
+##   costo-colocacion-bloques-design.md).
 ## - "cama_cabecera"/"cama_pies" y "baul" pasan como celdas no sólidas.
 ##
 ## Agrupación en "pisos" (historias), NO por cada capa de Y por separado:
@@ -496,6 +514,11 @@ static func _columnas_2d_encerradas(celda_tipos: Dictionary, x_max: int, z_max: 
 				encerradas[clave] = true
 	return encerradas
 
+## Los 4 materiales de muro reales (ver VoxelWorld.TIPOS_ESTRUCTURA) son
+## intercambiables a efectos de Blueprint: la validación de forma no
+## distingue de qué están hechos, solo si la celda es sólida.
+const TIPOS_MURO_REAL := ["tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro"]
+
 static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	# "puerta_superior" se remapea a "pared" (nunca se omite): físicamente
 	# tapa el muro, y si se omitiera por completo dejaría un "agujero
@@ -504,9 +527,18 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	# aunque el techo esté completo. "pared" nunca compite con "puerta" (la
 	# mitad inferior) gracias a la regla de fusión que no pisa un tipo
 	# especial ya asignado con un "pared" de otra capa (ver más abajo).
+	# Los 4 materiales de muro reales también se remapean a "pared" (el
+	# vocabulario abstracto del Blueprint no distingue material, ver la
+	# constante TIPOS_CELDA_SOLIDA más arriba), y "vidrio" a "ventana".
 	var celdas_relevantes: Dictionary = {}
 	for pos in celdas.keys():
-		celdas_relevantes[pos] = "pared" if celdas[pos] == "puerta_superior" else celdas[pos]
+		var tipo_real: String = celdas[pos]
+		if tipo_real == "puerta_superior" or TIPOS_MURO_REAL.has(tipo_real):
+			celdas_relevantes[pos] = "pared"
+		elif tipo_real == "vidrio":
+			celdas_relevantes[pos] = "ventana"
+		else:
+			celdas_relevantes[pos] = tipo_real
 	if celdas_relevantes.is_empty():
 		return {}
 

@@ -8,9 +8,9 @@ Hecho: barra superior (recursos, población, moral, nivel), barra de modos de la
 
 Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir, zonas, vías, etc.) con sus accesos directos, y no por edificios particulares: habrá demasiados como para asignar una tecla a cada uno. Va tras los edificios de recolección jugables (ya implementados) para definir la interfaz con ellos ya presentes, y antes de 2C y de las demás mecánicas para no rehacerla.
 
-### 2. Ventana de interacción del baúl
+### 2. Ventana de interacción del baúl — ✅ hecho (2026-09-28)
 
-Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre una ventana similar a la de asignación de obreros, que muestra el contenido del baúl y ofrece extraer o agregar recursos. Reemplaza al retiro actual por `E` mantenida sobre el baúl (rama de `_procesar_frutos()`), que se elimina al construir la ventana; mantener `E` queda solo para los frutos. Se apoya en el despachador `_interactuar()` que ya existe en `Player.gd` (lo creó el punto de las puertas interactivas). Encaja con el HUD (punto 1).
+Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre `VentanaBaul`, que muestra el almacén local del puesto (una fila por recurso presente en el baúl o en el stock central) con botones -/+ (1 de cada vez, 10 con Shift) y "Extraer todo"/"Agregar todo". Reemplazó al retiro automático por `E` mantenida sobre el baúl; mantener `E` quedó solo para los frutos (`Player._procesar_frutos()`). Se apoya en el despachador `_interactuar()` de `Player.gd`. Ver `godot/scripts/VentanaBaul.gd`.
 
 ### 3. Declaración de edificios por volumen interno — ✅ hecho (2026-09-28)
 

@@ -983,6 +983,25 @@ func _base_y_blueprint(esquina: Vector2i) -> Dictionary:
 	return resultado
 
 
+## Igual que _base_y_blueprint() pero para el puesto "tipo" (giro efectivo
+## "giros"): mismo cálculo (NiveladorTerreno.calcular_base_y()) sobre
+## PlantillasPuesto.celdas(), que ahora también trae una losa de piso
+## enterrada bajo la puerta (capa 0, ver PlantillasPuesto.gd) — un puesto
+## siempre tiene exactamente una puerta, así que nunca cae en el caso
+## "puertas" (varias puertas a niveles distintos) que sí puede rechazar un
+## blueprint residencial (revisión de código, 2026-09-29).
+func _base_y_puesto(esquina: Vector2i, tipo: String, giros: int) -> Dictionary:
+	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, PlantillasPuesto.celdas(tipo, giros))
+	if not resultado["valido"]:
+		return resultado
+	for frente: Vector2i in resultado["frentes"]:
+		if not _frente_es_suelo_firme(frente):
+			resultado["valido"] = false
+			resultado["motivo"] = "frente"
+			return resultado
+	return resultado
+
+
 ## Celdas de terreno REAL a retirar bajo la huella (de calcular_excavacion(),
 ## sin las que ya están vacías, p. ej. cuevas).
 func _celdas_excavacion(esquina: Vector2i, columnas: Array[Vector2i], base_y: int) -> Array[Vector3i]:
@@ -1920,10 +1939,14 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 	var columnas_union: Array[Vector2i] = []
 	columnas_union.append_array(columnas)
 	columnas_union.append_array(columnas_fachada)
-	var fachada: Dictionary = {}  # columna mundial -> nivel del suelo (objetivo)
-	for rel_fachada in columnas_fachada:
-		fachada[esquina + rel_fachada] = objetivo
-	var y_base := objetivo + 1
+	# base_y/fachada: mismo cálculo que un residencial (_base_y_puesto(), ver
+	# NiveladorTerreno.calcular_base_y()) — la losa de piso (capa 0 de la
+	# plantilla, ver PlantillasPuesto.gd) queda enterrada al nivel del suelo
+	# natural frente a la puerta, no siempre en "objetivo + 1" (revisión de
+	# código, 2026-09-29).
+	var resultado_base: Dictionary = _base_y_puesto(esquina, _tipo_puesto_activo, giros)
+	var y_base: int = resultado_base["base_y"]
+	var fachada: Dictionary = resultado_base["fachada"]
 	var celdas_plantilla: Dictionary = PlantillasPuesto.en_mundo(_tipo_puesto_activo, giros, esquina, y_base)
 	var altura_plantilla: int = PlantillasPuesto.altura(_tipo_puesto_activo) + NiveladorTerreno.LIMITE_PENDIENTE
 	return {
@@ -1946,7 +1969,7 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		"fachada": fachada,
 		"celdas_plantilla": celdas_plantilla,
 		"celdas_mundo": celdas_plantilla,
-		"resultado_base": {"base_y": y_base},
+		"resultado_base": resultado_base,
 		"motivo_despeje": mundo.motivo_despeje_invalido(celdas_plantilla, fachada),
 	}
 
@@ -1973,6 +1996,8 @@ func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 		return "Colocación rechazada: el frente de la puerta choca con un recurso de madera o una estructura existente."
 	if ev["choca_fachada"]:
 		return "Colocación rechazada: el frente de la puerta choca con un puesto o construcción ya colocada."
+	if not ev["resultado_base"]["valido"]:
+		return MENSAJES_BASE_Y[ev["resultado_base"]["motivo"]]
 	if ev["motivo_despeje"] != "":
 		return "Colocación rechazada: %s" % ev["motivo_despeje"]
 	return ""
@@ -2052,7 +2077,10 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 					continue  # agua abierta bajo la plataforma: no se toca, no cuesta nada
 				var fondo: int = mundo.altura_en(x, z, true)
 				var bloque: String = "bloque_piedra" if es_pilote else "tierra"
-				for h in range(fondo + 1, objetivo + 1):
+				# Hasta base_y - 1 (no objetivo): la losa de piso (capa 0 de la
+				# plantilla, celdas_plantilla) ya cubre y = base_y en TODA la
+				# huella, pilotes incluidos (revisión de código, 2026-09-29).
+				for h in range(fondo + 1, base_y):
 					var celda_r := Vector3i(x, h, z)
 					relleno_orden.append(celda_r)
 					tipos_relleno[celda_r] = bloque

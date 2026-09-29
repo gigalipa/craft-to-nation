@@ -5,12 +5,17 @@ extends RefCounted
 ## funciones estáticas, sin autoload ni class_name (se carga con preload, como
 ## el resto de scripts sin estado).
 ##
-## Cada plantilla son "capas" de abajo hacia arriba (la capa 0 se coloca en
-## objetivo + 1). Una capa es una lista de filas (eje Z); una fila, un texto con
-## un carácter por columna (eje X). En la plantilla base la puerta está en la
-## fila z = 0 y mira a −Z. Este mismo formato lo producirá luego el conversor
-## de .obj de SketchUp, así que el arte reemplaza estas plantillas provisionales
-## sin tocar código.
+## Cada plantilla son "capas" de abajo hacia arriba. La capa 0 es una losa de
+## piso sólida (enterrada al nivel del suelo natural frente a la puerta, ver
+## NiveladorTerreno.calcular_base_y()); la puerta vive en la capa 1, un bloque
+## arriba, así que el frente de la puerta queda a la MISMA altura de siempre
+## (suelo natural + 1) pero ahora hay una losa real bajo ella en vez de dejar
+## el terreno natural como piso implícito (revisión de código, 2026-09-29).
+## Una capa es una lista de filas (eje Z); una fila, un texto con un carácter
+## por columna (eje X). En la plantilla base la puerta está en la fila z = 0 y
+## mira a −Z. Este mismo formato lo producirá luego el conversor de .obj de
+## SketchUp, así que el arte reemplaza estas plantillas provisionales sin
+## tocar código.
 
 ## Carácter -> bloque fijo (no depende del puesto). "." (y cualquier otro
 ## carácter) es vacío. "#" es especial: se resuelve con el material propio
@@ -32,24 +37,28 @@ const MATERIAL := {
 
 const PLANTILLAS := {
 	"mina": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
 		["##d##", "#...#", "#..B#", "#...#", "#####"],
 		["##D##", "#...#", "#...#", "#...#", "#####"],
 		["#####", "#####", "#####", "#####", "#####"],
 	]},
 	"caza_recoleccion": {"capas": [
+		["####", "####", "####", "####"],
 		["##d#", "#..#", "#.B#", "####"],
 		["##D#", "V..V", "#..#", "##V#"],
 		["####", "####", "####", "####"],
 	]},
 	"maderero": {"capas": [
+		["###", "###", "###", "###"],
 		["#d#", "#.#", "#B#", "###"],
 		["#D#", "#.#", "#.#", "###"],
 		["###", "###", "###", "###"],
 	]},
-	# Edificio en las filas 0-3 (interior libre en las filas 1-2, con el baúl al fondo)
-	# y muelle (cubierta de muro) en las filas 4-5; el agua queda del lado de z alto.
-	# "agua_ref" (x, z) es una celda del extremo de agua.
+	# Losa (fila 0) + edificio en las filas 0-3 (interior libre en las filas 1-2,
+	# con el baúl al fondo) y muelle (cubierta de muro) en las filas 4-5; el agua
+	# queda del lado de z alto. "agua_ref" (x, z) es una celda del extremo de agua.
 	"pesca_frutos_mar": {"capas": [
+		["####", "####", "####", "####", "####", "####"],
 		["#d##", "#..#", "#.B#", "####", "####", "####"],
 		["#D##", "V..V", "#..#", "####", "....", "...."],
 		["####", "####", "####", "####", "....", "...."],

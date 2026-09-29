@@ -80,8 +80,9 @@ func _ready() -> void:
 ## "servicio" (X, Z) es la celda exterior frente a su puerta y "deposito" la
 ## celda de su baúl (ver PlantillasPuesto.gd); sin ellas Colonos usa el anillo
 ## que rodea la huella y no hay depósito físico. "suelo" es la altura Y del piso
-## interior (la capa 0 de la plantilla): los colonos entran a trabajar a las
-## celdas libres de esa capa.
+## interior TRANSITABLE de la plantilla (donde vive la puerta — una capa por
+## encima de la losa de piso, capa 0, ver PlantillasPuesto.gd): los colonos
+## entran a trabajar a las celdas libres de esa capa.
 func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO) -> void:
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,

@@ -52,7 +52,7 @@ func ejecutar_pruebas() -> void:
 				assert(fila.length() == _huella_esperada(tipo).x, tipo + ": columnas por fila")
 		assert(PlantillasPuesto.altura(tipo) >= 2, tipo + ": al menos puerta de 2 bloques")
 
-	print("\n=== TEST 2: cada plantilla tiene una puerta de 2 bloques en z = 0 y al menos un baúl ===")
+	print("\n=== TEST 2: cada plantilla tiene una losa de piso sólida (capa 0), una puerta de 2 bloques en la fila frontal justo encima (capa 1) y al menos un baúl ===")
 	for tipo in TIPOS:
 		var base: Dictionary = PlantillasPuesto.celdas(tipo, 0)
 		var puertas := 0
@@ -60,8 +60,9 @@ func ejecutar_pruebas() -> void:
 		for celda in base:
 			if base[celda] == "puerta_inferior":
 				puertas += 1
-				assert(celda.z == 0 and celda.y == 0, tipo + ": puerta a ras de suelo, en la fila frontal")
+				assert(celda.z == 0 and celda.y == 1, tipo + ": puerta en la fila frontal, una capa sobre la losa de piso")
 				assert(base.get(celda + Vector3i(0, 1, 0)) == "puerta_superior", tipo + ": puerta_superior encima")
+				assert(base.get(celda - Vector3i(0, 1, 0)) != null, tipo + ": losa de piso (capa 0) bajo la puerta")
 			elif base[celda] == "baul":
 				baules += 1
 		assert(puertas == 1, tipo + ": exactamente una puerta")
@@ -91,10 +92,11 @@ func ejecutar_pruebas() -> void:
 		assert(PlantillasPuesto.celdas(tipo, 4) == PlantillasPuesto.celdas(tipo, 0), tipo + ": 4 giros = 0 giros")
 	assert(mina0.size() > 0)
 
-	print("\n=== TEST 5: en_mundo() traslada la plantilla a la esquina y a la altura base ===")
+	print("\n=== TEST 5: en_mundo() traslada la plantilla a la esquina y a la altura base (la losa de piso, capa 0) ===")
 	var mundo5: Dictionary = PlantillasPuesto.en_mundo("mina", 0, Vector2i(10, 20), 5)
-	assert(mundo5.get(Vector3i(12, 5, 20)) == "puerta_inferior", "puerta en (esquina.x + 2, y_base, esquina.z)")
-	assert(mundo5.get(Vector3i(12, 6, 20)) == "puerta_superior")
+	assert(mundo5.get(Vector3i(12, 5, 20)) == "tierra_compactada", "capa 0 (y_base) es la losa de piso")
+	assert(mundo5.get(Vector3i(12, 6, 20)) == "puerta_inferior", "puerta en (esquina.x + 2, y_base + 1, esquina.z)")
+	assert(mundo5.get(Vector3i(12, 7, 20)) == "puerta_superior")
 	assert(mundo5.size() == PlantillasPuesto.celdas("mina", 0).size())
 
 	print("\n=== TEST 6: el extremo de agua de la pesca cambia con el giro (1, 0, 0, 1) ===")
@@ -153,9 +155,10 @@ func ejecutar_pruebas() -> void:
 		var base10: Dictionary = PlantillasPuesto.celdas(tipo, 0)
 		var d10: Vector2i = PlantillasPuesto.dimensiones(tipo)
 		var puerta10: Vector3i = _primera(base10, "puerta_inferior")
-		var vestibulo10 := Vector3i(puerta10.x, 0, puerta10.z + 1)
+		var piso10: int = puerta10.y  # capa del piso interior TRANSITABLE (una sobre la losa, capa 0)
+		var vestibulo10 := Vector3i(puerta10.x, piso10, puerta10.z + 1)
 		assert(not base10.has(vestibulo10) and not base10.has(vestibulo10 + Vector3i(0, 1, 0)), tipo + ": la celda detrás de la puerta debe estar libre (no un baúl ni una pared)")
-		# Relleno por inundación desde el vestíbulo sobre las celdas libres de la capa 0 dentro de la huella.
+		# Relleno por inundación desde el vestíbulo sobre las celdas libres del piso interior dentro de la huella.
 		var alcanzadas10 := {vestibulo10: true}
 		var pendientes10: Array[Vector3i] = [vestibulo10]
 		while not pendientes10.is_empty():
@@ -171,9 +174,9 @@ func ejecutar_pruebas() -> void:
 		var libres10 := 0
 		for x10 in range(d10.x):
 			for z10 in range(1, d10.y):
-				var c10 := Vector3i(x10, 0, z10)
+				var c10 := Vector3i(x10, piso10, z10)
 				var techo10: bool = PlantillasPuesto.celdas(tipo, 0).has(Vector3i(x10, PlantillasPuesto.altura(tipo) - 1, z10))
-				# libre en capa 0 y con techo encima (es interior, no el muelle abierto)
+				# libre en el piso interior y con techo encima (es interior, no el muelle abierto)
 				if not base10.has(c10) and techo10:
 					libres10 += 1
 					assert(alcanzadas10.has(c10), tipo + ": celda interior libre inalcanzable " + str(c10))

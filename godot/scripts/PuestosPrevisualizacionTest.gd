@@ -71,9 +71,9 @@ func ejecutar_pruebas() -> void:
 	var esquina := Vector2i(10, 10)
 	var ev: Dictionary = camara._evaluar_puesto(esquina)
 	assert(camara._mensaje_rechazo_puesto(ev) == "", "sobre suelo plano y libre la colocación es válida, salió: %s" % camara._mensaje_rechazo_puesto(ev))
-	assert(ev["y_base"] == 1, "la capa 0 va sobre el suelo (objetivo 0 + 1)")
+	assert(ev["y_base"] == 0, "la losa de piso (capa 0) queda enterrada al nivel del suelo natural (objetivo 0)")
 	assert(ev["giros"] == 0)
-	assert(ev["celdas_plantilla"] == PlantillasPuesto.en_mundo("mina", 0, esquina, 1), "la plantilla en su posición real")
+	assert(ev["celdas_plantilla"] == PlantillasPuesto.en_mundo("mina", 0, esquina, 0), "la plantilla en su posición real")
 	var fachada_rel: Array[Vector2i] = PlantillasPuesto.fachada("mina", 0)
 	assert(ev["fachada"].size() == fachada_rel.size() and not ev["fachada"].is_empty(), "una columna de fachada por cada columna relativa")
 	for rel in fachada_rel:
@@ -202,7 +202,15 @@ func ejecutar_pruebas() -> void:
 	for recurso7 in ["tierra", "madera", "piedra"]:
 		Ciudad.almacen[recurso7].cantidad = 0.0
 	camara7._confirmar_puesto(esquina7)
-	var celda_muro_7: Vector3i = ev7["celdas_plantilla"].keys()[0]
+	# La puerta (capa 1, sobre la losa de piso) siempre empieza vacía, así que se
+	# marca "fantasma" de inmediato — a diferencia de la losa (capa 0), que puede
+	# coincidir con terreno natural todavía sin excavar (igual que la losa
+	# enterrada de un residencial, ver VoxelWorld._colocar_fantasma_si_vacia()).
+	var celda_muro_7: Vector3i
+	for celda in ev7["celdas_plantilla"]:
+		if ev7["celdas_plantilla"][celda] == "puerta_inferior":
+			celda_muro_7 = celda
+			break
 	assert(mundo7.obtener_tipo(celda_muro_7) == "fantasma", "la plantilla queda como fantasma, no estampada")
 	assert(not Recoleccion.puestos.has(esquina7), "no se registra en Recoleccion hasta completarse")
 	print("OK: colocar un puesto solo inicia su construcción fantasma.")
@@ -330,4 +338,39 @@ func ejecutar_pruebas() -> void:
 	mundo10.free()
 	print("OK: deconstruir/reconstruir un puesto nuevo usa el mecanismo existente de pausa/reanuda.")
 
-	print("\n=== Las 10 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("=== TEST 11: incluso sobre terreno ya parejo, el primer paso es excavar 1 nivel para la losa de piso — no cobra de inmediato ===")
+	# Reporte del usuario (2026-09-29): con 0 tierra en el inventario, al colocar
+	# un puesto salía "No hay suficiente tierra" de inmediato, como si el primer
+	# paso fuera colocar un bloque en vez de excavar. Causa real: la plantilla no
+	# tenía losa de piso (capa 0 era la puerta), así que sobre terreno YA parejo
+	# no había nada que excavar y la cola arrancaba directo en la estructura. Fix:
+	# la plantilla ahora siempre trae una losa de piso (capa 0) que, sobre
+	# terreno parejo, coincide con el bloque natural existente — así que SIEMPRE
+	# hay al menos 1 paso de excavación antes de cualquier cobro (VoxelWorld.
+	# _bloqueado_por_falta_de() nunca bloquea un paso de excavación, "aire"/
+	# "fantasma", ver VoxelWorld.gd:1982).
+	var mundo11: Node = _mundo_plano()
+	var camara11: Camera3D = _camara(mundo11, "mina")
+	camara11.hud = HUDScript.new()
+	add_child(camara11.hud)
+	var esquina11 := Vector2i(30, 20)
+	var ev11: Dictionary = camara11._evaluar_puesto(esquina11)
+	assert(camara11._mensaje_rechazo_puesto(ev11) == "", "válida sobre suelo plano (ya parejo)")
+	for recurso11 in ["tierra", "madera", "piedra", "hierro"]:
+		Ciudad.almacen[recurso11].cantidad = 0.0
+	camara11._confirmar_puesto(esquina11)
+	var celda_puerta11: Vector3i
+	for celda in ev11["celdas_plantilla"]:
+		if ev11["celdas_plantilla"][celda] == "puerta_inferior":
+			celda_puerta11 = celda
+			break
+	var paso11: Dictionary = mundo11.proximo_paso_pendiente(celda_puerta11)
+	assert(paso11["tipo"] == "fantasma" or paso11["tipo"] == "aire", "el primer paso pendiente es de excavación, no de estructura/relleno — salió '%s'" % paso11.get("tipo", "?"))
+	var resultado11: Dictionary = mundo11.surtir_construccion(celda_puerta11)
+	assert(not resultado11.get("insuficiente", false), "un paso de excavación nunca se bloquea por falta de recursos, incluso con el almacén en 0")
+	camara11.hud.queue_free()
+	camara11.free()
+	mundo11.free()
+	print("OK: siempre hay al menos 1 nivel de excavación antes de cualquier cobro, incluso sobre terreno ya parejo.")
+
+	print("\n=== Las 11 pruebas de previsualización de puestos pasaron correctamente ===")

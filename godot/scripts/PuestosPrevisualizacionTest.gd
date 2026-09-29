@@ -12,6 +12,7 @@ const CamaraCenitalScript = preload("res://scripts/CamaraCenital.gd")
 const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const NivelacionOverlayScript = preload("res://scripts/NivelacionOverlay.gd")
+const HUDScript = preload("res://scripts/HUD.gd")
 
 const LADO := 40  # el suelo plano cubre x, z en [0, LADO)
 
@@ -149,4 +150,42 @@ func ejecutar_pruebas() -> void:
 	print("OK: overlays del puesto.")
 
 	mundo.free()
-	print("\n=== Las 5 pruebas de previsualización de puestos pasaron correctamente ===")
+
+	print("=== TEST 6: el resumen de materiales del blueprint residencial llega al cuadro de información en el MISMO frame ===")
+	# Regresión encontrada en revisión de código (2026-09-29):
+	# _actualizar_previsualizacion_blueprint() llamaba hud.mostrar_contexto()
+	# (que BORRA la línea "extra" en cada llamada, corre todos los frames)
+	# ANTES de _actualizar_resumen_materiales() — el resumen quedaba visible
+	# un solo frame hasta que el siguiente mostrar_contexto() lo limpiaba de
+	# nuevo. El orden correcto es: calcular el resumen primero, pasarlo como
+	# texto_extra de mostrar_contexto().
+	var mundo6: Node = _mundo_plano()
+	var camara6: Camera3D = CamaraCenitalScript.new()
+	camara6.mundo = mundo6
+	camara6.nivelador_puesto = NiveladorTerreno.new(CamaraCenitalScript._AlturaSinAgua.new(mundo6))
+	camara6._blueprint_activo = {
+		"celdas_3d": {Vector3i(0, 0, 0): "bloque_piedra"},
+		"pisos": [{"celdas": {}, "camas": [{"pos": "0,0"}]}],
+	}
+	var columnas6: Array[Vector2i] = [Vector2i(0, 0)]
+	var ev6 := {"columnas": columnas6, "resultado_base": {"base_y": 0}, "fachada": {}}
+	camara6._actualizar_resumen_materiales(Vector2i(5, 5), ev6, true)
+	assert(camara6._resumen_blueprint_texto.contains("Camas: 1"), "cuenta la cama del blueprint")
+	assert(camara6._resumen_blueprint_texto.contains("piedra"), "bloque_piedra cuesta piedra")
+
+	var hud6: CanvasLayer = HUDScript.new()
+	var oxigeno6 := Label.new()
+	oxigeno6.name = "OxigenoLabel"
+	hud6.add_child(oxigeno6)
+	add_child(hud6)
+	camara6.hud = hud6
+	# Mismo orden que el código real: mostrar_contexto() recibe el resumen YA
+	# calculado como texto_extra, en vez de que algo lo actualice después.
+	hud6.mostrar_contexto("Edificio residencial", {}, ["COLOCAR"], true, camara6._resumen_blueprint_texto)
+	assert(hud6._contexto.extra.visible and hud6._contexto.extra.text == camara6._resumen_blueprint_texto, "el resumen sigue visible tras mostrar_contexto(), no se borra")
+	hud6.queue_free()
+	camara6.free()
+	mundo6.free()
+	print("OK: el resumen de materiales llega al cuadro de información sin perderse.")
+
+	print("\n=== Las 6 pruebas de previsualización de puestos pasaron correctamente ===")

@@ -292,14 +292,11 @@ func probar_panel_desvanece() -> void:
 func probar_transicion_hud() -> void:
 	print("=== TEST 2d: HUD.iniciar_transicion() (crossfade hotbar <-> barra de modos) ===")
 	var hud: CanvasLayer = HUDScript.new()
-	# HUD._ready() espera $OxigenoLabel y $MaterialesFicha (@onready): en la
-	# escena real los pone Main.tscn; aquí se agregan a mano antes de add_child.
+	# HUD._ready() espera $OxigenoLabel (@onready): en la escena real lo pone
+	# Main.tscn; aquí se agrega a mano antes de add_child.
 	var oxigeno := Label.new()
 	oxigeno.name = "OxigenoLabel"
 	hud.add_child(oxigeno)
-	var materiales := Label.new()
-	materiales.name = "MaterialesFicha"
-	hud.add_child(materiales)
 	add_child(hud)
 	await get_tree().process_frame  # deja correr _ready() (set_vista(true) inicial)
 	assert(hud._hotbar.visible and not hud._barra_modos.visible, "arranca en 1ª persona")

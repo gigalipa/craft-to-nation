@@ -1,6 +1,7 @@
 extends Camera3D
 
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
+const HUDScript = preload("res://scripts/HUD.gd")
 const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
@@ -246,6 +247,10 @@ var _blueprint_activo: Dictionary = {}
 ## (se recalcula solo si cambia, o si se invalida al rotar/entrar al modo).
 const SIN_RESUMEN := Vector2i(-999999, -999999)
 var _resumen_blueprint_vigente: Vector2i = SIN_RESUMEN
+## Texto ya calculado por _actualizar_resumen_materiales() para la última
+## esquina vigente — quien llama debe pasarlo como texto_extra de
+## hud.mostrar_contexto() en CADA frame (ver el comentario de esa función).
+var _resumen_blueprint_texto: String = ""
 ## Última esquina para la que se dibujaron los overlays de nivelación (mismo
 ## criterio que _resumen_blueprint_vigente).
 var _overlay_vigente: Vector2i = SIN_RESUMEN
@@ -1125,11 +1130,18 @@ func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
 	return ""
 
 
-## Actualiza el resumen de materiales (y camas/baúles) en el cuadro de
-## información del blueprint activo en "esquina" (evaluación "ev" de
-## _evaluar_blueprint()). Se recalcula solo si cambió la esquina (o se
-## invalidó, ver SIN_RESUMEN). Si la colocación no es válida muestra "-".
-## Cuenta la nivelación de la huella Y de la fachada.
+## Recalcula (solo si cambió la esquina, o se invalidó, ver SIN_RESUMEN) y
+## guarda en _resumen_blueprint_texto el resumen de materiales (y
+## camas/baúles) del blueprint activo en "esquina" (evaluación "ev" de
+## _evaluar_blueprint()). Si la colocación no es válida guarda "-". Cuenta
+## la nivelación de la huella Y de la fachada.
+## NO se lo pasa directo al HUD aquí: quien llama (_actualizar_
+## previsualizacion_blueprint()) debe pasar _resumen_blueprint_texto como
+## "texto_extra" de hud.mostrar_contexto() — mostrar_contexto() BORRA la
+## línea "extra" en cada llamada (corre todos los frames), así que
+## actualizarla por separado (como hacía antes) la dejaba visible solo un
+## frame, hasta que mostrar_contexto() volvía a limpiarla (hallado en
+## revisión de código, 2026-09-29).
 func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: bool) -> void:
 	var clave: Vector2i = esquina if valida else SIN_RESUMEN
 	if clave == _resumen_blueprint_vigente:
@@ -1138,7 +1150,7 @@ func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: b
 	var camas: int = BlueprintValidator.contar_camas(_blueprint_activo)
 	var baules: int = BlueprintValidator.contar_baules(_blueprint_activo)
 	if not valida:
-		hud.actualizar_materiales({}, camas, baules)
+		_resumen_blueprint_texto = HUDScript.texto_materiales({}, camas, baules)
 		return
 	var plan: Dictionary = _plan_nivelacion(esquina, ev["columnas"], ev["resultado_base"]["base_y"], ev["fachada"])
 	var total_relleno := 0
@@ -1146,7 +1158,7 @@ func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: b
 		total_relleno += cantidad
 	var recogido: Dictionary = _material_excavado(plan["excavacion"])
 	var neto: Dictionary = nivelador_puesto.resumen_materiales(_blueprint_activo["celdas_3d"], total_relleno, recogido)
-	hud.actualizar_materiales(neto, camas, baules)
+	_resumen_blueprint_texto = HUDScript.texto_materiales(neto, camas, baules)
 
 
 ## Dibuja los overlays del blueprint activo en "esquina" (evaluación "ev" de
@@ -1214,8 +1226,8 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		var tipo_celda: String = _blueprint_activo["celdas_3d"][rel]
 		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
-	hud.mostrar_contexto("Edificio residencial", {}, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida)
 	_actualizar_resumen_materiales(esquina, ev, valida)
+	hud.mostrar_contexto("Edificio residencial", {}, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, _resumen_blueprint_texto)
 	_actualizar_overlays(esquina, ev)
 
 

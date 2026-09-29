@@ -13,6 +13,8 @@ const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const NivelacionOverlayScript = preload("res://scripts/NivelacionOverlay.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
+const PlayerScript = preload("res://scripts/Player.gd")
+const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
 
 const LADO := 40  # el suelo plano cubre x, z en [0, LADO)
 
@@ -27,6 +29,7 @@ func _mundo_plano() -> Node:
 	mundo.mesh_library = load("res://assets/BlockLibrary.res")
 	mundo.cell_size = Vector3.ONE
 	mundo._indexar_biblioteca()
+	mundo.arboles = GeneradorArbolScript.new()
 	for x in range(LADO):
 		for z in range(LADO):
 			mundo.colocar_bloque(Vector3i(x, 0, z), "tierra")
@@ -202,9 +205,36 @@ func ejecutar_pruebas() -> void:
 	var celda_muro_7: Vector3i = ev7["celdas_plantilla"].keys()[0]
 	assert(mundo7.obtener_tipo(celda_muro_7) == "fantasma", "la plantilla queda como fantasma, no estampada")
 	assert(not Recoleccion.puestos.has(esquina7), "no se registra en Recoleccion hasta completarse")
+	print("OK: colocar un puesto solo inicia su construcción fantasma.")
+
+	print("=== TEST 8: completar la construcción del puesto lo registra en Recoleccion/Economia — antes, no ===")
+	# surtir_construccion(celda_muro_7) sirve para avanzar CUALQUIER cola del
+	# mismo edificio (relleno primero, estructura después) apuntando siempre
+	# a la misma celda de la plantilla — mismo criterio que ya usan las
+	# pruebas de construcción de un residencial (ver BlueprintValidatorTest.gd).
+	for recurso8 in ["tierra", "madera", "piedra"]:
+		Ciudad.almacen[recurso8].cantidad = 999999.0
+	var resultado8: Dictionary
+	var limite8 := 0
+	while limite8 < 2000:
+		resultado8 = mundo7.surtir_construccion(celda_muro_7)
+		limite8 += 1
+		if resultado8.get("completa", false):
+			break
+		assert(not resultado8.get("insuficiente", false), "con fondos de sobra, ningún paso debe rechazarse por falta de recurso")
+	assert(resultado8.get("completa", false), "la construcción se completó dentro del límite de pasos")
+	assert(not Recoleccion.puestos.has(esquina7), "surtir_construccion() por sí sola NO registra el puesto: falta _completar_construccion()")
+
+	var jugador8: CharacterBody3D = PlayerScript.new()
+	jugador8.mundo = mundo7
+	jugador8.hud = camara7.hud
+	jugador8._completar_construccion(resultado8["metadata"])
+	assert(Recoleccion.puestos.has(esquina7), "_completar_construccion() registra el puesto en Recoleccion al completarse")
+	assert(Economia.puestos.has(esquina7), "...y en Economia")
+	jugador8.free()
 	camara7.hud.queue_free()
 	camara7.free()
 	mundo7.free()
-	print("OK: colocar un puesto solo inicia su construcción fantasma.")
+	print("OK: el puesto se activa exactamente al completar su construcción.")
 
-	print("\n=== Las 7 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== Las 8 pruebas de previsualización de puestos pasaron correctamente ===")

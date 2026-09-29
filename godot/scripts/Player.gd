@@ -1084,6 +1084,17 @@ func _ejecutar_sucesion(motivo: String) -> void:
 func _completar_construccion(metadata: Dictionary) -> void:
 	if metadata.is_empty():
 		return
+	if metadata.has("puesto_nuevo"):
+		var info: Dictionary = metadata["puesto_nuevo"]
+		var centro: Vector2i = info["centro"]
+		var altura: int = mundo.altura_en(centro.x, centro.y)
+		var entorno: Dictionary = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"])
+		var tasas: Dictionary = Recoleccion.tasas_de_entorno(info["tipo"], mundo, entorno)
+		Recoleccion.colocar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"])
+		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"])
+		print("Puesto '%s' construido en (%d, %d)." % [info["tipo"], info["esquina"].x, info["esquina"].y])
+		hud.notificar("Puesto construido.")
+		return
 	if metadata.has("puesto"):
 		Economia.reactivar_puesto(metadata["puesto"])
 		print("Puesto reactivado en ", metadata["puesto"], ".")

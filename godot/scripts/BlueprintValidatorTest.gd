@@ -109,6 +109,13 @@ func _rectangulo(ancho: int, alto: int) -> Array[Vector2i]:
 
 
 func ejecutar_pruebas() -> void:
+	# surtir_construccion() ahora cobra de Ciudad.almacen (ver
+	# VoxelWorld._bloqueado_por_falta_de()): las pruebas de este archivo, salvo
+	# las que prueban explícitamente el rechazo por falta de recurso (TEST 87,
+	# 88), no quieren preocuparse por el costo — les sobra de todo.
+	for recurso_fondo in ["tierra", "madera", "piedra", "hierro", "cobre", "carbon", "tierras_raras"]:
+		Ciudad.almacen[recurso_fondo].cantidad = 999999.0
+
 	print("=== TEST 1: Blueprint Válido (debe pasar sin errores) ===")
 	var bp_valido: Dictionary = JSON.parse_string(BLUEPRINT_VALIDO_JSON)
 	var resultado: Dictionary = BlueprintValidator.validar_blueprint(bp_valido, "residencial_investigacion")
@@ -2376,4 +2383,48 @@ func ejecutar_pruebas() -> void:
 	assert(resultado_85["valido"], "4 materiales de muro distintos en el mismo edificio: debe seguir siendo válido")
 	assert(resultado_85["errores"].is_empty())
 
-	print("\n=== Las 85 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 86: la cola de construcción ACREDITA al excavar terreno natural (mismo rendimiento que minar a mano) ===")
+	# Mundo propio: aísla el almacén de Ciudad de lo que dejaron las pruebas anteriores.
+	var mundo_econ: Node = VoxelWorld.new()
+	mundo_econ.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_econ.cell_size = Vector3.ONE * 1.0
+	mundo_econ._indexar_biblioteca()
+	const OX86 := 1200
+	var celda_excavar_86 := Vector3i(OX86, 0, 0)
+	mundo_econ.colocar_bloque(celda_excavar_86, "piedra")  # terreno natural, no colocado_por_jugador
+	Ciudad.almacen["piedra"].cantidad = 0.0
+	mundo_econ.iniciar_construccion_fantasma([celda_excavar_86], {celda_excavar_86: "aire"}, [], {})
+	mundo_econ.surtir_construccion(celda_excavar_86)
+	assert(mundo_econ.obtener_tipo(celda_excavar_86) == "", "se excavó")
+	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, Recoleccion.rendimiento_de("piedra")), "acredita el mismo rendimiento que minar a mano (10 piedra)")
+
+	print("\n=== TEST 87: la cola de RELLENO cobra tierra por celda y bloquea el paso si no alcanza ===")
+	var celda_relleno_87 := Vector3i(OX86 + 1, 0, 0)
+	Ciudad.almacen["tierra"].cantidad = 0.0
+	mundo_econ.iniciar_construccion_fantasma([celda_relleno_87], {celda_relleno_87: "tierra"}, [], {})
+	var r_87a: Dictionary = mundo_econ.surtir_construccion(celda_relleno_87)
+	assert(r_87a.get("insuficiente", false) and r_87a["recurso"] == "tierra", "sin tierra en el almacén, rechaza el paso")
+	assert(mundo_econ.obtener_tipo(celda_relleno_87) == "fantasma", "no avanza: sigue fantasma")
+	assert(Ciudad.almacen["tierra"].cantidad == 0.0, "el intento fallido no descuenta nada")
+	Ciudad.almacen["tierra"].cantidad = 1.0
+	var r_87b: Dictionary = mundo_econ.surtir_construccion(celda_relleno_87)
+	assert(not r_87b.get("insuficiente", false), "con 1 tierra en el almacén, esta vez sí avanza")
+	assert(mundo_econ.obtener_tipo(celda_relleno_87) == "tierra", "se rellenó")
+	assert(Ciudad.almacen["tierra"].cantidad == 0.0, "cobró la 1 tierra que costaba")
+
+	print("\n=== TEST 88: surtir la ESTRUCTURA cobra el costo individual de la celda, bloquea sin fondos, y marca la celda como pagada (el reembolso ya existente funcionará al deconstruirla) ===")
+	var celda_estructura_88 := Vector3i(OX86 + 2, 5, 0)
+	mundo_econ.iniciar_construccion_fantasma([], {}, [celda_estructura_88], {celda_estructura_88: "bloque_piedra"})
+	Ciudad.almacen["piedra"].cantidad = 4.0  # bloque_piedra cuesta 5
+	var r_88a: Dictionary = mundo_econ.surtir_construccion(celda_estructura_88)
+	assert(r_88a.get("insuficiente", false) and r_88a["recurso"] == "piedra")
+	assert(mundo_econ.obtener_tipo(celda_estructura_88) == "fantasma")
+	assert(Ciudad.almacen["piedra"].cantidad == 4.0, "el intento fallido no descuenta nada")
+	Ciudad.almacen["piedra"].cantidad = 5.0
+	var r_88b: Dictionary = mundo_econ.surtir_construccion(celda_estructura_88)
+	assert(r_88b["completa"], "única celda de la estructura: se completa la obra")
+	assert(mundo_econ.obtener_tipo(celda_estructura_88) == "bloque_piedra")
+	assert(Ciudad.almacen["piedra"].cantidad == 0.0, "cobró las 5 piedra que costaba")
+	assert(mundo_econ.celdas_pagadas.has(celda_estructura_88), "queda marcada como pagada: deconstruirla la reembolsará, igual que colocarla a mano")
+
+	print("\n=== Las 88 pruebas de BlueprintValidator pasaron correctamente ===")

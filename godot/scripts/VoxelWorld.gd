@@ -1912,21 +1912,60 @@ func obras_con_permiso(entidad) -> Array[int]:
 ## Aplica un paso ya avanzado de la cola de preparación del terreno (ver
 ## Construccion.avanzar()): "resultado" trae {"celda", "tipo"}. "tierra"
 ## (relleno) convierte la celda —fantasma, agua o follaje— en bloque real (ver
-## _reemplazar_celda()). "aire" y "fantasma"
-## son EXCAVACIÓN: la celda es terreno real y se retira; "fantasma" indica
-## que además pertenece a la estructura del edificio (p. ej. la losa
+## _reemplazar_celda()); su costo ya se cobró antes de avanzar la cola (ver
+## _bloqueado_por_falta_de()). "aire" y "fantasma"
+## son EXCAVACIÓN: la celda es terreno real y se retira, acreditando su
+## rendimiento (ver _acreditar_excavacion()) si es terreno natural; "fantasma"
+## indica que además pertenece a la estructura del edificio (p. ej. la losa
 ## enterrada) y por eso queda como fantasma en vez de vacía.
 func _aplicar_paso_cola(resultado: Dictionary) -> void:
 	var celda: Vector3i = resultado["celda"]
 	var tipo: String = resultado["tipo"]
 	_despejar_follaje_de_columna(Vector2i(celda.x, celda.z))
 	if tipo == "aire" or tipo == "fantasma":
+		_acreditar_excavacion(celda)
 		_retirar_bloque(celda)
 		if tipo == "fantasma":
 			colocar_bloque(celda, "fantasma")
 	else:
 		_reemplazar_celda(celda, tipo)
 	fantasmas_cambiados.emit()
+
+
+## Acredita a Ciudad.almacen el rendimiento de excavar "celda" (mismo
+## rendimiento que minar a mano, Recoleccion.RENDIMIENTO_POR_BLOQUE) si es
+## terreno natural — mismo criterio que extraer_por_avatar(). Debe llamarse
+## ANTES de retirar el bloque (necesita leer su tipo real todavía puesto).
+func _acreditar_excavacion(celda: Vector3i) -> void:
+	if not (es_terreno_natural(celda) and not colocado_por_jugador.has(celda)):
+		return
+	var recurso: String = material_real(obtener_tipo(celda))
+	var unidades: float = Recoleccion.rendimiento_de(recurso)
+	if unidades <= 0.0:
+		return
+	Ciudad.almacen[recurso].agregar(unidades)
+
+
+## Antes de avanzar un paso de construcción (relleno o estructura), cobra su
+## costo de Ciudad.almacen si corresponde (NiveladorTerreno.COSTO_POR_CELDA)
+## y marca "celda" como pagada (celdas_pagadas) para que el reembolso al
+## reminarla funcione igual que con la hotbar (ver Player._colocar()).
+## Nunca cobra por excavación ("aire"/"fantasma": eso se ACREDITA al
+## aplicarse, ver _acreditar_excavacion()). Devuelve "" si se puede avanzar
+## (ya cobrado si hacía falta), o el nombre del primer recurso que falta si
+## no alcanza — se comprueba ANTES de llamar a Construccion.avanzar() para
+## no mover su índice de progreso si la construcción no puede pagarlo (eso
+## desincronizaría la cola: el paso quedaría marcado como hecho sin haberse
+## aplicado nunca).
+func _bloqueado_por_falta_de(tipo: String, celda: Vector3i) -> String:
+	if tipo == "aire" or tipo == "fantasma":
+		return ""
+	var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
+	for recurso in costo:
+		if not Ciudad.almacen[recurso].consumir(costo[recurso]):
+			return recurso
+	celdas_pagadas[celda] = true
+	return ""
 
 
 ## Avanza, según a qué pertenezca "celda": si todavía es parte de una cola
@@ -1943,13 +1982,22 @@ func _aplicar_paso_cola(resultado: Dictionary) -> void:
 ## edificio nunca tuvo relleno), avanza la SIGUIENTE celda pendiente en
 ## edificio_orden, sin importar si "celda" en sí ya es real. No-op ({}) si
 ## "celda" no pertenece a ningún relleno huérfano NI a ningún edificio con
-## progreso incompleto.
+## progreso incompleto. Antes de avanzar CUALQUIER paso que no sea
+## excavación, cobra su costo de Ciudad.almacen (ver
+## _bloqueado_por_falta_de()); si falta el recurso, el paso NO avanza y
+## devuelve {"insuficiente": true, "recurso": ..., "tipo": ...} para que
+## Player._colocar() lo notifique, igual que "bloqueada".
 func surtir_construccion(celda: Vector3i) -> Dictionary:
 	var id_relleno_huerfano: int = Construccion.construccion_de(celda)
 	if id_relleno_huerfano != -1 and id_de_edificio(celda) == -1:
-		var resultado_relleno: Dictionary = Construccion.avanzar(id_relleno_huerfano)
-		if resultado_relleno.is_empty():
+		var pendientes_h: Array[Vector3i] = Construccion.celdas_pendientes(id_relleno_huerfano)
+		if pendientes_h.is_empty():
 			return {}
+		var tipo_h: String = Construccion.tipo_pendiente(id_relleno_huerfano)
+		var falta_h: String = _bloqueado_por_falta_de(tipo_h, pendientes_h[0])
+		if falta_h != "":
+			return {"insuficiente": true, "recurso": falta_h, "tipo": tipo_h}
+		var resultado_relleno: Dictionary = Construccion.avanzar(id_relleno_huerfano)
 		_aplicar_paso_cola(resultado_relleno)
 		return {"completa": false, "metadata": {}}
 
@@ -1967,8 +2015,13 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 
 	if edificio_relleno_cola.has(id):
 		var id_cola_relleno: int = edificio_relleno_cola[id]
-		var resultado_grupo: Dictionary = Construccion.avanzar(id_cola_relleno)
-		if not resultado_grupo.is_empty():
+		var pendientes_r: Array[Vector3i] = Construccion.celdas_pendientes(id_cola_relleno)
+		if not pendientes_r.is_empty():
+			var tipo_r: String = Construccion.tipo_pendiente(id_cola_relleno)
+			var falta_r: String = _bloqueado_por_falta_de(tipo_r, pendientes_r[0])
+			if falta_r != "":
+				return {"insuficiente": true, "recurso": falta_r, "tipo": tipo_r}
+			var resultado_grupo: Dictionary = Construccion.avanzar(id_cola_relleno)
 			_aplicar_paso_cola(resultado_grupo)
 			_sincronizar_cuerpo(id)
 			if resultado_grupo["completa"]:
@@ -1984,6 +2037,9 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 		return {}
 	var celda_a_surtir: Vector3i = orden[progreso]
 	var tipo: String = edificio_tipos[id][celda_a_surtir]
+	var falta: String = _bloqueado_por_falta_de(tipo, celda_a_surtir)
+	if falta != "":
+		return {"insuficiente": true, "recurso": falta, "tipo": tipo}
 	_despejar_follaje_de_columna(Vector2i(celda_a_surtir.x, celda_a_surtir.z))
 	_reemplazar_celda(celda_a_surtir, tipo)
 	edificio_progreso[id] = progreso + 1

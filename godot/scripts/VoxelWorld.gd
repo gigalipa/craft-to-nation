@@ -1989,6 +1989,43 @@ func _bloqueado_por_falta_de(tipo: String, celda: Vector3i) -> String:
 	return ""
 
 
+## Celda y tipo del PRÓXIMO paso que surtir_construccion("celda") aplicaría
+## ahora mismo, SIN mutar nada (ni la cola de Construccion.gd ni cobrar) —
+## para que Player.gd sepa cuánto debe tardar este paso ANTES de llamar a
+## surtir_construccion() de verdad: un paso de excavación ("aire"/
+## "fantasma") debe tardar lo mismo que minar a mano ese material
+## (Recoleccion.tiempo_minado_de()), no el intervalo fijo de colocar/surtir
+## relleno o estructura (decisión del usuario, 2026-09-29, revisión de
+## código). Mismo criterio de resolución de cola que surtir_construccion()
+## (huérfana -> relleno propio -> estructura), sin sus chequeos de
+## ocupantes/costo — esos no cambian CUÁL celda sigue. {} si "celda" no
+## tiene ningún paso pendiente.
+func proximo_paso_pendiente(celda: Vector3i) -> Dictionary:
+	var id_relleno_huerfano: int = Construccion.construccion_de(celda)
+	if id_relleno_huerfano != -1 and id_de_edificio(celda) == -1:
+		var pendientes_h: Array[Vector3i] = Construccion.celdas_pendientes(id_relleno_huerfano)
+		if pendientes_h.is_empty():
+			return {}
+		return {"celda": pendientes_h[0], "tipo": Construccion.tipo_pendiente(id_relleno_huerfano)}
+
+	var id: int = id_de_edificio(celda)
+	if id == -1:
+		return {}
+	if edificio_relleno_cola.has(id):
+		var id_cola_relleno: int = edificio_relleno_cola[id]
+		var pendientes_r: Array[Vector3i] = Construccion.celdas_pendientes(id_cola_relleno)
+		if not pendientes_r.is_empty():
+			return {"celda": pendientes_r[0], "tipo": Construccion.tipo_pendiente(id_cola_relleno)}
+	if not edificio_orden.has(id):
+		return {}
+	var orden: Array = edificio_orden[id]
+	var progreso: int = edificio_progreso[id]
+	if progreso >= orden.size():
+		return {}
+	var celda_a_surtir: Vector3i = orden[progreso]
+	return {"celda": celda_a_surtir, "tipo": edificio_tipos[id][celda_a_surtir]}
+
+
 ## Avanza, según a qué pertenezca "celda": si todavía es parte de una cola
 ## de RELLENO activa en Construccion.gd sin dueño (una celda de nivelación
 ## suelta, de un edificio ya eliminado — ver eliminar_edificio()), avanza

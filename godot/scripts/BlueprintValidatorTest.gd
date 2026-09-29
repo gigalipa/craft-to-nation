@@ -2462,4 +2462,36 @@ func ejecutar_pruebas() -> void:
 	assert(not mundo_econ.celdas_pagadas.has(celda_estructura_88), "eliminar_edificio() no deja la marca de pagada colgando")
 	assert(mundo_econ.obtener_tipo(celda_estructura_88) == "", "el edificio ya no existe")
 
-	print("\n=== Las 88 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 89: proximo_paso_pendiente() ve la celda/tipo del siguiente paso SIN mutar nada (para que Player.gd sepa cuánto debe tardar) ===")
+	# Decisión del usuario, 2026-09-29 (revisión de código): un paso de
+	# EXCAVACIÓN debe tardar lo mismo que minar ese material a mano — sin
+	# esto, nivelar un sitio sobre una veta rica sería mucho más rápido que
+	# minarla uno mismo. Player._intervalo_accion_actual() usa esta consulta
+	# para decidir el intervalo antes de llamar a surtir_construccion().
+	var mundo_89: Node = VoxelWorld.new()
+	mundo_89.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_89.cell_size = Vector3.ONE * 1.0
+	mundo_89._indexar_biblioteca()
+	var celda_vacia_89 := Vector3i(2000, 0, 0)
+	assert(mundo_89.proximo_paso_pendiente(celda_vacia_89).is_empty(), "sin ninguna obra pendiente ahí, {}")
+
+	var celda_excavar_89 := Vector3i(2001, 0, 0)
+	mundo_89.colocar_bloque(celda_excavar_89, "hierro")
+	mundo_89.iniciar_construccion_fantasma([celda_excavar_89], {celda_excavar_89: "aire"}, [], {})
+	var paso_89a: Dictionary = mundo_89.proximo_paso_pendiente(celda_excavar_89)
+	assert(paso_89a["celda"] == celda_excavar_89 and paso_89a["tipo"] == "aire")
+	assert(mundo_89.obtener_tipo(celda_excavar_89) == "hierro", "consultarlo no excava nada")
+	var paso_89b: Dictionary = mundo_89.proximo_paso_pendiente(celda_excavar_89)
+	assert(paso_89b == paso_89a, "consultarlo dos veces da lo mismo (no muta el progreso)")
+
+	var celda_relleno_89 := Vector3i(2002, 0, 0)
+	mundo_89.iniciar_construccion_fantasma([celda_relleno_89], {celda_relleno_89: "tierra"}, [], {})
+	var paso_89c: Dictionary = mundo_89.proximo_paso_pendiente(celda_relleno_89)
+	assert(paso_89c["celda"] == celda_relleno_89 and paso_89c["tipo"] == "tierra", "un paso de relleno (no excavación) también se ve")
+
+	var celda_estructura_89 := Vector3i(2003, 0, 0)
+	mundo_89.iniciar_construccion_fantasma([], {}, [celda_estructura_89], {celda_estructura_89: "bloque_piedra"})
+	var paso_89d: Dictionary = mundo_89.proximo_paso_pendiente(celda_estructura_89)
+	assert(paso_89d["celda"] == celda_estructura_89 and paso_89d["tipo"] == "bloque_piedra", "la cola de estructura (sin relleno) también se ve")
+
+	print("\n=== Las 89 pruebas de BlueprintValidator pasaron correctamente ===")

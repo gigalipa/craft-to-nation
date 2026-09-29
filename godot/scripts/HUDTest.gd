@@ -368,7 +368,7 @@ func probar_hotbar() -> void:
 
 	var hotbar: PanelContainer = HotbarScript.new()
 	add_child(hotbar)
-	hotbar.configurar(["pared", "puerta", "ventana"])
+	hotbar.configurar(["bloque_piedra", "puerta", "vidrio"])
 	assert(hotbar.indice_seleccionado() == 0)
 	hotbar.seleccionar(2)
 	assert(hotbar.indice_seleccionado() == 2)
@@ -377,13 +377,18 @@ func probar_hotbar() -> void:
 	hotbar.seleccionar(-1)
 	assert(hotbar.indice_seleccionado() == 2)
 
-	# Las cantidades están ocultas hasta que el inventario las aporte.
+	# Las cantidades están ocultas hasta que se llame set_cantidad()/actualizar_cantidades().
 	assert(not hotbar.cantidad_visible(0))
 	hotbar.set_cantidad(0, 32)
 	assert(hotbar.cantidad_visible(0))
 	hotbar.set_cantidad(0, -1)
 	assert(not hotbar.cantidad_visible(0))
 	hotbar.set_cantidad(9, 5)  # fuera de rango: ignora
+
+	print("=== TEST 4b: Hotbar.actualizar_cantidades() muestra stock ÷ costo por NiveladorTerreno.COSTO_POR_CELDA ===")
+	Ciudad.almacen["piedra"].cantidad = 12.0
+	hotbar.actualizar_cantidades()
+	assert(hotbar.cantidad_visible(0), "bloque_piedra (índice 0) tiene costo definido (5 piedra)")
 	hotbar.queue_free()
 
 

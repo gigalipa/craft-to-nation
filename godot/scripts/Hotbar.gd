@@ -1,17 +1,23 @@
 extends PanelContainer
 
 ## Hotbar de 1ª persona: una casilla por tipo de bloque (teclas 1-N), con la
-## seleccionada resaltada. Cada casilla admite una cantidad opcional, oculta
-## por ahora: el inventario del avatar será el almacén central y la aportará
-## cuando exista el consumo de materiales por tipo.
+## seleccionada resaltada. Cada casilla admite una cantidad opcional: cuántos
+## bloques de ese tipo todavía se pueden colocar con el stock actual del
+## almacén central. Se autoactualiza en _process() mientras esté visible,
+## mismo patrón que VentanaAlmacen.gd/BarraSuperior.gd (sin depender de que
+## Player.gd/HUD.gd la llamen en su propio refresco).
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
+const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 
 const NOMBRES := {
-	"pared": "Pared",
+	"tierra": "Tierra",
+	"tierra_compactada": "Tierra compactada",
+	"bloque_madera": "Bloque de madera",
+	"bloque_piedra": "Bloque de piedra",
+	"estructura_hierro": "Estructura de hierro",
+	"vidrio": "Vidrio",
 	"puerta": "Puerta",
-	"ventana": "Ventana",
-	"piso": "Piso",
 	"cama": "Cama",
 	"baul": "Baúl",
 }
@@ -19,6 +25,7 @@ const NOMBRES := {
 var _fila := HBoxContainer.new()
 var _casillas: Array = []  # de {"panel": PanelContainer, "cantidad": Label}
 var _seleccionada := 0
+var _tipos: Array = []
 
 
 static func nombre_de(tipo: String) -> String:
@@ -40,6 +47,7 @@ func _ready() -> void:
 
 
 func configurar(tipos: Array) -> void:
+	_tipos = tipos
 	for casilla in _casillas:
 		casilla["panel"].queue_free()
 	_casillas.clear()
@@ -63,6 +71,27 @@ func configurar(tipos: Array) -> void:
 		_casillas.append({"panel": panel, "cantidad": cantidad})
 	_seleccionada = 0
 	_resaltar()
+
+
+func _process(_delta: float) -> void:
+	if visible:
+		actualizar_cantidades()
+
+
+## Pone en cada casilla floor(stock del recurso / costo por bloque); oculta
+## el número (cantidad -1) en los tipos sin costo definido en
+## NiveladorTerreno.COSTO_POR_CELDA.
+func actualizar_cantidades() -> void:
+	for i in range(_tipos.size()):
+		var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(_tipos[i], {})
+		if costo.is_empty():
+			set_cantidad(i, -1)
+			continue
+		var minimo := 999999
+		for recurso in costo:
+			var disponible: int = int(Ciudad.almacen[recurso].cantidad / costo[recurso])
+			minimo = mini(minimo, disponible)
+		set_cantidad(i, minimo)
 
 
 func seleccionar(indice: int) -> void:

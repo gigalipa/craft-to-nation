@@ -48,7 +48,6 @@ const NOMBRES_TASA := {
 }
 
 @onready var oxigeno_label: Label = $OxigenoLabel
-@onready var materiales_ficha: Label = $MaterialesFicha
 
 var _panel_puesto: PanelContainer
 var _barra_progreso: ProgressBar
@@ -231,26 +230,21 @@ func ocultar_oxigeno() -> void:
 	oxigeno_label.visible = false
 
 
-## Ficha VISUAL de los materiales que movilizaría el blueprint activo (ver
-## docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md):
-## no lee ni toca ningún inventario real (no existe todavía).
-func mostrar_ficha_materiales() -> void:
-	materiales_ficha.text = texto_materiales({})
-	materiales_ficha.visible = true
-
-
-func actualizar_materiales(neto: Dictionary) -> void:
-	materiales_ficha.text = texto_materiales(neto)
-
-
-func ocultar_ficha_materiales() -> void:
-	materiales_ficha.visible = false
+## Resumen de materiales (y, para un edificio residencial, camas/baúles) del
+## blueprint activo, en la línea "extra" del cuadro de información
+## (PanelContextual) — ya no es un widget aparte (ver docs/superpowers/
+## specs/2026-09-29-costo-colocacion-bloques-design.md). "camas"/"baules"
+## negativos (por defecto) los omite, para puestos u otros usos sin mueble.
+func actualizar_materiales(neto: Dictionary, camas: int = -1, baules: int = -1) -> void:
+	_contexto.set_extra(texto_materiales(neto, camas, baules))
 
 
 ## "neto" es material -> int (negativo = hace falta, positivo = sobra; ver
 ## NiveladorTerreno.resumen_materiales()). Lo necesario va sin signo y de
-## mayor a menor; el sobrante recogido va después con "+".
-static func texto_materiales(neto: Dictionary) -> String:
+## mayor a menor; el sobrante recogido va después con "+". "camas"/"baules"
+## >= 0 anteponen una línea de conteo (edificio residencial); negativos
+## (por defecto) la omiten.
+static func texto_materiales(neto: Dictionary, camas: int = -1, baules: int = -1) -> String:
 	var necesarios: Array = []
 	var sobrantes: Array = []
 	for material in neto:
@@ -260,11 +254,15 @@ static func texto_materiales(neto: Dictionary) -> String:
 		elif cantidad > 0:
 			sobrantes.append("+ %d %s" % [cantidad, material])
 	necesarios.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
-	var lineas: Array = ["Materiales de construcción:"]
+	var lineas: Array = []
+	if camas >= 0 or baules >= 0:
+		lineas.append("Camas: %d · Baúles: %d" % [max(camas, 0), max(baules, 0)])
+	lineas.append("Materiales de construcción:")
+	var inicio_materiales := lineas.size()
 	for necesario in necesarios:
 		lineas.append("%d %s" % [necesario[0], necesario[1]])
 	lineas.append_array(sobrantes)
-	if lineas.size() == 1:
+	if lineas.size() == inicio_materiales:
 		lineas.append("-")
 	return "\n".join(lineas)
 

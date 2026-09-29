@@ -229,6 +229,19 @@ func probar_panel_contextual() -> void:
 	assert(not panel.visible)
 	panel.queue_free()
 
+	print("=== TEST 2e: PanelContextual.set_extra() actualiza solo esa línea, sin tocar el resto ===")
+	var panel_extra: PanelContainer = PanelContextualScript.new()
+	add_child(panel_extra)
+	panel_extra.mostrar("Edificio residencial", {}, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], true)
+	assert(not panel_extra.extra.visible, "sin resumen todavía, la línea extra empieza oculta")
+	panel_extra.set_extra("Camas: 2 · Baúles: 1\nMateriales de construcción:\n79 piedra")
+	assert(panel_extra.extra.visible and panel_extra.extra.text == "Camas: 2 · Baúles: 1\nMateriales de construcción:\n79 piedra")
+	assert(panel_extra.titulo.text == "EDIFICIO RESIDENCIAL", "set_extra() no toca el título ni el resto del panel")
+	assert(panel_extra.validez.visible and panel_extra.validez.text == "Ubicación válida")
+	panel_extra.set_extra("")
+	assert(not panel_extra.extra.visible, "texto vacío vuelve a ocultar la línea")
+	panel_extra.queue_free()
+
 
 func probar_panel_temporal() -> void:
 	print("=== TEST 2b: PanelContextual temporal ===")

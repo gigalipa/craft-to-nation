@@ -1120,24 +1120,28 @@ func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
 	return ""
 
 
-## Actualiza la ficha de materiales del HUD para el blueprint activo en
-## "esquina" (evaluación "ev" de _evaluar_blueprint()). Se recalcula solo si
-## cambió la esquina (o se invalidó, ver SIN_RESUMEN). Si la colocación no es
-## válida muestra "-". Cuenta la nivelación de la huella Y de la fachada.
+## Actualiza el resumen de materiales (y camas/baúles) en el cuadro de
+## información del blueprint activo en "esquina" (evaluación "ev" de
+## _evaluar_blueprint()). Se recalcula solo si cambió la esquina (o se
+## invalidó, ver SIN_RESUMEN). Si la colocación no es válida muestra "-".
+## Cuenta la nivelación de la huella Y de la fachada.
 func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: bool) -> void:
 	var clave: Vector2i = esquina if valida else SIN_RESUMEN
 	if clave == _resumen_blueprint_vigente:
 		return
 	_resumen_blueprint_vigente = clave
+	var camas: int = BlueprintValidator.contar_camas(_blueprint_activo)
+	var baules: int = BlueprintValidator.contar_baules(_blueprint_activo)
 	if not valida:
-		hud.actualizar_materiales({})
+		hud.actualizar_materiales({}, camas, baules)
 		return
 	var plan: Dictionary = _plan_nivelacion(esquina, ev["columnas"], ev["resultado_base"]["base_y"], ev["fachada"])
 	var total_relleno := 0
 	for cantidad in plan["relleno"].values():
 		total_relleno += cantidad
 	var recogido: Dictionary = _material_excavado(plan["excavacion"])
-	hud.actualizar_materiales(nivelador_puesto.resumen_materiales(_blueprint_activo["celdas_3d"], total_relleno, recogido))
+	var neto: Dictionary = nivelador_puesto.resumen_materiales(_blueprint_activo["celdas_3d"], total_relleno, recogido)
+	hud.actualizar_materiales(neto, camas, baules)
 
 
 ## Dibuja los overlays del blueprint activo en "esquina" (evaluación "ev" de
@@ -1446,7 +1450,6 @@ func _alternar_modo_colocar_blueprint() -> void:
 	modo_colocar_blueprint = true
 	_resumen_blueprint_vigente = SIN_RESUMEN
 	_overlay_vigente = SIN_RESUMEN
-	hud.mostrar_ficha_materiales()
 	hud.set_modo("construir", "residencial")
 	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar, Ctrl+rueda para rotar).")
 
@@ -1456,7 +1459,6 @@ func _salir_de_modo_colocar_blueprint() -> void:
 	modo_colocar_blueprint = false
 	_mostrar_huella_blueprint(false)
 	_blueprint_activo = {}
-	hud.ocultar_ficha_materiales()
 	_overlay_nivelacion.ocultar()
 	_overlay_vigente = SIN_RESUMEN
 	if estaba:

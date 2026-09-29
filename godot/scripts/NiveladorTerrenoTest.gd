@@ -252,6 +252,12 @@ func ejecutar_pruebas() -> void:
 	var texto_15: String = HUDScript.texto_materiales({"piedra": -79, "madera": -12, "tierra": 19})
 	assert(texto_15 == "Materiales de construcción:\n79 piedra\n12 madera\n+ 19 tierra", texto_15)
 	assert(HUDScript.texto_materiales({}) == "Materiales de construcción:\n-")
+	# Con camas/baúles (edificio residencial): una línea de conteo antes de
+	# los materiales. Sin ellos (camas/baúles omitidos o negativos, p. ej. un
+	# puesto), esa línea no aparece — mismo texto de siempre.
+	var texto_15b: String = HUDScript.texto_materiales({"piedra": -79}, 2, 1)
+	assert(texto_15b == "Camas: 2 · Baúles: 1\nMateriales de construcción:\n79 piedra", texto_15b)
+	assert(HUDScript.texto_materiales({}, 0, 0) == "Camas: 0 · Baúles: 0\nMateriales de construcción:\n-")
 
 	print("\n=== TEST 16: calcular_base_y() devuelve la fachada del lado de la puerta, al nivel del suelo frontal ===")
 	# Casa 4x5 con la puerta al oeste (x=0, z=2), terreno plano de altura 5, esquina (10,10):

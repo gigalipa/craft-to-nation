@@ -72,14 +72,6 @@ color = Color(1, 1, 1, 0.8)
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=157629340]
 script = ExtResource("5")
 
-[node name="MaterialesFicha" type="Label" parent="HUDLayer" unique_id=1902384756]
-visible = false
-offset_left = 110.0
-offset_top = 72.0
-offset_right = 418.0
-offset_bottom = 192.0
-text = "Materiales de construcción:"
-
 [node name="OxigenoLabel" type="Label" parent="HUDLayer"]
 visible = false
 offset_left = 12.0

@@ -117,6 +117,14 @@ func ocultar() -> void:
 	visible = false
 
 
+## Actualiza solo el texto de "extra" (p. ej. el resumen de materiales de un
+## blueprint activo, que cambia en vivo mientras el jugador se mueve) sin
+## tocar el resto del panel ni su animación.
+func set_extra(texto: String) -> void:
+	extra.text = texto
+	extra.visible = texto != ""
+
+
 ## Distancia al borde inferior: en 1ª persona el panel sube para no tapar la hotbar.
 func set_margen_inferior(px: float) -> void:
 	_margen_inferior = px

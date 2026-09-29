@@ -230,11 +230,14 @@ func ocultar_oxigeno() -> void:
 	oxigeno_label.visible = false
 
 
-## Resumen de materiales (y, para un edificio residencial, camas/baúles) del
-## blueprint activo, en la línea "extra" del cuadro de información
-## (PanelContextual) — ya no es un widget aparte (ver docs/superpowers/
-## specs/2026-09-29-costo-colocacion-bloques-design.md). "camas"/"baules"
-## negativos (por defecto) los omite, para puestos u otros usos sin mueble.
+## Resumen de materiales (y, para un edificio residencial, camas/baúles) en
+## la línea "extra" del cuadro de información (PanelContextual). Ya no la
+## usa CamaraCenital (calcula el texto con texto_materiales() y lo pasa
+## directo como texto_extra de mostrar_contexto(), para que
+## mostrar_contexto() no lo borre de un frame al siguiente — ver
+## CamaraCenital._actualizar_previsualizacion_blueprint()); queda como
+## utilidad para quien necesite actualizar solo esta línea sin volver a
+## llamar mostrar(). "camas"/"baules" negativos (por defecto) los omiten.
 func actualizar_materiales(neto: Dictionary, camas: int = -1, baules: int = -1) -> void:
 	_contexto.set_extra(texto_materiales(neto, camas, baules))
 

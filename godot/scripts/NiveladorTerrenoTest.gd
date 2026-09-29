@@ -65,22 +65,22 @@ func _rectangulo(ancho: int, alto: int) -> Array[Vector2i]:
 
 
 ## Casa de prueba 4x5x5 (ver spec 2026-09-20): losas de piso (y=0) y techo
-## (y=4) de "pared", muro perimetral en y=1..3 con una puerta en x=0 (z=2,
-## y=1..2) y una ventana en x=3 (z=2, y=2), cama y baúl adentro. Con
-## "puerta_extra_derecha" la ventana se reemplaza por una segunda puerta en
+## (y=4) de "bloque_piedra", muro perimetral en y=1..3 con una puerta en x=0
+## (z=2, y=1..2) y un vidrio en x=3 (z=2, y=2), cama y baúl adentro. Con
+## "puerta_extra_derecha" el vidrio se reemplaza por una segunda puerta en
 ## x=3.
 func _casa_4x5(puerta_extra_derecha: bool = false) -> Dictionary:
 	var celdas: Dictionary = {}
 	for x in range(4):
 		for z in range(5):
-			celdas[Vector3i(x, 0, z)] = "pared"
-			celdas[Vector3i(x, 4, z)] = "pared"
+			celdas[Vector3i(x, 0, z)] = "bloque_piedra"
+			celdas[Vector3i(x, 4, z)] = "bloque_piedra"
 			if x == 0 or x == 3 or z == 0 or z == 4:
 				for y in range(1, 4):
-					celdas[Vector3i(x, y, z)] = "pared"
+					celdas[Vector3i(x, y, z)] = "bloque_piedra"
 	celdas[Vector3i(0, 1, 2)] = "puerta_inferior"
 	celdas[Vector3i(0, 2, 2)] = "puerta_superior"
-	celdas[Vector3i(3, 2, 2)] = "ventana"
+	celdas[Vector3i(3, 2, 2)] = "vidrio"
 	celdas[Vector3i(1, 1, 1)] = "cama_cabecera"
 	celdas[Vector3i(1, 1, 2)] = "cama_pies"
 	celdas[Vector3i(2, 1, 3)] = "baul"
@@ -91,15 +91,15 @@ func _casa_4x5(puerta_extra_derecha: bool = false) -> Dictionary:
 
 
 ## Huella en L (14 columnas): barra x=0..4 x z=0..1 más barra x=0..1 x z=2..3;
-## losa "pared" en y=0 y una puerta en (x=3, z=1) (y=1..2) que mira hacia +z.
+## losa "bloque_piedra" en y=0 y una puerta en (x=3, z=1) (y=1..2) que mira hacia +z.
 func _casa_l() -> Dictionary:
 	var celdas: Dictionary = {}
 	for x in range(5):
 		for z in range(2):
-			celdas[Vector3i(x, 0, z)] = "pared"
+			celdas[Vector3i(x, 0, z)] = "bloque_piedra"
 	for x in range(2):
 		for z in range(2, 4):
-			celdas[Vector3i(x, 0, z)] = "pared"
+			celdas[Vector3i(x, 0, z)] = "bloque_piedra"
 	celdas[Vector3i(3, 1, 1)] = "puerta_inferior"
 	celdas[Vector3i(3, 2, 1)] = "puerta_superior"
 	return celdas
@@ -238,14 +238,14 @@ func ejecutar_pruebas() -> void:
 	assert(base_13b["valido"] and base_13b["base_y"] == 4)
 	assert(nivelador_plano.calcular_excavacion(Vector2i(0, 0), _rectangulo(4, 5), 4).size() == 40, "2 capas (Y=5 y Y=4) x 20 columnas")
 
-	print("\n=== TEST 14: resumen_materiales() del ejemplo 4x5x5 sobre terreno plano (79 piedra, 12 madera, +19 tierra) ===")
+	print("\n=== TEST 14: resumen_materiales() del ejemplo 4x5x5 sobre terreno plano (395 piedra, 5 madera, +19 tierra) ===")
 	var neto_14: Dictionary = nivelador_plano.resumen_materiales(casa_9, 0, {"tierra": 20})
-	assert(neto_14["piedra"] == -79)
-	assert(neto_14["madera"] == -12)
-	assert(neto_14["tierra"] == 19, "20 excavados - 1 de la ventana")
+	assert(neto_14["piedra"] == -395, "79 celdas de bloque_piedra x 5 piedra c/u")
+	assert(neto_14["madera"] == -5, "puerta 1+1, cama 1+1, baúl 1")
+	assert(neto_14["tierra"] == 19, "20 excavados - 1 del vidrio")
 	var neto_14b: Dictionary = nivelador_plano.resumen_materiales(casa_9, 3, {"tierra": 20})
 	assert(neto_14b["tierra"] == 16, "el relleno consume tierra")
-	var neto_14c: Dictionary = nivelador_plano.resumen_materiales({Vector3i(0, 0, 0): "ventana"}, 0, {"tierra": 1})
+	var neto_14c: Dictionary = nivelador_plano.resumen_materiales({Vector3i(0, 0, 0): "vidrio"}, 0, {"tierra": 1})
 	assert(neto_14c.is_empty(), "un neto de 0 no aparece")
 
 	print("\n=== TEST 15: HUD.texto_materiales() pone lo necesario sin signo (mayor primero) y el sobrante con '+' ===")

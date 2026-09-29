@@ -20,18 +20,28 @@ const LIMITE_PENDIENTE := 2
 
 const DIRECCIONES_XZ := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
-## Costo en material de cada tipo de celda estructural de un blueprint (ver
-## docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md).
-## Solo alimenta el resumen VISUAL del HUD — no existe inventario real.
+## Costo en material de cada tipo de celda estructural (ver docs/superpowers/
+## specs/2026-09-29-costo-colocacion-bloques-design.md, Sección 2). Fuente
+## real: la usan Player._colocar() para cobrar y VoxelWorld._retirar_bloque()
+## para reembolsar al re-minar, además del resumen visual del HUD de abajo.
+## "puerta"/"cama" son el costo total de la acción de colocar (dos celdas a
+## la vez, ver VoxelWorld.colocar_puerta()/colocar_cama()); "puerta_inferior"/
+## "puerta_superior"/"cama_cabecera"/"cama_pies" son el costo POR CELDA,
+## usado al reembolsar o al escanear una estructura ya construida.
 const COSTO_POR_CELDA := {
-	"pared": {"piedra": 1},
-	"piso": {"tierra": 1},
-	"ventana": {"tierra": 1},
+	"tierra": {"tierra": 1},
+	"tierra_compactada": {"tierra": 1},
+	"bloque_madera": {"madera": 5},
+	"bloque_piedra": {"piedra": 5},
+	"estructura_hierro": {"hierro": 5},
+	"vidrio": {"tierra": 1},
 	"puerta_inferior": {"madera": 1},
 	"puerta_superior": {"madera": 1},
-	"cama_cabecera": {"madera": 2},
-	"cama_pies": {"madera": 2},
-	"baul": {"madera": 6},
+	"puerta": {"madera": 2},
+	"cama_cabecera": {"madera": 1},
+	"cama_pies": {"madera": 1},
+	"cama": {"madera": 2},
+	"baul": {"madera": 1},
 }
 
 ## Sin tipo estático: puede ser un RefCounted (GeneradorMundo, los

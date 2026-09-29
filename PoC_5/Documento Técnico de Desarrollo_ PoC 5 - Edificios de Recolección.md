@@ -19,7 +19,7 @@ Spec de esta fase: `docs/superpowers/specs/2026-09-24-edificios-recoleccion-plan
 Que un puesto de recolección deje de ser un slab de bloques marcador y pase a ser un **edificio de bloques con forma propia, puerta de servicio y depósito físico**, que se desactiva al empezar a deconstruirse (igual que un residencial) y que despide a sus recolectores cuando se agota.
 
 Decisiones confirmadas con el usuario (2026-09-24):
-- Plantillas **prediseñadas**, una por tipo de puesto, colocadas al instante y sin costo (la construcción con costo y obreros NPC es el punto 6 del roadmap).
+- Plantillas **prediseñadas**, una por tipo de puesto. ~~Colocadas al instante y sin costo (la construcción con costo y obreros NPC es el punto 6 del roadmap).~~ — ✅ hecho (2026-09-29): un puesto se coloca como fantasma y se construye gradual con costo real, igual que un edificio residencial — ver `docs/superpowers/specs/2026-09-29-economia-construccion-puestos-design.md`. Solo queda pendiente que un colono (NPC), y no solo el avatar, pueda surtir la construcción (punto 6 del roadmap).
 - Elementos funcionales: forma propia por tipo, puerta de servicio, depósito físico y deconstruible por bloques.
 - El arte lo hará el usuario en SketchUp; un conversor offline de `.obj` (paso aparte) generará el mismo formato de datos que las plantillas provisionales escritas a mano aquí.
 - Un puesto se **desactiva** en cuanto empieza a deconstruirse, como los residenciales.

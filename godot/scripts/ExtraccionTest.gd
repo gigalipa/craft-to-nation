@@ -59,26 +59,26 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 3: tiempo_minado_de() por tipo y multiplicador de herramienta ===")
 	assert(Recoleccion.tiempo_minado_de("tierra") < Recoleccion.tiempo_minado_de("piedra"))
 	assert(Recoleccion.tiempo_minado_de("piedra") < Recoleccion.tiempo_minado_de("tierras_raras"))
-	assert(Recoleccion.tiempo_minado_de("pared") == Recoleccion.TIEMPO_MINADO_DEFECTO * Recoleccion.MULTIPLICADOR_HERRAMIENTA, "tipo sin tabla: tiempo por defecto")
+	assert(Recoleccion.tiempo_minado_de("bloque_piedra") == Recoleccion.TIEMPO_MINADO_DEFECTO * Recoleccion.MULTIPLICADOR_HERRAMIENTA, "tipo sin tabla: tiempo por defecto")
 	assert(Recoleccion.MULTIPLICADOR_HERRAMIENTA == 1.0, "sin herramientas todavía")
 
 	print("\n=== TEST 4: extraer_por_avatar() rinde solo por terreno natural ===")
 	var mundo: Node = _mundo_nuevo()
 	mundo.colocar_bloque(Vector3i(0, 0, 0), "piedra")
 	mundo.colocar_bloque(Vector3i(1, 0, 0), "tierra")
-	mundo.colocar_bloque(Vector3i(2, 0, 0), "piso")
+	mundo.colocar_bloque(Vector3i(2, 0, 0), "hierba")
 	mundo.colocar_bloque(Vector3i(3, 0, 0), "piedra", true)  # lo puso el jugador
-	mundo.colocar_bloque(Vector3i(4, 0, 0), "pared")
+	mundo.colocar_bloque(Vector3i(4, 0, 0), "bloque_piedra")
 	mundo.celda_a_edificio[Vector3i(4, 0, 0)] = 1  # parte de un edificio
 	mundo.colocar_bloque(Vector3i(5, 0, 0), "agua")
 	assert(mundo.extraer_por_avatar(Vector3i(0, 0, 0)) == {"piedra": 10.0})
 	assert(mundo.obtener_tipo(Vector3i(0, 0, 0)) == "", "el bloque se retiró")
 	assert(mundo.extraer_por_avatar(Vector3i(1, 0, 0)) == {"tierra": 1.0})
-	assert(mundo.extraer_por_avatar(Vector3i(2, 0, 0)) == {"tierra": 1.0}, "la capa piso cuenta como tierra")
+	assert(mundo.extraer_por_avatar(Vector3i(2, 0, 0)) == {"tierra": 1.0}, "la capa hierba cuenta como tierra")
 	assert(mundo.extraer_por_avatar(Vector3i(3, 0, 0)).is_empty(), "un bloque del jugador no rinde")
 	assert(mundo.obtener_tipo(Vector3i(3, 0, 0)) == "", "pero sí se retira, como siempre")
 	assert(not mundo.es_minable(Vector3i(4, 0, 0)) and mundo.extraer_por_avatar(Vector3i(4, 0, 0)).is_empty())
-	assert(mundo.obtener_tipo(Vector3i(4, 0, 0)) == "pared", "un edificio no se mina")
+	assert(mundo.obtener_tipo(Vector3i(4, 0, 0)) == "bloque_piedra", "un edificio no se mina")
 	assert(not mundo.es_minable(Vector3i(5, 0, 0)) and mundo.extraer_por_avatar(Vector3i(5, 0, 0)).is_empty(), "el agua no se mina")
 	assert(not mundo.es_minable(Vector3i(9, 9, 9)) and mundo.extraer_por_avatar(Vector3i(9, 9, 9)).is_empty(), "el aire tampoco")
 
@@ -107,4 +107,31 @@ func ejecutar_pruebas() -> void:
 	mundo_h.colocar_bloque(Vector3i(7, 8, 7), "piedra")
 	assert(mundo_h.altura_natural_en(7, 7) == 8, "el lecho real está bajo la superficie que da el generador")
 
-	print("\n=== Las 6 pruebas de la extracción del avatar pasaron correctamente ===")
+	print("\n=== TEST 7: colocar un bloque con costo lo descuenta del almacén ===")
+	var mundo_costo: Node = _mundo_nuevo()
+	Ciudad.almacen["piedra"].cantidad = 5.0
+	assert(mundo_costo.colocar_bloque(Vector3i(0, 0, 0), "bloque_piedra", true))
+	assert(Ciudad.almacen["piedra"].consumir(5.0), "el bloque ya descontó las 5 de piedra: no debería quedar más que eso")
+	Ciudad.almacen["piedra"].agregar(5.0)  # deja el almacén como estaba para las siguientes pruebas
+
+	print("\n=== TEST 8: volver a minar un bloque colocado reembolsa exactamente su costo ===")
+	Ciudad.almacen["piedra"].cantidad = 0.0
+	mundo_costo.colocar_bloque(Vector3i(1, 0, 0), "bloque_piedra", true)
+	Ciudad.almacen["piedra"].cantidad = 0.0  # el colocar_bloque de la prueba no cobra: solo VoxelWorld reembolsa
+	mundo_costo.minar_bloque(Vector3i(1, 0, 0))
+	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 5.0), "reembolsa 5 piedra")
+
+	print("\n=== TEST 9: minar terreno natural (hierba) no reembolsa nada ===")
+	Ciudad.almacen["tierra"].cantidad = 0.0
+	mundo_costo.colocar_bloque(Vector3i(2, 0, 0), "hierba")  # por_jugador=false: terreno natural
+	mundo_costo.minar_bloque(Vector3i(2, 0, 0))
+	assert(mundo_costo.obtener_tipo(Vector3i(2, 0, 0)) == "", "se minó")
+	assert(Ciudad.almacen["tierra"].cantidad == 0.0, "hierba natural no reembolsa: no pasa por COSTO_POR_CELDA")
+
+	print("\n=== TEST 10: minar una puerta por un extremo reembolsa las DOS celdas ===")
+	Ciudad.almacen["madera"].cantidad = 0.0
+	mundo_costo.colocar_puerta(Vector3i(3, 0, 0))
+	mundo_costo.minar_bloque(Vector3i(3, 0, 0))  # mina solo la mitad inferior
+	assert(is_equal_approx(Ciudad.almacen["madera"].cantidad, 2.0), "reembolsa 1 + 1 = 2 madera (inferior + superior)")
+
+	print("\n=== Las 10 pruebas de la extracción del avatar pasaron correctamente ===")

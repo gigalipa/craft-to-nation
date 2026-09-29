@@ -10,6 +10,7 @@ const TAMANO_CELDA := 1.0
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const GeneradorArbol = preload("res://scripts/GeneradorArbol.gd")
 const CuerposObra = preload("res://scripts/CuerposObra.gd")
+const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const MATERIAL_AGUA := preload("res://assets/mat_agua.tres")
 
 const ANCHO_MUNDO := 200
@@ -77,29 +78,31 @@ var arboles: RefCounted
 var cascadas: Dictionary = {}  # Vector2i -> Dictionary
 
 ## Tipos de bloque que pueden formar parte de un edificio declarado (ver
-## detectar_estructura()). "piso" queda deliberadamente fuera: es un
+## detectar_estructura()). "hierba" queda deliberadamente fuera: es un
 ## material de terreno/relleno (ver _generar_terreno() y el modo de
-## nivelación de CamaraCenital), nunca un material de construcción — para
-## la PoC, el único material estructural es "pared" (más adelante: madera,
-## piedra, metal, vidrio). Si el jugador usa "piso" para rellenar un hueco
-## de terreno bajo su edificio, ese relleno no debe "pegarse" a la
-## estructura declarada ni distorsionar su huella.
+## nivelación de CamaraCenital), nunca un material de construcción — los
+## materiales estructurales reales son tierra_compactada, bloque_madera,
+## bloque_piedra y estructura_hierro (ver docs/superpowers/specs/
+## 2026-09-29-costo-colocacion-bloques-design.md). Si el jugador usa
+## "hierba" para rellenar un hueco de terreno bajo su edificio, ese relleno
+## no debe "pegarse" a la estructura declarada ni distorsionar su huella.
 const TIPOS_ESTRUCTURA := [
-	"pared", "puerta_inferior", "puerta_superior", "ventana",
+	"tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro",
+	"puerta_inferior", "puerta_superior", "vidrio",
 	"cama_cabecera", "cama_pies", "baul",
 ]
 
-## La celda de superficie de cada columna del mundo se coloca como "piso"
+## La celda de superficie de cada columna del mundo se coloca como "hierba"
 ## (ver _generar_terreno() — reutiliza el bloque caminable), pero
 ## geológicamente es el mismo material que el subsuelo justo debajo
 ## ("tierra", ver GeneradorMundo.tipo_en_profundidad()). La distinción
-## piso/tierra es puramente visual (bloque caminable vs. bloque de
+## hierba/tierra es puramente visual (bloque caminable vs. bloque de
 ## relleno); para cualquier consumidor que le importe la IDENTIDAD del
 ## recurso (minas, a futuro NPCs — ver Recoleccion.detectar_recursos()),
-## "piso" debe contarse como "tierra". No afecta renderizado ni
-## construcción: "piso" sigue fuera de TIPOS_ESTRUCTURA y sigue siendo un
+## "hierba" debe contarse como "tierra". No afecta renderizado ni
+## construcción: "hierba" sigue fuera de TIPOS_ESTRUCTURA y sigue siendo un
 ## bloque distinto en la MeshLibrary.
-const MATERIAL_REAL := {"piso": "tierra"}
+const MATERIAL_REAL := {"hierba": "tierra"}
 
 ## Color con el que se destacan las puertas y ventanas de un edificio en
 ## construcción, para que se distingan del resto de sus celdas fantasma. Una
@@ -110,7 +113,7 @@ const MATERIAL_REAL := {"piso": "tierra"}
 const COLOR_DESTACADO := {
 	"puerta_inferior": Color(1.0, 0.2, 0.8, 0.6),
 	"puerta_superior": Color(1.0, 0.2, 0.8, 0.6),
-	"ventana": Color(0.5, 1.0, 0.2, 0.6),
+	"vidrio": Color(0.5, 1.0, 0.2, 0.6),
 }
 
 
@@ -147,7 +150,7 @@ const TIPOS_ARBOL := ["madera", "follaje"]
 ## translúcido (ver docs/superpowers/specs/2026-09-13-culling-caras-
 ## translucidas-design.md). GridMap sigue siendo la única fuente de verdad
 ## para ocupación/colisión: esto es puramente visual.
-const TIPOS_TRANSLUCIDOS: Array[String] = ["agua", "ventana"]
+const TIPOS_TRANSLUCIDOS: Array[String] = ["agua", "vidrio"]
 
 ## Tipos de las dos celdas de una puerta. Su malla y su colisión NO las da
 ## GridMap (el ítem queda vacío en _indexar_biblioteca()): las da Puertas.gd,
@@ -322,29 +325,29 @@ func id_de_edificio(celda: Vector3i) -> int:
 ## Calcula las celdas de despeje que exige "celdas_mundo" (Vector3i real ->
 ## tipo, las celdas ESTRUCTURALES de un edificio — mismo formato que
 ## registrar_edificio_completo()/iniciar_construccion_fantasma() ya usan).
-## Para cada celda "ventana" o "puerta_inferior"/"puerta_superior", revisa
+## Para cada celda "vidrio" o "puerta_inferior"/"puerta_superior", revisa
 ## sus 4 vecinos cardinales en XZ; cualquiera que NO pertenezca a la huella
 ## del propio edificio (es decir, cae fuera de celdas_mundo en esa columna)
 ## es una dirección "externa". En cada dirección externa se reservan 1
-## celda (ventana) o 2 celdas (puerta, en AMBOS niveles) a la misma altura
+## celda (vidrio) o 2 celdas (puerta, en AMBOS niveles) a la misma altura
 ## Y de la celda original. Devuelve Vector3i (celda de despeje) -> tipo de la
-## celda que la pidió ("ventana"/"puerta_inferior"/"puerta_superior") — quien
+## celda que la pidió ("vidrio"/"puerta_inferior"/"puerta_superior") — quien
 ## solo necesita las celdas (Array-like: .has()/.size()/iterar claves siguen
 ## funcionando igual que con un Array) puede ignorar el valor; quien necesita
 ## saber CUÁL restricción pidió cada celda (ver motivo_despeje_invalido(), para
 ## notificaciones precisas) lo lee de aquí en vez de adivinar. Si dos
-## ventanas/puertas piden la misma celda, gana la última procesada — no hay
+## vidrios/puertas piden la misma celda, gana la última procesada — no hay
 ## un caso real donde eso cambie el mensaje mostrado.
 func calcular_despeje(celdas_mundo: Dictionary) -> Dictionary:
 	var huella_xz: Dictionary = {}  # Vector2i -> true
 	for celda in celdas_mundo:
 		huella_xz[Vector2i(celda.x, celda.z)] = true
 
-	var despeje: Dictionary = {}  # Vector3i -> tipo ("ventana"/"puerta_inferior"/"puerta_superior")
+	var despeje: Dictionary = {}  # Vector3i -> tipo ("vidrio"/"puerta_inferior"/"puerta_superior")
 	for celda in celdas_mundo:
 		var tipo: String = celdas_mundo[celda]
 		var profundidad := 0
-		if tipo == "ventana":
+		if tipo == "vidrio":
 			profundidad = 1
 		elif tipo == "puerta_inferior" or tipo == "puerta_superior":
 			profundidad = 2
@@ -417,13 +420,13 @@ func verificar_despejes(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary 
 func motivo_despeje_invalido(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> String:
 	for celda: Vector3i in celdas_mundo:
 		if celda_a_despeje.has(celda):
-			return "Una pared, puerta o ventana nueva cae dentro del espacio reservado de un edificio vecino."
+			return "Un bloque de muro, puerta o vidrio nuevo cae dentro del espacio reservado de un edificio vecino."
 	var despeje: Dictionary = calcular_despeje(celdas_mundo)
 	for celda_despeje: Vector3i in despeje:
 		if despeje_bloqueado(celda_despeje, terreno_a_nivelar):
 			var tipo: String = despeje[celda_despeje]
-			if tipo == "ventana":
-				return "Una ventana no tiene el espacio libre exigido hacia afuera."
+			if tipo == "vidrio":
+				return "Un vidrio no tiene el espacio libre exigido hacia afuera."
 			return "Una puerta no tiene el espacio libre exigido hacia afuera."
 	return despeje_camas_invalido(celdas_mundo, terreno_a_nivelar)
 
@@ -501,10 +504,10 @@ func _pies_de_cama_en(cabecera: Vector3i, celdas_mundo: Dictionary) -> Vector3i:
 ## junto con el resto del interior al construir, igual que
 ## VoxelWorld.verificar_huella_libre() nunca rechaza terreno natural bajo la
 ## huella completa, solo árboles y estructuras (así se evitó el bug de
-## 2026-09-27: un "pared" ajeno puesto a propósito ahí SIGUE bloqueando,
-## dentro o fuera de la huella, porque no es terreno natural). Fuera de la
-## huella (o si no es terreno natural) se compara contra el mundo real
-## (despeje_bloqueado()), igual que el despeje de ventanas/puertas.
+## 2026-09-27: un bloque de muro ajeno puesto a propósito ahí SIGUE
+## bloqueando, dentro o fuera de la huella, porque no es terreno natural).
+## Fuera de la huella (o si no es terreno natural) se compara contra el
+## mundo real (despeje_bloqueado()), igual que el despeje de vidrios/puertas.
 func _celda_libre_junto_a_cama(celda: Vector3i, celdas_mundo: Dictionary, huella_xz: Dictionary, terreno_a_nivelar: Dictionary) -> bool:
 	if celdas_mundo.has(celda):
 		return false
@@ -560,7 +563,7 @@ func _indexar_biblioteca() -> void:
 
 
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
-## (x, z) coloca la celda de superficie ("piso", reutilizando el bloque
+## (x, z) coloca la celda de superficie ("hierba", reutilizando el bloque
 ## caminable existente) y PROFUNDIDAD_SUBSUELO celdas de subsuelo debajo
 ## (tierra cerca de la superficie, piedra más profundo, o vetas de "hierro"
 ## en la capa profunda — ver GeneradorMundo.tipo_en_profundidad), y si la
@@ -614,7 +617,7 @@ func _generar_terreno() -> void:
 					var tipo: String = "bedrock" if profundidad == PROFUNDIDAD_SUBSUELO else generador.tipo_en_profundidad(x, y, z, profundidad)
 					colocar_bloque(Vector3i(x, y, z), tipo)
 				continue
-			colocar_bloque(Vector3i(x, altura, z), "piso")
+			colocar_bloque(Vector3i(x, altura, z), "hierba")
 			for profundidad in range(1, PROFUNDIDAD_SUBSUELO + 1):
 				var y: int = altura - profundidad
 				var tipo: String = "bedrock" if profundidad == PROFUNDIDAD_SUBSUELO else generador.tipo_en_profundidad(x, y, z, profundidad)
@@ -779,11 +782,13 @@ func _retirar_bloque(celda: Vector3i) -> void:
 		var otra: Vector3i = pareja[celda]
 		var tipo_otra: String = obtener_tipo(otra)
 		set_cell_item(otra, GridMap.INVALID_CELL_ITEM)
+		_reembolsar_si_corresponde(otra, tipo_otra)
 		colocado_por_jugador.erase(otra)
 		pareja.erase(otra)
 		pareja.erase(celda)
 		if TIPOS_PUERTA.has(tipo_otra):
 			puerta_cambiada.emit(otra)
+	_reembolsar_si_corresponde(celda, tipo_anterior)
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	colocado_por_jugador.erase(celda)
 	if TIPOS_PUERTA.has(tipo_anterior):
@@ -798,6 +803,19 @@ func _retirar_bloque(celda: Vector3i) -> void:
 	if not vecinos_agua.is_empty():
 		_escurrir_agua_desde(vecinos_agua)
 	Vias.quitar([celda])
+
+
+## Reembolsa a Ciudad.almacen el costo de "tipo" (NiveladorTerreno.
+## COSTO_POR_CELDA, por celda individual, no la clave "puerta"/"cama" de
+## acción completa) si "celda" fue colocada por el jugador. Terreno natural
+## (nunca colocado_por_jugador) y tipos sin costo (p.ej. "hierba") no
+## reembolsan nada.
+func _reembolsar_si_corresponde(celda: Vector3i, tipo: String) -> void:
+	if not colocado_por_jugador.get(celda, false):
+		return
+	var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
+	for recurso in costo:
+		Ciudad.almacen[recurso].agregar(costo[recurso])
 
 
 ## Retira "celda" porque un puesto la extrajo (sin las guardas de minar_bloque()).
@@ -1210,11 +1228,11 @@ func colocar_cama(base: Vector3i, direccion: Vector3i) -> bool:
 ## TIPOS_ESTRUCTURA) colocados por el jugador, partiendo de "origen". No
 ## razona sobre espacio/aire transitable: dos habitaciones con puertas
 ## propias, cada una cerrada, quedan igualmente unidas si sus paredes se
-## tocan físicamente con el pasillo que las conecta. Un bloque de "piso"
+## tocan físicamente con el pasillo que las conecta. Un bloque de "tierra"
 ## colocado por el jugador (p.ej. relleno de terreno bajo el edificio) ni se
 ## incluye ni propaga el flood-fill, aunque sea colocado_por_jugador.
 ## Devuelve {} si "origen" no es un bloque estructural colocado por el
-## jugador (p.ej. es terreno, o es "piso"), o si ya pertenece a un edificio
+## jugador (p.ej. es terreno, o es "tierra"), o si ya pertenece a un edificio
 ## registrado (celda_a_edificio) — sin este chequeo, declarar dos veces la
 ## misma puerta (Player._declarar_edificio()) volvía a detectar y registrar
 ## la misma estructura física bajo un segundo id_edificio, duplicando sus
@@ -1240,7 +1258,7 @@ func detectar_estructura(origen: Vector3i) -> Dictionary:
 
 ## Pública (no solo para detectar_estructura): también la usa ZonaOverlay.gd
 ## para no pintar el overlay de zona sobre el techo de un edificio — un
-## bloque "piso" de relleno de terreno (nunca estructural, ver TIPOS_
+## bloque "tierra" de relleno de terreno (nunca estructural, ver TIPOS_
 ## ESTRUCTURA) sigue contando como parte del terreno para esto.
 func es_celda_estructural(celda: Vector3i) -> bool:
 	return colocado_por_jugador.get(celda, false) and TIPOS_ESTRUCTURA.has(obtener_tipo(celda))
@@ -1251,7 +1269,7 @@ func es_celda_estructural(celda: Vector3i) -> bool:
 ## un rectángulo es solo el caso particular de pasar range(ancho) x
 ## range(alto), ver CamaraCenital._columnas_rectangulo()).
 ## altura_en() no salta bloques estructurales (solo TIPOS_ARBOL y "fantasma"),
-## así que un muro colocado sobre "piso" se convierte en la propia superficie
+## así que un muro colocado sobre "tierra" se convierte en la propia superficie
 ## que altura_en() devuelve — por eso el chequeo de estructura se hace SOBRE
 ## esa superficie (altura_en(x,z)), no una celda encima. "madera"/"follaje",
 ## en cambio, sí se buscan por ENCIMA de la superficie, porque altura_en()
@@ -1407,16 +1425,17 @@ func eliminar_follaje(celda: Vector3i) -> void:
 
 
 ## Orden canónico y ÚNICO de las celdas estructurales de un edificio —
-## piso primero, luego paredes/puertas/ventanas, luego mobiliario. Se usa
-## en ambos sentidos: surtir_construccion() avanza edificio_progreso[id] a
-## través de este mismo orden, procesar_deconstruccion() lo retrocede. No
-## existe un orden "invertido" aparte — decrementar por el mismo camino
-## con el que se construyó ya quita primero lo último agregado (mobiliario
-## -> paredes -> piso), dando la sensación correcta de "arriba hacia
-## abajo" sin ninguna regla especial.
+## piso primero (bloque de tierra suelta que el jugador haya usado como
+## losa), luego muros/puertas/vidrio, luego mobiliario. Se usa en ambos
+## sentidos: surtir_construccion() avanza edificio_progreso[id] a través de
+## este mismo orden, procesar_deconstruccion() lo retrocede. No existe un
+## orden "invertido" aparte — decrementar por el mismo camino con el que se
+## construyó ya quita primero lo último agregado (mobiliario -> muros ->
+## piso), dando la sensación correcta de "arriba hacia abajo" sin ninguna
+## regla especial.
 const ORDEN_GRUPOS_EDIFICIO := [
-	["piso"],
-	["pared", "puerta_inferior", "puerta_superior", "ventana"],
+	["tierra"],
+	["tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro", "puerta_inferior", "puerta_superior", "vidrio"],
 	["cama_cabecera", "cama_pies", "baul"],
 ]
 

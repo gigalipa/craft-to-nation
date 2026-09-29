@@ -2407,6 +2407,21 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_econ.obtener_tipo(celda_excavar_86) == "", "se excavó")
 	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, Recoleccion.rendimiento_de("piedra")), "acredita el mismo rendimiento que minar a mano (10 piedra)")
 
+	print("\n=== TEST 86b: excavar la LOSA ENTERRADA (tipo 'fantasma', ya parte de la propia estructura) TAMBIÉN acredita ===")
+	# En un sitio con pendiente, la losa enterrada de la propia construcción
+	# también hay que excavarla — su celda YA está registrada en
+	# celda_a_edificio (viene en orden_estructura) desde que arranca la cola,
+	# antes de que el paso de excavación la haya tocado siquiera. Si
+	# _acreditar_excavacion() usara es_terreno_natural() a secas (que excluye
+	# cualquier celda de celda_a_edificio), este caso nunca acreditaría nada.
+	var celda_losa_86b := Vector3i(OX86 + 10, 0, 0)
+	mundo_econ.colocar_bloque(celda_losa_86b, "hierro")  # terreno natural bajo la losa
+	Ciudad.almacen["hierro"].cantidad = 0.0
+	mundo_econ.iniciar_construccion_fantasma([celda_losa_86b], {celda_losa_86b: "fantasma"}, [celda_losa_86b], {celda_losa_86b: "bloque_piedra"})
+	mundo_econ.surtir_construccion(celda_losa_86b)
+	assert(mundo_econ.obtener_tipo(celda_losa_86b) == "fantasma", "queda fantasma (todavía falta surtir la estructura)")
+	assert(is_equal_approx(Ciudad.almacen["hierro"].cantidad, Recoleccion.rendimiento_de("hierro")), "acredita el hierro real que había debajo, aunque la celda ya sea parte del edificio")
+
 	print("\n=== TEST 87: la cola de RELLENO cobra tierra por celda y bloquea el paso si no alcanza ===")
 	var celda_relleno_87 := Vector3i(OX86 + 1, 0, 0)
 	Ciudad.almacen["tierra"].cantidad = 0.0

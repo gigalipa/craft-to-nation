@@ -988,13 +988,18 @@ func _celdas_excavacion(esquina: Vector2i, columnas: Array[Vector2i], base_y: in
 	return celdas
 
 
-## Cuánto de cada material se recogería al excavar "celdas" (material_real
-## de lo que hay ahora en cada una).
+## Cuánto de cada material se recogería al excavar "celdas": mismo
+## rendimiento que acredita la construcción real al excavarlas
+## (Recoleccion.rendimiento_de(), ver VoxelWorld._acreditar_excavacion()),
+## no 1 por celda — para que el resumen no mienta sobre cuánto entra.
 func _material_excavado(celdas: Array[Vector3i]) -> Dictionary:
 	var recogido: Dictionary = {}
 	for celda in celdas:
 		var material: String = mundo.material_real(mundo.obtener_tipo(celda))
-		recogido[material] = recogido.get(material, 0) + 1
+		var unidades: float = Recoleccion.rendimiento_de(material)
+		if unidades <= 0.0:
+			continue
+		recogido[material] = recogido.get(material, 0) + unidades
 	return recogido
 
 

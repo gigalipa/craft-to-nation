@@ -1937,9 +1937,21 @@ func _aplicar_paso_cola(resultado: Dictionary) -> void:
 ## terreno natural — mismo criterio que extraer_por_avatar(). Debe llamarse
 ## ANTES de retirar el bloque (necesita leer su tipo real todavía puesto).
 func _acreditar_excavacion(celda: Vector3i) -> void:
-	if not (es_terreno_natural(celda) and not colocado_por_jugador.has(celda)):
+	# NO usa es_terreno_natural(): esa función excluye cualquier celda ya en
+	# celda_a_edificio, pero un paso de excavación tipo "fantasma" es
+	# EXACTAMENTE eso — una celda de terreno natural real (p. ej. la losa
+	# enterrada en un sitio con pendiente) que YA quedó registrada como
+	# parte de la estructura desde que arrancó la cola (ver
+	# iniciar_construccion_fantasma(), registra orden_estructura de
+	# entrada). Excluirla dejaría sin acreditar justo los casos más
+	# comunes de excavación bajo un edificio (hallado en revisión de
+	# código, 2026-09-29).
+	var tipo: String = obtener_tipo(celda)
+	if tipo == "" or tipo == "fantasma" or tipo == "agua":
 		return
-	var recurso: String = material_real(obtener_tipo(celda))
+	if TIPOS_ARBOL.has(tipo) or TIPOS_ESTRUCTURA.has(tipo) or colocado_por_jugador.has(celda):
+		return
+	var recurso: String = material_real(tipo)
 	var unidades: float = Recoleccion.rendimiento_de(recurso)
 	if unidades <= 0.0:
 		return

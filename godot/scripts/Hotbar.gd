@@ -80,12 +80,10 @@ const NOMBRE_FISICO_BIBLIOTECA := {
 	"adobe": "tierra_compactada",
 }
 
-## Tipos de la hotbar cuya colocación real son 2 celdas de BlockLibrary (ver
-## VoxelWorld.colocar_puerta()/colocar_cama()): el ícono junta ambas, con el
-## mismo desfase relativo que se usa al colocarlas, para mostrar el objeto
-## completo en vez de solo una mitad.
+## "cama" son 2 celdas reales de BlockLibrary (ver VoxelWorld.colocar_cama()):
+## el ícono junta ambas, con el mismo desfase relativo que se usa al
+## colocarla, para mostrar el objeto completo en vez de solo una mitad.
 const ITEM_ICONO_COMPUESTO := {
-	"puerta": [["puerta_inferior", Vector3.ZERO], ["puerta_superior", Vector3.UP]],
 	"cama": [["cama_cabecera", Vector3.ZERO], ["cama_pies", Vector3.RIGHT]],
 }
 
@@ -94,6 +92,14 @@ const ITEM_ICONO_COMPUESTO := {
 ## material — ver TranslucidosRenderer.gd) así que su ícono no puede salir
 ## de la biblioteca: se arma con un cubo genérico y el material real.
 const MATERIAL_VENTANA := preload("res://assets/mat_ventana.tres")
+
+## "puerta" tampoco sale de BlockLibrary: sus celdas puerta_inferior/
+## puerta_superior tienen malla vacía a propósito (igual que vidrio/agua —
+## Puertas.gd dibuja la lámina real, no GridMap). El ícono viejo mostraba el
+## bloque de 2 celdas que YA NO se ve en el juego (reporte del usuario
+## 2026-09-30); ahora arma la lámina real con las mismas medidas y color que
+## Puertas.gd — ver Puertas.LAMINA/COLOR_LAMINA.
+const PuertasScript = preload("res://scripts/Puertas.gd")
 
 const TAMANO_ICONO := 64.0
 const RESOLUCION_ICONO := 128
@@ -139,13 +145,20 @@ func icono_de(tipo: String) -> Texture2D:
 
 ## Piezas (malla, posición relativa, material o null para el real del ítem)
 ## que arman el ícono de "tipo": una sola para la mayoría, las 2 celdas
-## reales de ITEM_ICONO_COMPUESTO para puerta/cama (el objeto completo, no
-## solo una mitad), y un cubo genérico con MATERIAL_VENTANA para vidrio.
+## reales de ITEM_ICONO_COMPUESTO para cama (el objeto completo, no solo una
+## mitad), un cubo genérico con MATERIAL_VENTANA para vidrio, y la lámina
+## real (medidas y color de Puertas.gd) para puerta.
 func _piezas_de_icono(tipo: String) -> Array:
 	if tipo == "vidrio":
 		var cubo := BoxMesh.new()
 		cubo.size = Vector3.ONE
 		return [[cubo, Vector3.ZERO, MATERIAL_VENTANA]]
+	if tipo == "puerta":
+		var lamina := BoxMesh.new()
+		lamina.size = PuertasScript.LAMINA
+		var material_lamina := StandardMaterial3D.new()
+		material_lamina.albedo_color = PuertasScript.COLOR_LAMINA
+		return [[lamina, Vector3.ZERO, material_lamina]]
 	if ITEM_ICONO_COMPUESTO.has(tipo):
 		var piezas: Array = []
 		for par in ITEM_ICONO_COMPUESTO[tipo]:

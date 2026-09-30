@@ -13,6 +13,9 @@ extends Node3D
 ## coordenadas del mundo. Clave de cada puerta: su celda INFERIOR.
 
 const LAMINA := Vector3(1, 2, 0.1)
+## También la usa Hotbar.gd para el ícono de "puerta": la lámina real, no el
+## bloque viejo de 2 celdas de BlockLibrary (reporte del usuario 2026-09-30).
+const COLOR_LAMINA := Color(0.82, 0.42, 0.0)
 const CAPA_CERRADA := 1  # capa 1: mundo (bloquea al avatar)
 const CAPA_ABIERTA := 8  # capa 4: solo el raycast del jugador
 const META_CELDA := "celda_puerta"
@@ -40,7 +43,7 @@ var _material := StandardMaterial3D.new()
 func _init() -> void:
 	_forma.size = LAMINA
 	_malla.size = LAMINA
-	_material.albedo_color = Color(0.82, 0.42, 0.0)
+	_material.albedo_color = COLOR_LAMINA
 	_malla.material = _material
 
 

@@ -196,9 +196,9 @@ func ocultar_contexto() -> void:
 ## placeholder fijo, "10 tierra · 10 madera · 5 piedra" para los 4 tipos por
 ## igual, reporte del usuario 2026-09-30), personal, almacenamiento y, en
 ## vivo, la recolección prevista por ciudadano según la posición del cursor.
-func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}) -> void:
+func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}) -> void:
 	var extra := "Personal máximo: %d · Almacenamiento: %d\n%s" % [Recoleccion.cupo_de(tipo), Recoleccion.capacidad_almacen_de(tipo), texto_tasas(tipo, tasas)]
-	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, extra)
+	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, extra, bloques)
 
 
 ## Recolección prevista de un puesto. Diccionario vacío = nada detectado (en
@@ -257,8 +257,13 @@ func actualizar_materiales(neto: Dictionary, camas: int = -1, baules: int = -1) 
 ## NiveladorTerreno.resumen_materiales()). Lo necesario va sin signo y de
 ## mayor a menor; el sobrante recogido va después con "+". "camas"/"baules"
 ## >= 0 anteponen una línea de conteo (edificio residencial); negativos
-## (por defecto) la omiten.
-static func texto_materiales(neto: Dictionary, camas: int = -1, baules: int = -1) -> String:
+## (por defecto) la omiten. "bloques" (material -> cantidad de bloques
+## reales de pared/estructura, ver NiveladorTerreno.contar_bloques()) suma
+## "(N bloques)" a lo NECESARIO cuando hay conteo para ese material — el
+## jugador pide el recurso crudo (madera) y cuántos bloques colocados
+## representa (bloque_madera), no solo uno de los dos (reporte del usuario,
+## 2026-09-30). Sin "bloques" (default {}), el texto es igual que siempre.
+static func texto_materiales(neto: Dictionary, camas: int = -1, baules: int = -1, bloques: Dictionary = {}) -> String:
 	var necesarios: Array = []
 	var sobrantes: Array = []
 	for material in neto:
@@ -274,7 +279,12 @@ static func texto_materiales(neto: Dictionary, camas: int = -1, baules: int = -1
 	lineas.append("Materiales de construcción:")
 	var inicio_materiales := lineas.size()
 	for necesario in necesarios:
-		lineas.append("%d %s" % [necesario[0], necesario[1]])
+		var cantidad: int = necesario[0]
+		var material: String = necesario[1]
+		if bloques.has(material):
+			lineas.append("%d %s (%d bloques)" % [cantidad, material, bloques[material]])
+		else:
+			lineas.append("%d %s" % [cantidad, material])
 	lineas.append_array(sobrantes)
 	if lineas.size() == inicio_materiales:
 		lineas.append("-")

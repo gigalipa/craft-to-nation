@@ -44,10 +44,16 @@ const DURACION_ENTRADA := 0.2
 const DURACION_SALIDA := 0.3
 
 
-static func texto_costo(costo_dic: Dictionary) -> String:
+## "bloques_dic" (opcional, material -> cantidad de bloques reales de pared/
+## estructura, ver NiveladorTerreno.contar_bloques()) suma "(N bloques)" al
+## material que tenga conteo — mismo motivo que HUD.texto_materiales().
+static func texto_costo(costo_dic: Dictionary, bloques_dic: Dictionary = {}) -> String:
 	var partes: Array = []
 	for tipo in costo_dic:
-		partes.append("%d %s" % [costo_dic[tipo], tipo])
+		if bloques_dic.has(tipo):
+			partes.append("%d %s (%d bloques)" % [costo_dic[tipo], tipo, bloques_dic[tipo]])
+		else:
+			partes.append("%d %s" % [costo_dic[tipo], tipo])
 	return " · ".join(partes)
 
 
@@ -156,13 +162,14 @@ func _ready() -> void:
 ## valor (p. ej. null) oculta esa fila. "texto_extra" vacío oculta su línea.
 ## Oculta también los campos exclusivos de mostrar_bloque_temporal()
 ## (número, ícono, descripción, disponibilidad): este panel es compartido.
-func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valido: Variant = null, texto_extra: String = "") -> void:
+## "bloques_dic" (opcional) ver texto_costo().
+func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valido: Variant = null, texto_extra: String = "", bloques_dic: Dictionary = {}) -> void:
 	numero.visible = false
 	icono.visible = false
 	descripcion.visible = false
 	disponible.visible = false
 	titulo.text = nombre.to_upper()
-	costo.text = texto_costo(costo_dic)
+	costo.text = texto_costo(costo_dic, bloques_dic)
 	costo.visible = not costo_dic.is_empty()
 	acciones.text = texto_acciones(lista_acciones)
 	acciones.visible = not lista_acciones.is_empty()

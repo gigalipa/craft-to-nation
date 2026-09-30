@@ -249,3 +249,33 @@ func resumen_materiales(celdas_3d: Dictionary, relleno_total: int, recogido: Dic
 		if neto[material] == 0:
 			neto.erase(material)
 	return neto
+
+
+## Tipos de bloque de pared/estructura real contables como "bloques" en el
+## resumen visual del HUD — a propósito, deja fuera puerta/cama/baúl (son
+## objetos funcionales, no bloques de pared) aunque también aparezcan en
+## COSTO_POR_CELDA, para que "235 madera (47 bloques)" cuente solo los
+## bloque_madera reales, no cada puerta/cama/baúl que también gasta madera
+## (decisión del usuario, 2026-09-30).
+const TIPOS_BLOQUE_CONTABLE := ["tierra", "adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio"]
+
+
+## Cuenta, por recurso, cuántas celdas de "celdas_3d" son un bloque de pared/
+## estructura real (TIPOS_BLOQUE_CONTABLE) — el complemento visual de
+## resumen_materiales(): mientras esa función da el costo en recurso crudo
+## (p. ej. 235 madera), esta da el número de bloques colocados que
+## representa (47 bloques de madera), para mostrar ambos en la tarjeta del
+## HUD. "relleno_total" suma directo al conteo de "tierra": el relleno ya
+## son bloques de tierra literales, sin pasar por COSTO_POR_CELDA.
+func contar_bloques(celdas_3d: Dictionary, relleno_total: int = 0) -> Dictionary:
+	var conteo: Dictionary = {}
+	for rel in celdas_3d:
+		var tipo: String = celdas_3d[rel]
+		if not TIPOS_BLOQUE_CONTABLE.has(tipo):
+			continue
+		var costo: Dictionary = COSTO_POR_CELDA.get(tipo, {})
+		for material in costo:
+			conteo[material] = conteo.get(material, 0) + 1
+	if relleno_total > 0:
+		conteo["tierra"] = conteo.get("tierra", 0) + relleno_total
+	return conteo

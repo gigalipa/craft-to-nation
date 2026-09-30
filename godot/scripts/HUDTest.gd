@@ -206,6 +206,9 @@ func probar_panel_contextual() -> void:
 	print("=== TEST 2: PanelContextual ===")
 	assert(PanelContextualScript.texto_costo({"madera": 24, "piedra": 8}) == "24 madera · 8 piedra")
 	assert(PanelContextualScript.texto_costo({}) == "")
+	# Con "bloques" (material -> cantidad de bloques reales): suma "(N
+	# bloques)" solo al material que tenga conteo; sin él, se ve igual que siempre.
+	assert(PanelContextualScript.texto_costo({"madera": 24, "piedra": 8}, {"madera": 6}) == "24 madera (6 bloques) · 8 piedra")
 
 	var panel: PanelContainer = PanelContextualScript.new()
 	add_child(panel)

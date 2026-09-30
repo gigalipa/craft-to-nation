@@ -386,7 +386,10 @@ func ejecutar_pruebas() -> void:
 	var esquina12 := Vector2i(10, 30)
 	var ev12: Dictionary = camara12._evaluar_puesto(esquina12)
 	assert(camara12._mensaje_rechazo_puesto(ev12) == "", "válida sobre suelo plano")
-	var costo_mina12: Dictionary = camara12._resumen_materiales_puesto(esquina12, ev12)
+	# _resumen_materiales_puesto() devuelve {"neto": ..., "bloques": ...}
+	# desde 2026-09-30 (reporte del usuario: la ficha no decía cuántos
+	# bloques representa el costo, solo el recurso crudo).
+	var costo_mina12: Dictionary = camara12._resumen_materiales_puesto(esquina12, ev12)["neto"]
 	assert(not costo_mina12.has("piedra"), "mina no usa piedra en ningún bloque de su plantilla, salió: %s" % costo_mina12)
 	assert(costo_mina12.has("tierra"), "mina cuesta tierra (adobe): %s" % costo_mina12)
 	assert(costo_mina12.has("madera"), "la puerta y el baúl de mina cuestan madera: %s" % costo_mina12)
@@ -396,10 +399,12 @@ func ejecutar_pruebas() -> void:
 	var esquina12b := Vector2i(20, 30)
 	var ev12b: Dictionary = camara12b._evaluar_puesto(esquina12b)
 	assert(camara12b._mensaje_rechazo_puesto(ev12b) == "", "válida sobre suelo plano")
-	var costo_maderero12: Dictionary = camara12b._resumen_materiales_puesto(esquina12b, ev12b)
+	var resumen_maderero12: Dictionary = camara12b._resumen_materiales_puesto(esquina12b, ev12b)
+	var costo_maderero12: Dictionary = resumen_maderero12["neto"]
 	assert(not costo_maderero12.has("piedra"), "maderero no usa piedra en ningún bloque de su plantilla, salió: %s" % costo_maderero12)
 	assert(costo_maderero12.has("madera"), "maderero cuesta madera (bloque_madera): %s" % costo_maderero12)
 	assert(costo_mina12 != costo_maderero12, "dos tipos distintos ya no comparten el mismo costo fijo")
+	assert(resumen_maderero12["bloques"].get("madera", 0) > 0, "maderero cuenta bloque_madera reales en la plantilla, salió: %s" % resumen_maderero12["bloques"])
 	camara12b.free()
 	mundo12.free()
 	print("OK: el costo mostrado depende del tipo de puesto y de su plantilla real, no de un placeholder.")

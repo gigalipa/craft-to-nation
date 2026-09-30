@@ -258,6 +258,11 @@ func ejecutar_pruebas() -> void:
 	var texto_15b: String = HUDScript.texto_materiales({"piedra": -79}, 2, 1)
 	assert(texto_15b == "Camas: 2 · Baúles: 1\nMateriales de construcción:\n79 piedra", texto_15b)
 	assert(HUDScript.texto_materiales({}, 0, 0) == "Camas: 0 · Baúles: 0\nMateriales de construcción:\n-")
+	# Con "bloques" (material -> cantidad de bloques reales, ver
+	# contar_bloques()): lo necesario suma "(N bloques)"; sin conteo para ese
+	# material, o en lo sobrante, se ve igual que siempre.
+	var texto_15c: String = HUDScript.texto_materiales({"piedra": -79, "madera": -12, "tierra": 19}, -1, -1, {"piedra": 16, "madera": 12})
+	assert(texto_15c == "Materiales de construcción:\n79 piedra (16 bloques)\n12 madera (12 bloques)\n+ 19 tierra", texto_15c)
 
 	print("\n=== TEST 16: calcular_base_y() devuelve la fachada del lado de la puerta, al nivel del suelo frontal ===")
 	# Casa 4x5 con la puerta al oeste (x=0, z=2), terreno plano de altura 5, esquina (10,10):
@@ -311,4 +316,13 @@ func ejecutar_pruebas() -> void:
 	assert(nivelador_acantilado.verificar_pendiente(Vector2i(4, 0), _rectangulo(4, 5)), "la huella sola es válida")
 	assert(not nivelador_acantilado.verificar_pendiente(Vector2i(4, 0), union_20), "con la fachada, el acantilado invalida")
 
-	print("\n=== Las 20 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 21: contar_bloques() cuenta las celdas de pared/estructura reales por recurso, sin puerta/cama/baúl ===")
+	var bloques_21: Dictionary = nivelador_plano.contar_bloques(casa_9, 0)
+	assert(bloques_21["piedra"] == 79, "79 celdas de bloque_piedra")
+	assert(bloques_21["tierra"] == 1, "1 celda de vidrio (cuesta tierra)")
+	assert(not bloques_21.has("madera"), "puerta/cama/baúl no cuentan como bloques de pared/estructura")
+	var bloques_21b: Dictionary = nivelador_plano.contar_bloques(casa_9, 3)
+	assert(bloques_21b["tierra"] == 4, "1 del vidrio + 3 de relleno (el relleno son bloques de tierra literales)")
+	assert(nivelador_plano.contar_bloques({}, 0).is_empty())
+
+	print("\n=== Las 21 pruebas de NiveladorTerreno pasaron correctamente ===")

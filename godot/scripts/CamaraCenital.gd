@@ -953,8 +953,8 @@ func _actualizar_previsualizacion_puesto() -> void:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MADERERO)
-	var costo: Dictionary = _resumen_materiales_puesto(esquina, ev) if valida else {}
-	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, costo)
+	var resumen: Dictionary = _resumen_materiales_puesto(esquina, ev) if valida else {"neto": {}, "bloques": {}}
+	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, resumen["neto"], resumen["bloques"])
 
 
 ## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves
@@ -1190,7 +1190,8 @@ func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: b
 		total_relleno += cantidad
 	var recogido: Dictionary = _material_excavado(plan["excavacion"])
 	var neto: Dictionary = nivelador_puesto.resumen_materiales(_blueprint_activo["celdas_3d"], total_relleno, recogido)
-	_resumen_blueprint_texto = HUDScript.texto_materiales(neto, camas, baules)
+	var bloques: Dictionary = nivelador_puesto.contar_bloques(_blueprint_activo["celdas_3d"], total_relleno)
+	_resumen_blueprint_texto = HUDScript.texto_materiales(neto, camas, baules, bloques)
 
 
 ## Dibuja los overlays del blueprint activo en "esquina" (evaluación "ev" de
@@ -2163,6 +2164,11 @@ func _plan_relleno_puesto(esquina: Vector2i, ev: Dictionary) -> Dictionary:
 ## (HUD.costo_de_puesto(), "10 tierra · 10 madera · 5 piedra" para los 4
 ## tipos por igual, un placeholder de antes de esta rama) que nunca reflejó
 ## el costo real (reporte del usuario, 2026-09-30).
+## Devuelve {"neto": Dictionary, "bloques": Dictionary} — "neto" es el costo
+## real en recurso crudo (madera, piedra...); "bloques" es cuántas celdas de
+## eso son bloques de pared/estructura reales (ver NiveladorTerreno.
+## contar_bloques()), para mostrar ambos en la tarjeta ("235 madera (47
+## bloques)", reporte del usuario 2026-09-30).
 func _resumen_materiales_puesto(esquina: Vector2i, ev: Dictionary) -> Dictionary:
 	var plan: Dictionary = _plan_relleno_puesto(esquina, ev)
 	var relleno_orden: Array[Vector3i] = plan["relleno_orden"]
@@ -2187,7 +2193,21 @@ func _resumen_materiales_puesto(esquina: Vector2i, ev: Dictionary) -> Dictionary
 		neto[recurso] = neto.get(recurso, 0) - recogido[recurso]
 		if neto[recurso] == 0:
 			neto.erase(recurso)
-	return neto
+
+	# El relleno de un puesto puede ser tierra O piedra (pilotes de pesca,
+	# ver _plan_relleno_puesto()) — a diferencia del residencial, no es
+	# siempre tierra, así que se cuenta como celdas reales (mismo criterio
+	# que contar_bloques() usa para la plantilla) en vez de pasar un total
+	# fijo. Las celdas de excavación ("aire"/"fantasma") no son un tipo de
+	# bloque contable, quedan afuera solas.
+	var celdas_para_contar: Dictionary = ev["celdas_plantilla"].duplicate()
+	for celda in relleno_orden:
+		var tipo_relleno: String = tipos_relleno[celda]
+		if NiveladorTerreno.TIPOS_BLOQUE_CONTABLE.has(tipo_relleno):
+			celdas_para_contar[celda] = tipo_relleno
+	var bloques: Dictionary = nivelador_puesto.contar_bloques(celdas_para_contar, 0)
+
+	return {"neto": neto, "bloques": bloques}
 
 
 ## Valida y, si es válido, inicia la construcción fantasma del puesto activo

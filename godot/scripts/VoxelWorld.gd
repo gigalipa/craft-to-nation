@@ -81,13 +81,13 @@ var cascadas: Dictionary = {}  # Vector2i -> Dictionary
 ## detectar_estructura()). "hierba" queda deliberadamente fuera: es un
 ## material de terreno/relleno (ver _generar_terreno() y el modo de
 ## nivelación de CamaraCenital), nunca un material de construcción — los
-## materiales estructurales reales son tierra_compactada, bloque_madera,
-## bloque_piedra y estructura_hierro (ver docs/superpowers/specs/
-## 2026-09-29-costo-colocacion-bloques-design.md). Si el jugador usa
-## "hierba" para rellenar un hueco de terreno bajo su edificio, ese relleno
-## no debe "pegarse" a la estructura declarada ni distorsionar su huella.
+## materiales estructurales reales son adobe, bloque_madera, bloque_piedra y
+## estructura_hierro (ver docs/superpowers/specs/2026-09-29-costo-
+## colocacion-bloques-design.md). Si el jugador usa "hierba" para rellenar
+## un hueco de terreno bajo su edificio, ese relleno no debe "pegarse" a la
+## estructura declarada ni distorsionar su huella.
 const TIPOS_ESTRUCTURA := [
-	"tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro",
+	"adobe", "bloque_madera", "bloque_piedra", "estructura_hierro",
 	"puerta_inferior", "puerta_superior", "vidrio",
 	"cama_cabecera", "cama_pies", "baul",
 ]
@@ -106,6 +106,17 @@ const TIPOS_ESTRUCTURA := [
 ## "tierra pisada") son todas de tierra hoy — ambas se traducen para que el
 ## resumen de materiales (CamaraCenital._material_excavado()) nunca muestre
 ## un nombre de bloque interno al jugador.
+## Traduce el nombre del ítem tal como está guardado en assets/BlockLibrary.res
+## (invisible para el resto del código, un detalle del asset) al tipo
+## "de verdad" que usa toda la lógica del juego — mismo mecanismo que
+## MATERIAL_REAL más abajo, pero aplicado ANTES de indexar (ver
+## _indexar_biblioteca()). "tierra_compactada" era el nombre original del
+## bloque de adobe (decisión del usuario 2026-09-30: renombrarlo sin tener
+## que volver a exportar la MeshLibrary desde el editor).
+const RENOMBRE_BIBLIOTECA := {
+	"tierra_compactada": "adobe",
+}
+
 const MATERIAL_REAL := {
 	"hierba": "tierra",
 	"cuna_recta": "tierra", "cuna_esquina": "tierra",
@@ -565,7 +576,7 @@ func _ready() -> void:
 
 func _indexar_biblioteca() -> void:
 	for id in mesh_library.get_item_list():
-		var nombre: String = mesh_library.get_item_name(id)
+		var nombre: String = RENOMBRE_BIBLIOTECA.get(mesh_library.get_item_name(id), mesh_library.get_item_name(id))
 		_id_por_tipo[nombre] = id
 		_tipo_por_id[id] = nombre
 	# La colisión de los fantasmas la dan los cuerpos por obra (CuerposObra),
@@ -1457,7 +1468,7 @@ func eliminar_follaje(celda: Vector3i) -> void:
 ## regla especial.
 const ORDEN_GRUPOS_EDIFICIO := [
 	["tierra"],
-	["tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro", "puerta_inferior", "puerta_superior", "vidrio"],
+	["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "puerta_inferior", "puerta_superior", "vidrio"],
 	["cama_cabecera", "cama_pies", "baul"],
 ]
 

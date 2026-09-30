@@ -378,8 +378,8 @@ func ejecutar_pruebas() -> void:
 	# "10 tierra · 10 madera · 5 piedra" — el mismo placeholder fijo para los 4
 	# tipos de puesto (HUD.costo_de_puesto(), ya eliminado), sin relación con su
 	# costo real. Ninguna plantilla de puesto usa bloque_piedra (mina =
-	# tierra_compactada, maderero/caza = bloque_madera, pesca = bloque_piedra
-	# pero mina/maderero/caza no), así que "piedra" nunca debería aparecer en el
+	# adobe, maderero/caza = bloque_madera, pesca = bloque_piedra pero
+	# mina/maderero/caza no), así que "piedra" nunca debería aparecer en el
 	# costo de mina ni de maderero.
 	var mundo12: Node = _mundo_plano()
 	var camara12: Camera3D = _camara(mundo12, "mina")
@@ -388,7 +388,7 @@ func ejecutar_pruebas() -> void:
 	assert(camara12._mensaje_rechazo_puesto(ev12) == "", "válida sobre suelo plano")
 	var costo_mina12: Dictionary = camara12._resumen_materiales_puesto(esquina12, ev12)
 	assert(not costo_mina12.has("piedra"), "mina no usa piedra en ningún bloque de su plantilla, salió: %s" % costo_mina12)
-	assert(costo_mina12.has("tierra"), "mina cuesta tierra (tierra_compactada): %s" % costo_mina12)
+	assert(costo_mina12.has("tierra"), "mina cuesta tierra (adobe): %s" % costo_mina12)
 	assert(costo_mina12.has("madera"), "la puerta y el baúl de mina cuestan madera: %s" % costo_mina12)
 	camara12.free()
 

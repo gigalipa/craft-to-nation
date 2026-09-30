@@ -109,8 +109,10 @@ func _ready() -> void:
 func set_vista(primera_persona: bool) -> void:
 	_hotbar.visible = primera_persona
 	_barra_modos.visible = not primera_persona
-	# 102 = alto de la hotbar (~82) + su margen (12) + un hueco de 8.
-	_contexto.set_margen_inferior(102.0 if primera_persona else 12.0)
+	# Alto real de la hotbar (no una constante fija: se desincroniza en
+	# cuanto cambia su contenido, p. ej. al pasar a íconos — reporte del
+	# usuario 2026-09-30) + su propio margen respecto al borde + un hueco de 8.
+	_contexto.set_margen_inferior(-_hotbar.offset_bottom + _hotbar.get_combined_minimum_size().y + 8.0 if primera_persona else 12.0)
 	_contexto.ocultar()
 	# Las ventanas de Población/Almacén solo tienen sentido en la cenital;
 	# ocultarlas/restaurarlas conserva su posición y si el usuario las dejó
@@ -168,6 +170,14 @@ func mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido
 ## validez (1ª persona: 1-6). Para el que debe quedarse fijo, mostrar_contexto().
 func mostrar_contexto_temporal(nombre: String, costo: Dictionary, acciones: Array, segundos: float = 2.5) -> void:
 	_contexto.mostrar_temporal(nombre, costo, acciones, segundos)
+
+
+## Tarjeta completa (ícono, tipo/uso/obtención, disponibilidad) del bloque
+## de la hotbar en "indice" (Player, al seleccionar con 1-9): la fuente de
+## verdad del ícono y la disponibilidad es la propia hotbar, ya que ambos
+## dependen de su estado (caché de íconos, stock actual del almacén).
+func mostrar_contexto_bloque(indice: int, tipo: String) -> void:
+	_contexto.mostrar_bloque_temporal(indice, tipo, _hotbar.icono_de(tipo), _hotbar.cantidad_de(indice))
 
 
 func ocultar_contexto() -> void:

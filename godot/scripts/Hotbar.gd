@@ -6,13 +6,25 @@ extends PanelContainer
 ## almacén central. Se autoactualiza en _process() mientras esté visible,
 ## mismo patrón que VentanaAlmacen.gd/BarraSuperior.gd (sin depender de que
 ## Player.gd/HUD.gd la llamen en su propio refresco).
+##
+## El ícono de cada casilla es un render en vivo (ver _renderizar_icono())
+## de la malla y el material reales del ítem de assets/BlockLibrary.res: no
+## es un dibujo aparte, así que si cambia el material/textura de un bloque
+## (o el paquete de texturas completo) el ícono lo refleja solo, sin
+## mantener un segundo set de imágenes sincronizado. Antes se usaba
+## MeshLibrary.get_item_preview(), pero esa vista previa solo la genera el
+## editor: en una build headless/exportada siempre da null (comprobado en
+## pruebas 2026-09-30) — de ahí las casillas sin ícono reportadas.
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
+const RUTA_BIBLIOTECA := "res://assets/BlockLibrary.res"
 
+## Nombre completo/real de cada bloque: aparece en el título de la tarjeta
+## emergente (PanelContextual.mostrar_bloque_temporal()).
 const NOMBRES := {
 	"tierra": "Tierra",
-	"tierra_compactada": "Tierra compactada",
+	"adobe": "Bloque de adobe",
 	"bloque_madera": "Bloque de madera",
 	"bloque_piedra": "Bloque de piedra",
 	"estructura_hierro": "Estructura de hierro",
@@ -22,14 +34,186 @@ const NOMBRES := {
 	"baul": "Baúl",
 }
 
+## Título corto de cada casilla de la hotbar (decisión del usuario
+## 2026-09-30: la casilla usa una palabra corta aunque no sea el nombre real
+## del bloque, p. ej. "bloque_madera" se ve "Madera" — el nombre completo
+## sigue en la tarjeta emergente, vía NOMBRES/nombre_de()).
+const NOMBRES_HOTBAR := {
+	"tierra": "Tierra",
+	"adobe": "Adobe",
+	"bloque_madera": "Madera",
+	"bloque_piedra": "Piedra",
+	"estructura_hierro": "Estructura",
+	"vidrio": "Vidrio",
+	"puerta": "Puerta",
+	"cama": "Cama",
+	"baul": "Baúl",
+}
+
+## Tipos cuyo bloque es un objeto interactuable ya colocado (ver
+## Player._interactuar()): su tarjeta emergente suma una pista de "E" a las
+## acciones, además de "COLOCAR (clic der.)".
+const TIPOS_INTERACTIVOS := ["puerta", "cama", "baul"]
+
+## Tipo, uso ideal y método de obtención de cada bloque para la tarjeta
+## emergente (PanelContextual.mostrar_bloque_temporal()). El método de
+## obtención respeta el costo real de NiveladorTerreno.COSTO_POR_CELDA (p.
+## ej. vidrio cuesta tierra, no arena: no existe ese recurso en el juego).
+const DESCRIPCION := {
+	"tierra": ["Bloque de tipo no estructural.", "Ideal para relleno de terreno y nivelación.", "Se obtiene cavando hierba o tierra."],
+	"adobe": ["Bloque de tipo estructural.", "Ideal para cimientos y muros básicos.", "Se obtiene compactando tierra."],
+	"bloque_madera": ["Bloque de tipo estructural.", "Ideal para muros, pisos y techos.", "Se obtiene talando árboles."],
+	"bloque_piedra": ["Bloque de tipo estructural.", "Ideal para muros resistentes y cimientos.", "Se obtiene minando piedra."],
+	"estructura_hierro": ["Bloque de tipo estructural.", "Ideal para refuerzos y estructuras de carga.", "Se obtiene minando y fundiendo hierro."],
+	"vidrio": ["Bloque de tipo estructural translúcido.", "Ideal para ventanas e iluminación natural.", "Se obtiene fundiendo tierra."],
+	"puerta": ["Objeto de tipo funcional.", "Entrada y salida de edificaciones y espacios cerrados.", "Se fabrica con madera."],
+	"cama": ["Objeto de tipo funcional.", "Descanso de colonos; requisito de todo edificio residencial.", "Se fabrica con madera."],
+	"baul": ["Objeto de tipo funcional.", "Almacenamiento de materiales junto a un puesto.", "Se fabrica con madera."],
+}
+
+## "adobe" es el nombre real del bloque en el juego, pero el ítem físico de
+## assets/BlockLibrary.res sigue llamándose "tierra_compactada" (mismo
+## mapeo que VoxelWorld.RENOMBRE_BIBLIOTECA, aplicado aquí porque esta clase
+## busca sus propios ítems por nombre en una copia independiente — ver
+## _malla_de_item()): sin esto el ícono buscaría un ítem que no existe.
+const NOMBRE_FISICO_BIBLIOTECA := {
+	"adobe": "tierra_compactada",
+}
+
+## Tipos de la hotbar cuya colocación real son 2 celdas de BlockLibrary (ver
+## VoxelWorld.colocar_puerta()/colocar_cama()): el ícono junta ambas, con el
+## mismo desfase relativo que se usa al colocarlas, para mostrar el objeto
+## completo en vez de solo una mitad.
+const ITEM_ICONO_COMPUESTO := {
+	"puerta": [["puerta_inferior", Vector3.ZERO], ["puerta_superior", Vector3.UP]],
+	"cama": [["cama_cabecera", Vector3.ZERO], ["cama_pies", Vector3.RIGHT]],
+}
+
+## "vidrio" tiene malla vacía a propósito en BlockLibrary (GridMap solo lo
+## usa para ocupación/colisión; lo dibuja TranslucidosRenderer con este
+## material — ver TranslucidosRenderer.gd) así que su ícono no puede salir
+## de la biblioteca: se arma con un cubo genérico y el material real.
+const MATERIAL_VENTANA := preload("res://assets/mat_ventana.tres")
+
+const TAMANO_ICONO := 64.0
+const RESOLUCION_ICONO := 128
+
 var _fila := HBoxContainer.new()
-var _casillas: Array = []  # de {"panel": PanelContainer, "cantidad": Label}
+var _casillas: Array = []  # de {"contenedor", "caja", "nombre", "cantidad", "valor": int}
 var _seleccionada := 0
 var _tipos: Array = []
+
+## Copia propia (CACHE_MODE_IGNORE) de la MeshLibrary, independiente de la
+## que usa VoxelWorld en el mundo: VoxelWorld._indexar_biblioteca() vacía en
+## el sitio la malla de "puerta_inferior"/"puerta_superior" (su lámina la
+## da Puertas.gd) — como load() normalmente cachea por ruta, sin esto la
+## hotbar podría heredar esa mutación y quedarse sin ícono de puerta según
+## el orden de inicialización.
+var _biblioteca: MeshLibrary
+var _cache_iconos := {}
 
 
 static func nombre_de(tipo: String) -> String:
 	return NOMBRES.get(tipo, tipo.capitalize())
+
+
+static func nombre_hotbar_de(tipo: String) -> String:
+	return NOMBRES_HOTBAR.get(tipo, nombre_de(tipo))
+
+
+static func descripcion_de(tipo: String) -> Array:
+	return DESCRIPCION.get(tipo, ["", "", ""])
+
+
+## Ícono en miniatura (render en vivo) del bloque/objeto real que representa
+## "tipo", o null si no tiene ninguna malla que mostrar. Se cachea por tipo:
+## no hace falta volver a renderizar en cada configurar().
+func icono_de(tipo: String) -> Texture2D:
+	if _cache_iconos.has(tipo):
+		return _cache_iconos[tipo]
+	var piezas := _piezas_de_icono(tipo)
+	var textura: Texture2D = _renderizar_icono(piezas) if not piezas.is_empty() else null
+	_cache_iconos[tipo] = textura
+	return textura
+
+
+## Piezas (malla, posición relativa, material o null para el real del ítem)
+## que arman el ícono de "tipo": una sola para la mayoría, las 2 celdas
+## reales de ITEM_ICONO_COMPUESTO para puerta/cama (el objeto completo, no
+## solo una mitad), y un cubo genérico con MATERIAL_VENTANA para vidrio.
+func _piezas_de_icono(tipo: String) -> Array:
+	if tipo == "vidrio":
+		var cubo := BoxMesh.new()
+		cubo.size = Vector3.ONE
+		return [[cubo, Vector3.ZERO, MATERIAL_VENTANA]]
+	if ITEM_ICONO_COMPUESTO.has(tipo):
+		var piezas: Array = []
+		for par in ITEM_ICONO_COMPUESTO[tipo]:
+			var malla: Mesh = _malla_de_item(par[0])
+			if malla != null:
+				piezas.append([malla, par[1], null])
+		return piezas
+	var malla_simple: Mesh = _malla_de_item(tipo)
+	return [[malla_simple, Vector3.ZERO, null]] if malla_simple != null else []
+
+
+## Malla real del ítem "nombre_item" en la copia propia de BlockLibrary (ver
+## _biblioteca), o null si no existe/no tiene malla (p. ej. vidrio).
+func _malla_de_item(nombre_item: String) -> Mesh:
+	if _biblioteca == null:
+		_biblioteca = ResourceLoader.load(RUTA_BIBLIOTECA, "MeshLibrary", ResourceLoader.CACHE_MODE_IGNORE)
+	var nombre_fisico: String = NOMBRE_FISICO_BIBLIOTECA.get(nombre_item, nombre_item)
+	for id in _biblioteca.get_item_list():
+		if _biblioteca.get_item_name(id) == nombre_fisico:
+			return _biblioteca.get_item_mesh(id)
+	return null
+
+
+## Renderiza "piezas" (cada una [malla, posición relativa, material u null
+## para el de la propia malla]) juntas en un SubViewport aislado
+## (own_world_3d: no interfiere con la escena 3D del juego) y devuelve su
+## textura. UPDATE_ONCE: es una miniatura estática, no hace falta
+## re-renderizarla cada frame.
+func _renderizar_icono(piezas: Array) -> Texture2D:
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(RESOLUCION_ICONO, RESOLUCION_ICONO)
+	viewport.transparent_bg = true
+	viewport.own_world_3d = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+	var aabb: AABB
+	for i in range(piezas.size()):
+		var malla: Mesh = piezas[i][0]
+		var offset: Vector3 = piezas[i][1]
+		var material_pieza: Material = piezas[i][2]
+		var instancia := MeshInstance3D.new()
+		instancia.mesh = malla
+		instancia.position = offset
+		if material_pieza != null:
+			instancia.material_override = material_pieza
+		viewport.add_child(instancia)
+		var caja := AABB(malla.get_aabb().position + offset, malla.get_aabb().size)
+		aabb = caja if i == 0 else aabb.merge(caja)
+
+	var luz := DirectionalLight3D.new()
+	luz.rotation_degrees = Vector3(-55.0, -35.0, 0.0)
+	viewport.add_child(luz)
+	var relleno := DirectionalLight3D.new()
+	relleno.light_energy = 0.4
+	relleno.rotation_degrees = Vector3(-20.0, 145.0, 0.0)
+	viewport.add_child(relleno)
+
+	var centro := aabb.get_center()
+	var radio: float = maxf(0.2, aabb.get_longest_axis_size()) * 0.85
+	var camara := Camera3D.new()
+	camara.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camara.size = radio * 2.0
+	camara.position = centro + Vector3(radio, radio, radio)
+	viewport.add_child(camara)
+	add_child(viewport)
+	camara.look_at(centro, Vector3.UP)
+
+	return viewport.get_texture()
 
 
 func _ready() -> void:
@@ -49,26 +233,71 @@ func _ready() -> void:
 func configurar(tipos: Array) -> void:
 	_tipos = tipos
 	for casilla in _casillas:
-		casilla["panel"].queue_free()
+		casilla["contenedor"].queue_free()
 	_casillas.clear()
 	for i in range(tipos.size()):
-		var panel := PanelContainer.new()
-		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel.custom_minimum_size = Vector2(72, 60)
-		var caja := VBoxContainer.new()
-		caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var nombre := TemaHUD.etiqueta(nombre_de(tipos[i]))
+		var tipo: String = tipos[i]
+		var contenedor := VBoxContainer.new()
+		contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		contenedor.add_theme_constant_override("separation", 2)
+
+		# Título corto (nombre_hotbar_de(), no el real): envuelve en 2 líneas
+		# si hace falta, ya no desincroniza el margen del panel contextual
+		# porque HUD.set_vista() lo calcula del alto real de la hotbar, no de
+		# una constante fija.
+		var nombre := TemaHUD.etiqueta(nombre_hotbar_de(tipo))
 		nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var cantidad := TemaHUD.etiqueta()
-		cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		cantidad.visible = false
+		nombre.autowrap_mode = TextServer.AUTOWRAP_WORD
+		nombre.custom_minimum_size.x = TAMANO_ICONO
+		contenedor.add_child(nombre)
+
+		var caja := PanelContainer.new()
+		caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caja.custom_minimum_size = Vector2(TAMANO_ICONO, TAMANO_ICONO)
+
+		var icono := TextureRect.new()
+		icono.texture = icono_de(tipo)
+		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caja.add_child(icono)
+
+		# PanelContainer fuerza a TODOS sus hijos directos a ocupar su rect
+		# completo en cada sort (fit_child_in_rect), pisando cualquier ancla
+		# propia — por eso tecla/cantidad NO quedaban ancladas a las esquinas
+		# (se veían centradas verticalmente, reporte 2026-09-30). Un Control
+		# simple (no un Container) sí respeta las anclas de SUS hijos, así
+		# que tecla/cantidad van dentro de este en vez de directo en "caja".
+		var esquinas := Control.new()
+		esquinas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caja.add_child(esquinas)
+
+		# Acceso directo, esquina inferior izquierda, color del borde (dorado).
 		var tecla := TemaHUD.etiqueta(str(i + 1))
-		tecla.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		for etiqueta in [nombre, cantidad, tecla]:
-			caja.add_child(etiqueta)
-		panel.add_child(caja)
-		_fila.add_child(panel)
-		_casillas.append({"panel": panel, "cantidad": cantidad})
+		tecla.anchor_left = 0.0
+		tecla.anchor_right = 0.0
+		tecla.anchor_top = 1.0
+		tecla.anchor_bottom = 1.0
+		tecla.grow_horizontal = Control.GROW_DIRECTION_END
+		tecla.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		tecla.add_theme_font_size_override("font_size", 12)
+		tecla.add_theme_color_override("font_color", TemaHUD.DORADO)
+		esquinas.add_child(tecla)
+
+		# Disponibilidad, esquina inferior derecha (color según selección, ver _resaltar()).
+		var cantidad := TemaHUD.etiqueta()
+		cantidad.anchor_left = 1.0
+		cantidad.anchor_right = 1.0
+		cantidad.anchor_top = 1.0
+		cantidad.anchor_bottom = 1.0
+		cantidad.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		cantidad.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		cantidad.visible = false
+		esquinas.add_child(cantidad)
+
+		contenedor.add_child(caja)
+		_fila.add_child(contenedor)
+		_casillas.append({"contenedor": contenedor, "caja": caja, "nombre": nombre, "cantidad": cantidad, "valor": -1})
 	_seleccionada = 0
 	_resaltar()
 
@@ -109,6 +338,7 @@ func indice_seleccionado() -> int:
 func set_cantidad(indice: int, cantidad: int) -> void:
 	if indice < 0 or indice >= _casillas.size():
 		return
+	_casillas[indice]["valor"] = cantidad
 	var etiqueta: Label = _casillas[indice]["cantidad"]
 	etiqueta.visible = cantidad >= 0
 	etiqueta.text = str(cantidad)
@@ -118,7 +348,23 @@ func cantidad_visible(indice: int) -> bool:
 	return _casillas[indice]["cantidad"].visible
 
 
+## Último valor puesto por set_cantidad()/actualizar_cantidades(), o -1 si
+## el tipo no tiene costo definido (ver PanelContextual.mostrar_bloque_temporal()).
+func cantidad_de(indice: int) -> int:
+	if indice < 0 or indice >= _casillas.size():
+		return -1
+	return _casillas[indice]["valor"]
+
+
+## Disponibilidad: gris claro en la casilla activa, gris oscuro en las inactivas.
+const GRIS_CLARO := Color(0.82, 0.82, 0.82)
+const GRIS_OSCURO := Color(0.42, 0.42, 0.42)
+
+
 func _resaltar() -> void:
 	for i in range(_casillas.size()):
-		var estilo := TemaHUD.caja(TemaHUD.VERDE_CLARO, Color(1.0, 0.8, 0.3)) if i == _seleccionada else TemaHUD.caja()
-		_casillas[i]["panel"].add_theme_stylebox_override("panel", estilo)
+		var seleccionada := i == _seleccionada
+		var estilo := TemaHUD.caja(TemaHUD.VERDE_CLARO, Color(1.0, 0.8, 0.3)) if seleccionada else TemaHUD.caja()
+		_casillas[i]["caja"].add_theme_stylebox_override("panel", estilo)
+		_casillas[i]["nombre"].add_theme_color_override("font_color", Color(1.0, 0.85, 0.4) if seleccionada else TemaHUD.TEXTO)
+		_casillas[i]["cantidad"].add_theme_color_override("font_color", GRIS_CLARO if seleccionada else GRIS_OSCURO)

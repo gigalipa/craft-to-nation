@@ -17,7 +17,7 @@ const ZONAS_VALIDAS := ["residencial_investigacion", "fabricacion_militar", "per
 ## Vocabulario ABSTRACTO del Blueprint (formato JSON heredado de PoC 2 y
 ## resultado de estructura_a_blueprint()): "pared"/"puerta"/"ventana", fijo
 ## a propósito. VoxelWorld ya tiene 4 materiales de muro reales
-## (tierra_compactada/bloque_madera/bloque_piedra/estructura_hierro) y
+## (adobe/bloque_madera/bloque_piedra/estructura_hierro) y
 ## "vidrio" en vez de "ventana" (ver docs/superpowers/specs/2026-09-29-
 ## costo-colocacion-bloques-design.md), pero ese detalle de material NO le
 ## importa a la validación de forma (cerramiento, esquinas, aberturas): sea
@@ -407,7 +407,7 @@ static func _es_losa_parcial(capa: Dictionary, huella_real: Dictionary) -> bool:
 ## - "puerta_inferior" -> "puerta"; "puerta_superior" se remapea a "pared"
 ##   (ver más abajo, tapa el muro sin dejar un hueco fantasma).
 ## - "vidrio" -> "ventana".
-## - Cualquiera de los 4 materiales de muro reales (tierra_compactada,
+## - Cualquiera de los 4 materiales de muro reales (adobe,
 ##   bloque_madera, bloque_piedra, estructura_hierro) -> "pared": a la
 ##   validación de forma (cerramiento, esquinas) no le importa el material,
 ##   solo si la celda es sólida (ver docs/superpowers/specs/2026-09-29-
@@ -524,7 +524,7 @@ static func _columnas_2d_encerradas(celda_tipos: Dictionary, x_max: int, z_max: 
 ## Los 4 materiales de muro reales (ver VoxelWorld.TIPOS_ESTRUCTURA) son
 ## intercambiables a efectos de Blueprint: la validación de forma no
 ## distingue de qué están hechos, solo si la celda es sólida.
-const TIPOS_MURO_REAL := ["tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro"]
+const TIPOS_MURO_REAL := ["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro"]
 
 static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	# "puerta_superior" se remapea a "pared" (nunca se omite): físicamente

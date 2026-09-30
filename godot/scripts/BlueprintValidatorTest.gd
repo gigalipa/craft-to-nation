@@ -503,7 +503,7 @@ func ejecutar_pruebas() -> void:
 	# reconocía como parte del edificio. Decisión de diseño confirmada: los
 	# bloques de tierra/hierba dejan de ser material estructural en absoluto —
 	# ni en muros, ni en losas de suelo/techo. Los materiales estructurales
-	# válidos son tierra_compactada, bloque_madera, bloque_piedra y
+	# válidos son adobe, bloque_madera, bloque_piedra y
 	# estructura_hierro (ver docs/superpowers/specs/2026-09-29-costo-
 	# colocacion-bloques-design.md).
 	# Casa 5x6 con suelo/techo/muros de "bloque_piedra" (como TEST 10), más un
@@ -2346,7 +2346,7 @@ func ejecutar_pruebas() -> void:
 	print("Motivo de rechazo: '", motivo_84, "' (esperado: no vacío, no hay ninguna puerta externa)")
 	assert(motivo_84 != "", "sin ninguna puerta externa, la cama/baúl no debe considerarse alcanzable")
 
-	print("\n=== TEST 85: casa con MUROS DE MATERIALES MEZCLADOS (bloque_piedra/bloque_madera/tierra_compactada/estructura_hierro) sigue siendo válida ===")
+	print("\n=== TEST 85: casa con MUROS DE MATERIALES MEZCLADOS (bloque_piedra/bloque_madera/adobe/estructura_hierro) sigue siendo válida ===")
 	# Misma forma que TEST 10, pero cada lado del perímetro usa un material
 	# estructural real distinto — la validación de forma no debe distinguir
 	# entre ellos (ver BlueprintValidator.TIPOS_MURO_REAL / estructura_a_
@@ -2369,18 +2369,17 @@ func ejecutar_pruebas() -> void:
 					continue  # ventana, se coloca aparte
 				# Lado norte/sur (z=0/z=4): bloque_madera. Lado este
 				# (x=OX85+3): estructura_hierro. Lado oeste (x=OX85):
-				# tierra_compactada. Cuatro materiales distintos en un
-				# mismo edificio.
+				# adobe. Cuatro materiales distintos en un mismo edificio.
 				var material_85: String
 				if z == 0 or z == 4:
 					material_85 = "bloque_madera"
 				elif x == OX85 + 3:
 					material_85 = "estructura_hierro"
 				else:
-					material_85 = "tierra_compactada"
+					material_85 = "adobe"
 				mundo.colocar_bloque(Vector3i(x, y, z), material_85, true)
 	assert(mundo.colocar_puerta(Vector3i(OX85, 1, 2)))  # puerta principal (y=1 y y=2)
-	mundo.colocar_bloque(Vector3i(OX85, 3, 2), "tierra_compactada", true)  # pared sobre la puerta (lado oeste)
+	mundo.colocar_bloque(Vector3i(OX85, 3, 2), "adobe", true)  # pared sobre la puerta (lado oeste)
 	mundo.colocar_bloque(Vector3i(OX85 + 3, 2, 2), "vidrio", true)
 	assert(mundo.colocar_cama(Vector3i(OX85 + 2, 1, 1), Vector3i(0, 0, 1)))
 	mundo.colocar_bloque(Vector3i(OX85 + 1, 1, 3), "baul", true)

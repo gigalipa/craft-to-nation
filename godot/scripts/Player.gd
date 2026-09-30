@@ -75,13 +75,12 @@ const TASA_RECUPERACION_OXIGENO := 2.0
 ## tiempo_minado_de()).
 const INTERVALO_ACCION_REPETIDA := 0.20
 const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
-const HotbarScript = preload("res://scripts/Hotbar.gd")
 const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
 
-var tipos_disponibles := ["tierra", "tierra_compactada", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio", "puerta", "cama", "baul"]
+var tipos_disponibles := ["tierra", "adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio", "puerta", "cama", "baul"]
 var tipo_seleccionado := 0
 
 var mundo: Node  # asignada por Main.gd al iniciar la escena
@@ -181,7 +180,7 @@ func _input(event: InputEvent) -> void:
 				tipo_seleccionado = indice
 				hud.set_tipo_hotbar(indice)
 				if not modo_deconstruccion:
-					hud.mostrar_contexto_temporal(HotbarScript.nombre_de(tipos_disponibles[indice]), {}, ["COLOCAR (clic der.)"])
+					hud.mostrar_contexto_bloque(indice, tipos_disponibles[indice])
 				print("Tipo de bloque seleccionado: ", tipos_disponibles[tipo_seleccionado])
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:

@@ -29,7 +29,7 @@ const BLOQUES := {
 ## lo que tenga más a mano según su oficio — ver docs/superpowers/specs/
 ## 2026-09-29-costo-colocacion-bloques-design.md, Sección 5).
 const MATERIAL := {
-	"mina": "tierra_compactada",
+	"mina": "adobe",
 	"caza_recoleccion": "bloque_madera",
 	"maderero": "bloque_madera",
 	"pesca_frutos_mar": "bloque_piedra",

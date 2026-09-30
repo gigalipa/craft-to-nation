@@ -94,7 +94,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 5: en_mundo() traslada la plantilla a la esquina y a la altura base (la losa de piso, capa 0) ===")
 	var mundo5: Dictionary = PlantillasPuesto.en_mundo("mina", 0, Vector2i(10, 20), 5)
-	assert(mundo5.get(Vector3i(12, 5, 20)) == "tierra_compactada", "capa 0 (y_base) es la losa de piso")
+	assert(mundo5.get(Vector3i(12, 5, 20)) == "adobe", "capa 0 (y_base) es la losa de piso")
 	assert(mundo5.get(Vector3i(12, 6, 20)) == "puerta_inferior", "puerta en (esquina.x + 2, y_base + 1, esquina.z)")
 	assert(mundo5.get(Vector3i(12, 7, 20)) == "puerta_superior")
 	assert(mundo5.size() == PlantillasPuesto.celdas("mina", 0).size())

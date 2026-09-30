@@ -30,7 +30,7 @@ const DIRECCIONES_XZ := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector
 ## usado al reembolsar o al escanear una estructura ya construida.
 const COSTO_POR_CELDA := {
 	"tierra": {"tierra": 1},
-	"tierra_compactada": {"tierra": 1},
+	"adobe": {"tierra": 1},
 	"bloque_madera": {"madera": 5},
 	"bloque_piedra": {"piedra": 5},
 	"estructura_hierro": {"hierro": 5},

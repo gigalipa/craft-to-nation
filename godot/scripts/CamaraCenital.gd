@@ -941,7 +941,8 @@ func _actualizar_previsualizacion_puesto() -> void:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MADERERO)
-	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas)
+	var costo: Dictionary = _resumen_materiales_puesto(esquina, ev) if valida else {}
+	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, costo)
 
 
 ## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves
@@ -2010,53 +2011,23 @@ func _procesar_clic_puesto(posicion_pantalla: Vector2) -> void:
 	_confirmar_puesto(esquina)
 
 
-## Valida y, si es válido, inicia la construcción fantasma del puesto activo
-## en "esquina" — separado de _procesar_clic_puesto() para poder probarlo
-## sin depender del mouse/cámara reales (ver PuestosPrevisualizacionTest.gd).
-func _confirmar_puesto(esquina: Vector2i) -> void:
-	var ev: Dictionary = _evaluar_puesto(esquina)
-	var rechazo: String = _mensaje_rechazo_puesto(ev)
-	if rechazo != "":
-		print(rechazo)
-		hud.notificar(rechazo)
-		return
-	var centro: Vector2i = ev["centro"]
+## Cola de nivelación del puesto activo en "esquina" (evaluación "ev" de
+## _evaluar_puesto()): footprint (relleno o pilotes/relleno de pesca) +
+## cava-rellena de la fachada, en el mismo formato que consume
+## VoxelWorld.iniciar_construccion_fantasma() — {"relleno_orden":
+## Array[Vector3i], "tipos_relleno": Dictionary (celda -> "tierra"/
+## "bloque_piedra"/"fantasma"/"aire")}. NO toca el mundo (solo lee
+## mundo.altura_en()/obtener_tipo()): la usan tanto _confirmar_puesto() (para
+## encolar de verdad) como la ficha de previsualización del HUD (para
+## calcular el costo real sin construir nada, ver
+## _actualizar_previsualizacion_puesto()).
+func _plan_relleno_puesto(esquina: Vector2i, ev: Dictionary) -> Dictionary:
 	var columnas: Array[Vector2i] = ev["columnas"]
 	var extremo_agua_indice: int = ev["extremo_agua_indice"]
-	var giros: int = ev["giros"]
-	var objetivo: int = ev["objetivo"]
-	var fachada: Dictionary = ev["fachada"]
-	var y_base: int = ev["y_base"]
 	var base_y: int = ev["resultado_base"]["base_y"]
+	var fachada: Dictionary = ev["fachada"]
 	var celdas_plantilla: Dictionary = ev["celdas_plantilla"]
-	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
 
-	var centro_agua := Recoleccion.SIN_CENTRO
-	if _tipo_puesto_activo == "pesca_frutos_mar":
-		var celdas_extremo_pesca := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
-		@warning_ignore("integer_division")
-		centro_agua = esquina + celdas_extremo_pesca[celdas_extremo_pesca.size() / 2]
-
-	# Drenar agua: instantáneo y gratis (el agua no es un recurso), igual que hoy
-	# — EXCEPTO bajo la huella de "pesca_frutos_mar": ahí el agua abierta debe
-	# seguir siendo agua (ver el salto "agua abierta: no se toca" más abajo),
-	# igual que hacía el código previo a esta rama (revisión de código, 2026-09-29).
-	for celda_follaje in ev["resultado_huella"]["follaje_a_eliminar"]:
-		mundo.eliminar_follaje(celda_follaje)
-	var total_drenado := 0
-	if _tipo_puesto_activo != "pesca_frutos_mar":
-		for dx in range(_ancho_puesto_activo):
-			for dz in range(_alto_puesto_activo):
-				total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
-	for columna_fachada: Vector2i in fachada:
-		total_drenado += mundo.drenar_agua(columna_fachada.x, columna_fachada.y)
-	if total_drenado > 0:
-		print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
-
-	# Cola de nivelación pagada: excavar acredita, rellenar cobra tierra, un
-	# pilote de pesca cobra piedra (bloque_piedra) — mismo criterio que
-	# _procesar_clic_blueprint() para un residencial (ver
-	# VoxelWorld._bloqueado_por_falta_de()/_acreditar_excavacion()).
 	var relleno_orden: Array[Vector3i] = []
 	var tipos_relleno: Dictionary = {}
 
@@ -2107,6 +2078,98 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 				var celda_r := Vector3i(celda_relleno.x, altura_actual + h, celda_relleno.y)
 				relleno_orden.append(celda_r)
 				tipos_relleno[celda_r] = "tierra"
+
+	return {"relleno_orden": relleno_orden, "tipos_relleno": tipos_relleno}
+
+
+## Costo neto de materiales para completar el puesto activo en "esquina"
+## (evaluación "ev" de _evaluar_puesto()): estructura (NiveladorTerreno.
+## COSTO_POR_CELDA por celda de la plantilla) + relleno/pilotes (tierra o
+## piedra por celda, ver _plan_relleno_puesto()) menos lo que se recogería
+## al excavar (_material_excavado(), mismo criterio que un residencial) —
+## antes el panel del puesto mostraba un costo fijo hardcodeado
+## (HUD.costo_de_puesto(), "10 tierra · 10 madera · 5 piedra" para los 4
+## tipos por igual, un placeholder de antes de esta rama) que nunca reflejó
+## el costo real (reporte del usuario, 2026-09-30).
+func _resumen_materiales_puesto(esquina: Vector2i, ev: Dictionary) -> Dictionary:
+	var plan: Dictionary = _plan_relleno_puesto(esquina, ev)
+	var relleno_orden: Array[Vector3i] = plan["relleno_orden"]
+	var tipos_relleno: Dictionary = plan["tipos_relleno"]
+
+	var excavacion: Array[Vector3i] = []
+	for celda in relleno_orden:
+		if tipos_relleno[celda] == "aire" or tipos_relleno[celda] == "fantasma":
+			excavacion.append(celda)
+	var recogido: Dictionary = _material_excavado(excavacion)
+
+	var neto: Dictionary = {}
+	for celda in ev["celdas_plantilla"]:
+		var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(ev["celdas_plantilla"][celda], {})
+		for recurso in costo:
+			neto[recurso] = neto.get(recurso, 0) + costo[recurso]
+	for celda in relleno_orden:
+		var costo_relleno: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipos_relleno[celda], {})
+		for recurso in costo_relleno:
+			neto[recurso] = neto.get(recurso, 0) + costo_relleno[recurso]
+	for recurso in recogido:
+		neto[recurso] = neto.get(recurso, 0) - recogido[recurso]
+		if neto[recurso] == 0:
+			neto.erase(recurso)
+	return neto
+
+
+## Valida y, si es válido, inicia la construcción fantasma del puesto activo
+## en "esquina" — separado de _procesar_clic_puesto() para poder probarlo
+## sin depender del mouse/cámara reales (ver PuestosPrevisualizacionTest.gd).
+func _confirmar_puesto(esquina: Vector2i) -> void:
+	var ev: Dictionary = _evaluar_puesto(esquina)
+	var rechazo: String = _mensaje_rechazo_puesto(ev)
+	if rechazo != "":
+		print(rechazo)
+		hud.notificar(rechazo)
+		return
+	var centro: Vector2i = ev["centro"]
+	var extremo_agua_indice: int = ev["extremo_agua_indice"]
+	var giros: int = ev["giros"]
+	var fachada: Dictionary = ev["fachada"]
+	var y_base: int = ev["y_base"]
+	var base_y: int = ev["resultado_base"]["base_y"]
+	var celdas_plantilla: Dictionary = ev["celdas_plantilla"]
+	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
+
+	var centro_agua := Recoleccion.SIN_CENTRO
+	if _tipo_puesto_activo == "pesca_frutos_mar":
+		var celdas_extremo_pesca := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
+		@warning_ignore("integer_division")
+		centro_agua = esquina + celdas_extremo_pesca[celdas_extremo_pesca.size() / 2]
+
+	# Drenar agua: instantáneo y gratis (el agua no es un recurso), igual que hoy
+	# — EXCEPTO bajo la huella de "pesca_frutos_mar": ahí el agua abierta debe
+	# seguir siendo agua (ver el salto "agua abierta: no se toca" más abajo),
+	# igual que hacía el código previo a esta rama (revisión de código, 2026-09-29).
+	for celda_follaje in ev["resultado_huella"]["follaje_a_eliminar"]:
+		mundo.eliminar_follaje(celda_follaje)
+	var total_drenado := 0
+	if _tipo_puesto_activo != "pesca_frutos_mar":
+		for dx in range(_ancho_puesto_activo):
+			for dz in range(_alto_puesto_activo):
+				total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
+	for columna_fachada: Vector2i in fachada:
+		total_drenado += mundo.drenar_agua(columna_fachada.x, columna_fachada.y)
+	if total_drenado > 0:
+		print("Agua drenada bajo el puesto: ", total_drenado, " bloques reemplazados por tierra.")
+
+	# Cola de nivelación pagada: excavar acredita, rellenar cobra tierra, un
+	# pilote de pesca cobra piedra (bloque_piedra) — mismo criterio que
+	# _procesar_clic_blueprint() para un residencial (ver
+	# VoxelWorld._bloqueado_por_falta_de()/_acreditar_excavacion()). Extraído a
+	# _plan_relleno_puesto() para que la ficha de previsualización (HUD) pueda
+	# calcular el costo real sin duplicar esta lógica (revisión de código,
+	# 2026-09-30 — el costo que mostraba el HUD era un placeholder fijo, no el
+	# real).
+	var resultado_relleno: Dictionary = _plan_relleno_puesto(esquina, ev)
+	var relleno_orden: Array[Vector3i] = resultado_relleno["relleno_orden"]
+	var tipos_relleno: Dictionary = resultado_relleno["tipos_relleno"]
 
 	_despejar_vias_de_fachada(fachada)
 

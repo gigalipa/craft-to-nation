@@ -174,20 +174,14 @@ func ocultar_contexto() -> void:
 	_contexto.ocultar()
 
 
-## Panel contextual de un puesto de recolección: costo, personal, almacenamiento
-## y, en vivo, la recolección prevista por ciudadano según la posición del cursor.
-func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary) -> void:
+## Panel contextual de un puesto de recolección: costo real (ver
+## CamaraCenital._resumen_materiales_puesto() — antes de esta rama era un
+## placeholder fijo, "10 tierra · 10 madera · 5 piedra" para los 4 tipos por
+## igual, reporte del usuario 2026-09-30), personal, almacenamiento y, en
+## vivo, la recolección prevista por ciudadano según la posición del cursor.
+func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}) -> void:
 	var extra := "Personal máximo: %d · Almacenamiento: %d\n%s" % [Recoleccion.cupo_de(tipo), Recoleccion.capacidad_almacen_de(tipo), texto_tasas(tipo, tasas)]
-	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo_de_puesto(tipo), ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, extra)
-
-
-static func costo_de_puesto(tipo: String) -> Dictionary:
-	match tipo:
-		"mina": return Recoleccion.COSTO_CONSTRUCCION
-		"caza_recoleccion": return Recoleccion.COSTO_CONSTRUCCION_CAZA_RECOLECCION
-		"maderero": return Recoleccion.COSTO_CONSTRUCCION_MADERERO
-		"pesca_frutos_mar": return Recoleccion.COSTO_CONSTRUCCION_PESCA_FRUTOS_MAR
-	return {}
+	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, extra)
 
 
 ## Recolección prevista de un puesto. Diccionario vacío = nada detectado (en

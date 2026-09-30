@@ -81,11 +81,6 @@ const SIN_CENTRO := Vector2i(-99999, -99999)
 ## Centinela: "no queda ningún bloque que extraer" en siguiente_bloque_mina().
 const SIN_BLOQUE := Vector3i(-99999, -99999, -99999)
 
-## Ejemplo "mina manual, Tipo 1" del GDD (Sección 3) — puramente
-## informativo por ahora: colocar una mina no cobra nada todavía (mismo
-## alcance reducido que la nivelación de terreno, el juego no tiene
-## inventario de recursos real).
-const COSTO_CONSTRUCCION := {"tierra": 10, "madera": 10, "piedra": 5}
 ## Cupos de trabajadores (decisión del usuario, 2026-09-21): mina 5, maderero 5, caza/recolección 7, pesca 7.
 const PERSONAL_MAXIMO := 5
 const CAPACIDAD_ALMACENAMIENTO := 1000
@@ -97,9 +92,6 @@ const RADIO_AREA_MADERERO := 12
 const PASO_MUESTREO_MADERERO := 2  # mismo patrón de muestreo que caza/recolección
 const TASA_BASE_MADERERO_POR_CIUDADANO := 5.0
 
-# GDD Sección 3 — mismos valores que la mina por ahora, sin balance real
-# todavía (ver Recoleccion.COSTO_CONSTRUCCION más arriba).
-const COSTO_CONSTRUCCION_MADERERO := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_MADERERO := 5
 const CAPACIDAD_ALMACENAMIENTO_MADERERO := 1000
 
@@ -110,9 +102,6 @@ const TASA_BASE_FRUTOS_POR_CIUDADANO := 10.0  # Excel: columna "Árbol (obj)" er
 const ANCHO_HUELLA_CAZA_RECOLECCION := 4
 const ALTO_HUELLA_CAZA_RECOLECCION := 4
 
-# GDD Sección 3 — mismos valores que la mina por ahora, sin balance real
-# todavía (ver Recoleccion.COSTO_CONSTRUCCION más arriba).
-const COSTO_CONSTRUCCION_CAZA_RECOLECCION := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_CAZA_RECOLECCION := 7
 const CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION := 1000
 
@@ -131,9 +120,6 @@ const AGUA_REFERENCIA := 450.0
 const ESCALA_AGUA_MIN := 0.4
 const ESCALA_AGUA_MAX := 1.5
 
-# GDD Sección 3 — mismos valores placeholder que los otros tres puestos,
-# sin balance real todavía (ver Recoleccion.COSTO_CONSTRUCCION).
-const COSTO_CONSTRUCCION_PESCA_FRUTOS_MAR := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_PESCA_FRUTOS_MAR := 7
 const CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR := 1000
 

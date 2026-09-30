@@ -373,4 +373,35 @@ func ejecutar_pruebas() -> void:
 	mundo11.free()
 	print("OK: siempre hay al menos 1 nivel de excavación antes de cualquier cobro, incluso sobre terreno ya parejo.")
 
-	print("\n=== Las 11 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("=== TEST 12: la ficha de previsualización muestra el costo REAL de cada tipo, no un placeholder fijo ===")
+	# Reporte del usuario (2026-09-30, con captura): la ficha de "MINA" mostraba
+	# "10 tierra · 10 madera · 5 piedra" — el mismo placeholder fijo para los 4
+	# tipos de puesto (HUD.costo_de_puesto(), ya eliminado), sin relación con su
+	# costo real. Ninguna plantilla de puesto usa bloque_piedra (mina =
+	# tierra_compactada, maderero/caza = bloque_madera, pesca = bloque_piedra
+	# pero mina/maderero/caza no), así que "piedra" nunca debería aparecer en el
+	# costo de mina ni de maderero.
+	var mundo12: Node = _mundo_plano()
+	var camara12: Camera3D = _camara(mundo12, "mina")
+	var esquina12 := Vector2i(10, 30)
+	var ev12: Dictionary = camara12._evaluar_puesto(esquina12)
+	assert(camara12._mensaje_rechazo_puesto(ev12) == "", "válida sobre suelo plano")
+	var costo_mina12: Dictionary = camara12._resumen_materiales_puesto(esquina12, ev12)
+	assert(not costo_mina12.has("piedra"), "mina no usa piedra en ningún bloque de su plantilla, salió: %s" % costo_mina12)
+	assert(costo_mina12.has("tierra"), "mina cuesta tierra (tierra_compactada): %s" % costo_mina12)
+	assert(costo_mina12.has("madera"), "la puerta y el baúl de mina cuestan madera: %s" % costo_mina12)
+	camara12.free()
+
+	var camara12b: Camera3D = _camara(mundo12, "maderero")
+	var esquina12b := Vector2i(20, 30)
+	var ev12b: Dictionary = camara12b._evaluar_puesto(esquina12b)
+	assert(camara12b._mensaje_rechazo_puesto(ev12b) == "", "válida sobre suelo plano")
+	var costo_maderero12: Dictionary = camara12b._resumen_materiales_puesto(esquina12b, ev12b)
+	assert(not costo_maderero12.has("piedra"), "maderero no usa piedra en ningún bloque de su plantilla, salió: %s" % costo_maderero12)
+	assert(costo_maderero12.has("madera"), "maderero cuesta madera (bloque_madera): %s" % costo_maderero12)
+	assert(costo_mina12 != costo_maderero12, "dos tipos distintos ya no comparten el mismo costo fijo")
+	camara12b.free()
+	mundo12.free()
+	print("OK: el costo mostrado depende del tipo de puesto y de su plantilla real, no de un placeholder.")
+
+	print("\n=== Las 12 pruebas de previsualización de puestos pasaron correctamente ===")

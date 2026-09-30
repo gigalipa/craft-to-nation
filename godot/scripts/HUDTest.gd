@@ -404,10 +404,6 @@ func probar_hotbar() -> void:
 
 func probar_formateadores_hud() -> void:
 	print("=== TEST 5: formateadores de HUD.gd ===")
-	assert(HUDScript.costo_de_puesto("mina") == Recoleccion.COSTO_CONSTRUCCION)
-	assert(HUDScript.costo_de_puesto("maderero") == Recoleccion.COSTO_CONSTRUCCION_MADERERO)
-	assert(HUDScript.costo_de_puesto("desconocido").is_empty())
-
 	assert(HUDScript.texto_tasas("mina", {}) == "Recolección prevista: sin recursos detectados")
 	assert(HUDScript.texto_tasas("mina", {"hierro": 2.0}) == "Recolección prevista por ciudadano:\n  2.0 hierro/h")
 	assert(HUDScript.texto_tasas("maderero", {"madera": 0.0}) == "Recolección prevista: sin árboles detectados")

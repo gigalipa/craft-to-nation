@@ -526,6 +526,23 @@ static func _columnas_2d_encerradas(celda_tipos: Dictionary, x_max: int, z_max: 
 ## distingue de qué están hechos, solo si la celda es sólida.
 const TIPOS_MURO_REAL := ["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro"]
 
+## Rota "celdas_3d" (Vector3i local -> tipo de bloque) 90° horario, misma
+## fórmula que usa CamaraCenital._rotar_blueprint() para el fantasma en
+## colocación: (x, z) -> (profundidad_previa - 1 - z, x), la capa Y no
+## cambia. "profundidad_previa" es el tamaño en Z de la caja ANTES de este
+## giro (después del giro, la caja mide "profundidad_previa" de ancho). Pura:
+## no muta "celdas_3d", devuelve un Dictionary nuevo — quien la llama decide
+## si reemplaza su propio estado (ver CamaraCenital._rotar_blueprint()) o
+## solo quiere una vista rotada sin tocar nada guardado (ver
+## BarraModos._celdas_residencial_giradas()).
+static func rotar_celdas_3d(celdas_3d: Dictionary, profundidad_previa: int) -> Dictionary:
+	var celdas_rotadas: Dictionary = {}
+	for rel in celdas_3d:
+		var punto_rotado := Vector3i(profundidad_previa - 1 - rel.z, rel.y, rel.x)
+		celdas_rotadas[punto_rotado] = celdas_3d[rel]
+	return celdas_rotadas
+
+
 static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	# "puerta_superior" se remapea a "pared" (nunca se omite): físicamente
 	# tapa el muro, y si se omitiera por completo dejaría un "agujero

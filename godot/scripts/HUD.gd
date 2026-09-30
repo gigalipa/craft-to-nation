@@ -162,6 +162,13 @@ func set_modo(modo: String, sub: String = "") -> void:
 	_barra_modos.set_modo(modo, sub)
 
 
+## Rotación compartida de las 5 miniaturas del submenú Construir (0-3, ver
+## BarraModos.set_giros()); CamaraCenital la llama cada vez que Ctrl+rueda
+## rota un puesto o un blueprint en colocación.
+func set_giros_construccion(giros: int) -> void:
+	_barra_modos.set_giros(giros)
+
+
 func mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "") -> void:
 	_contexto.mostrar(nombre, costo, acciones, valido, extra)
 

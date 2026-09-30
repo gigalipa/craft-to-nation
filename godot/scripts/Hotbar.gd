@@ -18,7 +18,7 @@ extends PanelContainer
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
-const RUTA_BIBLIOTECA := "res://assets/BlockLibrary.res"
+const MiniaturaRendererScript = preload("res://scripts/MiniaturaRenderer.gd")
 
 ## Nombre completo/real de cada bloque: aparece en el título de la tarjeta
 ## emergente (PanelContextual.mostrar_bloque_temporal()).
@@ -71,15 +71,6 @@ const DESCRIPCION := {
 	"baul": ["Objeto de tipo funcional.", "Almacenamiento de materiales junto a un puesto.", "Se fabrica con madera."],
 }
 
-## "adobe" es el nombre real del bloque en el juego, pero el ítem físico de
-## assets/BlockLibrary.res sigue llamándose "tierra_compactada" (mismo
-## mapeo que VoxelWorld.RENOMBRE_BIBLIOTECA, aplicado aquí porque esta clase
-## busca sus propios ítems por nombre en una copia independiente — ver
-## _malla_de_item()): sin esto el ícono buscaría un ítem que no existe.
-const NOMBRE_FISICO_BIBLIOTECA := {
-	"adobe": "tierra_compactada",
-}
-
 ## "cama" son 2 celdas reales de BlockLibrary (ver VoxelWorld.colocar_cama()):
 ## el ícono junta ambas, con el mismo desfase relativo que se usa al
 ## colocarla, para mostrar el objeto completo en vez de solo una mitad.
@@ -102,7 +93,6 @@ const MATERIAL_VENTANA := preload("res://assets/mat_ventana.tres")
 const PuertasScript = preload("res://scripts/Puertas.gd")
 
 const TAMANO_ICONO := 64.0
-const RESOLUCION_ICONO := 128
 
 var _fila := HBoxContainer.new()
 var _casillas: Array = []  # de {"contenedor", "caja", "nombre", "cantidad", "valor": int}
@@ -174,59 +164,12 @@ func _piezas_de_icono(tipo: String) -> Array:
 ## _biblioteca), o null si no existe/no tiene malla (p. ej. vidrio).
 func _malla_de_item(nombre_item: String) -> Mesh:
 	if _biblioteca == null:
-		_biblioteca = ResourceLoader.load(RUTA_BIBLIOTECA, "MeshLibrary", ResourceLoader.CACHE_MODE_IGNORE)
-	var nombre_fisico: String = NOMBRE_FISICO_BIBLIOTECA.get(nombre_item, nombre_item)
-	for id in _biblioteca.get_item_list():
-		if _biblioteca.get_item_name(id) == nombre_fisico:
-			return _biblioteca.get_item_mesh(id)
-	return null
+		_biblioteca = MiniaturaRendererScript.cargar_biblioteca()
+	return MiniaturaRendererScript.malla_de_item(_biblioteca, nombre_item)
 
 
-## Renderiza "piezas" (cada una [malla, posición relativa, material u null
-## para el de la propia malla]) juntas en un SubViewport aislado
-## (own_world_3d: no interfiere con la escena 3D del juego) y devuelve su
-## textura. UPDATE_ONCE: es una miniatura estática, no hace falta
-## re-renderizarla cada frame.
 func _renderizar_icono(piezas: Array) -> Texture2D:
-	var viewport := SubViewport.new()
-	viewport.size = Vector2i(RESOLUCION_ICONO, RESOLUCION_ICONO)
-	viewport.transparent_bg = true
-	viewport.own_world_3d = true
-	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-
-	var aabb: AABB
-	for i in range(piezas.size()):
-		var malla: Mesh = piezas[i][0]
-		var offset: Vector3 = piezas[i][1]
-		var material_pieza: Material = piezas[i][2]
-		var instancia := MeshInstance3D.new()
-		instancia.mesh = malla
-		instancia.position = offset
-		if material_pieza != null:
-			instancia.material_override = material_pieza
-		viewport.add_child(instancia)
-		var caja := AABB(malla.get_aabb().position + offset, malla.get_aabb().size)
-		aabb = caja if i == 0 else aabb.merge(caja)
-
-	var luz := DirectionalLight3D.new()
-	luz.rotation_degrees = Vector3(-55.0, -35.0, 0.0)
-	viewport.add_child(luz)
-	var relleno := DirectionalLight3D.new()
-	relleno.light_energy = 0.4
-	relleno.rotation_degrees = Vector3(-20.0, 145.0, 0.0)
-	viewport.add_child(relleno)
-
-	var centro := aabb.get_center()
-	var radio: float = maxf(0.2, aabb.get_longest_axis_size()) * 0.85
-	var camara := Camera3D.new()
-	camara.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camara.size = radio * 2.0
-	camara.position = centro + Vector3(radio, radio, radio)
-	viewport.add_child(camara)
-	add_child(viewport)
-	camara.look_at(centro, Vector3.UP)
-
-	return viewport.get_texture()
+	return MiniaturaRendererScript.renderizar(piezas, Vector3(1, 1, 1), self)
 
 
 func _ready() -> void:

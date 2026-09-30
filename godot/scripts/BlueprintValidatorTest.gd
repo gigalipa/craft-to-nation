@@ -2493,4 +2493,31 @@ func ejecutar_pruebas() -> void:
 	var paso_89d: Dictionary = mundo_89.proximo_paso_pendiente(celda_estructura_89)
 	assert(paso_89d["celda"] == celda_estructura_89 and paso_89d["tipo"] == "bloque_piedra", "la cola de estructura (sin relleno) también se ve")
 
-	print("\n=== Las 89 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 90: rotar_celdas_3d() aplica la misma fórmula que CamaraCenital._rotar_blueprint() y 4 giros vuelven al original ===")
+	var celdas_90 := {
+		Vector3i(0, 0, 0): "bloque_madera",
+		Vector3i(1, 0, 0): "bloque_piedra",
+		Vector3i(0, 1, 0): "puerta_inferior",
+	}
+	# Caja de ancho 2 (x: 0-1), profundidad 1 (z: 0): girar 90° la lleva a
+	# ancho 1, profundidad 2 — (x, z) -> (profundidad_previa - 1 - z, x).
+	var giradas_90: Dictionary = BlueprintValidator.rotar_celdas_3d(celdas_90, 1)
+	assert(giradas_90[Vector3i(0, 0, 0)] == "bloque_madera", "(0,0,0) -> (1-1-0, 0) = (0,0)")
+	assert(giradas_90[Vector3i(0, 0, 1)] == "bloque_piedra", "(1,0,0) -> (1-1-0, 1) = (0,1) en x,z -> Vector3i(0,0,1)")
+	assert(giradas_90[Vector3i(0, 1, 0)] == "puerta_inferior", "la capa Y no cambia con la rotación")
+	assert(giradas_90.size() == celdas_90.size(), "mismo número de celdas, ninguna se pierde")
+
+	# 4 giros vuelven al original: cada giro intercambia ancho/profundidad,
+	# así que hay que alternar la profundidad pasada en cada llamada (mismo
+	# manejo que CamaraCenital._rotar_blueprint() hace con _blueprint_activo).
+	var celdas_vuelta := celdas_90.duplicate()
+	var ancho_vuelta := 2
+	var profundidad_vuelta := 1
+	for _i in range(4):
+		celdas_vuelta = BlueprintValidator.rotar_celdas_3d(celdas_vuelta, profundidad_vuelta)
+		var previo := ancho_vuelta
+		ancho_vuelta = profundidad_vuelta
+		profundidad_vuelta = previo
+	assert(celdas_vuelta == celdas_90, "4 giros de 90° devuelven las celdas originales")
+
+	print("\n=== Las 90 pruebas de BlueprintValidator pasaron correctamente ===")

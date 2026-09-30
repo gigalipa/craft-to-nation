@@ -31,6 +31,8 @@ Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cad
 ### 6. Construcción/deconstrucción asistida por NPCs
 
 Los colonos participan en construir y deconstruir. Se apoya en el acarreo (2A) y en la extracción real (2B, ya implementada).
+Traducción de modelos .dae a blueprints construibles.
+Aplicación de primeras texturas.
 
 ### 7. Cola de pendientes menores de la Fase 3 — no bloqueantes
 

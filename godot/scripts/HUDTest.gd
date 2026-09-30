@@ -317,38 +317,57 @@ func probar_transicion_hud() -> void:
 
 
 func probar_barra_modos() -> void:
-	print("=== TEST 3: BarraModos ===")
+	print("=== TEST 3: BarraModos (menú de 3 niveles: Ver/Construir/Zonificar/Demoler → categoría → edificio) ===")
 	var barra: Control = BarraModosScript.new()
 	add_child(barra)
 	assert(barra.boton_activo() == "ver", "sin modo debe estar activo Ver")
 	assert(not barra.construccion_visible())
-	# Residencial y los puestos van en una barra propia, a la derecha de la principal.
-	assert(not barra._panel_sub.visible)
-	assert(barra._panel_sub.get_parent() == barra and barra._panel_principal.get_parent() == barra)
-	assert(barra._panel_principal.get_index() < barra._panel_sub.get_index())
+	# Las categorías de Construir van en un panel propio, a la derecha de la principal.
+	assert(not barra._panel_categorias.visible)
+	assert(barra._panel_categorias.get_parent() == barra and barra._panel_principal.get_parent() == barra)
+	assert(barra._panel_principal.get_index() < barra._panel_categorias.get_index())
 
-	barra.set_modo("zonas")
-	assert(barra.boton_activo() == "zonas")
+	barra.set_modo("zonificar")
+	assert(barra.boton_activo() == "zonificar")
+	barra.set_modo("demoler")
+	assert(barra.boton_activo() == "demoler")
 	barra.set_modo("")
 	assert(barra.boton_activo() == "ver")
 
-	barra.set_modo("construir", "maderero")
+	print("=== TEST 3a: categorías de Construir, y sus edificios en el panel de la categoría activa ===")
+	barra.set_modo("construir", "", "")
 	assert(barra.boton_activo() == "construir" and barra.construccion_visible())
-	assert(barra._panel_sub.visible)
-	assert(barra.construccion_activa() == "maderero")
-	barra.set_modo("construir", "residencial")  # cambio directo puesto -> blueprint
-	assert(barra.construccion_activa() == "residencial")
+	assert(barra._panel_categorias.visible and barra.categoria_activa() == "")
+	for id in barra._paneles_construccion:
+		assert(not barra._paneles_construccion[id].visible, "sin categoría elegida, ningún panel de edificios se muestra (%s)" % id)
+
+	barra.set_modo("construir", "maderero", "periferico")
+	assert(barra.categoria_activa() == "periferico" and barra.construccion_activa() == "maderero")
+	assert(barra._paneles_construccion["periferico"].visible)
+	assert(not barra._paneles_construccion["residencial"].visible)
+	assert(barra._botones_categoria["periferico"].button_pressed)
+	assert(barra._botones_construccion["maderero"].button_pressed)
+
+	barra.set_modo("construir", "residencial", "residencial")  # cambio directo de categoría, como al cambiar de puesto
+	assert(barra.categoria_activa() == "residencial" and barra.construccion_activa() == "residencial")
 	assert(barra._botones_construccion["residencial"].button_pressed)
+	assert(not barra._paneles_construccion["periferico"].visible, "cambiar de categoría oculta el panel de la anterior")
 	assert(not barra._botones.has("puestos"), "ya no hay botón Puestos")
 	barra.set_modo("")
-	assert(not barra.construccion_visible() and not barra._panel_sub.visible)
+	assert(not barra.construccion_visible() and not barra._panel_categorias.visible)
+
+	print("=== TEST 3a-bis: Industrial e Investigación no tienen edificios todavía, su panel queda vacío (sin botones) ===")
+	barra.set_modo("construir", "", "industrial")
+	assert(barra._paneles_construccion["industrial"].visible)
+	assert(not barra._botones_construccion.has("industrial"), "no hay ningún tipo de edificio con id 'industrial'")
+	barra.set_modo("")
 
 	print("=== TEST 3b: Residencial atenuado sin blueprint, normal con uno declarado ===")
 	assert(Blueprints.obtener("residencial_investigacion").is_empty(), "arranca vacío en esta escena de prueba")
-	barra.set_modo("construir", "")
+	barra.set_modo("construir", "", "residencial")
 	assert(barra._botones_construccion["residencial"].modulate.a < 1.0, "sin blueprint: atenuado")
 	Blueprints.guardar({"zona_permitida": "residencial_investigacion", "ancho": 1, "profundidad": 1, "celdas_3d": {Vector3i.ZERO: "bloque_madera"}, "huella_relativa": [Vector2i.ZERO]})
-	barra.set_modo("construir", "")
+	barra.set_modo("construir", "", "residencial")
 	assert(barra._botones_construccion["residencial"].modulate.a == 1.0, "con blueprint declarado: ya no atenuado")
 
 	print("\n=== TEST 3c: las miniaturas de construcción se generan con malla real y cambian con set_giros() ===")
@@ -363,18 +382,18 @@ func probar_barra_modos() -> void:
 	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
 
 	print("\n=== TEST 3e: re-renderizar una miniatura libera el SubViewport anterior, no acumula uno por cada rotación ===")
-	assert(barra._viewports_construccion.size() == 5, "una construcción con malla real por cada una de las 5 opciones (mina/caza/madera/pesca + residencial con el blueprint declarado arriba)")
+	assert(barra._viewports_construccion.size() == 5, "una construcción con malla real por cada uno de los 5 tipos con miniatura (mina/caza/madera/pesca + residencial con el blueprint declarado arriba)")
 	for giro in [2, 3, 0, 1, 2, 3]:
 		barra.set_giros(giro)
 	assert(barra._viewports_construccion.size() == 5, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
 
-	print("\n=== TEST 3f: el botón Residencial ya no anuncia [B] como atajo (B ya no coloca Residencial, solo abre/cierra el menú) ===")
+	print("\n=== TEST 3f: cada edificio (incluido Residencial) anuncia su propia tecla numérica de categoría ===")
 	var etiqueta_residencial := ""
 	for hijo in barra._botones_construccion["residencial"].get_children():
 		for nieto in hijo.get_children():
 			if nieto is Label:
 				etiqueta_residencial = (nieto as Label).text
-	assert(etiqueta_residencial == "Residencial", "salió: %s" % etiqueta_residencial)
+	assert(etiqueta_residencial == "Residencial [1]", "salió: %s" % etiqueta_residencial)
 
 	barra.set_modo("")
 
@@ -392,25 +411,32 @@ func probar_barra_modos() -> void:
 	assert(encontro_icono, "el TextureRect con la textura pasada está entre los descendientes del botón")
 
 	# Un clic emite la señal; si quien la recibe no cambia el modo (p. ej.
-	# Construir sin blueprint guardado), la barra vuelve a reflejar el real.
+	# Demoler todavía sin implementar del todo), la barra vuelve a reflejar el real.
 	var pedidos: Array = []
 	barra.modo_pedido.connect(func(modo: String) -> void: pedidos.append(modo))
-	barra._botones["vias"].button_pressed = true
-	barra._botones["vias"].pressed.emit()
-	assert(pedidos == ["vias"], "salió %s" % [pedidos])
+	barra._botones["demoler"].button_pressed = true
+	barra._botones["demoler"].pressed.emit()
+	assert(pedidos == ["demoler"], "salió %s" % [pedidos])
 	assert(barra.boton_activo() == "ver", "el botón debe volver al modo real, salió %s" % barra.boton_activo())
-	assert(not barra._botones["vias"].button_pressed, "el botón de Vías no debe quedar marcado")
+	assert(not barra._botones["demoler"].button_pressed, "el botón de Demoler no debe quedar marcado")
+
+	print("\n=== TEST 3g: clic en una categoría emite categoria_pedida ===")
+	var categorias_pedidas: Array = []
+	barra.categoria_pedida.connect(func(categoria: String) -> void: categorias_pedidas.append(categoria))
+	barra.set_modo("construir", "", "")
+	barra._botones_categoria["vias"].pressed.emit()
+	assert(categorias_pedidas == ["vias"], "salió %s" % [categorias_pedidas])
 
 	var construcciones_pedidas: Array = []
 	barra.construccion_pedida.connect(func(tipo: String) -> void: construcciones_pedidas.append(tipo))
-	barra.set_modo("construir", "mina")
+	barra.set_modo("construir", "mina", "periferico")
 	barra._botones_construccion["pesca_frutos_mar"].pressed.emit()
 	assert(construcciones_pedidas == ["pesca_frutos_mar"], "salió %s" % [construcciones_pedidas])
-	# Las zonas tienen su propia subbarra, solo visible con Zonas activo.
-	assert(not barra._panel_zonas.visible and not barra.zonas_visibles())
-	assert(barra._panel_sub.get_index() < barra._panel_zonas.get_index())
-	barra.set_modo("zonas", Zonificacion.ZONAS_PINTABLES[1])
-	assert(barra._panel_zonas.visible and not barra._panel_sub.visible)
+	# Las zonas tienen su propio panel, solo visible con Zonificar activo.
+	assert(not barra._panel_zonas.visible and not barra.zonificar_visible())
+	assert(barra._panel_categorias.get_index() < barra._panel_zonas.get_index())
+	barra.set_modo("zonificar", Zonificacion.ZONAS_PINTABLES[1])
+	assert(barra._panel_zonas.visible and not barra._panel_categorias.visible)
 	assert(barra.zona_activa() == Zonificacion.ZONAS_PINTABLES[1])
 	assert(barra._botones_zona[Zonificacion.ZONAS_PINTABLES[1]].button_pressed)
 	var zonas_pedidas: Array = []

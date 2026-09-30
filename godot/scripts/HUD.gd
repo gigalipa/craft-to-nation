@@ -9,6 +9,7 @@ extends CanvasLayer
 ## Pedidos de la barra de modos (clic): CamaraCenital los traduce a sus
 ## funciones _alternar_modo_*.
 signal modo_pedido(modo: String)
+signal categoria_pedida(categoria: String)
 signal construccion_pedida(tipo: String)
 signal zona_pedida(tipo: String)
 ## "poblacion" o "almacen" (clic en la barra superior); solo lo escucha
@@ -78,6 +79,7 @@ func _init() -> void:
 	add_child(_contexto)
 	_barra_modos = BarraModosScript.new()
 	_barra_modos.modo_pedido.connect(func(modo: String) -> void: modo_pedido.emit(modo))
+	_barra_modos.categoria_pedida.connect(func(categoria: String) -> void: categoria_pedida.emit(categoria))
 	_barra_modos.construccion_pedida.connect(func(tipo: String) -> void: construccion_pedida.emit(tipo))
 	_barra_modos.zona_pedida.connect(func(tipo: String) -> void: zona_pedida.emit(tipo))
 	add_child(_barra_modos)
@@ -157,9 +159,11 @@ func set_tipo_hotbar(indice: int) -> void:
 	_hotbar.seleccionar(indice)
 
 
-## "modo" es el id de BarraModos.MODOS ("" = Ver); "sub" la subherramienta activa (construcción o zona).
-func set_modo(modo: String, sub: String = "") -> void:
-	_barra_modos.set_modo(modo, sub)
+## "modo" es el id de BarraModos.MODOS ("" = Ver); "sub" el tipo de edificio
+## activo (Construir) o el tipo de zona activo (Zonificar); "categoria" solo
+## aplica a Construir (ver BarraModos.set_modo()).
+func set_modo(modo: String, sub: String = "", categoria: String = "") -> void:
+	_barra_modos.set_modo(modo, sub, categoria)
 
 
 ## Rotación compartida de las 5 miniaturas del submenú Construir (0-3, ver

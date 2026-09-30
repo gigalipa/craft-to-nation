@@ -17,8 +17,8 @@ const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 ## contra lo que quedará después de drenar, no contra el nivel del mar. Los
 ## blueprints, en cambio, no drenan al confirmar: su agua se rellena celda a
 ## celda al surtirlos (ver VoxelWorld._reemplazar_celda()). La
-## tecla `B` ya no activa nivelación manual (ver _alternar_modo_colocar_
-## blueprint() más abajo, Task 7).
+## La colocación de blueprint ya no activa nivelación manual (ver
+## _alternar_modo_colocar_blueprint() más abajo, Task 7).
 class _AlturaSinAgua:
 	var _mundo: Object
 
@@ -54,9 +54,8 @@ class _AlturaSinAgua:
 ##   la cámara dentro de un bloque sólido — si el movimiento comandado
 ##   colisiona, ese movimiento simplemente no se aplica esta vez (nunca se
 ##   redirige a otro sentido distinto al que pidió el jugador).
-## - Colocación de puestos periféricos con huella real (mina: tecla `M`;
-##   caza y recolección: tecla `H`; maderero: tecla `L`; pesca y frutos del
-##   mar: tecla `F`; ver GDD Sección 3 y
+## - Colocación de puestos periféricos con huella real (categoría Periférico
+##   del menú Construir — tecla `1`, luego `2`; ver GDD Sección 3 y
 ##   docs/superpowers/specs/2026-09-10-puestos-huella-real-caza-recoleccion-design.md):
 ##   huella fantasma de N×M celdas, rotable 90° con Ctrl+rueda del mouse,
 ##   ficha en vivo en el HUD, confirma solo si pasan las 5 validaciones
@@ -70,12 +69,12 @@ class _AlturaSinAgua:
 ##   _actualizar_area_accion()), y al confirmar la colocación se drena el
 ##   agua bajo la huella (ver VoxelWorld.drenar_agua()) y se nivela
 ##   automáticamente el terreno real resultante (mismo mecanismo de
-##   nivelación que usa el modo de colocación de blueprint, tecla `B` — ver
+##   nivelación que usa el modo de colocación de blueprint — ver
 ##   _AlturaSinAgua/nivelador_puesto — pero ignorando el agua) antes de
 ##   colocar el marcador — de nuevo con la excepción de "pesca_frutos_mar",
 ##   que en vez de drenar coloca pilotes bajo la huella (ver
 ##   _procesar_clic_puesto()).
-## - Colocación de blueprint (tecla `B`, ver Task 7 de este plan) reemplaza
+## - Colocación de blueprint (categoría Residencial del menú Construir) reemplaza
 ##   la antigua nivelación standalone — sin selección de tropas por
 ##   arrastre todavía, eso sigue siendo PoC 7/Fase 4.
 
@@ -162,15 +161,22 @@ const ALTURA_SOBRE_SUPERFICIE_AREA_ACCION := 1.001
 @onready var hud: CanvasLayer = get_node("../HUDLayer")
 @onready var jugador: CharacterBody3D = get_node("../Player")
 
-## Modo zonificación (tecla `Z`): mientras está activo, el clic izquierdo pinta
-## zona (dos esquinas) y `1`/`2`/`0` eligen la zona A, la zona B o borrar. Sin
-## este modo (ni otro) el clic solo abre/cierra el panel de un puesto.
+## Modo demoler (menú principal, tecla `3`): sin submenú ni lógica de marcado
+## todavía — solo el interruptor (decisión del usuario, 2026-09-30): la idea a
+## futuro es marcar edificios para que los ciudadanos desempleados los
+## deconstruyan, pero esa lógica queda para otra tarea.
+var modo_demoler := false
+
+## Modo zonificación (menú principal, tecla `2`): mientras está activo, el
+## clic izquierdo pinta zona (dos esquinas) y `1`/`2`/`3` eligen Zona
+## Residencial, Zona Industrial o Borrar. Sin este modo (ni otro) el clic solo
+## abre/cierra el panel de un puesto.
 var modo_zonificar := false
 var tipo_zona_seleccionada: String = Zonificacion.ZONAS_PINTABLES[0]
 var esperando_segunda_esquina := false
 var primera_esquina := Vector2i.ZERO
 
-## Modo trazador de vías (tecla `V`) — ver spec de vías Sección 4.
+## Modo trazador de vías (categoría "vias" del menú Construir) — ver spec de vías Sección 4.
 var modo_trazar_via := false
 var _hay_tramo_en_curso := false
 var _vertice_inicio_tramo := Vector2i.ZERO
@@ -199,8 +205,8 @@ const MAX_NODOS_PREVIEW_VIA := 600
 
 var nivelador_puesto: RefCounted
 
-## Modo de colocación de puesto periférico (mina: tecla `M`; caza y
-## recolección: tecla `H`; maderero: `L`; pesca: `F`) — la plantilla del puesto
+## Modo de colocación de puesto periférico (categoría Periférico del menú
+## Construir) — la plantilla del puesto
 ## (cajas fantasma, ver _actualizar_fantasma_puesto()) sigue la celda bajo el
 ## cursor (esa celda es el CENTRO de la huella de _ancho_puesto_activo x
 ## _alto_puesto_activo celdas), dorada si la evaluación completa de
@@ -231,7 +237,7 @@ var _giros_fantasma_puesto := -1
 var _offsets_area_accion: Array[Vector2i] = []
 var _area_accion: Array[MeshInstance3D] = []
 
-## Modo de colocación de blueprint (tecla `B`) — reemplaza la antigua
+## Modo de colocación de blueprint (categoría Residencial del menú Construir) — reemplaza la antigua
 ## nivelación standalone. A diferencia de la huella plana de los puestos
 ## (un rectángulo verde/rojo que solo marca "dónde"), aquí se previsualiza
 ## una copia translúcida en 3D de la forma REAL del blueprint (una caja por
@@ -242,13 +248,17 @@ var _area_accion: Array[MeshInstance3D] = []
 ## de tener un tamaño fijo — solo existe un blueprint (residencial) por
 ## ahora, activarse no es un evento frecuente por fotograma.
 var modo_colocar_blueprint := false
-## true mientras el submenú Construir está visible, con o sin una opción
-## activa — a diferencia de modo_colocar_blueprint/modo_colocar_puesto, que
-## solo son true cuando hay una construcción CONCRETA en colocación. Lo
-## controla _alternar_modo_menu_construir() (tecla B / botón "Construir" de
-## BarraModos): abrir el menú ya no activa la colocación de Residencial
-## directamente (decisión del usuario, 2026-09-30).
+## true mientras el submenú Construir está visible (en cualquiera de sus 3
+## niveles: lista de categorías, edificios de una categoría, o con una
+## construcción/vía concreta en colocación) — a diferencia de
+## modo_colocar_blueprint/modo_colocar_puesto/modo_trazar_via, que solo son
+## true en el último nivel. Lo controla _alternar_modo_menu_construir() (tecla
+## `1` / botón "Construir" de BarraModos): abrir el menú ya no activa la
+## colocación de Residencial directamente (decisión del usuario, 2026-09-30).
 var _menu_construir_abierto := false
+## Categoría cuyo panel de edificios está abierto dentro de Construir ("" =
+## todavía en la lista de categorías, ver BarraModos.CATEGORIAS).
+var _categoria_construir := ""
 var _blueprint_activo: Dictionary = {}
 ## Giro actual del blueprint en colocación (0-3), solo para sincronizar la
 ## miniatura del menú Construir (HUD.set_giros_construccion()) — a
@@ -314,6 +324,7 @@ func _ready() -> void:
 	_overlay_nivelacion = NivelacionOverlay.new()
 	add_child(_overlay_nivelacion)
 	hud.modo_pedido.connect(_on_modo_pedido)
+	hud.categoria_pedida.connect(_elegir_categoria)
 	hud.construccion_pedida.connect(_on_construccion_pedida)
 	hud.zona_pedida.connect(_elegir_zona)
 	hud.dato_pedido.connect(hud.abrir_ventana_dato)
@@ -1264,6 +1275,13 @@ func _actualizar_previsualizacion_blueprint() -> void:
 	_actualizar_overlays(esquina, ev)
 
 
+## Categorías de Construir y sus edificios, en el mismo orden que
+## BarraModos.CATEGORIAS/CONSTRUCCIONES_POR_CATEGORIA — deben coincidir para
+## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
+const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias"]
+const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar"]
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not current:
 		return
@@ -1272,26 +1290,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		var tecla := event as InputEventKey
 		if tecla.pressed and tecla.keycode == KEY_ESCAPE:
 			salir_de_todos_los_modos()
-		elif tecla.pressed and tecla.keycode == KEY_Z:
-			_alternar_modo_zonificar()
-		elif tecla.pressed and modo_zonificar and tecla.keycode == KEY_1:
-			_elegir_zona(Zonificacion.ZONAS_PINTABLES[0])
-		elif tecla.pressed and modo_zonificar and tecla.keycode == KEY_2:
-			_elegir_zona(Zonificacion.ZONAS_PINTABLES[1])
-		elif tecla.pressed and modo_zonificar and tecla.keycode == KEY_0:
-			_elegir_zona(Zonificacion.MARCADOR_BORRAR)
-		elif tecla.pressed and tecla.keycode == KEY_M:
-			_alternar_puesto_por_tipo("mina")
-		elif tecla.pressed and tecla.keycode == KEY_H:
-			_alternar_puesto_por_tipo("caza_recoleccion")
-		elif tecla.pressed and tecla.keycode == KEY_L:
-			_alternar_puesto_por_tipo("maderero")
-		elif tecla.pressed and tecla.keycode == KEY_F:
-			_alternar_puesto_por_tipo("pesca_frutos_mar")
-		elif tecla.pressed and tecla.keycode == KEY_B:
-			_alternar_modo_menu_construir()
-		elif tecla.pressed and tecla.keycode == KEY_V:
-			_alternar_modo_trazar_via()
+		elif tecla.pressed:
+			var digito := _digito_de_tecla(tecla.keycode)
+			if digito != -1:
+				_manejar_tecla_numerica(digito)
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
@@ -1304,6 +1306,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_procesar_clic(boton.position)
 			elif modo_trazar_via:
 				_procesar_clic_via(boton.position)
+			elif modo_demoler:
+				pass  # marcar edificios para demolición: fuera de alcance por ahora (ver modo_demoler)
 			else:
 				_procesar_clic_interaccion(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
@@ -1326,6 +1330,100 @@ func _unhandled_input(event: InputEvent) -> void:
 				_intentar_zoom(VELOCIDAD_ZOOM)
 
 
+## 1-9 si "keycode" es una tecla numérica de esa fila, -1 si no.
+func _digito_de_tecla(keycode: int) -> int:
+	match keycode:
+		KEY_1: return 1
+		KEY_2: return 2
+		KEY_3: return 3
+		KEY_4: return 4
+		KEY_5: return 5
+		KEY_6: return 6
+		KEY_7: return 7
+		KEY_8: return 8
+		KEY_9: return 9
+	return -1
+
+
+## Enrutador de las teclas numéricas: cada una vale para el nivel de menú
+## donde está el jugador (ver BarraModos, cabecera del archivo) — nunca una
+## letra fija. Esc (ver _unhandled_input()) siempre sale de todo sin importar
+## la profundidad.
+func _manejar_tecla_numerica(n: int) -> void:
+	if modo_zonificar:
+		_manejar_tecla_zonificar(n)
+	elif _menu_construir_abierto or modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via:
+		_manejar_tecla_construir(n)
+	elif not modo_demoler:
+		_manejar_tecla_nivel_superior(n)
+
+
+## Menú principal (nada activo todavía): 1 Construir, 2 Zonificar, 3 Demoler.
+func _manejar_tecla_nivel_superior(n: int) -> void:
+	match n:
+		1: _alternar_modo_menu_construir()
+		2: _alternar_modo_zonificar()
+		3: _alternar_modo_demoler()
+
+
+## Con Zonificar activo: 1 Zona Residencial, 2 Zona Industrial, 3 Borrar.
+func _manejar_tecla_zonificar(n: int) -> void:
+	match n:
+		1: _elegir_zona(Zonificacion.ZONAS_PINTABLES[0])
+		2: _elegir_zona(Zonificacion.ZONAS_PINTABLES[1])
+		3: _elegir_zona(Zonificacion.MARCADOR_BORRAR)
+
+
+## Con Construir activo: sin categoría elegida, N selecciona la categoría N
+## (CATEGORIAS_CONSTRUIR); con una categoría abierta, N selecciona su
+## edificio N (o no hace nada si esa categoría no tiene esa posición, p. ej.
+## Industrial/Investigación, que todavía no tienen edificios).
+func _manejar_tecla_construir(n: int) -> void:
+	if _categoria_construir == "":
+		if n >= 1 and n <= CATEGORIAS_CONSTRUIR.size():
+			_elegir_categoria(CATEGORIAS_CONSTRUIR[n - 1])
+		return
+	match _categoria_construir:
+		"residencial":
+			if n == 1:
+				_alternar_modo_colocar_blueprint()
+		"periferico":
+			if n >= 1 and n <= PUESTOS_PERIFERICO.size():
+				_alternar_puesto_por_tipo(PUESTOS_PERIFERICO[n - 1])
+		"vias":
+			if n == 1:
+				_alternar_modo_trazar_via()
+
+
+## Abre el panel de edificios de "categoria" dentro de Construir (tecla
+## numérica en la lista de categorías, o clic en su botón de BarraModos) —
+## igual que _alternar_modo_menu_construir() pero un nivel más adentro: elegir
+## una categoría NO activa ninguna construcción todavía. Volver a elegir la
+## categoría ya abierta cancela lo que estuviera activo en ella (si algo lo
+## estaba) o, si no había nada activo, colapsa de vuelta a la lista de
+## categorías — mismo patrón de "la misma tecla vuelve un nivel" en toda la
+## jerarquía. Elegir OTRA categoría cancela directamente lo que estuviera
+## activo en la anterior, sin necesidad de cerrar primero (mismo criterio que
+## ya usa _alternar_modo_colocar_puesto() al cambiar de tipo de puesto).
+func _elegir_categoria(categoria: String) -> void:
+	if _categoria_construir == categoria:
+		if modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via:
+			_salir_de_modo_colocar_blueprint(false)
+			_salir_de_modo_colocar_puesto(false)
+			_salir_de_modo_trazar_via(false)
+			hud.set_modo("construir", "", categoria)
+		else:
+			_categoria_construir = ""
+			hud.set_modo("construir", "", "")
+		return
+	_salir_de_modo_colocar_blueprint(false)
+	_salir_de_modo_colocar_puesto(false)
+	_salir_de_modo_trazar_via(false)
+	_categoria_construir = categoria
+	hud.set_giros_construccion(0)
+	hud.set_modo("construir", "", categoria)
+
+
 ## Igual que el resto de controles: aplica el zoom tentativamente, y solo
 ## lo compromete (y mueve la cámara) si la posición resultante no
 ## colisiona — si colisiona, la distancia de zoom no cambia (nunca se
@@ -1343,8 +1441,9 @@ func _intentar_zoom(delta_distancia: float) -> void:
 ## Activa el modo de colocación del puesto "tipo" (huella ancho x alto). Si
 ## ya estaba activo ESE MISMO tipo, lo cancela (mismo toggle que antes tenía
 ## _alternar_modo_colocar_puesto()); si estaba activo otro tipo, cambia
-## directamente al nuevo sin necesidad de cancelar primero. M, H y L llaman a
-## esta misma función con su tipo/huella respectivos (ver _unhandled_input()).
+## directamente al nuevo sin necesidad de cancelar primero. Solo se llama con
+## la categoría "periferico" del menú Construir ya abierta (ver
+## _manejar_tecla_construir()/_on_construccion_pedida()).
 func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	if modo_colocar_puesto and _tipo_puesto_activo == tipo:
 		_salir_de_modo_colocar_puesto()
@@ -1353,10 +1452,11 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	# Ver el comentario equivalente en _alternar_modo_colocar_blueprint(): los
 	# modos son mutuamente excluyentes.
 	_salir_de_modo_zonificar()
+	_salir_de_modo_demoler()
 	if modo_colocar_blueprint:
-		_salir_de_modo_colocar_blueprint()
+		_salir_de_modo_colocar_blueprint(false)
 	if modo_trazar_via:
-		_salir_de_modo_trazar_via()
+		_salir_de_modo_trazar_via(false)
 	modo_colocar_puesto = true
 	_tipo_puesto_activo = tipo
 	_ancho_puesto_activo = ancho
@@ -1364,14 +1464,14 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_giros_puesto = 0
 	_giros_fantasma_puesto = -1
 	_overlay_vigente = SIN_RESUMEN
-	hud.set_modo("construir", tipo)
+	hud.set_modo("construir", tipo, "periferico")
 	hud.set_giros_construccion(0)
 	hud.mostrar_contexto_puesto(tipo, false, {})
 	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
 
 
-## Alterna el puesto de "tipo" con su huella: teclas M/H/L/F y subtira de la
-## menú de Construir (HUD.construccion_pedida).
+## Alterna el puesto de "tipo" con su huella: categoría Periférico del menú
+## Construir (tecla numérica o clic — ver HUD.construccion_pedida).
 func _alternar_puesto_por_tipo(tipo: String) -> void:
 	match tipo:
 		"mina": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
@@ -1380,25 +1480,30 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
 
 
-## Clic en un botón de la barra de modos: mismo efecto que su tecla.
+## Clic en un botón del menú principal de la barra de modos: mismo efecto que su tecla.
 func _on_modo_pedido(modo: String) -> void:
 	match modo:
 		"ver": salir_de_todos_los_modos()
 		"construir": _alternar_modo_menu_construir()
-		"zonas": _alternar_modo_zonificar()
-		"vias": _alternar_modo_trazar_via()
+		"zonificar": _alternar_modo_zonificar()
+		"demoler": _alternar_modo_demoler()
 
 
-## Clic en el menú de Construir: "residencial" alterna el blueprint; cualquier
-## otro valor es un tipo de puesto.
+## Clic en un edificio del menú Construir: "residencial" alterna el
+## blueprint, "vias" alterna el trazador; cualquier otro valor es un tipo de
+## puesto periférico.
 func _on_construccion_pedida(tipo: String) -> void:
 	if tipo == "residencial":
 		_alternar_modo_colocar_blueprint()
+	elif tipo == "vias":
+		_alternar_modo_trazar_via()
 	else:
 		_alternar_puesto_por_tipo(tipo)
 
 
-func _salir_de_modo_colocar_puesto() -> void:
+## "cerrar_menu" en false lo usa _elegir_categoria() al cambiar de categoría o
+## colapsar a la lista de categorías sin salir del todo de Construir.
+func _salir_de_modo_colocar_puesto(cerrar_menu: bool = true) -> void:
 	var estaba := modo_colocar_puesto
 	if modo_colocar_puesto:
 		# El fantasma y los overlays son los mismos nodos que usa el modo blueprint.
@@ -1409,12 +1514,13 @@ func _salir_de_modo_colocar_puesto() -> void:
 	modo_colocar_puesto = false
 	_ocultar_area_accion()
 	_tipo_puesto_activo = ""
-	if estaba:
+	if estaba and cerrar_menu:
 		# El menú Construir queda marcado "abierto" hasta ahora (se abrió con
-		# B antes de elegir este puesto) — sin esto, confirmar o deseleccionar
-		# la colocación cerraba el HUD pero dejaba el flag colgado, y la
-		# siguiente B solo volvía a cerrar (ya cerrado) en vez de abrir.
+		# la tecla `1` antes de elegir este puesto) — sin esto, confirmar o
+		# deseleccionar la colocación cerraba el HUD pero dejaba el flag colgado, y la
+		# siguiente tecla `1` solo volvía a cerrar (ya cerrado) en vez de abrir.
 		_menu_construir_abierto = false
+		_categoria_construir = ""
 		hud.set_modo("")
 		hud.ocultar_contexto()
 
@@ -1476,37 +1582,38 @@ func _rotar_blueprint() -> void:
 	hud.set_giros_construccion(_giros_blueprint)
 
 
-## Tecla B / clic en el botón principal "Construir" de BarraModos: abre o
-## cierra el submenú Construir SIN activar ninguna colocación todavía (a
-## diferencia de antes, cuando B intentaba colocar Residencial directamente
-## y si no había blueprint declarado ni siquiera abría el menú — decisión
-## del usuario, 2026-09-30). Elegir una opción dentro del menú ya abierto
-## (clic en "Residencial" o en un puesto) sigue llamando a
-## _alternar_modo_colocar_blueprint()/_alternar_puesto_por_tipo() sin
-## cambios, exactamente igual que antes.
+## Tecla `1` / clic en el botón principal "Construir" de BarraModos: abre o
+## cierra el submenú Construir SIN activar ninguna colocación todavía —
+## primero muestra la lista de categorías (Residencial/Periférico/Industrial/
+## Investigación/Vías, ver _elegir_categoria()); elegir una de ellas es un
+## paso aparte, y dentro de ella elegir un edificio sigue llamando a
+## _alternar_modo_colocar_blueprint()/_alternar_puesto_por_tipo()/
+## _alternar_modo_trazar_via() sin cambios.
 func _alternar_modo_menu_construir() -> void:
-	if _menu_construir_abierto or modo_colocar_blueprint or modo_colocar_puesto:
+	if _menu_construir_abierto or modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via:
 		_salir_de_modo_menu_construir()
 		return
 	_salir_de_modo_zonificar()
-	if modo_trazar_via:
-		_salir_de_modo_trazar_via()
+	_salir_de_modo_demoler()
 	_menu_construir_abierto = true
+	_categoria_construir = ""
 	hud.set_giros_construccion(0)
-	hud.set_modo("construir", "")
+	hud.set_modo("construir", "", "")
 
 
-## Segunda pulsación de B (o "Construir" de nuevo) con el menú abierto —
-## con o sin una opción activa: cierra todo el sistema de construcción y
-## vuelve a "Ver", igual que ya hacen Z/V con sus propios modos (nunca
-## reactiva Residencial como atajo, aunque comparta tecla con el botón
-## principal).
+## Segunda pulsación de la tecla `1` (o "Construir" de nuevo) con el menú
+## abierto — en cualquiera de sus 3 niveles: cierra todo el sistema de
+## construcción y vuelve a "Ver", igual que ya hacen Zonificar/Demoler con sus
+## propios modos.
 func _salir_de_modo_menu_construir() -> void:
 	if modo_colocar_blueprint:
 		_salir_de_modo_colocar_blueprint()
 	if modo_colocar_puesto:
 		_salir_de_modo_colocar_puesto()
+	if modo_trazar_via:
+		_salir_de_modo_trazar_via()
 	_menu_construir_abierto = false
+	_categoria_construir = ""
 	hud.set_modo("")
 
 
@@ -1514,7 +1621,8 @@ func _salir_de_modo_menu_construir() -> void:
 ## blueprint posible a la vez — a diferencia de _alternar_modo_colocar_puesto(),
 ## no recibe tipo/ancho/alto porque hoy solo existe un blueprint guardado,
 ## el de "residencial_investigacion"). Si no hay ningún blueprint guardado
-## todavía, avisa y no entra al modo.
+## todavía, avisa y no entra al modo. Solo se llama con la categoría
+## "residencial" del menú Construir ya abierta.
 func _alternar_modo_colocar_blueprint() -> void:
 	if modo_colocar_blueprint:
 		_salir_de_modo_colocar_blueprint()
@@ -1526,10 +1634,11 @@ func _alternar_modo_colocar_blueprint() -> void:
 		hud.notificar("No hay ningún blueprint guardado todavía — declara un edificio primero.")
 		return
 	_salir_de_modo_zonificar()
+	_salir_de_modo_demoler()
 	if modo_colocar_puesto:
-		_salir_de_modo_colocar_puesto()
+		_salir_de_modo_colocar_puesto(false)
 	if modo_trazar_via:
-		_salir_de_modo_trazar_via()
+		_salir_de_modo_trazar_via(false)
 	# Duplicado (no la misma referencia): _rotar_blueprint() reemplaza
 	# "celdas_3d"/"huella_relativa"/"ancho"/"profundidad" en _blueprint_activo
 	# en cada rotación — sobre el dict original de Blueprints.obtener(), eso
@@ -1541,44 +1650,49 @@ func _alternar_modo_colocar_blueprint() -> void:
 	_giros_blueprint = 0
 	_resumen_blueprint_vigente = SIN_RESUMEN
 	_overlay_vigente = SIN_RESUMEN
-	hud.set_modo("construir", "residencial")
+	hud.set_modo("construir", "residencial", "residencial")
 	hud.set_giros_construccion(0)
-	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar, Ctrl+rueda para rotar).")
+	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (misma tecla para cancelar, Ctrl+rueda para rotar).")
 
 
-func _salir_de_modo_colocar_blueprint() -> void:
+## "cerrar_menu" en false lo usa _elegir_categoria() al cambiar de categoría o
+## colapsar a la lista de categorías sin salir del todo de Construir.
+func _salir_de_modo_colocar_blueprint(cerrar_menu: bool = true) -> void:
 	var estaba := modo_colocar_blueprint
 	modo_colocar_blueprint = false
 	_mostrar_huella_blueprint(false)
 	_blueprint_activo = {}
 	_overlay_nivelacion.ocultar()
 	_overlay_vigente = SIN_RESUMEN
-	if estaba:
+	if estaba and cerrar_menu:
 		# Mismo motivo que en _salir_de_modo_colocar_puesto().
 		_menu_construir_abierto = false
+		_categoria_construir = ""
 		hud.set_modo("")
 		hud.ocultar_contexto()
 
 
 ## Sale de cualquier modo de interacción de esta cámara (colocar blueprint,
-## colocar puesto, pintar zona) — llamada por Main.gd al cambiar a la cámara
-## en 1ª persona. Sin esto, la huella fantasma del blueprint o la huella del
-## puesto (hijos de esta cámara, independientes de si `current` está activo)
-## seguirían visibles y congeladas tras salir de la vista cenital, porque su
-## visibilidad solo depende de estas banderas de modo, nunca de qué cámara
-## está activa.
+## colocar puesto, trazar vía, pintar zona, demoler) — llamada por Main.gd al
+## cambiar a la cámara en 1ª persona. Sin esto, la huella fantasma del
+## blueprint o la huella del puesto (hijos de esta cámara, independientes de
+## si `current` está activo) seguirían visibles y congeladas tras salir de la
+## vista cenital, porque su visibilidad solo depende de estas banderas de
+## modo, nunca de qué cámara está activa.
 func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_zonificar()
 	_salir_de_modo_trazar_via()
+	_salir_de_modo_demoler()
 	# Incondicional (no solo "if estaba"): cubre también el caso de que el
 	# menú Construir estuviera abierto SIN ninguna colocación activa — ese
-	# caso no pasa por ninguna de las 4 llamadas de arriba (todas son no-op
+	# caso no pasa por ninguna de las llamadas de arriba (todas son no-op
 	# si su modo no estaba activo), así que sin esto el HUD se quedaba
 	# mostrando "Construir" después de Esc/Ver/cambiar a 1ª persona
 	# (reporte de revisión, 2026-09-30).
 	_menu_construir_abierto = false
+	_categoria_construir = ""
 	hud.set_modo("")
 	hud.cerrar_panel_puesto()
 
@@ -1691,21 +1805,15 @@ func _vertice_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 	return Vector2i(roundi(local.x), roundi(local.z))
 
 
-## Activa/desactiva el modo zonificación (tecla `Z`). Es excluyente con los
-## demás modos de interacción de la cenital (colocar puesto, blueprint,
-## trazar vías). Conserva la última zona elegida.
+## Activa/desactiva el modo zonificación (menú principal, tecla `2`). Es
+## excluyente con los demás modos de interacción de la cenital (colocar
+## puesto, blueprint, trazar vías, demoler). Conserva la última zona elegida.
 func _alternar_modo_zonificar() -> void:
 	if modo_zonificar:
 		_salir_de_modo_zonificar()
 		return
-	_salir_de_modo_colocar_blueprint()
-	_salir_de_modo_colocar_puesto()
-	_salir_de_modo_trazar_via()
-	# El menú Construir (si estaba abierto sin nada activo) no pasa por
-	# ninguna de las 3 llamadas de arriba — sin esto, una B posterior lo
-	# encontraba todavía "abierto" y cerraba a ciegas el HUD de Zonas que
-	# se muestra abajo (reporte de revisión, 2026-09-30).
-	_menu_construir_abierto = false
+	_salir_de_modo_menu_construir()
+	_salir_de_modo_demoler()
 	hud.cerrar_panel_puesto()
 	modo_zonificar = true
 	_mostrar_contexto_zona()
@@ -1720,35 +1828,65 @@ func _salir_de_modo_zonificar() -> void:
 		hud.ocultar_contexto()
 
 
-## Activa/desactiva el modo trazador de vías (tecla `V`). Excluyente con
-## los demás modos — ver spec de vías Sección 4.
+## Activa/desactiva el modo trazador de vías: categoría "vias" del menú
+## Construir (tecla numérica o clic — ver HUD.construccion_pedida). Igual que
+## los puestos/el blueprint, es una construcción concreta dentro de Construir,
+## no un modo hermano — ver spec de vías Sección 4.
 func _alternar_modo_trazar_via() -> void:
 	if modo_trazar_via:
 		_salir_de_modo_trazar_via()
 		return
-	_salir_de_modo_colocar_blueprint()
-	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_zonificar()
-	# Mismo motivo que en _alternar_modo_zonificar(): el menú Construir
-	# abierto sin nada activo no pasa por ninguna llamada de arriba.
-	_menu_construir_abierto = false
-	hud.cerrar_panel_puesto()
+	_salir_de_modo_demoler()
+	if modo_colocar_blueprint:
+		_salir_de_modo_colocar_blueprint(false)
+	if modo_colocar_puesto:
+		_salir_de_modo_colocar_puesto(false)
 	modo_trazar_via = true
+	_categoria_construir = "vias"
+	_menu_construir_abierto = true
 	_trazador_via = TrazadorVias.new(mundo)
 	_tramos_fijos.clear()
 	_hay_tramo_en_curso = false
 	_ultimo_origen_preview = SIN_VERTICE_PREVIO
 	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
-	hud.set_modo("vias")
+	hud.set_modo("construir", "vias", "vias")
 	hud.mostrar_contexto("Trazar vía", {}, ["FIJAR PUNTO (clic)", "CONFIRMAR (doble clic)", "SALIR (Esc)"])
 
 
-func _salir_de_modo_trazar_via() -> void:
+## "cerrar_menu" en false lo usa _elegir_categoria() al cambiar de categoría o
+## colapsar a la lista de categorías sin salir del todo de Construir.
+func _salir_de_modo_trazar_via(cerrar_menu: bool = true) -> void:
 	var estaba := modo_trazar_via
 	modo_trazar_via = false
 	_hay_tramo_en_curso = false
 	_tramos_fijos.clear()
 	via_preview.limpiar()
+	if estaba and cerrar_menu:
+		_menu_construir_abierto = false
+		_categoria_construir = ""
+		hud.set_modo("")
+		hud.ocultar_contexto()
+
+
+## Activa/desactiva el modo demoler (menú principal, tecla `3`). Solo el
+## interruptor — sin marcado de edificios ni asignación de NPCs todavía (ver
+## comentario de "modo_demoler" arriba).
+func _alternar_modo_demoler() -> void:
+	if modo_demoler:
+		_salir_de_modo_demoler()
+		return
+	_salir_de_modo_menu_construir()
+	_salir_de_modo_zonificar()
+	hud.cerrar_panel_puesto()
+	modo_demoler = true
+	hud.set_modo("demoler")
+	hud.mostrar_contexto("Demoler", {}, ["Esc salir"])
+
+
+func _salir_de_modo_demoler() -> void:
+	var estaba := modo_demoler
+	modo_demoler = false
 	if estaba:
 		hud.set_modo("")
 		hud.ocultar_contexto()
@@ -1762,14 +1900,27 @@ func _elegir_zona(tipo: String) -> void:
 
 
 func _mostrar_contexto_zona() -> void:
-	hud.set_modo("zonas", tipo_zona_seleccionada)
-	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, ["1 Zona A", "2 Zona B", "0 Borrar", "Z/Esc salir"])
+	hud.set_modo("zonificar", tipo_zona_seleccionada)
+	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, ["1 Zona Residencial", "2 Zona Industrial", "3 Borrar", "Esc salir"], null, _categorias_permitidas_zona())
 
 
 func _nombre_zona_seleccionada() -> String:
 	if tipo_zona_seleccionada == Zonificacion.MARCADOR_BORRAR:
 		return "Borrar"
-	return "Zona A" if tipo_zona_seleccionada == Zonificacion.ZONAS_PINTABLES[0] else "Zona B"
+	return "Zona Residencial" if tipo_zona_seleccionada == Zonificacion.ZONAS_PINTABLES[0] else "Zona Industrial"
+
+
+## Línea "extra" del panel contextual de zonificación: qué categorías del
+## menú Construir se pueden levantar en la zona elegida (GDD Sección de
+## Núcleo A/Núcleo B) — pedido del usuario, 2026-09-30, para que Zona
+## Residencial/Zona Industrial sean nombres más intuitivos que A/B. Sin
+## categorías permitidas para "Borrar" (no es una zona construible).
+func _categorias_permitidas_zona() -> String:
+	if tipo_zona_seleccionada == Zonificacion.ZONAS_PINTABLES[0]:
+		return "Categorías permitidas: Residencial, Investigación"
+	elif tipo_zona_seleccionada == Zonificacion.ZONAS_PINTABLES[1]:
+		return "Categorías permitidas: Industrial"
+	return ""
 
 
 ## Clic sin ningún modo activo: sobre un puesto de trabajo abre su panel; en

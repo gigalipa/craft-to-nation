@@ -1,13 +1,19 @@
 extends HBoxContainer
 
 ## Barras de modos de la cenital, en la esquina inferior izquierda: la barra
-## principal (un botón por modo) y, a su derecha, una barra de subherramientas
-## (Residencial y los 4 puestos con Construir activo; Zona A/B/Borrar con Zonas). Solo pide
-## cambios (señales): el modo real lo decide CamaraCenital, que lo devuelve con
-## HUD.set_modo(). Tras cada clic la barra se resincroniza con el modo real, así
-## un modo que no llega a activarse no queda marcado.
+## principal (Ver/Construir/Zonificar/Demoler), y a su derecha, según el modo:
+## las categorías de Construir (Residencial/Periférico/Industrial/
+## Investigación/Vías), los edificios de la categoría elegida, o las zonas
+## (Zona Residencial/Zona Industrial/Borrar). Navegación puramente posicional
+## (Esc + números, ver docs/superpowers/specs/2026-09-30-hud-menu-numerico-
+## design.md): cada tecla numérica vale para el nivel donde está el jugador,
+## nunca una letra fija. Solo pide cambios (señales): el modo real lo decide
+## CamaraCenital, que lo devuelve con HUD.set_modo(). Tras cada clic la barra
+## se resincroniza con el modo real, así un modo que no llega a activarse no
+## queda marcado.
 
 signal modo_pedido(modo: String)
+signal categoria_pedida(categoria: String)
 signal construccion_pedida(tipo: String)
 signal zona_pedida(tipo: String)
 
@@ -32,45 +38,72 @@ const ZONA_RESIDENCIAL := "residencial_investigacion"
 ## [id, nombre, tecla, ícono opcional (null: sin arte todavía)]
 const MODOS := [
 	["ver", "Ver", "Esc", null],
-	["construir", "Construir", "B", null],
-	["zonas", "Zonas", "Z", null],
-	["vias", "Vías", "V", null],
+	["construir", "Construir", "1", null],
+	["zonificar", "Zonificar", "2", null],
+	["demoler", "Demoler", "3", null],
 ]
-## Menú de Construir: "residencial" (blueprint) y los tipos de puesto.
-## "" de tecla en Residencial: a diferencia de los puestos (M/H/L/F), B ya
-## no coloca Residencial directamente — solo abre/cierra el submenú (ver
-## CamaraCenital._alternar_modo_menu_construir()) — así que anunciar "[B]"
-## en el botón sería un atajo falso, y de paso desbordaba la caja fija de
-## 88px del botón (reporte de revisión, 2026-09-30).
-const CONSTRUCCIONES := [
-	["residencial", "Residencial", ""],
-	["mina", "Mina", "M"],
-	["caza_recoleccion", "Caza", "H"],
-	["maderero", "Madera", "L"],
-	["pesca_frutos_mar", "Pesca", "F"],
+
+## Categorías del menú Construir (GDD: Núcleo A = Residencial/Investigación,
+## Núcleo B = Industrial; Periférico son los puestos de recolección fuera de
+## la ciudad). Industrial e Investigación no tienen edificios implementados
+## todavía — quedan visibles, con su panel vacío (ver CONSTRUCCIONES_POR_CATEGORIA).
+const CATEGORIAS := [
+	["residencial", "Residencial", "1"],
+	["periferico", "Periférico", "2"],
+	["industrial", "Industrial", "3"],
+	["investigacion", "Investigación", "4"],
+	["vias", "Vías", "5"],
 ]
+
+## categoría -> [tipo, nombre, tecla] de sus edificios, en el orden en que
+## aparecen los botones (y en el que CamaraCenital._manejar_tecla_construir()
+## indexa las teclas numéricas — deben coincidir).
+const CONSTRUCCIONES_POR_CATEGORIA := {
+	"residencial": [
+		["residencial", "Residencial", "1"],
+	],
+	"periferico": [
+		["caza_recoleccion", "Caza", "1"],
+		["maderero", "Madera", "2"],
+		["mina", "Mina", "3"],
+		["pesca_frutos_mar", "Pesca", "4"],
+	],
+	"industrial": [],
+	"investigacion": [],
+	"vias": [
+		["vias", "Trazar vía", "1"],
+	],
+}
+
+## Tipos con miniatura 3D real (mina/caza/madera/pesca + el blueprint
+## residencial); "vias" no tiene malla que previsualizar, es un botón de texto.
+const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar"]
+
 ## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
 var ZONAS := [
-	[Zonificacion.ZONAS_PINTABLES[0], "Zona A", "1", null],
-	[Zonificacion.ZONAS_PINTABLES[1], "Zona B", "2", null],
-	[Zonificacion.MARCADOR_BORRAR, "Borrar", "0", null],
+	[Zonificacion.ZONAS_PINTABLES[0], "Zona Residencial", "1", null],
+	[Zonificacion.ZONAS_PINTABLES[1], "Zona Industrial", "2", null],
+	[Zonificacion.MARCADOR_BORRAR, "Borrar", "3", null],
 ]
 
 var _panel_principal := PanelContainer.new()
-var _panel_sub := PanelContainer.new()
+var _panel_categorias := PanelContainer.new()
 var _panel_zonas := PanelContainer.new()
 var _botones := {}  # id de modo -> Button
-var _botones_construccion := {}  # "residencial" o tipo de puesto -> Button
+var _botones_categoria := {}  # id de categoría -> Button
+var _botones_construccion := {}  # tipo de edificio -> Button
 var _botones_zona := {}  # tipo de zona -> Button
-var _modo := ""
-var _puesto := ""
-var _miniaturas_construccion := {}  # "residencial" o tipo de puesto -> TextureRect
+var _paneles_construccion := {}  # id de categoría -> PanelContainer (uno visible a la vez)
+var _miniaturas_construccion := {}  # tipo con miniatura -> TextureRect
 ## SubViewport vivo detrás de cada miniatura actual — se libera (queue_free())
 ## antes de crear el siguiente en cada re-render, para no acumular uno por
 ## cada rotación/refresco (reporte de revisión, 2026-09-30).
-var _viewports_construccion := {}  # "residencial" o tipo de puesto -> SubViewport
+var _viewports_construccion := {}  # tipo con miniatura -> SubViewport
 var _biblioteca_construccion: MeshLibrary
 var _giros_menu := 0
+var _modo := ""
+var _categoria := ""  # categoría activa dentro de Construir ("" = lista de categorías)
+var _puesto := ""  # tipo de edificio activo (Construir) o tipo de zona activo (Zonificar)
 
 
 func _ready() -> void:
@@ -86,10 +119,12 @@ func _ready() -> void:
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_theme_constant_override("separation", 6)
 
-	for panel in [_panel_principal, _panel_sub, _panel_zonas]:
+	for panel in [_panel_principal, _panel_categorias, _panel_zonas]:
 		TemaHUD.aplicar_panel(panel)
 		panel.size_flags_vertical = Control.SIZE_SHRINK_END  # ambas alineadas abajo
-		add_child(panel)
+
+	add_child(_panel_principal)
+	add_child(_panel_categorias)
 	var columna := _nueva_columna(_panel_principal)
 	for modo in MODOS:
 		var id: String = modo[0]
@@ -100,17 +135,44 @@ func _ready() -> void:
 		)
 		columna.add_child(boton)
 		_botones[id] = boton
-	var columna_sub := _nueva_columna(_panel_sub)
-	for puesto in CONSTRUCCIONES:
-		var tipo: String = puesto[0]
-		var nombre_con_tecla: String = "%s [%s]" % [puesto[1], puesto[2]] if puesto[2] != "" else puesto[1]
-		var boton := _crear_boton_construccion(tipo, nombre_con_tecla)
+
+	var columna_categorias := _nueva_columna(_panel_categorias)
+	for categoria in CATEGORIAS:
+		var id: String = categoria[0]
+		var boton := _crear_boton("%s\n[%s]" % [categoria[1], categoria[2]], Vector2(88, 56))
 		boton.pressed.connect(func() -> void:
-			construccion_pedida.emit(tipo)
+			categoria_pedida.emit(id)
 			_refrescar()
 		)
-		columna_sub.add_child(boton)
-		_botones_construccion[tipo] = boton
+		columna_categorias.add_child(boton)
+		_botones_categoria[id] = boton
+
+	for categoria in CATEGORIAS:
+		var id: String = categoria[0]
+		var panel := PanelContainer.new()
+		TemaHUD.aplicar_panel(panel)
+		panel.size_flags_vertical = Control.SIZE_SHRINK_END
+		panel.visible = false
+		add_child(panel)
+		_paneles_construccion[id] = panel
+		var edificios: Array = CONSTRUCCIONES_POR_CATEGORIA[id]
+		if edificios.is_empty():
+			var columna_vacia := _nueva_columna(panel)
+			columna_vacia.add_child(TemaHUD.etiqueta("Próximamente"))
+			continue
+		var columna_edificios := _nueva_columna(panel)
+		for edificio in edificios:
+			var tipo: String = edificio[0]
+			var nombre_con_tecla: String = "%s [%s]" % [edificio[1], edificio[2]]
+			var boton: Button = _crear_boton_construccion(tipo, nombre_con_tecla) if TIPOS_CON_MINIATURA.has(tipo) else _crear_boton(nombre_con_tecla, Vector2(88, 56))
+			boton.pressed.connect(func() -> void:
+				construccion_pedida.emit(tipo)
+				_refrescar()
+			)
+			columna_edificios.add_child(boton)
+			_botones_construccion[tipo] = boton
+
+	add_child(_panel_zonas)
 	var columna_zonas := _nueva_columna(_panel_zonas)
 	for zona in ZONAS:
 		var tipo: String = zona[0]
@@ -200,10 +262,9 @@ func _crear_boton_construccion(tipo: String, texto: String) -> Button:
 	return boton
 
 
-## Cambia el giro compartido de las 5 miniaturas (0-3, normalizado con
-## posmod) y las vuelve a renderizar. La llama CamaraCenital cada vez que
-## Ctrl+rueda rota un puesto o un blueprint en colocación — ver
-## HUD.set_giros_construccion().
+## Cambia el giro compartido de las miniaturas (0-3, normalizado con posmod)
+## y las vuelve a renderizar. La llama CamaraCenital cada vez que Ctrl+rueda
+## rota un puesto o un blueprint en colocación — ver HUD.set_giros_construccion().
 func set_giros(giros: int) -> void:
 	_giros_menu = posmod(giros, 4)
 	_actualizar_miniaturas()
@@ -262,11 +323,14 @@ func _celdas_residencial_giradas() -> Dictionary:
 	return celdas
 
 
-## "modo" es el id de MODOS ("" = Ver); "sub" la subherramienta activa: el tipo
-## de construcción con "construir" (residencial o puesto) o el tipo de zona con "zonas".
-func set_modo(modo: String, sub: String = "") -> void:
+## "modo" es el id de MODOS ("" = Ver); "sub" es el tipo de edificio activo
+## (Construir) o el tipo de zona activo (Zonificar); "categoria" solo aplica a
+## Construir: la categoría cuyo panel de edificios está abierto ("" = todavía
+## en la lista de categorías).
+func set_modo(modo: String, sub: String = "", categoria: String = "") -> void:
 	_modo = modo
 	_puesto = sub
+	_categoria = categoria
 	if is_inside_tree():
 		_refrescar()
 
@@ -275,18 +339,25 @@ func _refrescar() -> void:
 	var activo := _modo if _modo != "" else "ver"
 	for id in _botones:
 		_botones[id].set_pressed_no_signal(id == activo)
-	_panel_sub.visible = _modo == "construir"
+
+	_panel_categorias.visible = _modo == "construir"
+	for id in _botones_categoria:
+		_botones_categoria[id].set_pressed_no_signal(id == _categoria)
+	for id in _paneles_construccion:
+		_paneles_construccion[id].visible = _modo == "construir" and _categoria == id
 	for tipo in _botones_construccion:
-		_botones_construccion[tipo].set_pressed_no_signal(tipo == _puesto)
+		_botones_construccion[tipo].set_pressed_no_signal(_modo == "construir" and tipo == _puesto)
 	# Residencial sigue siendo clickeable sin blueprint declarado (el clic
 	# dispara la misma notificación de siempre, ver CamaraCenital.
 	# _alternar_modo_colocar_blueprint()); solo se atenúa como pista visual.
-	_botones_construccion["residencial"].modulate = Color(1.0, 1.0, 1.0, 0.4 if Blueprints.obtener(ZONA_RESIDENCIAL).is_empty() else 1.0)
-	_panel_zonas.visible = _modo == "zonas"
+	if _botones_construccion.has("residencial"):
+		_botones_construccion["residencial"].modulate = Color(1.0, 1.0, 1.0, 0.4 if Blueprints.obtener(ZONA_RESIDENCIAL).is_empty() else 1.0)
+	if _modo == "construir" and (_categoria == "residencial" or _categoria == "periferico"):
+		_actualizar_miniaturas()
+
+	_panel_zonas.visible = _modo == "zonificar"
 	for tipo in _botones_zona:
 		_botones_zona[tipo].set_pressed_no_signal(tipo == _puesto)
-	if _modo == "construir":
-		_actualizar_miniaturas()
 
 
 func boton_activo() -> String:
@@ -297,13 +368,17 @@ func construccion_visible() -> bool:
 	return _modo == "construir"
 
 
+func categoria_activa() -> String:
+	return _categoria if _modo == "construir" else ""
+
+
 func construccion_activa() -> String:
-	return _puesto
+	return _puesto if _modo == "construir" else ""
 
 
-func zonas_visibles() -> bool:
-	return _modo == "zonas"
+func zonificar_visible() -> bool:
+	return _modo == "zonificar"
 
 
 func zona_activa() -> String:
-	return _puesto if _modo == "zonas" else ""
+	return _puesto if _modo == "zonificar" else ""

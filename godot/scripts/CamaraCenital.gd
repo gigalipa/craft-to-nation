@@ -243,6 +243,11 @@ var _area_accion: Array[MeshInstance3D] = []
 ## ahora, activarse no es un evento frecuente por fotograma.
 var modo_colocar_blueprint := false
 var _blueprint_activo: Dictionary = {}
+## Giro actual del blueprint en colocación (0-3), solo para sincronizar la
+## miniatura del menú Construir (HUD.set_giros_construccion()) — a
+## diferencia de _giros_puesto, _rotar_blueprint() no necesitaba llevar un
+## contador propio antes de esto (rotaba las celdas directo).
+var _giros_blueprint := 0
 ## Última esquina para la que se calculó el resumen de materiales del HUD
 ## (se recalcula solo si cambia, o si se invalida al rotar/entrar al modo).
 const SIN_RESUMEN := Vector2i(-999999, -999999)
@@ -1352,6 +1357,7 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_giros_fantasma_puesto = -1
 	_overlay_vigente = SIN_RESUMEN
 	hud.set_modo("construir", tipo)
+	hud.set_giros_construccion(0)
 	hud.mostrar_contexto_puesto(tipo, false, {})
 	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
 
@@ -1415,6 +1421,7 @@ func _rotar_huella_puesto() -> void:
 	_alto_puesto_activo = ancho_previo
 	_giros_puesto = (_giros_puesto + 1) % 4
 	_overlay_vigente = SIN_RESUMEN
+	hud.set_giros_construccion(_giros_puesto)
 
 
 ## Ctrl + rueda del mouse, con un blueprint en modo colocación: rota el
@@ -1452,6 +1459,9 @@ func _rotar_blueprint() -> void:
 	_overlay_vigente = SIN_RESUMEN
 	_mostrar_huella_blueprint(true)
 
+	_giros_blueprint = (_giros_blueprint + 1) % 4
+	hud.set_giros_construccion(_giros_blueprint)
+
 
 ## Activa/cancela el modo de colocación de blueprint (toggle simple, un solo
 ## blueprint posible a la vez — a diferencia de _alternar_modo_colocar_puesto(),
@@ -1481,9 +1491,11 @@ func _alternar_modo_colocar_blueprint() -> void:
 	_blueprint_activo = blueprint.duplicate()
 	_crear_huella_blueprint(_blueprint_activo["celdas_3d"])
 	modo_colocar_blueprint = true
+	_giros_blueprint = 0
 	_resumen_blueprint_vigente = SIN_RESUMEN
 	_overlay_vigente = SIN_RESUMEN
 	hud.set_modo("construir", "residencial")
+	hud.set_giros_construccion(0)
 	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (B de nuevo para cancelar, Ctrl+rueda para rotar).")
 
 

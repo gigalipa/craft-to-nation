@@ -1435,11 +1435,7 @@ func _rotar_blueprint() -> void:
 	var ancho_previo: int = _blueprint_activo["ancho"]
 	var profundidad_previa: int = _blueprint_activo["profundidad"]
 
-	var celdas_rotadas: Dictionary = {}
-	for rel in _blueprint_activo["celdas_3d"]:
-		var punto_rotado := Vector3i(profundidad_previa - 1 - rel.z, rel.y, rel.x)
-		celdas_rotadas[punto_rotado] = _blueprint_activo["celdas_3d"][rel]
-	_blueprint_activo["celdas_3d"] = celdas_rotadas
+	_blueprint_activo["celdas_3d"] = BlueprintValidator.rotar_celdas_3d(_blueprint_activo["celdas_3d"], profundidad_previa)
 
 	var huella_rotada: Array[Vector2i] = []
 	for rel in _blueprint_activo["huella_relativa"]:

@@ -360,6 +360,19 @@ func probar_barra_modos() -> void:
 	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
 	barra.set_modo("")
 
+	print("\n=== TEST 3d: _crear_boton() sin ícono se ve igual que antes; con ícono, antepone un TextureRect ===")
+	var boton_sin_icono: Button = barra._crear_boton("Prueba", Vector2(88, 56))
+	assert(boton_sin_icono.text == "Prueba", "sin ícono: el texto va directo en el Button, como siempre")
+	var textura_prueba := PlaceholderTexture2D.new()
+	var boton_con_icono: Button = barra._crear_boton("Prueba", Vector2(88, 56), textura_prueba)
+	assert(boton_con_icono.text == "", "con ícono: el texto ya no va en el Button, va en un Label hijo")
+	var encontro_icono := false
+	for hijo in boton_con_icono.get_children():
+		for nieto in hijo.get_children():
+			if nieto is TextureRect and (nieto as TextureRect).texture == textura_prueba:
+				encontro_icono = true
+	assert(encontro_icono, "el TextureRect con la textura pasada está entre los descendientes del botón")
+
 	# Un clic emite la señal; si quien la recibe no cambia el modo (p. ej.
 	# Construir sin blueprint guardado), la barra vuelve a reflejar el real.
 	var pedidos: Array = []

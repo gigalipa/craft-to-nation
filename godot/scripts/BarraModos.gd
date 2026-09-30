@@ -29,12 +29,12 @@ const DIRECCION_CAMARA_MINIATURA := Vector3(1, 1, -1)
 const TAMANO_MINIATURA := 40.0
 const ZONA_RESIDENCIAL := "residencial_investigacion"
 
-## [id, nombre, tecla]
+## [id, nombre, tecla, ícono opcional (null: sin arte todavía)]
 const MODOS := [
-	["ver", "Ver", "Esc"],
-	["construir", "Construir", "B"],
-	["zonas", "Zonas", "Z"],
-	["vias", "Vías", "V"],
+	["ver", "Ver", "Esc", null],
+	["construir", "Construir", "B", null],
+	["zonas", "Zonas", "Z", null],
+	["vias", "Vías", "V", null],
 ]
 ## Menú de Construir: "residencial" (blueprint) y los tipos de puesto.
 const CONSTRUCCIONES := [
@@ -44,11 +44,11 @@ const CONSTRUCCIONES := [
 	["maderero", "Madera", "L"],
 	["pesca_frutos_mar", "Pesca", "F"],
 ]
-## [tipo de zona, nombre, tecla]
+## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
 var ZONAS := [
-	[Zonificacion.ZONAS_PINTABLES[0], "Zona A", "1"],
-	[Zonificacion.ZONAS_PINTABLES[1], "Zona B", "2"],
-	[Zonificacion.MARCADOR_BORRAR, "Borrar", "0"],
+	[Zonificacion.ZONAS_PINTABLES[0], "Zona A", "1", null],
+	[Zonificacion.ZONAS_PINTABLES[1], "Zona B", "2", null],
+	[Zonificacion.MARCADOR_BORRAR, "Borrar", "0", null],
 ]
 
 var _panel_principal := PanelContainer.new()
@@ -84,7 +84,7 @@ func _ready() -> void:
 	var columna := _nueva_columna(_panel_principal)
 	for modo in MODOS:
 		var id: String = modo[0]
-		var boton := _crear_boton("%s\n[%s]" % [modo[1], modo[2]], Vector2(88, 56))
+		var boton := _crear_boton("%s\n[%s]" % [modo[1], modo[2]], Vector2(88, 56), modo[3])
 		boton.pressed.connect(func() -> void:
 			modo_pedido.emit(id)
 			_refrescar()
@@ -104,7 +104,7 @@ func _ready() -> void:
 	var columna_zonas := _nueva_columna(_panel_zonas)
 	for zona in ZONAS:
 		var tipo: String = zona[0]
-		var boton := _crear_boton("%s [%s]" % [zona[1], zona[2]], Vector2(88, 36))
+		var boton := _crear_boton("%s [%s]" % [zona[1], zona[2]], Vector2(88, 36), zona[3])
 		boton.pressed.connect(func() -> void:
 			zona_pedida.emit(tipo)
 			_refrescar()
@@ -121,12 +121,40 @@ func _nueva_columna(panel: PanelContainer) -> VBoxContainer:
 	return columna
 
 
-func _crear_boton(texto: String, tamano: Vector2) -> Button:
+## "icono" es opcional (null en todos los llamadores hoy — no hay arte
+## todavía, ver docs/superpowers/specs/2026-09-30-previsualizacion-
+## construcciones-cenital-design.md, Sección 9): sin él, el botón se ve
+## exactamente igual que siempre (texto directo en el Button). Con él,
+## antepone un TextureRect de 24x24 y mueve el texto a un Label hijo — deja
+## el mecanismo listo para cuando exista el ícono real de cada modo/zona.
+func _crear_boton(texto: String, tamano: Vector2, icono: Texture2D = null) -> Button:
 	var boton := Button.new()
-	boton.text = texto
 	boton.toggle_mode = true
 	boton.custom_minimum_size = tamano
 	TemaHUD.estilizar_boton(boton)
+	if icono == null:
+		boton.text = texto
+		return boton
+
+	var columna := VBoxContainer.new()
+	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columna.set_anchors_preset(Control.PRESET_FULL_RECT)
+	columna.alignment = BoxContainer.ALIGNMENT_CENTER
+	columna.add_theme_constant_override("separation", 2)
+
+	var imagen := TextureRect.new()
+	imagen.custom_minimum_size = Vector2(24, 24)
+	imagen.texture = icono
+	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	imagen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columna.add_child(imagen)
+
+	var etiqueta := TemaHUD.etiqueta(texto)
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	columna.add_child(etiqueta)
+
+	boton.add_child(columna)
 	return boton
 
 

@@ -242,6 +242,13 @@ var _area_accion: Array[MeshInstance3D] = []
 ## de tener un tamaño fijo — solo existe un blueprint (residencial) por
 ## ahora, activarse no es un evento frecuente por fotograma.
 var modo_colocar_blueprint := false
+## true mientras el submenú Construir está visible, con o sin una opción
+## activa — a diferencia de modo_colocar_blueprint/modo_colocar_puesto, que
+## solo son true cuando hay una construcción CONCRETA en colocación. Lo
+## controla _alternar_modo_menu_construir() (tecla B / botón "Construir" de
+## BarraModos): abrir el menú ya no activa la colocación de Residencial
+## directamente (decisión del usuario, 2026-09-30).
+var _menu_construir_abierto := false
 var _blueprint_activo: Dictionary = {}
 ## Giro actual del blueprint en colocación (0-3), solo para sincronizar la
 ## miniatura del menú Construir (HUD.set_giros_construccion()) — a
@@ -1281,7 +1288,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif tecla.pressed and tecla.keycode == KEY_F:
 			_alternar_puesto_por_tipo("pesca_frutos_mar")
 		elif tecla.pressed and tecla.keycode == KEY_B:
-			_alternar_modo_colocar_blueprint()
+			_alternar_modo_menu_construir()
 		elif tecla.pressed and tecla.keycode == KEY_V:
 			_alternar_modo_trazar_via()
 
@@ -1376,7 +1383,7 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 func _on_modo_pedido(modo: String) -> void:
 	match modo:
 		"ver": salir_de_todos_los_modos()
-		"construir": _alternar_modo_colocar_blueprint()
+		"construir": _alternar_modo_menu_construir()
 		"zonas": _alternar_modo_zonificar()
 		"vias": _alternar_modo_trazar_via()
 
@@ -1463,6 +1470,40 @@ func _rotar_blueprint() -> void:
 	hud.set_giros_construccion(_giros_blueprint)
 
 
+## Tecla B / clic en el botón principal "Construir" de BarraModos: abre o
+## cierra el submenú Construir SIN activar ninguna colocación todavía (a
+## diferencia de antes, cuando B intentaba colocar Residencial directamente
+## y si no había blueprint declarado ni siquiera abría el menú — decisión
+## del usuario, 2026-09-30). Elegir una opción dentro del menú ya abierto
+## (clic en "Residencial" o en un puesto) sigue llamando a
+## _alternar_modo_colocar_blueprint()/_alternar_puesto_por_tipo() sin
+## cambios, exactamente igual que antes.
+func _alternar_modo_menu_construir() -> void:
+	if _menu_construir_abierto or modo_colocar_blueprint or modo_colocar_puesto:
+		_salir_de_modo_menu_construir()
+		return
+	_salir_de_modo_zonificar()
+	if modo_trazar_via:
+		_salir_de_modo_trazar_via()
+	_menu_construir_abierto = true
+	hud.set_giros_construccion(0)
+	hud.set_modo("construir", "")
+
+
+## Segunda pulsación de B (o "Construir" de nuevo) con el menú abierto —
+## con o sin una opción activa: cierra todo el sistema de construcción y
+## vuelve a "Ver", igual que ya hacen Z/V con sus propios modos (nunca
+## reactiva Residencial como atajo, aunque comparta tecla con el botón
+## principal).
+func _salir_de_modo_menu_construir() -> void:
+	if modo_colocar_blueprint:
+		_salir_de_modo_colocar_blueprint()
+	if modo_colocar_puesto:
+		_salir_de_modo_colocar_puesto()
+	_menu_construir_abierto = false
+	hud.set_modo("")
+
+
 ## Activa/cancela el modo de colocación de blueprint (toggle simple, un solo
 ## blueprint posible a la vez — a diferencia de _alternar_modo_colocar_puesto(),
 ## no recibe tipo/ancho/alto porque hoy solo existe un blueprint guardado,
@@ -1523,6 +1564,7 @@ func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_zonificar()
 	_salir_de_modo_trazar_via()
+	_menu_construir_abierto = false
 	hud.cerrar_panel_puesto()
 
 

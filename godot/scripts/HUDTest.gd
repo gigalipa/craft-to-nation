@@ -358,6 +358,21 @@ func probar_barra_modos() -> void:
 	assert(barra._giros_menu == 1)
 	barra.set_giros(5)
 	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
+
+	print("\n=== TEST 3e: re-renderizar una miniatura libera el SubViewport anterior, no acumula uno por cada rotación ===")
+	assert(barra._viewports_construccion.size() == 5, "una construcción con malla real por cada una de las 5 opciones (mina/caza/madera/pesca + residencial con el blueprint declarado arriba)")
+	for giro in [2, 3, 0, 1, 2, 3]:
+		barra.set_giros(giro)
+	assert(barra._viewports_construccion.size() == 5, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
+
+	print("\n=== TEST 3f: el botón Residencial ya no anuncia [B] como atajo (B ya no coloca Residencial, solo abre/cierra el menú) ===")
+	var etiqueta_residencial := ""
+	for hijo in barra._botones_construccion["residencial"].get_children():
+		for nieto in hijo.get_children():
+			if nieto is Label:
+				etiqueta_residencial = (nieto as Label).text
+	assert(etiqueta_residencial == "Residencial", "salió: %s" % etiqueta_residencial)
+
 	barra.set_modo("")
 
 	print("\n=== TEST 3d: _crear_boton() sin ícono se ve igual que antes; con ícono, antepone un TextureRect ===")

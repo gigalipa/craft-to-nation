@@ -1409,6 +1409,11 @@ func _salir_de_modo_colocar_puesto() -> void:
 	_ocultar_area_accion()
 	_tipo_puesto_activo = ""
 	if estaba:
+		# El menú Construir queda marcado "abierto" hasta ahora (se abrió con
+		# B antes de elegir este puesto) — sin esto, confirmar o deseleccionar
+		# la colocación cerraba el HUD pero dejaba el flag colgado, y la
+		# siguiente B solo volvía a cerrar (ya cerrado) en vez de abrir.
+		_menu_construir_abierto = false
 		hud.set_modo("")
 		hud.ocultar_contexto()
 
@@ -1548,6 +1553,8 @@ func _salir_de_modo_colocar_blueprint() -> void:
 	_overlay_nivelacion.ocultar()
 	_overlay_vigente = SIN_RESUMEN
 	if estaba:
+		# Mismo motivo que en _salir_de_modo_colocar_puesto().
+		_menu_construir_abierto = false
 		hud.set_modo("")
 		hud.ocultar_contexto()
 
@@ -1564,7 +1571,14 @@ func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_zonificar()
 	_salir_de_modo_trazar_via()
+	# Incondicional (no solo "if estaba"): cubre también el caso de que el
+	# menú Construir estuviera abierto SIN ninguna colocación activa — ese
+	# caso no pasa por ninguna de las 4 llamadas de arriba (todas son no-op
+	# si su modo no estaba activo), así que sin esto el HUD se quedaba
+	# mostrando "Construir" después de Esc/Ver/cambiar a 1ª persona
+	# (reporte de revisión, 2026-09-30).
 	_menu_construir_abierto = false
+	hud.set_modo("")
 	hud.cerrar_panel_puesto()
 
 
@@ -1686,6 +1700,11 @@ func _alternar_modo_zonificar() -> void:
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_trazar_via()
+	# El menú Construir (si estaba abierto sin nada activo) no pasa por
+	# ninguna de las 3 llamadas de arriba — sin esto, una B posterior lo
+	# encontraba todavía "abierto" y cerraba a ciegas el HUD de Zonas que
+	# se muestra abajo (reporte de revisión, 2026-09-30).
+	_menu_construir_abierto = false
 	hud.cerrar_panel_puesto()
 	modo_zonificar = true
 	_mostrar_contexto_zona()
@@ -1709,6 +1728,9 @@ func _alternar_modo_trazar_via() -> void:
 	_salir_de_modo_colocar_blueprint()
 	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_zonificar()
+	# Mismo motivo que en _alternar_modo_zonificar(): el menú Construir
+	# abierto sin nada activo no pasa por ninguna llamada de arriba.
+	_menu_construir_abierto = false
 	hud.cerrar_panel_puesto()
 	modo_trazar_via = true
 	_trazador_via = TrazadorVias.new(mundo)

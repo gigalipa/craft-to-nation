@@ -37,8 +37,13 @@ const MODOS := [
 	["vias", "Vías", "V", null],
 ]
 ## Menú de Construir: "residencial" (blueprint) y los tipos de puesto.
+## "" de tecla en Residencial: a diferencia de los puestos (M/H/L/F), B ya
+## no coloca Residencial directamente — solo abre/cierra el submenú (ver
+## CamaraCenital._alternar_modo_menu_construir()) — así que anunciar "[B]"
+## en el botón sería un atajo falso, y de paso desbordaba la caja fija de
+## 88px del botón (reporte de revisión, 2026-09-30).
 const CONSTRUCCIONES := [
-	["residencial", "Residencial", "B"],
+	["residencial", "Residencial", ""],
 	["mina", "Mina", "M"],
 	["caza_recoleccion", "Caza", "H"],
 	["maderero", "Madera", "L"],
@@ -60,6 +65,10 @@ var _botones_zona := {}  # tipo de zona -> Button
 var _modo := ""
 var _puesto := ""
 var _miniaturas_construccion := {}  # "residencial" o tipo de puesto -> TextureRect
+## SubViewport vivo detrás de cada miniatura actual — se libera (queue_free())
+## antes de crear el siguiente en cada re-render, para no acumular uno por
+## cada rotación/refresco (reporte de revisión, 2026-09-30).
+var _viewports_construccion := {}  # "residencial" o tipo de puesto -> SubViewport
 var _biblioteca_construccion: MeshLibrary
 var _giros_menu := 0
 
@@ -94,7 +103,8 @@ func _ready() -> void:
 	var columna_sub := _nueva_columna(_panel_sub)
 	for puesto in CONSTRUCCIONES:
 		var tipo: String = puesto[0]
-		var boton := _crear_boton_construccion(tipo, "%s [%s]" % [puesto[1], puesto[2]])
+		var nombre_con_tecla: String = "%s [%s]" % [puesto[1], puesto[2]] if puesto[2] != "" else puesto[1]
+		var boton := _crear_boton_construccion(tipo, nombre_con_tecla)
 		boton.pressed.connect(func() -> void:
 			construccion_pedida.emit(tipo)
 			_refrescar()
@@ -201,10 +211,17 @@ func set_giros(giros: int) -> void:
 
 func _actualizar_miniaturas() -> void:
 	for tipo in _miniaturas_construccion:
-		(_miniaturas_construccion[tipo] as TextureRect).texture = _miniatura_de(tipo)
+		(_miniaturas_construccion[tipo] as TextureRect).texture = _renderizar_miniatura(tipo)
 
 
-func _miniatura_de(tipo: String) -> Texture2D:
+## Libera el SubViewport anterior de "tipo" (si había uno) antes de armar el
+## siguiente, para que _viewports_construccion nunca acumule más de uno por
+## tipo sin importar cuántas veces se llame (rotaciones, refrescos).
+func _renderizar_miniatura(tipo: String) -> Texture2D:
+	if _viewports_construccion.has(tipo):
+		(_viewports_construccion[tipo] as SubViewport).queue_free()
+		_viewports_construccion.erase(tipo)
+
 	var celdas: Dictionary = _celdas_residencial_giradas() if tipo == "residencial" else PlantillasPuestoScript.celdas(tipo, _giros_menu)
 	if celdas.is_empty():
 		return null
@@ -220,7 +237,9 @@ func _miniatura_de(tipo: String) -> Texture2D:
 			piezas.append([malla, Vector3(celda.x, celda.y, celda.z), null])
 	if piezas.is_empty():
 		return null
-	return MiniaturaRendererScript.renderizar(piezas, DIRECCION_CAMARA_MINIATURA, self)
+	var viewport: SubViewport = MiniaturaRendererScript.renderizar_viewport(piezas, DIRECCION_CAMARA_MINIATURA, self)
+	_viewports_construccion[tipo] = viewport
+	return viewport.get_texture()
 
 
 ## Celdas del blueprint residencial declarado, giradas _giros_menu cuartos de

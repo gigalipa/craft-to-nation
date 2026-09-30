@@ -40,19 +40,22 @@ static func malla_de_item(biblioteca: MeshLibrary, nombre_item: String) -> Mesh:
 	return null
 
 
-## Renderiza "piezas" (cada una [malla, posición relativa, material o null
-## para el de la propia malla]) juntas en un SubViewport aislado
-## (own_world_3d: no interfiere con la escena 3D del juego) y devuelve su
-## textura. "direccion_camara" es la dirección diagonal de la cámara
-## ortográfica respecto al centro del AABB combinado (p. ej. Vector3(1,1,1)
-## para una diagonal simétrica, Vector3(1,1,-1) para la esquina superior-
-## derecha-frontal de algo cuyo frente mira a -Z). "padre" es el Node ya en
-## el árbol de escena donde se cuelga el SubViewport (hace falta estar en el
-## árbol para que el motor lo renderice). UPDATE_ONCE: es una miniatura
-## estática, no hace falta re-renderizarla cada frame — quien necesite
-## reflejar un cambio (p. ej. una rotación) vuelve a llamar a esta función,
-## no reutiliza el mismo SubViewport.
-static func renderizar(piezas: Array, direccion_camara: Vector3, padre: Node) -> Texture2D:
+## Igual que renderizar(), pero devuelve el SubViewport en sí en vez de su
+## textura — para que el llamador pueda quedarse con la referencia y
+## liberarlo (queue_free()) cuando vuelva a renderizar la misma miniatura
+## (ver BarraModos._actualizar_miniaturas()): sin esto, cada re-render deja
+## un SubViewport (con su propio World3D, luces, cámara y mallas) huérfano
+## colgado como hijo de "padre" para siempre — reporte de revisión,
+## 2026-09-30. "piezas" es cada una [malla, posición relativa, material o
+## null para el de la propia malla]. "direccion_camara" es la dirección
+## diagonal de la cámara ortográfica respecto al centro del AABB combinado
+## (p. ej. Vector3(1,1,1) para una diagonal simétrica, Vector3(1,1,-1) para
+## la esquina superior-derecha-frontal de algo cuyo frente mira a -Z).
+## "padre" es el Node ya en el árbol de escena donde se cuelga el
+## SubViewport (hace falta estar en el árbol para que el motor lo
+## renderice). UPDATE_ONCE: es una miniatura estática, no hace falta
+## re-renderizarla cada frame.
+static func renderizar_viewport(piezas: Array, direccion_camara: Vector3, padre: Node) -> SubViewport:
 	var viewport := SubViewport.new()
 	viewport.size = Vector2i(RESOLUCION_ICONO, RESOLUCION_ICONO)
 	viewport.transparent_bg = true
@@ -91,4 +94,11 @@ static func renderizar(piezas: Array, direccion_camara: Vector3, padre: Node) ->
 	padre.add_child(viewport)
 	camara.look_at(centro, Vector3.UP)
 
-	return viewport.get_texture()
+	return viewport
+
+
+## Atajo de renderizar_viewport() para quien no necesita la referencia al
+## SubViewport (p. ej. Hotbar.gd, que cachea el ícono para siempre y nunca
+## lo re-renderiza, así que no hay nada que liberar).
+static func renderizar(piezas: Array, direccion_camara: Vector3, padre: Node) -> Texture2D:
+	return renderizar_viewport(piezas, direccion_camara, padre).get_texture()

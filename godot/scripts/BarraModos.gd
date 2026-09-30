@@ -12,6 +12,22 @@ signal construccion_pedida(tipo: String)
 signal zona_pedida(tipo: String)
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
+const MiniaturaRendererScript = preload("res://scripts/MiniaturaRenderer.gd")
+const BlueprintValidatorScript = preload("res://scripts/BlueprintValidator.gd")
+const PlantillasPuestoScript = preload("res://scripts/PlantillasPuesto.gd")
+
+## Tipos sin malla real en BlockLibrary (a propósito: otro sistema los
+## dibuja — ver VoxelWorld/Puertas.gd/TranslucidosRenderer.gd). La miniatura
+## de una construcción completa los salta: es una vista general del
+## edificio, no necesita reproducir cada mueble.
+const TIPOS_SIN_MALLA_MINIATURA := ["vidrio", "puerta_inferior", "puerta_superior"]
+
+## Esquina superior-derecha-FRONTAL (el frente/puerta de plantillas y
+## blueprints mira a -Z, ver PlantillasPuesto.gd) — no la diagonal simétrica
+## que usa Hotbar para bloques sueltos sin frente definido.
+const DIRECCION_CAMARA_MINIATURA := Vector3(1, 1, -1)
+const TAMANO_MINIATURA := 40.0
+const ZONA_RESIDENCIAL := "residencial_investigacion"
 
 ## [id, nombre, tecla]
 const MODOS := [
@@ -43,6 +59,9 @@ var _botones_construccion := {}  # "residencial" o tipo de puesto -> Button
 var _botones_zona := {}  # tipo de zona -> Button
 var _modo := ""
 var _puesto := ""
+var _miniaturas_construccion := {}  # "residencial" o tipo de puesto -> TextureRect
+var _biblioteca_construccion: MeshLibrary
+var _giros_menu := 0
 
 
 func _ready() -> void:
@@ -75,7 +94,7 @@ func _ready() -> void:
 	var columna_sub := _nueva_columna(_panel_sub)
 	for puesto in CONSTRUCCIONES:
 		var tipo: String = puesto[0]
-		var boton := _crear_boton("%s [%s]" % [puesto[1], puesto[2]], Vector2(88, 36))
+		var boton := _crear_boton_construccion(tipo, "%s [%s]" % [puesto[1], puesto[2]])
 		boton.pressed.connect(func() -> void:
 			construccion_pedida.emit(tipo)
 			_refrescar()
@@ -111,6 +130,91 @@ func _crear_boton(texto: String, tamano: Vector2) -> Button:
 	return boton
 
 
+## Botón del submenú Construir: miniatura 3D (espacio fijo TAMANO_MINIATURA x
+## TAMANO_MINIATURA, ver _actualizar_miniaturas()) arriba, texto+tecla abajo
+## — a diferencia de _crear_boton(), que solo pone texto. Los hijos llevan
+## MOUSE_FILTER_IGNORE para que el clic siga llegando al Button de abajo.
+func _crear_boton_construccion(tipo: String, texto: String) -> Button:
+	var boton := Button.new()
+	boton.toggle_mode = true
+	boton.custom_minimum_size = Vector2(88, 64)
+	TemaHUD.estilizar_boton(boton)
+
+	var columna := VBoxContainer.new()
+	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columna.set_anchors_preset(Control.PRESET_FULL_RECT)
+	columna.alignment = BoxContainer.ALIGNMENT_CENTER
+	columna.add_theme_constant_override("separation", 2)
+
+	var miniatura := TextureRect.new()
+	miniatura.custom_minimum_size = Vector2(TAMANO_MINIATURA, TAMANO_MINIATURA)
+	miniatura.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	miniatura.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	miniatura.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columna.add_child(miniatura)
+	_miniaturas_construccion[tipo] = miniatura
+
+	var etiqueta := TemaHUD.etiqueta(texto)
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	columna.add_child(etiqueta)
+
+	boton.add_child(columna)
+	return boton
+
+
+## Cambia el giro compartido de las 5 miniaturas (0-3, normalizado con
+## posmod) y las vuelve a renderizar. La llama CamaraCenital cada vez que
+## Ctrl+rueda rota un puesto o un blueprint en colocación — ver
+## HUD.set_giros_construccion().
+func set_giros(giros: int) -> void:
+	_giros_menu = posmod(giros, 4)
+	_actualizar_miniaturas()
+
+
+func _actualizar_miniaturas() -> void:
+	for tipo in _miniaturas_construccion:
+		(_miniaturas_construccion[tipo] as TextureRect).texture = _miniatura_de(tipo)
+
+
+func _miniatura_de(tipo: String) -> Texture2D:
+	var celdas: Dictionary = _celdas_residencial_giradas() if tipo == "residencial" else PlantillasPuestoScript.celdas(tipo, _giros_menu)
+	if celdas.is_empty():
+		return null
+	if _biblioteca_construccion == null:
+		_biblioteca_construccion = MiniaturaRendererScript.cargar_biblioteca()
+	var piezas: Array = []
+	for celda in celdas:
+		var tipo_bloque: String = celdas[celda]
+		if TIPOS_SIN_MALLA_MINIATURA.has(tipo_bloque):
+			continue
+		var malla: Mesh = MiniaturaRendererScript.malla_de_item(_biblioteca_construccion, tipo_bloque)
+		if malla != null:
+			piezas.append([malla, Vector3(celda.x, celda.y, celda.z), null])
+	if piezas.is_empty():
+		return null
+	return MiniaturaRendererScript.renderizar(piezas, DIRECCION_CAMARA_MINIATURA, self)
+
+
+## Celdas del blueprint residencial declarado, giradas _giros_menu cuartos de
+## vuelta con la misma fórmula que CamaraCenital._rotar_blueprint() (vía
+## BlueprintValidator.rotar_celdas_3d()) — sin mutar el blueprint guardado en
+## Blueprints, solo una vista para la miniatura. {} si no hay ninguno
+## declarado todavía.
+func _celdas_residencial_giradas() -> Dictionary:
+	var blueprint: Dictionary = Blueprints.obtener(ZONA_RESIDENCIAL)
+	if blueprint.is_empty():
+		return {}
+	var celdas: Dictionary = blueprint["celdas_3d"]
+	var ancho: int = blueprint["ancho"]
+	var profundidad: int = blueprint["profundidad"]
+	for _i in range(_giros_menu):
+		celdas = BlueprintValidatorScript.rotar_celdas_3d(celdas, profundidad)
+		var previo := ancho
+		ancho = profundidad
+		profundidad = previo
+	return celdas
+
+
 ## "modo" es el id de MODOS ("" = Ver); "sub" la subherramienta activa: el tipo
 ## de construcción con "construir" (residencial o puesto) o el tipo de zona con "zonas".
 func set_modo(modo: String, sub: String = "") -> void:
@@ -127,9 +231,15 @@ func _refrescar() -> void:
 	_panel_sub.visible = _modo == "construir"
 	for tipo in _botones_construccion:
 		_botones_construccion[tipo].set_pressed_no_signal(tipo == _puesto)
+	# Residencial sigue siendo clickeable sin blueprint declarado (el clic
+	# dispara la misma notificación de siempre, ver CamaraCenital.
+	# _alternar_modo_colocar_blueprint()); solo se atenúa como pista visual.
+	_botones_construccion["residencial"].modulate = Color(1.0, 1.0, 1.0, 0.4 if Blueprints.obtener(ZONA_RESIDENCIAL).is_empty() else 1.0)
 	_panel_zonas.visible = _modo == "zonas"
 	for tipo in _botones_zona:
 		_botones_zona[tipo].set_pressed_no_signal(tipo == _puesto)
+	if _modo == "construir":
+		_actualizar_miniaturas()
 
 
 func boton_activo() -> String:

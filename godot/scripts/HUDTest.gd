@@ -340,6 +340,26 @@ func probar_barra_modos() -> void:
 	barra.set_modo("")
 	assert(not barra.construccion_visible() and not barra._panel_sub.visible)
 
+	print("=== TEST 3b: Residencial atenuado sin blueprint, normal con uno declarado ===")
+	assert(Blueprints.obtener("residencial_investigacion").is_empty(), "arranca vacío en esta escena de prueba")
+	barra.set_modo("construir", "")
+	assert(barra._botones_construccion["residencial"].modulate.a < 1.0, "sin blueprint: atenuado")
+	Blueprints.guardar({"zona_permitida": "residencial_investigacion", "ancho": 1, "profundidad": 1, "celdas_3d": {Vector3i.ZERO: "bloque_madera"}, "huella_relativa": [Vector2i.ZERO]})
+	barra.set_modo("construir", "")
+	assert(barra._botones_construccion["residencial"].modulate.a == 1.0, "con blueprint declarado: ya no atenuado")
+
+	print("\n=== TEST 3c: las miniaturas de construcción se generan con malla real y cambian con set_giros() ===")
+	barra.set_giros(0)
+	var miniatura_mina: TextureRect = barra._miniaturas_construccion["mina"]
+	assert(miniatura_mina.texture != null, "mina tiene celdas con malla real: miniatura no vacía")
+	var miniatura_residencial: TextureRect = barra._miniaturas_construccion["residencial"]
+	assert(miniatura_residencial.texture != null, "con el blueprint de un solo bloque_madera declarado arriba, la miniatura no está vacía")
+	barra.set_giros(1)
+	assert(barra._giros_menu == 1)
+	barra.set_giros(5)
+	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
+	barra.set_modo("")
+
 	# Un clic emite la señal; si quien la recibe no cambia el modo (p. ej.
 	# Construir sin blueprint guardado), la barra vuelve a reflejar el real.
 	var pedidos: Array = []

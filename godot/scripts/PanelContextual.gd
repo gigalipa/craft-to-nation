@@ -16,7 +16,7 @@ var titulo := TemaHUD.etiqueta()
 ## Índice del bloque en la hotbar ("1"-"9"), en dorado junto al título. Solo
 ## lo usa mostrar_bloque_temporal(); mostrar()/mostrar_temporal() lo ocultan.
 var numero := TemaHUD.etiqueta()
-## Miniatura del bloque (ver Hotbar._renderizar_icono()). Solo la usa
+## Miniatura del bloque (ver MiniaturaRenderer.renderizar()). Solo la usa
 ## mostrar_bloque_temporal().
 var icono := TextureRect.new()
 var costo := TemaHUD.etiqueta()
@@ -197,7 +197,7 @@ func mostrar_temporal(nombre: String, costo_dic: Dictionary, lista_acciones: Arr
 
 ## Tarjeta completa de un bloque de la hotbar (Player, al seleccionar con
 ## 1-9/rueda): índice y nombre en dorado, ícono en miniatura (mismo render
-## que Hotbar._renderizar_icono()), tipo/uso ideal/método de obtención
+## que MiniaturaRenderer.renderizar()), tipo/uso ideal/método de obtención
 ## (Hotbar.DESCRIPCION) y disponibilidad — mismo panel y animación que
 ## mostrar_temporal(), pero con el layout de tarjeta en vez de solo texto.
 ## "disponibilidad" < 0 (sin costo definido, ver Hotbar.cantidad_de())

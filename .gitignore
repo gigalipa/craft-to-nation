@@ -21,6 +21,7 @@ venv/
 .env
 .env.*
 !.env.example
+docs/Datos_para_donaciones.txt
 
 # Editors and operating systems
 .idea/

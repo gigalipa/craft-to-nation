@@ -99,6 +99,21 @@ Escena standalone, no integrada con `Main.tscn` ni con el estado real del juego 
 
 ---
 
+## **Refinerías reales restantes (2C, parte 2, 2026-10-01)**
+
+La refinería de tierras raras, el aserradero y la carbonera son edificios reales colocables, variantes de datos del mismo mecanismo de la siderúrgica (entrada en `CadenaMinerales.REFINERIAS`, plantilla en `PlantillasPuesto`, nombre, botón en Construir > Industrial). Reglas comunes a las cuatro: se colocan solo dentro de la zona de influencia y sobre zona industrial, puerta de entrada y salida, ventanas, baúl como almacén local e indicador de actividad sobre el techo; personal máximo 4 técnicos y almacén local de 1000 (`CadenaMinerales.PERSONAL_MAXIMO_REFINERIA`, `CAPACIDAD_ALMACENAMIENTO_REFINERIA`; las constantes por tipo y `COSTO_CONSTRUCCION_REFINERIA_*` desaparecieron).
+
+| Edificio | Receta (por lote) | `tasa_base` (lotes/h por técnico) | Aspecto | Indicador |
+|---|---|---|---|---|
+| Refinería de tierras raras | 3 tierras raras → 1 mineral refinado | 0,5 | 5×5 de `estructura_hierro`, torre de 3 capas | humo violáceo |
+| Aserradero | 1 madera → 3 tablas | 0,5 | 5×6 de `bloque_madera`, tolva sobre el techo | aserrín claro y corto |
+| Carbonera | 3 madera → 1 carbón | 2,0 | 5×5 de `adobe`, dos chimeneas bajas | humo negro y denso |
+
+- **`tablas` y `mineral_refinado` son recursos nuevos del stock central** (con tope como el resto). Las tablas no pueden llamarse `madera`: con la misma clave de entrada y de salida, el acarreador se llevaría de vuelta la madera sin aserrar.
+- **Las tablas cuentan como madera** al pagar construcciones (GDD Sección 4): `Ciudad.consumir_costo()` cobra un costo en madera primero con tablas y el resto con madera (lo usan `Player._cobrar_colocacion()` y `VoxelWorld._bloqueado_por_falta_de()`). El reembolso al volver a minar devuelve todo como madera (vale lo mismo). No cambia ningún otro uso de la madera (p. ej. la investigación, `Ciudad.gd`).
+- **Indicador por tipo:** `HumoRefinerias.ESTILOS` define color, opacidad, tamaño y vida de las partículas de cada refinería.
+- `tasa_base` de tierras raras bajó de 2,0 a 0,5 (decisión del usuario); la de la carbonera sigue en el valor por defecto de 2,0, sin balance real todavía.
+
 ## **Siderúrgica real (2C, parte 2, 2026-09-30)**
 
 Decisión funcional: las refinerías son puestos con receta, con entrada y salida separadas (preparadas para futuras cintas y tuberías), técnicos como operarios y acarreo de ida y vuelta. La siderúrgica es un edificio de 5×5 con plantilla de `bloque_piedra`; se coloca solo dentro de la zona de influencia y sobre zona industrial; la puerta de entrada decide la altura y el frente de la salida se nivela a ella. Su costo es el de los bloques de la plantilla (las constantes `COSTO_CONSTRUCCION_REFINERIA_*` no se usan).
@@ -114,9 +129,9 @@ Ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`.
 
 ## **Próximos Pasos**
 
-* **Madera** (aserradero/carbonera) — sub-proyecto futuro de esta misma PoC 5; incluye implementar la carbonera real (madera → carbón) que motivó la corrección del GDD en esta pieza.
+* **Madera** — el aserradero y la carbonera ya son edificios reales (ver "Refinerías reales restantes" arriba); el resto del sub-proyecto (aprovechamiento de las tablas, más usos de la madera) sigue pendiente.
 * **Fluidos** (agua/crudo/combustible: bombas de extracción, refinería de crudo, productor de combustible) — sub-proyecto futuro de esta misma PoC 5.
 * **Energía** (generadores, transmisión sin red dedicada) — sub-proyecto futuro de esta misma PoC 5.
-* **Refinerías reales colocables en el mundo** — la siderúrgica ya es real (ver "Siderúrgica real" arriba); faltan refinería de tierras raras, aserradero y carbonera, que son variantes de datos sobre el mismo mecanismo (entrada en `CadenaMinerales.REFINERIAS`, plantilla, nombre y botón).
+* **Refinerías reales colocables en el mundo** — las cuatro (siderúrgica, tierras raras, aserradero y carbonera) ya son reales.
 * **Formación de técnicos** — hoy un desempleado se vuelve técnico al asignarlo (provisional).
 * **Integración con el almacén real** — hecha para la siderúrgica (el acero llega al stock central de `Ciudad`); `procesar_tick()` sigue siendo la lógica pura de la demo.

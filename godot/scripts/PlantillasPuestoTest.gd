@@ -219,4 +219,25 @@ func ejecutar_pruebas() -> void:
 		assert(not celdas12.has(tope12 + Vector3i(0, 1, 0)), "nada encima")
 	assert(PlantillasPuesto.celda_chimenea("siderurgica", 0) == Vector3i(3, 5, 2))
 
-	print("\n=== Las 12 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 13: las refinerías nuevas (tierras raras, aserradero, carbonera) cumplen lo de toda refinería ===")
+	var materiales13 := {}
+	for tipo13 in ["refineria_tierras_raras", "aserradero", "carbonera"]:
+		materiales13[PlantillasPuesto.MATERIAL[tipo13]] = true
+		var base13: Dictionary = PlantillasPuesto.celdas(tipo13, 0)
+		var conteo13 := {"puerta_inferior": 0, "vidrio": 0, "baul": 0}
+		for c13 in base13:
+			if conteo13.has(base13[c13]):
+				conteo13[base13[c13]] += 1
+		assert(conteo13["puerta_inferior"] == 2, tipo13 + ": puerta de entrada y de salida")
+		assert(conteo13["vidrio"] >= 2 and conteo13["baul"] == 1, tipo13 + ": ventanas y un baúl")
+		for giros13 in range(4):
+			assert(PlantillasPuesto.celda_de_servicio(tipo13, giros13) != PlantillasPuesto.celda_de_salida(tipo13, giros13), tipo13 + ": entrada y salida distintas")
+			var tope13: Vector3i = PlantillasPuesto.celda_chimenea(tipo13, giros13)
+			var celdas13: Dictionary = PlantillasPuesto.celdas(tipo13, giros13)
+			assert(celdas13[tope13] == PlantillasPuesto.MATERIAL[tipo13], tipo13 + ": el indicador de actividad es un bloque de su material")
+			assert(not celdas13.has(tope13 + Vector3i(0, 1, 0)), tipo13 + ": nada sobre el indicador")
+			assert(tope13.y == PlantillasPuesto.altura(tipo13) - 1)
+	assert(materiales13.size() == 3 and not materiales13.has("bloque_piedra"), "cada refinería nueva tiene su material propio, distinto de la siderúrgica")
+	assert(PlantillasPuesto.dimensiones("aserradero") == Vector2i(5, 6))
+
+	print("\n=== Las 13 pruebas de PlantillasPuesto pasaron correctamente ===")

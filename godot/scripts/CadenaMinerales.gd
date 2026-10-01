@@ -12,23 +12,21 @@ extends Node
 ## por eso el catálogo se indexa por tipo_entrada (el insumo principal), no por nombre de edificio.
 const RECETAS: Dictionary = {
 	"hierro": {"entradas": {"hierro": 3, "carbon": 4}, "tipo_salida": "acero", "cantidad_salida": 2, "tasa_base": 2.0},
-	"tierras_raras": {"entradas": {"tierras_raras": 3}, "tipo_salida": "mineral_refinado", "cantidad_salida": 1, "tasa_base": 2.0},
+	"tierras_raras": {"entradas": {"tierras_raras": 3}, "tipo_salida": "mineral_refinado", "cantidad_salida": 1, "tasa_base": 0.5},
+	# Las tablas cuentan como madera al pagar construcciones (ver Ciudad.consumir_costo()), pero son un
+	# recurso aparte: si la salida fuera "madera", el acarreador se llevaría también la madera sin aserrar.
+	"aserradero": {"entradas": {"madera": 1}, "tipo_salida": "tablas", "cantidad_salida": 3, "tasa_base": 0.5},
+	"carbonera": {"entradas": {"madera": 3}, "tipo_salida": "carbon", "cantidad_salida": 1, "tasa_base": 2.0},
 }
 
 ## Tipo de edificio -> tipo_entrada de su receta (clave de RECETAS). Una refinería es un
 ## puesto de Economia con tipo en este diccionario (ver Economia.es_refineria()).
-const REFINERIAS := {"siderurgica": "hierro"}
+const REFINERIAS := {"siderurgica": "hierro", "refineria_tierras_raras": "tierras_raras", "aserradero": "aserradero", "carbonera": "carbonera"}
 
-# GDD Sección 4 — mismos valores placeholder que los puestos periféricos
-# (Recoleccion.COSTO_CONSTRUCCION), sin balance real todavía. El costo REAL de
-# construir una refinería es el de los bloques de su plantilla (ver PlantillasPuesto).
-const COSTO_CONSTRUCCION_REFINERIA_HIERRO := {"tierra": 10, "madera": 10, "piedra": 5}
-const PERSONAL_MAXIMO_REFINERIA_HIERRO := 4
-const CAPACIDAD_ALMACENAMIENTO_REFINERIA_HIERRO := 1000  # igual que los puestos; hierro y acero lo comparten
-
-const COSTO_CONSTRUCCION_REFINERIA_TIERRAS_RARAS := {"tierra": 10, "madera": 10, "piedra": 5}
-const PERSONAL_MAXIMO_REFINERIA_TIERRAS_RARAS := 3
-const CAPACIDAD_ALMACENAMIENTO_REFINERIA_TIERRAS_RARAS := 1000
+# Todas las refinerías comparten personal y almacén local (el costo REAL de construirlas es el de
+# los bloques de su plantilla, ver PlantillasPuesto).
+const PERSONAL_MAXIMO_REFINERIA := 4
+const CAPACIDAD_ALMACENAMIENTO_REFINERIA := 1000  # insumo y producto lo comparten
 
 
 ## Procesa un tick de refinado de duración "delta" horas: por cada receta en

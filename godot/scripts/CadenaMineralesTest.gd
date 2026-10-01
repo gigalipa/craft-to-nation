@@ -20,9 +20,9 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(resultado_1["hierro"], 94.0))
 	assert(is_equal_approx(resultado_1["carbon"], 92.0))
 	assert(is_equal_approx(resultado_1["acero"], 4.0))
-	# tierras_raras: consumo = 3 * 1 * 2.0 * 1.0 = 6.0 -> 2 lotes -> 2.0 mineral_refinado
-	assert(is_equal_approx(resultado_1["tierras_raras"], 94.0))
-	assert(is_equal_approx(resultado_1["mineral_refinado"], 2.0))
+	# tierras_raras: 1 * 0.5 * 1.0 = 0.5 lote -> consume 1.5, produce 0.5 mineral_refinado
+	assert(is_equal_approx(resultado_1["tierras_raras"], 98.5))
+	assert(is_equal_approx(resultado_1["mineral_refinado"], 0.5))
 	print("OK: ambas recetas se procesan en el mismo tick sin interferir entre sí.")
 
 	print("\n=== TEST 2: procesar_tick() sin trabajadores no cambia el almacén ===")
@@ -66,9 +66,9 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(tasas_6["hierro"]["consumo"]["carbon"], 16.0))
 	assert(is_equal_approx(tasas_6["hierro"]["produccion"], 8.0))
 	assert(tasas_6["hierro"]["tipo_salida"] == "acero")
-	# tierras_raras: 2 lotes/h -> 6.0/h -> produccion 2.0/h
-	assert(is_equal_approx(tasas_6["tierras_raras"]["consumo"]["tierras_raras"], 6.0))
-	assert(is_equal_approx(tasas_6["tierras_raras"]["produccion"], 2.0))
+	# tierras_raras: 0.5 lote/h -> 1.5/h -> produccion 0.5/h
+	assert(is_equal_approx(tasas_6["tierras_raras"]["consumo"]["tierras_raras"], 1.5))
+	assert(is_equal_approx(tasas_6["tierras_raras"]["produccion"], 0.5))
 	print("OK: tasas_refinado() calcula el consumo/producción por hora exactos para cada receta activa.")
 
 	print("\n=== TEST 7: tasas_refinado() omite (no pone en 0.0) una receta sin trabajadores ===")
@@ -88,4 +88,20 @@ func ejecutar_pruebas() -> void:
 	assert(tasas_8a == tasas_8b)
 	print("OK: procesar_tick()/tasas_refinado() son deterministas para los mismos argumentos.")
 
-	print("\n=== Las 8 pruebas de CadenaMinerales pasaron correctamente ===")
+	print("\n=== TEST 9: aserradero (madera -> tablas) y carbonera (madera -> carbón) ===")
+	# aserradero: 1 técnico * 0.5 lote/h -> 0.5 madera -> 1.5 tablas
+	var tasas_9: Dictionary = CadenaMinerales.tasas_refinado({"aserradero": 1, "carbonera": 1})
+	assert(is_equal_approx(tasas_9["aserradero"]["consumo"]["madera"], 0.5))
+	assert(is_equal_approx(tasas_9["aserradero"]["produccion"], 1.5))
+	assert(tasas_9["aserradero"]["tipo_salida"] == "tablas")
+	# carbonera: 1 * 2.0 = 2 lotes/h -> 6 madera -> 2 carbón
+	assert(is_equal_approx(tasas_9["carbonera"]["consumo"]["madera"], 6.0))
+	assert(is_equal_approx(tasas_9["carbonera"]["produccion"], 2.0))
+	var resultado_9: Dictionary = CadenaMinerales.procesar_tick(1.0, {"madera": 10.0}, {"aserradero": 1})
+	assert(is_equal_approx(resultado_9["madera"], 9.5) and is_equal_approx(resultado_9["tablas"], 1.5))
+	for tipo_9 in ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]:
+		assert(CadenaMinerales.RECETAS.has(CadenaMinerales.REFINERIAS[tipo_9]), tipo_9 + " apunta a una receta")
+		assert(Recoleccion.cupo_de(tipo_9) == 4 and Recoleccion.capacidad_almacen_de(tipo_9) == 1000, tipo_9 + ": 4 técnicos, almacén 1000")
+	print("OK: las recetas nuevas producen y consumen según la ficha; cupo 4 y almacén 1000 en todas las refinerías.")
+
+	print("\n=== Las 9 pruebas de CadenaMinerales pasaron correctamente ===")

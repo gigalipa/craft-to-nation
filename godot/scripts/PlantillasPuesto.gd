@@ -39,6 +39,9 @@ const MATERIAL := {
 	"maderero": "bloque_madera",
 	"pesca_frutos_mar": "bloque_piedra",
 	"siderurgica": "bloque_piedra",
+	"refineria_tierras_raras": "estructura_hierro",
+	"carbonera": "adobe",
+	"aserradero": "bloque_madera",
 }
 
 const PLANTILLAS := {
@@ -79,6 +82,33 @@ const PLANTILLAS := {
 		[".....", ".....", "...#.", ".....", "....."],
 		[".....", ".....", "...#.", ".....", "....."],
 	], "chimenea": Vector2i(3, 2)},
+	# Cada refinería se reconoce de lejos por su material, su silueta y su indicador (ver HumoRefinerias.gd).
+	# Torre de hierro: chimenea alta (3 capas) en una esquina; el baúl al otro lado.
+	"refineria_tierras_raras": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#B..#", "#...#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#####", "#####", "#####", "#####"],
+		[".....", ".#...", ".....", ".....", "....."],
+		[".....", ".#...", ".....", ".....", "....."],
+		[".....", ".#...", ".....", ".....", "....."],
+	], "chimenea": Vector2i(1, 1)},
+	# Carbonera de adobe: dos chimeneas bajas y gruesas (el humo sale de la de (3, 3)).
+	"carbonera": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#...#", "#B..#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#####", "#####", "#####", "#####"],
+		[".....", ".#...", ".....", "...#.", "....."],
+	], "chimenea": Vector2i(3, 3)},
+	# Aserradero: galpón largo de madera (5 x 6) con una tolva sobre el techo; sale aserrín de ella.
+	"aserradero": {"capas": [
+		["#####", "#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#...#", "#..B#", "#...#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "#...#", "##S##"],
+		["#####", "#####", "#####", "#####", "#####", "#####"],
+		[".....", ".....", ".....", "..#..", ".....", "....."],
+	], "chimenea": Vector2i(2, 3)},
 }
 
 

@@ -40,6 +40,8 @@ const NOMBRES_RECURSO := {
 	"carbon": "Carbón",
 	"tierras_raras": "Tierras raras",
 	"acero": "Acero",
+	"mineral_refinado": "Mineral refinado",
+	"tablas": "Tablas",
 }
 
 const NOMBRES_TASA := {
@@ -209,6 +211,13 @@ func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, cost
 ## Recolección prevista de un puesto. Diccionario vacío = nada detectado (en
 ## pesca también cuando el extremo de agua todavía no es válido).
 static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
+	if CadenaMinerales.REFINERIAS.has(tipo):
+		var receta_clave: String = CadenaMinerales.REFINERIAS[tipo]
+		var t_ref: Dictionary = CadenaMinerales.tasas_refinado({receta_clave: 1})[receta_clave]
+		var consumo: Array = []
+		for recurso in t_ref["consumo"]:
+			consumo.append("%.1f %s" % [t_ref["consumo"][recurso], NOMBRES_RECURSO[recurso].to_lower()])
+		return "Refinado previsto por técnico:\n  %s/h → %.1f %s/h" % [" + ".join(consumo), t_ref["produccion"], NOMBRES_RECURSO[t_ref["tipo_salida"]].to_lower()]
 	match tipo:
 		"mina":
 			if tasas.is_empty():
@@ -221,9 +230,6 @@ static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
 			if tasas.get("madera", 0.0) <= 0.0:
 				return "Recolección prevista: sin árboles detectados"
 			return "Recolección prevista por ciudadano:\n  %.1f madera/h" % tasas["madera"]
-		"siderurgica":
-			var t_ref: Dictionary = CadenaMinerales.tasas_refinado({"hierro": 1})["hierro"]
-			return "Refinado previsto por técnico:\n  %.1f hierro + %.1f carbón/h → %.1f acero/h" % [t_ref["consumo"]["hierro"], t_ref["consumo"]["carbon"], t_ref["produccion"]]
 		"caza_recoleccion":
 			if tasas.get("caza", 0.0) <= 0.0 and tasas.get("recoleccion", 0.0) <= 0.0:
 				return "Recolección prevista: sin fauna ni fruta detectada"

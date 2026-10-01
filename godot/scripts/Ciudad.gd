@@ -212,9 +212,27 @@ func _init() -> void:
 		"carbon": Recurso.new("Carbón", 0, LIMITE_BASE),
 		"tierras_raras": Recurso.new("Tierras raras", 0, LIMITE_BASE),
 		"acero": Recurso.new("Acero", 0, LIMITE_BASE),  # lo produce la siderúrgica (ver Economia.gd)
+		"mineral_refinado": Recurso.new("Mineral refinado", 0, LIMITE_BASE),  # refinería de tierras raras
+		"tablas": Recurso.new("Tablas", 0, LIMITE_BASE),  # aserradero; cuentan como madera (consumir_costo())
 	}
 	for categoria in CATEGORIAS_COMIDA:
 		fuentes_comida_activas[categoria] = 0.0
+
+
+## Cobra "monto" de "recurso" del stock central (true si alcanzó; false y sin cobrar si no). Las
+## tablas cuentan como madera (GDD Sec. 4): un costo en madera se paga primero con tablas y el resto con
+## madera. El reembolso (VoxelWorld/Player) devuelve todo como madera, que vale lo mismo.
+func consumir_costo(recurso: String, monto: float) -> bool:
+	if recurso != "madera":
+		return (almacen[recurso] as Recurso).consumir(monto)
+	var tablas: Recurso = almacen["tablas"]
+	var madera: Recurso = almacen["madera"]
+	if tablas.cantidad + madera.cantidad < monto:
+		return false
+	var de_tablas: float = minf(tablas.cantidad, monto)
+	tablas.cantidad -= de_tablas
+	madera.cantidad -= monto - de_tablas
+	return true
 
 
 func _ready() -> void:

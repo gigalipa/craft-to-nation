@@ -70,6 +70,9 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 	],
 	"industrial": [
 		["siderurgica", "Siderúrgica", "1"],
+		["refineria_tierras_raras", "Tierras raras", "2"],
+		["aserradero", "Aserradero", "3"],
+		["carbonera", "Carbonera", "4"],
 	],
 	"investigacion": [],
 	"vias": [
@@ -79,7 +82,7 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 
 ## Tipos con miniatura 3D real (mina/caza/madera/pesca + el blueprint
 ## residencial); "vias" no tiene malla que previsualizar, es un botón de texto.
-const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica"]
+const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]
 
 ## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
 var ZONAS := [
@@ -130,7 +133,7 @@ func _ready() -> void:
 	var columna := _nueva_columna(_panel_principal)
 	for modo in MODOS:
 		var id: String = modo[0]
-		var boton := _crear_boton("%s\n[%s]" % [modo[1], modo[2]], Vector2(88, 56), modo[3])
+		var boton := _crear_boton(modo[1], Vector2(88, 56), modo[3], modo[2])
 		boton.pressed.connect(func() -> void:
 			modo_pedido.emit(id)
 			_refrescar()
@@ -141,7 +144,7 @@ func _ready() -> void:
 	var columna_categorias := _nueva_columna(_panel_categorias)
 	for categoria in CATEGORIAS:
 		var id: String = categoria[0]
-		var boton := _crear_boton("%s\n[%s]" % [categoria[1], categoria[2]], Vector2(88, 56))
+		var boton := _crear_boton(categoria[1], Vector2(88, 56), null, categoria[2])
 		boton.pressed.connect(func() -> void:
 			categoria_pedida.emit(id)
 			_refrescar()
@@ -165,8 +168,7 @@ func _ready() -> void:
 		var columna_edificios := _nueva_columna(panel)
 		for edificio in edificios:
 			var tipo: String = edificio[0]
-			var nombre_con_tecla: String = "%s [%s]" % [edificio[1], edificio[2]]
-			var boton: Button = _crear_boton_construccion(tipo, nombre_con_tecla) if TIPOS_CON_MINIATURA.has(tipo) else _crear_boton(nombre_con_tecla, Vector2(88, 56))
+			var boton: Button = _crear_boton_construccion(tipo, edificio[1], edificio[2])
 			boton.pressed.connect(func() -> void:
 				construccion_pedida.emit(tipo)
 				_refrescar()
@@ -178,7 +180,7 @@ func _ready() -> void:
 	var columna_zonas := _nueva_columna(_panel_zonas)
 	for zona in ZONAS:
 		var tipo: String = zona[0]
-		var boton := _crear_boton("%s [%s]" % [zona[1], zona[2]], Vector2(88, 36), zona[3])
+		var boton := _crear_boton(zona[1], Vector2(88, 40), zona[3], zona[2])
 		boton.pressed.connect(func() -> void:
 			zona_pedida.emit(tipo)
 			_refrescar()
@@ -201,13 +203,14 @@ func _nueva_columna(panel: PanelContainer) -> VBoxContainer:
 ## exactamente igual que siempre (texto directo en el Button). Con él,
 ## antepone un TextureRect de 24x24 y mueve el texto a un Label hijo — deja
 ## el mecanismo listo para cuando exista el ícono real de cada modo/zona.
-func _crear_boton(texto: String, tamano: Vector2, icono: Texture2D = null) -> Button:
+func _crear_boton(texto: String, tamano: Vector2, icono: Texture2D = null, tecla: String = "") -> Button:
 	var boton := Button.new()
 	boton.toggle_mode = true
 	boton.custom_minimum_size = tamano
 	TemaHUD.estilizar_boton(boton)
 	if icono == null:
 		boton.text = texto
+		_poner_tecla(boton, tecla, boton.get_theme_font("font").get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, boton.get_theme_font_size("font_size")).x)
 		return boton
 
 	var columna := VBoxContainer.new()
@@ -229,17 +232,40 @@ func _crear_boton(texto: String, tamano: Vector2, icono: Texture2D = null) -> Bu
 	columna.add_child(etiqueta)
 
 	boton.add_child(columna)
+	_poner_tecla(boton, tecla, etiqueta.get_minimum_size().x)
 	return boton
 
 
+## Acceso directo de un botón: texto dorado de 12 px en la esquina inferior izquierda, por dentro del
+## marco, como en la hotbar de 1ª persona (ver Hotbar.gd). Sin "tecla" no hace nada. El botón se ensancha
+## si hace falta para que la tecla (a cada lado, para no descentrar el nombre) no pise "ancho_texto".
+## Un Control simple (no un Container) respeta las anclas de sus hijos, y MOUSE_FILTER_IGNORE deja
+## pasar el clic al Button.
+func _poner_tecla(boton: Button, tecla: String, ancho_texto: float) -> void:
+	if tecla == "":
+		return
+	var esquinas := Control.new()
+	esquinas.set_anchors_preset(Control.PRESET_FULL_RECT)
+	esquinas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boton.add_child(esquinas)
+	var etiqueta_tecla := TemaHUD.etiqueta(tecla)
+	etiqueta_tecla.add_theme_font_size_override("font_size", 12)
+	etiqueta_tecla.add_theme_color_override("font_color", TemaHUD.DORADO)
+	esquinas.add_child(etiqueta_tecla)
+	TemaHUD.poner_en_esquina_inferior(etiqueta_tecla)  # a MARGEN_X / MARGEN_Y del marco
+	var margen: float = etiqueta_tecla.get_minimum_size().x + TemaHUD.MARGEN_X + 4.0
+	boton.custom_minimum_size.x = maxf(boton.custom_minimum_size.x, ancho_texto + 2.0 * margen)
+
+
 ## Botón del submenú Construir: miniatura 3D (espacio fijo TAMANO_MINIATURA x
-## TAMANO_MINIATURA, ver _actualizar_miniaturas()) arriba, texto+tecla abajo
-## — a diferencia de _crear_boton(), que solo pone texto. Los hijos llevan
+## TAMANO_MINIATURA, ver _actualizar_miniaturas(); solo los tipos de
+## TIPOS_CON_MINIATURA) arriba y el nombre abajo; el ancho se adapta al nombre.
+## La tecla de acceso directo va en la esquina inferior izquierda, en dorado,
+## como en la hotbar de 1ª persona (ver Hotbar.gd). Los hijos llevan
 ## MOUSE_FILTER_IGNORE para que el clic siga llegando al Button de abajo.
-func _crear_boton_construccion(tipo: String, texto: String) -> Button:
+func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> Button:
 	var boton := Button.new()
 	boton.toggle_mode = true
-	boton.custom_minimum_size = Vector2(88, 64)
 	TemaHUD.estilizar_boton(boton)
 
 	var columna := VBoxContainer.new()
@@ -248,19 +274,22 @@ func _crear_boton_construccion(tipo: String, texto: String) -> Button:
 	columna.alignment = BoxContainer.ALIGNMENT_CENTER
 	columna.add_theme_constant_override("separation", 2)
 
-	var miniatura := TextureRect.new()
-	miniatura.custom_minimum_size = Vector2(TAMANO_MINIATURA, TAMANO_MINIATURA)
-	miniatura.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	miniatura.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	miniatura.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna.add_child(miniatura)
-	_miniaturas_construccion[tipo] = miniatura
+	if TIPOS_CON_MINIATURA.has(tipo):
+		var miniatura := TextureRect.new()
+		miniatura.custom_minimum_size = Vector2(TAMANO_MINIATURA, TAMANO_MINIATURA)
+		miniatura.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		miniatura.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		miniatura.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		columna.add_child(miniatura)
+		_miniaturas_construccion[tipo] = miniatura
 
-	var etiqueta := TemaHUD.etiqueta(texto)
+	var etiqueta := TemaHUD.etiqueta(nombre)
 	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	columna.add_child(etiqueta)
-
 	boton.add_child(columna)
+
+	boton.custom_minimum_size = Vector2(88, 64)
+	_poner_tecla(boton, tecla, etiqueta.get_minimum_size().x)
 	return boton
 
 

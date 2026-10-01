@@ -15,6 +15,9 @@ const NOMBRES_PUESTO := {
 	"maderero": "Puesto maderero",
 	"pesca_frutos_mar": "Pesca y frutos del mar",
 	"siderurgica": "Siderúrgica",
+	"refineria_tierras_raras": "Refinería de tierras raras",
+	"aserradero": "Aserradero",
+	"carbonera": "Carbonera",
 }
 const NOMBRES_ROL := {"recolector": "Recolectores", "tecnico": "Técnicos", "acarreador": "Acarreadores"}
 

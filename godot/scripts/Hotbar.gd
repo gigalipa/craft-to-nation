@@ -233,26 +233,16 @@ func configurar(tipos: Array) -> void:
 
 		# Acceso directo, esquina inferior izquierda, color del borde (dorado).
 		var tecla := TemaHUD.etiqueta(str((i + 1) % 10))
-		tecla.anchor_left = 0.0
-		tecla.anchor_right = 0.0
-		tecla.anchor_top = 1.0
-		tecla.anchor_bottom = 1.0
-		tecla.grow_horizontal = Control.GROW_DIRECTION_END
-		tecla.grow_vertical = Control.GROW_DIRECTION_BEGIN
 		tecla.add_theme_font_size_override("font_size", 12)
 		tecla.add_theme_color_override("font_color", TemaHUD.DORADO)
 		esquinas.add_child(tecla)
+		TemaHUD.poner_en_esquina_inferior(tecla, false, TemaHUD.MARGEN_CONTENIDO)  # "esquinas" queda dentro del margen interno de la caja
 
 		# Disponibilidad, esquina inferior derecha (color según selección, ver _resaltar()).
 		var cantidad := TemaHUD.etiqueta()
-		cantidad.anchor_left = 1.0
-		cantidad.anchor_right = 1.0
-		cantidad.anchor_top = 1.0
-		cantidad.anchor_bottom = 1.0
-		cantidad.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-		cantidad.grow_vertical = Control.GROW_DIRECTION_BEGIN
 		cantidad.visible = false
 		esquinas.add_child(cantidad)
+		TemaHUD.poner_en_esquina_inferior(cantidad, true, TemaHUD.MARGEN_CONTENIDO)
 
 		contenedor.add_child(caja)
 		_fila.add_child(contenedor)

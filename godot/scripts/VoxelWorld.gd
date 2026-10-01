@@ -1994,7 +1994,7 @@ func _bloqueado_por_falta_de(tipo: String, celda: Vector3i) -> String:
 		return ""
 	var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
 	for recurso in costo:
-		if not Ciudad.almacen[recurso].consumir(costo[recurso]):
+		if not Ciudad.consumir_costo(recurso, costo[recurso]):
 			return recurso
 	celdas_pagadas[celda] = true
 	return ""

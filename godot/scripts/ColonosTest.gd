@@ -130,6 +130,16 @@ func _nuevo_con_siderurgica(ciudad: Node) -> Node:
 	return colonos
 
 
+## Colonos con una escuela técnica de 2x2 en (2, 2) (cupo 4, el de la cohorte); mundo llano de 10x10.
+func _nuevo_con_escuela(ciudad: Node) -> Node:
+	var economia: Node = EconomiaScript.new()
+	economia.ciudad = ciudad
+	economia.registrar_puesto(Vector2i(2, 2), "escuela_tecnica", 2, 2, {})
+	var colonos: Node = _nuevo(_mundo_llano(), ciudad)
+	colonos.economia = economia
+	return colonos
+
+
 func _contar(colonos: Node, tipo: String) -> int:
 	var total := 0
 	for c in colonos.colonos.values():
@@ -917,23 +927,34 @@ func ejecutar_pruebas() -> void:
 	assert(dentro36 == 4, "los cuatro caben dentro (dentro: %d)" % dentro36)
 	assert(economia36.trabajadores_de(Vector2i(2, 2))["presentes"] == 4)
 
-	print("\n=== TEST 37: un técnico pasa a tecnico al contratarlo y vuelve a desempleado al despedirlo ===")
+	print("\n=== TEST 37: una refinería solo contrata técnicos libres; al despedirlos siguen siendo técnicos ===")
 	var ciudad37: Node = CiudadScript.new()
 	var colonos37: Node = _nuevo_con_siderurgica(ciudad37)
 	var id37: int = colonos37.agregar_colono("desempleado", Vector3i(6, 1, 1))
 	ciudad37.demografia["desempleado"] = 1
 	assert(not colonos37.contratar(Vector2i(2, 2), "recolector"), "una refinería no acepta recolectores")
-	assert(ciudad37.demografia["desempleado"] == 1, "el rechazo no toca la demografía")
+	assert(not colonos37.contratar(Vector2i(2, 2), "tecnico"), "un desempleado no se convierte en técnico: hace falta formarlo")
+	assert(ciudad37.demografia["desempleado"] == 1 and ciudad37.demografia["tecnico"] == 0, "el rechazo no toca la demografía")
+	assert(colonos37.colonos[id37]["tipo"] == "desempleado")
+	var tecnico37: int = colonos37.agregar_colono("tecnico", Vector3i(6, 1, 2))
+	ciudad37.demografia["tecnico"] = 1
+	assert(colonos37.tecnicos_libres() == 1)
 	assert(colonos37.contratar(Vector2i(2, 2), "tecnico"))
-	assert(colonos37.colonos[id37]["tipo"] == "tecnico" and ciudad37.demografia["tecnico"] == 1 and ciudad37.demografia["desempleado"] == 0)
+	assert(colonos37.colonos[tecnico37]["tipo"] == "tecnico" and colonos37.colonos[tecnico37]["trabajo"]["puesto"] == Vector2i(2, 2))
+	assert(ciudad37.demografia["tecnico"] == 1 and ciudad37.demografia["desempleado"] == 1, "contratar a un técnico libre no cambia la demografía")
+	assert(colonos37.tecnicos_libres() == 0, "ya no queda ninguno libre")
 	assert(colonos37.despedir(Vector2i(2, 2), "tecnico"))
-	assert(colonos37.colonos[id37]["tipo"] == "desempleado" and ciudad37.demografia["tecnico"] == 0 and ciudad37.demografia["desempleado"] == 1, "el técnico despedido vuelve a desempleado")
+	assert(colonos37.colonos[tecnico37]["tipo"] == "tecnico" and ciudad37.demografia["tecnico"] == 1 and ciudad37.demografia["desempleado"] == 1, "el técnico despedido sigue siendo técnico")
+	assert(colonos37.tecnicos_libres() == 1)
+	assert(colonos37.contratar(Vector2i(2, 2), "tecnico"))
+	colonos37.economia.quitar_puesto(Vector2i(2, 2))
+	assert(colonos37.colonos[tecnico37]["tipo"] == "tecnico" and colonos37.tecnicos_libres() == 1, "al deconstruir la refinería el técnico queda libre")
 
 	print("\n=== TEST 38: un técnico camina a la siderúrgica, queda presente y refina ===")
 	var ciudad38: Node = CiudadScript.new()
 	var colonos38: Node = _nuevo_con_siderurgica(ciudad38)
-	colonos38.agregar_colono("desempleado", Vector3i(6, 1, 1))
-	ciudad38.demografia["desempleado"] = 1
+	colonos38.agregar_colono("tecnico", Vector3i(6, 1, 1))
+	ciudad38.demografia["tecnico"] = 1
 	assert(colonos38.contratar(Vector2i(2, 2), "tecnico"))
 	var llego38 := false
 	for i in range(400):
@@ -1052,4 +1073,72 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(ciudad41.almacen["hierro"].cantidad, hierro41 + 30.0), "al quitar el puesto el insumo también vuelve")
 	assert(colonos41.colonos[id41]["tipo"] == "desempleado" and ciudad41.demografia["obrero"] == 0)
 
-	print("\n=== Las 41 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 42: una cohorte de 4 aprendices estudia 24 h y sale como 3 técnicos libres; el cuarto se va (la vivienda ocupada se conserva) ===")
+	var ciudad42: Node = CiudadScript.new()
+	var colonos42: Node = _nuevo_con_escuela(ciudad42)
+	var ids42: Array[int] = []
+	for z42 in range(1, 5):
+		ids42.append(colonos42.agregar_colono("desempleado", Vector3i(6, 1, z42)))
+	ciudad42.demografia["desempleado"] = 4
+	var formados42: Array = []
+	colonos42.tecnicos_formados.connect(func(cantidad: int) -> void: formados42.append(cantidad))
+	assert(not colonos42.contratar(Vector2i(2, 2), "tecnico") and not colonos42.contratar(Vector2i(2, 2), "acarreador"), "la escuela solo admite aprendices")
+	for i42 in range(4):
+		assert(colonos42.contratar(Vector2i(2, 2), "aprendiz"))
+	assert(ciudad42.demografia["obrero"] == 4 and ciudad42.demografia["desempleado"] == 0, "un aprendiz cuenta como obrero mientras estudia")
+	assert(is_equal_approx(ciudad42.vivienda_ocupada, 1.0))
+	for id42 in ids42:
+		colonos42.economia.marcar_presente(id42, true)
+	for hora42 in range(23):
+		colonos42.economia.simular_hora()
+	assert(formados42.is_empty() and _contar(colonos42, "tecnico") == 0, "a las 23 h todavía no se gradúa")
+	colonos42.economia.simular_hora()
+	assert(formados42 == [3], "salen 3 técnicos")
+	assert(_contar(colonos42, "tecnico") == 3 and colonos42.colonos.size() == 3, "el cuarto colono se fue de la ciudad")
+	assert(not colonos42.colonos.has(ids42[3]), "se va el de id mayor")
+	assert(ciudad42.demografia["tecnico"] == 3 and ciudad42.demografia["obrero"] == 0 and ciudad42.demografia["desempleado"] == 0)
+	assert(is_equal_approx(ciudad42.vivienda_ocupada, 1.0), "la vivienda ocupada se conserva: 4 x 1/4 = 3 x 1/3")
+	assert(colonos42.tecnicos_libres() == 3, "los técnicos nuevos quedan sin puesto")
+	assert(colonos42.economia.cupo_libre(Vector2i(2, 2)) == 4, "la escuela queda libre para otra cohorte")
+
+	print("\n=== TEST 43: despedir a un aprendiz reinicia la cohorte; deconstruir la escuela devuelve a los aprendices a desempleado ===")
+	var ciudad43: Node = CiudadScript.new()
+	var colonos43: Node = _nuevo_con_escuela(ciudad43)
+	var ids43: Array[int] = []
+	for z43 in range(1, 5):
+		ids43.append(colonos43.agregar_colono("desempleado", Vector3i(6, 1, z43)))
+	ciudad43.demografia["desempleado"] = 4
+	for i43 in range(4):
+		colonos43.contratar(Vector2i(2, 2), "aprendiz")
+	for id43 in ids43:
+		colonos43.economia.marcar_presente(id43, true)
+	for hora43 in range(10):
+		colonos43.economia.simular_hora()
+	assert(colonos43.economia.puestos[Vector2i(2, 2)]["progreso"] == 10.0)
+	assert(colonos43.despedir(Vector2i(2, 2), "aprendiz"))
+	assert(ciudad43.demografia["obrero"] == 3 and ciudad43.demografia["desempleado"] == 1, "el despedido vuelve a desempleado, sin formación")
+	assert(colonos43.economia.puestos[Vector2i(2, 2)]["progreso"] == 0.0, "la cohorte empieza de nuevo")
+	for hora43 in range(30):
+		colonos43.economia.simular_hora()
+	assert(_contar(colonos43, "tecnico") == 0 and ciudad43.demografia["tecnico"] == 0, "con 3 aprendices no se gradúa nadie")
+	colonos43.economia.quitar_puesto(Vector2i(2, 2))
+	assert(ciudad43.demografia["obrero"] == 0 and ciudad43.demografia["desempleado"] == 4 and ciudad43.demografia["tecnico"] == 0, "sin escuela, los aprendices vuelven a desempleado")
+	assert(_contar(colonos43, "desempleado") == 4)
+
+	print("\n=== TEST 44: si un colono de la cohorte ya no existe al graduarse, la graduación no falla ===")
+	var ciudad44: Node = CiudadScript.new()
+	var colonos44: Node = _nuevo_con_escuela(ciudad44)
+	var ids44: Array[int] = []
+	for z44 in range(1, 5):
+		ids44.append(colonos44.agregar_colono("desempleado", Vector3i(6, 1, z44)))
+	ciudad44.demografia["desempleado"] = 4
+	for i44 in range(4):
+		colonos44.contratar(Vector2i(2, 2), "aprendiz")
+	for id44 in ids44:
+		colonos44.economia.marcar_presente(id44, true)
+	colonos44.colonos.erase(ids44[0])  # p. ej. lo retiró una hambruna en el mismo tick
+	for hora44 in range(24):
+		colonos44.economia.simular_hora()
+	assert(_contar(colonos44, "tecnico") == 3, "los tres que quedan se gradúan")
+
+	print("\n=== Las 44 pruebas de Colonos pasaron correctamente ===")

@@ -26,7 +26,11 @@ const TASAS_BASE_MINERAL := {
 const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Los únicos tipos de puesto donde se asignan trabajadores (los edificios
 ## registrados con tipo "blueprint" comparten el registro pero no son puestos).
-const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica"]
+## Escuelas: tipo de puesto -> {"origen", "destino"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
+## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
+## conserva (4 obreros = 3 técnicos) y quien sobra se va de la ciudad.
+const ESCUELAS := {"escuela_tecnica": {"origen": "obrero", "destino": "tecnico"}}
 const ANCHO_HUELLA_MINA := 5
 const ALTO_HUELLA_MINA := 5
 
@@ -159,7 +163,7 @@ func celda_dentro_de_algun_puesto(celda: Vector2i) -> bool:
 	return false
 
 
-## Cupo de trabajadores (recolectores + acarreadores) de un tipo de puesto; 0
+## Cupo de trabajadores (recolectores + acarreadores + aprendices) de un tipo de puesto; 0
 ## para un tipo que no es puesto de trabajo.
 func cupo_de(tipo: String) -> int:
 	match tipo:
@@ -169,6 +173,8 @@ func cupo_de(tipo: String) -> int:
 		"pesca_frutos_mar": return PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.PERSONAL_MAXIMO_REFINERIA
+	if ESCUELAS.has(tipo):
+		return Ciudad.TIPOS_POBLACION[ESCUELAS[tipo]["origen"]]["x_cama"]  # el cupo es la cohorte
 	return 0
 
 

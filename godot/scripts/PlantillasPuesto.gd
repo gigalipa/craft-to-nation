@@ -21,7 +21,7 @@ extends RefCounted
 ## carácter) es vacío. "#" es especial: se resuelve con el material propio
 ## de cada plantilla (ver MATERIAL más abajo), no con un tipo fijo.
 const BLOQUES := {
-	"V": "vidrio", "B": "baul",
+	"V": "vidrio", "B": "baul", "M": "mesa_estudio",
 	"d": "puerta_inferior", "D": "puerta_superior",
 	# Edificios con entrada y salida separadas (refinerías y, más adelante, fábricas): las
 	# cintas y tuberías futuras necesitan dos puertas. Mismo bloque que "d"/"D"; la letra
@@ -42,6 +42,7 @@ const MATERIAL := {
 	"refineria_tierras_raras": "estructura_hierro",
 	"carbonera": "adobe",
 	"aserradero": "bloque_madera",
+	"escuela_tecnica": "adobe",
 }
 
 const PLANTILLAS := {
@@ -109,6 +110,15 @@ const PLANTILLAS := {
 		["#####", "#####", "#####", "#####", "#####", "#####"],
 		[".....", ".....", ".....", "..#..", ".....", "....."],
 	], "chimenea": Vector2i(2, 3)},
+	# Escuela técnica (primer edificio de investigación): una sola puerta (como un puesto) y un interior de
+	# 3 x 3 con 4 mesas de estudio (M, una por aprendiz) al fondo y a un lado; quedan 4 sitios libres más el
+	# vestíbulo. Sin baúl: no maneja recursos (ver celda_deposito()).
+	"escuela_tecnica": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##d##", "#...#", "#..M#", "#MMM#", "#####"],
+		["##D##", "V...V", "#...#", "V...V", "#####"],
+		["#####", "#####", "#####", "#####", "#####"],
+	]},
 }
 
 
@@ -235,8 +245,11 @@ static func puerta_de_entrada(tipo: String, giros: int) -> Vector3i:
 	return _girar(_buscar_caracter(tipo, "de"), d.x, d.y, giros)
 
 
-## Celda local (x, capa, z) del baúl que hace de depósito del puesto.
+## Celda local (x, capa, z) girada del baúl que hace de depósito del puesto; Vector3i.MAX (igual que
+## Economia.SIN_DEPOSITO) si la plantilla no lleva baúl, como la escuela técnica.
 static func celda_deposito(tipo: String, giros: int) -> Vector3i:
+	if not celdas(tipo, 0).values().has("baul"):
+		return Vector3i.MAX
 	var d := dimensiones(tipo)
 	return _girar(_buscar(tipo, "baul"), d.x, d.y, giros)
 

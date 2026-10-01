@@ -240,4 +240,44 @@ func ejecutar_pruebas() -> void:
 	assert(materiales13.size() == 3 and not materiales13.has("bloque_piedra"), "cada refinería nueva tiene su material propio, distinto de la siderúrgica")
 	assert(PlantillasPuesto.dimensiones("aserradero") == Vector2i(5, 6))
 
-	print("\n=== Las 13 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 14: la escuela técnica es un puesto de una sola puerta con 4 mesas de estudio (una por aprendiz), ventanas y sin baúl ===")
+	var tipo14 := "escuela_tecnica"
+	assert(PlantillasPuesto.dimensiones(tipo14) == Vector2i(5, 5) and PlantillasPuesto.MATERIAL[tipo14] == "adobe")
+	var base14: Dictionary = PlantillasPuesto.celdas(tipo14, 0)
+	var conteo14 := {"puerta_inferior": 0, "vidrio": 0, "baul": 0, "mesa_estudio": 0}
+	for c14 in base14:
+		if conteo14.has(base14[c14]):
+			conteo14[base14[c14]] += 1
+	assert(conteo14["puerta_inferior"] == 1 and conteo14["vidrio"] >= 2, "una puerta y ventanas: %s" % [conteo14])
+	assert(conteo14["mesa_estudio"] == Recoleccion.cupo_de(tipo14), "una mesa de estudio por aprendiz: %s" % [conteo14])
+	assert(conteo14["baul"] == 0, "sin baúl: no maneja recursos")
+	var libres14 := 0
+	for x14 in range(1, 4):
+		for z14 in range(1, 4):
+			if not base14.has(Vector3i(x14, 1, z14)) and base14.has(Vector3i(x14, PlantillasPuesto.altura(tipo14) - 1, z14)):
+				libres14 += 1
+	assert(libres14 >= Recoleccion.cupo_de(tipo14) + 1, "el piso libre y techado alcanza para los aprendices más el vestíbulo (%d libres)" % libres14)
+	var vestibulo14 := Vector3i(2, 1, 1)
+	assert(not base14.has(vestibulo14) and not base14.has(vestibulo14 + Vector3i(0, 1, 0)), "el vestíbulo detrás de la puerta está libre")
+	var alcanzadas14 := {vestibulo14: true}
+	var pendientes14: Array[Vector3i] = [vestibulo14]
+	while not pendientes14.is_empty():
+		var actual14: Vector3i = pendientes14.pop_back()
+		for dir14 in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+			var vecina14: Vector3i = actual14 + dir14
+			if vecina14.x < 1 or vecina14.x > 3 or vecina14.z < 1 or vecina14.z > 3 or base14.has(vecina14) or alcanzadas14.has(vecina14):
+				continue
+			alcanzadas14[vecina14] = true
+			pendientes14.append(vecina14)
+	assert(alcanzadas14.size() == libres14, "todo el piso libre del interior es alcanzable desde el vestíbulo")
+	for giros14 in range(4):
+		assert(PlantillasPuesto.celda_de_salida(tipo14, giros14) == PlantillasPuesto.celda_de_servicio(tipo14, giros14), "con una sola puerta, salida == servicio")
+		assert(PlantillasPuesto.fachada(tipo14, giros14).size() == 10, "2 columnas de fondo por los 5 del lado de la puerta")
+		assert(PlantillasPuesto.celda_deposito(tipo14, giros14) == Vector3i.MAX, "sin baúl no hay depósito")
+	for tipo14b in TIPOS:
+		assert(PlantillasPuesto.celda_deposito(tipo14b, 0) != Vector3i.MAX, tipo14b + ": los puestos de recolección siguen teniendo depósito")
+	var mundo14: Node = _mundo()
+	for bloque14 in base14.values():
+		assert(mundo14._id_por_tipo.has(bloque14), "falta el bloque " + bloque14)
+
+	print("\n=== Las 14 pruebas de PlantillasPuesto pasaron correctamente ===")

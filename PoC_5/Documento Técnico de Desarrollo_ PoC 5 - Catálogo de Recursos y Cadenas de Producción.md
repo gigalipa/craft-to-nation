@@ -105,7 +105,7 @@ Decisión funcional: las refinerías son puestos con receta, con entrada y salid
 
 * **Velocidad:** `cantidad_entrada × técnicos × tasa_base` por hora (hierro: 2 × técnicos × 2,0 = 4 hierro/h por técnico → 2 acero/h), con cupo de 3 técnicos presentes.
 * **Acarreo:** un solo acarreador hace núcleo → entrada → salida → núcleo; cada viaje exige al menos `Economia.CARGA_MINIMA` (10) unidades, tanto de insumo como de producto. El acero llega al stock central; `bloque_acero` cuesta 3 acero.
-* **Almacén local:** 1000, compartido entre hierro y acero. Despedir al acarreador (o quitar el puesto) con hierro en fase de entrada devuelve ese hierro al stock; el producto de la refinería y la carga de recolección se pierden.
+* **Almacén local:** 1000, compartido entre hierro y acero. Despedir al acarreador (o quitar el puesto) con hierro en fase de entrada devuelve ese hierro al stock; el producto de la refinería y la carga de recolección se pierden. Al deconstruir un puesto (de cualquier tipo), lo que quepa de su almacén local pasa automáticamente al núcleo urbano (decisión del usuario, 2026-10-01); el resto se pierde.
 * **Técnicos:** un desempleado pasa a técnico al asignarlo (provisional); compite con los obreros por los desempleados.
 
 Ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`.

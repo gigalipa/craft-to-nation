@@ -44,6 +44,7 @@ Pueden intercalarse en cualquier momento.
 - Corrección de pathfinding para dar mayor prioridad al uso de rutas (ignorar rutas solo si el destino no es alcanzable).
 - Percentil de nivel de mar dependiente de un "tipo de mundo" (concepto sin diseñar aún).
 - Revisar el dithering de Alpha Hash en ventanas cuando exista una textura real.
+- Eliminar el botón "Agregar todo" de `VentanaBaul` (decisión del usuario, 2026-10-01, tras probar la siderúrgica en vivo): es poco útil en cualquier baúl. Más adelante podría volver solo en los baúles dentro de un edificio de almacén y en los del núcleo urbano, que son los que realmente surten de recursos a la ciudad. Mientras exista, en una refinería llena su almacén local con recursos ajenos al insumo (recuperables con "Extraer todo").
 
 ### Después de cerrar la Fase 3
 

@@ -509,8 +509,9 @@ func _celda_aparicion() -> Vector3i:
 
 
 ## Contrata a un desempleado (el de id menor) para un puesto con un rol
-## ("recolector" o "acarreador"): pasa a obrero en Ciudad.demografia y en el
-## colono. Falso si no hay desempleados, el puesto no existe o no tiene cupo.
+## ("recolector", "tecnico" o "acarreador"): pasa a obrero (a técnico, si el rol es
+## "tecnico") en Ciudad.demografia y en el colono. Falso si no hay desempleados, el
+## puesto no existe, el rol no es de ese puesto o no tiene cupo.
 func contratar(esquina: Vector2i, rol: String) -> bool:
 	var desempleados: Array[int] = _ids_de_tipo("desempleado")
 	if desempleados.is_empty():
@@ -519,9 +520,10 @@ func contratar(esquina: Vector2i, rol: String) -> bool:
 	var id: int = desempleados[0]
 	if not economia.asignar(esquina, rol, id):
 		return false
-	ciudad.reasignar_tipo("desempleado", "obrero")
+	var tipo := "tecnico" if rol == "tecnico" else "obrero"
+	ciudad.reasignar_tipo("desempleado", tipo)
 	var c: Dictionary = colonos[id]
-	c["tipo"] = "obrero"
+	c["tipo"] = tipo
 	c["trabajo"] = {"puesto": esquina, "rol": rol}
 	c["fase"] = ""
 	c["carga"] = {}
@@ -550,27 +552,29 @@ func _on_puesto_quitado(ids: Array) -> void:
 
 
 ## Trabajadores liberados de un puesto que sigue en pie (agotado o desactivado):
-## vuelven a desempleado, salvo un acarreador que lleva carga, que primero
-## termina el viaje y la entrega en el núcleo (ver _decidir_trabajo()).
+## vuelven a desempleado, salvo un acarreador que lleva carga (producto o insumo), que
+## primero termina el viaje y la entrega en el núcleo (ver _decidir_trabajo()).
 func _on_trabajadores_liberados(ids: Array) -> void:
 	for id in ids:
 		if not colonos.has(id):
 			continue
 		var c: Dictionary = colonos[id]
-		if c["fase"] == "entregar" and not c["carga"].is_empty():
+		if not c["carga"].is_empty():
+			c["fase"] = "entregar"
 			c["retirar_al_entregar"] = true
 		else:
 			_volver_a_desempleado(c)
 
 
 func _volver_a_desempleado(c: Dictionary) -> void:
+	var tipo_previo: String = c["tipo"]
 	c["trabajo"] = {}
 	c["carga"] = {}
 	c["fase"] = ""
 	c["fallos_servicio"] = 0
 	c["retirar_al_entregar"] = false
 	c["tipo"] = "desempleado"
-	ciudad.reasignar_tipo("obrero", "desempleado")
+	ciudad.reasignar_tipo(tipo_previo, "desempleado")
 	_dejar_lo_que_hacia(c)
 
 
@@ -586,8 +590,8 @@ func _dejar_lo_que_hacia(c: Dictionary) -> void:
 
 
 ## Lo que hace un trabajador cuando está quieto, sin ruta ni espera: un
-## recolector va a su puesto y se queda (presente); un acarreador cicla
-## puesto -> núcleo -> puesto.
+## recolector o técnico va a su puesto y se queda (presente); un acarreador cicla
+## puesto -> núcleo -> puesto (en una refinería, ver _decidir_acarreo_refineria()).
 func _decidir_trabajo(c: Dictionary) -> void:
 	if not _recuperar_si_atrapado(c):
 		return
@@ -603,7 +607,7 @@ func _decidir_trabajo(c: Dictionary) -> void:
 		return
 	var servicio: Vector2i = economia.servicio_de(esquina)
 	var suelo: int = economia.suelo_de(esquina)
-	if c["trabajo"]["rol"] == "recolector":
+	if c["trabajo"]["rol"] != "acarreador":
 		if _en_puesto(c["celda"], huella_puesto, servicio, suelo):
 			economia.marcar_presente(c["id"], true)
 			c["espera"] = ESPERA_TRABAJO
@@ -612,6 +616,9 @@ func _decidir_trabajo(c: Dictionary) -> void:
 				_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio), true)
 		else:
 			_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio))
+		return
+	if economia.es_refineria(esquina):
+		_decidir_acarreo_refineria(c, esquina, huella_puesto, servicio, economia.salida_de(esquina))
 		return
 	if c["fase"] == "entregar":
 		if _llevar_al_nucleo(c):
@@ -627,6 +634,46 @@ func _decidir_trabajo(c: Dictionary) -> void:
 		return
 	c["carga"] = carga
 	c["fase"] = "entregar"
+
+
+## Acarreador de una refinería: núcleo (retira insumo) -> entrada (lo deja) -> salida (recoge el
+## producto) -> núcleo (lo entrega). La fase "" decide si vale la pena un viaje: retirar insumo si
+## hay al menos Economia.CARGA_MINIMA que llevar, o recoger producto si hay al menos esa cantidad
+## acumulada; si no, espera donde está, sin viajar en vacío.
+func _decidir_acarreo_refineria(c: Dictionary, esquina: Vector2i, huella: Array, entrada: Vector2i, salida: Vector2i) -> void:
+	match c["fase"]:
+		"entregar":
+			if _llevar_al_nucleo(c):
+				c["fase"] = ""
+		"cargar":
+			var nucleo: Array = zona.huella_del_nucleo()
+			if not _junto_a(c["celda"], nucleo):
+				_ir_junto_a(c, nucleo)
+				return
+			c["carga"] = economia.cargar_insumo(esquina)
+			c["fase"] = "entrada" if not c["carga"].is_empty() else ""
+		"entrada":
+			if not _junto_a(c["celda"], huella, entrada):
+				_ir_junto_a(c, huella, entrada)
+				return
+			economia.descargar_insumo(esquina, c["carga"])
+			c["carga"] = {}
+			c["fase"] = "salida"
+		"salida":
+			if not _junto_a(c["celda"], huella, salida):
+				_ir_junto_a(c, huella, salida)
+				return
+			c["carga"] = economia.recoger_producto(esquina, economia.CAPACIDAD_CARGA)
+			c["fase"] = "entregar" if not c["carga"].is_empty() else ""
+			if c["carga"].is_empty():
+				c["espera"] = ESPERA_TRABAJO
+		_:
+			if economia.insumo_a_cargar(esquina) >= economia.CARGA_MINIMA:
+				c["fase"] = "cargar"
+			elif economia.producto_pendiente(esquina) >= economia.CARGA_MINIMA:
+				c["fase"] = "salida"
+			else:
+				c["espera"] = ESPERA_TRABAJO
 
 
 ## Un paso hacia el núcleo urbano con la carga del colono: si ya está junto a él,

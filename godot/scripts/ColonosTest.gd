@@ -119,6 +119,17 @@ func _nuevo_con_puesto(ciudad: Node) -> Node:
 	return colonos
 
 
+## Colonos con una siderúrgica de 2x2 en (2, 2): entrada al norte (2, 1), salida al sur (3, 4);
+## mundo llano de 10x10 y el núcleo en (7..8, 7..8). Sin plantilla (suelo desconocido): los colonos esperan fuera.
+func _nuevo_con_siderurgica(ciudad: Node) -> Node:
+	var economia: Node = EconomiaScript.new()
+	economia.ciudad = ciudad
+	economia.registrar_puesto(Vector2i(2, 2), "siderurgica", 2, 2, {}, {}, Vector2i(2, 1), economia.SIN_DEPOSITO, economia.SIN_SUELO, Vector2i(3, 4))
+	var colonos: Node = _nuevo(_mundo_llano(), ciudad)
+	colonos.economia = economia
+	return colonos
+
+
 func _contar(colonos: Node, tipo: String) -> int:
 	var total := 0
 	for c in colonos.colonos.values():
@@ -906,4 +917,93 @@ func ejecutar_pruebas() -> void:
 	assert(dentro36 == 4, "los cuatro caben dentro (dentro: %d)" % dentro36)
 	assert(economia36.trabajadores_de(Vector2i(2, 2))["presentes"] == 4)
 
-	print("\n=== Las 36 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 37: un técnico pasa a tecnico al contratarlo y vuelve a desempleado al despedirlo ===")
+	var ciudad37: Node = CiudadScript.new()
+	var colonos37: Node = _nuevo_con_siderurgica(ciudad37)
+	var id37: int = colonos37.agregar_colono("desempleado", Vector3i(6, 1, 1))
+	ciudad37.demografia["desempleado"] = 1
+	assert(not colonos37.contratar(Vector2i(2, 2), "recolector"), "una refinería no acepta recolectores")
+	assert(ciudad37.demografia["desempleado"] == 1, "el rechazo no toca la demografía")
+	assert(colonos37.contratar(Vector2i(2, 2), "tecnico"))
+	assert(colonos37.colonos[id37]["tipo"] == "tecnico" and ciudad37.demografia["tecnico"] == 1 and ciudad37.demografia["desempleado"] == 0)
+	assert(colonos37.despedir(Vector2i(2, 2), "tecnico"))
+	assert(colonos37.colonos[id37]["tipo"] == "desempleado" and ciudad37.demografia["tecnico"] == 0 and ciudad37.demografia["desempleado"] == 1, "el técnico despedido vuelve a desempleado")
+
+	print("\n=== TEST 38: un técnico camina a la siderúrgica, queda presente y refina ===")
+	var ciudad38: Node = CiudadScript.new()
+	var colonos38: Node = _nuevo_con_siderurgica(ciudad38)
+	colonos38.agregar_colono("desempleado", Vector3i(6, 1, 1))
+	ciudad38.demografia["desempleado"] = 1
+	assert(colonos38.contratar(Vector2i(2, 2), "tecnico"))
+	var llego38 := false
+	for i in range(400):
+		colonos38.avanzar(0.1)
+		if colonos38.economia.trabajadores_de(Vector2i(2, 2))["presentes"] == 1:
+			llego38 = true
+			break
+	assert(llego38, "el técnico llega junto a la entrada y se marca presente")
+	colonos38.economia.puestos[Vector2i(2, 2)]["almacen"]["hierro"] = 20.0
+	colonos38.economia.simular_hora()
+	assert(is_equal_approx(colonos38.economia.almacen_local(Vector2i(2, 2))["acero"], 2.0), "1 técnico: 4 hierro -> 2 acero por hora")
+
+	print("\n=== TEST 39: el acarreador lleva hierro del núcleo a la entrada y trae el acero de la salida al núcleo ===")
+	var ciudad39: Node = CiudadScript.new()
+	var colonos39: Node = _nuevo_con_siderurgica(ciudad39)
+	ciudad39.almacen["hierro"].cantidad = 50.0
+	colonos39.economia.puestos[Vector2i(2, 2)]["almacen"]["acero"] = 20.0
+	var id39: int = colonos39.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad39.demografia["desempleado"] = 1
+	assert(colonos39.contratar(Vector2i(2, 2), "acarreador"))
+	assert(colonos39.colonos[id39]["tipo"] == "obrero", "el acarreador es obrero")
+	var entrego39 := false
+	for i in range(3000):  # hasta 300 s de juego
+		colonos39.avanzar(0.1)
+		if ciudad39.almacen["acero"].cantidad >= 20.0:
+			entrego39 = true
+			break
+	assert(entrego39, "el acero llega al stock central")
+	assert(is_equal_approx(ciudad39.almacen["acero"].cantidad, 20.0))
+	assert(is_equal_approx(ciudad39.almacen["hierro"].cantidad, 0.0), "todo el hierro salió del stock central")
+	assert(is_equal_approx(colonos39.economia.almacen_local(Vector2i(2, 2))["hierro"], 50.0), "y quedó en el almacén de la siderúrgica")
+	assert(not colonos39.economia.almacen_local(Vector2i(2, 2)).has("acero"), "no queda acero")
+	assert(colonos39.colonos[id39]["carga"].is_empty())
+
+	print("\n=== TEST 39b: sin hierro en el núcleo ni acero que recoger, el acarreador espera sin viajar ===")
+	var ciudad39b: Node = CiudadScript.new()
+	var colonos39b: Node = _nuevo_con_siderurgica(ciudad39b)
+	var id39b: int = colonos39b.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad39b.demografia["desempleado"] = 1
+	colonos39b.contratar(Vector2i(2, 2), "acarreador")
+	var celda39b: Vector3i = colonos39b.colonos[id39b]["celda"]
+	for i in range(200):
+		colonos39b.avanzar(0.1)
+	assert(colonos39b.colonos[id39b]["celda"] == celda39b and colonos39b.colonos[id39b]["fase"] == "", "no se mueve ni queda en una fase a medias")
+	# Con 9 unidades de acero (< CARGA_MINIMA) tampoco justifica el viaje.
+	colonos39b.economia.puestos[Vector2i(2, 2)]["almacen"]["acero"] = 9.0
+	for i in range(200):
+		colonos39b.avanzar(0.1)
+	assert(colonos39b.colonos[id39b]["celda"] == celda39b, "un resto menor al mínimo no mueve al acarreador")
+
+	print("\n=== TEST 40: si la siderúrgica se desactiva con hierro en camino, el acarreador lo devuelve al stock central ===")
+	var ciudad40: Node = CiudadScript.new()
+	var colonos40: Node = _nuevo_con_siderurgica(ciudad40)
+	var id40: int = colonos40.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad40.demografia["desempleado"] = 1
+	colonos40.contratar(Vector2i(2, 2), "acarreador")
+	var acarreador40: Dictionary = colonos40.colonos[id40]
+	acarreador40["fase"] = "entrada"
+	acarreador40["carga"] = {"hierro": 30.0}
+	var hierro40: float = ciudad40.almacen["hierro"].cantidad
+	colonos40.economia.desactivar_puesto(Vector2i(2, 2))
+	assert(acarreador40["fase"] == "entregar" and acarreador40.get("retirar_al_entregar", false), "con carga en cualquier fase, termina el viaje al núcleo")
+	var devolvio40 := false
+	for i in range(1500):
+		colonos40.avanzar(0.1)
+		if acarreador40["tipo"] == "desempleado":
+			devolvio40 = true
+			break
+	assert(devolvio40, "devuelve la carga y queda libre")
+	assert(is_equal_approx(ciudad40.almacen["hierro"].cantidad, hierro40 + 30.0), "el hierro volvió al stock central")
+	assert(ciudad40.demografia["obrero"] == 0 and ciudad40.demografia["desempleado"] == 1)
+
+	print("\n=== Las 40 pruebas de Colonos pasaron correctamente ===")

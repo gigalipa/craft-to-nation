@@ -28,6 +28,7 @@ const NOMBRES := {
 	"bloque_madera": "Bloque de madera",
 	"bloque_piedra": "Bloque de piedra",
 	"estructura_hierro": "Estructura de hierro",
+	"bloque_acero": "Bloque de acero",
 	"vidrio": "Vidrio",
 	"puerta": "Puerta",
 	"cama": "Cama",
@@ -44,6 +45,7 @@ const NOMBRES_HOTBAR := {
 	"bloque_madera": "Madera",
 	"bloque_piedra": "Piedra",
 	"estructura_hierro": "Estructura",
+	"bloque_acero": "Acero",
 	"vidrio": "Vidrio",
 	"puerta": "Puerta",
 	"cama": "Cama",
@@ -65,6 +67,7 @@ const DESCRIPCION := {
 	"bloque_madera": ["Bloque de tipo estructural.", "Ideal para muros, pisos y techos.", "Se obtiene talando árboles."],
 	"bloque_piedra": ["Bloque de tipo estructural.", "Ideal para muros resistentes y cimientos.", "Se obtiene minando piedra."],
 	"estructura_hierro": ["Bloque de tipo estructural.", "Ideal para refuerzos y estructuras de carga.", "Se obtiene minando y fundiendo hierro."],
+	"bloque_acero": ["Bloque de tipo estructural.", "Ideal para estructuras pesadas y muros blindados.", "Se obtiene refinando hierro en una siderúrgica."],
 	"vidrio": ["Bloque de tipo estructural translúcido.", "Ideal para ventanas e iluminación natural.", "Se obtiene fundiendo tierra."],
 	"puerta": ["Objeto de tipo funcional.", "Entrada y salida de edificaciones y espacios cerrados.", "Se fabrica con madera."],
 	"cama": ["Objeto de tipo funcional.", "Descanso de colonos; requisito de todo edificio residencial.", "Se fabrica con madera."],
@@ -229,7 +232,7 @@ func configurar(tipos: Array) -> void:
 		caja.add_child(esquinas)
 
 		# Acceso directo, esquina inferior izquierda, color del borde (dorado).
-		var tecla := TemaHUD.etiqueta(str(i + 1))
+		var tecla := TemaHUD.etiqueta(str((i + 1) % 10))
 		tecla.anchor_left = 0.0
 		tecla.anchor_right = 0.0
 		tecla.anchor_top = 1.0

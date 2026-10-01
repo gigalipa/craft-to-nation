@@ -81,13 +81,13 @@ var cascadas: Dictionary = {}  # Vector2i -> Dictionary
 ## detectar_estructura()). "hierba" queda deliberadamente fuera: es un
 ## material de terreno/relleno (ver _generar_terreno() y el modo de
 ## nivelación de CamaraCenital), nunca un material de construcción — los
-## materiales estructurales reales son adobe, bloque_madera, bloque_piedra y
-## estructura_hierro (ver docs/superpowers/specs/2026-09-29-costo-
+## materiales estructurales reales son adobe, bloque_madera, bloque_piedra,
+## estructura_hierro y bloque_acero (ver docs/superpowers/specs/2026-09-29-costo-
 ## colocacion-bloques-design.md). Si el jugador usa "hierba" para rellenar
 ## un hueco de terreno bajo su edificio, ese relleno no debe "pegarse" a la
 ## estructura declarada ni distorsionar su huella.
 const TIPOS_ESTRUCTURA := [
-	"adobe", "bloque_madera", "bloque_piedra", "estructura_hierro",
+	"adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "bloque_acero",
 	"puerta_inferior", "puerta_superior", "vidrio",
 	"cama_cabecera", "cama_pies", "baul",
 ]
@@ -1468,7 +1468,7 @@ func eliminar_follaje(celda: Vector3i) -> void:
 ## regla especial.
 const ORDEN_GRUPOS_EDIFICIO := [
 	["tierra"],
-	["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "puerta_inferior", "puerta_superior", "vidrio"],
+	["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "bloque_acero", "puerta_inferior", "puerta_superior", "vidrio"],
 	["cama_cabecera", "cama_pies", "baul"],
 ]
 

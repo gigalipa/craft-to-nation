@@ -345,4 +345,13 @@ func ejecutar_pruebas() -> void:
 	var guia_acantilado_22: Dictionary = acantilado_22.calcular_base_y(Vector2i(-2, 0), casa_g, Vector3i(0, 1, 2))
 	assert(not guia_acantilado_22["valido"] and guia_acantilado_22["motivo"] == "pendiente", "el frente de la puerta seguidora está en el acantilado")
 
-	print("\n=== Las 22 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 23: bloque_acero cuesta 3 acero, cuenta como bloque contable y existe en la biblioteca ===")
+	assert(NiveladorTerreno.COSTO_POR_CELDA["bloque_acero"] == {"acero": 3})
+	assert(NiveladorTerreno.TIPOS_BLOQUE_CONTABLE.has("bloque_acero"))
+	var bloques_22: Dictionary = nivelador_plano.contar_bloques({Vector3i(0, 0, 0): "bloque_acero", Vector3i(1, 0, 0): "bloque_acero"}, 0)
+	assert(bloques_22["acero"] == 2, "cuenta bloques por recurso crudo")
+	var biblioteca_22: MeshLibrary = load("res://assets/BlockLibrary.res")
+	assert(biblioteca_22.find_item_by_name("bloque_acero") != -1, "la biblioteca tiene el bloque")
+	assert(biblioteca_22.find_item_by_name("estructura_hierro") != -1, "y conserva los anteriores")
+
+	print("\n=== Las 23 pruebas de NiveladorTerreno pasaron correctamente ===")

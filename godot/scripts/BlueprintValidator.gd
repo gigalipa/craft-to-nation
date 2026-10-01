@@ -524,7 +524,7 @@ static func _columnas_2d_encerradas(celda_tipos: Dictionary, x_max: int, z_max: 
 ## Los 4 materiales de muro reales (ver VoxelWorld.TIPOS_ESTRUCTURA) son
 ## intercambiables a efectos de Blueprint: la validación de forma no
 ## distingue de qué están hechos, solo si la celda es sólida.
-const TIPOS_MURO_REAL := ["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro"]
+const TIPOS_MURO_REAL := ["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "bloque_acero"]
 
 ## Rota "celdas_3d" (Vector3i local -> tipo de bloque) 90° horario, misma
 ## fórmula que usa CamaraCenital._rotar_blueprint() para el fantasma en

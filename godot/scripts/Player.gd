@@ -80,7 +80,7 @@ const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
 
-var tipos_disponibles := ["tierra", "adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio", "puerta", "cama", "baul"]
+var tipos_disponibles := ["tierra", "adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio", "puerta", "cama", "baul", "bloque_acero"]
 var tipo_seleccionado := 0
 
 var mundo: Node  # asignada por Main.gd al iniciar la escena
@@ -175,7 +175,7 @@ func _input(event: InputEvent) -> void:
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
 		if tecla.pressed:
-			var indice: int = tecla.keycode - KEY_1
+			var indice: int = 9 if tecla.keycode == KEY_0 else tecla.keycode - KEY_1
 			if indice >= 0 and indice < tipos_disponibles.size():
 				tipo_seleccionado = indice
 				hud.set_tipo_hotbar(indice)

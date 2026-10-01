@@ -32,6 +32,14 @@ material = SubResource("Mat_estructura_hierro")
 
 [sub_resource type="BoxShape3D" id="Shape_estructura_hierro"]
 
+[sub_resource type="StandardMaterial3D" id="Mat_bloque_acero"]
+albedo_color = Color(0.72, 0.76, 0.82, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_bloque_acero"]
+material = SubResource("Mat_bloque_acero")
+
+[sub_resource type="BoxShape3D" id="Shape_bloque_acero"]
+
 [sub_resource type="StandardMaterial3D" id="Mat_puerta_inferior"]
 albedo_color = Color(0.45, 0.28, 0.12, 1)
 
@@ -521,3 +529,9 @@ mesh = SubResource("ArrayMesh_lawda")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="diag_lat" unique_id=527560520]
 shape = SubResource("ConvexPolygonShape3D_aj37d")
+
+[node name="bloque_acero" type="MeshInstance3D" parent="." unique_id=900000101]
+mesh = SubResource("Mesh_bloque_acero")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="bloque_acero" unique_id=900000102]
+shape = SubResource("Shape_bloque_acero")

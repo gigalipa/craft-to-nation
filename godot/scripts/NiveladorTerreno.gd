@@ -37,6 +37,7 @@ const COSTO_POR_CELDA := {
 	"bloque_madera": {"madera": 5},
 	"bloque_piedra": {"piedra": 5},
 	"estructura_hierro": {"hierro": 5},
+	"bloque_acero": {"acero": 3},
 	"vidrio": {"tierra": 1},
 	"puerta_inferior": {"madera": 1},
 	"puerta_superior": {"madera": 1},
@@ -275,7 +276,7 @@ func resumen_materiales(celdas_3d: Dictionary, relleno_total: int, recogido: Dic
 ## COSTO_POR_CELDA, para que "235 madera (47 bloques)" cuente solo los
 ## bloque_madera reales, no cada puerta/cama/baúl que también gasta madera
 ## (decisión del usuario, 2026-09-30).
-const TIPOS_BLOQUE_CONTABLE := ["tierra", "adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio"]
+const TIPOS_BLOQUE_CONTABLE := ["tierra", "adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio", "bloque_acero"]
 
 
 ## Cuenta, por recurso, cuántas celdas de "celdas_3d" son un bloque de pared/

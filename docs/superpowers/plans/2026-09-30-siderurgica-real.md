@@ -41,11 +41,12 @@ El código `124` del `timeout` es normal. Tras cada ejecución, comprueba con `G
 
 1. **Costo de construcción = los bloques de la plantilla**, igual que los puestos reales (`NiveladorTerreno.COSTO_POR_CELDA` por celda). Las constantes `COSTO_CONSTRUCCION_REFINERIA_*` de `CadenaMinerales.gd` no las usa nadie y quedan sin tocar; el spec decía "usar esos placeholders", pero el sistema real cobra por bloque.
 2. **Material de muro `bloque_piedra`**, con una plantilla provisional de 5×5 y dos puertas en lados opuestos.
-3. **Ubicación:** la regla "fuera de la zona de influencia" de los puestos periféricos **no se aplica** a las refinerías (el GDD las ubica en el núcleo industrial); basta suelo libre y plano.
+3. **Ubicación (decidido por el usuario):** una refinería solo puede construirse **dentro de la zona de influencia y con toda su huella sobre una zona industrial** (`Zonificacion.ZONAS_PINTABLES[1]`, "fabricacion_militar"). Es la regla opuesta a la de los puestos periféricos, que no pueden ir dentro de la zona de influencia.
+3b. **Nivelación (decidido por el usuario):** la puerta de **entrada** marca la altura del edificio (como la puerta de cualquier construcción); el terreno frente a la puerta de **salida** se nivela a ese mismo nivel, cavando o rellenando según haga falta. No se rechaza por desnivel entre entrada y salida (solo por la pendiente máxima general entre columnas vecinas).
 4. **Categoría Industrial** del menú Construir (hoy "Próximamente") recibe el botón de la siderúrgica, con tecla `1`.
 5. **`acero` no existe en `Ciudad.almacen`** (hoy `Economia.entregar()` lo descartaría): se agrega, con tope `LIMITE_BASE`.
 6. Un acarreador de refinería solo viaja a retirar hierro si hay al menos `Economia.CARGA_MINIMA` (10) unidades que llevar, y solo viaja a recoger acero si hay al menos 10 acumuladas (o va de paso tras dejar hierro). Un resto menor de 10 de acero queda en el almacén local hasta acumular más.
-7. `bloque_acero` pasa a ser la **10.ª casilla de la hotbar** (tecla `0`).
+7. `bloque_acero` pasa a ser la **10.ª casilla de la hotbar** (tecla `0`). Es provisional (decidido por el usuario): más adelante la hotbar será configurable, como en Minecraft, y se cambiará de bloque con la rueda del mouse.
 
 ## Review Focus
 
@@ -53,12 +54,14 @@ El código `124` del `timeout` es normal. Tras cada ejecución, comprueba con `G
 - **Almacén local lleno (1000):** no se retira más hierro del stock central (Task 3, TEST 26).
 - **Liberar a un acarreador que lleva hierro:** el hierro vuelve al stock central, no se pierde (Task 4, TEST 40).
 - **Despedir a un técnico:** su tipo vuelve a desempleado y la demografía cuadra (hoy `_volver_a_desempleado` asume siempre obrero; Task 4, TEST 37).
-- **Entrada y salida a distinto nivel de suelo:** la colocación se rechaza con el mensaje de "puertas" (Task 5, TEST 13).
+- **Entrada y salida a distinto nivel de suelo:** no se rechaza; el frente de la salida se nivela (cava o rellena) al nivel de la entrada (Task 4b, TEST 22; Task 5, TEST 13).
+- **Fuera de la zona de influencia, o dentro pero sin zona industrial pintada bajo toda la huella:** se rechaza con un mensaje específico para cada caso (Task 5, TEST 13).
 
 ## File Structure
 
 - Modify `godot/scripts/Ciudad.gd`, `HUD.gd`: recurso `acero` en el stock central y su nombre (Task 1).
-- Modify `godot/scripts/PlantillasPuesto.gd`: puertas de entrada/salida, plantilla `siderurgica`, fachada de ambos lados (Task 2).
+- Modify `godot/scripts/PlantillasPuesto.gd`: puertas de entrada/salida, plantilla `siderurgica`, fachada de ambos lados, `puerta_de_entrada()` (Task 2).
+- Modify `godot/scripts/NiveladorTerreno.gd`: `calcular_base_y()` acepta una puerta guía; las demás puertas se nivelan a su nivel (Task 4b).
 - Modify `godot/scripts/CadenaMinerales.gd`, `Recoleccion.gd`, `Economia.gd`: tipo, cupo, capacidad, roles, refinado, helpers de acarreo (Task 3).
 - Modify `godot/scripts/Colonos.gd`: contratar técnicos, liberación, fases del acarreador de refinería (Task 4).
 - Modify `godot/scripts/BarraModos.gd`, `CamaraCenital.gd`, `Player.gd`, `HUD.gd`, `PanelPuesto.gd`: colocación, registro y panel (Task 5).
@@ -142,6 +145,7 @@ git commit -m "feat: acero en el stock central" -m "Co-Authored-By: Claude Sonne
   - `PlantillasPuesto.celda_de_servicio(tipo, giros) -> Vector2i` (ahora: celda frente a la **entrada**; sin cambios para los puestos de una puerta).
   - `PlantillasPuesto.celda_de_salida(tipo, giros) -> Vector2i` (frente a la **salida**; igual a la de servicio en los puestos de una puerta).
   - `PlantillasPuesto.fachada(tipo, giros)` cubre ambos lados.
+  - `PlantillasPuesto.puerta_de_entrada(tipo, giros) -> Vector3i`: celda local (x, capa, z) girada de la puerta inferior de entrada (la que marca la altura; en los puestos de una puerta, esa puerta).
   - Caracteres de plantilla: `e`/`E` entrada inferior/superior, `s`/`S` salida inferior/superior (mismos bloques que `d`/`D`).
 
 - [ ] **Step 1: Escribir la prueba que falla**
@@ -169,6 +173,9 @@ En `PlantillasPuestoTest.gd`, antes de `print("\n=== Las 10 pruebas ...`, agrega
 		var fachada11: Array[Vector2i] = PlantillasPuesto.fachada("siderurgica", giros11)
 		assert(fachada11.has(entrada11) and fachada11.has(salida11), "la fachada incluye ambas celdas de servicio")
 		assert(fachada11.size() == 20, "2 columnas de fondo por los 5 de cada lado, en ambos lados (%d)" % fachada11.size())
+		var guia11: Vector3i = PlantillasPuesto.puerta_de_entrada("siderurgica", giros11)
+		assert(PlantillasPuesto.celdas("siderurgica", giros11)[guia11] == "puerta_inferior", "la puerta guía es una puerta inferior")
+		assert(absi(guia11.x - entrada11.x) + absi(guia11.z - entrada11.y) == 1, "y es la que da a la celda de servicio de entrada")
 	for tipo11 in TIPOS:
 		for giros11 in range(4):
 			assert(PlantillasPuesto.celda_de_salida(tipo11, giros11) == PlantillasPuesto.celda_de_servicio(tipo11, giros11), tipo11 + ": con una sola puerta, salida == servicio")
@@ -267,6 +274,14 @@ static func celda_de_servicio(tipo: String, giros: int) -> Vector2i:
 ## en los tipos de una sola puerta.
 static func celda_de_salida(tipo: String, giros: int) -> Vector2i:
 	return _celda_fuera(tipo, giros, "ds")
+
+
+## Celda local (x, capa, z) girada de la puerta inferior de entrada: la que marca la altura
+## del edificio (NiveladorTerreno.calcular_base_y(), "puerta_guia"); el terreno frente a la
+## puerta de salida se nivela a ese mismo nivel.
+static func puerta_de_entrada(tipo: String, giros: int) -> Vector3i:
+	var d := dimensiones(tipo)
+	return _girar(_buscar_caracter(tipo, "de"), d.x, d.y, giros)
 ```
 
 y `fachada()`:
@@ -908,18 +923,151 @@ git commit -m "feat: técnicos y acarreo de ida y vuelta de la siderúrgica" -m 
 
 ---
 
+### Task 4b: Nivelación guiada por la puerta de entrada
+
+**Files:**
+- Modify: `godot/scripts/NiveladorTerreno.gd:158-207` (`calcular_base_y`)
+- Test: `godot/scripts/NiveladorTerrenoTest.gd` (TEST 22 nuevo)
+
+**Interfaces:**
+- Produces: `NiveladorTerreno.SIN_PUERTA_GUIA := Vector3i(-99999, -99999, -99999)` y `calcular_base_y(esquina, celdas_3d, puerta_guia: Vector3i = SIN_PUERTA_GUIA) -> Dictionary`. Con `puerta_guia` (clave relativa de `celdas_3d` de una `"puerta_inferior"`), solo esa puerta decide `base_y`; las demás puertas inferiores ("seguidoras") añaden su frente a `"frentes"` y las columnas de su fachada se nivelan al **mismo nivel que el frente de la puerta guía**. Sin `puerta_guia` el comportamiento es el de siempre (varias puertas a distinto nivel se rechazan con el motivo `"puertas"`). El resultado conserva su forma: `{"valido", "base_y", "motivo", "frentes", "fachada"}`.
+
+- [ ] **Step 1: Escribir la prueba que falla**
+
+En `NiveladorTerrenoTest.gd`, antes de la línea final (`print("\n=== Las 21 pruebas ...`), agrega y cambia el total a 22:
+
+```gdscript
+	print("\n=== TEST 22: con puerta guía, la otra puerta no decide el nivel: su frente se nivela al de la guía ===")
+	# Casa 4x5 con puertas en x=0 (guía) y x=3, terreno que sube 1 por paso en X (ver TEST 11):
+	# sin guía se rechaza ("puertas"); con guía manda la de x=0 (suelo frontal 9) y la otra se nivela a 9.
+	var nivelador_g: RefCounted = NiveladorTerreno.new(GeneradorRampaX.new())
+	var casa_g: Dictionary = _casa_4x5(true)
+	var sin_guia_22: Dictionary = nivelador_g.calcular_base_y(Vector2i(10, 10), casa_g)
+	assert(not sin_guia_22["valido"] and sin_guia_22["motivo"] == "puertas", "sin guía, el comportamiento no cambia")
+	var guia_22: Dictionary = nivelador_g.calcular_base_y(Vector2i(10, 10), casa_g, Vector3i(0, 1, 2))
+	assert(guia_22["valido"] and guia_22["base_y"] == 9, "la puerta guía decide la altura")
+	assert(guia_22["frentes"].size() == 2 and guia_22["frentes"].has(Vector2i(9, 12)) and guia_22["frentes"].has(Vector2i(14, 12)), "ambos frentes quedan registrados")
+	assert(guia_22["fachada"].size() == 20, "2 columnas de fondo por los 5 de cada lado, en ambos lados")
+	assert(guia_22["fachada"][Vector2i(9, 12)] == 9 and guia_22["fachada"][Vector2i(8, 12)] == 9, "frente de la guía: su suelo natural")
+	assert(guia_22["fachada"][Vector2i(14, 12)] == 9 and guia_22["fachada"][Vector2i(15, 12)] == 9, "frente de la otra puerta: nivelado al de la guía, no a su suelo natural (14)")
+	# Una puerta seguidora frente a un desnivel mayor al límite sigue rechazándose (pendiente).
+	var acantilado_22: RefCounted = NiveladorTerreno.new(GeneradorConAcantilado.new())
+	# Con esquina (-2, 0) la puerta seguidora (x=3) queda en la columna (1, 2) y su frente en (2, 2),
+	# justo el acantilado (altura 100): se rechaza por pendiente igual que cualquier puerta.
+	var guia_acantilado_22: Dictionary = acantilado_22.calcular_base_y(Vector2i(-2, 0), casa_g, Vector3i(0, 1, 2))
+	assert(not guia_acantilado_22["valido"] and guia_acantilado_22["motivo"] == "pendiente", "el frente de la puerta seguidora está en el acantilado")
+
+	print("\n=== Las 22 pruebas de NiveladorTerreno pasaron correctamente ===")
+```
+
+(borra la línea final antigua "Las 21 pruebas").
+
+- [ ] **Step 2: Correr y ver que falla**
+
+Run: `scenes/NiveladorTerrenoTest.tscn`. Expected: fallo (`calcular_base_y` no acepta un tercer argumento).
+
+- [ ] **Step 3: Implementar**
+
+En `NiveladorTerreno.gd`, junto a `LIMITE_PENDIENTE`, agrega:
+
+```gdscript
+## "Sin puerta guía": todas las puertas inferiores deciden el nivel (ver calcular_base_y()).
+const SIN_PUERTA_GUIA := Vector3i(-99999, -99999, -99999)
+```
+
+Reemplaza la firma y el cuerpo de `calcular_base_y()` (líneas 158-207) por la versión siguiente (añade el parámetro y el manejo de puertas seguidoras; el resto no cambia). Amplía su comentario de cabecera con: `"puerta_guia" (clave relativa de una "puerta_inferior" de "celdas_3d"): con ella, solo esa puerta decide base_y y las demás puertas inferiores (p. ej. la salida de una refinería) nivelan el terreno de su frente al mismo nivel que el de la guía, cavando o rellenando.`
+
+```gdscript
+func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary, puerta_guia: Vector3i = SIN_PUERTA_GUIA) -> Dictionary:
+	var huella: Dictionary = {}  # Vector2i -> true
+	var columnas: Array[Vector2i] = []
+	for rel in celdas_3d:
+		var xz := Vector2i(rel.x, rel.z)
+		if not huella.has(xz):
+			huella[xz] = true
+			columnas.append(xz)
+	var respaldo: int = altura_objetivo(esquina, columnas) + 1
+
+	var frentes: Array[Vector2i] = []
+	var candidatos: Dictionary = {}  # int base_y -> true
+	var nivel_por_direccion: Dictionary = {}  # Vector2i (dirección) -> int (G)
+	var direcciones_seguidoras: Array[Vector2i] = []  # puertas que no deciden el nivel (ver puerta_guia)
+	for rel in celdas_3d:
+		if celdas_3d[rel] != "puerta_inferior":
+			continue
+		var es_seguidora: bool = puerta_guia != SIN_PUERTA_GUIA and rel != puerta_guia
+		var xz := Vector2i(rel.x, rel.z)
+		for direccion: Vector2i in DIRECCIONES_XZ:
+			if huella.has(xz + direccion):
+				continue
+			var columna_puerta := esquina + xz
+			var frente := columna_puerta + direccion
+			var suelo_frente: int = _generador.altura_en(frente.x, frente.y)
+			if abs(_generador.altura_en(columna_puerta.x, columna_puerta.y) - suelo_frente) > LIMITE_PENDIENTE:
+				return _base_y_invalida(respaldo, "pendiente", frentes)
+			frentes.append(frente)
+			if es_seguidora:
+				direcciones_seguidoras.append(direccion)
+				continue
+			candidatos[suelo_frente + 1 - rel.y] = true
+			if nivel_por_direccion.get(direccion, suelo_frente) != suelo_frente:
+				return _base_y_invalida(respaldo, "puertas", frentes)
+			nivel_por_direccion[direccion] = suelo_frente
+	if candidatos.size() > 1:
+		return _base_y_invalida(respaldo, "puertas", frentes)
+	if not nivel_por_direccion.is_empty():
+		var nivel_guia: int = nivel_por_direccion.values()[0]
+		for direccion: Vector2i in direcciones_seguidoras:
+			if not nivel_por_direccion.has(direccion):
+				nivel_por_direccion[direccion] = nivel_guia
+
+	var fachada: Dictionary = {}  # Vector2i (columna mundial) -> int (G)
+	for direccion: Vector2i in nivel_por_direccion:
+		var nivel: int = nivel_por_direccion[direccion]
+		for c: Vector2i in columnas:
+			if huella.has(c + direccion):
+				continue
+			for paso in range(1, 3):
+				var relativa: Vector2i = c + direccion * paso
+				if huella.has(relativa):
+					continue
+				var columna: Vector2i = esquina + relativa
+				if fachada.get(columna, nivel) != nivel:
+					return _base_y_invalida(respaldo, "puertas", frentes)
+				fachada[columna] = nivel
+
+	var base_y: int = respaldo if candidatos.is_empty() else candidatos.keys()[0]
+	return {"valido": true, "base_y": base_y, "motivo": "", "frentes": frentes, "fachada": fachada}
+```
+
+(Antes de pegarla, compara con la función actual: debe diferir solo en el parámetro `puerta_guia`, `es_seguidora`, `direcciones_seguidoras` y el bloque `if not nivel_por_direccion.is_empty():`.)
+
+- [ ] **Step 4: Correr y ver que pasa**
+
+Run: `scenes/NiveladorTerrenoTest.tscn`, `scenes/BlueprintsTest.tscn`, `scenes/PuestosPrevisualizacionTest.tscn`.
+Expected: 0 fallos. Los TESTS 9-16 existentes de `NiveladorTerrenoTest` (sin guía) siguen verdes porque, sin guía, ninguna puerta es seguidora.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add godot/scripts/NiveladorTerreno.gd godot/scripts/NiveladorTerrenoTest.gd
+git commit -m "feat: nivelación guiada por la puerta de entrada" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+```
+
+---
+
 ### Task 5: Colocar la siderúrgica desde la cenital
 
 **Files:**
 - Modify: `godot/scripts/BarraModos.gd:71`, `:80`
-- Modify: `godot/scripts/CamaraCenital.gd` (`PUESTOS_PERIFERICO` ~1282, `_manejar_tecla_construir` ~1386, `_alternar_puesto_por_tipo` ~1475, `_actualizar_previsualizacion_puesto` ~963, `_evaluar_puesto` ~2185, `_confirmar_puesto` ~2381/2431)
+- Modify: `godot/scripts/CamaraCenital.gd` (`PUESTOS_PERIFERICO` ~1282, `_manejar_tecla_construir` ~1386, `_alternar_puesto_por_tipo` ~1475, `_actualizar_previsualizacion_puesto` ~963, `_base_y_puesto` ~1017, `_evaluar_puesto` ~2185, `_mensaje_rechazo_puesto` ~2205, `_confirmar_puesto` ~2381/2431)
 - Modify: `godot/scripts/Player.gd:1086-1099`
 - Modify: `godot/scripts/HUD.gd:219` (`texto_tasas`)
 - Modify: `godot/scripts/PanelPuesto.gd`
 - Test: `godot/scripts/PuestosPrevisualizacionTest.gd` (TEST 13 nuevo)
 
 **Interfaces:**
-- Consumes: `PlantillasPuesto` (Task 2), `Economia.registrar_puesto(..., salida)`, `CadenaMinerales.REFINERIAS` (Task 3).
+- Consumes: `PlantillasPuesto` incl. `puerta_de_entrada()` (Task 2), `Economia.registrar_puesto(..., salida)`, `CadenaMinerales.REFINERIAS` (Task 3), `NiveladorTerreno.calcular_base_y(..., puerta_guia)` (Task 4b).
 - Produces: botón "Siderúrgica [1]" en Construir → Industrial; `puesto_nuevo["salida"]` en la metadata de la obra; `Economia` registra la refinería con `entorno {}` y `tasas {}`.
 
 - [ ] **Step 1: Escribir la prueba que falla**
@@ -927,35 +1075,48 @@ git commit -m "feat: técnicos y acarreo de ida y vuelta de la siderúrgica" -m 
 En `PuestosPrevisualizacionTest.gd`, antes de `print("\n=== Las 12 pruebas ...`, agrega y cambia el total a 13:
 
 ```gdscript
-	print("\n=== TEST 13: la siderúrgica se evalúa como un puesto: válida en suelo plano, con fachada de entrada y salida, sin la regla de la zona de influencia ===")
+	print("\n=== TEST 13: la siderúrgica solo se coloca dentro de la zona de influencia y sobre zona industrial; el frente de la salida se nivela al nivel de la entrada ===")
 	var mundo13: Node = _mundo_plano()
+	var esquina13 := Vector2i(18, 18)
 	var camara13: Camera3D = _camara(mundo13, "siderurgica")
-	var esquina13 := Vector2i(10, 10)
 	var ev13: Dictionary = camara13._evaluar_puesto(esquina13)
-	assert(camara13._mensaje_rechazo_puesto(ev13) == "", "válida sobre suelo plano, salió: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	assert("zona de influencia" in camara13._mensaje_rechazo_puesto(ev13), "sin núcleo declarado está fuera de la zona de influencia: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	Zonificacion.declarar_nucleo([Vector2i(30, 30), Vector2i(31, 30), Vector2i(30, 31), Vector2i(31, 31)])
+	ev13 = camara13._evaluar_puesto(esquina13)
+	assert("zona industrial" in camara13._mensaje_rechazo_puesto(ev13), "dentro de la influencia pero sin zona pintada: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	Zonificacion.pintar_zona(esquina13, esquina13 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[0])
+	ev13 = camara13._evaluar_puesto(esquina13)
+	assert("zona industrial" in camara13._mensaje_rechazo_puesto(ev13), "una zona residencial tampoco sirve: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	Zonificacion.pintar_zona(esquina13, esquina13 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[1])
+	ev13 = camara13._evaluar_puesto(esquina13)
+	assert(camara13._mensaje_rechazo_puesto(ev13) == "", "dentro de la influencia y sobre zona industrial es válida: %s" % camara13._mensaje_rechazo_puesto(ev13))
 	assert(ev13["fachada"].size() == 20, "fachada de ambos lados (%d)" % ev13["fachada"].size())
 	var costo13: Dictionary = camara13._resumen_materiales_puesto(esquina13, ev13)["neto"]
 	assert(costo13.get("piedra", 0) > 0, "construir una siderúrgica cuesta piedra (muros de bloque_piedra)")
+	# Media huella sobre zona industrial no alcanza.
+	Zonificacion.despintar_zona(esquina13 + Vector2i(0, 4), esquina13 + Vector2i(4, 4))
+	assert("zona industrial" in camara13._mensaje_rechazo_puesto(camara13._evaluar_puesto(esquina13)), "toda la huella debe estar sobre zona industrial")
+	Zonificacion.pintar_zona(esquina13, esquina13 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[1])
 	camara13.free()
-	# Dentro de la zona de influencia: una mina se rechaza, la siderúrgica no.
-	Zonificacion.declarar_nucleo([Vector2i(20, 20), Vector2i(21, 20), Vector2i(20, 21), Vector2i(21, 21)])
-	var camara13b: Camera3D = _camara(mundo13, "mina")
-	var ev13b: Dictionary = camara13b._evaluar_puesto(Vector2i(18, 18))
-	assert("influencia" in camara13b._mensaje_rechazo_puesto(ev13b), "una mina no se coloca en la zona de influencia")
-	camara13b.free()
-	var camara13c: Camera3D = _camara(mundo13, "siderurgica")
-	var ev13c: Dictionary = camara13c._evaluar_puesto(Vector2i(18, 18))
-	assert(not ("influencia" in camara13c._mensaje_rechazo_puesto(ev13c)), "la siderúrgica sí puede ir en la zona de influencia")
-	camara13c.free()
-	Zonificacion.nucleo_declarado = false  # no contaminar otras pruebas de esta escena
-	# Entrada y salida a distinto nivel de suelo: se rechaza como un blueprint con puertas desniveladas.
+	# Una mina, en cambio, no puede ir en la zona de influencia.
+	var camara13m: Camera3D = _camara(mundo13, "mina")
+	assert("influencia" in camara13m._mensaje_rechazo_puesto(camara13m._evaluar_puesto(esquina13)), "una mina no se coloca en la zona de influencia")
+	camara13m.free()
+	# Entrada y salida a distinto nivel: el terreno al sur de la salida (z >= 23) está 1 más alto. Manda la
+	# entrada (norte, nivel 0); el frente de la salida se nivela cavando ese bloque, no se rechaza.
 	for x13 in range(LADO):
-		for z13 in range(15, LADO):
+		for z13 in range(23, LADO):
 			mundo13.colocar_bloque(Vector3i(x13, 1, z13), "tierra")
 	var camara13d: Camera3D = _camara(mundo13, "siderurgica")
 	var ev13d: Dictionary = camara13d._evaluar_puesto(esquina13)
-	assert(camara13d._mensaje_rechazo_puesto(ev13d) == CamaraCenitalScript.MENSAJES_BASE_Y["puertas"], "entrada y salida a distinto nivel: %s" % camara13d._mensaje_rechazo_puesto(ev13d))
+	assert(camara13d._mensaje_rechazo_puesto(ev13d) == "", "el desnivel entre entrada y salida no rechaza: %s" % camara13d._mensaje_rechazo_puesto(ev13d))
+	assert(ev13d["resultado_base"]["base_y"] == 0, "la entrada decide la altura")
+	var frente_salida13: Vector2i = esquina13 + PlantillasPuesto.celda_de_salida("siderurgica", 0)
+	assert(ev13d["fachada"][frente_salida13] == 0, "el frente de la salida se nivela al nivel de la entrada")
+	var plan13: Dictionary = camara13d._plan_nivelacion(esquina13, ev13d["columnas"], ev13d["resultado_base"]["base_y"], ev13d["fachada"])
+	assert(plan13["excavacion"].has(Vector3i(frente_salida13.x, 1, frente_salida13.y)), "se cava el bloque que sobra frente a la salida")
 	camara13d.free()
+	Zonificacion.nucleo_declarado = false  # no contaminar otras pruebas de esta escena
 	mundo13.free()
 
 	print("\n=== Las 13 pruebas de previsualización de puestos pasaron correctamente ===")
@@ -966,7 +1127,7 @@ En `PuestosPrevisualizacionTest.gd`, antes de `print("\n=== Las 12 pruebas ...`,
 - [ ] **Step 2: Correr y ver que falla**
 
 Run: `scenes/PuestosPrevisualizacionTest.tscn`.
-Expected: fallo en TEST 13 (la rama `else` de `_actualizar_previsualizacion_puesto` y la regla de influencia aún tratan a `siderurgica` como un maderero).
+Expected: fallo en TEST 13 (la regla de zona de influencia/zona industrial y la nivelación guiada por la entrada aún no existen para `siderurgica`).
 
 - [ ] **Step 3: Implementar**
 
@@ -1005,10 +1166,31 @@ const PUESTOS_INDUSTRIAL := ["siderurgica"]
 		elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo):
 			_ocultar_area_accion()  # una refinería no tiene área de acción ni tasa de recolección
 ```
-5. `_evaluar_puesto()` — la regla de zona de influencia no aplica a las refinerías:
+5. `_evaluar_puesto()` — las refinerías siguen la regla opuesta a la de los puestos periféricos: solo dentro de la zona de influencia y con toda la huella sobre zona industrial. Antes del `return {`, agrega:
 ```gdscript
-		"en_influencia": Zonificacion.dentro_de_influencia(centro) and not CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo),
+	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo)
+	var dentro_de_influencia: bool = Zonificacion.dentro_de_influencia(centro)
 ```
+y reemplaza la línea `"en_influencia": Zonificacion.dentro_de_influencia(centro),` por:
+```gdscript
+		"en_influencia": dentro_de_influencia and not es_refineria,  # los puestos periféricos no pueden ir dentro
+		"fuera_de_influencia": es_refineria and not dentro_de_influencia,  # las refinerías solo pueden ir dentro
+		"zona_correcta": not es_refineria or _huella_en_zona_correcta(esquina, columnas, Zonificacion.ZONAS_PINTABLES[1]),
+```
+(`ZONAS_PINTABLES[1]` es la zona industrial, "fabricacion_militar"; `_huella_en_zona_correcta()` exige que **todas** las columnas de la huella estén pintadas con ella, igual que un blueprint).
+
+5b. `_mensaje_rechazo_puesto()` — tras el primer `if ev["en_influencia"]:` (que devuelve el mensaje de los puestos periféricos), agrega:
+```gdscript
+	if ev["fuera_de_influencia"]:
+		return "Colocación rechazada: una refinería solo puede construirse dentro de la zona de influencia."
+	if not ev["zona_correcta"]:
+		return "Colocación rechazada: una refinería solo puede construirse sobre una zona industrial."
+```
+5c. `_base_y_puesto()` — la puerta de **entrada** manda en la altura y el frente de la salida se nivela a ese nivel (Task 4b):
+```gdscript
+	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, PlantillasPuesto.celdas(tipo, giros), PlantillasPuesto.puerta_de_entrada(tipo, giros))
+```
+y corrige su comentario de cabecera: ya no es cierto que "un puesto siempre tiene exactamente una puerta"; ahora dice que la puerta de entrada decide `base_y` (en los puestos de una puerta es la única) y que el terreno frente a la puerta de salida se nivela a ese nivel.
 6. `_confirmar_puesto()` — tras `var servicio: Vector2i = ...`:
 ```gdscript
 	var salida: Vector2i = esquina + PlantillasPuesto.celda_de_salida(_tipo_puesto_activo, giros)
@@ -1096,17 +1278,17 @@ Independiente del resto: puede hacerse antes o después, y se puede aplazar sin 
 - Modify: `godot/scripts/BlueprintValidator.gd:527`
 - Modify: `godot/scripts/Hotbar.gd:28-31`, `:44-46`, `:65-67`, `:232`
 - Modify: `godot/scripts/Player.gd:83`, `:176-178`
-- Test: `godot/scripts/NiveladorTerrenoTest.gd` (TEST 22 nuevo), `godot/scripts/HUDTest.gd` si cuenta casillas
+- Test: `godot/scripts/NiveladorTerrenoTest.gd` (TEST 23 nuevo, tras el TEST 22 de la Task 4b), `godot/scripts/HUDTest.gd` si cuenta casillas
 
 **Interfaces:**
 - Produces: bloque `bloque_acero` en la `MeshLibrary`, en `NiveladorTerreno.COSTO_POR_CELDA` (`{"acero": 3}`), en `TIPOS_BLOQUE_CONTABLE`, `VoxelWorld.TIPOS_ESTRUCTURA`, `BlueprintValidator.TIPOS_MURO_REAL`, y como 10.ª casilla de `Player.tipos_disponibles` (tecla `0`).
 
 - [ ] **Step 1: Escribir la prueba que falla**
 
-En `NiveladorTerrenoTest.gd`, antes de `print("\n=== Las 21 pruebas ...`, agrega y cambia el total a 22:
+En `NiveladorTerrenoTest.gd`, antes de `print("\n=== Las 22 pruebas ...`, agrega y cambia el total a 23:
 
 ```gdscript
-	print("\n=== TEST 22: bloque_acero cuesta 3 acero, cuenta como bloque contable y existe en la biblioteca ===")
+	print("\n=== TEST 23: bloque_acero cuesta 3 acero, cuenta como bloque contable y existe en la biblioteca ===")
 	assert(NiveladorTerreno.COSTO_POR_CELDA["bloque_acero"] == {"acero": 3})
 	assert(NiveladorTerreno.TIPOS_BLOQUE_CONTABLE.has("bloque_acero"))
 	var bloques_22: Dictionary = nivelador_plano.contar_bloques({Vector3i(0, 0, 0): "bloque_acero", Vector3i(1, 0, 0): "bloque_acero"}, 0)
@@ -1115,14 +1297,14 @@ En `NiveladorTerrenoTest.gd`, antes de `print("\n=== Las 21 pruebas ...`, agrega
 	assert(biblioteca_22.find_item_by_name("bloque_acero") != -1, "la biblioteca tiene el bloque")
 	assert(biblioteca_22.find_item_by_name("estructura_hierro") != -1, "y conserva los anteriores")
 
-	print("\n=== Las 22 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== Las 23 pruebas de NiveladorTerreno pasaron correctamente ===")
 ```
 
 (borra la línea final antigua). Revisa en el test existente 21 cómo se llama la instancia (`nivelador_plano`) y úsala igual.
 
 - [ ] **Step 2: Correr y ver que falla**
 
-Run: `scenes/NiveladorTerrenoTest.tscn`. Expected: fallo (no existe `bloque_acero`).
+Run: `scenes/NiveladorTerrenoTest.tscn`. Expected: fallo en TEST 23 (no existe `bloque_acero`).
 
 - [ ] **Step 3: Implementar**
 
@@ -1252,7 +1434,7 @@ Expected: 0 `Assertion failed`/`SCRIPT ERROR` en cada una, y cada escena imprime
 
 - [ ] **Step 5: Verificación manual (la hace el usuario jugando)**
 
-Con el editor abierto, en la cenital: Construir → Industrial → Siderúrgica (tecla `1`). Comprobar: el fantasma muestra dos puertas en lados opuestos y la nivelación a ambos lados; se puede colocar dentro de la zona de influencia; al completarla aparece su panel con "Técnicos" y "Acarreadores"; con hierro en el stock, un técnico y un acarreador, el acero llega al stock central y se puede colocar `bloque_acero` con la tecla `0`.
+Con el editor abierto, en la cenital: Construir → Industrial → Siderúrgica (tecla `1`). Comprobar: el fantasma muestra dos puertas en lados opuestos y la nivelación a ambos lados (la entrada marca la altura y el frente de la salida se cava o rellena a ese nivel); solo se deja colocar dentro de la zona de influencia y con toda la huella sobre una zona industrial (y avisa en cada caso); al completarla aparece su panel con "Técnicos" y "Acarreadores"; con hierro en el stock, un técnico y un acarreador, el acero llega al stock central y se puede colocar `bloque_acero` con la tecla `0`.
 
 - [ ] **Step 6: Commit**
 

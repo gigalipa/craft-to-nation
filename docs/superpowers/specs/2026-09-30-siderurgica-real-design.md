@@ -16,6 +16,9 @@ Es la primera de cuatro refinerías (siderúrgica, refinería de tierras raras, 
 - **Técnicos:** las refinerías emplean trabajadores de nivel técnico; su velocidad de refinado crece con cuántos técnicos tengan empleados. Los acarreadores siguen siendo obreros, como en los puestos periféricos.
 - **Origen de los técnicos (placeholder):** asignar un desempleado al rol técnico lo convierte en técnico (`Ciudad.reasignar_tipo("desempleado", "tecnico")`), sin formación previa, hasta que exista educación o entrenamiento.
 - **Acarreo:** el plan debe leer `Colonos.gd` completo antes de fijar cómo cambia la máquina de estados.
+- **Ubicación:** una refinería solo puede construirse dentro de la zona de influencia y con toda su huella sobre una zona industrial (regla opuesta a la de los puestos periféricos, que no pueden ir dentro de la zona de influencia).
+- **Nivelación:** como en toda construcción, la altura la marca la puerta; en la siderúrgica la marca la puerta de entrada, y el terreno frente a la puerta de salida se nivela a ese mismo nivel, cavando o rellenando. No se rechaza por desnivel entre ambas.
+- **Hotbar:** `bloque_acero` es por ahora la 10.ª casilla (tecla `0`); más adelante la hotbar será configurable, como en Minecraft, y se cambiará de bloque con la rueda del mouse.
 
 ## Alcance
 
@@ -29,7 +32,8 @@ Fuera: aserradero, carbonera, refinería de tierras raras, cintas y tuberías (s
 - **Entrada y salida:** la plantilla marca dos puertas con caracteres distintos. `d`/`D` sigue siendo la puerta de los puestos; se agregan `e`/`E` (entrada) y `s`/`S` (salida), que producen los mismos bloques `puerta_inferior`/`puerta_superior`. Las puertas se ubican en lados opuestos del edificio.
 - API de plantilla: `celda_de_entrada(tipo, giros)` y `celda_de_salida(tipo, giros)`. Para los tipos de recolección ambas devuelven la celda de servicio actual, así que su comportamiento no cambia.
 - `Economia.registrar_puesto()` recibe, además de `servicio`, la celda de salida. Para los puestos de recolección entrada y salida coinciden.
-- **Fachada y nivelación:** el despeje de puertas y la nivelación se aplican a cada lado donde haya una puerta (entrada y salida), con el mismo criterio de 2 columnas de `PlantillasPuesto.fachada()`. La previsualización marca ambas.
+- **Fachada y nivelación:** el despeje de puertas y la nivelación se aplican a cada lado donde haya una puerta (entrada y salida), con el mismo criterio de 2 columnas de `PlantillasPuesto.fachada()`. La puerta de entrada decide la altura del edificio; las 2 columnas frente a la salida se nivelan a ese nivel (`NiveladorTerreno.calcular_base_y()` con puerta guía). La previsualización marca ambas.
+- **Zona:** solo dentro de la zona de influencia y sobre zona industrial (toda la huella), con un mensaje de rechazo específico para cada caso.
 - Costo de construcción y personal máximo: los placeholders ya definidos en `CadenaMinerales` (`COSTO_CONSTRUCCION_REFINERIA_HIERRO`, `PERSONAL_MAXIMO_REFINERIA_HIERRO` = 3). **Almacén local: 1000**, igual que los puestos; se corrige `CAPACIDAD_ALMACENAMIENTO_REFINERIA_HIERRO` (hoy 100) y, por coherencia, el de tierras raras. Sin balance real todavía.
 - **Roles:** `Economia.ROLES` gana `tecnico`, que solo existe en las refinerías (en los puestos de recolección el rol de producción sigue siendo `recolector`, nivel obrero). El `acarreador` es obrero en todos los edificios. Al asignar, `Colonos.gd` hoy pasa al colono a obrero (líneas ~512-524) y al liberarlo lo regresa a desempleado (~573); ambos puntos deben distinguir el rol `tecnico` → tipo `tecnico`.
 - El panel del puesto (`PanelPuesto.gd`) muestra "Técnicos" en lugar de "Recolectores" para las refinerías.

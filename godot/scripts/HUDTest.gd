@@ -13,6 +13,7 @@ const HUDScript = preload("res://scripts/HUD.gd")
 const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
+const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 
 
 ## Recurso falso: BarraSuperior solo lee estos cuatro campos (duck typing).
@@ -46,6 +47,7 @@ func ejecutar_pruebas() -> void:
 	probar_formateadores_hud()
 	probar_cara_apuntada()
 	probar_ventanas_datos()
+	probar_panel_escuela()
 
 
 func probar_barra_superior_calculos() -> void:
@@ -517,3 +519,25 @@ func probar_cara_apuntada() -> void:
 	cara.ocultar()
 	assert(not cara.visible)
 	cara.queue_free()
+
+
+func probar_panel_escuela() -> void:
+	print("=== TEST 7: PanelPuesto de una escuela técnica (aprendices, progreso) y de una refinería (técnicos libres) ===")
+	var esquina7 := Vector2i(900, 900)
+	var esquina7r := Vector2i(930, 900)
+	Economia.registrar_puesto(esquina7, "escuela_tecnica", 5, 5, {})
+	Economia.registrar_puesto(esquina7r, "siderurgica", 5, 5, {})
+	var panel: PanelContainer = PanelPuestoScript.new()
+	add_child(panel)
+	panel.abrir(esquina7)
+	assert(panel._titulo.text == "Escuela técnica")
+	assert(panel._filas["aprendiz"]["fila"].visible and not panel._filas["recolector"]["fila"].visible and not panel._filas["tecnico"]["fila"].visible)
+	assert(not panel._filas["acarreador"]["fila"].visible, "una escuela no tiene acarreadores")
+	assert(not panel._almacen.visible and not panel._produccion.visible, "ni almacén local ni producción")
+	assert("Aprendices: 0 / 4" in panel._trabajadores.text and "0 / %d h" % Economia.HORAS_FORMACION in panel._trabajadores.text, "cohorte y horas: %s" % panel._trabajadores.text)
+	panel.abrir(esquina7r)
+	assert(panel._filas["tecnico"]["fila"].visible and not panel._filas["aprendiz"]["fila"].visible and panel._filas["acarreador"]["fila"].visible)
+	assert(panel._almacen.visible and "Técnicos libres: %d" % Colonos.tecnicos_libres() in panel._libres.text, "la refinería pide técnicos libres: %s" % panel._libres.text)
+	panel.queue_free()
+	Economia.puestos.erase(esquina7)
+	Economia.puestos.erase(esquina7r)

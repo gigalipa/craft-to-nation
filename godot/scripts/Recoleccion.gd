@@ -26,7 +26,7 @@ const TASAS_BASE_MINERAL := {
 const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Los únicos tipos de puesto donde se asignan trabajadores (los edificios
 ## registrados con tipo "blueprint" comparten el registro pero no son puestos).
-const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar"]
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica"]
 const ANCHO_HUELLA_MINA := 5
 const ALTO_HUELLA_MINA := 5
 
@@ -167,6 +167,7 @@ func cupo_de(tipo: String) -> int:
 		"maderero": return PERSONAL_MAXIMO_MADERERO
 		"caza_recoleccion": return PERSONAL_MAXIMO_CAZA_RECOLECCION
 		"pesca_frutos_mar": return PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
+		"siderurgica": return CadenaMinerales.PERSONAL_MAXIMO_REFINERIA_HIERRO
 	return 0
 
 
@@ -177,6 +178,7 @@ func capacidad_almacen_de(tipo: String) -> int:
 		"maderero": return CAPACIDAD_ALMACENAMIENTO_MADERERO
 		"caza_recoleccion": return CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION
 		"pesca_frutos_mar": return CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR
+		"siderurgica": return CadenaMinerales.CAPACIDAD_ALMACENAMIENTO_REFINERIA_HIERRO
 	return 0
 
 

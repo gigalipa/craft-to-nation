@@ -15,15 +15,20 @@ const RECETAS: Dictionary = {
 	"tierras_raras": {"tipo_salida": "mineral_refinado", "cantidad_entrada": 3, "cantidad_salida": 1, "tasa_base": 2.0},
 }
 
+## Tipo de edificio -> tipo_entrada de su receta (clave de RECETAS). Una refinería es un
+## puesto de Economia con tipo en este diccionario (ver Economia.es_refineria()).
+const REFINERIAS := {"siderurgica": "hierro"}
+
 # GDD Sección 4 — mismos valores placeholder que los puestos periféricos
-# (Recoleccion.COSTO_CONSTRUCCION), sin balance real todavía.
+# (Recoleccion.COSTO_CONSTRUCCION), sin balance real todavía. El costo REAL de
+# construir una refinería es el de los bloques de su plantilla (ver PlantillasPuesto).
 const COSTO_CONSTRUCCION_REFINERIA_HIERRO := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_REFINERIA_HIERRO := 3
-const CAPACIDAD_ALMACENAMIENTO_REFINERIA_HIERRO := 100
+const CAPACIDAD_ALMACENAMIENTO_REFINERIA_HIERRO := 1000  # igual que los puestos; hierro y acero lo comparten
 
 const COSTO_CONSTRUCCION_REFINERIA_TIERRAS_RARAS := {"tierra": 10, "madera": 10, "piedra": 5}
 const PERSONAL_MAXIMO_REFINERIA_TIERRAS_RARAS := 3
-const CAPACIDAD_ALMACENAMIENTO_REFINERIA_TIERRAS_RARAS := 100
+const CAPACIDAD_ALMACENAMIENTO_REFINERIA_TIERRAS_RARAS := 1000
 
 
 ## Procesa un tick de refinado de duración "delta" horas: por cada receta en

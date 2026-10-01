@@ -31,7 +31,14 @@ const SIN_SUELO := -1
 ## los puestos más lejanos rinden menos.
 const CAPACIDAD_CARGA := 150.0
 
-const ROLES := ["recolector", "acarreador"]
+## Mínimo de unidades que justifica un viaje del acarreador de una refinería (retirar insumo
+## del stock central o recoger producto): evita viajes de 1 unidad. ponytail: un resto menor
+## de este valor queda en el almacén local hasta acumular más.
+const CARGA_MINIMA := 10.0
+
+## "tecnico" solo existe en las refinerías (opera la receta); "recolector" solo en los puestos de
+## recolección. "acarreador" vale en ambos.
+const ROLES := ["recolector", "tecnico", "acarreador"]
 
 ## Tipos de puesto que consumen el mundo al producir; caza/recolección y pesca
 ## no consumen bloques (sus tasas dependen del entorno, ver recalcular_tasas()).
@@ -82,8 +89,10 @@ func _ready() -> void:
 ## que rodea la huella y no hay depósito físico. "suelo" es la altura Y del piso
 ## interior TRANSITABLE de la plantilla (donde vive la puerta — una capa por
 ## encima de la losa de piso, capa 0, ver PlantillasPuesto.gd): los colonos
-## entran a trabajar a las celdas libres de esa capa.
-func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO) -> void:
+## entran a trabajar a las celdas libres de esa capa. "salida" (X, Z) es la celda frente a la
+## puerta de salida de una refinería (la de entrada es "servicio"); SIN_SERVICIO en los puestos
+## de una sola puerta.
+func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO, salida: Vector2i = SIN_SERVICIO) -> void:
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
 		"cupo": Recoleccion.cupo_de(tipo),
@@ -95,6 +104,7 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"presentes": {}, "almacen": {},
 		"activo": true, "agotado": false,
 		"servicio": servicio, "deposito": deposito, "suelo": suelo,
+		"salida": salida,
 	}
 
 
@@ -138,12 +148,14 @@ func cupo_libre(esquina: Vector2i) -> int:
 func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 	if not puestos.has(esquina) or not ROLES.has(rol) or _puesto_de.has(colono_id):
 		return false
+	if rol != "acarreador" and (rol == "tecnico") != es_refineria(esquina):
+		return false  # técnicos solo en refinerías, recolectores solo en puestos de recolección
 	var p: Dictionary = puestos[esquina]
 	if not p["activo"] or (p["agotado"] and rol == "recolector"):
 		return false  # inactivo (se está deconstruyendo) o agotado: sin recolectores nuevos
 	if cupo_libre(esquina) <= 0:
 		return false
-	p["recolectores" if rol == "recolector" else "acarreadores"].append(colono_id)
+	p[_lista_de(rol)].append(colono_id)
 	_puesto_de[colono_id] = esquina
 	return true
 
@@ -163,8 +175,14 @@ func liberar(colono_id: int) -> void:
 func ultimo_de(esquina: Vector2i, rol: String) -> int:
 	if not puestos.has(esquina):
 		return -1
-	var lista: Array = puestos[esquina]["recolectores" if rol == "recolector" else "acarreadores"]
+	var lista: Array = puestos[esquina][_lista_de(rol)]
 	return lista.back() if not lista.is_empty() else -1
+
+
+## Lista interna donde vive cada rol: los técnicos comparten la de los recolectores (el cupo y la
+## presencia funcionan igual; en una refinería son quienes operan la receta).
+static func _lista_de(rol: String) -> String:
+	return "acarreadores" if rol == "acarreador" else "recolectores"
 
 
 ## Un recolector está (o deja de estar) en su puesto: solo entonces produce.
@@ -197,6 +215,11 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 	var resultado: Dictionary = {}
 	if not puestos.has(esquina):
 		return resultado
+	if es_refineria(esquina):
+		var tasas_ref: Dictionary = CadenaMinerales.tasas_refinado({insumo_de(esquina): puestos[esquina]["presentes"].size()})
+		for entrada in tasas_ref:
+			resultado[tasas_ref[entrada]["tipo_salida"]] = tasas_ref[entrada]["produccion"]
+		return resultado
 	var p: Dictionary = puestos[esquina]
 	var presentes: int = p["presentes"].size()
 	for clave in p["tasas"]:
@@ -228,6 +251,9 @@ func simular_hora() -> void:
 		if not p["activo"]:
 			continue
 		_liberar_acarreadores_si_agotado(esquina)
+		if es_refineria(esquina):
+			_refinar(esquina)
+			continue
 		var producido: Dictionary = produccion_por_hora(esquina)
 		var total_producido := _total(producido)
 		if total_producido <= 0.0:
@@ -372,6 +398,102 @@ func servicio_de(esquina: Vector2i) -> Vector2i:
 ## Altura Y del piso interior del puesto o SIN_SUELO.
 func suelo_de(esquina: Vector2i) -> int:
 	return puestos[esquina]["suelo"] if puestos.has(esquina) else SIN_SUELO
+
+
+## Celda (X, Z) frente a la puerta de salida de una refinería o SIN_SERVICIO.
+func salida_de(esquina: Vector2i) -> Vector2i:
+	return puestos[esquina]["salida"] if puestos.has(esquina) else SIN_SERVICIO
+
+
+## true si el puesto es una refinería (CadenaMinerales.REFINERIAS): produce a partir de su almacén
+## local con una receta, en vez de extraer del entorno.
+func es_refineria(esquina: Vector2i) -> bool:
+	return puestos.has(esquina) and CadenaMinerales.REFINERIAS.has(puestos[esquina]["tipo"])
+
+
+## Recurso que consume la refinería (tipo_entrada de su receta, p. ej. "hierro").
+func insumo_de(esquina: Vector2i) -> String:
+	return CadenaMinerales.REFINERIAS[puestos[esquina]["tipo"]]
+
+
+## Recurso que produce la refinería (p. ej. "acero").
+func producto_de(esquina: Vector2i) -> String:
+	return CadenaMinerales.RECETAS[insumo_de(esquina)]["tipo_salida"]
+
+
+## Una hora de refinado: los técnicos presentes consumen insumo del almacén local y lo convierten
+## en producto (CadenaMinerales.procesar_tick()). No hay nada que hacer sin ellos. Si el resultado
+## no cupiera en el almacén (compartido entre insumo y producto), esa hora no se refina.
+## ponytail: todo o nada al llenarse; con las recetas actuales (2 -> 1, 3 -> 1) el total nunca crece,
+## así que solo importaría para una receta que multiplique (aserradero).
+func _refinar(esquina: Vector2i) -> void:
+	var p: Dictionary = puestos[esquina]
+	var presentes: int = p["presentes"].size()
+	if presentes <= 0:
+		return
+	var resultado: Dictionary = CadenaMinerales.procesar_tick(1.0, p["almacen"], {insumo_de(esquina): presentes})
+	if _total(resultado) > p["capacidad"] + 1e-9:
+		return
+	for recurso in resultado.keys():
+		if resultado[recurso] <= 1e-9:
+			resultado.erase(recurso)
+	p["almacen"] = resultado
+
+
+## Unidades de insumo que un acarreador retiraría ahora del stock central para esta refinería: lo que
+## quepa en su almacén local, hasta CAPACIDAD_CARGA y lo disponible. 0.0 si no es refinería.
+func insumo_a_cargar(esquina: Vector2i) -> float:
+	if not es_refineria(esquina):
+		return 0.0
+	var p: Dictionary = puestos[esquina]
+	var disponible: float = ciudad.almacen[insumo_de(esquina)].cantidad
+	return maxf(0.0, minf(minf(CAPACIDAD_CARGA, p["capacidad"] - _total(p["almacen"])), disponible))
+
+
+## El acarreador retira insumo del stock central (ver insumo_a_cargar()). {} si no hay nada que llevar.
+func cargar_insumo(esquina: Vector2i) -> Dictionary:
+	var cantidad: float = insumo_a_cargar(esquina)
+	if cantidad <= 1e-9:
+		return {}
+	var insumo: String = insumo_de(esquina)
+	var sacado: float = ciudad.almacen[insumo].quitar(cantidad)
+	return {insumo: sacado} if sacado > 1e-9 else {}
+
+
+## El acarreador deja su carga en el almacén local; lo que ya no cupiera vuelve al stock central.
+func descargar_insumo(esquina: Vector2i, carga: Dictionary) -> void:
+	if not puestos.has(esquina):
+		entregar(carga)
+		return
+	var p: Dictionary = puestos[esquina]
+	for recurso in carga:
+		var cabe: float = minf(carga[recurso], maxf(0.0, p["capacidad"] - _total(p["almacen"])))
+		if cabe > 1e-9:
+			p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + cabe
+		if carga[recurso] - cabe > 1e-9:
+			entregar({recurso: carga[recurso] - cabe})
+
+
+## Producto refinado esperando en el almacén local.
+func producto_pendiente(esquina: Vector2i) -> float:
+	if not es_refineria(esquina):
+		return 0.0
+	return puestos[esquina]["almacen"].get(producto_de(esquina), 0.0)
+
+
+## El acarreador recoge el producto (nada más) hasta "capacidad". Sin mínimo: el mínimo lo decide
+## Colonos al elegir si vale la pena el viaje. {} si no hay nada.
+func recoger_producto(esquina: Vector2i, capacidad: float) -> Dictionary:
+	var pendiente: float = producto_pendiente(esquina)
+	var tomado: float = minf(pendiente, capacidad)
+	if tomado <= 1e-9:
+		return {}
+	var producto: String = producto_de(esquina)
+	var local: Dictionary = puestos[esquina]["almacen"]
+	local[producto] -= tomado
+	if local[producto] <= 1e-9:
+		local.erase(producto)
+	return {producto: tomado}
 
 
 ## Esquina del puesto cuyo baúl (depósito) está en "celda", o Recoleccion.SIN_PUESTO.

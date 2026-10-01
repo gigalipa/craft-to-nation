@@ -16,6 +16,8 @@ extends Node
 
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
+const VoxelWorldScript = preload("res://scripts/VoxelWorld.gd")
+const HotbarScript = preload("res://scripts/Hotbar.gd")
 
 
 ## Generador falso: la altura crece 1 celda por cada paso en Z (pendiente de
@@ -354,4 +356,13 @@ func ejecutar_pruebas() -> void:
 	assert(biblioteca_22.find_item_by_name("bloque_acero") != -1, "la biblioteca tiene el bloque")
 	assert(biblioteca_22.find_item_by_name("estructura_hierro") != -1, "y conserva los anteriores")
 
-	print("\n=== Las 23 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 24: la mesa de estudio cuesta lo mismo que un baúl, es estructura de edificio (mobiliario) y existe en la biblioteca ===")
+	assert(NiveladorTerreno.COSTO_POR_CELDA["mesa_estudio"] == NiveladorTerreno.COSTO_POR_CELDA["baul"], "mismo costo que un baúl")
+	assert(VoxelWorldScript.TIPOS_ESTRUCTURA.has("mesa_estudio"), "cuenta como estructura del edificio")
+	assert(VoxelWorldScript.ORDEN_GRUPOS_EDIFICIO[2].has("mesa_estudio"), "es mobiliario: se construye al final y se deconstruye primero")
+	assert(HotbarScript.nombre_de("mesa_estudio") == "Mesa de estudio")
+	var biblioteca_24: MeshLibrary = load("res://assets/BlockLibrary.res")
+	assert(biblioteca_24.find_item_by_name("mesa_estudio") != -1, "la biblioteca tiene el bloque")
+	assert(biblioteca_24.find_item_by_name("baul") != -1 and biblioteca_24.find_item_by_name("bloque_acero") != -1, "y conserva los anteriores")
+
+	print("\n=== Las 24 pruebas de NiveladorTerreno pasaron correctamente ===")

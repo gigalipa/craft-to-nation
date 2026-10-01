@@ -121,7 +121,11 @@ Decisión funcional: las refinerías son puestos con receta, con entrada y salid
 * **Velocidad:** `cantidad_entrada × técnicos × tasa_base` por hora (hierro: 2 × técnicos × 2,0 = 4 hierro/h por técnico → 2 acero/h), con cupo de 3 técnicos presentes.
 * **Acarreo:** un solo acarreador hace núcleo → entrada → salida → núcleo; cada viaje exige al menos `Economia.CARGA_MINIMA` (10) unidades, tanto de insumo como de producto. El acero llega al stock central; `bloque_acero` cuesta 3 acero.
 * **Almacén local:** 1000, compartido entre hierro y acero. Despedir al acarreador (o quitar el puesto) con hierro en fase de entrada devuelve ese hierro al stock; el producto de la refinería y la carga de recolección se pierden. Al deconstruir un puesto (de cualquier tipo), lo que quepa de su almacén local pasa automáticamente al núcleo urbano (decisión del usuario, 2026-10-01); el resto se pierde.
-* **Técnicos:** un desempleado pasa a técnico al asignarlo (provisional); compite con los obreros por los desempleados.
+* **Técnicos:** solo se contratan técnicos libres, formados en la Escuela técnica (ver abajo); un técnico despedido sigue siendo técnico.
+
+### Escuela técnica (2026-10-01)
+
+Decisión funcional: la formación de técnicos es un puesto más de `Economia.puestos` (`escuela_tecnica`, plantilla de 5×5 de adobe con una puerta y 4 mesas de estudio —bloque nuevo `mesa_estudio`, 1 madera como un baúl—, sin baúl porque no maneja recursos; se coloca dentro de la zona de influencia y sobre zona residencial). Su rol es `aprendiz` (cupo 4 = la cohorte, comparte la lista de recolectores). La cohorte suma 1 h de estudio por hora de juego solo mientras los 4 aprendices están presentes (se pausa si falta uno y se reinicia con menos de 4); a `Economia.HORAS_FORMACION` (24) se gradúan: 3 pasan a técnico libre y el cuarto se va de la ciudad, porque cada jerarquía ocupa más vivienda (`Ciudad.TIPOS_POBLACION[...]["x_cama"]`: 4 obreros = 3 técnicos). Un aprendiz cuenta como obrero mientras estudia. Un técnico despedido o liberado (p. ej. al deconstruir su refinería) sigue siendo técnico. Ver `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
 
 Ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`.
 
@@ -133,5 +137,5 @@ Ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`.
 * **Fluidos** (agua/crudo/combustible: bombas de extracción, refinería de crudo, productor de combustible) — sub-proyecto futuro de esta misma PoC 5.
 * **Energía** (generadores, transmisión sin red dedicada) — sub-proyecto futuro de esta misma PoC 5.
 * **Refinerías reales colocables en el mundo** — las cuatro (siderúrgica, tierras raras, aserradero y carbonera) ya son reales.
-* **Formación de técnicos** — hoy un desempleado se vuelve técnico al asignarlo (provisional).
+* **Formación de técnicos** — ✅ hecha (2026-10-01), ver «Escuela técnica». La de especialistas, los niveles de edificio y la universidad están en `docs/ideas-backlog.md`.
 * **Integración con el almacén real** — hecha para la siderúrgica (el acero llega al stock central de `Ciudad`); `procesar_tick()` sigue siendo la lógica pura de la demo.

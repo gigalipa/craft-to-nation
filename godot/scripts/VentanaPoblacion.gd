@@ -1,7 +1,7 @@
 extends PanelContainer
 
 ## Ventana emergente (clic en "Población" de la barra superior, solo cenital):
-## censo por tipo, camas totales y la distribución de trabajadores por puesto.
+## población total, camas construidas y empleo por tipo (los puestos, en Ocupaciones).
 ## Se actualiza en vivo mientras está visible. Arrastrable con el ratón;
 ## aparece por defecto en la esquina superior izquierda. Es un hijo más de
 ## HUD (nunca se destruye), así que su posición y si está abierta o cerrada
@@ -9,7 +9,6 @@ extends PanelContainer
 ## entrar a la cenital (HUD.set_vista() la oculta/restaura sin tocarlas).
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
-const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 
 const NOMBRES_TIPO := {
 	"ciudadano": "Ciudadanos",
@@ -21,6 +20,9 @@ const NOMBRES_TIPO := {
 	"militar": "Militares",
 }
 
+## El botón "Ocupaciones" (HUD abre VentanaOcupaciones).
+signal ocupaciones_pedidas
+
 const POSICION_INICIAL := Vector2(16, 56)
 
 ## Contenido dinámico (demografía/puestos): esto es lo único que se
@@ -30,6 +32,7 @@ const POSICION_INICIAL := Vector2(16, 56)
 ## press y el release), así que el "pressed" nunca llegaba a emitirse.
 var _caja := VBoxContainer.new()
 var _caja_raiz := VBoxContainer.new()
+var _boton_ocupaciones := Button.new()
 ## true mientras el usuario la dejó abierta (independiente de "visible": en
 ## 1ª persona se oculta sin cambiar esto, ver ocultar_temporalmente()).
 var abierta := false
@@ -52,6 +55,11 @@ func _ready() -> void:
 	_caja_raiz.add_child(_fila_titulo("Población"))
 	_caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_caja_raiz.add_child(_caja)
+	# Fuera de _caja: lo de dentro se destruye cada fotograma (ver arriba).
+	_boton_ocupaciones.text = "Ocupaciones"
+	TemaHUD.estilizar_boton(_boton_ocupaciones)
+	_boton_ocupaciones.pressed.connect(func() -> void: ocupaciones_pedidas.emit())
+	_caja_raiz.add_child(_boton_ocupaciones)
 
 
 func _gui_input(evento: InputEvent) -> void:
@@ -87,22 +95,29 @@ func restaurar() -> void:
 func _actualizar() -> void:
 	for hijo in _caja.get_children():
 		hijo.free()
+	_caja.add_child(TemaHUD.etiqueta("Población total: %d" % Ciudad.censo_total))
 	_caja.add_child(TemaHUD.etiqueta("Camas construidas: %d" % Ciudad.capacidad_camas_construida))
 	_caja.add_child(TemaHUD.etiqueta(""))
+	var empleados := _empleados_por_tipo()
 	for tipo in NOMBRES_TIPO:
 		var cantidad: int = Ciudad.demografia.get(tipo, 0)
-		if cantidad > 0:
+		if cantidad <= 0:
+			continue
+		if tipo == "ciudadano" or tipo == "desempleado":  # sin puesto posible: solo el total
 			_caja.add_child(TemaHUD.etiqueta("%s: %d" % [NOMBRES_TIPO[tipo], cantidad]))
-	_caja.add_child(TemaHUD.etiqueta(""))
-	_caja.add_child(TemaHUD.etiqueta("Puestos de trabajo:"))
-	if Economia.puestos.is_empty():
-		_caja.add_child(TemaHUD.etiqueta("  Ninguno todavía"))
-	for esquina in Economia.puestos:
-		var puesto: Dictionary = Economia.puestos[esquina]
-		var t: Dictionary = Economia.trabajadores_de(esquina)
-		var nombre: String = PanelPuestoScript.NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"])
-		var rol_produccion := "técnicos" if Economia.es_refineria(esquina) else "recolectores"  # los técnicos transforman, no recolectan
-		_caja.add_child(TemaHUD.etiqueta("  %s: %d %s, %d acarreadores" % [nombre, t["recolectores"], rol_produccion, t["acarreadores"]]))
+		else:
+			var con_puesto: int = empleados.get(tipo, 0)
+			_caja.add_child(TemaHUD.etiqueta("%s: %d · %d empleados · %d sin empleo" % [NOMBRES_TIPO[tipo], cantidad, con_puesto, maxi(cantidad - con_puesto, 0)]))
+
+
+## Colonos con puesto, por tipo (un aprendiz es obrero empleado; un técnico libre, sin empleo).
+func _empleados_por_tipo() -> Dictionary:
+	var cuenta := {}
+	for id in Colonos.colonos:
+		var colono: Dictionary = Colonos.colonos[id]
+		if not colono["trabajo"].is_empty():
+			cuenta[colono["tipo"]] = cuenta.get(colono["tipo"], 0) + 1
+	return cuenta
 
 
 func cerrar() -> void:

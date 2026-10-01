@@ -11,6 +11,7 @@ const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
 
 const ESQ := Vector2i(10, 10)
 const ESQ_REF := Vector2i(30, 30)
+const ESQ_ESC := Vector2i(50, 50)
 
 
 ## Generador falso: fauna 0.8 y frutal 0.4 en todas partes.
@@ -46,6 +47,14 @@ func _con_siderurgica(ciudad: Node) -> Node:
 	var economia: Node = EconomiaScript.new()
 	economia.ciudad = ciudad
 	economia.registrar_puesto(ESQ_REF, "siderurgica", 5, 5, {}, {}, Vector2i(32, 29), EconomiaScript.SIN_DEPOSITO, EconomiaScript.SIN_SUELO, Vector2i(32, 35))
+	return economia
+
+
+## Una Economia con una escuela técnica de 5x5 en ESQ_ESC (cupo 4: el de la cohorte).
+func _con_escuela(ciudad: Node) -> Node:
+	var economia: Node = EconomiaScript.new()
+	economia.ciudad = ciudad
+	economia.registrar_puesto(ESQ_ESC, "escuela_tecnica", 5, 5, {})
 	return economia
 
 
@@ -641,4 +650,56 @@ func ejecutar_pruebas() -> void:
 	e27c.desactivar_puesto(ESQ_REF)
 	assert(is_equal_approx(ciudad27c.almacen["hierro"].cantidad, 300.0) and is_equal_approx(ciudad27c.almacen["acero"].cantidad, 40.0))
 
-	print("\n=== Las 28 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 29: la escuela técnica forma cohortes: el conteo solo avanza con los 4 aprendices presentes y a las 24 h se gradúan ===")
+	var e29: Node = _con_escuela(CiudadScript.new())
+	assert(e29.es_escuela(ESQ_ESC) and not e29.es_refineria(ESQ_ESC) and not e29.es_escuela(Vector2i(0, 0)))
+	assert(e29.puestos[ESQ_ESC]["cupo"] == 4 and e29.puestos[ESQ_ESC]["capacidad"] == 0, "cupo = cohorte; sin almacén local")
+	assert(e29.roles_de(ESQ_ESC) == ["aprendiz"], "solo aprendices")
+	assert(not e29.asignar(ESQ_ESC, "recolector", 1) and not e29.asignar(ESQ_ESC, "tecnico", 1) and not e29.asignar(ESQ_ESC, "acarreador", 1), "la escuela solo admite aprendices")
+	var e29b: Node = _nueva(CiudadScript.new())
+	assert(not e29b.asignar(ESQ, "aprendiz", 9), "un puesto de recolección no admite aprendices")
+	var e29c: Node = _con_siderurgica(CiudadScript.new())
+	assert(not e29c.asignar(ESQ_REF, "aprendiz", 9), "una refinería tampoco")
+	var graduadas29: Array = []
+	e29.cohorte_graduada.connect(func(esquina: Vector2i, ids: Array) -> void: graduadas29.append([esquina, ids]))
+	for id29 in range(1, 4):
+		assert(e29.asignar(ESQ_ESC, "aprendiz", id29))
+		e29.marcar_presente(id29, true)
+	for hora29 in range(30):
+		e29.simular_hora()
+	assert(e29.puestos[ESQ_ESC]["progreso"] == 0.0 and graduadas29.is_empty(), "con 3 aprendices no hay conteo, pasen las horas que pasen")
+	assert(e29.asignar(ESQ_ESC, "aprendiz", 4))
+	for hora29 in range(5):
+		e29.simular_hora()
+	assert(e29.puestos[ESQ_ESC]["progreso"] == 0.0, "el cuarto está asignado pero no presente: el conteo no empieza")
+	e29.marcar_presente(4, true)
+	for hora29 in range(5):
+		e29.simular_hora()
+	assert(e29.puestos[ESQ_ESC]["progreso"] == 5.0, "con los 4 presentes avanza 1 h por hora de juego")
+	e29.marcar_presente(2, false)
+	for hora29 in range(3):
+		e29.simular_hora()
+	assert(e29.puestos[ESQ_ESC]["progreso"] == 5.0, "si uno falta, el conteo se pausa")
+	e29.marcar_presente(2, true)
+	for hora29 in range(18):
+		e29.simular_hora()
+	assert(e29.puestos[ESQ_ESC]["progreso"] == 23.0 and graduadas29.is_empty(), "a las 23 h todavía no se gradúa")
+	e29.simular_hora()
+	assert(graduadas29.size() == 1 and graduadas29[0][0] == ESQ_ESC and graduadas29[0][1] == [1, 2, 3, 4], "a las 24 h se gradúa la cohorte")
+	assert(e29.puestos[ESQ_ESC]["progreso"] == 0.0 and e29.cupo_libre(ESQ_ESC) == 4, "la escuela queda libre para otra cohorte")
+	assert(e29.trabajadores_de(ESQ_ESC) == {"recolectores": 0, "acarreadores": 0, "presentes": 0}, "los 4 ya no trabajan ahí")
+
+	print("\n=== TEST 29b: despedir a un aprendiz reinicia el conteo ===")
+	var e29d: Node = _con_escuela(CiudadScript.new())
+	for id29d in range(1, 5):
+		e29d.asignar(ESQ_ESC, "aprendiz", id29d)
+		e29d.marcar_presente(id29d, true)
+	for hora29d in range(10):
+		e29d.simular_hora()
+	assert(e29d.puestos[ESQ_ESC]["progreso"] == 10.0)
+	e29d.liberar(4)
+	assert(e29d.puestos[ESQ_ESC]["progreso"] == 0.0, "al irse uno, la cohorte empieza de nuevo")
+	assert(e29d.asignar(ESQ_ESC, "aprendiz", 5))
+	assert(e29d.puestos[ESQ_ESC]["progreso"] == 0.0)
+
+	print("\n=== Las 29 pruebas de Economia pasaron correctamente ===")

@@ -333,6 +333,14 @@ _surfaces = [{
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_aj37d"]
 points = PackedVector3Array(-0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5)
 
+[sub_resource type="StandardMaterial3D" id="Mat_mesa_estudio"]
+albedo_color = Color(0.78, 0.62, 0.38, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_mesa_estudio"]
+material = SubResource("Mat_mesa_estudio")
+
+[sub_resource type="BoxShape3D" id="Shape_mesa_estudio"]
+
 [node name="BlockLibrarySource" type="Node3D" unique_id=221191729]
 
 [node name="bloque_piedra" type="MeshInstance3D" parent="." unique_id=1472954888]
@@ -535,3 +543,9 @@ mesh = SubResource("Mesh_bloque_acero")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="bloque_acero" unique_id=900000102]
 shape = SubResource("Shape_bloque_acero")
+
+[node name="mesa_estudio" type="MeshInstance3D" parent="." unique_id=900000201]
+mesh = SubResource("Mesh_mesa_estudio")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="mesa_estudio" unique_id=900000202]
+shape = SubResource("Shape_mesa_estudio")

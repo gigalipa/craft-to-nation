@@ -15,6 +15,8 @@ signal zona_pedida(tipo: String)
 ## "poblacion" o "almacen" (clic en la barra superior); solo lo escucha
 ## CamaraCenital, que decide si tiene sentido abrir la ventana (ver dato_pedido).
 signal dato_pedido(cual: String)
+## Clic en una fila de Ocupaciones: CamaraCenital centra la cámara y abre el panel del puesto.
+signal edificio_pedido(esquina: Vector2i)
 
 const COLOR_POSITIVO := Color.WHITE
 const COLOR_NEGATIVO := Color(1.0, 0.3, 0.3)
@@ -26,6 +28,7 @@ const BarraModosScript = preload("res://scripts/BarraModos.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
+const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
 const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
 const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
 
@@ -61,6 +64,7 @@ var _barra_modos: Control
 var _hotbar: PanelContainer
 var _ventana_poblacion: PanelContainer
 var _ventana_almacen: PanelContainer
+var _ventana_ocupaciones: PanelContainer
 var _ventana_baul: PanelContainer
 var _notificaciones: Control
 
@@ -73,7 +77,11 @@ func _init() -> void:
 	_barra_superior.dato_pedido.connect(func(cual: String) -> void: dato_pedido.emit(cual))
 	add_child(_barra_superior)
 	_ventana_poblacion = VentanaPoblacionScript.new()
+	_ventana_poblacion.ocupaciones_pedidas.connect(func() -> void: abrir_ventana_dato("ocupaciones"))
 	add_child(_ventana_poblacion)
+	_ventana_ocupaciones = VentanaOcupacionesScript.new()
+	_ventana_ocupaciones.edificio_pedido.connect(func(esquina: Vector2i) -> void: edificio_pedido.emit(esquina))
+	add_child(_ventana_ocupaciones)
 	_ventana_almacen = VentanaAlmacenScript.new()
 	add_child(_ventana_almacen)
 	_ventana_baul = VentanaBaulScript.new()
@@ -124,9 +132,11 @@ func set_vista(primera_persona: bool) -> void:
 	# abiertas (ver VentanaPoblacion/VentanaAlmacen).
 	if primera_persona:
 		_ventana_poblacion.ocultar_temporalmente()
+		_ventana_ocupaciones.ocultar_temporalmente()
 		_ventana_almacen.ocultar_temporalmente()
 	else:
 		_ventana_poblacion.restaurar()
+		_ventana_ocupaciones.restaurar()
 		_ventana_almacen.restaurar()
 	# La ventana del baúl solo tiene sentido junto al baúl que la abrió: al
 	# cambiar de vista se cierra del todo (no se restaura, a diferencia de
@@ -204,13 +214,18 @@ func ocultar_contexto() -> void:
 ## igual, reporte del usuario 2026-09-30), personal, almacenamiento y, en
 ## vivo, la recolección prevista por ciudadano según la posición del cursor.
 func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}) -> void:
-	var extra := "Personal máximo: %d · Almacenamiento: %d\n%s" % [Recoleccion.cupo_de(tipo), Recoleccion.capacidad_almacen_de(tipo), texto_tasas(tipo, tasas)]
+	var almacenamiento := "" if Recoleccion.ESCUELAS.has(tipo) else " · Almacenamiento: %d" % Recoleccion.capacidad_almacen_de(tipo)
+	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, texto_tasas(tipo, tasas)]
 	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, extra, bloques)
 
 
 ## Recolección prevista de un puesto. Diccionario vacío = nada detectado (en
 ## pesca también cuando el extremo de agua todavía no es válido).
 static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
+	if Recoleccion.ESCUELAS.has(tipo):
+		var escuela: Dictionary = Recoleccion.ESCUELAS[tipo]
+		var nombres: Dictionary = VentanaPoblacionScript.NOMBRES_TIPO
+		return "Forma una cohorte de %d %s en %d %s\n  (%d h de estudio)" % [Ciudad.TIPOS_POBLACION[escuela["origen"]]["x_cama"], nombres[escuela["origen"]].to_lower(), Ciudad.TIPOS_POBLACION[escuela["destino"]]["x_cama"], nombres[escuela["destino"]].to_lower(), Economia.HORAS_FORMACION]
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		var receta_clave: String = CadenaMinerales.REFINERIAS[tipo]
 		var t_ref: Dictionary = CadenaMinerales.tasas_refinado({receta_clave: 1})[receta_clave]
@@ -305,7 +320,7 @@ static func texto_materiales(neto: Dictionary, camas: int = -1, baules: int = -1
 	return "\n".join(lineas)
 
 
-## "cual" es "poblacion" o "almacen". Ambas ventanas pueden estar abiertas a
+## "cual" es "poblacion", "almacen" u "ocupaciones". Ambas ventanas pueden estar abiertas a
 ## la vez (decisión del usuario, 2026-09-27): cada una se coloca por defecto
 ## en su propia esquina (ver POSICION_INICIAL de cada una) para no solaparse.
 func abrir_ventana_dato(cual: String) -> void:
@@ -313,6 +328,8 @@ func abrir_ventana_dato(cual: String) -> void:
 		_ventana_poblacion.abrir()
 	elif cual == "almacen":
 		_ventana_almacen.abrir()
+	elif cual == "ocupaciones":
+		_ventana_ocupaciones.abrir()
 
 
 func abrir_panel_puesto(esquina: Vector2i) -> void:

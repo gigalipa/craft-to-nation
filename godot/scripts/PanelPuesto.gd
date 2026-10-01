@@ -2,7 +2,7 @@ extends PanelContainer
 
 ## Panel de un puesto de recolección (clic izquierdo sobre él en la cenital,
 ## ver CamaraCenital._procesar_clic). Se construye por código: título, filas
-## "Recolectores/Técnicos [-] n [+]" y "Acarreadores [-] n [+]", desempleados libres,
+## "Recolectores/Técnicos/Aprendices [-] n [+]" y "Acarreadores [-] n [+]", desempleados/técnicos libres,
 ## almacén local, producción y distancia al núcleo. Las reglas viven en
 ## Economia/Colonos; esto solo las muestra y les pasa los clics.
 
@@ -18,8 +18,9 @@ const NOMBRES_PUESTO := {
 	"refineria_tierras_raras": "Refinería de tierras raras",
 	"aserradero": "Aserradero",
 	"carbonera": "Carbonera",
+	"escuela_tecnica": "Escuela técnica",
 }
-const NOMBRES_ROL := {"recolector": "Recolectores", "tecnico": "Técnicos", "acarreador": "Acarreadores"}
+const NOMBRES_ROL := {"recolector": "Recolectores", "tecnico": "Técnicos", "aprendiz": "Aprendices", "acarreador": "Acarreadores"}
 
 var esquina := Recoleccion.SIN_PUESTO
 
@@ -46,7 +47,7 @@ func _ready() -> void:
 	add_child(caja)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	caja.add_child(_titulo)
-	for rol in ["recolector", "tecnico", "acarreador"]:
+	for rol in ["recolector", "tecnico", "aprendiz", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
 	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
@@ -103,25 +104,36 @@ func _process(_delta: float) -> void:
 func _actualizar() -> void:
 	var puesto: Dictionary = Economia.puestos[esquina]
 	var t: Dictionary = Economia.trabajadores_de(esquina)
-	var libres: int = Ciudad.demografia["desempleado"]
+	var es_escuela: bool = Economia.es_escuela(esquina)
+	var rol_produccion := "aprendiz" if es_escuela else ("tecnico" if Economia.es_refineria(esquina) else "recolector")
+	# Quién se puede contratar: técnicos libres (formados en la escuela) para una refinería, desempleados para el resto.
+	var libres: int = Colonos.tecnicos_libres() if rol_produccion == "tecnico" else Ciudad.demografia["desempleado"]
 	var estado := ""
 	if not puesto["activo"]:
 		estado = " (inactivo)"
 	elif puesto["agotado"]:
 		estado = " (agotado)"
 	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + estado
-	var rol_produccion := "tecnico" if Economia.es_refineria(esquina) else "recolector"
-	_filas["recolector"]["fila"].visible = rol_produccion == "recolector"
-	_filas["tecnico"]["fila"].visible = rol_produccion == "tecnico"
-	_filas[rol_produccion]["cantidad"].text = str(t["recolectores"])  # los técnicos cuentan bajo "recolectores"
+	for rol in ["recolector", "tecnico", "aprendiz"]:
+		_filas[rol]["fila"].visible = rol == rol_produccion
+	_filas["acarreador"]["fila"].visible = not es_escuela  # una escuela no mueve recursos
+	_filas[rol_produccion]["cantidad"].text = str(t["recolectores"])  # técnicos y aprendices cuentan bajo "recolectores"
 	_filas["acarreador"]["cantidad"].text = str(t["acarreadores"])
 	_filas[rol_produccion]["menos"].disabled = t["recolectores"] == 0
 	_filas["acarreador"]["menos"].disabled = t["acarreadores"] == 0
-	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0 or libres <= 0
-	_filas[rol_produccion]["mas"].disabled = sin_cupo or not puesto["activo"] or puesto["agotado"]
-	_filas["acarreador"]["mas"].disabled = sin_cupo or not puesto["activo"]
-	_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
-	_libres.text = "Desempleados libres: %d" % libres
+	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0
+	_filas[rol_produccion]["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or puesto["agotado"]
+	_filas["acarreador"]["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
+	if es_escuela:
+		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
+	else:
+		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
+	if rol_produccion == "tecnico":
+		_libres.text = "Técnicos libres: %d" % libres if libres > 0 else "Técnicos libres: 0 (fórmalos en una escuela técnica)"
+	else:
+		_libres.text = "Desempleados libres: %d" % libres
+	_almacen.visible = not es_escuela
+	_produccion.visible = not es_escuela
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()

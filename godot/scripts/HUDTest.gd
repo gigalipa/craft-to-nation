@@ -13,6 +13,8 @@ const HUDScript = preload("res://scripts/HUD.gd")
 const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
+const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
+const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 
 
 ## Recurso falso: BarraSuperior solo lee estos cuatro campos (duck typing).
@@ -46,6 +48,9 @@ func ejecutar_pruebas() -> void:
 	probar_formateadores_hud()
 	probar_cara_apuntada()
 	probar_ventanas_datos()
+	probar_ventana_poblacion_empleo()
+	probar_ventana_ocupaciones()
+	probar_panel_escuela()
 
 
 func probar_barra_superior_calculos() -> void:
@@ -162,6 +167,114 @@ func probar_ventanas_datos() -> void:
 	ventana_almacen.cerrar()
 	assert(not ventana_almacen.visible and not ventana_almacen.abierta)
 	ventana_almacen.queue_free()
+
+
+func _textos(caja: Node) -> Array:
+	var textos: Array = []
+	for hijo in caja.get_children():
+		if hijo is Label:
+			textos.append((hijo as Label).text)
+	return textos
+
+
+## Ventana Población: total, camas y empleo por tipo; el botón "Ocupaciones".
+func probar_ventana_poblacion_empleo() -> void:
+	print("=== TEST 1d: Población muestra total, camas y empleo por tipo, y el botón Ocupaciones ===")
+	var demografia_previa: Dictionary = Ciudad.demografia
+	var colonos_previos: Dictionary = Colonos.colonos
+	Ciudad.demografia = {"ciudadano": 0, "desempleado": 2, "obrero": 4, "tecnico": 5, "especialista": 0, "investigador": 0, "militar": 0}
+	Colonos.colonos = {}
+	var trabajo := {"puesto": Vector2i(1, 1), "rol": "recolector"}
+	for i in range(5):
+		Colonos.colonos[i] = {"tipo": "tecnico", "trabajo": trabajo if i < 3 else {}}
+	Colonos.colonos[10] = {"tipo": "obrero", "trabajo": {"puesto": Vector2i(2, 2), "rol": "aprendiz"}}  # un aprendiz es obrero empleado
+	var ventana: PanelContainer = VentanaPoblacionScript.new()
+	add_child(ventana)
+	ventana.abrir()
+	var textos: Array = _textos(ventana._caja)
+	assert("Población total: 11" in textos, "salió %s" % [textos])
+	assert("Camas construidas: %d" % Ciudad.capacidad_camas_construida in textos, "salió %s" % [textos])
+	assert("Técnicos: 5 · 3 empleados · 2 sin empleo" in textos, "salió %s" % [textos])
+	assert("Obreros: 4 · 1 empleados · 3 sin empleo" in textos, "salió %s" % [textos])
+	assert("Desempleados: 2" in textos, "solo el total: %s" % [textos])
+	assert(not textos.any(func(t: String) -> bool: return t.contains("Ciudadanos") or t.contains("Especialistas")), "los tipos sin habitantes no salen")
+	assert(not textos.any(func(t: String) -> bool: return t.contains("Puestos de trabajo")), "la lista de puestos pasó a Ocupaciones")
+	# Un técnico libre cuenta como sin empleo aunque los demás trabajen: el mínimo de "sin empleo" es 0.
+	Ciudad.demografia["tecnico"] = 2
+	ventana._actualizar()
+	assert("Técnicos: 2 · 3 empleados · 0 sin empleo" in _textos(ventana._caja), "salió %s" % [_textos(ventana._caja)])
+	# El botón vive fuera del contenido dinámico: sobrevive a los fotogramas y emite la señal.
+	var boton: Button = ventana._boton_ocupaciones
+	assert(boton != null and boton.text == "Ocupaciones" and boton.get_parent() == ventana._caja_raiz)
+	for i in range(5):
+		ventana._process(0.0)
+	assert(ventana._boton_ocupaciones == boton and boton.get_parent() == ventana._caja_raiz and not boton.is_queued_for_deletion(), "el botón no se recrea")
+	var pedidas: Array = []
+	ventana.ocupaciones_pedidas.connect(func() -> void: pedidas.append(true))
+	boton.pressed.emit()
+	assert(pedidas.size() == 1, "pressed emite ocupaciones_pedidas")
+	ventana.queue_free()
+	Ciudad.demografia = demografia_previa
+	Colonos.colonos = colonos_previos
+
+
+## Ventana Ocupaciones: una fila-botón por sitio de trabajo.
+func probar_ventana_ocupaciones() -> void:
+	print("=== TEST 1e: Ocupaciones lista los sitios de trabajo, se actualiza sin recrear filas y emite edificio_pedido ===")
+	var puestos_previos: Dictionary = Economia.puestos
+	Economia.puestos = {}
+	var ventana: PanelContainer = VentanaOcupacionesScript.new()
+	add_child(ventana)
+	assert(ventana.position == VentanaOcupacionesScript.POSICION_INICIAL and not ventana.visible and not ventana.abierta)
+	assert(ventana.position.x >= VentanaPoblacionScript.POSICION_INICIAL.x + 320, "no solapa con Población")
+	ventana.abrir()
+	assert("Ninguno todavía" in _textos(ventana._caja), "salió %s" % [_textos(ventana._caja)])
+	var e_mina := Vector2i(1000, 1000)
+	var e_esc := Vector2i(1100, 1000)
+	var e_bp := Vector2i(1200, 1000)
+	Economia.registrar_puesto(e_mina, "mina", 5, 5, {})
+	Economia.registrar_puesto(e_esc, "escuela_tecnica", 5, 5, {})
+	Economia.registrar_puesto(e_bp, "blueprint", 5, 5, {})
+	Economia.puestos[e_mina]["recolectores"] = [1, 2]
+	Economia.puestos[e_mina]["acarreadores"] = [3]
+	ventana._actualizar()
+	var botones: Array = ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button)
+	assert(botones.size() == 2, "mina y escuela; el blueprint no es puesto de trabajo (%d)" % botones.size())
+	assert(not "Ninguno todavía" in _textos(ventana._caja))
+	var cupo_mina: int = Economia.puestos[e_mina]["cupo"]
+	var boton_mina: Button = botones[0]
+	assert(boton_mina.text == "Mina 3/%d" % cupo_mina, "salió '%s'" % boton_mina.text)
+	assert((botones[1] as Button).text.begins_with("Escuela técnica 0/"), "salió '%s'" % (botones[1] as Button).text)
+	# Sin cambiar el conjunto de puestos, los botones son los mismos pero el texto se actualiza.
+	Economia.puestos[e_mina]["acarreadores"] = []
+	Economia.puestos[e_mina]["activo"] = false
+	ventana._actualizar()
+	assert(ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button)[0] == boton_mina, "no se recrean las filas")
+	assert(boton_mina.text == "Mina 2/%d (inactivo)" % cupo_mina, "salió '%s'" % boton_mina.text)
+	Economia.puestos[e_mina]["activo"] = true
+	Economia.puestos[e_mina]["agotado"] = true
+	ventana._actualizar()
+	assert(boton_mina.text == "Mina 2/%d (agotado)" % cupo_mina, "salió '%s'" % boton_mina.text)
+	# El clic emite la esquina de su fila.
+	var pedidos: Array = []
+	ventana.edificio_pedido.connect(func(esquina: Vector2i) -> void: pedidos.append(esquina))
+	boton_mina.pressed.emit()
+	(ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button)[1] as Button).pressed.emit()
+	assert(pedidos == [e_mina, e_esc], "salió %s" % [pedidos])
+	# Si cambia el conjunto, se reconstruye.
+	Economia.puestos.erase(e_esc)
+	ventana._actualizar()
+	assert(ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button).size() == 1)
+	# Cierre, ocultar/restaurar, como las demás ventanas.
+	var cerrar: Button = ventana._caja_raiz.get_child(0).get_child(1)
+	ventana.ocultar_temporalmente()
+	assert(not ventana.visible and ventana.abierta)
+	ventana.restaurar()
+	assert(ventana.visible)
+	cerrar.pressed.emit()
+	assert(not ventana.visible and not ventana.abierta)
+	ventana.queue_free()
+	Economia.puestos = puestos_previos
 
 
 func probar_barra_superior() -> void:
@@ -356,9 +469,10 @@ func probar_barra_modos() -> void:
 	barra.set_modo("")
 	assert(not barra.construccion_visible() and not barra._panel_categorias.visible)
 
-	print("=== TEST 3a-bis: Industrial e Investigación no tienen edificios todavía, su panel queda vacío (sin botones) ===")
-	barra.set_modo("construir", "", "industrial")
-	assert(barra._paneles_construccion["industrial"].visible)
+	print("=== TEST 3a-bis: Investigación tiene la Escuela técnica; Industrial no tiene un botón con su propio id ===")
+	barra.set_modo("construir", "", "investigacion")
+	assert(barra._paneles_construccion["investigacion"].visible)
+	assert(barra._botones_construccion.has("escuela_tecnica"), "Investigación ofrece la escuela técnica")
 	assert(not barra._botones_construccion.has("industrial"), "no hay ningún tipo de edificio con id 'industrial'")
 	barra.set_modo("")
 
@@ -382,10 +496,10 @@ func probar_barra_modos() -> void:
 	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
 
 	print("\n=== TEST 3e: re-renderizar una miniatura libera el SubViewport anterior, no acumula uno por cada rotación ===")
-	assert(barra._viewports_construccion.size() == 9, "una construcción con malla real por cada uno de los 9 tipos con miniatura (mina/caza/madera/pesca/las 4 refinerías + residencial con el blueprint declarado arriba)")
+	assert(barra._viewports_construccion.size() == 10, "una construcción con malla real por cada uno de los 10 tipos con miniatura (mina/caza/madera/pesca/las 4 refinerías/la escuela + residencial con el blueprint declarado arriba)")
 	for giro in [2, 3, 0, 1, 2, 3]:
 		barra.set_giros(giro)
-	assert(barra._viewports_construccion.size() == 9, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
+	assert(barra._viewports_construccion.size() == 10, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
 
 	print("\n=== TEST 3f: cada edificio (incluido Residencial) anuncia su propia tecla numérica de categoría ===")
 	var textos_residencial: Array = []
@@ -516,3 +630,25 @@ func probar_cara_apuntada() -> void:
 	cara.ocultar()
 	assert(not cara.visible)
 	cara.queue_free()
+
+
+func probar_panel_escuela() -> void:
+	print("=== TEST 7: PanelPuesto de una escuela técnica (aprendices, progreso) y de una refinería (técnicos libres) ===")
+	var esquina7 := Vector2i(900, 900)
+	var esquina7r := Vector2i(930, 900)
+	Economia.registrar_puesto(esquina7, "escuela_tecnica", 5, 5, {})
+	Economia.registrar_puesto(esquina7r, "siderurgica", 5, 5, {})
+	var panel: PanelContainer = PanelPuestoScript.new()
+	add_child(panel)
+	panel.abrir(esquina7)
+	assert(panel._titulo.text == "Escuela técnica")
+	assert(panel._filas["aprendiz"]["fila"].visible and not panel._filas["recolector"]["fila"].visible and not panel._filas["tecnico"]["fila"].visible)
+	assert(not panel._filas["acarreador"]["fila"].visible, "una escuela no tiene acarreadores")
+	assert(not panel._almacen.visible and not panel._produccion.visible, "ni almacén local ni producción")
+	assert("Aprendices: 0 / 4" in panel._trabajadores.text and "0 / %d h" % Economia.HORAS_FORMACION in panel._trabajadores.text, "cohorte y horas: %s" % panel._trabajadores.text)
+	panel.abrir(esquina7r)
+	assert(panel._filas["tecnico"]["fila"].visible and not panel._filas["aprendiz"]["fila"].visible and panel._filas["acarreador"]["fila"].visible)
+	assert(panel._almacen.visible and "Técnicos libres: %d" % Colonos.tecnicos_libres() in panel._libres.text, "la refinería pide técnicos libres: %s" % panel._libres.text)
+	panel.queue_free()
+	Economia.puestos.erase(esquina7)
+	Economia.puestos.erase(esquina7r)

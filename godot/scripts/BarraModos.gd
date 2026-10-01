@@ -45,8 +45,8 @@ const MODOS := [
 
 ## Categorías del menú Construir (GDD: Núcleo A = Residencial/Investigación,
 ## Núcleo B = Industrial; Periférico son los puestos de recolección fuera de
-## la ciudad). Industrial tiene la siderúrgica; solo Investigación no tiene
-## edificios todavía — queda visible, con su panel vacío (ver CONSTRUCCIONES_POR_CATEGORIA).
+## la ciudad). Industrial tiene la siderúrgica e Investigación la escuela técnica
+## (ver CONSTRUCCIONES_POR_CATEGORIA).
 const CATEGORIAS := [
 	["residencial", "Residencial", "1"],
 	["periferico", "Periférico", "2"],
@@ -74,7 +74,9 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["aserradero", "Aserradero", "3"],
 		["carbonera", "Carbonera", "4"],
 	],
-	"investigacion": [],
+	"investigacion": [
+		["escuela_tecnica", "Escuela técnica", "1"],
+	],
 	"vias": [
 		["vias", "Trazar vía", "1"],
 	],
@@ -82,7 +84,7 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 
 ## Tipos con miniatura 3D real (mina/caza/madera/pesca + el blueprint
 ## residencial); "vias" no tiene malla que previsualizar, es un botón de texto.
-const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]
+const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica"]
 
 ## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
 var ZONAS := [
@@ -383,7 +385,7 @@ func _refrescar() -> void:
 	# _alternar_modo_colocar_blueprint()); solo se atenúa como pista visual.
 	if _botones_construccion.has("residencial"):
 		_botones_construccion["residencial"].modulate = Color(1.0, 1.0, 1.0, 0.4 if Blueprints.obtener(ZONA_RESIDENCIAL).is_empty() else 1.0)
-	if _modo == "construir" and (_categoria == "residencial" or _categoria == "periferico"):
+	if _modo == "construir" and (_categoria == "residencial" or _categoria == "periferico" or _categoria == "investigacion"):
 		_actualizar_miniaturas()
 
 	_panel_zonas.visible = _modo == "zonificar"

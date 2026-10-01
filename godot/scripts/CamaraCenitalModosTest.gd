@@ -20,6 +20,12 @@ const ZonaOverlayScript = preload("res://scripts/ZonaOverlay.gd")
 const ViaPreviewOverlayScript = preload("res://scripts/ViaPreviewOverlay.gd")
 
 
+## Mundo mínimo: la cámara solo le pide altura_en(x, z).
+class MundoFalso extends Node:
+	func altura_en(_x: int, _z: int) -> int:
+		return 12
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -137,4 +143,21 @@ func ejecutar_pruebas() -> void:
 	assert(camara10.hud._barra_modos.boton_activo() == "ver")
 	camara10.hud.queue_free()
 
-	print("\n=== Las 10 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 11: centrar_en_edificio lleva el foco al centro del edificio, a la altura del suelo ahí ===")
+	var camara11: Camera3D = _camara()
+	camara11.mundo = MundoFalso.new()
+	var esquina11 := Vector2i(700, 710)
+	Economia.registrar_puesto(esquina11, "mina", 5, 3, {})
+	var destino11: Vector3 = camara11._destino_foco_de(esquina11)
+	assert(destino11 == Vector3(702.5, 12.0, 711.5), "salió %s" % destino11)
+	camara11.angulo_orbital = 1.0
+	camara11.distancia_camara = 33.0
+	camara11.centrar_en_edificio(esquina11)  # sin árbol no hay tween: aplica el destino directo
+	assert(camara11.foco == destino11, "salió %s" % camara11.foco)
+	assert(camara11.angulo_orbital == 1.0 and camara11.distancia_camara == 33.0, "conserva órbita y distancia")
+	camara11.centrar_en_edificio(Vector2i(-5, -5))  # sin puesto en esa esquina: no hace nada
+	assert(camara11.foco == destino11)
+	Economia.puestos.erase(esquina11)
+	camara11.hud.queue_free()
+
+	print("\n=== Las 11 pruebas de CamaraCenitalModosTest pasaron correctamente ===")

@@ -14,6 +14,9 @@ const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
 
 signal colono_creado(id: int)
 signal colono_retirado(id: int)
+## Una escuela graduó a una cohorte: "cantidad" colonos pasaron a técnico (el que sobraba se fue).
+## ponytail: solo existe la escuela técnica; con la de especialistas se añadirá el tipo destino.
+signal tecnicos_formados(cantidad: int)
 
 ## Valor centinela de "no hay celda": una celda imposible.
 const INVALIDA := Vector3i(999999, 999999, 999999)
@@ -52,10 +55,13 @@ var economia: Object = null:  # Economia
 				economia.puesto_quitado.disconnect(_on_puesto_quitado)
 			if economia.trabajadores_liberados.is_connected(_on_trabajadores_liberados):
 				economia.trabajadores_liberados.disconnect(_on_trabajadores_liberados)
+			if economia.cohorte_graduada.is_connected(_on_cohorte_graduada):
+				economia.cohorte_graduada.disconnect(_on_cohorte_graduada)
 		economia = valor
 		if valor != null:
 			valor.puesto_quitado.connect(_on_puesto_quitado)
 			valor.trabajadores_liberados.connect(_on_trabajadores_liberados)
+			valor.cohorte_graduada.connect(_on_cohorte_graduada)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
 ## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase", "fallos_servicio"}. "fase" del acarreador:
@@ -131,6 +137,15 @@ func _ids_de_tipo(tipo: String) -> Array[int]:
 	var ids: Array[int] = []
 	for id in colonos:
 		if colonos[id]["tipo"] == tipo:
+			ids.append(id)
+	return ids
+
+
+## Ids de los colonos de ese tipo que no trabajan en ningún puesto.
+func _ids_sin_puesto(tipo: String) -> Array[int]:
+	var ids: Array[int] = []
+	for id in _ids_de_tipo(tipo):
+		if colonos[id]["trabajo"].is_empty():
 			ids.append(id)
 	return ids
 
@@ -510,20 +525,22 @@ func _celda_aparicion() -> Vector3i:
 	return respaldo
 
 
-## Contrata a un desempleado (el de id menor) para un puesto con un rol
-## ("recolector", "tecnico" o "acarreador"): pasa a obrero (a técnico, si el rol es
-## "tecnico") en Ciudad.demografia y en el colono. Falso si no hay desempleados, el
-## puesto no existe, el rol no es de ese puesto o no tiene cupo.
+## Contrata a un colono para un puesto con un rol. Para "recolector", "aprendiz" y "acarreador" toma
+## a un desempleado (el de id menor) y lo pasa a obrero en Ciudad.demografia y en el colono. Para
+## "tecnico" toma a un técnico libre (el de id menor): ya es técnico, así que no cambia de tipo ni la
+## demografía; un desempleado nunca se convierte en técnico, hay que formarlo en una escuela. Falso si
+## no hay candidato, el puesto no existe, el rol no es de ese puesto o no tiene cupo.
 func contratar(esquina: Vector2i, rol: String) -> bool:
-	var desempleados: Array[int] = _ids_de_tipo("desempleado")
-	if desempleados.is_empty():
+	var candidatos: Array[int] = _ids_sin_puesto("tecnico") if rol == "tecnico" else _ids_de_tipo("desempleado")
+	if candidatos.is_empty():
 		return false
-	desempleados.sort()
-	var id: int = desempleados[0]
+	candidatos.sort()
+	var id: int = candidatos[0]
 	if not economia.asignar(esquina, rol, id):
 		return false
 	var tipo := "tecnico" if rol == "tecnico" else "obrero"
-	ciudad.reasignar_tipo("desempleado", tipo)
+	if rol != "tecnico":
+		ciudad.reasignar_tipo("desempleado", tipo)
 	var c: Dictionary = colonos[id]
 	c["tipo"] = tipo
 	c["trabajo"] = {"puesto": esquina, "rol": rol}
@@ -534,27 +551,32 @@ func contratar(esquina: Vector2i, rol: String) -> bool:
 	return true
 
 
-## Despide al último colono contratado con ese rol en el puesto; vuelve a
-## desempleado y pierde lo que llevara. Falso si no hay ninguno.
+## Técnicos sin puesto (formados en una escuela y todavía sin empleo).
+func tecnicos_libres() -> int:
+	return _ids_sin_puesto("tecnico").size()
+
+
+## Despide al último colono contratado con ese rol en el puesto; queda sin
+## puesto y pierde lo que llevara. Falso si no hay ninguno.
 func despedir(esquina: Vector2i, rol: String) -> bool:
 	var id: int = economia.ultimo_de(esquina, rol)
 	if id == -1 or not colonos.has(id):
 		return false
 	economia.liberar(id)
-	_volver_a_desempleado(colonos[id])
+	_quedar_sin_puesto(colonos[id])
 	return true
 
 
 ## El puesto se quitó (se deconstruyó): sus trabajadores ya fueron liberados en
-## Economia; aquí solo vuelven a desempleado. Conectada a Economia.puesto_quitado.
+## Economia; aquí solo quedan sin puesto. Conectada a Economia.puesto_quitado.
 func _on_puesto_quitado(ids: Array) -> void:
 	for id in ids:
 		if colonos.has(id):
-			_volver_a_desempleado(colonos[id])
+			_quedar_sin_puesto(colonos[id])
 
 
 ## Trabajadores liberados de un puesto que sigue en pie (agotado o desactivado):
-## vuelven a desempleado, salvo un acarreador que lleva carga (producto o insumo), que
+## quedan sin puesto, salvo un acarreador que lleva carga (producto o insumo), que
 ## primero termina el viaje y la entrega en el núcleo (ver _decidir_trabajo()).
 func _on_trabajadores_liberados(ids: Array) -> void:
 	for id in ids:
@@ -565,10 +587,42 @@ func _on_trabajadores_liberados(ids: Array) -> void:
 			c["fase"] = "entregar"
 			c["retirar_al_entregar"] = true
 		else:
-			_volver_a_desempleado(c)
+			_quedar_sin_puesto(c)
 
 
-func _volver_a_desempleado(c: Dictionary) -> void:
+## Una escuela graduó a su cohorte (Economia.cohorte_graduada; los ids ya están libres): de cada
+## x_cama[origen] colonos salen x_cama[destino] del tipo destino (los de id menor, ya sin puesto) y
+## el resto se va de la ciudad; así la vivienda ocupada se conserva y nadie queda desahuciado.
+func _on_cohorte_graduada(esquina: Vector2i, ids: Array) -> void:
+	var escuela: Dictionary = Recoleccion.ESCUELAS[economia.puestos[esquina]["tipo"]]
+	var salen: int = ciudad.TIPOS_POBLACION[escuela["destino"]]["x_cama"]
+	var graduados := 0
+	var ordenados: Array = ids.duplicate()
+	ordenados.sort()
+	for id in ordenados:
+		if not colonos.has(id):
+			continue  # ya no existe (p. ej. lo retiró una hambruna en el mismo tick)
+		# Si una hambruna/desahucio ya bajó la demografía de origen (reconciliar() aún no retiró al colono), no hay a quién convertir: se retira sin tocar la demografía.
+		if graduados < salen and ciudad.reasignar_tipo(escuela["origen"], escuela["destino"]):
+			var c: Dictionary = colonos[id]
+			c["tipo"] = escuela["destino"]
+			c["trabajo"] = {}
+			c["carga"] = {}
+			c["fase"] = ""
+			c["fallos_servicio"] = 0
+			_dejar_lo_que_hacia(c)
+			graduados += 1
+		else:
+			if graduados >= salen and ciudad.demografia[escuela["origen"]] > 0:
+				ciudad.demografia[escuela["origen"]] -= 1
+			_retirar(id)
+	if graduados > 0:
+		tecnicos_formados.emit(graduados)
+
+
+## El colono deja su puesto. Un técnico conserva su oficio y queda como técnico libre; cualquier otro
+## vuelve a desempleado. Pierde lo que llevara (salvo el insumo de refinería en fase "entrada").
+func _quedar_sin_puesto(c: Dictionary) -> void:
 	var tipo_previo: String = c["tipo"]
 	# Solo el insumo de refinería (fase "entrada", ya retirado del stock) se devuelve; el resto de la carga se pierde, para que despedir no teletransporte recursos al stock.
 	if c["fase"] == "entrada" and not c["carga"].is_empty():
@@ -578,8 +632,9 @@ func _volver_a_desempleado(c: Dictionary) -> void:
 	c["fase"] = ""
 	c["fallos_servicio"] = 0
 	c["retirar_al_entregar"] = false
-	c["tipo"] = "desempleado"
-	ciudad.reasignar_tipo(tipo_previo, "desempleado")
+	if tipo_previo != "tecnico":
+		c["tipo"] = "desempleado"
+		ciudad.reasignar_tipo(tipo_previo, "desempleado")
 	_dejar_lo_que_hacia(c)
 
 
@@ -603,7 +658,7 @@ func _decidir_trabajo(c: Dictionary) -> void:
 	if c.get("retirar_al_entregar", false):
 		# Ya no trabaja en el puesto (agotado o desactivado), pero termina su viaje.
 		if _llevar_al_nucleo(c):
-			_volver_a_desempleado(c)
+			_quedar_sin_puesto(c)
 		return
 	var esquina: Vector2i = c["trabajo"]["puesto"]
 	var huella_puesto: Array = economia.huella_de(esquina)

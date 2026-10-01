@@ -19,6 +19,10 @@ signal puesto_quitado(ids: Array)
 ## desempleado, salvo a un acarreador con carga, que termina su viaje).
 signal trabajadores_liberados(ids: Array)
 
+## Una escuela completó las horas de su cohorte. Los "ids" ya están liberados de su puesto; Colonos
+## los convierte (ver Colonos._on_cohorte_graduada()).
+signal cohorte_graduada(esquina: Vector2i, ids: Array)
+
 ## Valores «ninguno» de la celda de servicio (X, Z de la puerta) y del depósito
 ## (celda del baúl) de un puesto sin plantilla.
 const SIN_SERVICIO := Vector2i.MAX
@@ -37,8 +41,12 @@ const CAPACIDAD_CARGA := 150.0
 const CARGA_MINIMA := 10.0
 
 ## "tecnico" solo existe en las refinerías (opera la receta); "recolector" solo en los puestos de
-## recolección. "acarreador" vale en ambos.
-const ROLES := ["recolector", "tecnico", "acarreador"]
+## recolección; "aprendiz" solo en las escuelas. "acarreador" vale en los puestos de recolección y
+## en las refinerías (ver roles_de()).
+const ROLES := ["recolector", "tecnico", "aprendiz", "acarreador"]
+
+## Horas de juego que estudia una cohorte antes de graduarse (placeholder sin balance real).
+const HORAS_FORMACION := 24
 
 ## Tipos de puesto que consumen el mundo al producir; caza/recolección y pesca
 ## no consumen bloques (sus tasas dependen del entorno, ver recalcular_tasas()).
@@ -92,7 +100,8 @@ func _ready() -> void:
 ## entran a trabajar a las celdas libres de esa capa. "salida" (X, Z) es la celda frente a la
 ## puerta de salida de una refinería (la de entrada es "servicio"); SIN_SERVICIO en los puestos
 ## de una sola puerta. "chimenea" es la celda sobre la que sale el humo de una refinería activa
-## (ver esta_refinando()); SIN_DEPOSITO si no tiene.
+## (ver esta_refinando()); SIN_DEPOSITO si no tiene. "progreso" son las horas de estudio de la
+## cohorte (solo escuelas, ver _formar()).
 func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO, salida: Vector2i = SIN_SERVICIO, chimenea: Vector3i = SIN_DEPOSITO) -> void:
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
@@ -106,6 +115,7 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"activo": true, "agotado": false,
 		"servicio": servicio, "deposito": deposito, "suelo": suelo,
 		"salida": salida, "chimenea": chimenea,
+		"progreso": 0.0,  # horas que lleva estudiando la cohorte (solo escuelas)
 	}
 
 
@@ -148,10 +158,8 @@ func cupo_libre(esquina: Vector2i) -> int:
 ## Asigna un colono a un puesto con un rol. Falso si el puesto no existe, el
 ## rol no es válido, el cupo está lleno o el colono ya trabaja en algún puesto.
 func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
-	if not puestos.has(esquina) or not ROLES.has(rol) or _puesto_de.has(colono_id):
-		return false
-	if rol != "acarreador" and (rol == "tecnico") != es_refineria(esquina):
-		return false  # técnicos solo en refinerías, recolectores solo en puestos de recolección
+	if not puestos.has(esquina) or not roles_de(esquina).has(rol) or _puesto_de.has(colono_id):
+		return false  # roles válidos por tipo de puesto: ver roles_de()
 	var p: Dictionary = puestos[esquina]
 	if not p["activo"] or (p["agotado"] and rol == "recolector"):
 		return false  # inactivo (se está deconstruyendo) o agotado: sin recolectores nuevos
@@ -162,6 +170,14 @@ func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 	return true
 
 
+## Roles que admite el puesto: aprendices en una escuela; técnicos y acarreadores en una refinería;
+## recolectores y acarreadores en los demás.
+func roles_de(esquina: Vector2i) -> Array:
+	if es_escuela(esquina):
+		return ["aprendiz"]
+	return ["tecnico", "acarreador"] if es_refineria(esquina) else ["recolector", "acarreador"]
+
+
 ## Quita a un colono de su puesto (despido o muerte). No-op si no trabaja.
 func liberar(colono_id: int) -> void:
 	if not _puesto_de.has(colono_id):
@@ -170,6 +186,8 @@ func liberar(colono_id: int) -> void:
 	p["recolectores"].erase(colono_id)
 	p["acarreadores"].erase(colono_id)
 	p["presentes"].erase(colono_id)
+	if es_escuela(_puesto_de[colono_id]):
+		p["progreso"] = 0.0  # si se va un aprendiz, la cohorte empieza de nuevo
 	_puesto_de.erase(colono_id)
 
 
@@ -181,8 +199,7 @@ func ultimo_de(esquina: Vector2i, rol: String) -> int:
 	return lista.back() if not lista.is_empty() else -1
 
 
-## Lista interna donde vive cada rol: los técnicos comparten la de los recolectores (el cupo y la
-## presencia funcionan igual; en una refinería son quienes operan la receta).
+## Lista interna donde vive cada rol: los técnicos y los aprendices comparten la de los recolectores (el cupo y la presencia funcionan igual).
 static func _lista_de(rol: String) -> String:
 	return "acarreadores" if rol == "acarreador" else "recolectores"
 
@@ -253,6 +270,9 @@ func simular_hora() -> void:
 		if not p["activo"]:
 			continue
 		_liberar_acarreadores_si_agotado(esquina)
+		if es_escuela(esquina):
+			_formar(esquina)
+			continue
 		if es_refineria(esquina):
 			_refinar(esquina)
 			continue
@@ -413,6 +433,11 @@ func es_refineria(esquina: Vector2i) -> bool:
 	return puestos.has(esquina) and CadenaMinerales.REFINERIAS.has(puestos[esquina]["tipo"])
 
 
+## true si el puesto es una escuela (Recoleccion.ESCUELAS): forma a sus aprendices en vez de producir.
+func es_escuela(esquina: Vector2i) -> bool:
+	return puestos.has(esquina) and Recoleccion.ESCUELAS.has(puestos[esquina]["tipo"])
+
+
 ## Recurso principal que consume la refinería (tipo_entrada de su receta, p. ej. "hierro").
 func insumo_de(esquina: Vector2i) -> String:
 	return CadenaMinerales.REFINERIAS[puestos[esquina]["tipo"]]
@@ -426,6 +451,25 @@ func entradas_de(esquina: Vector2i) -> Dictionary:
 ## Recurso que produce la refinería (p. ej. "acero").
 func producto_de(esquina: Vector2i) -> String:
 	return CadenaMinerales.RECETAS[insumo_de(esquina)]["tipo_salida"]
+
+
+## Una hora de estudio: la cohorte (el cupo completo de aprendices) suma 1 h solo si los aprendices
+## están TODOS presentes; si falta alguno el conteo se pausa, y con menos aprendices que el cupo se
+## reinicia. A HORAS_FORMACION se gradúa: los aprendices se liberan y Colonos los convierte.
+func _formar(esquina: Vector2i) -> void:
+	var p: Dictionary = puestos[esquina]
+	if p["recolectores"].size() < p["cupo"]:
+		p["progreso"] = 0.0
+		return
+	if p["presentes"].size() < p["cupo"]:
+		return
+	p["progreso"] += 1.0
+	if p["progreso"] < HORAS_FORMACION:
+		return
+	var ids: Array = p["recolectores"].duplicate()
+	for id in ids:
+		liberar(id)  # también reinicia "progreso"
+	cohorte_graduada.emit(esquina, ids)
 
 
 ## Una hora de refinado: los técnicos presentes consumen insumo del almacén local y lo convierten

@@ -311,6 +311,9 @@ var distancia_camara := DISTANCIA_INICIAL
 ## continúa, sin importar qué otro movimiento (paneo) ocurra a la vez.
 var _gesto_orbital_activo := false
 
+const DURACION_CENTRADO := 0.4
+var _tween_centrado: Tween
+
 
 func _ready() -> void:
 	projection = PROJECTION_PERSPECTIVE
@@ -328,6 +331,10 @@ func _ready() -> void:
 	hud.construccion_pedida.connect(_on_construccion_pedida)
 	hud.zona_pedida.connect(_elegir_zona)
 	hud.dato_pedido.connect(hud.abrir_ventana_dato)
+	hud.edificio_pedido.connect(func(esquina: Vector2i) -> void:
+		centrar_en_edificio(esquina)
+		hud.abrir_panel_puesto(esquina)
+	)
 
 
 ## Precalcula los offsets (dx, dz) dentro del círculo de radio
@@ -489,6 +496,39 @@ func _raycast_colision_camara(origen: Vector3) -> Dictionary:
 	return get_world_3d().direct_space_state.intersect_ray(consulta)
 
 
+## Punto al que debe mirar la cámara para centrar el edificio de "esquina": su centro
+## en X/Z y la altura del suelo ahí (como posicionar_sobre()).
+func _destino_foco_de(esquina: Vector2i) -> Vector3:
+	var puesto: Dictionary = Economia.puestos[esquina]
+	var x: float = esquina.x + puesto["ancho"] / 2.0
+	var z: float = esquina.y + puesto["alto"] / 2.0
+	return Vector3(x, mundo.altura_en(int(x), int(z)), z)
+
+
+## Desliza el foco hasta el centro del edificio (~0,4 s) conservando distancia,
+## inclinación y órbita; _process() cancela la animación si el usuario toma el
+## control. Sin árbol (pruebas) aplica el destino directo; sin puesto, no hace nada.
+func centrar_en_edificio(esquina: Vector2i) -> void:
+	if not Economia.puestos.has(esquina):
+		return
+	_cancelar_centrado()
+	var destino := _destino_foco_de(esquina)
+	if not is_inside_tree():
+		foco = destino
+		return
+	_tween_centrado = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_tween_centrado.tween_method(func(f: Vector3) -> void:
+		foco = f
+		_actualizar_transform()
+	, foco, destino, DURACION_CENTRADO)
+
+
+func _cancelar_centrado() -> void:
+	if _tween_centrado != null and _tween_centrado.is_valid():
+		_tween_centrado.kill()
+	_tween_centrado = null
+
+
 ## Recalcula la posición/orientación de la cámara a partir de foco,
 ## angulo_orbital, angulo_inclinacion y distancia_camara (órbita de cámara
 ## clásica: la cámara nunca se mueve directamente por sí sola). Devuelve la
@@ -642,6 +682,8 @@ func _process(delta: float) -> void:
 		elif modo_trazar_via and not _hay_tramo_en_curso:
 			_actualizar_preview_vertice_inicial()
 		return
+
+	_cancelar_centrado()  # el usuario toma el control: la animación de centrado se detiene
 
 	# Estado tentativo: se aplican todos los controles activos este
 	# fotograma sobre COPIAS locales, y solo se comprometen (se asignan a
@@ -960,8 +1002,8 @@ func _actualizar_previsualizacion_puesto() -> void:
 			_actualizar_area_accion_agua(centro_agua, celdas_agua)
 		else:
 			_ocultar_area_accion()
-	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo):
-		_ocultar_area_accion()  # una refinería no tiene área de acción ni tasa de recolección
+	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo):
+		_ocultar_area_accion()  # ni una refinería ni una escuela tienen área de acción ni tasa de recolección
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
@@ -1284,6 +1326,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar"]
 const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]
+const PUESTOS_INVESTIGACION := ["escuela_tecnica"]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1381,7 +1424,7 @@ func _manejar_tecla_zonificar(n: int) -> void:
 ## Con Construir activo: sin categoría elegida, N selecciona la categoría N
 ## (CATEGORIAS_CONSTRUIR); con una categoría abierta, N selecciona su
 ## edificio N (o no hace nada si esa categoría no tiene esa posición, p. ej.
-## Industrial/Investigación, que todavía no tienen edificios).
+## una categoría con menos edificios).
 func _manejar_tecla_construir(n: int) -> void:
 	if _categoria_construir == "":
 		if n >= 1 and n <= CATEGORIAS_CONSTRUIR.size():
@@ -1397,6 +1440,9 @@ func _manejar_tecla_construir(n: int) -> void:
 		"industrial":
 			if n >= 1 and n <= PUESTOS_INDUSTRIAL.size():
 				_alternar_puesto_por_tipo(PUESTOS_INDUSTRIAL[n - 1])
+		"investigacion":
+			if n >= 1 and n <= PUESTOS_INVESTIGACION.size():
+				_alternar_puesto_por_tipo(PUESTOS_INVESTIGACION[n - 1])
 		"vias":
 			if n == 1:
 				_alternar_modo_trazar_via()
@@ -1485,7 +1531,7 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 
@@ -2167,6 +2213,8 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 	if extremo_agua_indice != -1 and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
 		giros = (giros + 2) % 4
 	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo)
+	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
+	var es_urbano: bool = es_refineria or es_escuela  # se construyen dentro de la zona de influencia, los demás puestos fuera
 	var dentro_de_influencia: bool = Zonificacion.dentro_de_influencia(centro)
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	# Fachada, como en los edificios declarados: las 2 columnas delante de todo el lado
@@ -2194,9 +2242,9 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		"y_base": y_base,
 		"extremo_agua_indice": extremo_agua_indice,
 		"en_tierra": en_tierra,
-		"en_influencia": dentro_de_influencia and not es_refineria,  # los puestos periféricos no pueden ir dentro
-		"fuera_de_influencia": es_refineria and not dentro_de_influencia,  # las refinerías solo pueden ir dentro
-		"zona_correcta": not es_refineria or _huella_en_zona_correcta(esquina, columnas, Zonificacion.ZONAS_PINTABLES[1]),
+		"en_influencia": dentro_de_influencia and not es_urbano,  # los puestos periféricos no pueden ir dentro
+		"fuera_de_influencia": es_urbano and not dentro_de_influencia,  # las refinerías y la escuela solo pueden ir dentro
+		"zona_correcta": not es_urbano or _huella_en_zona_correcta(esquina, columnas, Zonificacion.ZONAS_PINTABLES[0 if es_escuela else 1]),  # la escuela, sobre residencial; las refinerías, sobre industrial
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas),
 		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, altura_plantilla),
 		"choca": _huella_choca_con_otro_puesto(esquina, columnas),
@@ -2219,9 +2267,12 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 	if ev["en_influencia"]:
 		return "No se puede colocar un puesto dentro de la zona de influencia."
+	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
 	if ev["fuera_de_influencia"]:
-		return "Colocación rechazada: una refinería solo puede construirse dentro de la zona de influencia."
+		return "Colocación rechazada: %s solo puede construirse dentro de la zona de influencia." % ("una escuela" if es_escuela else "una refinería")
 	if not ev["zona_correcta"]:
+		if es_escuela:
+			return "Colocación rechazada: una escuela solo puede construirse sobre una zona residencial."
 		return "Colocación rechazada: una refinería solo puede construirse sobre una zona industrial."
 	if not ev["relieve_valido"]:
 		return "Colocación rechazada: la pendiente de esta huella supera el límite permitido."
@@ -2437,7 +2488,9 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 
 	var orden_estructura: Array = mundo.ordenar_celdas_edificio(celdas_plantilla)
 	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
-	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
+	var deposito := Economia.SIN_DEPOSITO  # una plantilla sin baúl (la escuela) no tiene depósito
+	if deposito_local != Vector3i.MAX:
+		deposito = Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 	var chimenea := Economia.SIN_DEPOSITO
 	if CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo):
 		var chimenea_local: Vector3i = PlantillasPuesto.celda_chimenea(_tipo_puesto_activo, giros)

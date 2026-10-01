@@ -78,7 +78,7 @@ El personal máximo es el cupo total de trabajadores (recolectores + acarreadore
 
 Fuente: hoja "Economia" de `docs/Recursos.xlsx`, `Economia.gd`, `Ciudad.gd` y `Colonos.gd`.
 
-Flujo: producción de los recolectores presentes → **almacén local** del puesto (tope 1000; el exceso se pierde) → **acarreador** a pie (carga 150 por viaje; ciclo puesto → núcleo urbano → puesto) → **stock central** (madera, comida, hierro, tierra, piedra, cobre, carbón, tierras raras y acero; límite 1000 por recurso, comida 10000). La comida de caza, frutos, pesca y algas se suma en `comida`. Un tick = 2 s reales = 1 hora de juego; un colono camina 2,5 celdas/s (5 por hora de juego).
+Flujo: producción de los recolectores presentes → **almacén local** del puesto (tope 1000; el exceso se pierde) → **acarreador** a pie (carga 150 por viaje; ciclo puesto → núcleo urbano → puesto) → **stock central** (madera, comida, hierro, tierra, piedra, cobre, carbón, tierras raras y acero; tope base 500 por recurso, comida 5000; ver la tabla). La comida de caza, frutos, pesca y algas se suma en `comida`. Un tick = 2 s reales = 1 hora de juego; un colono camina 2,5 celdas/s (5 por hora de juego).
 
 | Parámetro | Valor | Fuente |
 |---|---|---|
@@ -86,8 +86,8 @@ Flujo: producción de los recolectores presentes → **almacén local** del pues
 | Velocidad de un colono | 2,5 celdas/s | `Colonos.VELOCIDAD_COLONO` |
 | Carga de un acarreador | 150 unidades por viaje (placeholder) | `Economia.CAPACIDAD_CARGA` |
 | Almacén local de un puesto | 1000 unidades en total | `Recoleccion.CAPACIDAD_ALMACENAMIENTO*` |
-| Límite del stock central | 1000 por recurso (comida 10000) | `Ciudad.almacen` |
-| Stock inicial | comida 10000, madera 200, el resto 0 (hierro 0) | `Ciudad.almacen` |
+| Límite del stock central | 500 por recurso (comida 5000) al empezar; ×2 al declarar el núcleo; cada baúl suma +100 (comida +400) | `Ciudad.LIMITE_BASE*`, `FACTOR_NUCLEO`, `BONO_BAUL*`, `recalcular_limites()` |
+| Stock inicial | comida 5000, madera 200, el resto 0 (hierro y acero incluidos) | `Ciudad.almacen` |
 | Migración de colonos | 0,5 por hora de juego (con vivienda libre y sin hambruna) | `Ciudad.TASA_MIGRACION` |
 | Consumo de un obrero de puesto | 5 comida/h (desempleado: 3) | `Ciudad.TIPOS_POBLACION` |
 

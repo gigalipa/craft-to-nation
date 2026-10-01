@@ -1085,14 +1085,17 @@ func _completar_construccion(metadata: Dictionary) -> void:
 		return
 	if metadata.has("puesto_nuevo"):
 		var info: Dictionary = metadata["puesto_nuevo"]
-		var centro: Vector2i = info["centro"]
-		var altura: int = mundo.altura_en(centro.x, centro.y)
-		var entorno: Dictionary = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"])
-		var tasas: Dictionary = Recoleccion.tasas_de_entorno(info["tipo"], mundo, entorno)
+		var entorno: Dictionary = {}
+		var tasas: Dictionary = {}
+		if not CadenaMinerales.REFINERIAS.has(info["tipo"]):
+			var centro: Vector2i = info["centro"]
+			var altura: int = mundo.altura_en(centro.x, centro.y)
+			entorno = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"])
+			tasas = Recoleccion.tasas_de_entorno(info["tipo"], mundo, entorno)
 		Recoleccion.colocar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"])
 		# info["y_base"] es la Y de la losa de piso (capa 0, ver PlantillasPuesto.gd);
 		# el piso interior TRANSITABLE (donde vive la puerta) es una capa arriba.
-		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"] + 1)
+		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"] + 1, info.get("salida", Economia.SIN_SERVICIO))
 		print("Puesto '%s' construido en (%d, %d)." % [info["tipo"], info["esquina"].x, info["esquina"].y])
 		hud.notificar("Puesto construido.")
 		metadata.erase("puesto_nuevo")  # a partir de aquí, un reconstruir cae en la rama "puesto" (reactivar), no en esta (evita re-registrar y huérfanos en _puesto_de — revisión de código, 2026-09-29).

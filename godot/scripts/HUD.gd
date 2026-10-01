@@ -221,6 +221,10 @@ static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
 			if tasas.get("madera", 0.0) <= 0.0:
 				return "Recolección prevista: sin árboles detectados"
 			return "Recolección prevista por ciudadano:\n  %.1f madera/h" % tasas["madera"]
+		"siderurgica":
+			var t_ref: Dictionary = CadenaMinerales.tasas_refinado({"hierro": 1})["hierro"]
+			return "Refinado previsto por técnico:
+  %.1f hierro/h → %.1f acero/h" % [t_ref["consumo"], t_ref["produccion"]]
 		"caza_recoleccion":
 			if tasas.get("caza", 0.0) <= 0.0 and tasas.get("recoleccion", 0.0) <= 0.0:
 				return "Recolección prevista: sin fauna ni fruta detectada"

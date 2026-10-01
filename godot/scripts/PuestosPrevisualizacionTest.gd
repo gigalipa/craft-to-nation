@@ -409,4 +409,49 @@ func ejecutar_pruebas() -> void:
 	mundo12.free()
 	print("OK: el costo mostrado depende del tipo de puesto y de su plantilla real, no de un placeholder.")
 
-	print("\n=== Las 12 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== TEST 13: la siderúrgica solo se coloca dentro de la zona de influencia y sobre zona industrial; el frente de la salida se nivela al nivel de la entrada ===")
+	Recoleccion.puestos.clear()  # los puestos de las pruebas 7-11 siguen registrados y chocarían con la huella de esta
+	var mundo13: Node = _mundo_plano()
+	var esquina13 := Vector2i(18, 18)
+	var camara13: Camera3D = _camara(mundo13, "siderurgica")
+	var ev13: Dictionary = camara13._evaluar_puesto(esquina13)
+	assert("zona de influencia" in camara13._mensaje_rechazo_puesto(ev13), "sin núcleo declarado está fuera de la zona de influencia: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	Zonificacion.declarar_nucleo([Vector2i(30, 30), Vector2i(31, 30), Vector2i(30, 31), Vector2i(31, 31)])
+	ev13 = camara13._evaluar_puesto(esquina13)
+	assert("zona industrial" in camara13._mensaje_rechazo_puesto(ev13), "dentro de la influencia pero sin zona pintada: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	Zonificacion.pintar_zona(esquina13, esquina13 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[0])
+	ev13 = camara13._evaluar_puesto(esquina13)
+	assert("zona industrial" in camara13._mensaje_rechazo_puesto(ev13), "una zona residencial tampoco sirve: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	Zonificacion.pintar_zona(esquina13, esquina13 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[1])
+	ev13 = camara13._evaluar_puesto(esquina13)
+	assert(camara13._mensaje_rechazo_puesto(ev13) == "", "dentro de la influencia y sobre zona industrial es válida: %s" % camara13._mensaje_rechazo_puesto(ev13))
+	assert(ev13["fachada"].size() == 20, "fachada de ambos lados (%d)" % ev13["fachada"].size())
+	var costo13: Dictionary = camara13._resumen_materiales_puesto(esquina13, ev13)["neto"]
+	assert(costo13.get("piedra", 0) > 0, "construir una siderúrgica cuesta piedra (muros de bloque_piedra)")
+	# Media huella sobre zona industrial no alcanza.
+	Zonificacion.despintar_zona(esquina13 + Vector2i(0, 4), esquina13 + Vector2i(4, 4))
+	assert("zona industrial" in camara13._mensaje_rechazo_puesto(camara13._evaluar_puesto(esquina13)), "toda la huella debe estar sobre zona industrial")
+	Zonificacion.pintar_zona(esquina13, esquina13 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[1])
+	camara13.free()
+	# Una mina, en cambio, no puede ir en la zona de influencia.
+	var camara13m: Camera3D = _camara(mundo13, "mina")
+	assert("influencia" in camara13m._mensaje_rechazo_puesto(camara13m._evaluar_puesto(esquina13)), "una mina no se coloca en la zona de influencia")
+	camara13m.free()
+	# Entrada y salida a distinto nivel: el terreno al sur de la salida (z >= 23) está 1 más alto. Manda la
+	# entrada (norte, nivel 0); el frente de la salida se nivela cavando ese bloque, no se rechaza.
+	for x13 in range(LADO):
+		for z13 in range(23, LADO):
+			mundo13.colocar_bloque(Vector3i(x13, 1, z13), "tierra")
+	var camara13d: Camera3D = _camara(mundo13, "siderurgica")
+	var ev13d: Dictionary = camara13d._evaluar_puesto(esquina13)
+	assert(camara13d._mensaje_rechazo_puesto(ev13d) == "", "el desnivel entre entrada y salida no rechaza: %s" % camara13d._mensaje_rechazo_puesto(ev13d))
+	assert(ev13d["resultado_base"]["base_y"] == 0, "la entrada decide la altura")
+	var frente_salida13: Vector2i = esquina13 + PlantillasPuesto.celda_de_salida("siderurgica", 0)
+	assert(ev13d["fachada"][frente_salida13] == 0, "el frente de la salida se nivela al nivel de la entrada")
+	var plan13: Dictionary = camara13d._plan_nivelacion(esquina13, ev13d["columnas"], ev13d["resultado_base"]["base_y"], ev13d["fachada"])
+	assert(plan13["excavacion"].has(Vector3i(frente_salida13.x, 1, frente_salida13.y)), "se cava el bloque que sobra frente a la salida")
+	camara13d.free()
+	Zonificacion.nucleo_declarado = false  # no contaminar otras pruebas de esta escena
+	mundo13.free()
+
+	print("\n=== Las 13 pruebas de previsualización de puestos pasaron correctamente ===")

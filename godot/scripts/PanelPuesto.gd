@@ -2,7 +2,7 @@ extends PanelContainer
 
 ## Panel de un puesto de recolección (clic izquierdo sobre él en la cenital,
 ## ver CamaraCenital._procesar_clic). Se construye por código: título, filas
-## "Recolectores [-] n [+]" y "Acarreadores [-] n [+]", desempleados libres,
+## "Recolectores/Técnicos [-] n [+]" y "Acarreadores [-] n [+]", desempleados libres,
 ## almacén local, producción y distancia al núcleo. Las reglas viven en
 ## Economia/Colonos; esto solo las muestra y les pasa los clics.
 
@@ -14,7 +14,9 @@ const NOMBRES_PUESTO := {
 	"caza_recoleccion": "Caza y recolección",
 	"maderero": "Puesto maderero",
 	"pesca_frutos_mar": "Pesca y frutos del mar",
+	"siderurgica": "Siderúrgica",
 }
+const NOMBRES_ROL := {"recolector": "Recolectores", "tecnico": "Técnicos", "acarreador": "Acarreadores"}
 
 var esquina := Recoleccion.SIN_PUESTO
 
@@ -41,7 +43,7 @@ func _ready() -> void:
 	add_child(caja)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	caja.add_child(_titulo)
-	for rol in ["recolector", "acarreador"]:
+	for rol in ["recolector", "tecnico", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
 	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
@@ -52,7 +54,7 @@ func _ready() -> void:
 
 func _crear_fila(rol: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
-	var nombre := TemaHUD.etiqueta("Recolectores" if rol == "recolector" else "Acarreadores")
+	var nombre := TemaHUD.etiqueta(NOMBRES_ROL[rol])
 	nombre.custom_minimum_size.x = 110.0
 	var menos := Button.new()
 	menos.text = "-"
@@ -69,7 +71,7 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	mas.pressed.connect(func() -> void: Colonos.contratar(esquina, rol))
 	for nodo in [nombre, menos, cantidad, mas]:
 		fila.add_child(nodo)
-	_filas[rol] = {"cantidad": cantidad, "menos": menos, "mas": mas}
+	_filas[rol] = {"fila": fila, "cantidad": cantidad, "menos": menos, "mas": mas}
 	return fila
 
 
@@ -105,12 +107,15 @@ func _actualizar() -> void:
 	elif puesto["agotado"]:
 		estado = " (agotado)"
 	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + estado
-	_filas["recolector"]["cantidad"].text = str(t["recolectores"])
+	var rol_produccion := "tecnico" if Economia.es_refineria(esquina) else "recolector"
+	_filas["recolector"]["fila"].visible = rol_produccion == "recolector"
+	_filas["tecnico"]["fila"].visible = rol_produccion == "tecnico"
+	_filas[rol_produccion]["cantidad"].text = str(t["recolectores"])  # los técnicos cuentan bajo "recolectores"
 	_filas["acarreador"]["cantidad"].text = str(t["acarreadores"])
-	_filas["recolector"]["menos"].disabled = t["recolectores"] == 0
+	_filas[rol_produccion]["menos"].disabled = t["recolectores"] == 0
 	_filas["acarreador"]["menos"].disabled = t["acarreadores"] == 0
 	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0 or libres <= 0
-	_filas["recolector"]["mas"].disabled = sin_cupo or not puesto["activo"] or puesto["agotado"]
+	_filas[rol_produccion]["mas"].disabled = sin_cupo or not puesto["activo"] or puesto["agotado"]
 	_filas["acarreador"]["mas"].disabled = sin_cupo or not puesto["activo"]
 	_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
 	_libres.text = "Desempleados libres: %d" % libres

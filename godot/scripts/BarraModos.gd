@@ -45,8 +45,8 @@ const MODOS := [
 
 ## Categorías del menú Construir (GDD: Núcleo A = Residencial/Investigación,
 ## Núcleo B = Industrial; Periférico son los puestos de recolección fuera de
-## la ciudad). Industrial e Investigación no tienen edificios implementados
-## todavía — quedan visibles, con su panel vacío (ver CONSTRUCCIONES_POR_CATEGORIA).
+## la ciudad). Industrial tiene la siderúrgica; solo Investigación no tiene
+## edificios todavía — queda visible, con su panel vacío (ver CONSTRUCCIONES_POR_CATEGORIA).
 const CATEGORIAS := [
 	["residencial", "Residencial", "1"],
 	["periferico", "Periférico", "2"],
@@ -68,7 +68,9 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["mina", "Mina", "3"],
 		["pesca_frutos_mar", "Pesca", "4"],
 	],
-	"industrial": [],
+	"industrial": [
+		["siderurgica", "Siderúrgica", "1"],
+	],
 	"investigacion": [],
 	"vias": [
 		["vias", "Trazar vía", "1"],
@@ -77,7 +79,7 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 
 ## Tipos con miniatura 3D real (mina/caza/madera/pesca + el blueprint
 ## residencial); "vias" no tiene malla que previsualizar, es un botón de texto.
-const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar"]
+const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica"]
 
 ## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
 var ZONAS := [

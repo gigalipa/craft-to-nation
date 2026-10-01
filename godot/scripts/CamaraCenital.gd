@@ -960,6 +960,8 @@ func _actualizar_previsualizacion_puesto() -> void:
 			_actualizar_area_accion_agua(centro_agua, celdas_agua)
 		else:
 			_ocultar_area_accion()
+	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo):
+		_ocultar_area_accion()  # una refinería no tiene área de acción ni tasa de recolección
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
@@ -1010,12 +1012,13 @@ func _base_y_blueprint(esquina: Vector2i) -> Dictionary:
 ## Igual que _base_y_blueprint() pero para el puesto "tipo" (giro efectivo
 ## "giros"): mismo cálculo (NiveladorTerreno.calcular_base_y()) sobre
 ## PlantillasPuesto.celdas(), que ahora también trae una losa de piso
-## enterrada bajo la puerta (capa 0, ver PlantillasPuesto.gd) — un puesto
-## siempre tiene exactamente una puerta, así que nunca cae en el caso
-## "puertas" (varias puertas a niveles distintos) que sí puede rechazar un
-## blueprint residencial (revisión de código, 2026-09-29).
+## enterrada bajo la puerta (capa 0, ver PlantillasPuesto.gd). La puerta de
+## ENTRADA decide base_y (en los puestos de una puerta es la única, así que
+## nunca cae en el caso "puertas" que sí puede rechazar un blueprint
+## residencial) y el terreno frente a la puerta de salida se nivela a ese
+## nivel (revisión de código, 2026-09-29).
 func _base_y_puesto(esquina: Vector2i, tipo: String, giros: int) -> Dictionary:
-	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, PlantillasPuesto.celdas(tipo, giros))
+	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, PlantillasPuesto.celdas(tipo, giros), PlantillasPuesto.puerta_de_entrada(tipo, giros))
 	if not resultado["valido"]:
 		return resultado
 	for frente: Vector2i in resultado["frentes"]:
@@ -1280,6 +1283,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 ## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar"]
+const PUESTOS_INDUSTRIAL := ["siderurgica"]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1390,6 +1394,9 @@ func _manejar_tecla_construir(n: int) -> void:
 		"periferico":
 			if n >= 1 and n <= PUESTOS_PERIFERICO.size():
 				_alternar_puesto_por_tipo(PUESTOS_PERIFERICO[n - 1])
+		"industrial":
+			if n >= 1 and n <= PUESTOS_INDUSTRIAL.size():
+				_alternar_puesto_por_tipo(PUESTOS_INDUSTRIAL[n - 1])
 		"vias":
 			if n == 1:
 				_alternar_modo_trazar_via()
@@ -1478,6 +1485,9 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
+		"siderurgica":
+			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
+			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 
 
 ## Clic en un botón del menú principal de la barra de modos: mismo efecto que su tecla.
@@ -2156,6 +2166,8 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 	var giros := _giros_puesto
 	if extremo_agua_indice != -1 and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
 		giros = (giros + 2) % 4
+	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo)
+	var dentro_de_influencia: bool = Zonificacion.dentro_de_influencia(centro)
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	# Fachada, como en los edificios declarados: las 2 columnas delante de todo el lado
 	# de la puerta se nivelan a la altura de la puerta, y ahí (y frente a las ventanas)
@@ -2182,7 +2194,9 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		"y_base": y_base,
 		"extremo_agua_indice": extremo_agua_indice,
 		"en_tierra": en_tierra,
-		"en_influencia": Zonificacion.dentro_de_influencia(centro),
+		"en_influencia": dentro_de_influencia and not es_refineria,  # los puestos periféricos no pueden ir dentro
+		"fuera_de_influencia": es_refineria and not dentro_de_influencia,  # las refinerías solo pueden ir dentro
+		"zona_correcta": not es_refineria or _huella_en_zona_correcta(esquina, columnas, Zonificacion.ZONAS_PINTABLES[1]),
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas),
 		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, altura_plantilla),
 		"choca": _huella_choca_con_otro_puesto(esquina, columnas),
@@ -2205,6 +2219,10 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 	if ev["en_influencia"]:
 		return "No se puede colocar un puesto dentro de la zona de influencia."
+	if ev["fuera_de_influencia"]:
+		return "Colocación rechazada: una refinería solo puede construirse dentro de la zona de influencia."
+	if not ev["zona_correcta"]:
+		return "Colocación rechazada: una refinería solo puede construirse sobre una zona industrial."
 	if not ev["relieve_valido"]:
 		return "Colocación rechazada: la pendiente de esta huella supera el límite permitido."
 	if not ev["resultado_huella"]["valida"]:
@@ -2379,6 +2397,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	var base_y: int = ev["resultado_base"]["base_y"]
 	var celdas_plantilla: Dictionary = ev["celdas_plantilla"]
 	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
+	var salida: Vector2i = esquina + PlantillasPuesto.celda_de_salida(_tipo_puesto_activo, giros)
 
 	var centro_agua := Recoleccion.SIN_CENTRO
 	if _tipo_puesto_activo == "pesca_frutos_mar":
@@ -2429,6 +2448,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 			"centro": centro,
 			"centro_agua": centro_agua,
 			"servicio": servicio,
+			"salida": salida,
 			"deposito": deposito,
 			"y_base": y_base,
 		},

@@ -454,4 +454,39 @@ func ejecutar_pruebas() -> void:
 	Zonificacion.nucleo_declarado = false  # no contaminar otras pruebas de esta escena
 	mundo13.free()
 
-	print("\n=== Las 13 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== TEST 14: la escuela técnica solo se coloca dentro de la zona de influencia y sobre zona residencial ===")
+	Recoleccion.puestos.clear()
+	var mundo14: Node = _mundo_plano()
+	var esquina14 := Vector2i(24, 18)
+	var camara14: Camera3D = _camara(mundo14, "escuela_tecnica")
+	var ev14: Dictionary = camara14._evaluar_puesto(esquina14)
+	var mensaje14: String = camara14._mensaje_rechazo_puesto(ev14)
+	assert("zona de influencia" in mensaje14 and "escuela" in mensaje14, "sin núcleo declarado está fuera de la zona de influencia: %s" % mensaje14)
+	Zonificacion.declarar_nucleo([Vector2i(30, 30), Vector2i(31, 30), Vector2i(30, 31), Vector2i(31, 31)])
+	ev14 = camara14._evaluar_puesto(esquina14)
+	assert("zona residencial" in camara14._mensaje_rechazo_puesto(ev14), "dentro de la influencia pero sin zona pintada: %s" % camara14._mensaje_rechazo_puesto(ev14))
+	Zonificacion.pintar_zona(esquina14, esquina14 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[1])
+	ev14 = camara14._evaluar_puesto(esquina14)
+	assert("zona residencial" in camara14._mensaje_rechazo_puesto(ev14), "una zona industrial tampoco sirve: %s" % camara14._mensaje_rechazo_puesto(ev14))
+	Zonificacion.pintar_zona(esquina14, esquina14 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[0])
+	ev14 = camara14._evaluar_puesto(esquina14)
+	assert(camara14._mensaje_rechazo_puesto(ev14) == "", "dentro de la influencia y sobre zona residencial es válida: %s" % camara14._mensaje_rechazo_puesto(ev14))
+	assert(ev14["fachada"].size() == 10, "fachada de un solo lado (%d)" % ev14["fachada"].size())
+	assert(not camara14._resumen_materiales_puesto(esquina14, ev14)["neto"].is_empty(), "construirla cuesta materiales")
+	Zonificacion.despintar_zona(esquina14 + Vector2i(0, 4), esquina14 + Vector2i(4, 4))
+	assert("zona residencial" in camara14._mensaje_rechazo_puesto(camara14._evaluar_puesto(esquina14)), "toda la huella debe estar sobre zona residencial")
+	Zonificacion.pintar_zona(esquina14, esquina14 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[0])
+	camara14.hud = HUDScript.new()
+	add_child(camara14.hud)
+	camara14._confirmar_puesto(esquina14)
+	var info14: Dictionary = {}
+	for meta14 in mundo14.edificio_metadata.values():
+		if meta14.has("puesto_nuevo") and meta14["puesto_nuevo"]["tipo"] == "escuela_tecnica":
+			info14 = meta14["puesto_nuevo"]
+	assert(not info14.is_empty(), "colocar la escuela inicia su construcción")
+	assert(info14["deposito"] == Economia.SIN_DEPOSITO, "sin baúl, el puesto se registra sin depósito")
+	camara14.free()
+	Zonificacion.nucleo_declarado = false  # no contaminar otras pruebas de esta escena
+	mundo14.free()
+
+	print("\n=== Las 14 pruebas de previsualización de puestos pasaron correctamente ===")

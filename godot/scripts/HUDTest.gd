@@ -356,9 +356,10 @@ func probar_barra_modos() -> void:
 	barra.set_modo("")
 	assert(not barra.construccion_visible() and not barra._panel_categorias.visible)
 
-	print("=== TEST 3a-bis: Industrial e Investigación no tienen edificios todavía, su panel queda vacío (sin botones) ===")
-	barra.set_modo("construir", "", "industrial")
-	assert(barra._paneles_construccion["industrial"].visible)
+	print("=== TEST 3a-bis: Investigación tiene la Escuela técnica; Industrial no tiene un botón con su propio id ===")
+	barra.set_modo("construir", "", "investigacion")
+	assert(barra._paneles_construccion["investigacion"].visible)
+	assert(barra._botones_construccion.has("escuela_tecnica"), "Investigación ofrece la escuela técnica")
 	assert(not barra._botones_construccion.has("industrial"), "no hay ningún tipo de edificio con id 'industrial'")
 	barra.set_modo("")
 
@@ -382,10 +383,10 @@ func probar_barra_modos() -> void:
 	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
 
 	print("\n=== TEST 3e: re-renderizar una miniatura libera el SubViewport anterior, no acumula uno por cada rotación ===")
-	assert(barra._viewports_construccion.size() == 9, "una construcción con malla real por cada uno de los 9 tipos con miniatura (mina/caza/madera/pesca/las 4 refinerías + residencial con el blueprint declarado arriba)")
+	assert(barra._viewports_construccion.size() == 10, "una construcción con malla real por cada uno de los 10 tipos con miniatura (mina/caza/madera/pesca/las 4 refinerías/la escuela + residencial con el blueprint declarado arriba)")
 	for giro in [2, 3, 0, 1, 2, 3]:
 		barra.set_giros(giro)
-	assert(barra._viewports_construccion.size() == 9, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
+	assert(barra._viewports_construccion.size() == 10, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
 
 	print("\n=== TEST 3f: cada edificio (incluido Residencial) anuncia su propia tecla numérica de categoría ===")
 	var textos_residencial: Array = []

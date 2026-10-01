@@ -381,8 +381,10 @@ func ejecutar_pruebas() -> void:
 	assert(e18.suelo_de(ESQ) == EconomiaScript.SIN_SUELO, "sin plantilla no hay piso interior")
 	assert(e18.servicio_de(Vector2i(0, 0)) == EconomiaScript.SIN_SERVICIO, "puesto inexistente")
 
-	print("\n=== TEST 19: desactivar_puesto() libera a todos, es idempotente, conserva el almacén y no admite contratar ===")
-	var e19: Node = _nueva(CiudadScript.new())
+	print("\n=== TEST 19: desactivar_puesto() libera a todos, es idempotente, pasa el almacén al núcleo y no admite contratar ===")
+	var ciudad19: Node = CiudadScript.new()
+	var madera19: float = ciudad19.almacen["madera"].cantidad
+	var e19: Node = _nueva(ciudad19)
 	e19.asignar(ESQ, "recolector", 1)
 	e19.asignar(ESQ, "acarreador", 2)
 	e19.marcar_presente(1, true)
@@ -393,13 +395,13 @@ func ejecutar_pruebas() -> void:
 	liberados19.sort()
 	assert(liberados19 == [1, 2], "los dos quedan libres")
 	assert(not e19.puestos[ESQ]["activo"] and e19.cupo_libre(ESQ) == 5)
-	assert(is_equal_approx(e19.almacen_local(ESQ)["madera"], 5.0), "el almacén local se conserva")
+	assert(e19.almacen_local(ESQ).is_empty() and is_equal_approx(ciudad19.almacen["madera"].cantidad, madera19 + 5.0), "el almacén local pasa al núcleo")
 	e19.desactivar_puesto(ESQ)
 	assert(liberados19.size() == 2, "desactivar dos veces no vuelve a emitir")
 	assert(not e19.asignar(ESQ, "recolector", 3) and not e19.asignar(ESQ, "acarreador", 3), "inactivo: no se contrata")
 	e19.marcar_presente(1, true)
 	e19.simular_hora()
-	assert(is_equal_approx(e19.almacen_local(ESQ)["madera"], 5.0), "inactivo no produce")
+	assert(e19.almacen_local(ESQ).is_empty(), "inactivo no produce")
 	e19.reactivar_puesto(ESQ)
 	assert(e19.puestos[ESQ]["activo"] and e19.asignar(ESQ, "recolector", 3), "reactivado: se contrata de nuevo")
 	e19.desactivar_puesto(Vector2i(0, 0))  # inexistente: no falla
@@ -574,4 +576,29 @@ func ejecutar_pruebas() -> void:
 	assert(producto26 == {"acero": 150.0} and is_equal_approx(e26.almacen_local(ESQ_REF)["acero"], 50.0), "solo el producto, hasta 150")
 	assert(e26.recoger_producto(Vector2i(0, 0), 150.0).is_empty(), "puesto inexistente")
 
-	print("\n=== Las 26 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 27: al deconstruir, el almacén local pasa al núcleo (lo que quepa) ===")
+	var ciudad27: Node = CiudadScript.new()
+	var e27: Node = _nueva(ciudad27)
+	var madera27: float = ciudad27.almacen["madera"].cantidad
+	e27.puestos[ESQ]["almacen"] = {"madera": 100.0, "piedra": 50.0}
+	e27.desactivar_puesto(ESQ)
+	assert(is_equal_approx(ciudad27.almacen["madera"].cantidad, madera27 + 100.0), "la madera pasó al stock central")
+	assert(e27.almacen_local(ESQ).is_empty(), "el almacén local quedó vacío")
+	# Si el stock está casi lleno, solo pasa lo que cabe; el resto se reintenta al quitar el puesto.
+	var ciudad27b: Node = CiudadScript.new()
+	var e27b: Node = _nueva(ciudad27b)
+	ciudad27b.almacen["madera"].cantidad = ciudad27b.almacen["madera"].limite - 30.0
+	e27b.puestos[ESQ]["almacen"] = {"madera": 100.0}
+	e27b.desactivar_puesto(ESQ)
+	assert(is_equal_approx(e27b.almacen_local(ESQ)["madera"], 70.0), "solo cupieron 30")
+	ciudad27b.almacen["madera"].cantidad = 0.0  # el stock se vació mientras tanto
+	e27b.quitar_puesto(ESQ)
+	assert(is_equal_approx(ciudad27b.almacen["madera"].cantidad, 70.0), "al quitar el puesto se reintenta con lo que quedaba")
+	# La siderúrgica devuelve su hierro (y su acero) al núcleo en vez de perderlos.
+	var ciudad27c: Node = CiudadScript.new()
+	var e27c: Node = _con_siderurgica(ciudad27c)
+	e27c.puestos[ESQ_REF]["almacen"] = {"hierro": 300.0, "acero": 40.0}
+	e27c.desactivar_puesto(ESQ_REF)
+	assert(is_equal_approx(ciudad27c.almacen["hierro"].cantidad, 300.0) and is_equal_approx(ciudad27c.almacen["acero"].cantidad, 40.0))
+
+	print("\n=== Las 27 pruebas de Economia pasaron correctamente ===")

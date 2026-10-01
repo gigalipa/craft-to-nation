@@ -108,11 +108,12 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 	}
 
 
-## Quita el puesto (se deconstruyó): su almacén local se pierde y sus
-## trabajadores quedan libres; se avisa con puesto_quitado. No-op si no existe.
+## Quita el puesto (se deconstruyó): lo que quepa de su almacén local pasa al núcleo
+## (el resto se pierde) y sus trabajadores quedan libres; se avisa con puesto_quitado. No-op si no existe.
 func quitar_puesto(esquina: Vector2i) -> void:
 	if not puestos.has(esquina):
 		return
+	retirar_deposito(esquina)  # último intento (el stock pudo liberar espacio desde que empezó la deconstrucción)
 	var p: Dictionary = puestos[esquina]
 	var ids: Array = p["recolectores"] + p["acarreadores"]
 	for id in ids:
@@ -568,13 +569,14 @@ func agregar_deposito(esquina: Vector2i) -> Dictionary:
 
 
 ## El puesto empieza a deconstruirse: deja de funcionar y todos sus trabajadores
-## quedan libres. Conserva el almacén local (se pierde al eliminar el puesto).
+## quedan libres. Su almacén local pasa al núcleo lo que quepa (ver retirar_deposito()).
 ## Idempotente; no-op si el puesto no existe.
 func desactivar_puesto(esquina: Vector2i) -> void:
 	if not puestos.has(esquina) or not puestos[esquina]["activo"]:
 		return
 	var p: Dictionary = puestos[esquina]
 	p["activo"] = false
+	retirar_deposito(esquina)  # el baúl se desmonta: lo que quepa pasa al núcleo urbano en vez de perderse
 	_liberar_de(esquina, p["recolectores"] + p["acarreadores"])
 
 

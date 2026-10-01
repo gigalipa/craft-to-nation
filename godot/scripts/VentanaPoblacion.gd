@@ -101,7 +101,8 @@ func _actualizar() -> void:
 		var puesto: Dictionary = Economia.puestos[esquina]
 		var t: Dictionary = Economia.trabajadores_de(esquina)
 		var nombre: String = PanelPuestoScript.NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"])
-		_caja.add_child(TemaHUD.etiqueta("  %s: %d recolectores, %d acarreadores" % [nombre, t["recolectores"], t["acarreadores"]]))
+		var rol_produccion := "técnicos" if Economia.es_refineria(esquina) else "recolectores"  # los técnicos transforman, no recolectan
+		_caja.add_child(TemaHUD.etiqueta("  %s: %d %s, %d acarreadores" % [nombre, t["recolectores"], rol_produccion, t["acarreadores"]]))
 
 
 func cerrar() -> void:

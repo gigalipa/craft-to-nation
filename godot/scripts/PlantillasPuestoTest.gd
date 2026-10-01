@@ -182,4 +182,31 @@ func ejecutar_pruebas() -> void:
 					assert(alcanzadas10.has(c10), tipo + ": celda interior libre inalcanzable " + str(c10))
 		assert(libres10 >= 1, tipo + ": tiene interior libre")
 
-	print("\n=== Las 10 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 11: la siderúrgica tiene entrada y salida separadas, en lados opuestos, y la fachada cubre ambos ===")
+	assert(PlantillasPuesto.dimensiones("siderurgica") == Vector2i(5, 5))
+	assert(PlantillasPuesto.MATERIAL["siderurgica"] == "bloque_piedra")
+	var base11: Dictionary = PlantillasPuesto.celdas("siderurgica", 0)
+	var puertas11 := 0
+	for c11 in base11:
+		if base11[c11] == "puerta_inferior":
+			puertas11 += 1
+	assert(puertas11 == 2, "dos puertas: entrada y salida")
+	for giros11 in range(4):
+		var h11: Vector2i = PlantillasPuesto.huella("siderurgica", giros11)
+		var entrada11: Vector2i = PlantillasPuesto.celda_de_servicio("siderurgica", giros11)
+		var salida11: Vector2i = PlantillasPuesto.celda_de_salida("siderurgica", giros11)
+		assert(entrada11 != salida11, "entrada y salida son celdas distintas")
+		for c11 in [entrada11, salida11]:
+			assert(c11.x < 0 or c11.x >= h11.x or c11.y < 0 or c11.y >= h11.y, "las celdas de servicio quedan fuera de la huella")
+		assert(absi(entrada11.x - salida11.x) + absi(entrada11.y - salida11.y) == 6, "lados opuestos: 5 de huella + 1")
+		var fachada11: Array[Vector2i] = PlantillasPuesto.fachada("siderurgica", giros11)
+		assert(fachada11.has(entrada11) and fachada11.has(salida11), "la fachada incluye ambas celdas de servicio")
+		assert(fachada11.size() == 20, "2 columnas de fondo por los 5 de cada lado, en ambos lados (%d)" % fachada11.size())
+		var guia11: Vector3i = PlantillasPuesto.puerta_de_entrada("siderurgica", giros11)
+		assert(PlantillasPuesto.celdas("siderurgica", giros11)[guia11] == "puerta_inferior", "la puerta guía es una puerta inferior")
+		assert(absi(guia11.x - entrada11.x) + absi(guia11.z - entrada11.y) == 1, "y es la que da a la celda de servicio de entrada")
+	for tipo11 in TIPOS:
+		for giros11 in range(4):
+			assert(PlantillasPuesto.celda_de_salida(tipo11, giros11) == PlantillasPuesto.celda_de_servicio(tipo11, giros11), tipo11 + ": con una sola puerta, salida == servicio")
+
+	print("\n=== Las 11 pruebas de PlantillasPuesto pasaron correctamente ===")

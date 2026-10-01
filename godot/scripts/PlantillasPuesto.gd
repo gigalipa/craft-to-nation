@@ -23,6 +23,11 @@ extends RefCounted
 const BLOQUES := {
 	"V": "vidrio", "B": "baul",
 	"d": "puerta_inferior", "D": "puerta_superior",
+	# Edificios con entrada y salida separadas (refinerías y, más adelante, fábricas): las
+	# cintas y tuberías futuras necesitan dos puertas. Mismo bloque que "d"/"D"; la letra
+	# solo dice cuál es cuál (ver celda_de_servicio()/celda_de_salida()).
+	"e": "puerta_inferior", "E": "puerta_superior",
+	"s": "puerta_inferior", "S": "puerta_superior",
 }
 
 ## Material de muro de cada tipo de puesto (era de prehistoria: cada uno usa
@@ -33,6 +38,7 @@ const MATERIAL := {
 	"caza_recoleccion": "bloque_madera",
 	"maderero": "bloque_madera",
 	"pesca_frutos_mar": "bloque_piedra",
+	"siderurgica": "bloque_piedra",
 }
 
 const PLANTILLAS := {
@@ -63,6 +69,13 @@ const PLANTILLAS := {
 		["#D##", "V..V", "#..#", "####", "....", "...."],
 		["####", "####", "####", "####", "....", "...."],
 	], "agua_ref": Vector2i(0, 5)},
+	# Entrada (z = 0) y salida (z = 4) en lados opuestos; baúl como almacén local.
+	"siderurgica": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#...#", "#..B#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#####", "#####", "#####", "#####"],
+	]},
 }
 
 
@@ -133,12 +146,60 @@ static func _buscar(tipo: String, bloque: String) -> Vector3i:
 	return Vector3i.ZERO
 
 
-## Celda local (X, Z) justo fuera de la puerta, fuera de la huella girada.
-static func celda_de_servicio(tipo: String, giros: int) -> Vector2i:
-	var puerta := _buscar(tipo, "puerta_inferior")
+## Primera celda base (sin girar) cuyo carácter esté en "caracteres" (p. ej. "de" =
+## la puerta de entrada de cualquier tipo; "ds" = la de salida: en los puestos de una
+## sola puerta, "d" sirve para las dos).
+static func _buscar_caracter(tipo: String, caracteres: String) -> Vector3i:
+	var capas: Array = PLANTILLAS[tipo]["capas"]
+	for y in range(capas.size()):
+		var filas: Array = capas[y]
+		for z in range(filas.size()):
+			var fila: String = filas[z]
+			for x in range(fila.length()):
+				if caracteres.contains(fila[x]):
+					return Vector3i(x, y, z)
+	assert(false, "la plantilla " + tipo + " no tiene " + caracteres)
+	return Vector3i.ZERO
+
+
+## Sentido (sin girar) en que "puerta" mira hacia afuera: el borde de la huella donde está.
+static func _hacia_afuera(tipo: String, puerta: Vector3i) -> Vector3i:
 	var d := dimensiones(tipo)
-	var fuera := _girar(Vector3i(puerta.x, 0, puerta.z - 1), d.x, d.y, giros)
+	if puerta.z == 0:
+		return Vector3i(0, 0, -1)
+	if puerta.z == d.y - 1:
+		return Vector3i(0, 0, 1)
+	if puerta.x == 0:
+		return Vector3i(-1, 0, 0)
+	return Vector3i(1, 0, 0)
+
+
+## Celda local (X, Z) justo fuera de la puerta marcada con "caracteres", girada.
+static func _celda_fuera(tipo: String, giros: int, caracteres: String) -> Vector2i:
+	var puerta := _buscar_caracter(tipo, caracteres)
+	var d := dimensiones(tipo)
+	var fuera := _girar(Vector3i(puerta.x, 0, puerta.z) + _hacia_afuera(tipo, puerta), d.x, d.y, giros)
 	return Vector2i(fuera.x, fuera.z)
+
+
+## Celda local (X, Z) justo fuera de la puerta de entrada (la única, en un puesto
+## de recolección), fuera de la huella girada.
+static func celda_de_servicio(tipo: String, giros: int) -> Vector2i:
+	return _celda_fuera(tipo, giros, "de")
+
+
+## Celda local (X, Z) justo fuera de la puerta de salida; igual a celda_de_servicio()
+## en los tipos de una sola puerta.
+static func celda_de_salida(tipo: String, giros: int) -> Vector2i:
+	return _celda_fuera(tipo, giros, "ds")
+
+
+## Celda local (x, capa, z) girada de la puerta inferior de entrada: la que marca la altura
+## del edificio (NiveladorTerreno.calcular_base_y(), "puerta_guia"); el terreno frente a la
+## puerta de salida se nivela a ese mismo nivel.
+static func puerta_de_entrada(tipo: String, giros: int) -> Vector3i:
+	var d := dimensiones(tipo)
+	return _girar(_buscar_caracter(tipo, "de"), d.x, d.y, giros)
 
 
 ## Celda local (x, capa, z) del baúl que hace de depósito del puesto.
@@ -161,22 +222,27 @@ static func indice_extremo_agua(giros: int) -> int:
 
 
 ## Columnas locales (X, Z) de la fachada: las 2 columnas delante de TODO el lado de
-## la huella girada donde está la puerta, fuera de la huella (mismo criterio que
-## NiveladorTerreno.calcular_base_y() para los blueprints). Se nivelan a la altura
-## de la puerta y ahí se reserva el despeje de puertas y ventanas.
+## la huella girada donde está cada puerta (entrada y salida), fuera de la huella (mismo
+## criterio que NiveladorTerreno.calcular_base_y() para los blueprints). Se nivelan a la
+## altura de la puerta y ahí se reserva el despeje de puertas y ventanas.
 static func fachada(tipo: String, giros: int) -> Array[Vector2i]:
 	var d := dimensiones(tipo)
 	var h := huella(tipo, giros)
-	var puerta := _girar(_buscar(tipo, "puerta_inferior"), d.x, d.y, giros)
-	var servicio := celda_de_servicio(tipo, giros)
-	var direccion := Vector2i(servicio.x - puerta.x, servicio.y - puerta.z)
 	var resultado: Array[Vector2i] = []
-	for x in range(h.x):
-		for z in range(h.y):
-			var columna := Vector2i(x, z)
-			var vecina := columna + direccion
-			if vecina.x >= 0 and vecina.x < h.x and vecina.y >= 0 and vecina.y < h.y:
-				continue  # no es del borde del lado de la puerta
-			for paso in range(1, 3):
-				resultado.append(columna + direccion * paso)
+	var vistas := {}
+	for caracteres in ["de", "ds"]:
+		var puerta := _girar(_buscar_caracter(tipo, caracteres), d.x, d.y, giros)
+		var servicio := _celda_fuera(tipo, giros, caracteres)
+		var direccion := Vector2i(servicio.x - puerta.x, servicio.y - puerta.z)
+		for x in range(h.x):
+			for z in range(h.y):
+				var columna := Vector2i(x, z)
+				var vecina := columna + direccion
+				if vecina.x >= 0 and vecina.x < h.x and vecina.y >= 0 and vecina.y < h.y:
+					continue  # no es del borde del lado de la puerta
+				for paso in range(1, 3):
+					var candidata := columna + direccion * paso
+					if not vistas.has(candidata):
+						vistas[candidata] = true
+						resultado.append(candidata)
 	return resultado

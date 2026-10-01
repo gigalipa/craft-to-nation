@@ -311,6 +311,9 @@ var distancia_camara := DISTANCIA_INICIAL
 ## continúa, sin importar qué otro movimiento (paneo) ocurra a la vez.
 var _gesto_orbital_activo := false
 
+const DURACION_CENTRADO := 0.4
+var _tween_centrado: Tween
+
 
 func _ready() -> void:
 	projection = PROJECTION_PERSPECTIVE
@@ -328,6 +331,10 @@ func _ready() -> void:
 	hud.construccion_pedida.connect(_on_construccion_pedida)
 	hud.zona_pedida.connect(_elegir_zona)
 	hud.dato_pedido.connect(hud.abrir_ventana_dato)
+	hud.edificio_pedido.connect(func(esquina: Vector2i) -> void:
+		centrar_en_edificio(esquina)
+		hud.abrir_panel_puesto(esquina)
+	)
 
 
 ## Precalcula los offsets (dx, dz) dentro del círculo de radio
@@ -489,6 +496,39 @@ func _raycast_colision_camara(origen: Vector3) -> Dictionary:
 	return get_world_3d().direct_space_state.intersect_ray(consulta)
 
 
+## Punto al que debe mirar la cámara para centrar el edificio de "esquina": su centro
+## en X/Z y la altura del suelo ahí (como posicionar_sobre()).
+func _destino_foco_de(esquina: Vector2i) -> Vector3:
+	var puesto: Dictionary = Economia.puestos[esquina]
+	var x: float = esquina.x + puesto["ancho"] / 2.0
+	var z: float = esquina.y + puesto["alto"] / 2.0
+	return Vector3(x, mundo.altura_en(int(x), int(z)), z)
+
+
+## Desliza el foco hasta el centro del edificio (~0,4 s) conservando distancia,
+## inclinación y órbita; _process() cancela la animación si el usuario toma el
+## control. Sin árbol (pruebas) aplica el destino directo; sin puesto, no hace nada.
+func centrar_en_edificio(esquina: Vector2i) -> void:
+	if not Economia.puestos.has(esquina):
+		return
+	_cancelar_centrado()
+	var destino := _destino_foco_de(esquina)
+	if not is_inside_tree():
+		foco = destino
+		return
+	_tween_centrado = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_tween_centrado.tween_method(func(f: Vector3) -> void:
+		foco = f
+		_actualizar_transform()
+	, foco, destino, DURACION_CENTRADO)
+
+
+func _cancelar_centrado() -> void:
+	if _tween_centrado != null and _tween_centrado.is_valid():
+		_tween_centrado.kill()
+	_tween_centrado = null
+
+
 ## Recalcula la posición/orientación de la cámara a partir de foco,
 ## angulo_orbital, angulo_inclinacion y distancia_camara (órbita de cámara
 ## clásica: la cámara nunca se mueve directamente por sí sola). Devuelve la
@@ -642,6 +682,8 @@ func _process(delta: float) -> void:
 		elif modo_trazar_via and not _hay_tramo_en_curso:
 			_actualizar_preview_vertice_inicial()
 		return
+
+	_cancelar_centrado()  # el usuario toma el control: la animación de centrado se detiene
 
 	# Estado tentativo: se aplican todos los controles activos este
 	# fotograma sobre COPIAS locales, y solo se comprometen (se asignan a

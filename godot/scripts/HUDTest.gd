@@ -382,18 +382,19 @@ func probar_barra_modos() -> void:
 	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
 
 	print("\n=== TEST 3e: re-renderizar una miniatura libera el SubViewport anterior, no acumula uno por cada rotación ===")
-	assert(barra._viewports_construccion.size() == 6, "una construcción con malla real por cada uno de los 6 tipos con miniatura (mina/caza/madera/pesca/siderúrgica + residencial con el blueprint declarado arriba)")
+	assert(barra._viewports_construccion.size() == 9, "una construcción con malla real por cada uno de los 9 tipos con miniatura (mina/caza/madera/pesca/las 4 refinerías + residencial con el blueprint declarado arriba)")
 	for giro in [2, 3, 0, 1, 2, 3]:
 		barra.set_giros(giro)
-	assert(barra._viewports_construccion.size() == 6, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
+	assert(barra._viewports_construccion.size() == 9, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
 
 	print("\n=== TEST 3f: cada edificio (incluido Residencial) anuncia su propia tecla numérica de categoría ===")
-	var etiqueta_residencial := ""
+	var textos_residencial: Array = []
 	for hijo in barra._botones_construccion["residencial"].get_children():
 		for nieto in hijo.get_children():
 			if nieto is Label:
-				etiqueta_residencial = (nieto as Label).text
-	assert(etiqueta_residencial == "Residencial [1]", "salió: %s" % etiqueta_residencial)
+				textos_residencial.append((nieto as Label).text)
+	assert(textos_residencial == ["Residencial", "1"], "nombre y tecla (esquina inferior izquierda) por separado, salió: %s" % [textos_residencial])
+	assert(barra._botones_construccion["refineria_tierras_raras"].custom_minimum_size.x >= barra._botones_construccion["siderurgica"].custom_minimum_size.x, "un nombre más largo no da un botón más angosto")
 
 	barra.set_modo("")
 

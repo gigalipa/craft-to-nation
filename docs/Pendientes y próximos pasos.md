@@ -24,7 +24,7 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 
 ~~**Parte 2: siderúrgica real**~~ ✅ hecha (2026-09-30): edificio real de 5×5 con plantilla de `bloque_piedra`, puertas de entrada y salida separadas, que solo se coloca dentro de la zona de influencia y sobre zona industrial; operada por técnicos (un desempleado se vuelve técnico al asignarlo), con acarreo de ida y vuelta núcleo → entrada → salida → núcleo (mínimo 10 unidades por viaje) y `acero` en el stock central; `bloque_acero` (3 acero por bloque, décima casilla de la hotbar, tecla `0`) ya tiene fuente de acero — ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md` y `docs/superpowers/plans/2026-09-30-siderurgica-real.md`.
 
-**Pendiente (parte 2, resto):** refinería de tierras raras, aserradero y carbonera como refinerías reales colocables — son variantes de datos sobre el mismo mecanismo: entrada en `CadenaMinerales.REFINERIAS`, plantilla, nombre y botón. Pendiente también la formación de técnicos (hoy provisional).
+~~**Parte 2, resto:** refinería de tierras raras, aserradero y carbonera~~ ✅ hechas (2026-10-01): edificios reales con plantilla, material e indicador de actividad propios (humo violáceo, humo negro, aserrín); personal máximo 4; `tasa_base` 0,5 (tierras raras y aserradero) y 2,0 (carbonera). Las tablas del aserradero son un recurso nuevo que cuenta como madera al pagar construcciones; ver `PoC_5/…Catálogo de Recursos y Cadenas de Producción.md`. **Pendiente:** la formación de técnicos (hoy provisional).
 
 ### 5. Resto del catálogo general de PoC 5
 

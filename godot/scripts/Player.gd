@@ -855,7 +855,7 @@ func _colocar() -> void:
 func _cobrar_colocacion(tipo: String) -> bool:
 	var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(tipo, {})
 	for recurso in costo:
-		if not Ciudad.almacen[recurso].consumir(costo[recurso]):
+		if not Ciudad.consumir_costo(recurso, costo[recurso]):
 			_avisar_colocacion_rechazada("No hay suficiente %s para colocar: %s" % [_nombre_recurso(recurso), _nombre_bloque(tipo)])
 			return false
 	return true

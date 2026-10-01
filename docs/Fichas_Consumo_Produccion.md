@@ -91,7 +91,7 @@ Flujo: producción de los recolectores presentes → **almacén local** del pues
 | Migración de colonos | 0,5 por hora de juego (con vivienda libre y sin hambruna) | `Ciudad.TASA_MIGRACION` |
 | Consumo de un obrero de puesto | 5 comida/h (desempleado: 3) | `Ciudad.TIPOS_POBLACION` |
 
-Todavía no existe: refinerías reales de tierras raras, aserradero y carbonera, y energía completa (el costo de colocación en recursos y la siderúrgica real ya están implementados, ver la tabla de extracción abajo y la Sección 3), carretas y carreteras (sub-proyecto 6), moral y nivel del puesto, y drones o transporte automatizado.
+Todavía no existe: energía completa (el costo de colocación en recursos y la siderúrgica real ya están implementados, ver la tabla de extracción abajo y la Sección 3), carretas y carreteras (sub-proyecto 6), moral y nivel del puesto, y drones o transporte automatizado.
 
 ---
 
@@ -125,16 +125,16 @@ Fuente: hoja "Relacion", columnas AD–AQ, y hoja "Recetas".
 | Refinería | Consume | Produce | Ciclo (h) | Almacén (entra/sale) | Estado | Fuente |
 |---|---|---|---|---|---|---|
 | Siderúrgica | Hierro ×2 | Acero ×1 | 1 | 1 / 2 | **Implementado (edificio real)** | `CadenaMinerales.gd` (receta "hierro"), `Economia.gd`, `Colonos.gd` |
-| Refinería de mineral | Tierras raras ×3 | Mineral refinado ×1 | 2 | 1 / 3 | **Implementado** | `CadenaMinerales.gd` (receta "tierras_raras") |
-| Aserradero | Madera ×1 | Tablas ×3 (cuentan como "madera", GDD Sec. 4) | 2 | 3 / 1 | Propuesta (Excel + GDD Sec. 4) | Tasa aún no definida en código |
-| Carbonera | Madera ×3 | Carbón ×1 | 1 | 1 / 3 | Propuesta (Excel) | Confirma la corrección del GDD ya aplicada en PoC 5 (madera→carbón) |
+| Refinería de mineral | Tierras raras ×3 | Mineral refinado ×1 | 2 | 1 / 3 | **Implementado (edificio real)** | `CadenaMinerales.gd` (receta "tierras_raras") |
+| Aserradero | Madera ×1 | Tablas ×3 (cuentan como "madera", GDD Sec. 4) | 2 | 3 / 1 | **Implementado (edificio real)** | `CadenaMinerales.gd` (receta "aserradero", `tasa_base` 0,5) |
+| Carbonera | Madera ×3 | Carbón ×1 | 1 | 1 / 3 | **Implementado (edificio real)** | `CadenaMinerales.gd` (receta "carbonera", `tasa_base` 2,0). Confirma la corrección del GDD (madera→carbón) |
 | Refinería petrolera | Crudo ×2 **y** Energía ×1 | Combustible ×1 | 1 | 1 / 2 | Propuesta (Excel), no implementada | — |
 | Licuefactora de hidrocarburo | Carbón ×3, Agua ×1 **y** Energía ×1 | Combustible ×2 | 1 | 1 / 4 | Propuesta (Excel), no implementada | — |
 | Central termoeléctrica | Carbón ×1 **o** Crudo ×1 **o** Combustible ×1 (cualquiera de los tres) | Energía ×20 | 1 | 60/30/10 (según insumo) / — | Propuesta (Excel), no implementada | — |
 
-`tasa_base` (unid./ciudadano/hora) de las dos recetas implementadas: `2.0` para ambas (`CadenaMinerales.RECETAS`) — la tabla de arriba muestra cantidades por ciclo de receta, no por ciudadano; ver `CadenaMinerales.procesar_tick()` para la fórmula completa (demanda teórica recortada a lo disponible en almacén).
+`tasa_base` (lotes/técnico/hora, `CadenaMinerales.RECETAS`): siderúrgica `2.0`, tierras raras `0.5`, aserradero `0.5`, carbonera `2.0` — la tabla de arriba muestra cantidades por ciclo de receta, no por ciudadano; ver `CadenaMinerales.procesar_tick()` para la fórmula completa (demanda teórica recortada a lo disponible en almacén).
 
-Siderúrgica real: plantilla de 5×5 en `bloque_piedra` con puertas de entrada y salida separadas (la de entrada decide la altura y el frente de la salida se nivela a ella); personal máximo 3 técnicos; almacén local de 1000 compartido entre hierro y acero; velocidad = técnicos presentes × 4 hierro/h → 2 acero/h por técnico. Un solo acarreador hace el ciclo núcleo → entrada → salida → núcleo (mínimo 10 unidades por viaje, `Economia.CARGA_MINIMA`). Si se despide al acarreador (o se quita el puesto) con hierro en fase de entrada, ese hierro vuelve al stock; el producto de la refinería y la carga de recolección se pierden. Al deconstruir un puesto (de cualquier tipo), lo que quepa de su almacén local pasa automáticamente al núcleo urbano; el resto se pierde. Su costo de construcción es el de los bloques de su plantilla (las constantes `COSTO_CONSTRUCCION_REFINERIA_*` no se usan). La refinería de tierras raras aún no tiene edificio real.
+Siderúrgica real: plantilla de 5×5 en `bloque_piedra` con puertas de entrada y salida separadas (la de entrada decide la altura y el frente de la salida se nivela a ella); personal máximo 3 técnicos; almacén local de 1000 compartido entre hierro y acero; velocidad = técnicos presentes × 4 hierro/h → 2 acero/h por técnico. Un solo acarreador hace el ciclo núcleo → entrada → salida → núcleo (mínimo 10 unidades por viaje, `Economia.CARGA_MINIMA`). Si se despide al acarreador (o se quita el puesto) con hierro en fase de entrada, ese hierro vuelve al stock; el producto de la refinería y la carga de recolección se pierden. Al deconstruir un puesto (de cualquier tipo), lo que quepa de su almacén local pasa automáticamente al núcleo urbano; el resto se pierde. Su costo de construcción es el de los bloques de su plantilla (las constantes `COSTO_CONSTRUCCION_REFINERIA_*` no se usan). Las cuatro refinerías comparten personal máximo 4 y almacén local 1000 (`CadenaMinerales.PERSONAL_MAXIMO_REFINERIA`); cada una tiene plantilla, material e indicador de actividad propios (ver el documento técnico de PoC 5). Las **tablas** del aserradero son un recurso aparte del stock central pero cuentan como madera al pagar construcciones (`Ciudad.consumir_costo()`).
 
 Refinerías propuestas todavía sin `PERSONAL_MAXIMO_*`/`COSTO_CONSTRUCCION_*` definidos — mismo criterio que dejó pendientes madera/fluidos/energía en el documento técnico de PoC 5 ("Próximos Pasos"): no se inventan aquí.
 
@@ -163,6 +163,6 @@ Fuente: hoja "Relacion", columnas J–M ("Consumo por Objeto"). El GDD (Sección
 - Ajustar tras jugar los parámetros de la pesca por tamaño y profundidad (`PECES_FACTOR_SOMERO` 0,5, `AGUA_REFERENCIA` 450, `ESCALA_AGUA_MIN` 0,4, `ESCALA_AGUA_MAX` 1,5, base 17): los puestos de pesca ya colocados conservan las tasas antiguas hasta reconstruirlos.
 - Verificar jugando que 2 recolectores + 1 acarreador se sostienen (la meta de 7,5/h por recolector se cumple con margen de media en el mundo actual, caza y recolección ~12,2/h y pesca ~8,6/h; pero un lago pequeño y somero rinde solo ≈2,5–3/h por la nueva escala de pesca y no la cumple; con menos densidad, por ejemplo poca fauna, o con un puesto más lejano, puede no cumplirse).
 - Formación de técnicos: hoy un desempleado se vuelve técnico al asignarlo (provisional).
-- Edificio real de la refinería de tierras raras (solo datos: entrada en `CadenaMinerales.REFINERIAS`, plantilla, nombre y botón).
-- Definir personal máximo/costo de construcción/ciclo para: Aserradero, Carbonera, Refinería petrolera, Licuefactora de hidrocarburo, Central termoeléctrica, y el edificio "Fábrica" genérico — cada uno como su propio sub-proyecto/PoC, según el roadmap de la Sección 11 del GDD.
+- ~~Edificio real de la refinería de tierras raras, aserradero y carbonera~~ — ✅ hecho (2026-10-01).
+- Definir personal máximo/costo de construcción/ciclo para: Refinería petrolera, Licuefactora de hidrocarburo, Central termoeléctrica, y el edificio "Fábrica" genérico — cada uno como su propio sub-proyecto/PoC, según el roadmap de la Sección 11 del GDD.
 - ~~Definir el costo en unidades de recurso del bloque de madera colocable... Implica también programar el reembolso al volver a minar un bloque colocado.~~ — ✅ hecho (2026-09-29): `Player._colocar()` cobra de `Ciudad.almacen` según `NiveladorTerreno.COSTO_POR_CELDA` y `VoxelWorld._retirar_bloque()` reembolsa exactamente lo cobrado al volver a minar, ver `docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md`.

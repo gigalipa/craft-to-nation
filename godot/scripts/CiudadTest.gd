@@ -233,11 +233,11 @@ func ejecutar_pruebas() -> void:
 	print("Comida tras 300 ticks: ", recien_nacida.almacen["comida"].cantidad)
 	assert(not hubo_hambruna, "no debe haber hambruna en los primeros 10 minutos")
 
-	print("\n=== TEST 18: el almacén tiene los 9 recursos de la economía ===")
+	print("\n=== TEST 18: el almacén tiene los 11 recursos de la economía ===")
 	var ocho: Node = CiudadScript.new()
-	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero"]:
+	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas"]:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
-	assert(ocho.almacen.size() == 9)
+	assert(ocho.almacen.size() == 11)
 	assert(ocho.almacen["acero"].cantidad == 0.0 and ocho.almacen["acero"].limite == 500.0, "el acero empieza en 0 con el tope inicial")
 	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
 	assert(ocho.almacen["comida"].cantidad == ocho.COMIDA_INICIAL, "la comida inicial es COMIDA_INICIAL")
@@ -308,4 +308,14 @@ func ejecutar_pruebas() -> void:
 	lim.simular_tick(0.0)
 	assert(lim.horas_juego == 2, "cada tick es una hora de juego")
 
-	print("\n=== Las 22 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 23: las tablas cuentan como madera al pagar un costo (consumir_costo) ===")
+	var talado: Node = CiudadScript.new()
+	talado.almacen["madera"].cantidad = 10.0
+	talado.almacen["tablas"].cantidad = 5.0
+	assert(talado.consumir_costo("madera", 8.0))
+	assert(talado.almacen["tablas"].cantidad == 0.0 and talado.almacen["madera"].cantidad == 7.0, "paga primero con tablas y el resto con madera")
+	assert(not talado.consumir_costo("madera", 8.0) and talado.almacen["madera"].cantidad == 7.0, "sin alcanzar no cobra nada")
+	talado.almacen["hierro"].cantidad = 3.0
+	assert(talado.consumir_costo("hierro", 3.0) and not talado.consumir_costo("hierro", 1.0), "un recurso que no es madera se cobra normal")
+
+	print("\n=== Las 23 pruebas de Ciudad pasaron correctamente ===")

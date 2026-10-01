@@ -10,6 +10,15 @@ const TEXTO := Color(0.95, 0.92, 0.82)
 const VALIDO := Color(0.45, 0.90, 0.45)
 const INVALIDO := Color(1.0, 0.35, 0.35)
 
+## Margen (px) de los textos de esquina de un botón o casilla (acceso directo y disponibilidad, ver
+## poner_en_esquina_inferior()): MARGEN_X va del borde lateral al primer/último carácter del texto,
+## y MARGEN_Y, del borde inferior al pie del texto. Ajustar solo estos dos valores.
+const MARGEN_X := 5.0
+const MARGEN_Y := 2.0
+
+## Margen interno del estilo de caja(): un PanelContainer lo reserva alrededor de sus hijos.
+const MARGEN_CONTENIDO := 8
+
 
 static func caja(fondo: Color = VERDE, borde: Color = DORADO) -> StyleBoxFlat:
 	var estilo := StyleBoxFlat.new()
@@ -17,7 +26,7 @@ static func caja(fondo: Color = VERDE, borde: Color = DORADO) -> StyleBoxFlat:
 	estilo.border_color = borde
 	estilo.set_border_width_all(2)
 	estilo.set_corner_radius_all(4)
-	estilo.set_content_margin_all(8)
+	estilo.set_content_margin_all(MARGEN_CONTENIDO)
 	return estilo
 
 
@@ -44,3 +53,24 @@ static func estilizar_boton(boton: Button) -> void:
 	boton.add_theme_color_override("font_color", TEXTO)
 	boton.add_theme_color_override("font_pressed_color", Color(1.0, 0.85, 0.4))
 	boton.focus_mode = Control.FOCUS_NONE
+
+
+## Ancla "etiqueta" a la esquina inferior izquierda (o derecha) de su padre, que debe ser un Control
+## simple (un Container pisaría las anclas), a MARGEN_X / MARGEN_Y del marco. Crece hacia adentro,
+## así que sirve para textos que cambian de ancho. Los márgenes se miden desde el borde exterior del
+## marco; si el padre queda dentro del margen interno de un PanelContainer, pasar ese margen en "inset".
+static func poner_en_esquina_inferior(etiqueta: Label, derecha: bool = false, inset: float = 0.0) -> void:
+	var x: float = 1.0 if derecha else 0.0
+	etiqueta.anchor_left = x
+	etiqueta.anchor_right = x
+	etiqueta.anchor_top = 1.0
+	etiqueta.anchor_bottom = 1.0
+	etiqueta.grow_horizontal = Control.GROW_DIRECTION_BEGIN if derecha else Control.GROW_DIRECTION_END
+	etiqueta.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var mx: float = MARGEN_X - inset
+	var my: float = MARGEN_Y - inset
+	var lado: float = -mx if derecha else mx
+	etiqueta.offset_left = lado
+	etiqueta.offset_right = lado
+	etiqueta.offset_top = -my
+	etiqueta.offset_bottom = -my

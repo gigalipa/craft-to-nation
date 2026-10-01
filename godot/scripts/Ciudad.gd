@@ -211,6 +211,7 @@ func _init() -> void:
 		"cobre": Recurso.new("Cobre", 0, LIMITE_BASE),
 		"carbon": Recurso.new("Carbón", 0, LIMITE_BASE),
 		"tierras_raras": Recurso.new("Tierras raras", 0, LIMITE_BASE),
+		"acero": Recurso.new("Acero", 0, LIMITE_BASE),  # lo produce la siderúrgica (ver Economia.gd)
 	}
 	for categoria in CATEGORIAS_COMIDA:
 		fuentes_comida_activas[categoria] = 0.0
@@ -408,7 +409,7 @@ func suceder_avatar() -> String:
 	return "sucesion_exitosa"
 
 
-## Devuelve la clave de almacen (una de las 8 del almacén) con la tasa neta más
+## Devuelve la clave de almacen (una de las 9 del almacén) con la tasa neta más
 ## negativa (promedio de las últimas horas) — el recurso en mayor déficit ahora mismo. Si
 ## ninguno está en déficit, igual devuelve el de tasa más baja (puede ser 0
 ## o positiva); el HUD decide cómo mostrarlo (ver Ciudad.recurso_critico()).

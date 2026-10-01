@@ -39,6 +39,7 @@ const NOMBRES_RECURSO := {
 	"cobre": "Cobre",
 	"carbon": "Carbón",
 	"tierras_raras": "Tierras raras",
+	"acero": "Acero",
 }
 
 const NOMBRES_TASA := {

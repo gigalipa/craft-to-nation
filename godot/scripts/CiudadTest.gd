@@ -233,11 +233,12 @@ func ejecutar_pruebas() -> void:
 	print("Comida tras 300 ticks: ", recien_nacida.almacen["comida"].cantidad)
 	assert(not hubo_hambruna, "no debe haber hambruna en los primeros 10 minutos")
 
-	print("\n=== TEST 18: el almacén tiene los 8 recursos de la economía ===")
+	print("\n=== TEST 18: el almacén tiene los 9 recursos de la economía ===")
 	var ocho: Node = CiudadScript.new()
-	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras"]:
+	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero"]:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
-	assert(ocho.almacen.size() == 8)
+	assert(ocho.almacen.size() == 9)
+	assert(ocho.almacen["acero"].cantidad == 0.0 and ocho.almacen["acero"].limite == 500.0, "el acero empieza en 0 con el tope inicial")
 	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
 	assert(ocho.almacen["comida"].cantidad == ocho.COMIDA_INICIAL, "la comida inicial es COMIDA_INICIAL")
 	assert(ocho.almacen["comida"].limite == 5000.0, "el tope inicial de comida es 5000")

@@ -18,6 +18,9 @@ extends RefCounted
 
 const LIMITE_PENDIENTE := 2
 
+## "Sin puerta guía": todas las puertas inferiores deciden el nivel (ver calcular_base_y()).
+const SIN_PUERTA_GUIA := Vector3i(-99999, -99999, -99999)
+
 const DIRECCIONES_XZ := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 ## Costo en material de cada tipo de celda estructural (ver docs/superpowers/
@@ -155,7 +158,12 @@ static func _arriba_abajo(a: Vector3i, b: Vector3i) -> bool:
 ## (todo el lado; en una huella en L sigue el contorno), sin contar columnas
 ## de la propia huella. G es el suelo natural delante de la puerta. Vacía si
 ## el resultado es inválido.
-func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary) -> Dictionary:
+##
+## "puerta_guia" (clave relativa de una "puerta_inferior" de "celdas_3d"): con
+## ella, solo esa puerta decide base_y y las demás puertas inferiores (p. ej.
+## la salida de una refinería) nivelan el terreno de su frente al mismo nivel
+## que el de la guía, cavando o rellenando.
+func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary, puerta_guia: Vector3i = SIN_PUERTA_GUIA) -> Dictionary:
 	var huella: Dictionary = {}  # Vector2i -> true
 	var columnas: Array[Vector2i] = []
 	for rel in celdas_3d:
@@ -168,9 +176,11 @@ func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary) -> Dictionary:
 	var frentes: Array[Vector2i] = []
 	var candidatos: Dictionary = {}  # int base_y -> true
 	var nivel_por_direccion: Dictionary = {}  # Vector2i (dirección) -> int (G)
+	var direcciones_seguidoras: Array[Vector2i] = []  # puertas que no deciden el nivel (ver puerta_guia)
 	for rel in celdas_3d:
 		if celdas_3d[rel] != "puerta_inferior":
 			continue
+		var es_seguidora: bool = puerta_guia != SIN_PUERTA_GUIA and rel != puerta_guia
 		var xz := Vector2i(rel.x, rel.z)
 		for direccion: Vector2i in DIRECCIONES_XZ:
 			if huella.has(xz + direccion):
@@ -181,12 +191,20 @@ func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary) -> Dictionary:
 			if abs(_generador.altura_en(columna_puerta.x, columna_puerta.y) - suelo_frente) > LIMITE_PENDIENTE:
 				return _base_y_invalida(respaldo, "pendiente", frentes)
 			frentes.append(frente)
+			if es_seguidora:
+				direcciones_seguidoras.append(direccion)
+				continue
 			candidatos[suelo_frente + 1 - rel.y] = true
 			if nivel_por_direccion.get(direccion, suelo_frente) != suelo_frente:
 				return _base_y_invalida(respaldo, "puertas", frentes)
 			nivel_por_direccion[direccion] = suelo_frente
 	if candidatos.size() > 1:
 		return _base_y_invalida(respaldo, "puertas", frentes)
+	if not nivel_por_direccion.is_empty():
+		var nivel_guia: int = nivel_por_direccion.values()[0]
+		for direccion: Vector2i in direcciones_seguidoras:
+			if not nivel_por_direccion.has(direccion):
+				nivel_por_direccion[direccion] = nivel_guia
 
 	var fachada: Dictionary = {}  # Vector2i (columna mundial) -> int (G)
 	for direccion: Vector2i in nivel_por_direccion:

@@ -325,4 +325,24 @@ func ejecutar_pruebas() -> void:
 	assert(bloques_21b["tierra"] == 4, "1 del vidrio + 3 de relleno (el relleno son bloques de tierra literales)")
 	assert(nivelador_plano.contar_bloques({}, 0).is_empty())
 
-	print("\n=== Las 21 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 22: con puerta guía, la otra puerta no decide el nivel: su frente se nivela al de la guía ===")
+	# Casa 4x5 con puertas en x=0 (guía) y x=3, terreno que sube 1 por paso en X (ver TEST 11):
+	# sin guía se rechaza ("puertas"); con guía manda la de x=0 (suelo frontal 9) y la otra se nivela a 9.
+	var nivelador_g: RefCounted = NiveladorTerreno.new(GeneradorRampaX.new())
+	var casa_g: Dictionary = _casa_4x5(true)
+	var sin_guia_22: Dictionary = nivelador_g.calcular_base_y(Vector2i(10, 10), casa_g)
+	assert(not sin_guia_22["valido"] and sin_guia_22["motivo"] == "puertas", "sin guía, el comportamiento no cambia")
+	var guia_22: Dictionary = nivelador_g.calcular_base_y(Vector2i(10, 10), casa_g, Vector3i(0, 1, 2))
+	assert(guia_22["valido"] and guia_22["base_y"] == 9, "la puerta guía decide la altura")
+	assert(guia_22["frentes"].size() == 2 and guia_22["frentes"].has(Vector2i(9, 12)) and guia_22["frentes"].has(Vector2i(14, 12)), "ambos frentes quedan registrados")
+	assert(guia_22["fachada"].size() == 20, "2 columnas de fondo por los 5 de cada lado, en ambos lados")
+	assert(guia_22["fachada"][Vector2i(9, 12)] == 9 and guia_22["fachada"][Vector2i(8, 12)] == 9, "frente de la guía: su suelo natural")
+	assert(guia_22["fachada"][Vector2i(14, 12)] == 9 and guia_22["fachada"][Vector2i(15, 12)] == 9, "frente de la otra puerta: nivelado al de la guía, no a su suelo natural (14)")
+	# Una puerta seguidora frente a un desnivel mayor al límite sigue rechazándose (pendiente).
+	var acantilado_22: RefCounted = NiveladorTerreno.new(GeneradorConAcantilado.new())
+	# Con esquina (-2, 0) la puerta seguidora (x=3) queda en la columna (1, 2) y su frente en (2, 2),
+	# justo el acantilado (altura 100): se rechaza por pendiente igual que cualquier puerta.
+	var guia_acantilado_22: Dictionary = acantilado_22.calcular_base_y(Vector2i(-2, 0), casa_g, Vector3i(0, 1, 2))
+	assert(not guia_acantilado_22["valido"] and guia_acantilado_22["motivo"] == "pendiente", "el frente de la puerta seguidora está en el acantilado")
+
+	print("\n=== Las 22 pruebas de NiveladorTerreno pasaron correctamente ===")

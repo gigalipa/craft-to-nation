@@ -6,6 +6,7 @@ Reemplazar la conversión provisional "desempleado → técnico al asignarlo a u
 
 ## Decisiones del usuario (2026-10-01)
 
+- **Mesa de estudio (2026-10-01):** la escuela no lleva baúl (los baúles son de los edificios residenciales y de los que mueven recursos, periféricos o industriales). Lleva **4 mesas de estudio**, una por aprendiz, de un bloque nuevo `mesa_estudio` que cuesta lo mismo que un baúl (1 madera).
 - **Edificio real** con plantilla de bloques, como la siderúrgica: un `tipo` más de `Economia.puestos`, que reutiliza registro, cupo, asignación, presencia, panel y colocación en la cenital.
 - **Zona:** se coloca dentro de la zona de influencia y con toda la huella sobre **zona residencial** (`residencial_investigacion`), no sobre industrial. Es el primer edificio de investigación.
 - **Rol `aprendiz`:** se asigna desde el panel del puesto («Aprendices»). Camina a la escuela y, mientras está presente, acumula horas de juego; a las **24 h** (placeholder) queda listo.
@@ -22,7 +23,8 @@ Fuera: especialistas y su escuela (que solo admitirá técnicos desempleados), c
 
 ## 1. Edificio
 
-- Tipo `escuela_tecnica` en `PlantillasPuesto.PLANTILLAS`: una sola puerta (`d`/`D`, como los puestos), espacio interior para 4 aprendices y un baúl que no se usa (mismo contrato de plantilla). Material de muro propio provisional. El tamaño y la forma se fijan en el plan, con la plantilla actual de la siderúrgica o de un puesto como punto de partida.
+- Tipo `escuela_tecnica` en `PlantillasPuesto.PLANTILLAS`: una sola puerta (`d`/`D`, como los puestos), interior de 3 × 3 con 4 mesas de estudio (`mesa_estudio`, carácter `M`) pegadas al fondo y a un lado, de modo que queden 4 sitios libres para los aprendices más el vestíbulo, y **sin baúl**: una plantilla sin baúl no tiene depósito (`PlantillasPuesto.celda_deposito()` devuelve `Vector3i.MAX` y el puesto se registra con `Economia.SIN_DEPOSITO`). Material de muro propio provisional (adobe), 5 × 5.
+- **Bloque `mesa_estudio`:** bloque funcional nuevo, como el baúl. Se agrega a `BlockLibrarySource.tscn` (cubo de color propio, provisional) y se regenera `assets/BlockLibrary.res` (como último ítem, para no mover los ids existentes); es estructura (`VoxelWorld.TIPOS_ESTRUCTURA`) y mobiliario (`ORDEN_GRUPOS_EDIFICIO`, se construye al final y se deconstruye primero); cuesta `{"madera": 1}` en `NiveladorTerreno.COSTO_POR_CELDA`, igual que el baúl (cobro al colocar y reembolso al minar con el mecanismo de siempre); `Hotbar.NOMBRES` lo nombra «Mesa de estudio». No va en la hotbar del avatar ni tiene interacción con `E`: es decorado funcional del edificio. Como cualquier bloque sólido, los colonos la rodean (no se paran encima: arriba solo queda el techo).
 - Cupo: **4** (`Recoleccion.cupo_de`). Almacén local: no aplica; se registra con la capacidad mínima que el contrato exige.
 - **Zona:** la validación de `CamaraCenital._evaluar_puesto()` hoy distingue «refinería» de «puesto periférico». Se añade el caso escuela: dentro de la zona de influencia (`Zonificacion.dentro_de_influencia`) y huella sobre `ZONAS_PINTABLES[0]` (residencial), con mensajes de rechazo propios. `_huella_en_zona_correcta()` ya recibe la zona como parámetro.
 - **Costo de construcción:** placeholder en materiales crudos, definido en el plan (sin balance real).
@@ -56,7 +58,8 @@ Fuera: especialistas y su escuela (que solo admitirá técnicos desempleados), c
 
 - `EconomiaTest`: el conteo solo avanza con los 4 aprendices presentes y se pausa si falta uno; a 24 h se gradúa la cohorte (obrero −4, tecnico +3, vivienda ocupada igual) y el progreso vuelve a 0; con menos de 4 no hay conteo; cupo 4; rol `aprendiz` solo en escuela, `tecnico` solo en refinería.
 - `ColonosTest`: contratar aprendiz; contratar técnico exige un técnico libre y no convierte desempleados; despedir o deconstruir una refinería deja al técnico como técnico libre; despedir un aprendiz vuelve a desempleado; graduación (3 técnicos, 1 retirado, `Ciudad.demografia` coherente).
-- `PlantillasPuestoTest`: plantilla, puerta, fachada y giros de la escuela.
+- `PlantillasPuestoTest`: plantilla, puerta, 4 mesas, sin baúl ni depósito, fachada y giros de la escuela; el bloque `mesa_estudio` existe en la biblioteca del mundo.
+- `NiveladorTerrenoTest`: la mesa de estudio cuesta lo mismo que un baúl.
 - Prueba de zona en la evaluación de colocación (residencial dentro de la influencia; rechazo fuera de la influencia y sobre industrial).
 - Verificación: `godot/scenes/Test.tscn` más las `*Test.tscn` afectadas (solo las relacionadas, según el criterio del proyecto).
 

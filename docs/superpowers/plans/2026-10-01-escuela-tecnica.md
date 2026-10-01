@@ -19,6 +19,7 @@
 - La vivienda ocupada se conserva: 4 obreros (4 × 1/4) = 3 técnicos (3 × 1/3).
 - El conteo avanza solo con los 4 aprendices presentes; se pausa si falta alguno y se reinicia si hay menos de 4 asignados.
 - Un aprendiz sigue siendo `obrero` en `Ciudad.demografia` mientras estudia. Un técnico despedido o liberado sigue siendo `tecnico` (técnico libre).
+- La escuela no lleva baúl: lleva 4 `mesa_estudio` (1 madera cada una, como un baúl). Los baúles son de los edificios residenciales y de los que mueven recursos.
 - Fuera de alcance: especialistas, consumo de recursos para formar, arte, niveles de edificio, trabajo de obra de colonos.
 - Commits en la rama `feat/escuela-tecnica`, con la línea final `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
 
@@ -41,7 +42,7 @@ Entradas o condiciones que el spec implica pero que ninguna prueba obvia cubre; 
 1. **Despedir a uno de los 4 aprendices a mitad de estudio:** el conteo se reinicia y con 3 aprendices no se gradúa nadie aunque pasen 30 h (Tarea 1, TEST 29; Tarea 2, TEST 43).
 2. **Deconstruir la escuela con la cohorte a medias:** los aprendices vuelven a desempleado (no a técnico ni a obrero) y la demografía cuadra (Tarea 2, TEST 43).
 3. **Sin técnicos libres:** contratar un técnico devuelve falso sin tocar la demografía; un desempleado nunca se convierte en técnico (Tarea 2, TEST 37).
-4. **Zona equivocada:** la escuela se rechaza fuera de la zona de influencia, sin zona pintada y sobre zona industrial (Tarea 4, TEST 14 de previsualización).
+4. **Zona equivocada:** la escuela se rechaza fuera de la zona de influencia, sin zona pintada y sobre zona industrial (Tarea 5, TEST 14 de previsualización).
 5. **Un colono de la cohorte ya no existe al graduarse** (retirado por hambruna o desahucio en el mismo tick): la graduación no falla (Tarea 2, TEST 44).
 
 ---
@@ -579,41 +580,223 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 3: Plantilla de la escuela técnica
+### Task 3: Bloque `mesa_estudio`
 
 **Files:**
-- Modify: `godot/scripts/PlantillasPuesto.gd` (`MATERIAL`, `PLANTILLAS`)
+- Modify: `godot/scenes/BlockLibrarySource.tscn` (ítem nuevo al final)
+- Regenerate: `godot/assets/BlockLibrary.res` (con un script `--headless` temporal; las herramientas MCP del editor no sirven en este proyecto)
+- Modify: `godot/scripts/VoxelWorld.gd` (`TIPOS_ESTRUCTURA`, `ORDEN_GRUPOS_EDIFICIO`)
+- Modify: `godot/scripts/NiveladorTerreno.gd` (`COSTO_POR_CELDA`)
+- Modify: `godot/scripts/Hotbar.gd` (`NOMBRES`)
+- Test: `godot/scripts/NiveladorTerrenoTest.gd`
+
+**Interfaces:**
+- Produces: tipo de bloque `"mesa_estudio"` (ítem 34 de la `MeshLibrary`, el último), estructura y mobiliario del edificio, con costo `{"madera": 1}` igual al del baúl; nombre «Mesa de estudio» en `Hotbar.nombre_de()`. La plantilla de la Tarea 4 lo usa con el carácter `M`.
+
+- [ ] **Step 1: Escribir la prueba que falla**
+
+En `godot/scripts/NiveladorTerrenoTest.gd`, reemplaza la última línea (`print("\n=== Las 23 pruebas de NiveladorTerreno pasaron correctamente ===")`) por:
+
+```gdscript
+	print("\n=== TEST 24: la mesa de estudio cuesta lo mismo que un baúl, es estructura de edificio (mobiliario) y existe en la biblioteca ===")
+	assert(NiveladorTerreno.COSTO_POR_CELDA["mesa_estudio"] == NiveladorTerreno.COSTO_POR_CELDA["baul"], "mismo costo que un baúl")
+	assert(VoxelWorldScript.TIPOS_ESTRUCTURA.has("mesa_estudio"), "cuenta como estructura del edificio")
+	assert(VoxelWorldScript.ORDEN_GRUPOS_EDIFICIO[2].has("mesa_estudio"), "es mobiliario: se construye al final y se deconstruye primero")
+	assert(HotbarScript.nombre_de("mesa_estudio") == "Mesa de estudio")
+	var biblioteca_24: MeshLibrary = load("res://assets/BlockLibrary.res")
+	assert(biblioteca_24.find_item_by_name("mesa_estudio") != -1, "la biblioteca tiene el bloque")
+	assert(biblioteca_24.find_item_by_name("baul") != -1 and biblioteca_24.find_item_by_name("bloque_acero") != -1, "y conserva los anteriores")
+
+	print("\n=== Las 24 pruebas de NiveladorTerreno pasaron correctamente ===")
+```
+
+Junto a `const HUDScript = preload(...)` (línea 18 del archivo) añade `const VoxelWorldScript = preload("res://scripts/VoxelWorld.gd")` y `const HotbarScript = preload("res://scripts/Hotbar.gd")`.
+
+- [ ] **Step 2: Correr la prueba y verificar que falla**
+
+Run: `correr NiveladorTerrenoTest`
+Expected: `SCRIPT ERROR`/`Assertion failed` por la clave `mesa_estudio` inexistente; no aparece «Las 24 pruebas».
+
+- [ ] **Step 3: Escribir el generador de la biblioteca y verificarlo contra la actual**
+
+Crea el script temporal `godot/_tmp_gen_biblioteca.gd` (se borra al terminar; no se commitea):
+
+```gdscript
+extends SceneTree
+
+## Reconstruye la MeshLibrary desde BlockLibrarySource.tscn como lo hace el editor (un ítem por hijo
+## MeshInstance3D, en orden, con la forma de su CollisionShape3D hija) y la guarda en la ruta que
+## llega tras "--" (por defecto res://_tmp_lib.res). Compara los ítems de assets/BlockLibrary.res con
+## los nuevos e imprime DIFERENCIAS n (debe ser 0 mientras la fuente no cambie).
+func _init() -> void:
+	var args: PackedStringArray = OS.get_cmdline_user_args()
+	var salida: String = args[0] if args.size() > 0 else "res://_tmp_lib.res"
+	var fuente: Node = load("res://scenes/BlockLibrarySource.tscn").instantiate()
+	var lib := MeshLibrary.new()
+	for hijo in fuente.get_children():
+		var malla := hijo as MeshInstance3D
+		if malla == null:
+			continue
+		var id := lib.get_last_unused_item_id()
+		lib.create_item(id)
+		lib.set_item_name(id, malla.name)
+		lib.set_item_mesh(id, malla.mesh)
+		lib.set_item_mesh_transform(id, Transform3D.IDENTITY)
+		var formas: Array = []
+		for nieto in malla.get_children():
+			var colision := nieto as CollisionShape3D
+			if colision != null and colision.shape != null:
+				formas.append(colision.shape)
+				formas.append(colision.transform)
+		lib.set_item_shapes(id, formas)
+	var vieja: MeshLibrary = load("res://assets/BlockLibrary.res")  # antes de guardar: puede ser el mismo archivo
+	var copia_vieja: Array = []
+	for id in vieja.get_item_list():
+		copia_vieja.append([id, vieja.get_item_name(id), vieja.get_item_mesh(id).get_class(), vieja.get_item_mesh(id).get_aabb(), vieja.get_item_shapes(id).size()])
+	print("GUARDADO ", ResourceSaver.save(lib, salida))
+	var nueva: MeshLibrary = ResourceLoader.load(salida, "", ResourceLoader.CACHE_MODE_IGNORE)
+	print("ITEMS viejo/nuevo ", copia_vieja.size(), " ", nueva.get_item_list().size())
+	var diferencias := 0
+	for datos in copia_vieja:
+		var id: int = datos[0]
+		var mismo: bool = nueva.get_item_name(id) == datos[1] \
+			and nueva.get_item_mesh(id).get_class() == datos[2] \
+			and nueva.get_item_mesh(id).get_aabb() == datos[3] \
+			and nueva.get_item_shapes(id).size() == datos[4]
+		if not mismo:
+			diferencias += 1
+			print("DIFERENTE ", id, " ", datos[1])
+	print("DIFERENCIAS ", diferencias)
+	fuente.free()
+	quit()
+```
+
+Corre el generador **sin haber tocado todavía la fuente** y a un archivo temporal, para comprobar que reproduce la biblioteca actual:
+
+```bash
+timeout -k 5 60 "$GODOT" --headless --path godot --script res://_tmp_gen_biblioteca.gd -- res://_tmp_lib.res > /tmp/ct_gen.txt 2>&1; grep -E "GUARDADO|ITEMS|DIFEREN|SCRIPT ERROR" /tmp/ct_gen.txt
+rm godot/_tmp_lib.res
+```
+
+Expected: `GUARDADO 0`, `ITEMS viejo/nuevo 34 34`, `DIFERENCIAS 0`. (Los avisos `BUG: Unreferenced static string` y `leaked` del cierre de Godot son ruido conocido.) Si `DIFERENCIAS` no es 0, **detente y consulta**: el generador no reproduce el editor.
+
+- [ ] **Step 4: Añadir el ítem a `BlockLibrarySource.tscn`**
+
+Siguiendo el patrón de `bloque_acero` (commit `93ae0f5`), antes de la primera línea `[node name=...]` añade:
+
+```
+[sub_resource type="StandardMaterial3D" id="Mat_mesa_estudio"]
+albedo_color = Color(0.78, 0.62, 0.38, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_mesa_estudio"]
+material = SubResource("Mat_mesa_estudio")
+
+[sub_resource type="BoxShape3D" id="Shape_mesa_estudio"]
+```
+
+y **al final del archivo**, tras el nodo `bloque_acero` (la mesa va última para no mover ningún id):
+
+```
+
+[node name="mesa_estudio" type="MeshInstance3D" parent="." unique_id=900000201]
+mesh = SubResource("Mesh_mesa_estudio")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="mesa_estudio" unique_id=900000202]
+shape = SubResource("Shape_mesa_estudio")
+```
+
+(Color de madera clara, distinto del baúl `0.5, 0.35, 0.1`; es un cubo provisional hasta el arte.)
+
+- [ ] **Step 5: Regenerar `assets/BlockLibrary.res`**
+
+```bash
+timeout -k 5 60 "$GODOT" --headless --path godot --script res://_tmp_gen_biblioteca.gd -- res://assets/BlockLibrary.res > /tmp/ct_gen.txt 2>&1; grep -E "GUARDADO|ITEMS|DIFEREN|SCRIPT ERROR" /tmp/ct_gen.txt
+rm godot/_tmp_gen_biblioteca.gd
+```
+
+Expected: `GUARDADO 0`, `ITEMS viejo/nuevo 34 35`, `DIFERENCIAS 0` (los 34 ítems antiguos intactos; el nuevo es el 34). Verifica con `git status --short godot` que solo cambian `BlockLibrary.res` y `BlockLibrarySource.tscn` y que no queda ningún `_tmp_*`.
+
+- [ ] **Step 6: Implementar el resto del bloque**
+
+En `godot/scripts/VoxelWorld.gd`:
+- `TIPOS_ESTRUCTURA` (línea ~92): `"cama_cabecera", "cama_pies", "baul", "mesa_estudio",`
+- `ORDEN_GRUPOS_EDIFICIO` (línea ~1472): `["cama_cabecera", "cama_pies", "baul", "mesa_estudio"],`
+
+En `godot/scripts/NiveladorTerreno.gd`, en `COSTO_POR_CELDA`, tras la línea `"baul": {"madera": 1},` (línea 48) añade:
+
+```gdscript
+	"mesa_estudio": {"madera": 1},  # igual que un baúl (decisión del usuario, 2026-10-01)
+```
+
+En `godot/scripts/Hotbar.gd`, en `NOMBRES` (tras `"baul": "Baúl",`) añade `"mesa_estudio": "Mesa de estudio",`. (No va en `NOMBRES_HOTBAR`, `TIPOS_INTERACTIVOS` ni `DESCRIPCION`: no está en la hotbar ni se usa con `E`.)
+
+- [ ] **Step 7: Correr las pruebas y verificar que pasan**
+
+Run: `correr NiveladorTerrenoTest` → «Las 24 pruebas de NiveladorTerreno pasaron correctamente».
+Run: `correr ConstruccionTest` y `correr PlantillasPuestoTest` (leen la biblioteca nueva): sin `Assertion failed` / `SCRIPT ERROR` (esta última aún muestra «Las 13 pruebas»).
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add godot/scenes/BlockLibrarySource.tscn godot/assets/BlockLibrary.res godot/scripts/VoxelWorld.gd godot/scripts/NiveladorTerreno.gd godot/scripts/Hotbar.gd godot/scripts/NiveladorTerrenoTest.gd
+git commit -m "feat: bloque mesa_estudio (1 madera, como un baúl)
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+```
+
+---
+
+### Task 4: Plantilla de la escuela técnica
+
+**Files:**
+- Modify: `godot/scripts/PlantillasPuesto.gd` (`BLOQUES`, `MATERIAL`, `PLANTILLAS`, `celda_deposito`)
 - Test: `godot/scripts/PlantillasPuestoTest.gd`
 
 **Interfaces:**
-- Consumes (Tarea 1): `Recoleccion.cupo_de("escuela_tecnica")` = 4.
-- Produces: tipo `"escuela_tecnica"` en `PlantillasPuesto` (5×5, una puerta, 4 ventanas, un baúl sin uso), que funciona con `dimensiones`, `celdas`, `en_mundo`, `celda_de_servicio`, `celda_de_salida` (igual que el servicio), `celda_deposito`, `fachada` y `puerta_de_entrada`.
+- Consumes: `Recoleccion.cupo_de("escuela_tecnica")` = 4 (Tarea 1) y el bloque `mesa_estudio` (Tarea 3).
+- Produces: tipo `"escuela_tecnica"` en `PlantillasPuesto` (5×5, una puerta, 4 ventanas, 4 mesas de estudio, **sin baúl**), que funciona con `dimensiones`, `celdas`, `en_mundo`, `celda_de_servicio`, `celda_de_salida` (igual que el servicio), `fachada` y `puerta_de_entrada`. `PlantillasPuesto.celda_deposito()` devuelve `Vector3i.MAX` (= `Economia.SIN_DEPOSITO`) para una plantilla sin baúl. Carácter de plantilla `M` = `mesa_estudio`.
 
 - [ ] **Step 1: Escribir la prueba que falla**
 
 En `godot/scripts/PlantillasPuestoTest.gd`, reemplaza la última línea (`print("\n=== Las 13 pruebas de PlantillasPuesto pasaron correctamente ===")`) por:
 
 ```gdscript
-	print("\n=== TEST 14: la escuela técnica es un puesto de una sola puerta con interior para una cohorte, ventanas y un baúl sin uso ===")
+	print("\n=== TEST 14: la escuela técnica es un puesto de una sola puerta con 4 mesas de estudio (una por aprendiz), ventanas y sin baúl ===")
 	var tipo14 := "escuela_tecnica"
 	assert(PlantillasPuesto.dimensiones(tipo14) == Vector2i(5, 5) and PlantillasPuesto.MATERIAL[tipo14] == "adobe")
 	var base14: Dictionary = PlantillasPuesto.celdas(tipo14, 0)
-	var conteo14 := {"puerta_inferior": 0, "vidrio": 0, "baul": 0}
+	var conteo14 := {"puerta_inferior": 0, "vidrio": 0, "baul": 0, "mesa_estudio": 0}
 	for c14 in base14:
 		if conteo14.has(base14[c14]):
 			conteo14[base14[c14]] += 1
-	assert(conteo14["puerta_inferior"] == 1 and conteo14["vidrio"] >= 2 and conteo14["baul"] == 1, "una puerta, ventanas y un baúl: %s" % [conteo14])
+	assert(conteo14["puerta_inferior"] == 1 and conteo14["vidrio"] >= 2, "una puerta y ventanas: %s" % [conteo14])
+	assert(conteo14["mesa_estudio"] == Recoleccion.cupo_de(tipo14), "una mesa de estudio por aprendiz: %s" % [conteo14])
+	assert(conteo14["baul"] == 0, "sin baúl: no maneja recursos")
 	var libres14 := 0
 	for x14 in range(1, 4):
 		for z14 in range(1, 4):
 			if not base14.has(Vector3i(x14, 1, z14)) and base14.has(Vector3i(x14, PlantillasPuesto.altura(tipo14) - 1, z14)):
 				libres14 += 1
-	assert(libres14 >= Recoleccion.cupo_de(tipo14), "el interior techado tiene sitio para la cohorte (%d libres)" % libres14)
-	assert(not base14.has(Vector3i(2, 1, 1)) and not base14.has(Vector3i(2, 2, 1)), "el vestíbulo detrás de la puerta está libre")
+	assert(libres14 >= Recoleccion.cupo_de(tipo14) + 1, "el piso libre y techado alcanza para los aprendices más el vestíbulo (%d libres)" % libres14)
+	var vestibulo14 := Vector3i(2, 1, 1)
+	assert(not base14.has(vestibulo14) and not base14.has(vestibulo14 + Vector3i(0, 1, 0)), "el vestíbulo detrás de la puerta está libre")
+	var alcanzadas14 := {vestibulo14: true}
+	var pendientes14: Array[Vector3i] = [vestibulo14]
+	while not pendientes14.is_empty():
+		var actual14: Vector3i = pendientes14.pop_back()
+		for dir14 in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+			var vecina14: Vector3i = actual14 + dir14
+			if vecina14.x < 1 or vecina14.x > 3 or vecina14.z < 1 or vecina14.z > 3 or base14.has(vecina14) or alcanzadas14.has(vecina14):
+				continue
+			alcanzadas14[vecina14] = true
+			pendientes14.append(vecina14)
+	assert(alcanzadas14.size() == libres14, "todo el piso libre del interior es alcanzable desde el vestíbulo")
 	for giros14 in range(4):
 		assert(PlantillasPuesto.celda_de_salida(tipo14, giros14) == PlantillasPuesto.celda_de_servicio(tipo14, giros14), "con una sola puerta, salida == servicio")
 		assert(PlantillasPuesto.fachada(tipo14, giros14).size() == 10, "2 columnas de fondo por los 5 del lado de la puerta")
-		assert(PlantillasPuesto.celdas(tipo14, giros14).get(PlantillasPuesto.celda_deposito(tipo14, giros14)) == "baul")
+		assert(PlantillasPuesto.celda_deposito(tipo14, giros14) == Vector3i.MAX, "sin baúl no hay depósito")
+	for tipo14b in TIPOS:
+		assert(PlantillasPuesto.celda_deposito(tipo14b, 0) != Vector3i.MAX, tipo14b + ": los puestos de recolección siguen teniendo depósito")
 	var mundo14: Node = _mundo()
 	for bloque14 in base14.values():
 		assert(mundo14._id_por_tipo.has(bloque14), "falta el bloque " + bloque14)
@@ -628,23 +811,40 @@ Expected: `SCRIPT ERROR` (índice inexistente `escuela_tecnica` en `MATERIAL`/`P
 
 - [ ] **Step 3: Implementar la plantilla**
 
-En `godot/scripts/PlantillasPuesto.gd`, dentro de `MATERIAL` (tras `"aserradero": "bloque_madera",`) añade:
+En `godot/scripts/PlantillasPuesto.gd`:
+
+(a) En `BLOQUES` (línea ~24) añade `"M": "mesa_estudio",` (por ejemplo, junto a `"V": "vidrio", "B": "baul",`).
+
+(b) Dentro de `MATERIAL` (tras `"aserradero": "bloque_madera",`) añade:
 
 ```gdscript
 	"escuela_tecnica": "adobe",
 ```
 
-y dentro de `PLANTILLAS`, tras la entrada del `aserradero` (antes del `}` de cierre del diccionario, línea ~112), añade:
+(c) Dentro de `PLANTILLAS`, tras la entrada del `aserradero` (antes del `}` de cierre del diccionario, línea ~112), añade:
 
 ```gdscript
 	# Escuela técnica (primer edificio de investigación): una sola puerta (como un puesto) y un interior de
-	# 3 x 3 para la cohorte de 4 aprendices; el baúl no se usa (el contrato de plantilla exige uno).
+	# 3 x 3 con 4 mesas de estudio (M, una por aprendiz) al fondo y a un lado; quedan 4 sitios libres más el
+	# vestíbulo. Sin baúl: no maneja recursos (ver celda_deposito()).
 	"escuela_tecnica": {"capas": [
 		["#####", "#####", "#####", "#####", "#####"],
-		["##d##", "#...#", "#..B#", "#...#", "#####"],
+		["##d##", "#...#", "#..M#", "#MMM#", "#####"],
 		["##D##", "V...V", "#...#", "V...V", "#####"],
 		["#####", "#####", "#####", "#####", "#####"],
 	]},
+```
+
+(d) Reemplaza `celda_deposito()` (y su comentario) por:
+
+```gdscript
+## Celda local (x, capa, z) girada del baúl que hace de depósito del puesto; Vector3i.MAX (igual que
+## Economia.SIN_DEPOSITO) si la plantilla no lleva baúl, como la escuela técnica.
+static func celda_deposito(tipo: String, giros: int) -> Vector3i:
+	if not celdas(tipo, 0).values().has("baul"):
+		return Vector3i.MAX
+	var d := dimensiones(tipo)
+	return _girar(_buscar(tipo, "baul"), d.x, d.y, giros)
 ```
 
 - [ ] **Step 4: Correr la prueba y verificar que pasa**
@@ -663,7 +863,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 4: Colocación en la cenital y menú Construir → Investigación
+### Task 5: Colocación en la cenital y menú Construir → Investigación
 
 **Files:**
 - Modify: `godot/scripts/CamaraCenital.gd` (`PUESTOS_INVESTIGACION`, `_manejar_tecla_construir`, `_alternar_puesto_por_tipo`, `_evaluar_puesto`, `_mensaje_rechazo_puesto`, bloque de previsualización ~línea 963)
@@ -673,7 +873,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 - Test: `godot/scripts/PuestosPrevisualizacionTest.gd`, `godot/scripts/HUDTest.gd`
 
 **Interfaces:**
-- Consumes: `Recoleccion.ESCUELAS` (Tarea 1), plantilla `escuela_tecnica` (Tarea 3), `Zonificacion.ZONAS_PINTABLES[0]` (residencial).
+- Consumes: `Recoleccion.ESCUELAS` (Tarea 1), plantilla `escuela_tecnica` (Tarea 4), `Zonificacion.ZONAS_PINTABLES[0]` (residencial).
 - Produces: `CamaraCenital.PUESTOS_INVESTIGACION := ["escuela_tecnica"]`; la tecla `4` → `1` o el botón «Escuela técnica» activan la colocación; `_evaluar_puesto()` rechaza fuera de la zona de influencia o fuera de zona residencial para una escuela, con mensajes que contienen «zona de influencia» y «zona residencial».
 
 - [ ] **Step 1: Escribir las pruebas que fallan**
@@ -702,6 +902,16 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 	assert(not camara14._resumen_materiales_puesto(esquina14, ev14)["neto"].is_empty(), "construirla cuesta materiales")
 	Zonificacion.despintar_zona(esquina14 + Vector2i(0, 4), esquina14 + Vector2i(4, 4))
 	assert("zona residencial" in camara14._mensaje_rechazo_puesto(camara14._evaluar_puesto(esquina14)), "toda la huella debe estar sobre zona residencial")
+	Zonificacion.pintar_zona(esquina14, esquina14 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[0])
+	camara14.hud = HUDScript.new()
+	add_child(camara14.hud)
+	camara14._confirmar_puesto(esquina14)
+	var info14: Dictionary = {}
+	for meta14 in mundo14.edificio_metadata.values():
+		if meta14.has("puesto_nuevo") and meta14["puesto_nuevo"]["tipo"] == "escuela_tecnica":
+			info14 = meta14["puesto_nuevo"]
+	assert(not info14.is_empty(), "colocar la escuela inicia su construcción")
+	assert(info14["deposito"] == Economia.SIN_DEPOSITO, "sin baúl, el puesto se registra sin depósito")
 	camara14.free()
 	Zonificacion.nucleo_declarado = false  # no contaminar otras pruebas de esta escena
 	mundo14.free()
@@ -764,6 +974,15 @@ y en el comentario previo (líneas 1381-1384) sustituye «Industrial/Investigaci
 ```gdscript
 		elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo):
 			_ocultar_area_accion()  # ni una refinería ni una escuela tienen área de acción ni tasa de recolección
+```
+
+(d2) En `_confirmar_puesto()` (línea ~2439), una plantilla sin baúl devuelve `Vector3i.MAX` de `celda_deposito()`; sumarle la esquina desbordaría. Reemplaza las dos líneas del depósito por:
+
+```gdscript
+	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
+	var deposito := Economia.SIN_DEPOSITO  # una plantilla sin baúl (la escuela) no tiene depósito
+	if deposito_local != Vector3i.MAX:
+		deposito = Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 ```
 
 (e) En `_evaluar_puesto()` (líneas 2169-2199) reemplaza la declaración de `es_refineria` y las tres claves que la usan. Antes de `var dentro_de_influencia` deja:
@@ -853,7 +1072,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 5: Panel del puesto, ventana de población y notificación
+### Task 6: Panel del puesto, ventana de población y notificación
 
 **Files:**
 - Modify: `godot/scripts/PanelPuesto.gd`
@@ -978,7 +1197,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 6: Documentación y verificación final
+### Task 7: Documentación y verificación final
 
 **Files:**
 - Modify: `docs/Pendientes y próximos pasos.md`
@@ -990,7 +1209,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 En el punto 4 («~~**Parte 2, resto:** ...»), al final del párrafo sustituye la frase «**Pendiente:** la formación de técnicos (hoy provisional).» por:
 
 ```
-La formación de técnicos ✅ está hecha (2026-10-01): la **Escuela técnica** (primer edificio de investigación, sobre zona residencial dentro de la influencia) forma cohortes de 4 obreros que estudian 24 h y salen como 3 técnicos libres (la vivienda ocupada se conserva con `x_cama`; el cuarto colono se va de la ciudad); las refinerías solo contratan técnicos libres y un técnico despedido sigue siendo técnico. Spec: `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
+La formación de técnicos ✅ está hecha (2026-10-01): la **Escuela técnica** (primer edificio de investigación, sobre zona residencial dentro de la influencia, con 4 mesas de estudio —bloque nuevo `mesa_estudio`— en vez de baúl) forma cohortes de 4 obreros que estudian 24 h y salen como 3 técnicos libres (la vivienda ocupada se conserva con `x_cama`; el cuarto colono se va de la ciudad); las refinerías solo contratan técnicos libres y un técnico despedido sigue siendo técnico. Spec: `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
 ```
 
 En el punto 6 («Construcción/deconstrucción asistida por NPCs») añade una línea al final de ese bloque: `Los técnicos libres (sin puesto) también harán obras de construcción, demolición y tendido de vías, igual que los obreros desempleados.`
@@ -1018,7 +1237,7 @@ Añade, justo antes de `Ver docs/superpowers/specs/2026-09-30-siderurgica-real-d
 ```
 ### Escuela técnica (2026-10-01)
 
-Decisión funcional: la formación de técnicos es un puesto más de `Economia.puestos` (`escuela_tecnica`, plantilla de 5×5 de adobe con una puerta, se coloca dentro de la zona de influencia y sobre zona residencial). Su rol es `aprendiz` (cupo 4 = la cohorte, comparte la lista de recolectores). La cohorte suma 1 h de estudio por hora de juego solo mientras los 4 aprendices están presentes (se pausa si falta uno y se reinicia con menos de 4); a `Economia.HORAS_FORMACION` (24) se gradúan: 3 pasan a técnico libre y el cuarto se va de la ciudad, porque cada jerarquía ocupa más vivienda (`Ciudad.TIPOS_POBLACION[...]["x_cama"]`: 4 obreros = 3 técnicos). Un aprendiz cuenta como obrero mientras estudia. Un técnico despedido o liberado (p. ej. al deconstruir su refinería) sigue siendo técnico. Ver `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
+Decisión funcional: la formación de técnicos es un puesto más de `Economia.puestos` (`escuela_tecnica`, plantilla de 5×5 de adobe con una puerta y 4 mesas de estudio —bloque nuevo `mesa_estudio`, 1 madera como un baúl—, sin baúl porque no maneja recursos; se coloca dentro de la zona de influencia y sobre zona residencial). Su rol es `aprendiz` (cupo 4 = la cohorte, comparte la lista de recolectores). La cohorte suma 1 h de estudio por hora de juego solo mientras los 4 aprendices están presentes (se pausa si falta uno y se reinicia con menos de 4); a `Economia.HORAS_FORMACION` (24) se gradúan: 3 pasan a técnico libre y el cuarto se va de la ciudad, porque cada jerarquía ocupa más vivienda (`Ciudad.TIPOS_POBLACION[...]["x_cama"]`: 4 obreros = 3 técnicos). Un aprendiz cuenta como obrero mientras estudia. Un técnico despedido o liberado (p. ej. al deconstruir su refinería) sigue siendo técnico. Ver `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
 ```
 
 En «Próximos Pasos», elimina la viñeta `* **Formación de técnicos** — hoy un desempleado se vuelve técnico al asignarlo (provisional).` y sustitúyela por `* **Formación de técnicos** — ✅ hecha (2026-10-01), ver «Escuela técnica». La de especialistas, los niveles de edificio y la universidad están en `docs/ideas-backlog.md`.`

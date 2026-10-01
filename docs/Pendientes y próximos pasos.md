@@ -10,7 +10,7 @@ Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir,
 
 ### 2. Ventana de interacción del baúl — ✅ hecho (2026-09-28)
 
-Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre `VentanaBaul`, que muestra el almacén local del puesto (una fila por recurso presente en el baúl o en el stock central) con botones -/+ (1 de cada vez, 10 con Shift) y "Extraer todo"/"Agregar todo". Reemplazó al retiro automático por `E` mantenida sobre el baúl; mantener `E` quedó solo para los frutos (`Player._procesar_frutos()`). Se apoya en el despachador `_interactuar()` de `Player.gd`. Ver `godot/scripts/VentanaBaul.gd`.
+Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre `VentanaBaul`, que muestra el almacén local del puesto (una fila por recurso presente en el baúl o en el stock central) con botones -/+ (1 de cada vez, 10 con Shift) y "Extraer todo" (el botón "Agregar todo" se quitó el 2026-10-01). Reemplazó al retiro automático por `E` mantenida sobre el baúl; mantener `E` quedó solo para los frutos (`Player._procesar_frutos()`). Se apoya en el despachador `_interactuar()` de `Player.gd`. Ver `godot/scripts/VentanaBaul.gd`.
 
 ### 3. Declaración de edificios por volumen interno — ✅ hecho (2026-09-28)
 
@@ -44,7 +44,7 @@ Pueden intercalarse en cualquier momento.
 - Corrección de pathfinding para dar mayor prioridad al uso de rutas (ignorar rutas solo si el destino no es alcanzable).
 - Percentil de nivel de mar dependiente de un "tipo de mundo" (concepto sin diseñar aún).
 - Revisar el dithering de Alpha Hash en ventanas cuando exista una textura real.
-- Eliminar el botón "Agregar todo" de `VentanaBaul` (decisión del usuario, 2026-10-01, tras probar la siderúrgica en vivo): es poco útil en cualquier baúl. Más adelante podría volver solo en los baúles dentro de un edificio de almacén y en los del núcleo urbano, que son los que realmente surten de recursos a la ciudad. Mientras exista, en una refinería llena su almacén local con recursos ajenos al insumo (recuperables con "Extraer todo").
+- Devolver "Agregar todo" a `VentanaBaul` solo en los baúles dentro de un edificio de almacén y en los del núcleo urbano, que son los que realmente surten de recursos a la ciudad (el botón se quitó de todos los baúles el 2026-10-01; `Economia.agregar_deposito()` sigue disponible).
 
 ### Después de cerrar la Fase 3
 

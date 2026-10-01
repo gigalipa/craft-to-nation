@@ -4,8 +4,9 @@ extends PanelContainer
 ## depósito físico de un puesto — ver Player._interactuar()). Muestra el
 ## almacén local del puesto, una fila por cada recurso que exista (en el
 ## baúl o en el stock central) con sus botones -/+ (1 de cada vez; con
-## Shift, 10), y los botones "Extraer todo"/"Agregar todo" para todo lo que
-## quepa de una vez. Reemplaza al retiro automático por E mantenida que
+## Shift, 10), y el botón "Extraer todo" para todo lo que
+## quepa de una vez ("Agregar todo" se quitó: solo volverá en los baúles de un
+## edificio de almacén y del núcleo urbano). Reemplaza al retiro automático por E mantenida que
 ## hacía antes Player._procesar_frutos(). Solo tiene sentido en 1ª persona,
 ## cerca del baúl: HUD.set_vista() la cierra al cambiar de vista. Libera el
 ## ratón al abrir y lo recaptura al cerrar (si un cambio de cámara ocurre a
@@ -59,14 +60,7 @@ func _ready() -> void:
 	TemaHUD.estilizar_boton(extraer)
 	extraer.pressed.connect(func() -> void:
 		Economia.retirar_deposito(esquina))
-	var agregar := Button.new()
-	agregar.text = "Agregar todo"
-	agregar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	TemaHUD.estilizar_boton(agregar)
-	agregar.pressed.connect(func() -> void:
-		Economia.agregar_deposito(esquina))
 	fila_botones.add_child(extraer)
-	fila_botones.add_child(agregar)
 	caja.add_child(fila_botones)
 
 

@@ -602,8 +602,8 @@ func _on_cohorte_graduada(esquina: Vector2i, ids: Array) -> void:
 	for id in ordenados:
 		if not colonos.has(id):
 			continue  # ya no existe (p. ej. lo retiró una hambruna en el mismo tick)
-		if graduados < salen:
-			ciudad.reasignar_tipo(escuela["origen"], escuela["destino"])
+		# Si una hambruna/desahucio ya bajó la demografía de origen (reconciliar() aún no retiró al colono), no hay a quién convertir: se retira sin tocar la demografía.
+		if graduados < salen and ciudad.reasignar_tipo(escuela["origen"], escuela["destino"]):
 			var c: Dictionary = colonos[id]
 			c["tipo"] = escuela["destino"]
 			c["trabajo"] = {}
@@ -613,7 +613,8 @@ func _on_cohorte_graduada(esquina: Vector2i, ids: Array) -> void:
 			_dejar_lo_que_hacia(c)
 			graduados += 1
 		else:
-			ciudad.demografia[escuela["origen"]] -= 1
+			if graduados >= salen and ciudad.demografia[escuela["origen"]] > 0:
+				ciudad.demografia[escuela["origen"]] -= 1
 			_retirar(id)
 	if graduados > 0:
 		tecnicos_formados.emit(graduados)

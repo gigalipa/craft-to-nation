@@ -1125,7 +1125,7 @@ func ejecutar_pruebas() -> void:
 	assert(ciudad43.demografia["obrero"] == 0 and ciudad43.demografia["desempleado"] == 4 and ciudad43.demografia["tecnico"] == 0, "sin escuela, los aprendices vuelven a desempleado")
 	assert(_contar(colonos43, "desempleado") == 4)
 
-	print("\n=== TEST 44: si un colono de la cohorte ya no existe al graduarse, la graduación no falla ===")
+	print("\n=== TEST 44: si una hambruna ya bajó la demografía antes de graduarse, esta no queda negativa y reconciliar() iguala colonos y demografía ===")
 	var ciudad44: Node = CiudadScript.new()
 	var colonos44: Node = _nuevo_con_escuela(ciudad44)
 	var ids44: Array[int] = []
@@ -1136,9 +1136,14 @@ func ejecutar_pruebas() -> void:
 		colonos44.contratar(Vector2i(2, 2), "aprendiz")
 	for id44 in ids44:
 		colonos44.economia.marcar_presente(id44, true)
-	colonos44.colonos.erase(ids44[0])  # p. ej. lo retiró una hambruna en el mismo tick
-	for hora44 in range(24):
+	for hora44 in range(23):
 		colonos44.economia.simular_hora()
-	assert(_contar(colonos44, "tecnico") == 3, "los tres que quedan se gradúan")
+	ciudad44.demografia["obrero"] = 2  # una hambruna ya se llevó a 2; reconciliar() aún no retiró a sus colonos
+	colonos44.economia.simular_hora()
+	for tipo44 in ciudad44.demografia:
+		assert(ciudad44.demografia[tipo44] >= 0, "la demografía de %s no puede quedar negativa" % tipo44)
+	colonos44.reconciliar()
+	for tipo44 in ciudad44.demografia:
+		assert(_contar(colonos44, tipo44) == ciudad44.demografia[tipo44], "colonos y demografía coinciden en %s" % tipo44)
 
 	print("\n=== Las 44 pruebas de Colonos pasaron correctamente ===")

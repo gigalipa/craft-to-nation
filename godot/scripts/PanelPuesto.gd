@@ -2,7 +2,7 @@ extends PanelContainer
 
 ## Panel de un puesto de recolección (clic izquierdo sobre él en la cenital,
 ## ver CamaraCenital._procesar_clic). Se construye por código: título, filas
-## "Recolectores/Técnicos/Aprendices [-] n [+]" y "Acarreadores [-] n [+]", desempleados libres,
+## "Recolectores/Técnicos/Aprendices [-] n [+]" y "Acarreadores [-] n [+]", desempleados/técnicos libres,
 ## almacén local, producción y distancia al núcleo. Las reglas viven en
 ## Economia/Colonos; esto solo las muestra y les pasa los clics.
 
@@ -125,11 +125,13 @@ func _actualizar() -> void:
 	_filas[rol_produccion]["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or puesto["agotado"]
 	_filas["acarreador"]["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
 	if es_escuela:
-		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)
-Formación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
+		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
 	else:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
-	_libres.text = ("Técnicos libres: %d" if rol_produccion == "tecnico" else "Desempleados libres: %d") % libres
+	if rol_produccion == "tecnico":
+		_libres.text = "Técnicos libres: %d" % libres if libres > 0 else "Técnicos libres: 0 (fórmalos en una escuela técnica)"
+	else:
+		_libres.text = "Desempleados libres: %d" % libres
 	_almacen.visible = not es_escuela
 	_produccion.visible = not es_escuela
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]

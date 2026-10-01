@@ -204,7 +204,8 @@ func ocultar_contexto() -> void:
 ## igual, reporte del usuario 2026-09-30), personal, almacenamiento y, en
 ## vivo, la recolección prevista por ciudadano según la posición del cursor.
 func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}) -> void:
-	var extra := "Personal máximo: %d · Almacenamiento: %d\n%s" % [Recoleccion.cupo_de(tipo), Recoleccion.capacidad_almacen_de(tipo), texto_tasas(tipo, tasas)]
+	var almacenamiento := "" if Recoleccion.ESCUELAS.has(tipo) else " · Almacenamiento: %d" % Recoleccion.capacidad_almacen_de(tipo)
+	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, texto_tasas(tipo, tasas)]
 	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, extra, bloques)
 
 
@@ -214,8 +215,7 @@ static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
 	if Recoleccion.ESCUELAS.has(tipo):
 		var escuela: Dictionary = Recoleccion.ESCUELAS[tipo]
 		var nombres: Dictionary = VentanaPoblacionScript.NOMBRES_TIPO
-		return "Forma una cohorte de %d %s en %d %s
-  (%d h de estudio)" % [Ciudad.TIPOS_POBLACION[escuela["origen"]]["x_cama"], nombres[escuela["origen"]].to_lower(), Ciudad.TIPOS_POBLACION[escuela["destino"]]["x_cama"], nombres[escuela["destino"]].to_lower(), Economia.HORAS_FORMACION]
+		return "Forma una cohorte de %d %s en %d %s\n  (%d h de estudio)" % [Ciudad.TIPOS_POBLACION[escuela["origen"]]["x_cama"], nombres[escuela["origen"]].to_lower(), Ciudad.TIPOS_POBLACION[escuela["destino"]]["x_cama"], nombres[escuela["destino"]].to_lower(), Economia.HORAS_FORMACION]
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		var receta_clave: String = CadenaMinerales.REFINERIAS[tipo]
 		var t_ref: Dictionary = CadenaMinerales.tasas_refinado({receta_clave: 1})[receta_clave]

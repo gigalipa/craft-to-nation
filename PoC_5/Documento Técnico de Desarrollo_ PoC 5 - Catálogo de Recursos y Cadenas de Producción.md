@@ -99,10 +99,24 @@ Escena standalone, no integrada con `Main.tscn` ni con el estado real del juego 
 
 ---
 
+## **Siderúrgica real (2C, parte 2, 2026-09-30)**
+
+Decisión funcional: las refinerías son puestos con receta, con entrada y salida separadas (preparadas para futuras cintas y tuberías), técnicos como operarios y acarreo de ida y vuelta. La siderúrgica es un edificio de 5×5 con plantilla de `bloque_piedra`; se coloca solo dentro de la zona de influencia y sobre zona industrial; la puerta de entrada decide la altura y el frente de la salida se nivela a ella. Su costo es el de los bloques de la plantilla (las constantes `COSTO_CONSTRUCCION_REFINERIA_*` no se usan).
+
+* **Velocidad:** `cantidad_entrada × técnicos × tasa_base` por hora (hierro: 2 × técnicos × 2,0 = 4 hierro/h por técnico → 2 acero/h), con cupo de 3 técnicos presentes.
+* **Acarreo:** un solo acarreador hace núcleo → entrada → salida → núcleo; cada viaje exige al menos `Economia.CARGA_MINIMA` (10) unidades, tanto de insumo como de producto. El acero llega al stock central; `bloque_acero` cuesta 3 acero.
+* **Almacén local:** 1000, compartido entre hierro y acero. Despedir al acarreador (o quitar el puesto) con hierro en fase de entrada devuelve ese hierro al stock; el producto de la refinería y la carga de recolección se pierden.
+* **Técnicos:** un desempleado pasa a técnico al asignarlo (provisional); compite con los obreros por los desempleados.
+
+Ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`.
+
+---
+
 ## **Próximos Pasos**
 
 * **Madera** (aserradero/carbonera) — sub-proyecto futuro de esta misma PoC 5; incluye implementar la carbonera real (madera → carbón) que motivó la corrección del GDD en esta pieza.
 * **Fluidos** (agua/crudo/combustible: bombas de extracción, refinería de crudo, productor de combustible) — sub-proyecto futuro de esta misma PoC 5.
 * **Energía** (generadores, transmisión sin red dedicada) — sub-proyecto futuro de esta misma PoC 5.
-* **Refinerías reales colocables en el mundo** (huella, validación de colocación, bloque marcador en la `MeshLibrary`, radio de acción, ficha de HUD) — PoC/sub-proyecto posterior, una vez probado el balance de recetas con la escena de demostración de esta pieza.
-* **Integración con el almacén real de `Ciudad`/`Recoleccion`** — hoy `procesar_tick()` opera sobre un `Dictionary` de usar y tirar; conectarlo al inventario real del jugador queda para cuando existan refinerías colocables.
+* **Refinerías reales colocables en el mundo** — la siderúrgica ya es real (ver "Siderúrgica real" arriba); faltan refinería de tierras raras, aserradero y carbonera, que son variantes de datos sobre el mismo mecanismo (entrada en `CadenaMinerales.REFINERIAS`, plantilla, nombre y botón).
+* **Formación de técnicos** — hoy un desempleado se vuelve técnico al asignarlo (provisional).
+* **Integración con el almacén real** — hecha para la siderúrgica (el acero llega al stock central de `Ciudad`); `procesar_tick()` sigue siendo la lógica pura de la demo.

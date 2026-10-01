@@ -89,7 +89,7 @@ var cascadas: Dictionary = {}  # Vector2i -> Dictionary
 const TIPOS_ESTRUCTURA := [
 	"adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "bloque_acero",
 	"puerta_inferior", "puerta_superior", "vidrio",
-	"cama_cabecera", "cama_pies", "baul",
+	"cama_cabecera", "cama_pies", "baul", "mesa_estudio",
 ]
 
 ## La celda de superficie de cada columna del mundo se coloca como "hierba"
@@ -1469,7 +1469,7 @@ func eliminar_follaje(celda: Vector3i) -> void:
 const ORDEN_GRUPOS_EDIFICIO := [
 	["tierra"],
 	["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "bloque_acero", "puerta_inferior", "puerta_superior", "vidrio"],
-	["cama_cabecera", "cama_pies", "baul"],
+	["cama_cabecera", "cama_pies", "baul", "mesa_estudio"],
 ]
 
 

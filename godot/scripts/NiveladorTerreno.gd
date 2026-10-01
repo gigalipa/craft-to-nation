@@ -46,6 +46,7 @@ const COSTO_POR_CELDA := {
 	"cama_pies": {"madera": 1},
 	"cama": {"madera": 2},
 	"baul": {"madera": 1},
+	"mesa_estudio": {"madera": 1},  # igual que un baúl (decisión del usuario, 2026-10-01)
 }
 
 ## Sin tipo estático: puede ser un RefCounted (GeneradorMundo, los

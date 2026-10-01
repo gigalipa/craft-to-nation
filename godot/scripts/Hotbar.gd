@@ -33,6 +33,7 @@ const NOMBRES := {
 	"puerta": "Puerta",
 	"cama": "Cama",
 	"baul": "Baúl",
+	"mesa_estudio": "Mesa de estudio",
 }
 
 ## Título corto de cada casilla de la hotbar (decisión del usuario

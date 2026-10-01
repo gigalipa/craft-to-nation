@@ -7,13 +7,13 @@
 [ext_resource type="Script" uid="uid://dyx7ud7wfqpeg" path="res://scripts/HUD.gd" id="5"]
 [ext_resource type="Script" uid="uid://dv3grllxpedej" path="res://scripts/CamaraCenital.gd" id="6"]
 [ext_resource type="Script" uid="uid://b3dtjvjivtjbv" path="res://scripts/ZonaOverlay.gd" id="7"]
-[ext_resource type="Script" path="res://scripts/TranslucidosRenderer.gd" id="8"]
-[ext_resource type="Script" path="res://scripts/FantasmasDestacados.gd" id="9"]
-[ext_resource type="Script" path="res://scripts/ColonosRenderer.gd" id="10"]
-[ext_resource type="Script" path="res://scripts/ViasRenderer.gd" id="11"]
-[ext_resource type="Script" path="res://scripts/ViaPreviewOverlay.gd" id="12"]
-[ext_resource type="Script" path="res://scripts/Puertas.gd" id="13"]
-[ext_resource type="Script" path="res://scripts/HumoRefinerias.gd" id="14"]
+[ext_resource type="Script" uid="uid://bc1ealkx3el5q" path="res://scripts/TranslucidosRenderer.gd" id="8"]
+[ext_resource type="Script" uid="uid://cfbh7eqvtkso1" path="res://scripts/FantasmasDestacados.gd" id="9"]
+[ext_resource type="Script" uid="uid://de4ypb6m2ia20" path="res://scripts/ColonosRenderer.gd" id="10"]
+[ext_resource type="Script" uid="uid://dbacydyl6cm2v" path="res://scripts/ViasRenderer.gd" id="11"]
+[ext_resource type="Script" uid="uid://dhmgyuru14f4t" path="res://scripts/ViaPreviewOverlay.gd" id="12"]
+[ext_resource type="Script" uid="uid://duci0pi7tbgsv" path="res://scripts/Puertas.gd" id="13"]
+[ext_resource type="Script" uid="uid://n1ch6wdi5ywp" path="res://scripts/HumoRefinerias.gd" id="14"]
 
 [node name="Main" type="Node3D" unique_id=1572763968]
 script = ExtResource("3")
@@ -23,22 +23,22 @@ mesh_library = ExtResource("4")
 cell_size = Vector3(1, 1, 1)
 script = ExtResource("2")
 
-[node name="TranslucidosRenderer" type="Node3D" parent="VoxelWorld"]
+[node name="TranslucidosRenderer" type="Node3D" parent="VoxelWorld" unique_id=1320616901]
 script = ExtResource("8")
 
-[node name="FantasmasDestacados" type="Node3D" parent="VoxelWorld"]
+[node name="FantasmasDestacados" type="Node3D" parent="VoxelWorld" unique_id=512191871]
 script = ExtResource("9")
 
-[node name="ViasRenderer" type="Node3D" parent="VoxelWorld"]
+[node name="ViasRenderer" type="Node3D" parent="VoxelWorld" unique_id=1712904621]
 script = ExtResource("11")
 
-[node name="Puertas" type="Node3D" parent="VoxelWorld"]
+[node name="Puertas" type="Node3D" parent="VoxelWorld" unique_id=1700363915]
 script = ExtResource("13")
 
-[node name="HumoRefinerias" type="Node3D" parent="VoxelWorld"]
+[node name="HumoRefinerias" type="Node3D" parent="VoxelWorld" unique_id=489741927]
 script = ExtResource("14")
 
-[node name="ColonosRenderer" type="Node3D" parent="."]
+[node name="ColonosRenderer" type="Node3D" parent="." unique_id=1161371301]
 script = ExtResource("10")
 
 [node name="Player" parent="." unique_id=1891965274 instance=ExtResource("1")]
@@ -51,7 +51,7 @@ script = ExtResource("6")
 visible = false
 script = ExtResource("7")
 
-[node name="ViaPreviewOverlay" type="Node3D" parent="."]
+[node name="ViaPreviewOverlay" type="Node3D" parent="." unique_id=1547375538]
 script = ExtResource("12")
 
 [node name="Luz" type="DirectionalLight3D" parent="." unique_id=1480571523]
@@ -76,7 +76,7 @@ color = Color(1, 1, 1, 0.8)
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=157629340]
 script = ExtResource("5")
 
-[node name="OxigenoLabel" type="Label" parent="HUDLayer"]
+[node name="OxigenoLabel" type="Label" parent="HUDLayer" unique_id=1270400929]
 visible = false
 offset_left = 12.0
 offset_top = 72.0

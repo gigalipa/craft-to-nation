@@ -1006,4 +1006,31 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(ciudad40.almacen["hierro"].cantidad, hierro40 + 30.0), "el hierro volvió al stock central")
 	assert(ciudad40.demografia["obrero"] == 0 and ciudad40.demografia["desempleado"] == 1)
 
-	print("\n=== Las 40 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 41: despedir o quitar el puesto devuelve el insumo en camino, pero no el producto ===")
+	var ciudad41: Node = CiudadScript.new()
+	var colonos41: Node = _nuevo_con_siderurgica(ciudad41)
+	var id41: int = colonos41.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad41.demografia["desempleado"] = 1
+	colonos41.contratar(Vector2i(2, 2), "acarreador")
+	colonos41.colonos[id41]["fase"] = "entrada"
+	colonos41.colonos[id41]["carga"] = {"hierro": 30.0}
+	var hierro41: float = ciudad41.almacen["hierro"].cantidad
+	assert(colonos41.despedir(Vector2i(2, 2), "acarreador"))
+	assert(is_equal_approx(ciudad41.almacen["hierro"].cantidad, hierro41 + 30.0), "el insumo vuelve al stock central")
+	assert(colonos41.colonos[id41]["tipo"] == "desempleado" and colonos41.colonos[id41]["carga"].is_empty())
+	assert(ciudad41.demografia["obrero"] == 0 and ciudad41.demografia["desempleado"] == 1)
+	colonos41.contratar(Vector2i(2, 2), "acarreador")
+	colonos41.colonos[id41]["fase"] = "entregar"
+	colonos41.colonos[id41]["carga"] = {"acero": 20.0}
+	var acero41: float = ciudad41.almacen["acero"].cantidad
+	assert(colonos41.despedir(Vector2i(2, 2), "acarreador"))
+	assert(is_equal_approx(ciudad41.almacen["acero"].cantidad, acero41), "el producto no se teletransporta al stock")
+	colonos41.contratar(Vector2i(2, 2), "acarreador")
+	colonos41.colonos[id41]["fase"] = "entrada"
+	colonos41.colonos[id41]["carga"] = {"hierro": 30.0}
+	hierro41 = ciudad41.almacen["hierro"].cantidad
+	colonos41.economia.quitar_puesto(Vector2i(2, 2))
+	assert(is_equal_approx(ciudad41.almacen["hierro"].cantidad, hierro41 + 30.0), "al quitar el puesto el insumo también vuelve")
+	assert(colonos41.colonos[id41]["tipo"] == "desempleado" and ciudad41.demografia["obrero"] == 0)
+
+	print("\n=== Las 41 pruebas de Colonos pasaron correctamente ===")

@@ -58,7 +58,9 @@ var economia: Object = null:  # Economia
 			valor.trabajadores_liberados.connect(_on_trabajadores_liberados)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
-## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase", "fallos_servicio"}. "celda" es la celda donde está parado;
+## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase", "fallos_servicio"}. "fase" del acarreador:
+## "" (decide), "recoger"/"entregar" (puesto de recolección) o, en una refinería, "cargar", "entrada",
+## "salida" y "entregar". "celda" es la celda donde está parado;
 ## "posicion" (Vector3, los pies) es lo que dibuja el renderer.
 var colonos: Dictionary = {}
 ## Vector3i -> id de colono: la celda que ocupa cada colono y, mientras da un
@@ -568,6 +570,9 @@ func _on_trabajadores_liberados(ids: Array) -> void:
 
 func _volver_a_desempleado(c: Dictionary) -> void:
 	var tipo_previo: String = c["tipo"]
+	# Solo el insumo de refinería (fase "entrada", ya retirado del stock) se devuelve; el resto de la carga se pierde, para que despedir no teletransporte recursos al stock.
+	if c["fase"] == "entrada" and not c["carga"].is_empty():
+		economia.entregar(c["carga"])
 	c["trabajo"] = {}
 	c["carga"] = {}
 	c["fase"] = ""

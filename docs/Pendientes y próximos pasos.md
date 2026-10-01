@@ -24,7 +24,7 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 
 ~~**Parte 2: siderúrgica real**~~ ✅ hecha (2026-09-30): edificio real de 5×5 con plantilla de `bloque_piedra`, puertas de entrada y salida separadas, que solo se coloca dentro de la zona de influencia y sobre zona industrial; operada por técnicos (un desempleado se vuelve técnico al asignarlo), con acarreo de ida y vuelta núcleo → entrada → salida → núcleo (mínimo 10 unidades por viaje) y `acero` en el stock central; `bloque_acero` (3 acero por bloque, décima casilla de la hotbar, tecla `0`) ya tiene fuente de acero — ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md` y `docs/superpowers/plans/2026-09-30-siderurgica-real.md`.
 
-~~**Parte 2, resto:** refinería de tierras raras, aserradero y carbonera~~ ✅ hechas (2026-10-01): edificios reales con plantilla, material e indicador de actividad propios (humo violáceo, humo negro, aserrín); personal máximo 4; `tasa_base` 0,5 (tierras raras y aserradero) y 2,0 (carbonera). Las tablas del aserradero son un recurso nuevo que cuenta como madera al pagar construcciones; ver `PoC_5/…Catálogo de Recursos y Cadenas de Producción.md`. **Pendiente:** la formación de técnicos (hoy provisional).
+~~**Parte 2, resto:** refinería de tierras raras, aserradero y carbonera~~ ✅ hechas (2026-10-01): edificios reales con plantilla, material e indicador de actividad propios (humo violáceo, humo negro, aserrín); personal máximo 4; `tasa_base` 0,5 (tierras raras y aserradero) y 2,0 (carbonera). Las tablas del aserradero son un recurso nuevo que cuenta como madera al pagar construcciones; ver `PoC_5/…Catálogo de Recursos y Cadenas de Producción.md`. La formación de técnicos ✅ está hecha (2026-10-01): la **Escuela técnica** (primer edificio de investigación, sobre zona residencial dentro de la influencia, con 4 mesas de estudio —bloque nuevo `mesa_estudio`— en vez de baúl) forma cohortes de 4 obreros que estudian 24 h y salen como 3 técnicos libres (la vivienda ocupada se conserva con `x_cama`; el cuarto colono se va de la ciudad); las refinerías solo contratan técnicos libres y un técnico despedido sigue siendo técnico. Spec: `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
 
 ### 5. Resto del catálogo general de PoC 5
 
@@ -35,6 +35,7 @@ Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cad
 Los colonos participan en construir y deconstruir. Se apoya en el acarreo (2A) y en la extracción real (2B, ya implementada).
 Traducción de modelos .dae a blueprints construibles.
 Aplicación de primeras texturas.
+Los técnicos libres (sin puesto) también harán obras de construcción, demolición y tendido de vías, igual que los obreros desempleados.
 
 ### 7. Cola de pendientes menores de la Fase 3 — no bloqueantes
 

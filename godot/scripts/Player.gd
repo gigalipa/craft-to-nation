@@ -4,6 +4,8 @@ class_name Player
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
 const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
+const HotbarScript = preload("res://scripts/Hotbar.gd")
+const HUDScript = preload("res://scripts/HUD.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
@@ -503,6 +505,16 @@ func _avisar_colocacion_rechazada(mensaje: String) -> void:
 		hud.notificar(mensaje)
 
 
+## Nombre legible (en minúsculas, para ir dentro de una frase) de un bloque ("bloque_piedra" ->
+## "bloque de piedra") o de un recurso del almacén ("carbon" -> "carbón"), en vez del identificador interno.
+func _nombre_bloque(tipo: String) -> String:
+	return HotbarScript.nombre_de(tipo).to_lower()
+
+
+func _nombre_recurso(recurso: String) -> String:
+	return HUDScript.NOMBRES_RECURSO.get(recurso, recurso).to_lower()
+
+
 ## Imprime y notifica un rechazo puntual (tecla suelta, no clic sostenido:
 ## no necesita el debounce de _avisar_colocacion_rechazada()).
 func _notificar_rechazo(mensaje: String) -> void:
@@ -794,7 +806,7 @@ func _colocar() -> void:
 		if resultado.get("bloqueada", false):
 			_avisar_colocacion_rechazada("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
 		elif resultado.get("insuficiente", false):
-			_avisar_colocacion_rechazada("No hay suficiente %s para continuar la obra." % resultado["recurso"])
+			_avisar_colocacion_rechazada("No hay suficiente %s para continuar la obra." % _nombre_recurso(resultado["recurso"]))
 		elif resultado.get("completa", false):
 			_completar_construccion(resultado["metadata"])
 			# La construcción se completó con este mismo clic sostenido: no
@@ -824,7 +836,7 @@ func _colocar() -> void:
 		colocado = mundo.colocar_bloque(celda_destino, tipo, true)
 	if not colocado:
 		_reembolsar_colocacion(tipo)
-		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % tipo)
+		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % _nombre_bloque(tipo))
 		return
 	# Marca como REALMENTE pagadas las celdas que se acaban de cobrar (ver
 	# VoxelWorld.celdas_pagadas) para que, y solo entonces, volver a minarlas
@@ -844,7 +856,7 @@ func _cobrar_colocacion(tipo: String) -> bool:
 	var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(tipo, {})
 	for recurso in costo:
 		if not Ciudad.almacen[recurso].consumir(costo[recurso]):
-			_avisar_colocacion_rechazada("No hay suficiente %s para colocar: %s" % [recurso, tipo])
+			_avisar_colocacion_rechazada("No hay suficiente %s para colocar: %s" % [_nombre_recurso(recurso), _nombre_bloque(tipo)])
 			return false
 	return true
 

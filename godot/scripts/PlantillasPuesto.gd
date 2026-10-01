@@ -69,13 +69,16 @@ const PLANTILLAS := {
 		["#D##", "V..V", "#..#", "####", "....", "...."],
 		["####", "####", "####", "####", "....", "...."],
 	], "agua_ref": Vector2i(0, 5)},
-	# Entrada (z = 0) y salida (z = 4) en lados opuestos; baúl como almacén local.
+	# Entrada (z = 0) y salida (z = 4) en lados opuestos; baúl como almacén local. Las dos capas
+	# sobre el techo son la chimenea ("chimenea" = su columna local (x, z), ver celda_chimenea()).
 	"siderurgica": {"capas": [
 		["#####", "#####", "#####", "#####", "#####"],
 		["##e##", "#...#", "#..B#", "#...#", "##s##"],
 		["##E##", "V...V", "#...#", "V...V", "##S##"],
 		["#####", "#####", "#####", "#####", "#####"],
-	]},
+		[".....", ".....", "...#.", ".....", "....."],
+		[".....", ".....", "...#.", ".....", "....."],
+	], "chimenea": Vector2i(3, 2)},
 }
 
 
@@ -206,6 +209,14 @@ static func puerta_de_entrada(tipo: String, giros: int) -> Vector3i:
 static func celda_deposito(tipo: String, giros: int) -> Vector3i:
 	var d := dimensiones(tipo)
 	return _girar(_buscar(tipo, "baul"), d.x, d.y, giros)
+
+
+## Celda local (x, capa, z) girada del tope de la chimenea de un tipo que la tiene (la refinería):
+## de ahí sale su indicador de actividad (el humo, ver HumoRefinerias.gd).
+static func celda_chimenea(tipo: String, giros: int) -> Vector3i:
+	var d := dimensiones(tipo)
+	var columna: Vector2i = PLANTILLAS[tipo]["chimenea"]
+	return _girar(Vector3i(columna.x, altura(tipo) - 1, columna.y), d.x, d.y, giros)
 
 
 ## Solo pesca_frutos_mar: índice (0 = extremo de coordenada baja, 1 = alta) del

@@ -209,4 +209,14 @@ func ejecutar_pruebas() -> void:
 		for giros11 in range(4):
 			assert(PlantillasPuesto.celda_de_salida(tipo11, giros11) == PlantillasPuesto.celda_de_servicio(tipo11, giros11), tipo11 + ": con una sola puerta, salida == servicio")
 
-	print("\n=== Las 11 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 12: la chimenea de la siderúrgica sobresale del techo y gira con el edificio ===")
+	assert(PlantillasPuesto.altura("siderurgica") == 6)
+	for giros12 in range(4):
+		var tope12: Vector3i = PlantillasPuesto.celda_chimenea("siderurgica", giros12)
+		var celdas12: Dictionary = PlantillasPuesto.celdas("siderurgica", giros12)
+		assert(celdas12[tope12] == "bloque_piedra", "el tope de la chimenea es un bloque de piedra")
+		assert(celdas12[tope12 - Vector3i(0, 1, 0)] == "bloque_piedra" and celdas12[tope12 - Vector3i(0, 2, 0)] == "bloque_piedra", "y se apoya sobre el techo")
+		assert(not celdas12.has(tope12 + Vector3i(0, 1, 0)), "nada encima")
+	assert(PlantillasPuesto.celda_chimenea("siderurgica", 0) == Vector3i(3, 5, 2))
+
+	print("\n=== Las 12 pruebas de PlantillasPuesto pasaron correctamente ===")

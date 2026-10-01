@@ -643,8 +643,9 @@ func _decidir_trabajo(c: Dictionary) -> void:
 
 ## Acarreador de una refinería: núcleo (retira insumo) -> entrada (lo deja) -> salida (recoge el
 ## producto) -> núcleo (lo entrega). La fase "" decide si vale la pena un viaje: retirar insumo si
-## hay al menos Economia.CARGA_MINIMA que llevar, o recoger producto si hay al menos esa cantidad
-## acumulada; si no, espera donde está, sin viajar en vacío.
+## hay al menos Economia.CARGA_MINIMA que llevar (rellena por adelantado) o si a la refinería no le
+## alcanza para producir y hay algo que llevarle (Economia.conviene_cargar()), o recoger producto si
+## hay al menos esa cantidad acumulada; si no, espera donde está, sin viajar en vacío.
 func _decidir_acarreo_refineria(c: Dictionary, esquina: Vector2i, huella: Array, entrada: Vector2i, salida: Vector2i) -> void:
 	match c["fase"]:
 		"entregar":
@@ -673,7 +674,7 @@ func _decidir_acarreo_refineria(c: Dictionary, esquina: Vector2i, huella: Array,
 			if c["carga"].is_empty():
 				c["espera"] = ESPERA_TRABAJO
 		_:
-			if economia.insumo_a_cargar(esquina) >= economia.CARGA_MINIMA:
+			if economia.conviene_cargar(esquina):
 				c["fase"] = "cargar"
 			elif economia.producto_pendiente(esquina) >= economia.CARGA_MINIMA:
 				c["fase"] = "salida"

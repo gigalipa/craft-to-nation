@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://scripts/ViasRenderer.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/ViaPreviewOverlay.gd" id="12"]
 [ext_resource type="Script" path="res://scripts/Puertas.gd" id="13"]
+[ext_resource type="Script" path="res://scripts/HumoRefinerias.gd" id="14"]
 
 [node name="Main" type="Node3D" unique_id=1572763968]
 script = ExtResource("3")
@@ -33,6 +34,9 @@ script = ExtResource("11")
 
 [node name="Puertas" type="Node3D" parent="VoxelWorld"]
 script = ExtResource("13")
+
+[node name="HumoRefinerias" type="Node3D" parent="VoxelWorld"]
+script = ExtResource("14")
 
 [node name="ColonosRenderer" type="Node3D" parent="."]
 script = ExtResource("10")

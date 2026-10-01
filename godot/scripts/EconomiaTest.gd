@@ -505,11 +505,11 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e23.agregar_uno(ESQ, "madera", 10.0), 1.0), "solo cabía 1 (capacidad 1000)")
 	assert(e23.agregar_uno(Vector2i(0, 0), "madera", 1.0) == 0.0, "puesto inexistente")
 
-	print("\n=== TEST 24: la siderúrgica es una refinería con cupo 3, almacén de 1000 y roles técnico/acarreador ===")
+	print("\n=== TEST 24: la siderúrgica es una refinería con cupo 4, almacén de 1000 y roles técnico/acarreador ===")
 	var ciudad24: Node = CiudadScript.new()
 	var e24: Node = _con_siderurgica(ciudad24)
 	assert(e24.es_refineria(ESQ_REF) and not e24.es_refineria(Vector2i(0, 0)))
-	assert(e24.puestos[ESQ_REF]["cupo"] == 3 and e24.puestos[ESQ_REF]["capacidad"] == 1000)
+	assert(e24.puestos[ESQ_REF]["cupo"] == 4 and e24.puestos[ESQ_REF]["capacidad"] == 1000)
 	assert(e24.insumo_de(ESQ_REF) == "hierro" and e24.producto_de(ESQ_REF) == "acero")
 	assert(e24.salida_de(ESQ_REF) == Vector2i(32, 35) and e24.servicio_de(ESQ_REF) == Vector2i(32, 29))
 	assert(e24.asignar(ESQ_REF, "tecnico", 1), "un técnico entra a la refinería")
@@ -523,48 +523,58 @@ func ejecutar_pruebas() -> void:
 	e24c.registrar_puesto(Vector2i(60, 60), "siderurgica", 5, 5, {})
 	assert(e24c.salida_de(Vector2i(60, 60)) == EconomiaScript.SIN_SERVICIO, "sin salida indicada, SIN_SERVICIO")
 
-	print("\n=== TEST 25: refina hierro en acero según los técnicos presentes, sin producir de la nada ===")
+	print("\n=== TEST 25: refina hierro y carbón en acero según los técnicos presentes, sin producir de la nada ===")
 	var ciudad25: Node = CiudadScript.new()
 	var e25: Node = _con_siderurgica(ciudad25)
-	e25.puestos[ESQ_REF]["almacen"]["hierro"] = 20.0
+	e25.puestos[ESQ_REF]["almacen"] = {"hierro": 40.0, "carbon": 40.0}
 	e25.simular_hora()
-	assert(e25.almacen_local(ESQ_REF) == {"hierro": 20.0}, "sin técnicos presentes no refina ni deja claves en 0")
+	assert(e25.almacen_local(ESQ_REF) == {"hierro": 40.0, "carbon": 40.0}, "sin técnicos presentes no refina ni deja claves en 0")
 	e25.asignar(ESQ_REF, "tecnico", 1)
 	e25.asignar(ESQ_REF, "tecnico", 2)
 	e25.marcar_presente(1, true)
 	e25.simular_hora()
-	# 1 técnico presente: consume 2 * 1 * 2.0 = 4 hierro y produce 2 acero.
-	assert(is_equal_approx(e25.almacen_local(ESQ_REF)["hierro"], 16.0) and is_equal_approx(e25.almacen_local(ESQ_REF)["acero"], 2.0))
+	# 1 técnico presente: 2 lotes -> consume 6 hierro y 8 carbón, produce 4 acero.
+	var l25: Dictionary = e25.almacen_local(ESQ_REF)
+	assert(is_equal_approx(l25["hierro"], 34.0) and is_equal_approx(l25["carbon"], 32.0) and is_equal_approx(l25["acero"], 4.0))
 	e25.marcar_presente(2, true)
 	e25.simular_hora()
-	# 2 presentes: consume 8 hierro y produce 4 acero (más técnicos, más rápido).
-	assert(is_equal_approx(e25.almacen_local(ESQ_REF)["hierro"], 8.0) and is_equal_approx(e25.almacen_local(ESQ_REF)["acero"], 6.0))
-	assert(is_equal_approx(e25.produccion_por_hora(ESQ_REF)["acero"], 4.0), "el panel muestra 4 acero/h con 2 técnicos")
-	e25.puestos[ESQ_REF]["almacen"] = {"acero": 5.0}
+	# 2 presentes: 4 lotes -> 12 hierro, 16 carbón, 8 acero (más técnicos, más rápido).
+	l25 = e25.almacen_local(ESQ_REF)
+	assert(is_equal_approx(l25["hierro"], 22.0) and is_equal_approx(l25["carbon"], 16.0) and is_equal_approx(l25["acero"], 12.0))
+	assert(is_equal_approx(e25.produccion_por_hora(ESQ_REF)["acero"], 8.0), "el panel muestra 8 acero/h con 2 técnicos")
+	e25.puestos[ESQ_REF]["almacen"] = {"acero": 5.0, "hierro": 30.0}
 	e25.simular_hora()
-	assert(e25.almacen_local(ESQ_REF) == {"acero": 5.0}, "sin hierro no pasa nada")
+	assert(e25.almacen_local(ESQ_REF) == {"acero": 5.0, "hierro": 30.0}, "sin carbón no pasa nada")
 	e25.puestos[ESQ_REF]["activo"] = false
-	e25.puestos[ESQ_REF]["almacen"] = {"hierro": 20.0}
+	e25.puestos[ESQ_REF]["almacen"] = {"hierro": 20.0, "carbon": 20.0}
 	e25.simular_hora()
-	assert(e25.almacen_local(ESQ_REF) == {"hierro": 20.0}, "una refinería inactiva no refina")
+	assert(e25.almacen_local(ESQ_REF) == {"hierro": 20.0, "carbon": 20.0}, "una refinería inactiva no refina")
 
-	print("\n=== TEST 26: helpers de acarreo: cargar insumo del stock central, descargarlo y recoger el producto ===")
+	print("\n=== TEST 26: helpers de acarreo: cargar insumos del stock central (3:4), descargarlos y recoger el producto ===")
 	var ciudad26: Node = CiudadScript.new()
 	var e26: Node = _con_siderurgica(ciudad26)
 	ciudad26.almacen["hierro"].cantidad = 300.0
-	assert(is_equal_approx(e26.insumo_a_cargar(ESQ_REF), 150.0), "tope de carga: CAPACIDAD_CARGA")
+	ciudad26.almacen["carbon"].cantidad = 300.0
+	var plan26: Dictionary = e26.insumos_a_cargar(ESQ_REF)
+	assert(is_equal_approx(plan26["hierro"], 150.0 * 3.0 / 7.0) and is_equal_approx(plan26["carbon"], 150.0 * 4.0 / 7.0), "tope de carga repartido 3:4")
+	assert(is_equal_approx(e26.insumo_a_cargar(ESQ_REF), 150.0))
 	var carga26: Dictionary = e26.cargar_insumo(ESQ_REF)
-	assert(is_equal_approx(carga26["hierro"], 150.0) and is_equal_approx(ciudad26.almacen["hierro"].cantidad, 150.0), "sale del stock central")
+	assert(is_equal_approx(carga26["hierro"], plan26["hierro"]) and is_equal_approx(ciudad26.almacen["carbon"].cantidad, 300.0 - plan26["carbon"]), "salen del stock central")
 	e26.descargar_insumo(ESQ_REF, carga26)
-	assert(is_equal_approx(e26.almacen_local(ESQ_REF)["hierro"], 150.0))
-	# Almacén local casi lleno (compartido con el producto): solo cabe lo que queda.
-	e26.puestos[ESQ_REF]["almacen"] = {"hierro": 900.0, "acero": 70.0}
-	assert(is_equal_approx(e26.insumo_a_cargar(ESQ_REF), 30.0), "queda lugar para 30 de 1000")
-	e26.puestos[ESQ_REF]["almacen"] = {"hierro": 900.0, "acero": 100.0}
-	assert(e26.insumo_a_cargar(ESQ_REF) == 0.0 and e26.cargar_insumo(ESQ_REF).is_empty(), "almacén lleno: no se retira hierro")
-	ciudad26.almacen["hierro"].cantidad = 0.0
+	assert(is_equal_approx(e26.almacen_local(ESQ_REF)["carbon"], plan26["carbon"]))
+	# Cada insumo tiene su tope local (3/7 y 4/7 de 1000): uno no llena el almacén.
+	e26.puestos[ESQ_REF]["almacen"] = {"hierro": 420.0, "carbon": 500.0}
+	plan26 = e26.insumos_a_cargar(ESQ_REF)
+	assert(is_equal_approx(plan26["hierro"], 1000.0 * 3.0 / 7.0 - 420.0) and is_equal_approx(plan26["carbon"], 1000.0 * 4.0 / 7.0 - 500.0), "queda el hueco de cada uno")
+	# Sin espacio libre total (el producto ocupa el resto): no se retira nada.
+	e26.puestos[ESQ_REF]["almacen"] = {"hierro": 100.0, "acero": 900.0}
+	assert(e26.insumo_a_cargar(ESQ_REF) == 0.0 and e26.cargar_insumo(ESQ_REF).is_empty(), "almacén lleno: no se retira insumo")
+	# Solo hay uno de los dos insumos en el stock central: se lleva ese.
+	ciudad26.almacen["carbon"].cantidad = 0.0
 	e26.puestos[ESQ_REF]["almacen"] = {}
-	assert(e26.insumo_a_cargar(ESQ_REF) == 0.0, "stock central sin hierro: nada que cargar")
+	assert(e26.insumos_a_cargar(ESQ_REF).keys() == ["hierro"], "sin carbón en el stock central solo se lleva hierro")
+	ciudad26.almacen["hierro"].cantidad = 0.0
+	assert(e26.insumo_a_cargar(ESQ_REF) == 0.0, "stock central sin insumos: nada que cargar")
 	# Lo que no cabe al descargar vuelve al stock central (no se pierde).
 	e26.puestos[ESQ_REF]["almacen"] = {"acero": 990.0}
 	e26.descargar_insumo(ESQ_REF, {"hierro": 40.0})
@@ -576,7 +586,37 @@ func ejecutar_pruebas() -> void:
 	assert(producto26 == {"acero": 150.0} and is_equal_approx(e26.almacen_local(ESQ_REF)["acero"], 50.0), "solo el producto, hasta 150")
 	assert(e26.recoger_producto(Vector2i(0, 0), 150.0).is_empty(), "puesto inexistente")
 
-	print("\n=== TEST 27: al deconstruir, el almacén local pasa al núcleo (lo que quepa) ===")
+	print("\n=== TEST 27: falta_insumo(), conviene_cargar() y esta_refinando() (humo de la chimenea) ===")
+	var ciudad28: Node = CiudadScript.new()
+	var e28: Node = _con_siderurgica(ciudad28)
+	assert(e28.falta_insumo(ESQ_REF), "vacía: le falta insumo")
+	assert(not e28.conviene_cargar(ESQ_REF), "pero sin nada en el stock central no hay viaje")
+	ciudad28.almacen["carbon"].cantidad = 5.0
+	assert(e28.conviene_cargar(ESQ_REF), "le falta y hay algo (aunque < CARGA_MINIMA): lo pide")
+	ciudad28.almacen["carbon"].cantidad = 0.0
+	e28.puestos[ESQ_REF]["almacen"] = {"hierro": 1.4, "carbon": 50.0}
+	assert(e28.falta_insumo(ESQ_REF), "1.4 hierro no alcanza para 1 acero (1.5)")
+	e28.puestos[ESQ_REF]["almacen"] = {"hierro": 1.5, "carbon": 2.0}
+	assert(not e28.falta_insumo(ESQ_REF), "1.5 hierro y 2 carbón alcanzan para 1 acero")
+	ciudad28.almacen["hierro"].cantidad = 100.0
+	assert(e28.conviene_cargar(ESQ_REF), "no le falta pero hay mucho que llevar: rellena por adelantado")
+	e28.puestos[ESQ_REF]["almacen"] = {"hierro": 3.0, "carbon": 4.0}
+	assert(not e28.esta_refinando(ESQ_REF), "sin técnicos presentes no hay humo")
+	e28.asignar(ESQ_REF, "tecnico", 1)
+	e28.marcar_presente(1, true)
+	assert(e28.esta_refinando(ESQ_REF), "técnico + 3 hierro + 4 carbón + espacio: humea")
+	e28.puestos[ESQ_REF]["almacen"] = {"hierro": 2.9, "carbon": 4.0}
+	assert(not e28.esta_refinando(ESQ_REF), "menos de 3 hierro")
+	e28.puestos[ESQ_REF]["almacen"] = {"hierro": 3.0, "carbon": 3.9}
+	assert(not e28.esta_refinando(ESQ_REF), "menos de 4 carbón")
+	e28.puestos[ESQ_REF]["almacen"] = {"hierro": 3.0, "carbon": 4.0, "acero": 993.0}
+	assert(not e28.esta_refinando(ESQ_REF), "baúl lleno")
+	e28.puestos[ESQ_REF]["almacen"] = {"hierro": 3.0, "carbon": 4.0}
+	e28.puestos[ESQ_REF]["activo"] = false
+	assert(not e28.esta_refinando(ESQ_REF), "inactiva (deconstruyéndose)")
+	assert(not e28.esta_refinando(Vector2i(0, 0)), "puesto inexistente")
+
+	print("\n=== TEST 28: al deconstruir, el almacén local pasa al núcleo (lo que quepa) ===")
 	var ciudad27: Node = CiudadScript.new()
 	var e27: Node = _nueva(ciudad27)
 	var madera27: float = ciudad27.almacen["madera"].cantidad
@@ -601,4 +641,4 @@ func ejecutar_pruebas() -> void:
 	e27c.desactivar_puesto(ESQ_REF)
 	assert(is_equal_approx(ciudad27c.almacen["hierro"].cantidad, 300.0) and is_equal_approx(ciudad27c.almacen["acero"].cantidad, 40.0))
 
-	print("\n=== Las 27 pruebas de Economia pasaron correctamente ===")
+	print("\n=== Las 28 pruebas de Economia pasaron correctamente ===")

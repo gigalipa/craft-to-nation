@@ -74,5 +74,8 @@ func _actualizar_texto() -> void:
 	else:
 		for tipo_entrada in tasas:
 			var info: Dictionary = tasas[tipo_entrada]
-			lineas.append("  %s: -%.1f/h -> %s +%.1f/h" % [tipo_entrada, info["consumo"], info["tipo_salida"], info["produccion"]])
+			var consumo: Array = []
+			for recurso in info["consumo"]:
+				consumo.append("%s -%.1f" % [recurso, info["consumo"][recurso]])
+			lineas.append("  %s/h -> %s +%.1f/h" % [", ".join(consumo), info["tipo_salida"], info["produccion"]])
 	texto.text = "\n".join(lineas)

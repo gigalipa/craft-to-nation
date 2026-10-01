@@ -942,14 +942,15 @@ func ejecutar_pruebas() -> void:
 			llego38 = true
 			break
 	assert(llego38, "el técnico llega junto a la entrada y se marca presente")
-	colonos38.economia.puestos[Vector2i(2, 2)]["almacen"]["hierro"] = 20.0
+	colonos38.economia.puestos[Vector2i(2, 2)]["almacen"] = {"hierro": 20.0, "carbon": 20.0}
 	colonos38.economia.simular_hora()
-	assert(is_equal_approx(colonos38.economia.almacen_local(Vector2i(2, 2))["acero"], 2.0), "1 técnico: 4 hierro -> 2 acero por hora")
+	assert(is_equal_approx(colonos38.economia.almacen_local(Vector2i(2, 2))["acero"], 4.0), "1 técnico: 6 hierro + 8 carbón -> 4 acero por hora")
 
 	print("\n=== TEST 39: el acarreador lleva hierro del núcleo a la entrada y trae el acero de la salida al núcleo ===")
 	var ciudad39: Node = CiudadScript.new()
 	var colonos39: Node = _nuevo_con_siderurgica(ciudad39)
 	ciudad39.almacen["hierro"].cantidad = 50.0
+	ciudad39.almacen["carbon"].cantidad = 60.0
 	colonos39.economia.puestos[Vector2i(2, 2)]["almacen"]["acero"] = 20.0
 	var id39: int = colonos39.agregar_colono("desempleado", Vector3i(4, 1, 4))
 	ciudad39.demografia["desempleado"] = 1
@@ -963,7 +964,8 @@ func ejecutar_pruebas() -> void:
 			break
 	assert(entrego39, "el acero llega al stock central")
 	assert(is_equal_approx(ciudad39.almacen["acero"].cantidad, 20.0))
-	assert(is_equal_approx(ciudad39.almacen["hierro"].cantidad, 0.0), "todo el hierro salió del stock central")
+	assert(is_equal_approx(ciudad39.almacen["hierro"].cantidad, 0.0) and is_equal_approx(ciudad39.almacen["carbon"].cantidad, 0.0), "todo el hierro y el carbón salió del stock central")
+	assert(is_equal_approx(colonos39.economia.almacen_local(Vector2i(2, 2))["carbon"], 60.0))
 	assert(is_equal_approx(colonos39.economia.almacen_local(Vector2i(2, 2))["hierro"], 50.0), "y quedó en el almacén de la siderúrgica")
 	assert(not colonos39.economia.almacen_local(Vector2i(2, 2)).has("acero"), "no queda acero")
 	assert(colonos39.colonos[id39]["carga"].is_empty())
@@ -983,6 +985,23 @@ func ejecutar_pruebas() -> void:
 	for i in range(200):
 		colonos39b.avanzar(0.1)
 	assert(colonos39b.colonos[id39b]["celda"] == celda39b, "un resto menor al mínimo no mueve al acarreador")
+
+	print("\n=== TEST 39c: si a la siderúrgica no le alcanza para producir, el acarreador le lleva aunque sea poco ===")
+	var ciudad39c: Node = CiudadScript.new()
+	var colonos39c: Node = _nuevo_con_siderurgica(ciudad39c)
+	ciudad39c.almacen["carbon"].cantidad = 5.0  # menos que CARGA_MINIMA
+	colonos39c.agregar_colono("desempleado", Vector3i(4, 1, 4))
+	ciudad39c.demografia["desempleado"] = 1
+	colonos39c.contratar(Vector2i(2, 2), "acarreador")
+	assert(colonos39c.economia.falta_insumo(Vector2i(2, 2)) and colonos39c.economia.conviene_cargar(Vector2i(2, 2)))
+	var llevo39c := false
+	for i in range(3000):
+		colonos39c.avanzar(0.1)
+		if colonos39c.economia.almacen_local(Vector2i(2, 2)).get("carbon", 0.0) > 0.0:
+			llevo39c = true
+			break
+	assert(llevo39c, "el carbón pedido llega al almacén de la siderúrgica")
+	assert(is_equal_approx(colonos39c.economia.almacen_local(Vector2i(2, 2))["carbon"], 5.0))
 
 	print("\n=== TEST 40: si la siderúrgica se desactiva con hierro en camino, el acarreador lo devuelve al stock central ===")
 	var ciudad40: Node = CiudadScript.new()

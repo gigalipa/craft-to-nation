@@ -13,19 +13,20 @@ func _ready() -> void:
 
 func ejecutar_pruebas() -> void:
 	print("=== TEST 1: procesar_tick() con ambas recetas a la vez, insumo suficiente ===")
-	var almacen_1 := {"hierro": 100.0, "tierras_raras": 100.0}
+	var almacen_1 := {"hierro": 100.0, "carbon": 100.0, "tierras_raras": 100.0}
 	var trabajadores_1 := {"hierro": 1, "tierras_raras": 1}
 	var resultado_1: Dictionary = CadenaMinerales.procesar_tick(1.0, almacen_1, trabajadores_1)
-	# hierro: consumo = 2 * 1 * 2.0 * 1.0 = 4.0 -> 2 lotes -> 2.0 acero
-	assert(is_equal_approx(resultado_1["hierro"], 96.0))
-	assert(is_equal_approx(resultado_1["acero"], 2.0))
+	# siderúrgica: 1 * 2.0 * 1.0 = 2 lotes -> consume 6 hierro y 8 carbón, produce 4 acero
+	assert(is_equal_approx(resultado_1["hierro"], 94.0))
+	assert(is_equal_approx(resultado_1["carbon"], 92.0))
+	assert(is_equal_approx(resultado_1["acero"], 4.0))
 	# tierras_raras: consumo = 3 * 1 * 2.0 * 1.0 = 6.0 -> 2 lotes -> 2.0 mineral_refinado
 	assert(is_equal_approx(resultado_1["tierras_raras"], 94.0))
 	assert(is_equal_approx(resultado_1["mineral_refinado"], 2.0))
 	print("OK: ambas recetas se procesan en el mismo tick sin interferir entre sí.")
 
 	print("\n=== TEST 2: procesar_tick() sin trabajadores no cambia el almacén ===")
-	var almacen_2 := {"hierro": 50.0, "tierras_raras": 50.0}
+	var almacen_2 := {"hierro": 50.0, "carbon": 50.0, "tierras_raras": 50.0}
 	var resultado_2: Dictionary = CadenaMinerales.procesar_tick(1.0, almacen_2, {})
 	assert(is_equal_approx(resultado_2["hierro"], 50.0))
 	assert(is_equal_approx(resultado_2["tierras_raras"], 50.0))
@@ -34,17 +35,19 @@ func ejecutar_pruebas() -> void:
 	print("OK: sin trabajadores asignados, ninguna receta se ejecuta.")
 
 	print("\n=== TEST 3: procesar_tick() con insumo insuficiente consume solo lo disponible ===")
-	var almacen_3 := {"hierro": 3.0}
+	var almacen_3 := {"hierro": 100.0, "carbon": 2.0}
 	var trabajadores_3 := {"hierro": 1}
-	# demanda teórica = 2 * 1 * 2.0 * 1.0 = 4.0, pero solo hay 3.0 disponibles
+	# demanda teórica = 2 lotes, pero 2.0 de carbón alcanzan para 0.5 lote (4 por lote)
 	var resultado_3: Dictionary = CadenaMinerales.procesar_tick(1.0, almacen_3, trabajadores_3)
-	assert(is_equal_approx(resultado_3["hierro"], 0.0))
-	# 3.0 consumidos / 2 por lote = 1.5 lotes -> 1.5 acero (no 2.0, la producción "completa")
-	assert(is_equal_approx(resultado_3["acero"], 1.5))
+	assert(is_equal_approx(resultado_3["carbon"], 0.0))
+	assert(is_equal_approx(resultado_3["hierro"], 98.5), "el hierro solo baja lo que pide el carbón disponible")
+	assert(is_equal_approx(resultado_3["acero"], 1.0), "0.5 lote -> 1 acero")
+	var sin_carbon: Dictionary = CadenaMinerales.procesar_tick(1.0, {"hierro": 50.0}, {"hierro": 1})
+	assert(is_equal_approx(sin_carbon["hierro"], 50.0) and is_equal_approx(sin_carbon["acero"], 0.0), "sin carbón no se refina")
 	print("OK: el consumo se limita a lo disponible, y la producción refleja exactamente lo consumido.")
 
 	print("\n=== TEST 4: procesar_tick() no muta el Dictionary 'almacen' recibido ===")
-	var almacen_4 := {"hierro": 20.0}
+	var almacen_4 := {"hierro": 20.0, "carbon": 20.0}
 	var copia_4 := almacen_4.duplicate()
 	CadenaMinerales.procesar_tick(1.0, almacen_4, {"hierro": 1})
 	assert(almacen_4 == copia_4)
@@ -58,12 +61,13 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 6: tasas_refinado() con ambas recetas activas ===")
 	var tasas_6: Dictionary = CadenaMinerales.tasas_refinado({"hierro": 2, "tierras_raras": 1})
-	# hierro: consumo = 2 * 2 * 2.0 = 8.0/h -> produccion = (8.0/2)*1 = 4.0/h
-	assert(is_equal_approx(tasas_6["hierro"]["consumo"], 8.0))
-	assert(is_equal_approx(tasas_6["hierro"]["produccion"], 4.0))
+	# siderúrgica con 2 técnicos: 4 lotes/h -> 12 hierro + 16 carbón/h -> 8 acero/h
+	assert(is_equal_approx(tasas_6["hierro"]["consumo"]["hierro"], 12.0))
+	assert(is_equal_approx(tasas_6["hierro"]["consumo"]["carbon"], 16.0))
+	assert(is_equal_approx(tasas_6["hierro"]["produccion"], 8.0))
 	assert(tasas_6["hierro"]["tipo_salida"] == "acero")
-	# tierras_raras: consumo = 3 * 1 * 2.0 = 6.0/h -> produccion = (6.0/3)*1 = 2.0/h
-	assert(is_equal_approx(tasas_6["tierras_raras"]["consumo"], 6.0))
+	# tierras_raras: 2 lotes/h -> 6.0/h -> produccion 2.0/h
+	assert(is_equal_approx(tasas_6["tierras_raras"]["consumo"]["tierras_raras"], 6.0))
 	assert(is_equal_approx(tasas_6["tierras_raras"]["produccion"], 2.0))
 	print("OK: tasas_refinado() calcula el consumo/producción por hora exactos para cada receta activa.")
 
@@ -74,7 +78,7 @@ func ejecutar_pruebas() -> void:
 	print("OK: una receta sin trabajadores asignados no aparece como clave en el resultado.")
 
 	print("\n=== TEST 8: determinismo — mismos argumentos dan siempre el mismo resultado ===")
-	var almacen_8 := {"hierro": 77.0, "tierras_raras": 33.0}
+	var almacen_8 := {"hierro": 77.0, "carbon": 50.0, "tierras_raras": 33.0}
 	var trabajadores_8 := {"hierro": 2, "tierras_raras": 1}
 	var resultado_8a: Dictionary = CadenaMinerales.procesar_tick(0.5, almacen_8, trabajadores_8)
 	var resultado_8b: Dictionary = CadenaMinerales.procesar_tick(0.5, almacen_8, trabajadores_8)

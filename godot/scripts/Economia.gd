@@ -91,8 +91,9 @@ func _ready() -> void:
 ## encima de la losa de piso, capa 0, ver PlantillasPuesto.gd): los colonos
 ## entran a trabajar a las celdas libres de esa capa. "salida" (X, Z) es la celda frente a la
 ## puerta de salida de una refinería (la de entrada es "servicio"); SIN_SERVICIO en los puestos
-## de una sola puerta.
-func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO, salida: Vector2i = SIN_SERVICIO) -> void:
+## de una sola puerta. "chimenea" es la celda sobre la que sale el humo de una refinería activa
+## (ver esta_refinando()); SIN_DEPOSITO si no tiene.
+func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO, salida: Vector2i = SIN_SERVICIO, chimenea: Vector3i = SIN_DEPOSITO) -> void:
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
 		"cupo": Recoleccion.cupo_de(tipo),
@@ -104,7 +105,7 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"presentes": {}, "almacen": {},
 		"activo": true, "agotado": false,
 		"servicio": servicio, "deposito": deposito, "suelo": suelo,
-		"salida": salida,
+		"salida": salida, "chimenea": chimenea,
 	}
 
 
@@ -412,9 +413,14 @@ func es_refineria(esquina: Vector2i) -> bool:
 	return puestos.has(esquina) and CadenaMinerales.REFINERIAS.has(puestos[esquina]["tipo"])
 
 
-## Recurso que consume la refinería (tipo_entrada de su receta, p. ej. "hierro").
+## Recurso principal que consume la refinería (tipo_entrada de su receta, p. ej. "hierro").
 func insumo_de(esquina: Vector2i) -> String:
 	return CadenaMinerales.REFINERIAS[puestos[esquina]["tipo"]]
+
+
+## Insumos de la receta de la refinería por lote (p. ej. {"hierro": 3, "carbon": 4}).
+func entradas_de(esquina: Vector2i) -> Dictionary:
+	return CadenaMinerales.RECETAS[insumo_de(esquina)]["entradas"]
 
 
 ## Recurso que produce la refinería (p. ej. "acero").
@@ -441,24 +447,82 @@ func _refinar(esquina: Vector2i) -> void:
 	p["almacen"] = resultado
 
 
-## Unidades de insumo que un acarreador retiraría ahora del stock central para esta refinería: lo que
-## quepa en su almacén local, hasta CAPACIDAD_CARGA y lo disponible. 0.0 si no es refinería.
-func insumo_a_cargar(esquina: Vector2i) -> float:
+## Qué retiraría ahora un acarreador del stock central para esta refinería: {recurso: cantidad}.
+## Cada insumo tiene su tope en el almacén local, repartido en la proporción de la receta (así uno
+## no llena el almacén y deja sin sitio al otro), y la carga total no pasa de CAPACIDAD_CARGA ni
+## del espacio libre. {} si no es refinería o no hay nada que llevar.
+## ponytail: reparto fijo por receta; si el almacén se desbalancea mucho, esto no lo corrige.
+func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 	if not es_refineria(esquina):
-		return 0.0
-	var p: Dictionary = puestos[esquina]
-	var disponible: float = ciudad.almacen[insumo_de(esquina)].cantidad
-	return maxf(0.0, minf(minf(CAPACIDAD_CARGA, p["capacidad"] - _total(p["almacen"])), disponible))
-
-
-## El acarreador retira insumo del stock central (ver insumo_a_cargar()). {} si no hay nada que llevar.
-func cargar_insumo(esquina: Vector2i) -> Dictionary:
-	var cantidad: float = insumo_a_cargar(esquina)
-	if cantidad <= 1e-9:
 		return {}
-	var insumo: String = insumo_de(esquina)
-	var sacado: float = ciudad.almacen[insumo].quitar(cantidad)
-	return {insumo: sacado} if sacado > 1e-9 else {}
+	var p: Dictionary = puestos[esquina]
+	var entradas: Dictionary = entradas_de(esquina)
+	var suma: float = 0.0
+	for recurso in entradas:
+		suma += entradas[recurso]
+	var plan: Dictionary = {}
+	var total: float = 0.0
+	for recurso in entradas:
+		var parte: float = entradas[recurso] / suma
+		var espacio: float = p["capacidad"] * parte - p["almacen"].get(recurso, 0.0)
+		var cantidad: float = minf(minf(CAPACIDAD_CARGA * parte, espacio), ciudad.almacen[recurso].cantidad)
+		if cantidad > 1e-9:
+			plan[recurso] = cantidad
+			total += cantidad
+	var libre: float = p["capacidad"] - _total(p["almacen"])
+	if total > libre:
+		for recurso in plan:
+			plan[recurso] *= maxf(0.0, libre) / total
+	return plan
+
+
+## Total de unidades de insumos_a_cargar().
+func insumo_a_cargar(esquina: Vector2i) -> float:
+	return _total(insumos_a_cargar(esquina))
+
+
+## true si el almacén local no alcanza para producir ni 1 unidad de producto (falta algún insumo).
+func falta_insumo(esquina: Vector2i) -> bool:
+	var entradas: Dictionary = entradas_de(esquina)
+	var salida: int = CadenaMinerales.RECETAS[insumo_de(esquina)]["cantidad_salida"]
+	for recurso in entradas:
+		if puestos[esquina]["almacen"].get(recurso, 0.0) < float(entradas[recurso]) / salida - 1e-9:
+			return true
+	return false
+
+
+## true si vale la pena que un acarreador vaya al núcleo por insumo: hay al menos CARGA_MINIMA que
+## llevar (rellenar por adelantado) o, aunque sea menos, a la refinería no le alcanza para producir
+## y hay algo con qué ayudarla (la pide).
+func conviene_cargar(esquina: Vector2i) -> bool:
+	var cantidad: float = insumo_a_cargar(esquina)
+	return cantidad >= CARGA_MINIMA or (cantidad > 1e-9 and falta_insumo(esquina))
+
+
+## true si la refinería está produciendo ahora: hay técnicos presentes, tiene insumo para un lote
+## completo y espacio en el almacén local. Es lo que el humo de la chimenea muestra.
+func esta_refinando(esquina: Vector2i) -> bool:
+	if not es_refineria(esquina):
+		return false
+	var p: Dictionary = puestos[esquina]
+	if not p["activo"] or p["presentes"].is_empty() or _total(p["almacen"]) >= p["capacidad"] - 1e-9:
+		return false
+	var entradas: Dictionary = entradas_de(esquina)
+	for recurso in entradas:
+		if p["almacen"].get(recurso, 0.0) < entradas[recurso] - 1e-9:
+			return false
+	return true
+
+
+## El acarreador retira insumos del stock central (ver insumos_a_cargar()). {} si no hay nada que llevar.
+func cargar_insumo(esquina: Vector2i) -> Dictionary:
+	var carga: Dictionary = {}
+	var plan: Dictionary = insumos_a_cargar(esquina)
+	for recurso in plan:
+		var sacado: float = ciudad.almacen[recurso].quitar(plan[recurso])
+		if sacado > 1e-9:
+			carga[recurso] = sacado
+	return carga
 
 
 ## El acarreador deja su carga en el almacén local; lo que ya no cupiera vuelve al stock central.

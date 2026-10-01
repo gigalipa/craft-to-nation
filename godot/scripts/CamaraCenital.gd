@@ -2438,6 +2438,10 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	var orden_estructura: Array = mundo.ordenar_celdas_edificio(celdas_plantilla)
 	var deposito_local: Vector3i = PlantillasPuesto.celda_deposito(_tipo_puesto_activo, giros)
 	var deposito := Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
+	var chimenea := Economia.SIN_DEPOSITO
+	if CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo):
+		var chimenea_local: Vector3i = PlantillasPuesto.celda_chimenea(_tipo_puesto_activo, giros)
+		chimenea = Vector3i(esquina.x + chimenea_local.x, y_base + chimenea_local.y, esquina.y + chimenea_local.z)
 	var metadata := {
 		"puesto": esquina,  # habilita Economia.desactivar_puesto()/reactivar_puesto() (mismo mecanismo que un puesto ya construido) desde la primera vez que se completa — ver _completar_construccion(), que borra "puesto_nuevo" tras registrar.
 		"puesto_nuevo": {
@@ -2450,6 +2454,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 			"servicio": servicio,
 			"salida": salida,
 			"deposito": deposito,
+			"chimenea": chimenea,
 			"y_base": y_base,
 		},
 	}

@@ -1095,7 +1095,7 @@ func _completar_construccion(metadata: Dictionary) -> void:
 		Recoleccion.colocar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"])
 		# info["y_base"] es la Y de la losa de piso (capa 0, ver PlantillasPuesto.gd);
 		# el piso interior TRANSITABLE (donde vive la puerta) es una capa arriba.
-		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"] + 1, info.get("salida", Economia.SIN_SERVICIO))
+		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"] + 1, info.get("salida", Economia.SIN_SERVICIO), info.get("chimenea", Economia.SIN_DEPOSITO))
 		print("Puesto '%s' construido en (%d, %d)." % [info["tipo"], info["esquina"].x, info["esquina"].y])
 		hud.notificar("Puesto construido.")
 		metadata.erase("puesto_nuevo")  # a partir de aquí, un reconstruir cae en la rama "puesto" (reactivar), no en esta (evita re-registrar y huérfanos en _puesto_de — revisión de código, 2026-09-29).

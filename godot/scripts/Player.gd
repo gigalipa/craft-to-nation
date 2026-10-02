@@ -967,11 +967,11 @@ static func _celdas_objetivo_muebles(celdas: Dictionary) -> Array[Vector3i]:
 ## si no, un mensaje de rechazo. No exige que CADA puerta externa por
 ## separado llegue a todo (decisión del usuario, 2026-09-28): si hay 2
 ## puertas externas y solo una tiene acceso al resto, igual se aprueba.
-static func _verificar_acceso_pathfinding(mundo: Node, celdas: Dictionary) -> String:
+static func _verificar_acceso_pathfinding(p_mundo: Node, celdas: Dictionary) -> String:
 	var origenes: Array[Vector3i] = _celdas_externas_puerta(celdas)
 	if origenes.is_empty():
 		return "ninguna puerta externa tiene un vestíbulo libre para entrar."
-	var buscador := BuscadorRutas.new(mundo)
+	var buscador := BuscadorRutas.new(p_mundo)
 	for pos: Vector3i in celdas.keys():
 		var tipo: String = celdas[pos]
 		if tipo != "cama_cabecera" and tipo != "baul":

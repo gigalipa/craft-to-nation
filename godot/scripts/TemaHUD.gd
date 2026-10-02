@@ -38,11 +38,11 @@ static func aplicar_panel(panel: PanelContainer) -> void:
 
 
 static func etiqueta(texto: String = "") -> Label:
-	var etiqueta := Label.new()
-	etiqueta.text = texto
-	etiqueta.add_theme_color_override("font_color", TEXTO)
-	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return etiqueta
+	var rotulo := Label.new()
+	rotulo.text = texto
+	rotulo.add_theme_color_override("font_color", TEXTO)
+	rotulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rotulo
 
 
 static func estilizar_boton(boton: Button) -> void:
@@ -59,18 +59,18 @@ static func estilizar_boton(boton: Button) -> void:
 ## simple (un Container pisaría las anclas), a MARGEN_X / MARGEN_Y del marco. Crece hacia adentro,
 ## así que sirve para textos que cambian de ancho. Los márgenes se miden desde el borde exterior del
 ## marco; si el padre queda dentro del margen interno de un PanelContainer, pasar ese margen en "inset".
-static func poner_en_esquina_inferior(etiqueta: Label, derecha: bool = false, inset: float = 0.0) -> void:
+static func poner_en_esquina_inferior(rotulo: Label, derecha: bool = false, inset: float = 0.0) -> void:
 	var x: float = 1.0 if derecha else 0.0
-	etiqueta.anchor_left = x
-	etiqueta.anchor_right = x
-	etiqueta.anchor_top = 1.0
-	etiqueta.anchor_bottom = 1.0
-	etiqueta.grow_horizontal = Control.GROW_DIRECTION_BEGIN if derecha else Control.GROW_DIRECTION_END
-	etiqueta.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	rotulo.anchor_left = x
+	rotulo.anchor_right = x
+	rotulo.anchor_top = 1.0
+	rotulo.anchor_bottom = 1.0
+	rotulo.grow_horizontal = Control.GROW_DIRECTION_BEGIN if derecha else Control.GROW_DIRECTION_END
+	rotulo.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	var mx: float = MARGEN_X - inset
 	var my: float = MARGEN_Y - inset
 	var lado: float = -mx if derecha else mx
-	etiqueta.offset_left = lado
-	etiqueta.offset_right = lado
-	etiqueta.offset_top = -my
-	etiqueta.offset_bottom = -my
+	rotulo.offset_left = lado
+	rotulo.offset_right = lado
+	rotulo.offset_top = -my
+	rotulo.offset_bottom = -my

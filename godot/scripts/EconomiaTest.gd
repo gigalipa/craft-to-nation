@@ -702,4 +702,35 @@ func ejecutar_pruebas() -> void:
 	assert(e29d.asignar(ESQ_ESC, "aprendiz", 5))
 	assert(e29d.puestos[ESQ_ESC]["progreso"] == 0.0)
 
-	print("\n=== Las 29 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 30: niveles — radios, profundidades, multiplicadores, entorno por nivel y franjas de la mina ===")
+	assert(Recoleccion.radio_de_nivel(12, 1) == 12 and Recoleccion.radio_de_nivel(12, 2) == 18 and Recoleccion.radio_de_nivel(12, 3) == 24)
+	assert(Recoleccion.radio_de_nivel(25, 2) == 37 and Recoleccion.radio_de_nivel(25, 3) == 50)
+	assert(Recoleccion.profundidad_de_nivel(1) == 8 and Recoleccion.profundidad_de_nivel(2) == 16 and Recoleccion.profundidad_de_nivel(3) == 24)
+	assert(Recoleccion.multiplicador_de_nivel("mina", 3) == 1.0, "la mina no gana velocidad")
+	assert(Recoleccion.multiplicador_de_nivel("maderero", 2) == 1.5 and Recoleccion.multiplicador_de_nivel("pesca_frutos_mar", 3) == 2.0)
+	assert(Recoleccion.multiplicador_de_nivel("maderero", 1) == 1.0)
+	var mundo30 := MundoBosqueFalso.new()
+	for i in range(1, 5):
+		mundo30.arboles.registrar([Vector3i(i, 5, i)], 3)
+	mundo30.arboles.registrar([Vector3i(15, 5, 0)], 3)  # a 15 celdas: fuera del radio 12, dentro del 18
+	var entorno30: Dictionary = Recoleccion.entorno_de_puesto("maderero", mundo30, Vector2i(0, 0), 5)
+	assert(entorno30["radio_arboles"] == 12 and entorno30["arboles_ref"] == 4)
+	var nivel2_30: Dictionary = Recoleccion.entorno_de_nivel("maderero", mundo30, entorno30, 2)
+	assert(nivel2_30["radio_arboles"] == 18 and nivel2_30["arboles_ref"] == 5, "el anillo nuevo suma su árbol a la referencia")
+	assert(Recoleccion.entorno_de_nivel("maderero", mundo30, nivel2_30, 2) == nivel2_30, "es idempotente")
+	assert(entorno30["radio_arboles"] == 12, "no toca el entorno original")
+	# Un maderero colocado sin árboles (referencia 0) empieza a producir al subir si el anillo nuevo tiene árboles.
+	var mundo30b := MundoBosqueFalso.new()
+	mundo30b.arboles.registrar([Vector3i(15, 5, 0)], 3)
+	var vacio30: Dictionary = Recoleccion.entorno_de_puesto("maderero", mundo30b, Vector2i(0, 0), 5)
+	assert(vacio30["arboles_ref"] == 0 and Recoleccion.tasas_de_entorno("maderero", mundo30b, vacio30)["madera"] == 0.0)
+	var sube30: Dictionary = Recoleccion.entorno_de_nivel("maderero", mundo30b, vacio30, 2)
+	assert(sube30["arboles_ref"] == 1 and Recoleccion.tasas_de_entorno("maderero", mundo30b, sube30, 2)["madera"] > 0.0)
+	# Franjas de la mina: el hierro de la veta (y=7) queda a 21-22 de profundidad con altura 28 (solo franja del nivel 3) y a 3-4 con altura 10 (solo nivel 1).
+	var franjas30: Array = Recoleccion.tasas_mina_por_nivel(_mundo_con_veta(), Vector2i(500, 500), 28)
+	assert(franjas30.size() == 3 and franjas30[0].is_empty() and franjas30[1].is_empty(), "a 21-22 de profundidad: solo la franja del nivel 3")
+	assert(is_equal_approx(franjas30[2]["hierro"], Recoleccion.TASAS_BASE_MINERAL["hierro"]))
+	var franjas30b: Array = Recoleccion.tasas_mina_por_nivel(_mundo_con_veta(), Vector2i(500, 500), 10)
+	assert(franjas30b[0].has("hierro") and franjas30b[1].is_empty() and franjas30b[2].is_empty(), "a 3-4 de profundidad: solo el nivel 1")
+
+	print("\n=== Las 30 pruebas de Economia pasaron correctamente ===")

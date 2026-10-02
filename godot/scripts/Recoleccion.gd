@@ -15,6 +15,10 @@ const PROFUNDIDAD_MINA_NIVEL_1 := 8
 ## la veta de hierro y nivel 3 recién empieza a cubrir bien tierras raras.
 const PROFUNDIDAD_MINA_NIVEL_2 := 16
 const PROFUNDIDAD_MINA_NIVEL_3 := 24
+## Puestos de recolección con niveles 1-3 (ver docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md).
+const TIPOS_CON_NIVELES := ["mina", "maderero", "caza_recoleccion", "pesca_frutos_mar"]
+## Velocidad del puesto por nivel. La mina no la usa (ver multiplicador_de_nivel()): su nivel amplía el volumen.
+const MULTIPLICADOR_NIVEL := {1: 1.0, 2: 1.5, 3: 2.0}
 ## Unidades por trabajador y hora de cada mineral (docs/Recursos.xlsx). La tasa
 ## de un mineral en una mina es su fracción en el área × esta tasa base.
 const TASAS_BASE_MINERAL := {
@@ -193,6 +197,26 @@ func capacidad_almacen_de(tipo: String) -> int:
 	return 0
 
 
+## Radio de un puesto de área circular en ese nivel: +50 % del radio base por nivel (12 → 18 → 24; 25 → 37 → 50).
+func radio_de_nivel(radio_base: int, nivel: int) -> int:
+	return int(radio_base * (1.0 + 0.5 * (nivel - 1)))
+
+
+## Profundidad acumulada de una mina en ese nivel (nivel 1 si no es 2 ni 3).
+func profundidad_de_nivel(nivel: int) -> int:
+	match nivel:
+		2: return PROFUNDIDAD_MINA_NIVEL_2
+		3: return PROFUNDIDAD_MINA_NIVEL_3
+	return PROFUNDIDAD_MINA_NIVEL_1
+
+
+## Multiplicador de velocidad de un puesto en ese nivel: la mina no tiene (1.0).
+func multiplicador_de_nivel(tipo: String, nivel: int) -> float:
+	if tipo == "mina":
+		return 1.0
+	return MULTIPLICADOR_NIVEL.get(nivel, 1.0)
+
+
 ## Esquina del puesto de trabajo (mina, caza/recolección, maderero, pesca)
 ## cuya huella contiene "celda", o SIN_PUESTO. Ignora los edificios
 ## registrados con tipo "blueprint". Usada por CamaraCenital para abrir el
@@ -289,13 +313,13 @@ func tasas_recoleccion(conteo: Dictionary) -> Dictionary:
 ## cada PASO_MUESTREO_CAZA_RECOLECCION celdas dentro del círculo de radio
 ## RADIO_AREA_CAZA_RECOLECCION centrado en centro_xz. Siempre devuelve ambas
 ## claves — 0.0 si no hubo ninguna muestra (evita dividir por cero).
-func detectar_fauna_frutal(generador: Object, centro_xz: Vector2i) -> Dictionary:
+func detectar_fauna_frutal(generador: Object, centro_xz: Vector2i, radio: int = RADIO_AREA_CAZA_RECOLECCION) -> Dictionary:
 	var suma_fauna := 0.0
 	var suma_frutal := 0.0
 	var muestras := 0
-	for dx in range(-RADIO_AREA_CAZA_RECOLECCION, RADIO_AREA_CAZA_RECOLECCION + 1, PASO_MUESTREO_CAZA_RECOLECCION):
-		for dz in range(-RADIO_AREA_CAZA_RECOLECCION, RADIO_AREA_CAZA_RECOLECCION + 1, PASO_MUESTREO_CAZA_RECOLECCION):
-			if Vector2(dx, dz).length() > RADIO_AREA_CAZA_RECOLECCION:
+	for dx in range(-radio, radio + 1, PASO_MUESTREO_CAZA_RECOLECCION):
+		for dz in range(-radio, radio + 1, PASO_MUESTREO_CAZA_RECOLECCION):
+			if Vector2(dx, dz).length() > radio:
 				continue
 			var x: int = centro_xz.x + dx
 			var z: int = centro_xz.y + dz
@@ -321,12 +345,12 @@ func tasas_caza_recoleccion(promedios: Dictionary) -> Dictionary:
 ## que detectar_fauna_frutal()) muestreada cada PASO_MUESTREO_MADERERO
 ## celdas dentro del círculo de radio RADIO_AREA_MADERERO centrado en
 ## centro_xz. 0.0 si no hubo ninguna muestra (evita dividir por cero).
-func detectar_arbol(generador: Object, centro_xz: Vector2i) -> float:
+func detectar_arbol(generador: Object, centro_xz: Vector2i, radio: int = RADIO_AREA_MADERERO) -> float:
 	var suma_arbol := 0.0
 	var muestras := 0
-	for dx in range(-RADIO_AREA_MADERERO, RADIO_AREA_MADERERO + 1, PASO_MUESTREO_MADERERO):
-		for dz in range(-RADIO_AREA_MADERERO, RADIO_AREA_MADERERO + 1, PASO_MUESTREO_MADERERO):
-			if Vector2(dx, dz).length() > RADIO_AREA_MADERERO:
+	for dx in range(-radio, radio + 1, PASO_MUESTREO_MADERERO):
+		for dz in range(-radio, radio + 1, PASO_MUESTREO_MADERERO):
+			if Vector2(dx, dz).length() > radio:
 				continue
 			suma_arbol += generador.densidad_arbol_en(centro_xz.x + dx, centro_xz.y + dz)
 			muestras += 1
@@ -461,6 +485,39 @@ func entorno_de_puesto(tipo: String, mundo: Object, centro: Vector2i, altura: in
 	return entorno
 
 
+## El entorno de un puesto al nivel "nivel": amplía el radio con que cuenta sus árboles (caza/recolección y
+## maderero) y suma a su referencia los árboles vivos del anillo nuevo, para que talar el anillo base siga
+## bajando el factor. Devuelve una copia; llamarla otra vez con el mismo nivel no cambia nada.
+func entorno_de_nivel(tipo: String, mundo: Object, entorno: Dictionary, nivel: int) -> Dictionary:
+	var nuevo: Dictionary = entorno.duplicate()
+	if not nuevo.has("radio_arboles"):
+		return nuevo
+	var base: int = RADIO_AREA_MADERERO if tipo == "maderero" else RADIO_AREA_CAZA_RECOLECCION
+	var radio: int = radio_de_nivel(base, nivel)
+	if radio <= nuevo["radio_arboles"]:
+		return nuevo
+	nuevo["arboles_ref"] += arboles_vivos_en(mundo, nuevo["centro"], radio) - arboles_vivos_en(mundo, nuevo["centro"], nuevo["radio_arboles"])
+	nuevo["radio_arboles"] = radio
+	return nuevo
+
+
+## Tasas por trabajador de la franja de cada nivel de una mina (la franja del nivel N es lo que añade
+## su profundidad sobre la del nivel anterior; no suma los niveles previos): [nivel 1, nivel 2, nivel 3].
+func tasas_mina_por_nivel(mundo: Object, centro_xz: Vector2i, altura_superficie: int) -> Array:
+	var niveles: Array = []
+	var anterior: Dictionary = {}
+	for nivel in range(1, 4):
+		var conteo: Dictionary = detectar_recursos_extraibles(mundo, centro_xz, altura_superficie, profundidad_de_nivel(nivel))
+		var franja: Dictionary = {}
+		for tipo in conteo:
+			var nuevos: int = conteo[tipo] - anterior.get(tipo, 0)
+			if nuevos > 0:
+				franja[tipo] = nuevos
+		niveles.append(tasas_recoleccion(franja))
+		anterior = conteo
+	return niveles
+
+
 ## Fracción de los árboles de su área que sigue en pie (tope 1.0). Sin árboles
 ## de referencia al colocar el puesto no hay nada que escalar: 1.0.
 func factor_arboles(mundo: Object, entorno: Dictionary) -> float:
@@ -474,23 +531,23 @@ func factor_arboles(mundo: Object, entorno: Dictionary) -> float:
 ## (mismas claves que tasas_recoleccion()/tasas_caza_recoleccion()/
 ## tasa_maderero()/tasas_pesca_frutos_mar()). Caza/recolección y maderero se
 ## escalan con factor_arboles(): talar el bosque reduce fauna, frutos y madera.
-func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary) -> Dictionary:
+func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary, nivel: int = 1) -> Dictionary:
 	var centro: Vector2i = entorno["centro"]
 	if tipo == "mina":
-		return tasas_recoleccion(detectar_recursos_extraibles(mundo, centro, entorno["altura"]))
+		return tasas_recoleccion(detectar_recursos_extraibles(mundo, centro, entorno["altura"], profundidad_de_nivel(nivel)))
 	if tipo == "pesca_frutos_mar":
 		if not entorno.has("centro_agua"):
 			return {}
-		var celdas_agua: Dictionary = celdas_agua_conectadas(mundo, entorno["centro_agua"], RADIO_AREA_PESCA_FRUTOS_MAR)
+		var celdas_agua: Dictionary = celdas_agua_conectadas(mundo, entorno["centro_agua"], radio_de_nivel(RADIO_AREA_PESCA_FRUTOS_MAR, nivel))
 		return tasas_pesca_frutos_mar(detectar_pesca_frutos_mar(mundo.generador, celdas_agua))
 	var tasas: Dictionary
 	# Un maderero sin árboles al colocarse no tiene nada que talar (factor_arboles() da 1.0 ahí).
 	if tipo == "maderero" and entorno.get("arboles_ref", 0) <= 0:
 		return {"madera": 0.0}
 	if tipo == "caza_recoleccion":
-		tasas = tasas_caza_recoleccion(detectar_fauna_frutal(mundo.generador, centro))
+		tasas = tasas_caza_recoleccion(detectar_fauna_frutal(mundo.generador, centro, radio_de_nivel(RADIO_AREA_CAZA_RECOLECCION, nivel)))
 	else:
-		tasas = tasa_maderero(detectar_arbol(mundo.generador, centro))
+		tasas = tasa_maderero(detectar_arbol(mundo.generador, centro, radio_de_nivel(RADIO_AREA_MADERERO, nivel)))
 	var factor := factor_arboles(mundo, entorno)
 	for clave in tasas:
 		tasas[clave] *= factor

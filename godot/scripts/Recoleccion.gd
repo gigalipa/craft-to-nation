@@ -26,6 +26,9 @@ const TASAS_BASE_MINERAL := {
 const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Los únicos tipos de puesto donde se asignan trabajadores (los edificios
 ## registrados con tipo "blueprint" comparten el registro pero no son puestos).
+## Madera/h por recolector bajo la cual un maderero se da por agotado (decisión del usuario, 2026-10-02).
+const UMBRAL_AGOTADO_MADERERO := 0.5
+
 const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica"]
 ## Escuelas: tipo de puesto -> {"origen", "destino"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
 ## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
@@ -491,4 +494,7 @@ func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary) -> Dicti
 	var factor := factor_arboles(mundo, entorno)
 	for clave in tasas:
 		tasas[clave] *= factor
+	# Un maderero por debajo del umbral está agotado: no conserva empleados improductivos.
+	if tipo == "maderero" and tasas["madera"] < UMBRAL_AGOTADO_MADERERO:
+		tasas["madera"] = 0.0
 	return tasas

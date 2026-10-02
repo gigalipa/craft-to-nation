@@ -33,8 +33,8 @@ func _ready() -> void:
 func _on_colono_creado(id: int) -> void:
 	var tipo: String = Colonos.colonos[id]["tipo"]
 	var cuerpo := AnimatableBody3D.new()
-	# Capa 2: solo el avatar (Player.collision_mask = 3) choca con los colonos;
-	# el raycast del jugador y el picking de CamaraCenital (máscara 1) los
+	# Capa 2: el avatar ya no choca con los colonos (Player.collision_mask = 1): él los empuja
+	# (Colonos.actualizar_avatar()) y ellos no pueden moverlo; el raycast del jugador y el picking de CamaraCenital (máscara 1) los
 	# atraviesan, así un clic sobre un colono elige el terreno de debajo.
 	cuerpo.collision_layer = 2
 	cuerpo.collision_mask = 0
@@ -73,3 +73,6 @@ func _physics_process(_delta: float) -> void:
 	for id in _cuerpos:
 		if Colonos.colonos.has(id):
 			_cuerpos[id].global_position = Colonos.colonos[id]["posicion"]
+			# El tipo cambia al graduarse o al emplearse: el color sigue al tipo actual.
+			var material: StandardMaterial3D = _cuerpos[id].get_child(0).mesh.material
+			material.albedo_color = COLORES_TIPO.get(Colonos.colonos[id]["tipo"], Color.WHITE)

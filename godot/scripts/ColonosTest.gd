@@ -1146,4 +1146,18 @@ func ejecutar_pruebas() -> void:
 	for tipo44 in ciudad44.demografia:
 		assert(_contar(colonos44, tipo44) == ciudad44.demografia[tipo44], "colonos y demografía coinciden en %s" % tipo44)
 
-	print("\n=== Las 44 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 45: el avatar empuja a un colono quieto de su celda a una celda libre; uno que camina no se toca ===")
+	var colonos45: Node = _nuevo(_mundo_llano(), CiudadScript.new())
+	var id45: int = colonos45.agregar_colono("obrero", Vector3i(3, 1, 3))
+	var c45: Dictionary = colonos45.colonos[id45]
+	colonos45.actualizar_avatar(Vector3i(3, 1, 3), Vector3.ZERO)
+	assert(c45["celda"] != Vector3i(3, 1, 3), "el colono salió de la celda del avatar")
+	assert(colonos45.ocupadas[c45["celda"]] == id45 and not colonos45.ocupadas.has(Vector3i(3, 1, 3)), "quedó en una celda vecina libre, con la reserva movida")
+	assert(c45["posicion"] == colonos45._centro_de(c45["celda"]), "y su posición lo sigue")
+	var id45b: int = colonos45.agregar_colono("obrero", Vector3i(6, 1, 6))
+	var c45b: Dictionary = colonos45.colonos[id45b]
+	c45b["moviendo"] = true
+	colonos45.actualizar_avatar(Vector3i(6, 1, 6), Vector3.ZERO)
+	assert(c45b["celda"] == Vector3i(6, 1, 6), "el que ya camina no se empuja")
+
+	print("\n=== Las 45 pruebas de Colonos pasaron correctamente ===")

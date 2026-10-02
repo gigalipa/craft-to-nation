@@ -811,6 +811,20 @@ func ejecutar_pruebas() -> void:
 		assert(mundo.id_de_edificio(c_22) == -1)
 	print("OK: procesar_deconstruccion() revierte en el mismo orden de construcción recorrido en reversa (mobiliario -> estructura -> piso), cuenta camas solo al cruzar el borde de completo, y eliminar_edificio() borra todo.")
 
+	print("\n=== TEST 22b: la celda sobre el techo de cada columna queda reservada para los ciudadanos y se libera al deconstruir ===")
+	const OX22B := 950
+	var celdas_22b := {
+		Vector3i(OX22B, 0, OX22B): "tierra", Vector3i(OX22B, 1, OX22B): "bloque_piedra", Vector3i(OX22B, 2, OX22B): "bloque_piedra",
+		Vector3i(OX22B + 1, 0, OX22B): "tierra", Vector3i(OX22B + 1, 1, OX22B): "bloque_piedra",
+	}
+	for celda_22b in celdas_22b:
+		mundo.colocar_bloque(celda_22b, celdas_22b[celda_22b], true)
+	var id_22b: int = mundo.registrar_edificio_completo(celdas_22b)
+	assert(mundo.es_sobre_techo(Vector3i(OX22B, 3, OX22B)) and mundo.es_sobre_techo(Vector3i(OX22B + 1, 2, OX22B)), "sobre el tope de cada columna")
+	assert(not mundo.es_sobre_techo(Vector3i(OX22B, 2, OX22B)) and not mundo.es_sobre_techo(Vector3i(OX22B, 4, OX22B)), "ni dentro ni más arriba")
+	mundo.eliminar_edificio(id_22b)
+	assert(not mundo.es_sobre_techo(Vector3i(OX22B, 3, OX22B)), "al deconstruir se libera")
+
 	print("\n=== TEST 23: deconstruir un edificio a medio construir revierte solo hasta donde llegó el progreso ===")
 	const OX11 := 950
 	var celda_piso_23 := Vector3i(OX11, 0, OX11)

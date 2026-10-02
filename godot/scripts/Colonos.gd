@@ -291,12 +291,37 @@ func actualizar_avatar(celda: Vector3i, velocidad: Vector3) -> void:
 	celdas_avatar.clear()
 	celdas_avatar[celda] = true
 	var horizontal := Vector2(velocidad.x, velocidad.z)
-	if horizontal.length() <= 0.5:
+	if horizontal.length() > 0.5:
+		if absf(horizontal.x) > absf(horizontal.y):
+			celdas_avatar[celda + Vector3i(int(signf(horizontal.x)), 0, 0)] = true
+		else:
+			celdas_avatar[celda + Vector3i(0, 0, int(signf(horizontal.y)))] = true
+	for celda_avatar in celdas_avatar:
+		_empujar_de(celda_avatar)
+
+
+## El avatar empuja a un colono quieto que esté en su celda a una celda libre vecina (decisión
+## del usuario, 2026-10-02: el jugador empuja a los colonos y ellos lo esquivan, nunca al revés).
+## Los que caminan no hacen falta: su siguiente paso ya evita las celdas del avatar.
+func _empujar_de(celda: Vector3i) -> void:
+	var id: int = ocupadas.get(celda, -1)
+	if id == -1 or not colonos.has(id) or colonos[id]["moviendo"] or colonos[id]["celda"] != celda:
 		return
-	if absf(horizontal.x) > absf(horizontal.y):
-		celdas_avatar[celda + Vector3i(int(signf(horizontal.x)), 0, 0)] = true
-	else:
-		celdas_avatar[celda + Vector3i(0, 0, int(signf(horizontal.y)))] = true
+	for direccion in BuscadorRutas.DIRECCIONES:
+		var destino: Vector3i = celda + direccion
+		if not _buscador.es_transitable(destino) or _ocupada_por_otro(destino, id):
+			continue
+		var c: Dictionary = colonos[id]
+		ocupadas.erase(celda)
+		ocupadas[destino] = id
+		c["celda"] = destino
+		c["posicion"] = _centro_de(destino)
+		c["ruta"] = []
+		c["busqueda"] = {}
+		c["espera"] = 0.0
+		if not c["trabajo"].is_empty():
+			economia.marcar_presente(id, false)
+		return
 
 
 func _ocupada_por_otro(celda: Vector3i, id: int) -> bool:

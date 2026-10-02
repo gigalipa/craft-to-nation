@@ -19,6 +19,11 @@ class MundoFalso extends RefCounted:
 		celdas[celda] = "fantasma"
 		ids[celda] = id_obra
 
+	var techos: Dictionary = {}  # Vector3i -> true: celdas reservadas sobre un techo
+
+	func es_sobre_techo(celda: Vector3i) -> bool:
+		return techos.has(celda)
+
 	func obtener_tipo(celda: Vector3i) -> String:
 		return celdas.get(celda, "")
 
@@ -279,4 +284,14 @@ func ejecutar_pruebas() -> void:
 	var vacia19 = b19.iniciar_busqueda_a_alguna(origen19, [])
 	assert(vacia19.terminada and not vacia19.exito, "sin destinos válidos termina al instante")
 
-	print("\n=== Las 19 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== TEST 20: un techo de edificio no es transitable ===")
+	var m20 := MundoFalso.new()
+	_llano(m20, 5, 5)
+	m20.poner(Vector3i(2, 1, 2), "bloque_madera")
+	var b20 := BuscadorRutas.new(m20)
+	assert(b20.es_transitable(Vector3i(2, 2, 2)), "sin ser techo, se pisa como cualquier bloque")
+	m20.techos[Vector3i(2, 2, 2)] = true
+	assert(not b20.es_transitable(Vector3i(2, 2, 2)), "la celda sobre un techo está reservada")
+	assert(b20.es_transitable(Vector3i(1, 1, 2)), "el suelo de al lado sigue igual")
+
+	print("\n=== Las 20 pruebas de BuscadorRutas pasaron correctamente ===")

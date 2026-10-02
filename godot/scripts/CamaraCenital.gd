@@ -2445,7 +2445,6 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	var giros: int = ev["giros"]
 	var fachada: Dictionary = ev["fachada"]
 	var y_base: int = ev["y_base"]
-	var base_y: int = ev["resultado_base"]["base_y"]
 	var celdas_plantilla: Dictionary = ev["celdas_plantilla"]
 	var servicio: Vector2i = esquina + PlantillasPuesto.celda_de_servicio(_tipo_puesto_activo, giros)
 	var salida: Vector2i = esquina + PlantillasPuesto.celda_de_salida(_tipo_puesto_activo, giros)

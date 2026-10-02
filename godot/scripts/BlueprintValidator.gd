@@ -837,7 +837,7 @@ static func _calcular_errores_vestibulos(
 	bandas: Array,
 	indices_capa: Array,
 	huella_local: Dictionary,
-	aire_interior: Dictionary,
+	_aire_interior: Dictionary,
 	x_min: int,
 	y_min: int,
 	z_min: int

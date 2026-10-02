@@ -15,6 +15,7 @@ Que las obras de edificios y puestos las construyan y demuelan los colonos libre
 - Demolición: la marca es reversible (clic derecho en 1ª persona con el modo G activo, clic en la cenital). Los colonos deconstruyen como el jugador, con reembolso.
 - Un edificio marcado se ve con un tinte rojo translúcido (cenital y 1ª persona).
 - Prioridad: construir antes que demoler; a igualdad, la tarea más cercana.
+- Si el jugador actúa a mano sobre un edificio, los colonos le ceden la obra; las obras se pueden pausar; el clic sobre un edificio en la cenital abre su ventana (ver «Preferencia del jugador, pausa y ventana del edificio»).
 - Enfoque elegido: coordinador nuevo (`Obras`) más lógica de finalización compartida con `Player`.
 
 ## Estado actual relevante
@@ -72,6 +73,20 @@ Un colono libre (desempleado o técnico sin puesto) pide `Obras.siguiente_tarea`
 3. Con el edificio «listo para remoción» el colono ejecuta `FinalizacionObras.retirar_edificio`. No usa `TICKS_REMOCION_FINAL`: ese contador evita borrados accidentales con el ratón.
 4. Al desmarcar, los colonos dejan de deconstruir; el edificio queda a medias como obra fantasma y puede reconstruirse.
 5. Un colono dentro de un edificio que se demuele sale antes (se reutiliza `_on_obra_a_fantasma`).
+
+## Preferencia del jugador, pausa y ventana del edificio (ampliación, 2026-10-02)
+
+### Preferencia del jugador
+Cuando el jugador construye o deconstruye un edificio a mano, los colonos le ceden la obra: `Obras.reclamar(id)` (lo llama `Player` en cada acción sobre ese edificio) la deja reclamada durante `DURACION_RECLAMO_MS` (3 s) tras la última acción. Mientras está reclamada, `siguiente_tarea` no la ofrece y `trabajar` devuelve «pausada», así que los colonos que estaban en ella toman otra tarea. Pasado el tiempo, vuelven a ofrecerla.
+
+### Pausa de obra
+Cualquier obra (construcción o demolición) se puede pausar y reanudar a petición del jugador: `Obras.alternar_pausa(id)`. Una obra pausada no se ofrece a los colonos y quienes trabajan en ella la dejan. La pausa no impide que el jugador la siga a mano. Es independiente de la pausa por falta de material.
+
+### Ventana del edificio (`PanelEdificio`)
+- Se abre con un clic izquierdo sobre un edificio u obra en la cenital (sin ninguna herramienta activa) y se ancla abajo a la derecha, como la de los puestos. Un puesto terminado sigue abriendo `PanelPuesto`, que gana un botón «Demoler».
+- Contenido: nombre y tipo (el nombre del blueprint o del puesto; el tipo, «Puesto» o la categoría del blueprint); estado (construcción, demolición o completo, más «pausada»); salud (fracción construida: sube al construir, baja al demoler y vale 100 % en un edificio completo); número de obreros con esa obra como tarea (`Colonos.obreros_en(id)`); y, si falta construir, los materiales que faltan para terminarlo (el costo de las celdas aún sin construir, con lo que hay en el almacén).
+- Botones: «Pausar construcción»/«Pausar demolición»/«Reanudar» (oculto en un edificio completo) y «Demoler»/«Cancelar demolición», que marca o desmarca el edificio sin activar la herramienta de demolición.
+- La ventana se actualiza mientras está abierta y se cierra sola si el edificio desaparece.
 
 ## Casos límite
 

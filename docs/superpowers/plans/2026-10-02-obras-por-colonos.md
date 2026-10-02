@@ -19,6 +19,8 @@
 - Prioridad: construir antes que demoler; a igualdad, la obra más cercana (en empate, id menor).
 - Un paso de obra dura lo mismo que para el jugador: el de minar el material si el paso es excavación (`"aire"`/`"fantasma"`), `INTERVALO_PASO = 0.20` s en el resto. La demolición usa siempre `INTERVALO_PASO`.
 - Las vías quedan fuera de alcance. El núcleo urbano no se puede marcar.
+- El jugador tiene preferencia: tras cualquier acción suya sobre un edificio (surtir o deconstruir), `Obras.reclamar(id)` lo deja reclamado `DURACION_RECLAMO_MS = 3000` ms y los colonos lo ceden. Cualquier obra se puede pausar/reanudar con `Obras.alternar_pausa(id)`.
+- Clic izquierdo en la cenital (sin herramienta) sobre un edificio u obra abre `PanelEdificio` (abajo a la derecha); sobre un puesto terminado, `PanelPuesto` (que gana un botón «Demoler»).
 - Verificación (CLAUDE.md): ejecutar `godot/scenes/Test.tscn` más las escenas afectadas. Comando (desde la raíz del repo, Git Bash):
   `"/c/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe" --headless --path godot scenes/<Escena>.tscn > /tmp/<Escena>.log 2>&1` envuelto en `timeout 400`. **Verde** = aparece la línea final de éxito de la escena y `grep -E "Assertion failed|SCRIPT ERROR|Parse Error" /tmp/<Escena>.log` no devuelve nada (`assert()` no detiene la ejecución: hay que buscar en toda la salida).
 - Trabajo en la rama `feat/obras-colonos` (ya creada). No hacer push sin que el usuario lo pida.
@@ -33,6 +35,8 @@ Entradas/condiciones que la especificación implica y que más probablemente fal
 3. Una obra pausada por falta de material no se ofrece de nuevo hasta que haya ese recurso, y el aviso sale una sola vez (Tarea 2).
 4. Una obra o un edificio eliminado con un colono trabajando en él: el colono suelta la tarea sin error (Tareas 2 y 3).
 5. Marcar el núcleo urbano se rechaza; marcar y desmarcar alternan; desmarcar a medias no reconstruye (Tarea 2).
+6. Mientras el jugador actúa sobre un edificio (reclamado) o la obra está pausada, ni se ofrece ni se trabaja; al caducar el reclamo, vuelve (Tareas 2 y 4).
+7. La ventana del edificio muestra salud 100 % en un edificio completo, materiales faltantes solo si falta construir, y cambia las etiquetas de sus botones según el estado (Tarea 5).
 
 ---
 
@@ -238,7 +242,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes (Tarea 1): `FinalizacionObras.INTERVALO_PASO`, `intervalo_del_paso`, `completar_construccion`, `al_deconstruir`, `retirar_edificio`.
 - Consumes (`VoxelWorld`, o su doble de prueba): `edificio_orden`, `edificio_progreso`, `edificio_a_celdas`, `edificio_metadata`, `surtir_construccion(celda)`, `procesar_deconstruccion(celda)`, `proximo_paso_pendiente(celda)`.
-- Produces: señales `marca_cambiada(id: int, marcado: bool)` y `aviso(texto: String)`; propiedades `mundo`, `ciudad`, `zona`, `marcados`, `abandonadas`, `pausadas`, y los puntos de inyección `al_completar`, `al_deconstruir`, `al_retirar` (Callables); funciones `alternar_marca(id) -> String` (`""` = hecho, si no, el motivo del rechazo), `esta_marcado(id) -> bool`, `abandonar(id)`, `olvidar(id)`, `siguiente_tarea(desde: Vector3i, id_colono := -1) -> Dictionary` (`{"tipo": "construir"|"demoler", "id": int}` o `{}`), `huella_de(id) -> Array` (de `Vector2i`), `trabajar(id, tipo) -> Dictionary` (`{"estado": "avanzo"|"pausada"|"bloqueada"|"completa"|"terminada"|"invalida", "espera": float}`), `vetar(id, id_colono)`, `pausar(id, recurso)`.
+- Produces: señales `marca_cambiada(id: int, marcado: bool)` y `aviso(texto: String)`; propiedades `mundo`, `ciudad`, `zona`, `marcados`, `abandonadas`, `pausadas`, y los puntos de inyección `al_completar`, `al_deconstruir`, `al_retirar` (Callables); funciones `alternar_marca(id) -> String` (`""` = hecho, si no, el motivo del rechazo), `esta_marcado(id) -> bool`, `abandonar(id)`, `olvidar(id)`, `siguiente_tarea(desde: Vector3i, id_colono := -1) -> Dictionary` (`{"tipo": "construir"|"demoler", "id": int}` o `{}`), `huella_de(id) -> Array` (de `Vector2i`), `trabajar(id, tipo) -> Dictionary` (`{"estado": "avanzo"|"pausada"|"bloqueada"|"completa"|"terminada"|"invalida", "espera": float}`), `vetar(id, id_colono)`, `pausar(id, recurso)`, `reclamar(id)`, `esta_reclamada(id) -> bool`, `alternar_pausa(id)`, `esta_pausada_por_jugador(id) -> bool`, `resumen_de(id) -> Dictionary` (`{"nombre", "tipo", "estado": "construccion"|"demolicion"|"completo", "pausada": bool, "salud": float 0..1, "faltantes": Dictionary recurso -> cantidad}` o `{}` si no existe) e `id_en_columna(columna: Vector2i) -> int` (id del edificio con alguna celda en esa columna, o -1). El doble de prueba del mundo necesita además `edificio_tipos` (id -> {celda -> tipo}).
 
 - [ ] **Step 1: Escribir `ObrasTest.gd` y la escena (la prueba falla porque no existe `Obras.gd`)**
 
@@ -273,6 +277,7 @@ class MundoObraFalso extends RefCounted:
 	var edificio_progreso: Dictionary = {}
 	var edificio_a_celdas: Dictionary = {}
 	var edificio_metadata: Dictionary = {}
+	var edificio_tipos: Dictionary = {}  # id -> {celda -> tipo final}
 	var resultados_surtir: Array = []  # se consumen en orden
 	var resultados_deconstruir: Array = []
 	var eliminados: Array = []
@@ -286,6 +291,9 @@ class MundoObraFalso extends RefCounted:
 		edificio_a_celdas[id] = lista
 		edificio_progreso[id] = progreso
 		edificio_metadata[id] = {}
+		edificio_tipos[id] = {}
+		for celda in lista:
+			edificio_tipos[id][celda] = "bloque_piedra"
 
 	func surtir_construccion(_celda: Vector3i) -> Dictionary:
 		return resultados_surtir.pop_front() if not resultados_surtir.is_empty() else {}
@@ -432,7 +440,51 @@ func ejecutar_pruebas() -> void:
 	assert(obras7.huella_de(1) == [Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5)], "huella: una entrada por columna")
 	assert(obras7.huella_de(9).is_empty(), "un id desconocido no tiene huella")
 
-	print("\n=== Las 7 pruebas de Obras pasaron correctamente ===")
+	print("\n=== TEST 8: el jugador tiene preferencia (reclamo con caducidad) y puede pausar cualquier obra ===")
+	var mundo8 := MundoObraFalso.new()
+	mundo8.agregar(1, Vector3i(5, 0, 5), 3, 0)
+	mundo8.agregar(2, Vector3i(8, 0, 8), 2, 2)
+	var obras8: Node = _nuevas(mundo8)
+	obras8.alternar_marca(2)
+	obras8.reclamar(1)
+	assert(obras8.esta_reclamada(1), "recién reclamada")
+	assert(obras8.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 2, "mientras el jugador la tiene, los colonos toman otra tarea (aquí, la demolición)")
+	assert(obras8.trabajar(1, "construir")["estado"] == "pausada", "y quien ya estaba en ella la cede")
+	obras8._reclamos[1] = 0  # caducó
+	assert(not obras8.esta_reclamada(1), "el reclamo caduca")
+	assert(obras8.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 1, "al caducar vuelve a ofrecerse")
+	obras8.alternar_pausa(1)
+	assert(obras8.esta_pausada_por_jugador(1) and obras8.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 2, "una obra pausada no se ofrece")
+	assert(obras8.trabajar(1, "construir")["estado"] == "pausada", "ni se trabaja")
+	obras8.alternar_pausa(2)
+	assert(obras8.siguiente_tarea(Vector3i(5, 1, 5)).is_empty(), "también se puede pausar una demolición")
+	obras8.alternar_pausa(1)
+	obras8.alternar_pausa(2)
+	assert(obras8.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 1, "reanudar la devuelve")
+	obras8.olvidar(1)
+	assert(not obras8.esta_pausada_por_jugador(1) and not obras8.esta_reclamada(1), "olvidar limpia la pausa y el reclamo")
+
+	print("\n=== TEST 9: resumen_de da el estado, la salud y los materiales que faltan; id_en_columna encuentra el edificio ===")
+	var mundo9 := MundoObraFalso.new()
+	mundo9.agregar(1, Vector3i(5, 0, 5), 4, 1)  # 3 celdas por hacer, 5 de piedra cada una
+	mundo9.agregar(2, Vector3i(9, 0, 9), 2, 2)  # completo
+	var obras9: Node = _nuevas(mundo9)
+	var res9: Dictionary = obras9.resumen_de(1)
+	assert(res9["estado"] == "construccion" and not res9["pausada"], "en construcción")
+	assert(is_equal_approx(res9["salud"], 0.25), "salud = fracción construida: %f" % res9["salud"])
+	assert(res9["faltantes"] == {"piedra": 15}, "faltan 3 celdas x 5 de piedra: %s" % str(res9["faltantes"]))
+	assert(res9["nombre"] == "Edificio 1" and res9["tipo"] == "Edificio", "sin metadata, nombre genérico")
+	var res9b: Dictionary = obras9.resumen_de(2)
+	assert(res9b["estado"] == "completo" and is_equal_approx(res9b["salud"], 1.0) and res9b["faltantes"].is_empty(), "un edificio completo: 100 % y nada que falte")
+	obras9.alternar_marca(2)
+	obras9.alternar_pausa(2)
+	assert(obras9.resumen_de(2)["estado"] == "demolicion" and obras9.resumen_de(2)["pausada"], "marcado: demolición; y se refleja la pausa")
+	mundo9.edificio_metadata[1] = {"blueprint": {"nombre": "Casa", "categoria": "residencial"}}
+	assert(obras9.resumen_de(1)["nombre"] == "Casa" and obras9.resumen_de(1)["tipo"] == "Residencial", "nombre y tipo del blueprint")
+	assert(obras9.resumen_de(99).is_empty(), "un id desconocido no tiene resumen")
+	assert(obras9.id_en_columna(Vector2i(6, 5)) == 1 and obras9.id_en_columna(Vector2i(0, 0)) == -1, "id_en_columna")
+
+	print("\n=== Las 9 pruebas de Obras pasaron correctamente ===")
 ```
 
 - [ ] **Step 2: Ejecutar `ObrasTest.tscn` y verificar que falla**
@@ -454,6 +506,8 @@ extends Node
 ## siguiente_tarea() y llama a trabajar().
 
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
+const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
+const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 
 ## Cambió la marca de demolición de un edificio (la dibuja MarcasDemolicionOverlay).
 signal marca_cambiada(id: int, marcado: bool)
@@ -462,6 +516,7 @@ signal aviso(texto: String)
 
 const ESPERA_BLOQUEADA := 1.0  # s que espera un colono si hay alguien dentro de la obra
 const DURACION_VETO_MS := 30000  # una obra a la que un colono no pudo llegar se le oculta ese tiempo
+const DURACION_RECLAMO_MS := 3000  # tras actuar el jugador a mano sobre un edificio, los colonos se lo ceden ese tiempo
 
 ## El mundo (VoxelWorld en el juego), asignado por Main.
 var mundo: Object = null
@@ -476,7 +531,9 @@ var al_retirar: Callable = FinalizacionObras.retirar_edificio
 var marcados: Dictionary = {}  # id -> true
 var abandonadas: Dictionary = {}  # id -> true
 var pausadas: Dictionary = {}  # id -> recurso que falta
+var pausadas_por_jugador: Dictionary = {}  # id -> true (pausa pedida desde la ventana del edificio)
 var _vetos: Dictionary = {}  # "id:colono" -> ms hasta los que dura
+var _reclamos: Dictionary = {}  # id -> ms hasta los que el jugador lo tiene reclamado
 
 
 func _ready() -> void:
@@ -520,6 +577,8 @@ func olvidar(id: int) -> void:
 	var estaba_marcado := marcados.erase(id)
 	abandonadas.erase(id)
 	pausadas.erase(id)
+	pausadas_por_jugador.erase(id)
+	_reclamos.erase(id)
 	if estaba_marcado:
 		marca_cambiada.emit(id, false)
 
@@ -530,6 +589,33 @@ func vetar(id: int, id_colono: int) -> void:
 
 func _vetada(id: int, id_colono: int) -> bool:
 	return _vetos.get("%d:%d" % [id, id_colono], 0) > Time.get_ticks_msec()
+
+
+## El jugador acaba de construir o deconstruir este edificio a mano: los colonos le ceden la obra un rato.
+func reclamar(id: int) -> void:
+	_reclamos[id] = Time.get_ticks_msec() + DURACION_RECLAMO_MS
+
+
+func esta_reclamada(id: int) -> bool:
+	return _reclamos.get(id, 0) > Time.get_ticks_msec()
+
+
+## Pausa o reanuda la obra (de construcción o de demolición) a petición del jugador. No impide que
+## el jugador la siga a mano.
+func alternar_pausa(id: int) -> void:
+	if pausadas_por_jugador.has(id):
+		pausadas_por_jugador.erase(id)
+	else:
+		pausadas_por_jugador[id] = true
+
+
+func esta_pausada_por_jugador(id: int) -> bool:
+	return pausadas_por_jugador.has(id)
+
+
+## Una obra no se ofrece ni se trabaja mientras el jugador la tiene reclamada o pausada.
+func _cedida(id: int) -> bool:
+	return pausadas_por_jugador.has(id) or esta_reclamada(id)
 
 
 ## Una obra sin material se pausa; el aviso sale solo la primera vez que falta ese recurso.
@@ -552,11 +638,11 @@ func _candidatas(tipo: String) -> Array[int]:
 		return ids
 	if tipo == "demoler":
 		for id: int in marcados:
-			if mundo.edificio_orden.has(id):
+			if mundo.edificio_orden.has(id) and not _cedida(id):
 				ids.append(id)
 		return ids
 	for id: int in mundo.edificio_orden:
-		if marcados.has(id) or abandonadas.has(id):
+		if marcados.has(id) or abandonadas.has(id) or _cedida(id):
 			continue
 		if mundo.edificio_progreso[id] >= mundo.edificio_orden[id].size():
 			continue
@@ -597,6 +683,52 @@ func huella_de(id: int) -> Array:
 	return huella
 
 
+## Id del edificio que tiene alguna celda en la columna "columna" (x, z), o -1.
+func id_en_columna(columna: Vector2i) -> int:
+	if mundo == null:
+		return -1
+	for id: int in mundo.edificio_a_celdas:
+		for celda: Vector3i in mundo.edificio_a_celdas[id]:
+			if celda.x == columna.x and celda.z == columna.y:
+				return id
+	return -1
+
+
+## Datos para la ventana del edificio: nombre y tipo; estado ("demolicion" si está marcado,
+## "construccion" si le faltan celdas, "completo"); si el jugador la pausó; salud (fracción
+## construida, 0..1: 1.0 en un edificio completo) y los materiales que faltan para terminarlo
+## (el costo de las celdas aún sin construir). {} si el edificio no existe.
+func resumen_de(id: int) -> Dictionary:
+	if mundo == null or not mundo.edificio_orden.has(id):
+		return {}
+	var orden: Array = mundo.edificio_orden[id]
+	var progreso: int = mundo.edificio_progreso[id]
+	var faltantes := {}
+	for i in range(progreso, orden.size()):
+		var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(mundo.edificio_tipos[id][orden[i]], {})
+		for recurso in costo:
+			faltantes[recurso] = faltantes.get(recurso, 0) + costo[recurso]
+	var estado := "completo"
+	if marcados.has(id):
+		estado = "demolicion"
+	elif progreso < orden.size():
+		estado = "construccion"
+	var meta: Dictionary = mundo.edificio_metadata.get(id, {})
+	var nombre := "Edificio %d" % id
+	var tipo := "Edificio"
+	if meta.has("puesto_nuevo") or meta.has("puesto"):
+		var tipo_puesto: String = meta["puesto_nuevo"]["tipo"] if meta.has("puesto_nuevo") else Economia.puestos.get(meta["puesto"], {}).get("tipo", "")
+		nombre = PanelPuestoScript.NOMBRES_PUESTO.get(tipo_puesto, nombre)
+		tipo = "Puesto"
+	elif meta.has("blueprint"):
+		nombre = str(meta["blueprint"].get("nombre", nombre))
+		tipo = str(meta["blueprint"].get("categoria", tipo)).capitalize()
+	return {
+		"nombre": nombre, "tipo": tipo, "estado": estado, "pausada": pausadas_por_jugador.has(id),
+		"salud": float(progreso) / maxf(float(orden.size()), 1.0), "faltantes": faltantes,
+	}
+
+
 ## Un paso de trabajo de un colono sobre la obra "id" ("construir" o "demoler").
 ## Devuelve {"estado", "espera"}: "avanzo" (sigue), "pausada" (falta material),
 ## "bloqueada" (alguien dentro), "completa" (terminó este edificio), "terminada"
@@ -606,6 +738,8 @@ func trabajar(id: int, tipo: String) -> Dictionary:
 	if mundo == null or not mundo.edificio_orden.has(id):
 		olvidar(id)
 		return {"estado": "invalida", "espera": 0.0}
+	if _cedida(id):
+		return {"estado": "pausada", "espera": ESPERA_BLOQUEADA}  # el jugador la tiene o la pausó
 	var celda: Vector3i = mundo.edificio_a_celdas[id][0]
 	if tipo == "demoler":
 		return _demoler_un_paso(id, celda)
@@ -654,7 +788,7 @@ Obras="*res://scripts/Obras.gd"
 
 - [ ] **Step 5: Ejecutar `ObrasTest.tscn` y verificar que pasa**
 
-Run: comando de verificación con `ObrasTest`. Expected: verde y «Las 7 pruebas de Obras pasaron correctamente». Si `FinalizacionObras.completar_construccion` (valor de Callable) no es válido en el `var al_completar`, cambiar esas tres líneas a `Callable(FinalizacionObras, "completar_construccion")` (y análogas) y repetir.
+Run: comando de verificación con `ObrasTest`. Expected: verde y «Las 9 pruebas de Obras pasaron correctamente». Si `FinalizacionObras.completar_construccion` (valor de Callable) no es válido en el `var al_completar`, cambiar esas tres líneas a `Callable(FinalizacionObras, "completar_construccion")` (y análogas) y repetir.
 
 - [ ] **Step 6: Commit**
 
@@ -675,7 +809,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes (Tarea 2): `obras.siguiente_tarea(celda, id)`, `obras.huella_de(id)`, `obras.trabajar(id, tipo) -> {"estado","espera"}`, `obras.vetar(id, id_colono)`.
-- Produces: propiedad `Colonos.obras`; campo `c["tarea"]` (`{}` o `{"tipo", "id"}`).
+- Produces: propiedad `Colonos.obras`; campo `c["tarea"]` (`{}` o `{"tipo", "id"}`); `Colonos.obreros_en(id: int) -> int` (colonos cuya tarea es esa obra; lo usa la ventana del edificio).
 
 - [ ] **Step 1: Escribir la prueba que falla (TEST 46)**
 
@@ -722,6 +856,7 @@ Antes del `print("\n=== Las 45 pruebas ...` insertar (y cambiar ese texto a «La
 			break
 	assert(not obras46.trabajos.is_empty() and obras46.trabajos[0] == [5, "construir"], "el colono libre llegó a la obra y trabajó en ella")
 	assert(colonos46._junto_a(c46["celda"], obras46.huella), "y trabajó pegado a la obra")
+	assert(colonos46.obreros_en(5) == 1 and colonos46.obreros_en(6) == 0, "obreros_en cuenta a los que tienen esa obra como tarea")
 	var trabajos_antes46: int = obras46.trabajos.size()
 	obras46.resultado = {"estado": "completa", "espera": 0.0}
 	for _i in range(60):
@@ -827,6 +962,15 @@ por:
 (h) Justo antes de `_decidir_trabajo` (antes de su comentario de documentación) añadir:
 
 ```gdscript
+## Colonos que ahora mismo tienen como tarea la obra "id" (para la ventana del edificio).
+func obreros_en(id: int) -> int:
+	var total := 0
+	for c in colonos.values():
+		if not c["tarea"].is_empty() and c["tarea"]["id"] == id:
+			total += 1
+	return total
+
+
 ## Un colono libre (desempleado, o técnico sin puesto) ayuda en las obras: toma la tarea que le
 ## ofrece Obras (construir o demoler lo más cercano) y la sigue hasta que se acaba; sin obras
 ## deambula. Un colono con puesto ni pasa por aquí.
@@ -918,6 +1062,7 @@ Antes del `print("\n=== Las 92 pruebas ...` (cambiarlo a «Las 93 pruebas») añ
 	jugador_93._alternar_modo_deconstruccion()
 	jugador_93._procesar_deconstruccion(Vector3i(OX93, 1, OX93))
 	assert(obras_93.abandonadas.has(id_93), "una celda deconstruida a mano marca el edificio como abandonado")
+	assert(obras_93.esta_reclamada(id_93), "y lo reclama: los colonos se lo ceden mientras el jugador actúa")
 	assert(obras_93.siguiente_tarea(Vector3i(OX93, 1, OX93 + 3)).get("tipo", "") != "construir" or obras_93.siguiente_tarea(Vector3i(OX93, 1, OX93 + 3))["id"] != id_93, "los colonos no lo reconstruyen")
 	jugador_93._marcar_demolicion_de(id_93)
 	assert(obras_93.esta_marcado(id_93), "el clic derecho marca el edificio")
@@ -977,6 +1122,8 @@ func _marcar_demolicion_de(id: int) -> void:
 		hud.notificar("Marca de demolición quitada.")
 ```
 
+(e) Preferencia del jugador: en `_colocar`, justo dentro de `if not resultado.is_empty():` (tras `var resultado: Dictionary = mundo.surtir_construccion(celda)`), añadir como primera línea `Obras.reclamar(mundo.id_de_edificio(celda))`; y en `_procesar_deconstruccion`, junto a `Obras.abandonar(...)`, añadir `Obras.reclamar(resultado["id"])`.
+
 (d) La función `_avisar_modo_deconstruccion("colocar bloques")` deja de usarse para el clic derecho (sigue usándose para minar/talar): no borrarla.
 
 - [ ] **Step 4: Implementar en `CamaraCenital.gd`**
@@ -1033,7 +1180,341 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 5: Overlay rojo de las marcas y documentación
+### Task 5: Ventana del edificio (`PanelEdificio`) y botón «Demoler» en el panel del puesto
+
+**Files:**
+- Create: `godot/scripts/PanelEdificio.gd`
+- Modify: `godot/scripts/HUD.gd` (crear el panel y abrirlo/cerrarlo), `godot/scripts/CamaraCenital.gd` (`_procesar_clic_interaccion` y un helper compartido con `_procesar_clic_demoler`), `godot/scripts/PanelPuesto.gd` (botón «Demoler»)
+- Test: `godot/scripts/HUDTest.gd` (`probar_panel_edificio`)
+
+**Interfaces:**
+- Consumes (Tareas 2 y 3): `Obras.resumen_de(id)`, `alternar_pausa(id)`, `alternar_marca(id) -> String`, `esta_marcado(id)`, `id_en_columna(columna)`; `Colonos.obreros_en(id)`; `Ciudad.almacen` (cada recurso tiene `.cantidad`; `"madera"` suma `"tablas"`).
+- Produces: `PanelEdificio` (`PanelContainer`) con `abrir(id: int)`, `cerrar()`, señal `aviso(texto: String)` y propiedades inyectables `obras`, `colonos`, `ciudad` (por defecto los autoloads); `HUD.abrir_panel_edificio(id: int)`; `HUD.cerrar_panel_puesto()` pasa a cerrar también el panel del edificio; `PanelPuesto` gana la señal `aviso`.
+
+- [ ] **Step 1: Escribir la prueba que falla (HUDTest)**
+
+En `HUDTest.gd`, junto a las demás clases internas, añadir:
+
+```gdscript
+class ObrasPanelFalso extends RefCounted:
+	var resumen: Dictionary = {}
+	var marcados: Dictionary = {}
+	var pausas := 0
+	var rechazo := ""
+
+	func resumen_de(_id: int) -> Dictionary:
+		return resumen
+
+	func alternar_pausa(_id: int) -> void:
+		pausas += 1
+		resumen["pausada"] = not resumen["pausada"]
+
+	func alternar_marca(id: int) -> String:
+		if rechazo != "":
+			return rechazo
+		if marcados.has(id):
+			marcados.erase(id)
+			resumen["estado"] = "construccion"
+		else:
+			marcados[id] = true
+			resumen["estado"] = "demolicion"
+		return ""
+
+	func esta_marcado(id: int) -> bool:
+		return marcados.has(id)
+
+
+class ColonosPanelFalso extends RefCounted:
+	func obreros_en(_id: int) -> int:
+		return 3
+```
+
+Y una función llamada desde `ejecutar_pruebas()` junto a las demás `probar_*` (con su `print` de cabecera):
+
+```gdscript
+func probar_panel_edificio() -> void:
+	print("=== TEST: PanelEdificio muestra los datos del edificio y sus botones actúan sobre Obras ===")
+	var PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
+	var ciudad: Node = preload("res://scripts/Ciudad.gd").new()
+	ciudad.almacen["piedra"].cantidad = 4.0
+	var obras := ObrasPanelFalso.new()
+	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "construccion", "pausada": false, "salud": 0.25, "faltantes": {"piedra": 15}}
+	var panel: PanelContainer = PanelEdificioScript.new()
+	panel.obras = obras
+	panel.colonos = ColonosPanelFalso.new()
+	panel.ciudad = ciudad
+	add_child(panel)
+	var avisos: Array = []
+	panel.aviso.connect(func(texto: String) -> void: avisos.append(texto))
+	panel.abrir(7)
+	assert(panel.visible, "se abre")
+	assert(panel._titulo.text == "Casa" and panel._tipo.text.contains("Residencial"), "nombre y tipo")
+	assert(panel._estado.text.contains("En construcción") and not panel._estado.text.contains("pausada"), "estado")
+	assert(panel._salud.text == "Salud: 25 %", "salud: %s" % panel._salud.text)
+	assert(panel._obreros.visible and panel._obreros.text == "Obreros: 3", "obreros")
+	assert(panel._materiales.visible and panel._materiales.text.contains("15") and panel._materiales.text.contains("4"), "faltan 15 de piedra y hay 4: %s" % panel._materiales.text)
+	assert(panel._pausar.visible and panel._pausar.text == "Pausar construcción" and panel._demoler.text == "Demoler", "botones")
+	panel._pausar.pressed.emit()
+	assert(obras.pausas == 1 and panel._pausar.text == "Reanudar" and panel._estado.text.contains("pausada"), "pausar actúa sobre Obras y cambia la etiqueta")
+	panel._demoler.pressed.emit()
+	assert(obras.marcados.has(7) and panel._demoler.text == "Cancelar demolición" and panel._pausar.text == "Reanudar", "demoler marca el edificio")
+	obras.rechazo = "El núcleo urbano no se puede demoler."
+	panel._demoler.pressed.emit()
+	assert(avisos == ["El núcleo urbano no se puede demoler."], "un rechazo se avisa")
+	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "completo", "pausada": false, "salud": 1.0, "faltantes": {}}
+	panel._actualizar()
+	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible, "completo: 100 %, sin materiales, sin obreros y sin botón de pausa")
+	obras.resumen = {}
+	panel._process(0.0)
+	assert(not panel.visible, "se cierra solo si el edificio desaparece")
+	panel.queue_free()
+	ciudad.free()
+```
+
+- [ ] **Step 2: Ejecutar `HUDTest.tscn` y verificar que falla**
+
+Expected: `Parse Error` (no existe `PanelEdificio.gd`).
+
+- [ ] **Step 3: Crear `PanelEdificio.gd`**
+
+```gdscript
+extends PanelContainer
+
+## Ventana de un edificio u obra (clic izquierdo sobre él en la cenital, ver
+## CamaraCenital._procesar_clic_interaccion). Muestra nombre, tipo, estado, salud, obreros y
+## materiales que faltan, y tiene los botones «Pausar/Reanudar» y «Demoler/Cancelar demolición».
+## Las reglas viven en Obras/Colonos; esto solo las muestra y les pasa los clics.
+
+const HUDScript = preload("res://scripts/HUD.gd")
+const TemaHUD = preload("res://scripts/TemaHUD.gd")
+
+## Mensaje para el jugador (el HUD lo envía a las notificaciones).
+signal aviso(texto: String)
+
+const NOMBRES_ESTADO := {"construccion": "En construcción", "demolicion": "En demolición", "completo": "Completo"}
+
+var id := -1
+var obras: Object = null
+var colonos: Object = null
+var ciudad: Object = null
+
+var _titulo := TemaHUD.etiqueta()
+var _tipo := TemaHUD.etiqueta()
+var _estado := TemaHUD.etiqueta()
+var _salud := TemaHUD.etiqueta()
+var _obreros := TemaHUD.etiqueta()
+var _materiales := TemaHUD.etiqueta()
+var _pausar := Button.new()
+var _demoler := Button.new()
+
+
+func _ready() -> void:
+	if obras == null:
+		obras = Obras
+	if colonos == null:
+		colonos = Colonos
+	if ciudad == null:
+		ciudad = Ciudad
+	visible = false
+	TemaHUD.aplicar_panel(self)
+	mouse_filter = Control.MOUSE_FILTER_STOP  # los botones necesitan capturar el clic
+	# Abajo a la derecha, como el panel del puesto: arriba las notificaciones ocupan ese lugar.
+	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	offset_left = -280.0
+	offset_bottom = -12.0
+	offset_right = -12.0
+	custom_minimum_size.x = 268.0
+	grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var caja := VBoxContainer.new()
+	add_child(caja)
+	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	caja.add_child(_titulo)
+	for etiqueta in [_tipo, _estado, _salud, _obreros, _materiales]:
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		etiqueta.custom_minimum_size.x = 250.0
+		caja.add_child(etiqueta)
+	for boton in [_pausar, _demoler]:
+		TemaHUD.estilizar_boton(boton)
+		caja.add_child(boton)
+	_pausar.pressed.connect(func() -> void:
+		obras.alternar_pausa(id)
+		_actualizar())
+	_demoler.pressed.connect(_on_demoler)
+
+
+func abrir(nuevo_id: int) -> void:
+	if obras.resumen_de(nuevo_id).is_empty():
+		return
+	id = nuevo_id
+	visible = true
+	_actualizar()
+
+
+func cerrar() -> void:
+	visible = false
+	id = -1
+
+
+func _process(_delta: float) -> void:
+	if not visible:
+		return
+	if obras.resumen_de(id).is_empty():
+		cerrar()  # el edificio desapareció con la ventana abierta
+		return
+	_actualizar()
+
+
+func _on_demoler() -> void:
+	var motivo: String = obras.alternar_marca(id)
+	if motivo != "":
+		aviso.emit(motivo)
+	_actualizar()
+
+
+func _actualizar() -> void:
+	var r: Dictionary = obras.resumen_de(id)
+	if r.is_empty():
+		return
+	var estado: String = r["estado"]
+	_titulo.text = r["nombre"]
+	_tipo.text = "Tipo: %s" % r["tipo"]
+	_estado.text = "Estado: " + NOMBRES_ESTADO[estado] + (" (pausada)" if r["pausada"] and estado != "completo" else "")
+	_salud.text = "Salud: %d %%" % roundi(r["salud"] * 100.0)
+	var en_obra: bool = estado != "completo"
+	_obreros.visible = en_obra
+	_obreros.text = "Obreros: %d" % colonos.obreros_en(id)
+	var faltan: bool = estado == "construccion" and not r["faltantes"].is_empty()
+	_materiales.visible = faltan
+	if faltan:
+		var partes: Array = []
+		for recurso in r["faltantes"]:
+			partes.append("%d %s (hay %d)" % [r["faltantes"][recurso], HUDScript.NOMBRES_RECURSO.get(recurso, recurso), int(_en_almacen(recurso))])
+		_materiales.text = "Faltan: " + ", ".join(partes)
+	_pausar.visible = en_obra
+	_pausar.text = "Reanudar" if r["pausada"] else ("Pausar demolición" if estado == "demolicion" else "Pausar construcción")
+	_demoler.text = "Cancelar demolición" if estado == "demolicion" else "Demoler"
+
+
+func _en_almacen(recurso: String) -> float:
+	var almacen: Dictionary = ciudad.almacen
+	if recurso == "madera":
+		return almacen["tablas"].cantidad + almacen["madera"].cantidad
+	return almacen[recurso].cantidad if almacen.has(recurso) else 0.0
+```
+
+- [ ] **Step 4: Cablear en `HUD.gd`**
+
+(a) Junto a `const PanelPuestoScript = ...` (l.24) añadir `const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")`; junto a `var _panel_puesto: PanelContainer` (l.59) añadir `var _panel_edificio: PanelContainer`.
+
+(b) Tras las líneas que crean `_panel_puesto` (`_panel_puesto = PanelPuestoScript.new()` / `add_child(_panel_puesto)`, ~l.99-100) añadir:
+
+```gdscript
+	_panel_puesto.aviso.connect(notificar)
+	_panel_edificio = PanelEdificioScript.new()
+	add_child(_panel_edificio)
+	_panel_edificio.aviso.connect(notificar)
+```
+
+(c) Reemplazar `abrir_panel_puesto` y `cerrar_panel_puesto` por:
+
+```gdscript
+func abrir_panel_puesto(esquina: Vector2i) -> void:
+	_panel_edificio.cerrar()
+	_panel_puesto.abrir(esquina)
+
+
+func cerrar_panel_puesto() -> void:
+	_panel_puesto.cerrar()
+	_panel_edificio.cerrar()
+
+
+## Ventana de un edificio u obra (ver PanelEdificio).
+func abrir_panel_edificio(id: int) -> void:
+	_panel_puesto.cerrar()
+	_panel_edificio.abrir(id)
+```
+
+- [ ] **Step 5: Añadir «Demoler» a `PanelPuesto.gd`**
+
+(a) Tras las `const`, añadir `signal aviso(texto: String)`; junto a las demás variables, `var _demoler := Button.new()`.
+
+(b) En `_ready()`, tras el bucle que añade `_trabajadores, _libres, ...` a `caja`, añadir:
+
+```gdscript
+	TemaHUD.estilizar_boton(_demoler)
+	_demoler.pressed.connect(_on_demoler)
+	caja.add_child(_demoler)
+```
+
+(c) Añadir:
+
+```gdscript
+## Marca (o desmarca) el edificio del puesto para demolición, sin activar la herramienta.
+func _on_demoler() -> void:
+	var id: int = Obras.id_en_columna(esquina)
+	if id == -1:
+		aviso.emit("No se encontró el edificio del puesto.")
+		return
+	var motivo: String = Obras.alternar_marca(id)
+	if motivo != "":
+		aviso.emit(motivo)
+```
+
+(d) Al final de `_actualizar()` añadir:
+
+```gdscript
+	_demoler.text = "Cancelar demolición" if Obras.esta_marcado(Obras.id_en_columna(esquina)) else "Demoler"
+```
+
+- [ ] **Step 6: Clic en la cenital**
+
+En `CamaraCenital.gd` añadir el helper y usarlo en dos sitios:
+
+```gdscript
+## Id del edificio en "celda" o, si no hay, en la de debajo (la celda de superficie puede ser el techo
+## o el suelo contiguo); -1 si no hay ninguno.
+func _edificio_bajo_celda(celda: Vector3i) -> int:
+	var id: int = mundo.id_de_edificio(celda)
+	if id == -1:
+		id = mundo.id_de_edificio(celda + Vector3i(0, -1, 0))
+	return id
+```
+
+`_procesar_clic_demoler` (Tarea 4): reemplazar sus cuatro primeras líneas (`var celda ...` hasta el `if id == -1:` de la celda de debajo) por `var id := _edificio_bajo_celda(_celda_bajo_mouse(posicion_pantalla))`, conservando el resto.
+
+`_procesar_clic_interaccion`: reemplazar su cuerpo por:
+
+```gdscript
+func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
+	var celda := _celda_bajo_mouse(posicion_pantalla)
+	var esquina_puesto := Recoleccion.esquina_de_puesto_en(celda)
+	if esquina_puesto != Recoleccion.SIN_PUESTO:
+		hud.abrir_panel_puesto(esquina_puesto)
+		return
+	var id := _edificio_bajo_celda(celda)
+	if id != -1:
+		hud.abrir_panel_edificio(id)
+	else:
+		hud.cerrar_panel_puesto()
+```
+
+- [ ] **Step 7: Ejecutar pruebas**
+
+Run: `HUDTest`, `CamaraCenitalModosTest`, `PuestosPrevisualizacionTest`, `ObrasTest`, `ColonosTest`, `Test`. Expected: verde en todas. Si `HUDTest` no llama a `probar_panel_edificio`, añadir la llamada en `ejecutar_pruebas()`.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add godot/scripts/PanelEdificio.gd godot/scripts/HUD.gd godot/scripts/PanelPuesto.gd godot/scripts/CamaraCenital.gd godot/scripts/HUDTest.gd
+git commit -m "feat: ventana del edificio con pausa y demolición, y botón Demoler en el panel del puesto
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+```
+
+---
+
+### Task 6: Overlay rojo de las marcas y documentación
 
 **Files:**
 - Create: `godot/scripts/MarcasDemolicionOverlay.gd`
@@ -1151,14 +1632,14 @@ func celdas_de(id: int) -> Array:
 	return mundo.edificio_a_celdas[id]
 ```
 
-Y en `ObrasTest.gd`, antes del `print` final (y cambiar el contador a «Las 8 pruebas»):
+Y en `ObrasTest.gd`, antes del `print` final (y cambiar el contador a «Las 10 pruebas»):
 
 ```gdscript
-	print("\n=== TEST 8: celdas_de devuelve las celdas del edificio ===")
-	var mundo8 := MundoObraFalso.new()
-	mundo8.agregar(1, Vector3i(5, 0, 5), 2, 0)
-	var obras8: Node = _nuevas(mundo8)
-	assert(obras8.celdas_de(1) == [Vector3i(5, 0, 5), Vector3i(6, 0, 5)] and obras8.celdas_de(9).is_empty())
+	print("\n=== TEST 10: celdas_de devuelve las celdas del edificio ===")
+	var mundo10 := MundoObraFalso.new()
+	mundo10.agregar(1, Vector3i(5, 0, 5), 2, 0)
+	var obras10: Node = _nuevas(mundo10)
+	assert(obras10.celdas_de(1) == [Vector3i(5, 0, 5), Vector3i(6, 0, 5)] and obras10.celdas_de(9).is_empty())
 ```
 
 - [ ] **Step 5: Crear el overlay desde código en `Main.gd`**

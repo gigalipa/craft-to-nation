@@ -15,7 +15,7 @@ const INTERVALO_PASO := 0.20
 ## residencial, un puesto nuevo ("puesto_nuevo") o un puesto que se volvió a
 ## completar tras deconstruirse ("puesto"; solo reactiva su Economia). Devuelve
 ## el mensaje para notificar ("" si no hay).
-static func completar_construccion(mundo: Node, metadata: Dictionary) -> String:
+static func completar_construccion(mundo: Object, metadata: Dictionary) -> String:
 	if metadata.is_empty():
 		return ""
 	if metadata.has("puesto_nuevo"):
@@ -70,7 +70,7 @@ static func completar_construccion(mundo: Node, metadata: Dictionary) -> String:
 ## Efectos de revertir una celda de un edificio ("resultado" es lo que devuelve
 ## VoxelWorld.procesar_deconstruccion()): retirar sus camas de Ciudad (idempotente)
 ## y dejar de producir si es un puesto (idempotente).
-static func al_deconstruir(mundo: Node, resultado: Dictionary) -> void:
+static func al_deconstruir(mundo: Object, resultado: Dictionary) -> void:
 	Ciudad.retirar_edificio_residencial(resultado["id"])
 	var metadata_obra: Dictionary = mundo.edificio_metadata.get(resultado["id"], {})
 	if metadata_obra.has("puesto"):
@@ -81,7 +81,7 @@ static func al_deconstruir(mundo: Node, resultado: Dictionary) -> void:
 
 ## Elimina por completo un edificio ya reducido a fantasma vacío y limpia lo que
 ## dependía de él.
-static func retirar_edificio(mundo: Node, id: int) -> void:
+static func retirar_edificio(mundo: Object, id: int) -> void:
 	var metadata_final: Dictionary = mundo.edificio_metadata.get(id, {})  # eliminar_edificio() la borra
 	var esquina: Vector2i = mundo.eliminar_edificio(id)
 	if metadata_final.has("puesto"):
@@ -97,7 +97,7 @@ static func retirar_edificio(mundo: Node, id: int) -> void:
 ## VoxelWorld.proximo_paso_pendiente()), y INTERVALO_PASO en el resto (colocar,
 ## relleno, estructura) — nivelar un sitio no debe vaciar una veta más rápido que
 ## minarla uno mismo (decisión del usuario, 2026-09-29).
-static func intervalo_del_paso(mundo: Node, celda: Vector3i) -> float:
+static func intervalo_del_paso(mundo: Object, celda: Vector3i) -> float:
 	var paso: Dictionary = mundo.proximo_paso_pendiente(celda)
 	if paso.is_empty() or (paso["tipo"] != "aire" and paso["tipo"] != "fantasma"):
 		return INTERVALO_PASO

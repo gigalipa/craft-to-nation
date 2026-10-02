@@ -36,6 +36,7 @@ var marcados: Dictionary = {}  # id -> true
 var abandonadas: Dictionary = {}  # id -> true
 var pausadas: Dictionary = {}  # id -> recurso que falta
 var pausadas_por_jugador: Dictionary = {}  # id -> true (pausa pedida desde la ventana del edificio)
+var _necesidades: Dictionary = {}  # id -> cantidad del recurso que pide el paso que quedó pausado
 var _vetos: Dictionary = {}  # "id:colono" -> ms hasta los que dura
 var _reclamos: Dictionary = {}  # id -> ms hasta los que el jugador lo tiene reclamado
 
@@ -52,23 +53,29 @@ func esta_marcado(id: int) -> bool:
 
 
 ## Marca o desmarca un edificio para demolición. Devuelve "" si lo hizo, o el
-## motivo del rechazo. Desmarcar uno ya a medio demoler lo deja abandonado.
+## motivo del rechazo. Desmarcar uno que los colonos ya empezaron a demoler lo deja
+## abandonado (ver _demoler_un_paso()); uno que nadie tocó sigue siendo una obra normal.
 func alternar_marca(id: int) -> String:
 	if marcados.has(id):
 		marcados.erase(id)
-		if mundo != null and mundo.edificio_orden.has(id) and mundo.edificio_progreso[id] < mundo.edificio_orden[id].size():
-			abandonadas[id] = true
 		marca_cambiada.emit(id, false)
 		return ""
 	if mundo == null or not mundo.edificio_orden.has(id):
 		return "Eso no es un edificio."
-	for celda: Vector3i in mundo.edificio_a_celdas[id]:
-		if zona.celda_es_del_nucleo(Vector2i(celda.x, celda.z)):
-			return "El núcleo urbano no se puede demoler."
+	if _es_del_nucleo(id):
+		return "El núcleo urbano no se puede demoler."
 	marcados[id] = true
 	abandonadas.erase(id)
 	marca_cambiada.emit(id, true)
 	return ""
+
+
+## true si alguna celda del edificio es del núcleo urbano (que no se demuele).
+func _es_del_nucleo(id: int) -> bool:
+	for celda: Vector3i in mundo.edificio_a_celdas[id]:
+		if zona.celda_es_del_nucleo(Vector2i(celda.x, celda.z)):
+			return true
+	return false
 
 
 ## El jugador deconstruyó parte de este edificio a mano: los colonos no lo reconstruyen.
@@ -81,6 +88,7 @@ func olvidar(id: int) -> void:
 	var estaba_marcado := marcados.erase(id)
 	abandonadas.erase(id)
 	pausadas.erase(id)
+	_necesidades.erase(id)
 	pausadas_por_jugador.erase(id)
 	_reclamos.erase(id)
 	if estaba_marcado:
@@ -107,8 +115,9 @@ func esta_reclamada(id: int) -> bool:
 ## Pausa o reanuda la obra (de construcción o de demolición) a petición del jugador. No impide que
 ## el jugador la siga a mano.
 func alternar_pausa(id: int) -> void:
-	if pausadas_por_jugador.has(id):
+	if pausadas_por_jugador.has(id) or abandonadas.has(id):
 		pausadas_por_jugador.erase(id)
+		abandonadas.erase(id)  # «Reanudar» también devuelve a los colonos una obra abandonada
 	else:
 		pausadas_por_jugador[id] = true
 
@@ -123,17 +132,20 @@ func _cedida(id: int) -> bool:
 
 
 ## Una obra sin material se pausa; el aviso sale solo la primera vez que falta ese recurso.
-func pausar(id: int, recurso: String) -> void:
+func pausar(id: int, recurso: String, necesita: float = 0.0) -> void:
 	if pausadas.get(id, "") != recurso:
 		aviso.emit("Obra detenida: falta %s." % recurso)
 	pausadas[id] = recurso
+	_necesidades[id] = necesita
 
 
-func _hay_recurso(recurso: String) -> bool:
+## Hay al menos "necesita" (y algo, si es 0) de ese recurso: lo que pide el paso que quedó pausado.
+func _hay_recurso(recurso: String, necesita: float = 0.0) -> bool:
 	var almacen: Dictionary = ciudad.almacen
+	var minimo: float = maxf(necesita, 0.0001)
 	if recurso == "madera":
-		return almacen["tablas"].cantidad + almacen["madera"].cantidad > 0.0
-	return almacen.has(recurso) and almacen[recurso].cantidad > 0.0
+		return almacen["tablas"].cantidad + almacen["madera"].cantidad >= minimo
+	return almacen.has(recurso) and almacen[recurso].cantidad >= minimo
 
 
 func _candidatas(tipo: String) -> Array[int]:
@@ -142,7 +154,7 @@ func _candidatas(tipo: String) -> Array[int]:
 		return ids
 	if tipo == "demoler":
 		for id: int in marcados:
-			if mundo.edificio_orden.has(id) and not _cedida(id):
+			if mundo.edificio_orden.has(id) and not _cedida(id) and not _es_del_nucleo(id):
 				ids.append(id)
 		return ids
 	for id: int in mundo.edificio_orden:
@@ -150,7 +162,7 @@ func _candidatas(tipo: String) -> Array[int]:
 			continue
 		if mundo.edificio_progreso[id] >= mundo.edificio_orden[id].size():
 			continue
-		if pausadas.has(id) and not _hay_recurso(pausadas[id]):
+		if pausadas.has(id) and not _hay_recurso(pausadas[id], _necesidades.get(id, 0.0)):
 			continue
 		ids.append(id)
 	return ids
@@ -228,7 +240,7 @@ func resumen_de(id: int) -> Dictionary:
 		nombre = str(meta["blueprint"].get("nombre", nombre))
 		tipo = str(meta["blueprint"].get("categoria", tipo)).capitalize()
 	return {
-		"nombre": nombre, "tipo": tipo, "estado": estado, "pausada": pausadas_por_jugador.has(id),
+		"nombre": nombre, "tipo": tipo, "estado": estado, "pausada": estado != "completo" and (pausadas_por_jugador.has(id) or abandonadas.has(id)),
 		"salud": float(progreso) / maxf(float(orden.size()), 1.0), "faltantes": faltantes,
 	}
 
@@ -249,6 +261,15 @@ func trabajar(id: int, tipo: String) -> Dictionary:
 	if mundo == null or not mundo.edificio_orden.has(id):
 		olvidar(id)
 		return {"estado": "invalida", "espera": 0.0}
+	# La tarea debe seguir vigente: si cambió la marca, el edificio quedó abandonado o pasó a ser el núcleo, se suelta.
+	if tipo == "demoler":
+		if not marcados.has(id):
+			return {"estado": "invalida", "espera": 0.0}
+		if _es_del_nucleo(id):
+			olvidar(id)
+			return {"estado": "invalida", "espera": 0.0}
+	elif marcados.has(id) or abandonadas.has(id):
+		return {"estado": "invalida", "espera": 0.0}
 	if _cedida(id):
 		return {"estado": "pausada", "espera": ESPERA_BLOQUEADA}  # el jugador la tiene o la pausó
 	var celda: Vector3i = mundo.edificio_a_celdas[id][0]
@@ -264,7 +285,7 @@ func _construir_un_paso(id: int, celda: Vector3i) -> Dictionary:
 	if r.get("bloqueada", false):
 		return {"estado": "bloqueada", "espera": ESPERA_BLOQUEADA}
 	if r.get("insuficiente", false):
-		pausar(id, r["recurso"])
+		pausar(id, r["recurso"], float(NiveladorTerrenoScript.COSTO_POR_CELDA.get(r["tipo"], {}).get(r["recurso"], 0)))
 		return {"estado": "pausada", "espera": 0.0}
 	pausadas.erase(id)
 	if r.get("completa", false):
@@ -281,6 +302,7 @@ func _demoler_un_paso(id: int, celda: Vector3i) -> Dictionary:
 		olvidar(id)
 		return {"estado": "invalida", "espera": 0.0}
 	al_deconstruir.call(mundo, r)
+	abandonar(id)  # si se desmarca ahora, queda a medias y los colonos no la reconstruyen
 	if r["lista_para_remocion"]:
 		al_retirar.call(mundo, id)
 		olvidar(id)

@@ -2607,7 +2607,35 @@ func ejecutar_pruebas() -> void:
 	hud_falso_93.free()
 	print("OK: la 1ª persona abandona al deconstruir y marca con el clic derecho.")
 
-	print("\n=== Las 93 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 94: con el mundo real, los colonos demuelen un edificio marcado hasta retirarlo; retirarlo a mano también limpia su marca ===")
+	const OX94 := 1400
+	mundo.colocar_bloque(Vector3i(OX94, 0, OX94), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX94, 1, OX94), "bloque_piedra", true)
+	var id_94: int = mundo.registrar_edificio_completo({Vector3i(OX94, 0, OX94): "tierra", Vector3i(OX94, 1, OX94): "bloque_piedra"})
+	Obras.mundo = mundo
+	assert(Obras.alternar_marca(id_94) == "", "se marca")
+	var estado_94 := ""
+	for _i in range(10):
+		estado_94 = Obras.trabajar(id_94, "demoler")["estado"]
+		if estado_94 == "completa":
+			break
+	assert(estado_94 == "completa", "los colonos terminan de demoler el edificio: %s" % estado_94)
+	assert(not mundo.edificio_a_celdas.has(id_94) and not Obras.esta_marcado(id_94), "el edificio ya no existe y no queda marcado")
+	assert(Obras.trabajar(id_94, "demoler")["estado"] == "invalida", "una obra que ya no existe es inválida, sin error")
+	mundo.colocar_bloque(Vector3i(OX94 + 5, 0, OX94), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX94 + 5, 1, OX94), "bloque_piedra", true)
+	var id_94b: int = mundo.registrar_edificio_completo({Vector3i(OX94 + 5, 0, OX94): "tierra", Vector3i(OX94 + 5, 1, OX94): "bloque_piedra"})
+	Obras.alternar_marca(id_94b)
+	for _i in range(5):
+		var r94: Dictionary = mundo.procesar_deconstruccion(Vector3i(OX94 + 5, 1, OX94))
+		if r94["lista_para_remocion"]:
+			break
+	FinalizacionObras.retirar_edificio(mundo, id_94b)  # lo que hace el jugador al terminar de deconstruir a mano
+	assert(not Obras.esta_marcado(id_94b), "retirar un edificio a mano limpia su marca (si no, el tinte rojo quedaría flotando)")
+	Obras.mundo = null
+	print("OK: la demolición por colonos retira el edificio y no deja rastro en Obras.")
+
+	print("\n=== Las 94 pruebas de BlueprintValidator pasaron correctamente ===")
 
 
 ## Sustituto mínimo del HUD para las pruebas de Player: solo cuenta avisos.

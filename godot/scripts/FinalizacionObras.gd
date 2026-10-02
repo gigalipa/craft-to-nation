@@ -89,6 +89,7 @@ static func retirar_edificio(mundo: Object, id: int) -> void:
 	Zonificacion.retirar_contribucion(id)
 	Recoleccion.quitar_puesto(esquina)
 	Economia.quitar_puesto(esquina)  # libera a sus trabajadores (no-op si era un edificio)
+	Obras.olvidar(id)  # sin marca ni estado de obra: el edificio ya no existe
 	print("Edificio deconstruido por completo.")
 
 

@@ -53,8 +53,10 @@ class MundoObraFalso extends RefCounted:
 
 ## Zona falsa: solo la celda (0, 0) es del núcleo urbano.
 class ZonaFalsa extends RefCounted:
+	var nucleo := Vector2i(0, 0)
+
 	func celda_es_del_nucleo(celda: Vector2i) -> bool:
-		return celda == Vector2i(0, 0)
+		return celda == nucleo
 
 
 func _ready() -> void:
@@ -100,10 +102,12 @@ func ejecutar_pruebas() -> void:
 	assert(not obras2.esta_marcado(2) and cambios2.is_empty(), "y no queda marcado")
 	assert(obras2.alternar_marca(99) != "", "un id que no es un edificio se rechaza")
 	assert(obras2.alternar_marca(1) == "" and obras2.esta_marcado(1), "marcar")
-	mundo2.edificio_progreso[1] = 2  # los colonos ya demolieron la mitad
+	mundo2.resultados_deconstruir = [{"id": 1, "completa_reversion": false, "lista_para_remocion": false, "total_camas": 0}]
+	obras2.trabajar(1, "demoler")  # los colonos demuelen una celda
+	mundo2.edificio_progreso[1] = 2  # y ya llevan la mitad
 	assert(obras2.alternar_marca(1) == "" and not obras2.esta_marcado(1), "desmarcar")
 	assert(cambios2 == [[1, true], [1, false]], "cada cambio emite la señal: %s" % str(cambios2))
-	assert(obras2.siguiente_tarea(Vector3i(6, 1, 6)).is_empty(), "un edificio desmarcado a medias queda abandonado: los colonos no lo reconstruyen")
+	assert(obras2.siguiente_tarea(Vector3i(6, 1, 6)).is_empty(), "un edificio desmarcado tras empezar a demolerse queda abandonado: los colonos no lo reconstruyen")
 	obras2.abandonar(1)
 	mundo2.edificio_progreso[1] = 4
 	assert(obras2.siguiente_tarea(Vector3i(6, 1, 6)).is_empty(), "completo no tiene trabajo")
@@ -228,4 +232,62 @@ func ejecutar_pruebas() -> void:
 	var obras10: Node = _nuevas(mundo10)
 	assert(obras10.celdas_de(1) == [Vector3i(5, 0, 5), Vector3i(6, 0, 5)] and obras10.celdas_de(9).is_empty())
 
-	print("\n=== Las 10 pruebas de Obras pasaron correctamente ===")
+	print("\n=== TEST 11: lo que cambia durante el trabajo (cancelar, marcar, núcleo, recurso insuficiente, desmarcar sin demoler) ===")
+	# Cancelar una demolición en curso detiene a quien ya está demoliendo.
+	var mundo11 := MundoObraFalso.new()
+	mundo11.agregar(1, Vector3i(5, 0, 5), 4, 4)
+	var obras11: Node = _nuevas(mundo11)
+	obras11.alternar_marca(1)
+	mundo11.resultados_deconstruir = [
+		{"id": 1, "completa_reversion": false, "lista_para_remocion": false, "total_camas": 0},
+		{"id": 1, "completa_reversion": false, "lista_para_remocion": false, "total_camas": 0},
+	]
+	assert(obras11.trabajar(1, "demoler")["estado"] == "avanzo", "empieza a demoler")
+	obras11.alternar_marca(1)  # el jugador cancela
+	assert(obras11.trabajar(1, "demoler")["estado"] == "invalida", "tras cancelar, quien demolía suelta la tarea")
+	assert(mundo11.resultados_deconstruir.size() == 1, "y no se revierte ni una celda más")
+	# Marcar una obra en construcción saca a los constructores.
+	var mundo11b := MundoObraFalso.new()
+	mundo11b.agregar(1, Vector3i(5, 0, 5), 4, 1)
+	var obras11b: Node = _nuevas(mundo11b)
+	mundo11b.resultados_surtir = [{"completa": false, "metadata": {}}]
+	obras11b.alternar_marca(1)
+	assert(obras11b.trabajar(1, "construir")["estado"] == "invalida", "una obra marcada ya no se construye")
+	assert(mundo11b.resultados_surtir.size() == 1, "y no se surte ninguna celda")
+	# Si lo marcado pasa a ser el núcleo urbano, los demoledores lo dejan.
+	var mundo11c := MundoObraFalso.new()
+	mundo11c.agregar(1, Vector3i(5, 0, 5), 4, 4)
+	var obras11c: Node = _nuevas(mundo11c)
+	obras11c.alternar_marca(1)
+	obras11c.zona.nucleo = Vector2i(6, 5)  # se declara núcleo después de marcarlo
+	mundo11c.resultados_deconstruir = [{"id": 1, "completa_reversion": false, "lista_para_remocion": false, "total_camas": 0}]
+	assert(obras11c.trabajar(1, "demoler")["estado"] == "invalida", "el núcleo no se demuele aunque estuviera marcado")
+	assert(not obras11c.esta_marcado(1) and mundo11c.resultados_deconstruir.size() == 1, "y deja de estar marcado sin tocarlo")
+	assert(obras11c.siguiente_tarea(Vector3i(5, 1, 5)).is_empty(), "ni se ofrece")
+	# Con recurso insuficiente para el paso, la obra sigue pausada aunque haya algo.
+	var mundo11d := MundoObraFalso.new()
+	mundo11d.agregar(1, Vector3i(5, 0, 5), 4, 0)
+	var ciudad11d: Node = CiudadScript.new()
+	ciudad11d.almacen["piedra"].cantidad = 0.0
+	var obras11d: Node = _nuevas(mundo11d, ciudad11d)
+	mundo11d.resultados_surtir = [{"insuficiente": true, "recurso": "piedra", "tipo": "bloque_piedra"}]
+	obras11d.trabajar(1, "construir")
+	ciudad11d.almacen["piedra"].cantidad = 3.0  # un bloque de piedra cuesta 5
+	assert(obras11d.siguiente_tarea(Vector3i(5, 1, 5)).is_empty(), "con 3 de piedra no alcanza para un paso de 5: sigue pausada")
+	ciudad11d.almacen["piedra"].cantidad = 5.0
+	assert(obras11d.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 1, "con 5 sí se ofrece")
+	# Marcar y desmarcar sin que nadie demoliera no abandona la obra.
+	var mundo11e := MundoObraFalso.new()
+	mundo11e.agregar(1, Vector3i(5, 0, 5), 20, 3)
+	var obras11e: Node = _nuevas(mundo11e)
+	obras11e.alternar_marca(1)
+	obras11e.alternar_marca(1)
+	assert(obras11e.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 1, "una obra marcada por error y desmarcada se sigue construyendo")
+	# Una obra abandonada se puede devolver a los colonos con «Reanudar».
+	obras11e.abandonar(1)
+	assert(obras11e.resumen_de(1)["pausada"], "abandonada se muestra como pausada")
+	assert(obras11e.siguiente_tarea(Vector3i(5, 1, 5)).is_empty(), "y no se ofrece")
+	obras11e.alternar_pausa(1)
+	assert(not obras11e.resumen_de(1)["pausada"] and obras11e.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 1, "Reanudar la devuelve a los colonos")
+
+	print("\n=== Las 11 pruebas de Obras pasaron correctamente ===")

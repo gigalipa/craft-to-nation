@@ -35,6 +35,7 @@ const ESPERA_TRABAJO := 1.0  # segundos que espera un recolector/acarreador ante
 ## inalcanzable agota el tope de nodos (~0,5 s de golpe) y, con varios colonos
 ## reintentando, congelaba el juego.
 const NODOS_POR_FRAME := 300
+const FALLOS_PARA_VETAR := 3  # búsquedas fallidas seguidas hacia una obra antes de dejarla (a ese colono) un rato
 const RADIO_SERVICIO := 2  # celdas (Chebyshev) alrededor de la celda de servicio de un puesto con puerta
 
 ## El mundo (VoxelWorld en el juego). Asignarlo crea el buscador de rutas.
@@ -63,8 +64,11 @@ var economia: Object = null:  # Economia
 			valor.trabajadores_liberados.connect(_on_trabajadores_liberados)
 			valor.cohorte_graduada.connect(_on_cohorte_graduada)
 
+## Coordinador de obras (Obras en el juego): reparte la construcción y demolición a los colonos libres.
+var obras: Object = null
+
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
-## "moviendo", "espera", "bloqueo", "trabajo", "carga", "fase", "fallos_servicio"}. "fase" del acarreador:
+## "moviendo", "espera", "bloqueo", "trabajo", "tarea", "carga", "fase", "fallos_servicio"}. "fase" del acarreador:
 ## "" (decide), "recoger"/"entregar" (puesto de recolección) o, en una refinería, "cargar", "entrada",
 ## "salida" y "entregar". "celda" es la celda donde está parado;
 ## "posicion" (Vector3, los pies) es lo que dibuja el renderer.
@@ -90,6 +94,8 @@ func _ready() -> void:
 		zona = Zonificacion
 	if economia == null:
 		economia = Economia
+	if obras == null:
+		obras = Obras
 	ciudad.tick_simulado.connect(reconciliar)
 
 
@@ -108,7 +114,7 @@ func agregar_colono(tipo: String, celda: Vector3i, hogar: int = -1) -> int:
 		"ruta": ruta, "progreso": 0.0, "moviendo": false,
 		"espera": 0.0, "bloqueo": 0.0,
 		"evacuando": -1, "ruta_de_evacuacion": false,
-		"trabajo": {}, "carga": {}, "fase": "", "fallos_servicio": 0,
+		"trabajo": {}, "tarea": {}, "carga": {}, "fase": "", "fallos_servicio": 0,
 	}
 	ocupadas[celda] = id
 	colono_creado.emit(id)
@@ -237,7 +243,7 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		return
 	if c["ruta"].is_empty():
 		if c["trabajo"].is_empty():
-			_elegir_destino(c)
+			_decidir_ocioso(c)
 		else:
 			_decidir_trabajo(c)
 		return
@@ -280,7 +286,7 @@ func _completar_paso(c: Dictionary, delta: float) -> void:
 	c["moviendo"] = false
 	c["progreso"] = 0.0
 	c["busqueda"] = {}
-	if c["ruta"].is_empty() and c["trabajo"].is_empty():
+	if c["ruta"].is_empty() and c["trabajo"].is_empty() and c["tarea"].is_empty():
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
 
 
@@ -666,12 +672,64 @@ func _quedar_sin_puesto(c: Dictionary) -> void:
 ## Abandona la ruta en curso (si no está a medio paso) para que el colono
 ## decida de nuevo con su oficio nuevo o sin él.
 func _dejar_lo_que_hacia(c: Dictionary) -> void:
+	c["tarea"] = {}
 	c["busqueda"] = {}
 	if c["moviendo"] or c["evacuando"] != -1:
 		return  # termina el paso o la evacuación y decide después
 	var vacia: Array[Vector3i] = []
 	c["ruta"] = vacia
 	c["espera"] = 0.0
+
+
+## Colonos que ahora mismo tienen como tarea la obra "id" (para la ventana del edificio).
+func obreros_en(id: int) -> int:
+	var total := 0
+	for c in colonos.values():
+		if not c["tarea"].is_empty() and c["tarea"]["id"] == id:
+			total += 1
+	return total
+
+
+## Un colono libre (desempleado, o técnico sin puesto) ayuda en las obras: toma la tarea que le
+## ofrece Obras (construir o demoler lo más cercano) y la sigue hasta que se acaba; sin obras
+## deambula. Un colono con puesto ni pasa por aquí.
+func _decidir_ocioso(c: Dictionary) -> void:
+	if obras != null and (c["tipo"] == "desempleado" or c["tipo"] == "tecnico"):
+		if c["tarea"].is_empty():
+			c["tarea"] = obras.siguiente_tarea(c["celda"], c["id"])
+		if not c["tarea"].is_empty():
+			_trabajar_en_obra(c)
+			return
+	_elegir_destino(c)
+
+
+## Va junto a la obra de su tarea y, ya allí, hace un paso (el tiempo que dure el paso es la
+## espera). Suelta la tarea si la obra se acabó, no existe o no se puede alcanzar.
+func _trabajar_en_obra(c: Dictionary) -> void:
+	var tarea: Dictionary = c["tarea"]
+	var huella: Array = obras.huella_de(tarea["id"])
+	if huella.is_empty():
+		c["tarea"] = {}  # la obra ya no existe
+		return
+	if not _junto_a(c["celda"], huella):
+		if c["fallos_servicio"] >= FALLOS_PARA_VETAR:
+			obras.vetar(tarea["id"], c["id"])
+			c["tarea"] = {}
+			c["fallos_servicio"] = 0
+			return
+		_ir_junto_a(c, huella)
+		return
+	var resultado: Dictionary = obras.trabajar(tarea["id"], tarea["tipo"])
+	c["espera"] = resultado["espera"]
+	match resultado["estado"]:
+		"avanzo":
+			pass
+		"bloqueada":
+			pass  # alguien está saliendo de la obra: espera y reintenta
+		_:
+			c["tarea"] = {}  # pausada, completa, terminada o inválida: pide otra tarea
+			if resultado["estado"] == "pausada":
+				c["espera"] = ESPERA_TRABAJO
 
 
 ## Lo que hace un trabajador cuando está quieto, sin ruta ni espera: un

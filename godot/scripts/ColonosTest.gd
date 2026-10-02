@@ -85,6 +85,28 @@ class BuscadorEspia extends "res://scripts/BuscadorRutas.gd":
 		return super.buscar_salida(origen, esta_dentro, opciones)
 
 
+## Obras falsas: ofrece una tarea fija y anota cada llamada a trabajar().
+class ObrasFalsa extends RefCounted:
+	var tarea: Dictionary = {}
+	var huella: Array = []
+	var resultado: Dictionary = {"estado": "avanzo", "espera": 0.0}
+	var trabajos: Array = []
+	var vetos: Array = []
+
+	func siguiente_tarea(_desde: Vector3i, _id_colono: int = -1) -> Dictionary:
+		return tarea
+
+	func huella_de(_id: int) -> Array:
+		return huella
+
+	func trabajar(id: int, tipo: String) -> Dictionary:
+		trabajos.append([id, tipo])
+		return resultado
+
+	func vetar(id: int, id_colono: int) -> void:
+		vetos.append([id, id_colono])
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -1160,4 +1182,71 @@ func ejecutar_pruebas() -> void:
 	colonos45.actualizar_avatar(Vector3i(6, 1, 6), Vector3.ZERO)
 	assert(c45b["celda"] == Vector3i(6, 1, 6), "el que ya camina no se empuja")
 
-	print("\n=== Las 45 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 46: un colono libre va a la obra, trabaja y repite; uno con empleo o con un aprendizaje la ignora; contratar cancela la tarea ===")
+	var ciudad46: Node = CiudadScript.new()
+	var colonos46: Node = _nuevo_con_puesto(ciudad46)
+	var obras46 := ObrasFalsa.new()
+	obras46.tarea = {"tipo": "construir", "id": 5}
+	obras46.huella = [Vector2i(6, 6), Vector2i(7, 6)]  # una obra de 2 columnas lejos del maderero
+	colonos46.obras = obras46
+	var id46: int = colonos46.agregar_colono("desempleado", Vector3i(1, 1, 7))
+	var c46: Dictionary = colonos46.colonos[id46]
+	for _i in range(400):
+		colonos46.avanzar(0.1)
+		if not obras46.trabajos.is_empty():
+			break
+	assert(not obras46.trabajos.is_empty() and obras46.trabajos[0] == [5, "construir"], "el colono libre llegó a la obra y trabajó en ella")
+	assert(colonos46._junto_a(c46["celda"], obras46.huella), "y trabajó pegado a la obra")
+	assert(colonos46.obreros_en(5) == 1 and colonos46.obreros_en(6) == 0, "obreros_en cuenta a los que tienen esa obra como tarea")
+	var trabajos_antes46: int = obras46.trabajos.size()
+	obras46.resultado = {"estado": "completa", "espera": 0.0}
+	for _i in range(60):
+		colonos46.avanzar(0.1)
+	assert(obras46.trabajos.size() > trabajos_antes46, "mientras la obra avanza, sigue trabajando")
+	# Una obra «completa» suelta la tarea: sin trabajo nuevo, el colono vuelve a deambular.
+	obras46.tarea = {}
+	for _i in range(60):
+		colonos46.avanzar(0.1)
+	assert(c46["tarea"].is_empty(), "sin obra, el colono no conserva la tarea")
+	# Un colono con puesto no pide obras.
+	var obras46b := ObrasFalsa.new()
+	obras46b.tarea = {"tipo": "construir", "id": 9}
+	obras46b.huella = [Vector2i(6, 6)]
+	var ciudad46b: Node = CiudadScript.new()
+	var colonos46b: Node = _nuevo_con_puesto(ciudad46b)
+	colonos46b.obras = obras46b
+	var empleado46: int = colonos46b.agregar_colono("desempleado", Vector3i(1, 1, 7))
+	ciudad46b.demografia["desempleado"] = 1
+	assert(colonos46b.contratar(Vector2i(2, 2), "recolector"), "se contrata al desempleado")
+	for _i in range(100):
+		colonos46b.avanzar(0.1)
+	assert(obras46b.trabajos.is_empty() and colonos46b.colonos[empleado46]["tarea"].is_empty(), "un colono con empleo ignora las obras")
+	# Contratar a quien ya tenía tarea la cancela.
+	var obras46c := ObrasFalsa.new()
+	obras46c.tarea = {"tipo": "construir", "id": 9}
+	obras46c.huella = [Vector2i(6, 6)]
+	var ciudad46c: Node = CiudadScript.new()
+	var colonos46c: Node = _nuevo_con_puesto(ciudad46c)
+	colonos46c.obras = obras46c
+	var libre46: int = colonos46c.agregar_colono("desempleado", Vector3i(1, 1, 7))
+	ciudad46c.demografia["desempleado"] = 1
+	for _i in range(3):
+		colonos46c.avanzar(0.1)
+	assert(not colonos46c.colonos[libre46]["tarea"].is_empty(), "el libre ya tomó una tarea")
+	assert(colonos46c.contratar(Vector2i(2, 2), "recolector"), "se contrata")
+	assert(colonos46c.colonos[libre46]["tarea"].is_empty(), "contratar cancela la tarea de obra")
+	# Un técnico libre también construye.
+	var obras46d := ObrasFalsa.new()
+	obras46d.tarea = {"tipo": "demoler", "id": 3}
+	obras46d.huella = [Vector2i(6, 6)]
+	var colonos46d: Node = _nuevo(_mundo_llano(), CiudadScript.new())
+	colonos46d.obras = obras46d
+	var tecnico46: int = colonos46d.agregar_colono("tecnico", Vector3i(1, 1, 7))
+	for _i in range(400):
+		colonos46d.avanzar(0.1)
+		if not obras46d.trabajos.is_empty():
+			break
+	assert(not obras46d.trabajos.is_empty() and obras46d.trabajos[0] == [3, "demoler"], "un técnico libre también demuele")
+	assert(colonos46d.colonos.has(tecnico46))
+
+	print("\n=== Las 46 pruebas de Colonos pasaron correctamente ===")

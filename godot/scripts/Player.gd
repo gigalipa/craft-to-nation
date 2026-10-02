@@ -448,7 +448,7 @@ func _physics_process(delta: float) -> void:
 ## Panel fijo mientras el modo deconstrucción (G) está activo. Main lo repone al
 ## volver de la cenital, cuyo set_vista() descarta el panel.
 func mostrar_contexto_deconstruccion() -> void:
-	hud.mostrar_contexto("Deconstruir", {}, ["DECONSTRUIR (clic izq.)\nMARCAR PARA DEMOLICIÓN (clic der.)\nG para salir"])  # un solo elemento: cada instrucción en su línea
+	hud.mostrar_contexto("Deconstruir", {}, ["(clic izq.) DECONSTRUIR\n(clic der.) MARCAR PARA DEMOLICIÓN\nG para salir"])  # un solo elemento: cada instrucción en su línea
 
 
 ## Overlay verde sobre la cara apuntada, solo si el raycast golpea algo (su largo

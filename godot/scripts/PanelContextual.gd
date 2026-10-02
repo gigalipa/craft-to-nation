@@ -111,7 +111,7 @@ func _ready() -> void:
 	acciones.scroll_active = false
 	acciones.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	acciones.add_theme_color_override("default_color", TemaHUD.TEXTO)
-	acciones.custom_minimum_size.x = 200.0
+	acciones.custom_minimum_size.x = ANCHO_TEXTO
 
 	disponible.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	disponible.visible = false

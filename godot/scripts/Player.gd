@@ -206,7 +206,7 @@ func _input(event: InputEvent) -> void:
 				# Con el modo activo no se coloca; el clic derecho queda reservado a «Marcar para demolición» (7b).
 				_colocando = false
 				if boton.pressed:
-					_avisar_modo_deconstruccion("colocar bloques")
+					_marcar_demolicion()
 				return
 			_colocando = boton.pressed
 			if boton.pressed:
@@ -709,6 +709,28 @@ func _alternar_modo_deconstruccion() -> void:
 	_ticks_listo_para_remocion = 0
 
 
+## Clic derecho con el modo deconstrucción: marca (o desmarca) para demolición el edificio
+## bajo la mira; los colonos libres lo demolerán.
+func _marcar_demolicion() -> void:
+	var id := -1
+	if raycast.is_colliding() and mundo != null:
+		id = mundo.id_de_edificio(_celda_impactada())
+	_marcar_demolicion_de(id)
+
+
+func _marcar_demolicion_de(id: int) -> void:
+	if id == -1:
+		hud.notificar("No hay ningún edificio ahí para marcar.")
+		return
+	var motivo: String = Obras.alternar_marca(id)
+	if motivo != "":
+		hud.notificar(motivo)
+	elif Obras.esta_marcado(id):
+		hud.notificar("Edificio marcado para demolición.")
+	else:
+		hud.notificar("Marca de demolición quitada.")
+
+
 ## Notificación de que la acción no está disponible con el modo deconstrucción
 ## activo; espaciada para que mantener el clic no sature el panel.
 func _avisar_modo_deconstruccion(accion: String) -> void:
@@ -749,6 +771,8 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		return
 
 	FinalizacionObras.al_deconstruir(mundo, resultado)
+	Obras.abandonar(resultado["id"])  # lo que se deconstruye a mano no lo reconstruyen los colonos
+	Obras.reclamar(resultado["id"])  # y mientras el jugador actúa, los colonos le ceden el edificio
 
 	if not resultado["lista_para_remocion"]:
 		_id_listo_para_remocion = -1
@@ -806,6 +830,7 @@ func _colocar() -> void:
 	var celda := _celda_impactada()
 	var resultado: Dictionary = mundo.surtir_construccion(celda)
 	if not resultado.is_empty():
+		Obras.reclamar(mundo.id_de_edificio(celda))  # el jugador tiene preferencia sobre los colonos
 		if resultado.get("bloqueada", false):
 			_avisar_colocacion_rechazada("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
 		elif resultado.get("insuficiente", false):

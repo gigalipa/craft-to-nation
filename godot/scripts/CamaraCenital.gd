@@ -1354,7 +1354,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif modo_trazar_via:
 				_procesar_clic_via(boton.position)
 			elif modo_demoler:
-				pass  # marcar edificios para demolición: fuera de alcance por ahora (ver modo_demoler)
+				_procesar_clic_demoler(boton.position)
 			else:
 				_procesar_clic_interaccion(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
@@ -1925,9 +1925,8 @@ func _salir_de_modo_trazar_via(cerrar_menu: bool = true) -> void:
 		hud.ocultar_contexto()
 
 
-## Activa/desactiva el modo demoler (menú principal, tecla `3`). Solo el
-## interruptor — sin marcado de edificios ni asignación de NPCs todavía (ver
-## comentario de "modo_demoler" arriba).
+## Activa/desactiva el modo demoler (menú principal, tecla `3`). Con él activo, el clic
+## marca o desmarca edificios para que los colonos los demuelan (ver _procesar_clic_demoler()).
 func _alternar_modo_demoler() -> void:
 	if modo_demoler:
 		_salir_de_modo_demoler()
@@ -1937,7 +1936,7 @@ func _alternar_modo_demoler() -> void:
 	hud.cerrar_panel_puesto()
 	modo_demoler = true
 	hud.set_modo("demoler")
-	hud.mostrar_contexto("Demoler", {}, ["[Esc] Salir"])
+	hud.mostrar_contexto("Demoler", {}, ["(clic izq.) MARCAR PARA DEMOLICIÓN\n[Esc] Salir"])
 
 
 func _salir_de_modo_demoler() -> void:
@@ -1987,6 +1986,25 @@ func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
 		hud.abrir_panel_puesto(esquina_puesto)
 	else:
 		hud.cerrar_panel_puesto()
+
+
+## Clic con el modo demoler: marca (o desmarca) para demolición el edificio bajo el cursor.
+## La celda de superficie puede ser la del techo o el suelo contiguo, así que se prueba también la de debajo.
+func _procesar_clic_demoler(posicion_pantalla: Vector2) -> void:
+	var celda := _celda_bajo_mouse(posicion_pantalla)
+	var id: int = mundo.id_de_edificio(celda)
+	if id == -1:
+		id = mundo.id_de_edificio(celda + Vector3i(0, -1, 0))
+	if id == -1:
+		hud.notificar("No hay ningún edificio ahí para marcar.")
+		return
+	var motivo: String = Obras.alternar_marca(id)
+	if motivo != "":
+		hud.notificar(motivo)
+	elif Obras.esta_marcado(id):
+		hud.notificar("Edificio marcado para demolición.")
+	else:
+		hud.notificar("Marca de demolición quitada.")
 
 
 ## Clic con el modo zonificación activo: primera esquina o cierre del rectángulo.

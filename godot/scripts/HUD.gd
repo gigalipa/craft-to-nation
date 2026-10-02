@@ -216,7 +216,7 @@ func ocultar_contexto() -> void:
 func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}) -> void:
 	var almacenamiento := "" if Recoleccion.ESCUELAS.has(tipo) else " · Almacenamiento: %d" % Recoleccion.capacidad_almacen_de(tipo)
 	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, texto_tasas(tipo, tasas)]
-	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, extra, bloques)
+	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+rueda] ROTAR", "COLOCAR (clic)"], valida, extra, bloques)
 
 
 ## Recolección prevista de un puesto. Diccionario vacío = nada detectado (en

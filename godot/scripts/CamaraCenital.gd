@@ -1316,7 +1316,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
 	_actualizar_resumen_materiales(esquina, ev, valida)
-	hud.mostrar_contexto("Edificio residencial", {}, ["ROTAR (Ctrl+rueda)", "COLOCAR (clic)"], valida, _resumen_blueprint_texto)
+	hud.mostrar_contexto("Edificio residencial", {}, ["[Ctrl+rueda] ROTAR", "COLOCAR (clic)"], valida, _resumen_blueprint_texto)
 	_actualizar_overlays(esquina, ev)
 
 
@@ -1907,7 +1907,7 @@ func _alternar_modo_trazar_via() -> void:
 	_ultimo_origen_preview = SIN_VERTICE_PREVIO
 	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	hud.set_modo("construir", "vias", "vias")
-	hud.mostrar_contexto("Trazar vía", {}, ["FIJAR PUNTO (clic)", "CONFIRMAR (doble clic)", "SALIR (Esc)"])
+	hud.mostrar_contexto("Trazar vía", {}, ["FIJAR PUNTO (clic)", "CONFIRMAR (doble clic)", "[Esc] SALIR"])
 
 
 ## "cerrar_menu" en false lo usa _elegir_categoria() al cambiar de categoría o
@@ -1937,7 +1937,7 @@ func _alternar_modo_demoler() -> void:
 	hud.cerrar_panel_puesto()
 	modo_demoler = true
 	hud.set_modo("demoler")
-	hud.mostrar_contexto("Demoler", {}, ["Esc salir"])
+	hud.mostrar_contexto("Demoler", {}, ["[Esc] Salir"])
 
 
 func _salir_de_modo_demoler() -> void:
@@ -1957,7 +1957,7 @@ func _elegir_zona(tipo: String) -> void:
 
 func _mostrar_contexto_zona() -> void:
 	hud.set_modo("zonificar", tipo_zona_seleccionada)
-	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, ["1 Zona Residencial", "2 Zona Industrial", "3 Borrar", "Esc salir"], null, _categorias_permitidas_zona())
+	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, ["[1] Zona Residencial", "[2] Zona Industrial", "[3] Borrar", "[Esc] Salir"], null, _categorias_permitidas_zona())
 
 
 func _nombre_zona_seleccionada() -> String:

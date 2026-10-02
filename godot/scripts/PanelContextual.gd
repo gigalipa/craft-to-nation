@@ -211,9 +211,9 @@ func mostrar_temporal(nombre: String, costo_dic: Dictionary, lista_acciones: Arr
 ## oculta esa línea. Los objetos (Hotbar.TIPOS_INTERACTIVOS: puerta, cama,
 ## baúl) suman una pista de interacción con "E" una vez colocados.
 func mostrar_bloque_temporal(indice: int, tipo: String, icono_textura: Texture2D, disponibilidad: int, segundos: float = 2.5) -> void:
-	var lista_acciones: Array = ["COLOCAR (clic der.)"]
+	var lista_acciones: Array = ["(clic der.) COLOCAR"]
 	if HotbarScript.TIPOS_INTERACTIVOS.has(tipo):
-		lista_acciones.append("INTERACTUAR (E)")
+		lista_acciones.append("[E] INTERACTUAR")
 	mostrar_temporal(HotbarScript.nombre_de(tipo), {}, lista_acciones, segundos)
 	numero.text = str(indice + 1)
 	numero.visible = true

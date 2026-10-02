@@ -394,6 +394,8 @@ func probar_panel_desvanece() -> void:
 	panel.mostrar("Deconstruir", {}, ["G para salir"])
 	await get_tree().create_timer(0.6).timeout
 	assert(panel.visible and panel.titulo.text == "DECONSTRUIR", "el panel fijo no debe desvanecerse")
+	panel.mostrar("Puerta", {}, ["(clic der.) COLOCAR", "[E] INTERACTUAR"])
+	assert(panel.acciones.get_parsed_text().contains("[E] INTERACTUAR"), "el atajo de tecla se muestra literal, antes de la acción")
 	assert(PanelContextualScript.texto_acciones(["MARCAR PARA DEMOLICIÓN (clic der.)"]).contains("click_der.svg"), "la acción de demolición lleva el ícono del clic derecho")
 
 	# Un segundo temporal reinicia la cuenta: el temporizador del primero no lo oculta.

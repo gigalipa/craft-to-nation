@@ -268,7 +268,10 @@ func actualizar_cantidades() -> void:
 			continue
 		var minimo := 999999
 		for recurso in costo:
-			var disponible: int = int(Ciudad.almacen[recurso].cantidad / costo[recurso])
+			var stock: float = Ciudad.almacen[recurso].cantidad
+			if recurso == "madera":
+				stock += Ciudad.almacen["tablas"].cantidad  # las tablas cuentan como madera (Ciudad.consumir_costo)
+			var disponible: int = int(stock / costo[recurso])
 			minimo = mini(minimo, disponible)
 		set_cantidad(i, minimo)
 

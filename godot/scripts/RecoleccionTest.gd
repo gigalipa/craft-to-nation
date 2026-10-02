@@ -511,6 +511,11 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(Recoleccion.tasas_de_entorno("maderero", mundo_arb, entorno_mad)["madera"], 0.6 * Recoleccion.TASA_BASE_MADERERO_POR_CIUDADANO))
 	mundo_arb.arboles.eliminar(ids_arb[2])
 	assert(Recoleccion.factor_arboles(mundo_arb, entorno_mad) == 0.5)
+	# Un maderero cuya tasa cae bajo el umbral queda en 0 (agotado); uno por encima la conserva.
+	var entorno_pocos: Dictionary = entorno_mad.duplicate()
+	entorno_pocos["arboles_ref"] = 1000  # quedan pocos árboles respecto a los que había
+	assert(Recoleccion.tasas_de_entorno("maderero", mundo_arb, entorno_pocos)["madera"] == 0.0, "bajo 0,5 madera/h el maderero se agota")
+	assert(Recoleccion.tasas_de_entorno("maderero", mundo_arb, entorno_mad)["madera"] >= Recoleccion.UMBRAL_AGOTADO_MADERERO, "con más árboles conserva su tasa")
 	# Sin árboles al colocar el puesto: factor 1, sin dividir por cero.
 	var mundo_sin := MundoFalso.new()
 	mundo_sin.generador = GeneradorBiomaFalso.new()

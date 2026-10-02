@@ -591,6 +591,16 @@ func probar_hotbar() -> void:
 	Ciudad.almacen["piedra"].cantidad = 12.0
 	hotbar.actualizar_cantidades()
 	assert(hotbar.cantidad_visible(0), "bloque_piedra (índice 0) tiene costo definido (5 piedra)")
+	# Las tablas cuentan como madera (reporte del usuario, 2026-10-02).
+	var madera_antes: float = Ciudad.almacen["madera"].cantidad
+	var tablas_antes: float = Ciudad.almacen["tablas"].cantidad
+	hotbar.configurar(["bloque_madera"])
+	Ciudad.almacen["madera"].cantidad = 0.0
+	Ciudad.almacen["tablas"].cantidad = 15.0
+	hotbar.actualizar_cantidades()
+	assert(hotbar.cantidad_de(0) == 3, "solo con tablas se cuentan 3 bloques de madera (5 de madera cada uno)")
+	Ciudad.almacen["madera"].cantidad = madera_antes
+	Ciudad.almacen["tablas"].cantidad = tablas_antes
 	hotbar.queue_free()
 
 

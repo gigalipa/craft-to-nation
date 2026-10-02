@@ -30,15 +30,15 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 
 ### 4b. Correcciones y mejoras tras la escuela técnica (pruebas en vivo, 2026-10-02) — siguiente a hacer
 
-1. **Color de los técnicos:** al graduarse siguen con el color naranja claro de los obreros; deben verse azules (`ColonosRenderer.COLORES_TIPO`).
+1. ✅ (2026-10-02) **Color de los técnicos:** al graduarse siguen con el color naranja claro de los obreros; deben verse azules (`ColonosRenderer.COLORES_TIPO`).
 2. **Elegir tipo y cantidad de empleados en un puesto:** hoy el panel de un puesto periférico solo habla de «Desempleados libres» (muestra 0 aunque haya 3 técnicos sin empleo). Diseñar la forma de elegir el tipo de ciudadano y la cantidad por tipo.
 3. **Nivel de puesto (1, 2, 3):** nivel 1 emplea obreros y técnicos; nivel 2, técnicos y especialistas; nivel 3, solo especialistas. Un puesto nivel 1 «agotado» (recursos agotados en su área o producción bajo el umbral) sigue admitiendo técnicos y, cuando solo tenga técnicos empleados, sube a nivel 2; así sigue siendo útil hasta agotar su nivel 3. Ver `docs/ideas-backlog.md` (niveles de edificio).
-4. **Hotbar y tablas:** los «Bloques de madera» disponibles solo cuentan «Madera»; deben contar también «Tablas».
-5. **Madereros agotados:** marcar el puesto como «agotado» cuando su producción baje de 0,5 madera/h (hoy mantiene empleados ocupados e improductivos demasiado tiempo).
+4. ✅ (2026-10-02) **Hotbar y tablas:** los «Bloques de madera» disponibles solo cuentan «Madera»; deben contar también «Tablas».
+5. ✅ (2026-10-02) **Madereros agotados:** marcar el puesto como «agotado» cuando su producción baje de 0,5 madera/h (hoy mantiene empleados ocupados e improductivos demasiado tiempo).
 6. **Tarjeta de información de minas por nivel:** al activar la herramienta de la mina, mostrar los recursos aproximados por nivel (omitiendo los < 0,3/h): Nivel 1 = volumen básico; Nivel 2 = solo la franja ampliada de nivel 2; Nivel 3 = solo la franja ampliada de nivel 3 (sin sumar los niveles anteriores). Una mina con especialistas desde el inicio arranca en nivel 3 y recolecta los tres volúmenes. Motivo: minas sobre trazas de hierro tan bajas que no recolectan nada.
 7. **Deconstrucción en 1ª persona:** que se desactive sola al terminar de deconstruir un edificio; con ella activa no se puede minar ni colocar bloques. Cuando los NPCs construyan/demuelan: opción «Marcar para demolición» con clic derecho. En la cenital, «Demolición» solo marca edificios para que los NPCs los demuelan.
-8. **Techos no transitables** para los colonos.
-9. **Empujar colonos:** el jugador empuja a los colonos; los colonos no mueven al jugador, lo esquivan.
+8. ✅ (2026-10-02) **Techos no transitables** para los colonos.
+9. ✅ (2026-10-02) **Empujar colonos:** el jugador empuja a los colonos; los colonos no mueven al jugador, lo esquivan.
 
 ### 5. Resto del catálogo general de PoC 5
 

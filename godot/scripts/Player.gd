@@ -109,6 +109,8 @@ var _progreso_accion: RefCounted = ProgresoAccionScript.new()
 var _cara_apuntada: MeshInstance3D = CaraApuntadaScript.new()
 
 var modo_deconstruccion := false
+const INTERVALO_AVISO_DECONSTRUCCION_MS := 2000
+var _ultimo_aviso_deconstruccion_ms := -INTERVALO_AVISO_DECONSTRUCCION_MS
 var _id_listo_para_remocion := -1
 var _ticks_listo_para_remocion := 0
 
@@ -440,7 +442,7 @@ func _physics_process(delta: float) -> void:
 ## Panel fijo mientras el modo deconstrucción (G) está activo. Main lo repone al
 ## volver de la cenital, cuyo set_vista() descarta el panel.
 func mostrar_contexto_deconstruccion() -> void:
-	hud.mostrar_contexto("Deconstruir", {}, ["DECONSTRUIR (clic izq.)", "G para salir"])
+	hud.mostrar_contexto("Deconstruir", {}, ["DECONSTRUIR (clic izq.)", "MARCAR PARA DEMOLICIÓN (clic der.)", "G para salir"])
 
 
 ## Overlay verde sobre la cara apuntada, solo si el raycast golpea algo (su largo
@@ -704,6 +706,16 @@ func _alternar_modo_deconstruccion() -> void:
 	_ticks_listo_para_remocion = 0
 
 
+## Notificación de que la acción no está disponible con el modo deconstrucción
+## activo; espaciada para que mantener el clic no sature el panel.
+func _avisar_modo_deconstruccion(accion: String) -> void:
+	var ahora := Time.get_ticks_msec()
+	if ahora - _ultimo_aviso_deconstruccion_ms < INTERVALO_AVISO_DECONSTRUCCION_MS:
+		return
+	_ultimo_aviso_deconstruccion_ms = ahora
+	hud.notificar("Modo Deconstrucción activo: no se puede %s. Pulsa G para salir." % accion)
+
+
 ## Un intento de deconstrucción sobre el bloque bajo la mira (modo G). Minar y
 ## talar ahora van por tiempo (ver _procesar_minado()).
 func _deconstruir() -> void:
@@ -728,6 +740,7 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 
 	var resultado: Dictionary = mundo.procesar_deconstruccion(celda)
 	if resultado.is_empty():
+		_avisar_modo_deconstruccion("minar ni talar")
 		_id_listo_para_remocion = -1
 		_ticks_listo_para_remocion = 0
 		return
@@ -760,8 +773,7 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		Recoleccion.quitar_puesto(esquina)
 		Economia.quitar_puesto(esquina)  # libera a sus trabajadores (no-op si era un edificio)
 		print("Edificio deconstruido por completo.")
-		_id_listo_para_remocion = -1
-		_ticks_listo_para_remocion = 0
+		_alternar_modo_deconstruccion()  # el modo se apaga solo al terminar el edificio
 
 
 ## Redondea hacia dónde mira el cuerpo (solo yaw, sin el pitch de la cámara,

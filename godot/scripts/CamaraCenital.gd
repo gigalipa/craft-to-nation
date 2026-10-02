@@ -1989,12 +1989,9 @@ func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
 
 
 ## Clic con el modo demoler: marca (o desmarca) para demolición el edificio bajo el cursor.
-## La celda de superficie puede ser la del techo o el suelo contiguo, así que se prueba también la de debajo.
+## _celda_bajo_mouse() es una columna (x, z): se busca el edificio que ocupa esa columna.
 func _procesar_clic_demoler(posicion_pantalla: Vector2) -> void:
-	var celda := _celda_bajo_mouse(posicion_pantalla)
-	var id: int = mundo.id_de_edificio(celda)
-	if id == -1:
-		id = mundo.id_de_edificio(celda + Vector3i(0, -1, 0))
+	var id: int = Obras.id_en_columna(_celda_bajo_mouse(posicion_pantalla))
 	if id == -1:
 		hud.notificar("No hay ningún edificio ahí para marcar.")
 		return

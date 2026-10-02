@@ -28,6 +28,18 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 
 ~~**Parte 2, resto:** refinería de tierras raras, aserradero y carbonera~~ ✅ hechas (2026-10-01): edificios reales con plantilla, material e indicador de actividad propios (humo violáceo, humo negro, aserrín); personal máximo 4; `tasa_base` 0,5 (tierras raras y aserradero) y 2,0 (carbonera). Las tablas del aserradero son un recurso nuevo que cuenta como madera al pagar construcciones; ver `PoC_5/…Catálogo de Recursos y Cadenas de Producción.md`. La formación de técnicos ✅ está hecha (2026-10-01): la **Escuela técnica** (primer edificio de investigación, sobre zona residencial dentro de la influencia, con 4 mesas de estudio —bloque nuevo `mesa_estudio`— en vez de baúl) forma cohortes de 4 obreros que estudian 24 h y salen como 3 técnicos libres (la vivienda ocupada se conserva con `x_cama`; el cuarto colono se va de la ciudad); las refinerías solo contratan técnicos libres y un técnico despedido sigue siendo técnico. Spec: `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
 
+### 4b. Correcciones y mejoras tras la escuela técnica (pruebas en vivo, 2026-10-02) — siguiente a hacer
+
+1. **Color de los técnicos:** al graduarse siguen con el color naranja claro de los obreros; deben verse azules (`ColonosRenderer.COLORES_TIPO`).
+2. **Elegir tipo y cantidad de empleados en un puesto:** hoy el panel de un puesto periférico solo habla de «Desempleados libres» (muestra 0 aunque haya 3 técnicos sin empleo). Diseñar la forma de elegir el tipo de ciudadano y la cantidad por tipo.
+3. **Nivel de puesto (1, 2, 3):** nivel 1 emplea obreros y técnicos; nivel 2, técnicos y especialistas; nivel 3, solo especialistas. Un puesto nivel 1 «agotado» (recursos agotados en su área o producción bajo el umbral) sigue admitiendo técnicos y, cuando solo tenga técnicos empleados, sube a nivel 2; así sigue siendo útil hasta agotar su nivel 3. Ver `docs/ideas-backlog.md` (niveles de edificio).
+4. **Hotbar y tablas:** los «Bloques de madera» disponibles solo cuentan «Madera»; deben contar también «Tablas».
+5. **Madereros agotados:** marcar el puesto como «agotado» cuando su producción baje de 0,5 madera/h (hoy mantiene empleados ocupados e improductivos demasiado tiempo).
+6. **Tarjeta de información de minas por nivel:** al activar la herramienta de la mina, mostrar los recursos aproximados por nivel (omitiendo los < 0,3/h): Nivel 1 = volumen básico; Nivel 2 = solo la franja ampliada de nivel 2; Nivel 3 = solo la franja ampliada de nivel 3 (sin sumar los niveles anteriores). Una mina con especialistas desde el inicio arranca en nivel 3 y recolecta los tres volúmenes. Motivo: minas sobre trazas de hierro tan bajas que no recolectan nada.
+7. **Deconstrucción en 1ª persona:** que se desactive sola al terminar de deconstruir un edificio; con ella activa no se puede minar ni colocar bloques. Cuando los NPCs construyan/demuelan: opción «Marcar para demolición» con clic derecho. En la cenital, «Demolición» solo marca edificios para que los NPCs los demuelan.
+8. **Techos no transitables** para los colonos.
+9. **Empujar colonos:** el jugador empuja a los colonos; los colonos no mueven al jugador, lo esquivan.
+
 ### 5. Resto del catálogo general de PoC 5
 
 Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`: sub-proyecto 2 (madera), 3 (fluidos: agua/crudo/combustible) y 4 (energía). El sub-proyecto 1 (minerales) ya está completo.

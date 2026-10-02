@@ -222,4 +222,10 @@ func ejecutar_pruebas() -> void:
 	assert(obras9.resumen_de(99).is_empty(), "un id desconocido no tiene resumen")
 	assert(obras9.id_en_columna(Vector2i(6, 5)) == 1 and obras9.id_en_columna(Vector2i(0, 0)) == -1, "id_en_columna")
 
-	print("\n=== Las 9 pruebas de Obras pasaron correctamente ===")
+	print("\n=== TEST 10: celdas_de devuelve las celdas del edificio ===")
+	var mundo10 := MundoObraFalso.new()
+	mundo10.agregar(1, Vector3i(5, 0, 5), 2, 0)
+	var obras10: Node = _nuevas(mundo10)
+	assert(obras10.celdas_de(1) == [Vector3i(5, 0, 5), Vector3i(6, 0, 5)] and obras10.celdas_de(9).is_empty())
+
+	print("\n=== Las 10 pruebas de Obras pasaron correctamente ===")

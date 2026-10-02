@@ -64,6 +64,14 @@ class ColonosPanelFalso extends RefCounted:
 		return 3
 
 
+class ObrasFalsa extends RefCounted:
+	signal marca_cambiada(id: int, marcado: bool)
+	var marcados: Dictionary = {}
+	var celdas: Dictionary = {}
+	func celdas_de(id: int) -> Array:
+		return celdas.get(id, [])
+
+
 func _ready() -> void:
 	await ejecutar_pruebas()
 	print("HUDTest: todas las pruebas pasaron")
@@ -85,6 +93,7 @@ func ejecutar_pruebas() -> void:
 	probar_ventana_ocupaciones()
 	probar_panel_escuela()
 	probar_panel_edificio()
+	probar_marcas_demolicion()
 
 
 func probar_barra_superior_calculos() -> void:
@@ -738,3 +747,23 @@ func probar_panel_edificio() -> void:
 	assert(not panel.visible, "se cierra solo si el edificio desaparece")
 	panel.queue_free()
 	ciudad.free()
+
+
+func probar_marcas_demolicion() -> void:
+	print("=== TEST: MarcasDemolicionOverlay dibuja una caja roja por celda de cada edificio marcado ===")
+	var MarcasScript = preload("res://scripts/MarcasDemolicionOverlay.gd")
+	var obras := ObrasFalsa.new()
+	obras.marcados = {7: true}
+	obras.celdas = {7: [Vector3i(1, 1, 1), Vector3i(2, 1, 1)], 8: [Vector3i(5, 1, 5)]}
+	var overlay: Node3D = MarcasScript.new()
+	overlay.obras = obras
+	add_child(overlay)
+	overlay.reconstruir()
+	assert(overlay.get_child_count() == 2, "una caja por celda del edificio marcado y ninguna del otro: %d" % overlay.get_child_count())
+	obras.marcados = {}
+	overlay.reconstruir()
+	assert(overlay.get_child_count() == 0, "al desmarcar se quitan")
+	obras.marcados = {8: true}
+	obras.marca_cambiada.emit(8, true)
+	assert(overlay.get_child_count() == 1, "la señal marca_cambiada reconstruye")
+	overlay.queue_free()

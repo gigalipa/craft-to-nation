@@ -36,7 +36,7 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 4. ✅ (2026-10-02) **Hotbar y tablas:** los «Bloques de madera» disponibles solo cuentan «Madera»; deben contar también «Tablas».
 5. ✅ (2026-10-02) **Madereros agotados:** marcar el puesto como «agotado» cuando su producción baje de 0,5 madera/h (hoy mantiene empleados ocupados e improductivos demasiado tiempo).
 6. **Tarjeta de información de minas por nivel:** al activar la herramienta de la mina, mostrar los recursos aproximados por nivel (omitiendo los < 0,3/h): Nivel 1 = volumen básico; Nivel 2 = solo la franja ampliada de nivel 2; Nivel 3 = solo la franja ampliada de nivel 3 (sin sumar los niveles anteriores). Una mina con especialistas desde el inicio arranca en nivel 3 y recolecta los tres volúmenes. Motivo: minas sobre trazas de hierro tan bajas que no recolectan nada.
-7. **Deconstrucción en 1ª persona:** ✅ (2026-10-02, 7a) se desactiva sola al terminar de deconstruir un edificio; con ella activa no se mina ni se coloca (se avisa con una notificación) y la tarjeta ya muestra «Marcar para demolición» (clic der.). **Pendiente (7b):** cuando los NPCs construyan/demuelan: opción «Marcar para demolición» con clic derecho. En la cenital, «Demolición» solo marca edificios para que los NPCs los demuelan.
+7. **Deconstrucción en 1ª persona:** ✅ (2026-10-02, 7a) se desactiva sola al terminar de deconstruir un edificio; con ella activa no se mina ni se coloca (se avisa con una notificación) y la tarjeta ya muestra «Marcar para demolición» (clic der.). **7b ✅ (2026-10-02):** hecho con las obras por colonos (ver sección 6; antes: cuando los NPCs construyan/demuelan: opción «Marcar para demolición» con clic derecho. En la cenital, «Demolición» solo marca edificios para que los NPCs los demuelan.)
 8. ✅ (2026-10-02) **Techos no transitables** para los colonos.
 9. ✅ (2026-10-02) **Empujar colonos:** el jugador empuja a los colonos; los colonos no mueven al jugador, lo esquivan.
 
@@ -44,7 +44,10 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 
 Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`: sub-proyecto 2 (madera), 3 (fluidos: agua/crudo/combustible) y 4 (energía). El sub-proyecto 1 (minerales) ya está completo.
 
-### 6. Construcción/deconstrucción asistida por NPCs
+### 6. Construcción/deconstrucción asistida por NPCs — ✅ hecha para edificios y puestos (2026-10-02)
+
+Los colonos libres (obreros desempleados y técnicos libres) construyen las obras puestas desde la cenital y demuelen los edificios marcados; el jugador tiene preferencia y puede pausar obras desde la ventana del edificio. Ver `docs/superpowers/specs/2026-10-02-obras-por-colonos-design.md`. Queda pendiente: tendido de vías por colonos, tope de cuadrilla por obra y prioridades configurables de obra.
+
 
 Los colonos participan en construir y deconstruir. Se apoya en el acarreo (2A) y en la extracción real (2B, ya implementada).
 Traducción de modelos .dae a blueprints construibles.

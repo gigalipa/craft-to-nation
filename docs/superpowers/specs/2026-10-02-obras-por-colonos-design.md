@@ -71,7 +71,7 @@ Un colono libre (desempleado o técnico sin puesto) pide `Obras.siguiente_tarea`
 1. Al marcar, `Obras` ofrece el edificio como tarea de demolición.
 2. Cada paso llama a `procesar_deconstruccion` (reembolso por celda; al revertir la primera celda se retiran camas y se desactiva el puesto, como en 1ª persona).
 3. Con el edificio «listo para remoción» el colono ejecuta `FinalizacionObras.retirar_edificio`. No usa `TICKS_REMOCION_FINAL`: ese contador evita borrados accidentales con el ratón.
-4. Al desmarcar, los colonos dejan de deconstruir; el edificio queda a medias como obra fantasma y puede reconstruirse.
+4. Al desmarcar, los colonos dejan de deconstruir. El edificio queda a medias como obra fantasma **abandonada**: los colonos no lo reconstruyen solos (igual que lo que el jugador deconstruye a mano); el jugador puede reconstruirlo en 1ª persona.
 5. Un colono dentro de un edificio que se demuele sale antes (se reutiliza `_on_obra_a_fantasma`).
 
 ## Preferencia del jugador, pausa y ventana del edificio (ampliación, 2026-10-02)

@@ -233,6 +233,13 @@ func resumen_de(id: int) -> Dictionary:
 	}
 
 
+## Celdas (Vector3i) del edificio; vacío si no existe. Lo usa MarcasDemolicionOverlay.
+func celdas_de(id: int) -> Array:
+	if mundo == null or not mundo.edificio_a_celdas.has(id):
+		return []
+	return mundo.edificio_a_celdas[id]
+
+
 ## Un paso de trabajo de un colono sobre la obra "id" ("construir" o "demoler").
 ## Devuelve {"estado", "espera"}: "avanzo" (sigue), "pausada" (falta material),
 ## "bloqueada" (alguien dentro), "completa" (terminó este edificio), "terminada"

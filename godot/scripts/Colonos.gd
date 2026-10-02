@@ -558,19 +558,21 @@ func _celda_aparicion() -> Vector3i:
 
 ## Contrata a un colono para un puesto con un rol. Para "recolector", "aprendiz" y "acarreador" toma
 ## a un desempleado (el de id menor) y lo pasa a obrero en Ciudad.demografia y en el colono. Para
-## "tecnico" toma a un técnico libre (el de id menor): ya es técnico, así que no cambia de tipo ni la
-## demografía; un desempleado nunca se convierte en técnico, hay que formarlo en una escuela. Falso si
-## no hay candidato, el puesto no existe, el rol no es de ese puesto o no tiene cupo.
+## "tecnico" y "especialista" toma a un libre de ese oficio (el de id menor): ya tiene su oficio, así que no
+## cambia de tipo ni la demografía; un desempleado nunca se convierte en técnico ni en especialista, hay que
+## formarlo. Falso si no hay candidato, el puesto no existe, el rol no es de ese puesto, no tiene cupo o su nivel
+## no admite ese oficio (en ese caso no se toca nada).
 func contratar(esquina: Vector2i, rol: String) -> bool:
-	var candidatos: Array[int] = _ids_sin_puesto("tecnico") if rol == "tecnico" else _ids_de_tipo("desempleado")
+	var es_oficio: bool = rol == "tecnico" or rol == "especialista"
+	var candidatos: Array[int] = _ids_sin_puesto(rol) if es_oficio else _ids_de_tipo("desempleado")
 	if candidatos.is_empty():
 		return false
 	candidatos.sort()
 	var id: int = candidatos[0]
 	if not economia.asignar(esquina, rol, id):
 		return false
-	var tipo := "tecnico" if rol == "tecnico" else "obrero"
-	if rol != "tecnico":
+	var tipo: String = rol if es_oficio else "obrero"
+	if not es_oficio:
 		ciudad.reasignar_tipo("desempleado", tipo)
 	var c: Dictionary = colonos[id]
 	c["tipo"] = tipo
@@ -585,6 +587,11 @@ func contratar(esquina: Vector2i, rol: String) -> bool:
 ## Técnicos sin puesto (formados en una escuela y todavía sin empleo).
 func tecnicos_libres() -> int:
 	return _ids_sin_puesto("tecnico").size()
+
+
+## Especialistas sin puesto (hoy ninguno: la escuela de especialistas todavía no existe).
+func especialistas_libres() -> int:
+	return _ids_sin_puesto("especialista").size()
 
 
 ## Despide al último colono contratado con ese rol en el puesto; queda sin
@@ -651,7 +658,7 @@ func _on_cohorte_graduada(esquina: Vector2i, ids: Array) -> void:
 		tecnicos_formados.emit(graduados)
 
 
-## El colono deja su puesto. Un técnico conserva su oficio y queda como técnico libre; cualquier otro
+## El colono deja su puesto. Un técnico o un especialista conserva su oficio y queda libre; cualquier otro
 ## vuelve a desempleado. Pierde lo que llevara (salvo el insumo de refinería en fase "entrada").
 func _quedar_sin_puesto(c: Dictionary) -> void:
 	var tipo_previo: String = c["tipo"]
@@ -663,7 +670,7 @@ func _quedar_sin_puesto(c: Dictionary) -> void:
 	c["fase"] = ""
 	c["fallos_servicio"] = 0
 	c["retirar_al_entregar"] = false
-	if tipo_previo != "tecnico":
+	if tipo_previo != "tecnico" and tipo_previo != "especialista":
 		c["tipo"] = "desempleado"
 		ciudad.reasignar_tipo(tipo_previo, "desempleado")
 	_dejar_lo_que_hacia(c)

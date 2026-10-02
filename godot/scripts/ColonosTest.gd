@@ -1249,4 +1249,28 @@ func ejecutar_pruebas() -> void:
 	assert(not obras46d.trabajos.is_empty() and obras46d.trabajos[0] == [3, "demoler"], "un técnico libre también demuele")
 	assert(colonos46d.colonos.has(tecnico46))
 
-	print("\n=== Las 46 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 47: contratar() por oficio en un puesto con niveles; un especialista despedido sigue siéndolo ===")
+	var ciudad47: Node = CiudadScript.new()
+	var colonos47: Node = _nuevo_con_puesto(ciudad47)  # maderero de 2x2 en (2, 2)
+	var desempleado47: int = colonos47.agregar_colono("desempleado", Vector3i(6, 1, 1))
+	var tecnico47: int = colonos47.agregar_colono("tecnico", Vector3i(6, 1, 2))
+	var especialista47: int = colonos47.agregar_colono("especialista", Vector3i(6, 1, 3))
+	ciudad47.demografia["desempleado"] = 1
+	ciudad47.demografia["tecnico"] = 1
+	ciudad47.demografia["especialista"] = 1
+	assert(colonos47.especialistas_libres() == 1 and colonos47.tecnicos_libres() == 1)
+	assert(colonos47.contratar(Vector2i(2, 2), "tecnico"))
+	assert(colonos47.economia.nivel_de(Vector2i(2, 2)) == 2, "solo técnicos: nivel 2")
+	assert(not colonos47.contratar(Vector2i(2, 2), "recolector"), "un obrero no entra a un puesto de nivel 2")
+	assert(colonos47.colonos[desempleado47]["tipo"] == "desempleado" and ciudad47.demografia["desempleado"] == 1 and ciudad47.demografia["obrero"] == 0, "el rechazo no toca al colono ni la demografía")
+	assert(colonos47.contratar(Vector2i(2, 2), "especialista"))
+	assert(colonos47.colonos[especialista47]["tipo"] == "especialista" and colonos47.colonos[especialista47]["trabajo"]["puesto"] == Vector2i(2, 2))
+	assert(ciudad47.demografia["especialista"] == 1 and ciudad47.demografia["tecnico"] == 1 and ciudad47.demografia["desempleado"] == 1, "contratar un oficio ya formado no cambia la demografía")
+	assert(colonos47.especialistas_libres() == 0)
+	assert(colonos47.despedir(Vector2i(2, 2), "especialista"))
+	assert(colonos47.colonos[especialista47]["tipo"] == "especialista" and ciudad47.demografia["especialista"] == 1 and colonos47.especialistas_libres() == 1, "el especialista despedido sigue siéndolo")
+	assert(colonos47.despedir(Vector2i(2, 2), "tecnico"))
+	assert(colonos47.colonos[tecnico47]["tipo"] == "tecnico" and colonos47.economia.nivel_de(Vector2i(2, 2)) == 2, "vacío conserva el nivel 2")
+	assert(not colonos47.contratar(Vector2i(2, 2), "recolector"), "ya no admite obreros")
+
+	print("\n=== Las 47 pruebas de Colonos pasaron correctamente ===")

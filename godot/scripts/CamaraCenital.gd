@@ -1981,9 +1981,14 @@ func _categorias_permitidas_zona() -> String:
 ## Clic sin ningún modo activo: sobre un puesto de trabajo abre su panel; en
 ## cualquier otro sitio lo cierra.
 func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
-	var esquina_puesto := Recoleccion.esquina_de_puesto_en(_celda_bajo_mouse(posicion_pantalla))
+	var columna := _celda_bajo_mouse(posicion_pantalla)
+	var esquina_puesto := Recoleccion.esquina_de_puesto_en(columna)
 	if esquina_puesto != Recoleccion.SIN_PUESTO:
 		hud.abrir_panel_puesto(esquina_puesto)
+		return
+	var id: int = Obras.id_en_columna(columna)
+	if id != -1:
+		hud.abrir_panel_edificio(id)
 	else:
 		hud.cerrar_panel_puesto()
 

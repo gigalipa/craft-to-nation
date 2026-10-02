@@ -20,6 +20,9 @@ const NOMBRES_PUESTO := {
 	"carbonera": "Carbonera",
 	"escuela_tecnica": "Escuela técnica",
 }
+## Mensaje para el jugador (el HUD lo envía a las notificaciones).
+signal aviso(texto: String)
+
 const NOMBRES_ROL := {"recolector": "Recolectores", "tecnico": "Técnicos", "aprendiz": "Aprendices", "acarreador": "Acarreadores"}
 
 var esquina := Recoleccion.SIN_PUESTO
@@ -30,6 +33,7 @@ var _libres := TemaHUD.etiqueta()
 var _almacen := TemaHUD.etiqueta()
 var _produccion := TemaHUD.etiqueta()
 var _distancia := TemaHUD.etiqueta()
+var _demoler := Button.new()
 var _filas := {}  # rol -> {"cantidad": Label, "menos": Button, "mas": Button}
 
 
@@ -56,6 +60,9 @@ func _ready() -> void:
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		etiqueta.custom_minimum_size.x = 250.0
 		caja.add_child(etiqueta)
+	TemaHUD.estilizar_boton(_demoler)
+	_demoler.pressed.connect(_on_demoler)
+	caja.add_child(_demoler)
 
 
 func _crear_fila(rol: String) -> HBoxContainer:
@@ -139,6 +146,18 @@ func _actualizar() -> void:
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
+	_demoler.text = "Cancelar demolición" if Obras.esta_marcado(Obras.id_en_columna(esquina)) else "Demoler"
+
+
+## Marca (o desmarca) el edificio del puesto para demolición, sin activar la herramienta.
+func _on_demoler() -> void:
+	var id: int = Obras.id_en_columna(esquina)
+	if id == -1:
+		aviso.emit("No se encontró el edificio del puesto.")
+		return
+	var motivo: String = Obras.alternar_marca(id)
+	if motivo != "":
+		aviso.emit(motivo)
 
 
 static func _texto_recursos(recursos: Dictionary, vacio: String, sufijo: String = "") -> String:

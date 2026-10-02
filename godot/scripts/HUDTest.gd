@@ -31,6 +31,39 @@ class RecursoFalso:
 		tasa_neta_promedio = p_tasa
 
 
+class ObrasPanelFalso extends RefCounted:
+	var resumen: Dictionary = {}
+	var marcados: Dictionary = {}
+	var pausas := 0
+	var rechazo := ""
+
+	func resumen_de(_id: int) -> Dictionary:
+		return resumen
+
+	func alternar_pausa(_id: int) -> void:
+		pausas += 1
+		resumen["pausada"] = not resumen["pausada"]
+
+	func alternar_marca(id: int) -> String:
+		if rechazo != "":
+			return rechazo
+		if marcados.has(id):
+			marcados.erase(id)
+			resumen["estado"] = "construccion"
+		else:
+			marcados[id] = true
+			resumen["estado"] = "demolicion"
+		return ""
+
+	func esta_marcado(id: int) -> bool:
+		return marcados.has(id)
+
+
+class ColonosPanelFalso extends RefCounted:
+	func obreros_en(_id: int) -> int:
+		return 3
+
+
 func _ready() -> void:
 	await ejecutar_pruebas()
 	print("HUDTest: todas las pruebas pasaron")
@@ -51,6 +84,7 @@ func ejecutar_pruebas() -> void:
 	probar_ventana_poblacion_empleo()
 	probar_ventana_ocupaciones()
 	probar_panel_escuela()
+	probar_panel_edificio()
 
 
 func probar_barra_superior_calculos() -> void:
@@ -665,3 +699,42 @@ func probar_panel_escuela() -> void:
 	panel.queue_free()
 	Economia.puestos.erase(esquina7)
 	Economia.puestos.erase(esquina7r)
+
+
+func probar_panel_edificio() -> void:
+	print("=== TEST: PanelEdificio muestra los datos del edificio y sus botones actúan sobre Obras ===")
+	var PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
+	var ciudad: Node = preload("res://scripts/Ciudad.gd").new()
+	ciudad.almacen["piedra"].cantidad = 4.0
+	var obras := ObrasPanelFalso.new()
+	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "construccion", "pausada": false, "salud": 0.25, "faltantes": {"piedra": 15}}
+	var panel: PanelContainer = PanelEdificioScript.new()
+	panel.obras = obras
+	panel.colonos = ColonosPanelFalso.new()
+	panel.ciudad = ciudad
+	add_child(panel)
+	var avisos: Array = []
+	panel.aviso.connect(func(texto: String) -> void: avisos.append(texto))
+	panel.abrir(7)
+	assert(panel.visible, "se abre")
+	assert(panel._titulo.text == "Casa" and panel._tipo.text.contains("Residencial"), "nombre y tipo")
+	assert(panel._estado.text.contains("En construcción") and not panel._estado.text.contains("pausada"), "estado")
+	assert(panel._salud.text == "Salud: 25 %", "salud: %s" % panel._salud.text)
+	assert(panel._obreros.visible and panel._obreros.text == "Obreros: 3", "obreros")
+	assert(panel._materiales.visible and panel._materiales.text.contains("15") and panel._materiales.text.contains("4"), "faltan 15 de piedra y hay 4: %s" % panel._materiales.text)
+	assert(panel._pausar.visible and panel._pausar.text == "Pausar construcción" and panel._demoler.text == "Demoler", "botones")
+	panel._pausar.pressed.emit()
+	assert(obras.pausas == 1 and panel._pausar.text == "Reanudar" and panel._estado.text.contains("pausada"), "pausar actúa sobre Obras y cambia la etiqueta")
+	panel._demoler.pressed.emit()
+	assert(obras.marcados.has(7) and panel._demoler.text == "Cancelar demolición" and panel._pausar.text == "Reanudar", "demoler marca el edificio")
+	obras.rechazo = "El núcleo urbano no se puede demoler."
+	panel._demoler.pressed.emit()
+	assert(avisos == ["El núcleo urbano no se puede demoler."], "un rechazo se avisa")
+	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "completo", "pausada": false, "salud": 1.0, "faltantes": {}}
+	panel._actualizar()
+	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible, "completo: 100 %, sin materiales, sin obreros y sin botón de pausa")
+	obras.resumen = {}
+	panel._process(0.0)
+	assert(not panel.visible, "se cierra solo si el edificio desaparece")
+	panel.queue_free()
+	ciudad.free()

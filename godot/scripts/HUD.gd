@@ -22,6 +22,7 @@ const COLOR_POSITIVO := Color.WHITE
 const COLOR_NEGATIVO := Color(1.0, 0.3, 0.3)
 
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
+const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
 const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
 const PanelContextualScript = preload("res://scripts/PanelContextual.gd")
 const BarraModosScript = preload("res://scripts/BarraModos.gd")
@@ -57,6 +58,7 @@ const NOMBRES_TASA := {
 @onready var oxigeno_label: Label = $OxigenoLabel
 
 var _panel_puesto: PanelContainer
+var _panel_edificio: PanelContainer
 var _barra_progreso: ProgressBar
 var _barra_superior: PanelContainer
 var _contexto: PanelContainer
@@ -98,6 +100,10 @@ func _init() -> void:
 	add_child(_hotbar)
 	_panel_puesto = PanelPuestoScript.new()
 	add_child(_panel_puesto)
+	_panel_puesto.aviso.connect(notificar)
+	_panel_edificio = PanelEdificioScript.new()
+	add_child(_panel_edificio)
+	_panel_edificio.aviso.connect(notificar)
 	_notificaciones = PanelNotificacionesScript.new()
 	add_child(_notificaciones)
 
@@ -333,11 +339,19 @@ func abrir_ventana_dato(cual: String) -> void:
 
 
 func abrir_panel_puesto(esquina: Vector2i) -> void:
+	_panel_edificio.cerrar()
 	_panel_puesto.abrir(esquina)
 
 
 func cerrar_panel_puesto() -> void:
 	_panel_puesto.cerrar()
+	_panel_edificio.cerrar()
+
+
+## Ventana de un edificio u obra (ver PanelEdificio).
+func abrir_panel_edificio(id: int) -> void:
+	_panel_puesto.cerrar()
+	_panel_edificio.abrir(id)
 
 
 ## Ventana de interacción del baúl (E apuntando al depósito de un puesto,

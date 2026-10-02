@@ -201,6 +201,12 @@ func _input(event: InputEvent) -> void:
 				_temporizador_accion = 0.0
 				_deconstruir()
 		elif boton.button_index == MOUSE_BUTTON_RIGHT:
+			if modo_deconstruccion:
+				# Con el modo activo no se coloca; el clic derecho queda reservado a «Marcar para demolición» (7b).
+				_colocando = false
+				if boton.pressed:
+					_avisar_modo_deconstruccion("colocar bloques")
+				return
 			_colocando = boton.pressed
 			if boton.pressed:
 				_temporizador_accion = 0.0
@@ -442,7 +448,7 @@ func _physics_process(delta: float) -> void:
 ## Panel fijo mientras el modo deconstrucción (G) está activo. Main lo repone al
 ## volver de la cenital, cuyo set_vista() descarta el panel.
 func mostrar_contexto_deconstruccion() -> void:
-	hud.mostrar_contexto("Deconstruir", {}, ["DECONSTRUIR (clic izq.)", "MARCAR PARA DEMOLICIÓN (clic der.)", "G para salir"])
+	hud.mostrar_contexto("Deconstruir", {}, ["DECONSTRUIR (clic izq.)\nMARCAR PARA DEMOLICIÓN (clic der.)\nG para salir"])  # un solo elemento: cada instrucción en su línea
 
 
 ## Overlay verde sobre la cara apuntada, solo si el raycast golpea algo (su largo

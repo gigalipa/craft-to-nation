@@ -27,6 +27,7 @@ Economia="*res://scripts/Economia.gd"
 Blueprints="*res://scripts/Blueprints.gd"
 Construccion="*res://scripts/Construccion.gd"
 CadenaMinerales="*res://scripts/CadenaMinerales.gd"
+Obras="*res://scripts/Obras.gd"
 Colonos="*res://scripts/Colonos.gd"
 Vias="*res://scripts/Vias.gd"
 

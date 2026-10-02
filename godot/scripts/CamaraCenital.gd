@@ -1354,7 +1354,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif modo_trazar_via:
 				_procesar_clic_via(boton.position)
 			elif modo_demoler:
-				pass  # marcar edificios para demolición: fuera de alcance por ahora (ver modo_demoler)
+				_procesar_clic_demoler(boton.position)
 			else:
 				_procesar_clic_interaccion(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
@@ -1925,9 +1925,8 @@ func _salir_de_modo_trazar_via(cerrar_menu: bool = true) -> void:
 		hud.ocultar_contexto()
 
 
-## Activa/desactiva el modo demoler (menú principal, tecla `3`). Solo el
-## interruptor — sin marcado de edificios ni asignación de NPCs todavía (ver
-## comentario de "modo_demoler" arriba).
+## Activa/desactiva el modo demoler (menú principal, tecla `3`). Con él activo, el clic
+## marca o desmarca edificios para que los colonos los demuelan (ver _procesar_clic_demoler()).
 func _alternar_modo_demoler() -> void:
 	if modo_demoler:
 		_salir_de_modo_demoler()
@@ -1937,7 +1936,7 @@ func _alternar_modo_demoler() -> void:
 	hud.cerrar_panel_puesto()
 	modo_demoler = true
 	hud.set_modo("demoler")
-	hud.mostrar_contexto("Demoler", {}, ["[Esc] Salir"])
+	hud.mostrar_contexto("Demoler", {}, ["(clic izq.) MARCAR PARA DEMOLICIÓN\n[Esc] Salir"])
 
 
 func _salir_de_modo_demoler() -> void:
@@ -1982,11 +1981,32 @@ func _categorias_permitidas_zona() -> String:
 ## Clic sin ningún modo activo: sobre un puesto de trabajo abre su panel; en
 ## cualquier otro sitio lo cierra.
 func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
-	var esquina_puesto := Recoleccion.esquina_de_puesto_en(_celda_bajo_mouse(posicion_pantalla))
+	var columna := _celda_bajo_mouse(posicion_pantalla)
+	var esquina_puesto := Recoleccion.esquina_de_puesto_en(columna)
 	if esquina_puesto != Recoleccion.SIN_PUESTO:
 		hud.abrir_panel_puesto(esquina_puesto)
+		return
+	var id: int = Obras.id_en_columna(columna)
+	if id != -1:
+		hud.abrir_panel_edificio(id)
 	else:
 		hud.cerrar_panel_puesto()
+
+
+## Clic con el modo demoler: marca (o desmarca) para demolición el edificio bajo el cursor.
+## _celda_bajo_mouse() es una columna (x, z): se busca el edificio que ocupa esa columna.
+func _procesar_clic_demoler(posicion_pantalla: Vector2) -> void:
+	var id: int = Obras.id_en_columna(_celda_bajo_mouse(posicion_pantalla))
+	if id == -1:
+		hud.notificar("No hay ningún edificio ahí para marcar.")
+		return
+	var motivo: String = Obras.alternar_marca(id)
+	if motivo != "":
+		hud.notificar(motivo)
+	elif Obras.esta_marcado(id):
+		hud.notificar("Edificio marcado para demolición.")
+	else:
+		hud.notificar("Marca de demolición quitada.")
 
 
 ## Clic con el modo zonificación activo: primera esquina o cierre del rectángulo.

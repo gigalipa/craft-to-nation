@@ -107,3 +107,14 @@ Un tick son 2 s reales y un colono camina 2,5 celdas/s, es decir 5 celdas por ho
 - Capacidad de carga de 150 unidades por viaje.
 - Un recolector de caza/recolección o de pesca produce las dos señales a la vez, sumadas en comida.
 - Las tasas se guardan al colocar el puesto y se recalculan cada 6 horas de juego según el entorno (fase 2B).
+
+## Obras por colonos (2026-10-02)
+
+Los colonos libres (desempleados y técnicos sin puesto) construyen y demuelen. Especificación: `docs/superpowers/specs/2026-10-02-obras-por-colonos-design.md`.
+
+- **`Obras` (autoload):** no guarda una lista de obras; las deriva de `VoxelWorld` (un edificio con progreso incompleto que nadie abandonó). Guarda las marcas de demolición, las obras pausadas por falta de material o por el jugador, las abandonadas, los reclamos del jugador (3 s tras actuar a mano sobre un edificio) y los vetos por colono (30 s).
+- **Prioridad:** construir antes que demoler; a igualdad, la obra más cercana. Un edificio que el jugador deconstruye a mano o que se desmarca a medias queda abandonado: no se reconstruye solo.
+- **`FinalizacionObras`:** lógica compartida por `Player` y `Obras` (registrar lo construido, retirar lo demolido, duración de un paso: el de minar si es excavación, 0,20 s en el resto).
+- **`Colonos`:** `c["tarea"]` (`{tipo, id}`); un colono libre pide tarea, se coloca junto al edificio y hace un paso cada vez; sin ruta repetida (3 fallos) veta la obra para sí.
+- **Marcado:** clic derecho con el modo G (1ª persona), clic con el modo demoler (cenital) o el botón «Demoler» de la ventana del edificio (`PanelEdificio`) y del panel del puesto. Los edificios marcados se ven con un tinte rojo (`MarcasDemolicionOverlay`).
+

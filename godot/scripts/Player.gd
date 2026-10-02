@@ -6,6 +6,7 @@ const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
 const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
+const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
@@ -75,7 +76,7 @@ const TASA_RECUPERACION_OXIGENO := 2.0
 ## "sostener") mientras se mantiene el click presionado. Minar, talar y recolectar
 ## frutos ya no repiten: avanzan por tiempo con ProgresoAccion (ver Recoleccion.
 ## tiempo_minado_de()).
-const INTERVALO_ACCION_REPETIDA := 0.20
+const INTERVALO_ACCION_REPETIDA := FinalizacionObras.INTERVALO_PASO
 const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
 const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 
@@ -205,7 +206,7 @@ func _input(event: InputEvent) -> void:
 				# Con el modo activo no se coloca; el clic derecho queda reservado a «Marcar para demolición» (7b).
 				_colocando = false
 				if boton.pressed:
-					_avisar_modo_deconstruccion("colocar bloques")
+					_marcar_demolicion()
 				return
 			_colocando = boton.pressed
 			if boton.pressed:
@@ -256,11 +257,7 @@ func _procesar_accion_repetida(delta: float) -> void:
 func _intervalo_accion_actual() -> float:
 	if mundo == null or not raycast.is_colliding():
 		return INTERVALO_ACCION_REPETIDA
-	var paso: Dictionary = mundo.proximo_paso_pendiente(_celda_impactada())
-	if paso.is_empty() or (paso["tipo"] != "aire" and paso["tipo"] != "fantasma"):
-		return INTERVALO_ACCION_REPETIDA
-	var material: String = mundo.material_real(mundo.obtener_tipo(paso["celda"]))
-	return Recoleccion.tiempo_minado_de(material)
+	return FinalizacionObras.intervalo_del_paso(mundo, _celda_impactada())
 
 
 ## Barra del avance de la obra apuntada (construye: avanza; deconstruye: retrocede).
@@ -712,6 +709,28 @@ func _alternar_modo_deconstruccion() -> void:
 	_ticks_listo_para_remocion = 0
 
 
+## Clic derecho con el modo deconstrucción: marca (o desmarca) para demolición el edificio
+## bajo la mira; los colonos libres lo demolerán.
+func _marcar_demolicion() -> void:
+	var id := -1
+	if raycast.is_colliding() and mundo != null:
+		id = mundo.id_de_edificio(_celda_impactada())
+	_marcar_demolicion_de(id)
+
+
+func _marcar_demolicion_de(id: int) -> void:
+	if id == -1:
+		hud.notificar("No hay ningún edificio ahí para marcar.")
+		return
+	var motivo: String = Obras.alternar_marca(id)
+	if motivo != "":
+		hud.notificar(motivo)
+	elif Obras.esta_marcado(id):
+		hud.notificar("Edificio marcado para demolición.")
+	else:
+		hud.notificar("Marca de demolición quitada.")
+
+
 ## Notificación de que la acción no está disponible con el modo deconstrucción
 ## activo; espaciada para que mantener el clic no sature el panel.
 func _avisar_modo_deconstruccion(accion: String) -> void:
@@ -751,12 +770,9 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		_ticks_listo_para_remocion = 0
 		return
 
-	Ciudad.retirar_edificio_residencial(resultado["id"])  # idempotente
-	var metadata_obra: Dictionary = mundo.edificio_metadata.get(resultado["id"], {})
-	if metadata_obra.has("puesto"):
-		Economia.desactivar_puesto(metadata_obra["puesto"])  # idempotente: un puesto en deconstrucción deja de funcionar
-	if resultado["total_camas"] > 0:
-		print("Deconstrucción iniciada: ", resultado["total_camas"], " cama(s) retiradas de Ciudad.")
+	FinalizacionObras.al_deconstruir(mundo, resultado)
+	Obras.abandonar(resultado["id"])  # lo que se deconstruye a mano no lo reconstruyen los colonos
+	Obras.reclamar(resultado["id"])  # y mientras el jugador actúa, los colonos le ceden el edificio
 
 	if not resultado["lista_para_remocion"]:
 		_id_listo_para_remocion = -1
@@ -771,14 +787,7 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		_ticks_listo_para_remocion = 1
 
 	if _ticks_listo_para_remocion >= TICKS_REMOCION_FINAL:
-		var metadata_final: Dictionary = mundo.edificio_metadata.get(id, {})  # eliminar_edificio() la borra
-		var esquina: Vector2i = mundo.eliminar_edificio(id)
-		if metadata_final.has("puesto"):
-			esquina = metadata_final["puesto"]  # la esquina del puesto, no la de las celdas de la plantilla
-		Zonificacion.retirar_contribucion(id)
-		Recoleccion.quitar_puesto(esquina)
-		Economia.quitar_puesto(esquina)  # libera a sus trabajadores (no-op si era un edificio)
-		print("Edificio deconstruido por completo.")
+		FinalizacionObras.retirar_edificio(mundo, id)
 		_alternar_modo_deconstruccion()  # el modo se apaga solo al terminar el edificio
 
 
@@ -821,6 +830,7 @@ func _colocar() -> void:
 	var celda := _celda_impactada()
 	var resultado: Dictionary = mundo.surtir_construccion(celda)
 	if not resultado.is_empty():
+		Obras.reclamar(mundo.id_de_edificio(celda))  # el jugador tiene preferencia sobre los colonos
 		if resultado.get("bloqueada", false):
 			_avisar_colocacion_rechazada("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
 		elif resultado.get("insuficiente", false):
@@ -1111,55 +1121,6 @@ func _ejecutar_sucesion(motivo: String) -> void:
 ## (metadata {"puesto": esquina}): este solo reactiva su Economia y no pasa
 ## por el registro de Ciudad/Zonificacion.
 func _completar_construccion(metadata: Dictionary) -> void:
-	if metadata.is_empty():
-		return
-	if metadata.has("puesto_nuevo"):
-		var info: Dictionary = metadata["puesto_nuevo"]
-		var entorno: Dictionary = {}
-		var tasas: Dictionary = {}
-		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]):
-			var centro: Vector2i = info["centro"]
-			var altura: int = mundo.altura_en(centro.x, centro.y)
-			entorno = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"])
-			tasas = Recoleccion.tasas_de_entorno(info["tipo"], mundo, entorno)
-		Recoleccion.colocar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"])
-		# info["y_base"] es la Y de la losa de piso (capa 0, ver PlantillasPuesto.gd);
-		# el piso interior TRANSITABLE (donde vive la puerta) es una capa arriba.
-		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"] + 1, info.get("salida", Economia.SIN_SERVICIO), info.get("chimenea", Economia.SIN_DEPOSITO))
-		print("Puesto '%s' construido en (%d, %d)." % [info["tipo"], info["esquina"].x, info["esquina"].y])
-		hud.notificar("Puesto construido.")
-		metadata.erase("puesto_nuevo")  # a partir de aquí, un reconstruir cae en la rama "puesto" (reactivar), no en esta (evita re-registrar y huérfanos en _puesto_de — revisión de código, 2026-09-29).
-		return
-	if metadata.has("puesto"):
-		Economia.reactivar_puesto(metadata["puesto"])
-		print("Puesto reactivado en ", metadata["puesto"], ".")
-		hud.notificar("Puesto reactivado.")
-		return
-	var blueprint: Dictionary = metadata["blueprint"]
-
-	# El primer edificio declarado es el núcleo urbano: no es habitable, así que
-	# no suma camas (no llegan colonos todavía) ni baúles al tope del almacén; en
-	# cambio, declararlo duplica los topes del inventario.
-	if not Zonificacion.nucleo_declarado:
-		Zonificacion.declarar_nucleo(metadata["huella_xz"])
-		Ciudad.ampliar_almacen()
-		print("Núcleo urbano declarado (no habitable: no llegan colonos todavía). Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max, ". Topes del inventario duplicados.")
-		hud.notificar("Núcleo urbano declarado.")
-		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
-		return
-
-	var camas_por_piso: Array[int] = []
-	var total_camas := 0
-	for piso in blueprint["pisos"]:
-		var camas: int = (piso.get("camas", []) as Array).size()
-		camas_por_piso.append(camas)
-		total_camas += camas
-	var baules: int = BlueprintValidator.contar_baules(blueprint)
-	Ciudad.registrar_edificio_residencial(metadata["id_edificio"], camas_por_piso, baules)
-	print("Construcción completa: camas registradas en Ciudad: ", total_camas, " (capacidad de camas actual: ", Ciudad.capacidad_camas_construida, "), baúles: ", baules)
-	hud.notificar("Edificio construido.")
-
-	Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
-	print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
-
-	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
+	var aviso: String = FinalizacionObras.completar_construccion(mundo, metadata)
+	if aviso != "":
+		hud.notificar(aviso)

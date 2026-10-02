@@ -2,6 +2,7 @@ extends Node
 
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const Player = preload("res://scripts/Player.gd")
+const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
 
 ## Equivalente GDScript de ejecutar_pruebas() en PoC_2 (tests 1-6), más
 ## pruebas propias de PoC 3 para "declarar edificio" (7-8, ver
@@ -2559,7 +2560,82 @@ func ejecutar_pruebas() -> void:
 	hud_falso_91.free()
 	print("OK: avisa sin saturar y el modo se apaga al terminar el edificio.")
 
-	print("\n=== Las 91 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 92: FinalizacionObras: el intervalo de un paso, completar sin metadata y retirar un edificio por completo ===")
+	const OX92 := 1200
+	mundo.colocar_bloque(Vector3i(OX92, 0, OX92), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX92, 1, OX92), "bloque_piedra", true)
+	var id_92: int = mundo.registrar_edificio_completo({Vector3i(OX92, 0, OX92): "tierra", Vector3i(OX92, 1, OX92): "bloque_piedra"})
+	assert(FinalizacionObras.completar_construccion(mundo, {}) == "", "sin metadata no hay nada que completar ni avisar")
+	assert(FinalizacionObras.intervalo_del_paso(mundo, Vector3i(OX92, 1, OX92)) == FinalizacionObras.INTERVALO_PASO, "un edificio completo no tiene paso de excavación: intervalo fijo")
+	var r92: Dictionary = {}
+	for _i in range(5):
+		r92 = mundo.procesar_deconstruccion(Vector3i(OX92, 1, OX92))
+		FinalizacionObras.al_deconstruir(mundo, r92)
+		if r92["lista_para_remocion"]:
+			break
+	assert(r92["lista_para_remocion"], "tras revertir todas las celdas queda listo para remoción")
+	FinalizacionObras.retirar_edificio(mundo, id_92)
+	assert(not mundo.edificio_a_celdas.has(id_92), "retirar_edificio elimina el edificio")
+	print("OK: FinalizacionObras funciona igual que el flujo previo de Player.")
+
+	print("\n=== TEST 93: deconstruir a mano abandona la obra para los colonos, y el clic derecho en modo deconstrucción alterna la marca ===")
+	const OX93 := 1300
+	mundo.colocar_bloque(Vector3i(OX93, 0, OX93), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX93, 1, OX93), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX93 + 1, 1, OX93), "bloque_piedra", true)
+	var id_93: int = mundo.registrar_edificio_completo({Vector3i(OX93, 0, OX93): "tierra", Vector3i(OX93, 1, OX93): "bloque_piedra", Vector3i(OX93 + 1, 1, OX93): "bloque_piedra"})
+	var obras_93: Node = Obras
+	obras_93.mundo = mundo
+	var hud_falso_93 := HudFalso91.new()
+	var jugador_93 := Player.new()
+	jugador_93.mundo = mundo
+	jugador_93.hud = hud_falso_93
+	jugador_93._alternar_modo_deconstruccion()
+	jugador_93._procesar_deconstruccion(Vector3i(OX93, 1, OX93))
+	assert(obras_93.abandonadas.has(id_93), "una celda deconstruida a mano marca el edificio como abandonado")
+	assert(obras_93.esta_reclamada(id_93), "y lo reclama: los colonos se lo ceden mientras el jugador actúa")
+	assert(obras_93.siguiente_tarea(Vector3i(OX93, 1, OX93 + 3)).get("tipo", "") != "construir" or obras_93.siguiente_tarea(Vector3i(OX93, 1, OX93 + 3))["id"] != id_93, "los colonos no lo reconstruyen")
+	jugador_93._marcar_demolicion_de(id_93)
+	assert(obras_93.esta_marcado(id_93), "el clic derecho marca el edificio")
+	jugador_93._marcar_demolicion_de(id_93)
+	assert(not obras_93.esta_marcado(id_93), "y otro clic lo desmarca")
+	jugador_93._marcar_demolicion_de(-1)
+	assert(hud_falso_93.avisos.size() >= 1, "sin edificio bajo la mira se avisa")
+	obras_93.olvidar(id_93)
+	obras_93.mundo = null
+	jugador_93.free()
+	hud_falso_93.free()
+	print("OK: la 1ª persona abandona al deconstruir y marca con el clic derecho.")
+
+	print("\n=== TEST 94: con el mundo real, los colonos demuelen un edificio marcado hasta retirarlo; retirarlo a mano también limpia su marca ===")
+	const OX94 := 1400
+	mundo.colocar_bloque(Vector3i(OX94, 0, OX94), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX94, 1, OX94), "bloque_piedra", true)
+	var id_94: int = mundo.registrar_edificio_completo({Vector3i(OX94, 0, OX94): "tierra", Vector3i(OX94, 1, OX94): "bloque_piedra"})
+	Obras.mundo = mundo
+	assert(Obras.alternar_marca(id_94) == "", "se marca")
+	var estado_94 := ""
+	for _i in range(10):
+		estado_94 = Obras.trabajar(id_94, "demoler")["estado"]
+		if estado_94 == "completa":
+			break
+	assert(estado_94 == "completa", "los colonos terminan de demoler el edificio: %s" % estado_94)
+	assert(not mundo.edificio_a_celdas.has(id_94) and not Obras.esta_marcado(id_94), "el edificio ya no existe y no queda marcado")
+	assert(Obras.trabajar(id_94, "demoler")["estado"] == "invalida", "una obra que ya no existe es inválida, sin error")
+	mundo.colocar_bloque(Vector3i(OX94 + 5, 0, OX94), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX94 + 5, 1, OX94), "bloque_piedra", true)
+	var id_94b: int = mundo.registrar_edificio_completo({Vector3i(OX94 + 5, 0, OX94): "tierra", Vector3i(OX94 + 5, 1, OX94): "bloque_piedra"})
+	Obras.alternar_marca(id_94b)
+	for _i in range(5):
+		var r94: Dictionary = mundo.procesar_deconstruccion(Vector3i(OX94 + 5, 1, OX94))
+		if r94["lista_para_remocion"]:
+			break
+	FinalizacionObras.retirar_edificio(mundo, id_94b)  # lo que hace el jugador al terminar de deconstruir a mano
+	assert(not Obras.esta_marcado(id_94b), "retirar un edificio a mano limpia su marca (si no, el tinte rojo quedaría flotando)")
+	Obras.mundo = null
+	print("OK: la demolición por colonos retira el edificio y no deja rastro en Obras.")
+
+	print("\n=== Las 94 pruebas de BlueprintValidator pasaron correctamente ===")
 
 
 ## Sustituto mínimo del HUD para las pruebas de Player: solo cuenta avisos.

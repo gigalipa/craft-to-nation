@@ -2,6 +2,7 @@ extends Node
 
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const Player = preload("res://scripts/Player.gd")
+const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
 
 ## Equivalente GDScript de ejecutar_pruebas() en PoC_2 (tests 1-6), más
 ## pruebas propias de PoC 3 para "declarar edificio" (7-8, ver
@@ -2559,7 +2560,25 @@ func ejecutar_pruebas() -> void:
 	hud_falso_91.free()
 	print("OK: avisa sin saturar y el modo se apaga al terminar el edificio.")
 
-	print("\n=== Las 91 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 92: FinalizacionObras: el intervalo de un paso, completar sin metadata y retirar un edificio por completo ===")
+	const OX92 := 1200
+	mundo.colocar_bloque(Vector3i(OX92, 0, OX92), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX92, 1, OX92), "bloque_piedra", true)
+	var id_92: int = mundo.registrar_edificio_completo({Vector3i(OX92, 0, OX92): "tierra", Vector3i(OX92, 1, OX92): "bloque_piedra"})
+	assert(FinalizacionObras.completar_construccion(mundo, {}) == "", "sin metadata no hay nada que completar ni avisar")
+	assert(FinalizacionObras.intervalo_del_paso(mundo, Vector3i(OX92, 1, OX92)) == FinalizacionObras.INTERVALO_PASO, "un edificio completo no tiene paso de excavación: intervalo fijo")
+	var r92: Dictionary = {}
+	for _i in range(5):
+		r92 = mundo.procesar_deconstruccion(Vector3i(OX92, 1, OX92))
+		FinalizacionObras.al_deconstruir(mundo, r92)
+		if r92["lista_para_remocion"]:
+			break
+	assert(r92["lista_para_remocion"], "tras revertir todas las celdas queda listo para remoción")
+	FinalizacionObras.retirar_edificio(mundo, id_92)
+	assert(not mundo.edificio_a_celdas.has(id_92), "retirar_edificio elimina el edificio")
+	print("OK: FinalizacionObras funciona igual que el flujo previo de Player.")
+
+	print("\n=== Las 92 pruebas de BlueprintValidator pasaron correctamente ===")
 
 
 ## Sustituto mínimo del HUD para las pruebas de Player: solo cuenta avisos.

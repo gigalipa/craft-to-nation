@@ -77,6 +77,8 @@ var _horas_desde_recalculo := 0
 ## true mientras _actualizar_agotamiento() libera personal y reevalúa el área: evita que cada liberación
 ## recalcule por su cuenta.
 var _recalculando := false
+## true mientras desactivar_puesto() libera a todos de golpe: _actualizar_nivel() no toca el nivel.
+var _liberando_todos := false
 
 ## Vector2i (esquina de la huella) -> {"tipo", "ancho", "alto", "cupo",
 ## "capacidad", "tasas" (clave de tasa -> unidades por recolector y hora),
@@ -181,7 +183,7 @@ func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 	if tiene_niveles(esquina) and RANGO_DE_ROL.has(rol):
 		p["rangos"][colono_id] = RANGO_DE_ROL[rol]
 		_actualizar_nivel(esquina)
-	return true
+	return _puesto_de.has(colono_id)  # falso si subir el nivel dejó el puesto agotado y lo despidió al instante
 
 
 ## Roles que admite el puesto: aprendices en una escuela; técnicos y acarreadores en una refinería;
@@ -228,7 +230,7 @@ func admite_rol(esquina: Vector2i, rol: String) -> bool:
 ## reevalúa de inmediato el área, las tasas y el agotamiento (salvo dentro de _actualizar_agotamiento()).
 func _actualizar_nivel(esquina: Vector2i) -> void:
 	var p: Dictionary = puestos[esquina]
-	if p["rangos"].is_empty():
+	if _liberando_todos or p["rangos"].is_empty():
 		return
 	var minimo := 99
 	for rango in p["rangos"].values():
@@ -760,7 +762,9 @@ func desactivar_puesto(esquina: Vector2i) -> void:
 	var p: Dictionary = puestos[esquina]
 	p["activo"] = false
 	retirar_deposito(esquina)  # el baúl se desmonta: lo que quepa pasa al núcleo urbano en vez de perderse
+	_liberando_todos = true  # que el orden de las bajas no suba el nivel del puesto que se demuele
 	_liberar_de(esquina, p["recolectores"] + p["acarreadores"])
+	_liberando_todos = false
 
 
 ## La obra del puesto volvió a completarse: vuelve a funcionar, sin trabajadores.

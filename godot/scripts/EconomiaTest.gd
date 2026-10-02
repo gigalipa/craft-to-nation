@@ -781,7 +781,7 @@ func ejecutar_pruebas() -> void:
 	e33.recalcular_tasas(ESQ)
 	assert(e33.puestos[ESQ]["agotado"] and e33.nivel_de(ESQ) == 1)
 	assert(not e33.asignar(ESQ, "recolector", 1), "agotado en nivel 1: no entran obreros")
-	assert(e33.asignar(ESQ, "tecnico", 2))
+	assert(not e33.asignar(ESQ, "tecnico", 2), "contratado y despedido al instante: asignar devuelve falso")
 	assert(e33.nivel_de(ESQ) == 2 and e33.puestos[ESQ]["agotado"] and e33.puestos[ESQ]["recolectores"].is_empty(), "sube a 2, sigue agotado y despide al técnico")
 	assert(not e33.asignar(ESQ, "tecnico", 3), "agotado en nivel 2: solo especialistas")
 	assert(e33.asignar(ESQ, "especialista", 4))
@@ -796,4 +796,16 @@ func ejecutar_pruebas() -> void:
 	e33b.recalcular_tasas(ESQ)
 	assert(e33b.puestos[ESQ]["recolectores"] == [2] and e33b.nivel_de(ESQ) == 3 and not e33b.puestos[ESQ]["agotado"])
 
-	print("\n=== Las 33 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 34: desactivar_puesto() no sube el nivel según el orden de las bajas y avisa una vez por colono ===")
+	# Con el técnico primero el puesto subiría a 2 y rechazaría al obrero: el único orden posible es obrero, técnico.
+	var e34: Node = _nueva(CiudadScript.new())
+	var liberados34: Array = []
+	e34.trabajadores_liberados.connect(func(ids: Array) -> void: liberados34.append_array(ids))
+	assert(e34.asignar(ESQ, "recolector", 1) and e34.asignar(ESQ, "tecnico", 2) and e34.nivel_de(ESQ) == 1)
+	e34.desactivar_puesto(ESQ)
+	liberados34.sort()
+	assert(e34.nivel_de(ESQ) == 1 and liberados34 == [1, 2], "el nivel no sube y cada id se avisa una vez")
+	e34.reactivar_puesto(ESQ)
+	assert(e34.asignar(ESQ, "recolector", 3), "tras reactivar sigue en nivel 1 y admite obreros")
+
+	print("\n=== Las 34 pruebas de Economia pasaron correctamente ===")

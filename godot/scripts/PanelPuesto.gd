@@ -37,12 +37,14 @@ func _ready() -> void:
 	visible = false
 	TemaHUD.aplicar_panel(self)
 	mouse_filter = Control.MOUSE_FILTER_STOP  # los botones +/- necesitan capturar el clic
-	set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	# Abajo a la derecha: arriba las notificaciones ocupan ese lugar (decisión del usuario, 2026-10-02).
+	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	offset_left = -280.0
-	offset_top = 72.0
+	offset_bottom = -12.0
 	offset_right = -12.0
 	custom_minimum_size.x = 268.0
 	grow_horizontal = Control.GROW_DIRECTION_BEGIN  # si crece, hacia la izquierda
+	grow_vertical = Control.GROW_DIRECTION_BEGIN  # y hacia arriba
 	var caja := VBoxContainer.new()
 	add_child(caja)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))

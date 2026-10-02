@@ -40,10 +40,14 @@ const CAPACIDAD_CARGA := 150.0
 ## de este valor queda en el almacén local hasta acumular más.
 const CARGA_MINIMA := 10.0
 
-## "tecnico" solo existe en las refinerías (opera la receta); "recolector" solo en los puestos de
-## recolección; "aprendiz" solo en las escuelas. "acarreador" vale en los puestos de recolección y
-## en las refinerías (ver roles_de()).
-const ROLES := ["recolector", "tecnico", "aprendiz", "acarreador"]
+## "tecnico" opera la receta en las refinerías y, en los puestos de recolección, recolecta como técnico;
+## "recolector" (un obrero) y "especialista" solo existen en los puestos de recolección; "aprendiz" solo en las
+## escuelas. "acarreador" vale en los puestos de recolección y en las refinerías (ver roles_de()).
+const ROLES := ["recolector", "tecnico", "especialista", "aprendiz", "acarreador"]
+
+## Rango de oficio de quien recolecta: es el nivel mínimo de puesto que ocupa (ver nivel_de()). Obrero 1,
+## técnico 2, especialista 3.
+const RANGO_DE_ROL := {"recolector": 1, "tecnico": 2, "especialista": 3}
 
 ## Horas de juego que estudia una cohorte antes de graduarse (placeholder sin balance real).
 const HORAS_FORMACION := 24
@@ -69,6 +73,10 @@ var ciudad: Object = null  # Ciudad
 ## consumir el mundo.
 var mundo: Object = null
 var _horas_desde_recalculo := 0
+
+## true mientras _actualizar_agotamiento() libera personal y reevalúa el área: evita que cada liberación
+## recalcule por su cuenta.
+var _recalculando := false
 
 ## Vector2i (esquina de la huella) -> {"tipo", "ancho", "alto", "cupo",
 ## "capacidad", "tasas" (clave de tasa -> unidades por recolector y hora),
@@ -116,6 +124,8 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"servicio": servicio, "deposito": deposito, "suelo": suelo,
 		"salida": salida, "chimenea": chimenea,
 		"progreso": 0.0,  # horas que lleva estudiando la cohorte (solo escuelas)
+		"nivel": 1,  # 1-3, solo en los puestos con niveles: rango mínimo de sus recolectores (ver nivel_de())
+		"rangos": {},  # id de recolector -> rango de su oficio (RANGO_DE_ROL)
 	}
 
 
@@ -156,46 +166,109 @@ func cupo_libre(esquina: Vector2i) -> int:
 
 
 ## Asigna un colono a un puesto con un rol. Falso si el puesto no existe, el
-## rol no es válido, el cupo está lleno o el colono ya trabaja en algún puesto.
+## rol no es válido, el cupo está lleno, el colono ya trabaja en algún puesto o el
+## nivel del puesto no admite ese oficio (ver admite_rol()).
 func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 	if not puestos.has(esquina) or not roles_de(esquina).has(rol) or _puesto_de.has(colono_id):
 		return false  # roles válidos por tipo de puesto: ver roles_de()
 	var p: Dictionary = puestos[esquina]
-	if not p["activo"] or (p["agotado"] and rol == "recolector"):
-		return false  # inactivo (se está deconstruyendo) o agotado: sin recolectores nuevos
+	if not p["activo"] or not admite_rol(esquina, rol) or (p["agotado"] and rol == "recolector" and not tiene_niveles(esquina)):
+		return false  # inactivo (se está deconstruyendo), su nivel no admite ese oficio o está agotado sin niveles
 	if cupo_libre(esquina) <= 0:
 		return false
 	p[_lista_de(rol)].append(colono_id)
 	_puesto_de[colono_id] = esquina
+	if tiene_niveles(esquina) and RANGO_DE_ROL.has(rol):
+		p["rangos"][colono_id] = RANGO_DE_ROL[rol]
+		_actualizar_nivel(esquina)
 	return true
 
 
 ## Roles que admite el puesto: aprendices en una escuela; técnicos y acarreadores en una refinería;
-## recolectores y acarreadores en los demás.
+## obreros (recolector), técnicos, especialistas y acarreadores en los demás.
 func roles_de(esquina: Vector2i) -> Array:
 	if es_escuela(esquina):
 		return ["aprendiz"]
-	return ["tecnico", "acarreador"] if es_refineria(esquina) else ["recolector", "acarreador"]
+	return ["tecnico", "acarreador"] if es_refineria(esquina) else ["recolector", "tecnico", "especialista", "acarreador"]
+
+
+## true si el puesto tiene niveles (Recoleccion.TIPOS_CON_NIVELES).
+func tiene_niveles(esquina: Vector2i) -> bool:
+	return puestos.has(esquina) and Recoleccion.TIPOS_CON_NIVELES.has(puestos[esquina]["tipo"])
+
+
+## Nivel del puesto (1-3): el rango mínimo de sus recolectores; sin recolectores conserva el último (parte en 1).
+func nivel_de(esquina: Vector2i) -> int:
+	return puestos[esquina]["nivel"] if puestos.has(esquina) else 1
+
+
+## Recolectores del puesto cuyo oficio tiene ese rango (1 obrero, 2 técnico, 3 especialista).
+func contar_rango(esquina: Vector2i, rango: int) -> int:
+	if not puestos.has(esquina):
+		return 0
+	var total := 0
+	for r in puestos[esquina]["rangos"].values():
+		if r == rango:
+			total += 1
+	return total
+
+
+## true si el nivel actual del puesto admite ese oficio: rango igual o superior al nivel y, estando agotado
+## a su nivel, solo un rango superior (así un técnico puede reabrir un puesto de obreros agotado). Siempre
+## true en los puestos sin niveles y para los acarreadores. No mira el cupo ni si está activo.
+func admite_rol(esquina: Vector2i, rol: String) -> bool:
+	if not tiene_niveles(esquina) or not RANGO_DE_ROL.has(rol):
+		return true
+	var p: Dictionary = puestos[esquina]
+	var rango: int = RANGO_DE_ROL[rol]
+	return rango > p["nivel"] or (rango == p["nivel"] and not p["agotado"])
+
+
+## Recalcula el nivel como el rango mínimo de los recolectores; sin recolectores lo conserva. Si cambió,
+## reevalúa de inmediato el área, las tasas y el agotamiento (salvo dentro de _actualizar_agotamiento()).
+func _actualizar_nivel(esquina: Vector2i) -> void:
+	var p: Dictionary = puestos[esquina]
+	if p["rangos"].is_empty():
+		return
+	var minimo := 99
+	for rango in p["rangos"].values():
+		minimo = mini(minimo, rango)
+	if minimo == p["nivel"]:
+		return
+	p["nivel"] = minimo
+	if not _recalculando:
+		recalcular_tasas(esquina)
 
 
 ## Quita a un colono de su puesto (despido o muerte). No-op si no trabaja.
 func liberar(colono_id: int) -> void:
 	if not _puesto_de.has(colono_id):
 		return
-	var p: Dictionary = puestos[_puesto_de[colono_id]]
+	var esquina: Vector2i = _puesto_de[colono_id]
+	var p: Dictionary = puestos[esquina]
 	p["recolectores"].erase(colono_id)
 	p["acarreadores"].erase(colono_id)
 	p["presentes"].erase(colono_id)
-	if es_escuela(_puesto_de[colono_id]):
+	p["rangos"].erase(colono_id)
+	if es_escuela(esquina):
 		p["progreso"] = 0.0  # si se va un aprendiz, la cohorte empieza de nuevo
 	_puesto_de.erase(colono_id)
+	if tiene_niveles(esquina):
+		_actualizar_nivel(esquina)  # al irse el de rango mínimo, el nivel puede subir
 
 
-## El último colono asignado con ese rol, o -1: a quien despide el panel.
+## El último colono asignado con ese rol, o -1: a quien despide el panel. En los puestos con niveles es el
+## último con ese oficio (el botón «−» de Técnicos no despide a un obrero).
 func ultimo_de(esquina: Vector2i, rol: String) -> int:
 	if not puestos.has(esquina):
 		return -1
-	var lista: Array = puestos[esquina][_lista_de(rol)]
+	var p: Dictionary = puestos[esquina]
+	var lista: Array = p[_lista_de(rol)]
+	if tiene_niveles(esquina) and RANGO_DE_ROL.has(rol):
+		for i in range(lista.size() - 1, -1, -1):
+			if p["rangos"].get(lista[i], 0) == RANGO_DE_ROL[rol]:
+				return lista[i]
+		return -1
 	return lista.back() if not lista.is_empty() else -1
 
 
@@ -241,9 +314,10 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 		return resultado
 	var p: Dictionary = puestos[esquina]
 	var presentes: int = p["presentes"].size()
+	var multiplicador: float = Recoleccion.multiplicador_de_nivel(p["tipo"], p["nivel"])
 	for clave in p["tasas"]:
 		var recurso: String = RECURSO_DE_TASA.get(clave, clave)
-		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes
+		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes * multiplicador
 	return resultado
 
 
@@ -309,7 +383,8 @@ func recalcular_tasas(esquina: Vector2i) -> void:
 	var p: Dictionary = puestos[esquina]
 	if p["entorno"].is_empty():
 		return
-	p["tasas"] = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"])
+	p["entorno"] = Recoleccion.entorno_de_nivel(p["tipo"], mundo, p["entorno"], p["nivel"])
+	p["tasas"] = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"], p["nivel"])
 	_actualizar_agotamiento(esquina)
 
 
@@ -346,7 +421,7 @@ func _extraer(esquina: Vector2i, recurso: String, unidades: float) -> float:
 func _siguiente_bloque(p: Dictionary, recurso: String) -> Dictionary:
 	var entorno: Dictionary = p["entorno"]
 	if p["tipo"] == "mina":
-		var celda: Vector3i = Recoleccion.siguiente_bloque_mina(mundo, entorno["centro"], entorno["altura"], recurso)
+		var celda: Vector3i = Recoleccion.siguiente_bloque_mina(mundo, entorno["centro"], entorno["altura"], recurso, Recoleccion.profundidad_de_nivel(p["nivel"]))
 		if celda == Recoleccion.SIN_BLOQUE:
 			return {}
 		return {"tipo": "bloque", "celda": celda, "recurso": recurso, "restante": Recoleccion.rendimiento_de(recurso)}
@@ -704,14 +779,35 @@ static func _sin_tasas(tasas: Dictionary) -> bool:
 	return true
 
 
-## Un puesto sin ninguna tasa positiva está agotado: pierde a sus recolectores
-## (y a sus acarreadores en cuanto su almacén local se vacía).
+## Un puesto sin ninguna tasa positiva está agotado a su nivel actual: pierde a los recolectores de rango
+## mínimo (y a sus acarreadores en cuanto su almacén local se vacía). Si quien queda tiene un rango mayor,
+## el nivel sube, el área crece y se reevalúa el agotamiento; así hasta el nivel 3.
 func _actualizar_agotamiento(esquina: Vector2i) -> void:
 	var p: Dictionary = puestos[esquina]
 	p["agotado"] = _sin_tasas(p["tasas"])
-	if p["agotado"]:
-		_liberar_de(esquina, p["recolectores"].duplicate())
-		_liberar_acarreadores_si_agotado(esquina)
+	if p["agotado"] and not tiene_niveles(esquina):
+		_liberar_de(esquina, p["recolectores"].duplicate())  # sin niveles no hay rangos: se va todo el personal
+	elif p["agotado"]:
+		_recalculando = true
+		while p["agotado"]:
+			var nivel_previo: int = p["nivel"]
+			_liberar_de(esquina, _recolectores_de_rango(p, nivel_previo))
+			if p["nivel"] == nivel_previo:
+				break  # nadie más sube el nivel: se queda agotado
+			p["entorno"] = Recoleccion.entorno_de_nivel(p["tipo"], mundo, p["entorno"], p["nivel"])
+			p["tasas"] = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"], p["nivel"])
+			p["agotado"] = _sin_tasas(p["tasas"])
+		_recalculando = false
+	_liberar_acarreadores_si_agotado(esquina)
+
+
+## Ids de los recolectores del puesto cuyo oficio tiene ese rango (copia).
+func _recolectores_de_rango(p: Dictionary, rango: int) -> Array:
+	var ids: Array = []
+	for id in p["rangos"]:
+		if p["rangos"][id] == rango:
+			ids.append(id)
+	return ids
 
 
 func _liberar_acarreadores_si_agotado(esquina: Vector2i) -> void:

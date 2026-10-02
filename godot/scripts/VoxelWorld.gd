@@ -242,7 +242,8 @@ var _siguiente_id_edificio := 1
 ## llamador que necesite "todas las celdas de un id" sin orden (p. ej. un
 ## puesto, que no tiene edificio_orden).
 var edificio_a_celdas: Dictionary = {}  # int -> Array[Vector3i]
-var edificio_y_techo: Dictionary = {}  # int -> Y de la capa más alta del edificio (su techo)
+var celda_sobre_techo: Dictionary = {}  # Vector3i -> id de edificio: celdas reservadas sobre su techo
+var edificio_sobre_techo: Dictionary = {}  # int -> Array[Vector3i], para liberarlas al deconstruir
 
 ## Emitida cuando una celda cambia DE o A un tipo en TIPOS_TRANSLUCIDOS
 ## (colocada, minada, revertida a fantasma, o drenada) — TranslucidosRenderer
@@ -346,10 +347,17 @@ func registrar_edificio(celdas: Array) -> int:
 	for celda in celdas:
 		celda_a_edificio[celda] = id
 	edificio_a_celdas[id] = celdas.duplicate()
-	var y_techo := -999999
+	# Reserva la celda sobre la capa más alta de cada columna: los ciudadanos no pisan los techos.
+	var tope_por_columna: Dictionary = {}  # Vector2i -> Y más alta
 	for celda: Vector3i in celdas:
-		y_techo = maxi(y_techo, celda.y)
-	edificio_y_techo[id] = y_techo
+		var columna := Vector2i(celda.x, celda.z)
+		tope_por_columna[columna] = maxi(tope_por_columna.get(columna, -999999), celda.y)
+	var reservadas: Array[Vector3i] = []
+	for columna: Vector2i in tope_por_columna:
+		var reservada := Vector3i(columna.x, tope_por_columna[columna] + 1, columna.y)
+		celda_sobre_techo[reservada] = id
+		reservadas.append(reservada)
+	edificio_sobre_techo[id] = reservadas
 	return id
 
 
@@ -359,10 +367,10 @@ func id_de_edificio(celda: Vector3i) -> int:
 	return celda_a_edificio.get(celda, -1)
 
 
-## La celda es parte de la capa más alta de un edificio: su techo (no transitable para los colonos).
-func es_techo(celda: Vector3i) -> bool:
-	var id: int = id_de_edificio(celda)
-	return id >= 0 and celda.y == edificio_y_techo.get(id, -999999)
+## La celda está justo sobre el techo de un edificio: los ciudadanos no la pisan (BuscadorRutas);
+## el avatar, las unidades voladoras y la fauna no la consultan.
+func es_sobre_techo(celda: Vector3i) -> bool:
+	return celda_sobre_techo.has(celda)
 
 
 ## Calcula las celdas de despeje que exige "celdas_mundo" (Vector3i real ->
@@ -1637,7 +1645,10 @@ func eliminar_edificio(id: int) -> Vector2i:
 		if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 			bloque_translucido_cambiado.emit(celda)
 	edificio_a_celdas.erase(id)
-	edificio_y_techo.erase(id)
+	for reservada: Vector3i in edificio_sobre_techo.get(id, []):
+		if celda_sobre_techo.get(reservada, -1) == id:
+			celda_sobre_techo.erase(reservada)
+	edificio_sobre_techo.erase(id)
 	edificio_orden.erase(id)
 	edificio_tipos.erase(id)
 	edificio_progreso.erase(id)

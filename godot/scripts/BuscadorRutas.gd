@@ -62,8 +62,8 @@ func es_transitable(celda: Vector3i, ignorar: Array = []) -> bool:
 	if not _libre(celda + ARRIBA, ignorar):
 		return false
 	var suelo: String = mundo.obtener_tipo(celda - ARRIBA)
-	# Los techos de los edificios no se pisan (decisión del usuario, 2026-10-02).
-	if mundo.has_method("es_techo") and mundo.es_techo(celda - ARRIBA):
+	# La celda sobre el techo de un edificio está reservada: los ciudadanos no pisan techos (decisión del usuario, 2026-10-02).
+	if mundo.has_method("es_sobre_techo") and mundo.es_sobre_techo(celda):
 		return false
 	return suelo != "agua" and not TIPOS_LIBRES.has(suelo)
 

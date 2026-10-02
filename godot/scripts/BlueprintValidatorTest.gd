@@ -2534,4 +2534,43 @@ func ejecutar_pruebas() -> void:
 		profundidad_vuelta = previo
 	assert(celdas_vuelta == celdas_90, "4 giros de 90° devuelven las celdas originales")
 
-	print("\n=== Las 90 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 91: el modo deconstrucción de Player avisa si se intenta minar/colocar y se apaga solo al terminar un edificio ===")
+	const OX91 := 1100
+	mundo.colocar_bloque(Vector3i(OX91, 0, OX91), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX91, 1, OX91), "bloque_piedra", true)
+	var id_91: int = mundo.registrar_edificio_completo({Vector3i(OX91, 0, OX91): "tierra", Vector3i(OX91, 1, OX91): "bloque_piedra"})
+	var hud_falso_91 := HudFalso91.new()
+	var jugador_91 := Player.new()
+	jugador_91.mundo = mundo
+	jugador_91.hud = hud_falso_91
+	jugador_91._alternar_modo_deconstruccion()
+	assert(jugador_91.modo_deconstruccion, "G activa el modo")
+	jugador_91._procesar_deconstruccion(Vector3i(OX91 + 50, 5, OX91 + 50))  # celda vacía = intento de minar
+	jugador_91._procesar_deconstruccion(Vector3i(OX91 + 50, 5, OX91 + 50))
+	assert(hud_falso_91.avisos.size() == 1, "un intento de minar avisa una vez (el segundo cae en el intervalo): %d" % hud_falso_91.avisos.size())
+	assert(jugador_91.modo_deconstruccion, "no minar no apaga el modo")
+	for _i in range(40):
+		if not jugador_91.modo_deconstruccion:
+			break
+		jugador_91._procesar_deconstruccion(Vector3i(OX91, 1, OX91))
+	assert(not jugador_91.modo_deconstruccion, "el modo se apaga solo al deconstruir el edificio por completo")
+	assert(not mundo.edificio_a_celdas.has(id_91), "y el edificio ya no existe")
+	jugador_91.free()
+	hud_falso_91.free()
+	print("OK: avisa sin saturar y el modo se apaga al terminar el edificio.")
+
+	print("\n=== Las 91 pruebas de BlueprintValidator pasaron correctamente ===")
+
+
+## Sustituto mínimo del HUD para las pruebas de Player: solo cuenta avisos.
+class HudFalso91 extends CanvasLayer:
+	var avisos: Array = []
+
+	func notificar(texto: String) -> void:
+		avisos.append(texto)
+
+	func mostrar_contexto(_a: String, _b: Dictionary, _c: Array) -> void:
+		pass
+
+	func ocultar_contexto() -> void:
+		pass

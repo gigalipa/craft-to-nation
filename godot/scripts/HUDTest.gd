@@ -662,6 +662,8 @@ func probar_formateadores_hud() -> void:
 	# Pesca sin extremo de agua válido llega como diccionario vacío.
 	assert(HUDScript.texto_tasas("pesca_frutos_mar", {}) == "Recolección prevista: sin agua detectada")
 	assert(HUDScript.texto_tasas("pesca_frutos_mar", {"pesca": 1.5, "frutos_mar": 0.5}) == "Recolección prevista por ciudadano:\n  1.5 comida/h por pesca\n  0.5 comida/h por frutos del mar")
+	assert(HUDScript.texto_tasas_mina_por_nivel([{"hierro": 2.0, "tierra": 0.1}, {}, {"hierro": 5.0}]) == "Recolección prevista por trabajador:\n  Nivel 1: 2.0 hierro/h\n  Nivel 2: nada\n  Nivel 3: 5.0 hierro/h", "se omiten las tasas menores de 0,3/h y cada nivel muestra solo su franja")
+	assert(HUDScript.texto_tasas_mina_por_nivel([{}, {}, {}]) == "Recolección prevista por trabajador:\n  Nivel 1: nada\n  Nivel 2: nada\n  Nivel 3: nada")
 
 
 func probar_cara_apuntada() -> void:

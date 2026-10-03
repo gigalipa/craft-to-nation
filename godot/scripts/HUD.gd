@@ -20,6 +20,8 @@ signal edificio_pedido(esquina: Vector2i)
 
 const COLOR_POSITIVO := Color.WHITE
 const COLOR_NEGATIVO := Color(1.0, 0.3, 0.3)
+## Tasas por debajo de esta (unidades por trabajador y hora) no se listan en la tarjeta de la mina.
+const UMBRAL_TASA_TARJETA := 0.3
 
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
@@ -219,10 +221,24 @@ func ocultar_contexto() -> void:
 ## placeholder fijo, "10 tierra · 10 madera · 5 piedra" para los 4 tipos por
 ## igual, reporte del usuario 2026-09-30), personal, almacenamiento y, en
 ## vivo, la recolección prevista por ciudadano según la posición del cursor.
-func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}) -> void:
+func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}, tasas_por_nivel: Array = []) -> void:
 	var almacenamiento := "" if Recoleccion.ESCUELAS.has(tipo) else " · Almacenamiento: %d" % Recoleccion.capacidad_almacen_de(tipo)
-	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, texto_tasas(tipo, tasas)]
+	var prevision: String = texto_tasas_mina_por_nivel(tasas_por_nivel) if tipo == "mina" and not tasas_por_nivel.is_empty() else texto_tasas(tipo, tasas)
+	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, prevision]
 	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+rueda] ROTAR", "COLOCAR (clic)"], valida, extra, bloques)
+
+
+## Recolección prevista de una mina por nivel: la franja de cada nivel por separado (sin sumar los anteriores),
+## omitiendo lo que rinde menos de UMBRAL_TASA_TARJETA. "niveles" viene de Recoleccion.tasas_mina_por_nivel().
+static func texto_tasas_mina_por_nivel(niveles: Array) -> String:
+	var lineas: Array = []
+	for i in range(niveles.size()):
+		var partes: Array = []
+		for recurso in niveles[i]:
+			if niveles[i][recurso] >= UMBRAL_TASA_TARJETA:
+				partes.append("%.1f %s/h" % [niveles[i][recurso], recurso])
+		lineas.append("  Nivel %d: %s" % [i + 1, ", ".join(partes) if not partes.is_empty() else "nada"])
+	return "Recolección prevista por trabajador:\n" + "\n".join(lineas)
 
 
 ## Recolección prevista de un puesto. Diccionario vacío = nada detectado (en

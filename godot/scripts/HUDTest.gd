@@ -92,6 +92,7 @@ func ejecutar_pruebas() -> void:
 	probar_ventana_poblacion_empleo()
 	probar_ventana_ocupaciones()
 	probar_panel_escuela()
+	probar_panel_niveles()
 	probar_panel_edificio()
 	probar_marcas_demolicion()
 
@@ -661,6 +662,8 @@ func probar_formateadores_hud() -> void:
 	# Pesca sin extremo de agua válido llega como diccionario vacío.
 	assert(HUDScript.texto_tasas("pesca_frutos_mar", {}) == "Recolección prevista: sin agua detectada")
 	assert(HUDScript.texto_tasas("pesca_frutos_mar", {"pesca": 1.5, "frutos_mar": 0.5}) == "Recolección prevista por ciudadano:\n  1.5 comida/h por pesca\n  0.5 comida/h por frutos del mar")
+	assert(HUDScript.texto_tasas_mina_por_nivel([{"hierro": 2.0, "tierra": 0.1}, {}, {"hierro": 5.0}]) == "Recolección prevista por trabajador:\n  Nivel 1: 2.0 hierro/h\n  Nivel 2: nada\n  Nivel 3: 5.0 hierro/h", "se omiten las tasas menores de 0,3/h y cada nivel muestra solo su franja")
+	assert(HUDScript.texto_tasas_mina_por_nivel([{}, {}, {}]) == "Recolección prevista por trabajador:\n  Nivel 1: nada\n  Nivel 2: nada\n  Nivel 3: nada")
 
 
 func probar_cara_apuntada() -> void:
@@ -704,10 +707,35 @@ func probar_panel_escuela() -> void:
 	assert("Aprendices: 0 / 4" in panel._trabajadores.text and "0 / %d h" % Economia.HORAS_FORMACION in panel._trabajadores.text, "cohorte y horas: %s" % panel._trabajadores.text)
 	panel.abrir(esquina7r)
 	assert(panel._filas["tecnico"]["fila"].visible and not panel._filas["aprendiz"]["fila"].visible and panel._filas["acarreador"]["fila"].visible)
-	assert(panel._almacen.visible and "Técnicos libres: %d" % Colonos.tecnicos_libres() in panel._libres.text, "la refinería pide técnicos libres: %s" % panel._libres.text)
+	assert(panel._almacen.visible and panel._filas["tecnico"]["libres"].text == "(%d libres)" % Colonos.tecnicos_libres(), "la refinería muestra los técnicos libres: %s" % panel._filas["tecnico"]["libres"].text)
+	assert(not panel._filas["especialista"]["fila"].visible and not panel._filas["recolector"]["fila"].visible, "una refinería no tiene filas de obreros ni de especialistas")
 	panel.queue_free()
 	Economia.puestos.erase(esquina7)
 	Economia.puestos.erase(esquina7r)
+
+
+func probar_panel_niveles() -> void:
+	print("=== TEST 8: PanelPuesto de un puesto con niveles (una fila por oficio, nivel en el título) ===")
+	var esquina8 := Vector2i(960, 900)
+	Economia.registrar_puesto(esquina8, "maderero", 3, 4, {"madera": 3.0})
+	var panel: PanelContainer = PanelPuestoScript.new()
+	add_child(panel)
+	panel.abrir(esquina8)
+	assert(panel._titulo.text == "Puesto maderero, nivel 1", "nivel en el título: %s" % panel._titulo.text)
+	assert(panel._filas["recolector"]["fila"].visible and panel._filas["tecnico"]["fila"].visible and panel._filas["acarreador"]["fila"].visible)
+	assert(not panel._filas["aprendiz"]["fila"].visible)
+	assert(panel._filas["especialista"]["fila"].visible == (Colonos.especialistas_libres() > 0), "la fila de especialistas solo aparece si hay alguno")
+	assert(panel._filas["tecnico"]["libres"].text == "(%d libres)" % Colonos.tecnicos_libres())
+	assert(panel._filas["recolector"]["libres"].text == "(%d libres)" % Ciudad.demografia["desempleado"])
+	Economia.asignar(esquina8, "tecnico", 99999)
+	panel._actualizar()
+	assert(panel._titulo.text == "Puesto maderero, nivel 2", "con un técnico sube a nivel 2: %s" % panel._titulo.text)
+	assert(panel._filas["recolector"]["mas"].disabled, "un puesto de nivel 2 no admite obreros")
+	assert(panel._filas["tecnico"]["cantidad"].text == "1" and panel._filas["recolector"]["cantidad"].text == "0")
+	assert(not panel._filas["tecnico"]["menos"].disabled and panel._filas["recolector"]["menos"].disabled)
+	Economia.liberar(99999)
+	panel.queue_free()
+	Economia.puestos.erase(esquina8)
 
 
 func probar_panel_edificio() -> void:

@@ -982,10 +982,10 @@ func _actualizar_previsualizacion_puesto() -> void:
 	_actualizar_overlays(esquina, ev)
 
 	var tasas: Dictionary = {}
+	var tasas_por_nivel: Array = []
 	if _tipo_puesto_activo == "mina":
 		var altura_superficie: int = mundo.altura_en(centro.x, centro.y)
-		var conteo: Dictionary = Recoleccion.detectar_recursos_extraibles(mundo, centro, altura_superficie)
-		tasas = Recoleccion.tasas_recoleccion(conteo)
+		tasas_por_nivel = Recoleccion.tasas_mina_por_nivel(mundo, centro, altura_superficie)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MINA)
 	elif _tipo_puesto_activo == "caza_recoleccion":
 		var promedios: Dictionary = Recoleccion.detectar_fauna_frutal(mundo.generador, centro)
@@ -1009,7 +1009,7 @@ func _actualizar_previsualizacion_puesto() -> void:
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MADERERO)
 	var resumen: Dictionary = _resumen_materiales_puesto(esquina, ev) if valida else {"neto": {}, "bloques": {}}
-	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, resumen["neto"], resumen["bloques"])
+	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, resumen["neto"], resumen["bloques"], tasas_por_nivel)
 
 
 ## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves

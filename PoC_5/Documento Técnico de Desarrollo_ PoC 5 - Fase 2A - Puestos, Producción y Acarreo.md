@@ -118,3 +118,14 @@ Los colonos libres (desempleados y técnicos sin puesto) construyen y demuelen. 
 - **`Colonos`:** `c["tarea"]` (`{tipo, id}`); un colono libre pide tarea, se coloca junto al edificio y hace un paso cada vez; sin ruta repetida (3 fallos) veta la obra para sí.
 - **Marcado:** clic derecho con el modo G (1ª persona), clic con el modo demoler (cenital) o el botón «Demoler» de la ventana del edificio (`PanelEdificio`) y del panel del puesto. Los edificios marcados se ven con un tinte rojo (`MarcasDemolicionOverlay`).
 
+## Niveles de puesto y empleo por tipo (2026-10-02)
+
+Los puestos de mina, maderero, caza/recolección y pesca tienen nivel 1–3. El nivel no se compra: sale del rango de sus recolectores (obrero 1, técnico 2, especialista 3) y es el mínimo entre ellos; los acarreadores no cuentan. Sin recolectores el puesto conserva su último nivel.
+
+- **Admisión:** un puesto admite oficios de rango igual o superior a su nivel. Agotado a su nivel, solo admite rangos superiores. `Economia.asignar` devuelve verdadero solo si el colono sigue asignado: contratar un rango mayor en un puesto que sigue agotado al nuevo nivel lo despide al instante, devuelve falso y deja el nivel subido.
+- **Agotamiento por nivel:** al agotarse el área del nivel actual se despide a los recolectores de rango mínimo; si queda personal de rango mayor, el nivel sube, el área crece y se reevalúa el agotamiento. `desactivar_puesto` (demolición) libera a todos los trabajadores sin cambiar el nivel, de modo que al reactivarlo conserva el anterior.
+- **Mina:** profundidad acumulada 8 / 16 / 24 sobre el mismo radio; sin multiplicador de velocidad. La tarjeta de colocación lista las tasas de la franja de cada nivel.
+- **Caza/recolección, maderero y pesca:** radio base ×1 / ×1,5 / ×2 (12→18→24 y 25→37→50) y velocidad ×1 / ×1,5 / ×2. Al subir de nivel, la referencia de árboles suma los árboles vivos del anillo nuevo.
+- **Panel del puesto:** una fila -/+ por oficio con los libres de cada tipo; el título muestra el nivel.
+- Código: `Economia.nivel_de()`, `admite_rol()`, `_actualizar_agotamiento()`; `Recoleccion.radio_de_nivel()`, `profundidad_de_nivel()`, `entorno_de_nivel()`, `tasas_mina_por_nivel()`.
+- Pendiente: escuela de especialistas, universidad e investigación, y niveles de refinerías.

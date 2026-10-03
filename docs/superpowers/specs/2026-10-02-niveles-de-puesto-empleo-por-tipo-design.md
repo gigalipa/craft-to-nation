@@ -51,7 +51,7 @@ Que un puesto de recolección siga siendo útil tras agotar su volumen básico, 
 
 ## Tarjeta de la mina (punto 6)
 
-Al activar la herramienta de la mina, la tarjeta lista los recursos aproximados por nivel con la franja de ese nivel únicamente (sin sumar los anteriores), omitiendo los que den menos de 0,3/h. Se reutiliza `detectar_recursos` con `profundidad_minima`. Motivo: minas sobre trazas de hierro tan bajas que no recolectan nada.
+Al activar la herramienta de la mina, la tarjeta lista los recursos aproximados por nivel con la franja de ese nivel únicamente (sin sumar los anteriores), omitiendo los que den menos de 0,3/h. Se calcula como diferencia de `detectar_recursos_extraibles` entre profundidades consecutivas (`Recoleccion.tasas_mina_por_nivel`). Motivo: minas sobre trazas de hierro tan bajas que no recolectan nada.
 
 ## Casos límite
 

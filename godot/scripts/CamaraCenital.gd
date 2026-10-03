@@ -985,8 +985,6 @@ func _actualizar_previsualizacion_puesto() -> void:
 	var tasas_por_nivel: Array = []
 	if _tipo_puesto_activo == "mina":
 		var altura_superficie: int = mundo.altura_en(centro.x, centro.y)
-		var conteo: Dictionary = Recoleccion.detectar_recursos_extraibles(mundo, centro, altura_superficie)
-		tasas = Recoleccion.tasas_recoleccion(conteo)
 		tasas_por_nivel = Recoleccion.tasas_mina_por_nivel(mundo, centro, altura_superficie)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MINA)
 	elif _tipo_puesto_activo == "caza_recoleccion":

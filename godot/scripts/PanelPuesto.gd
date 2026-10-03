@@ -143,8 +143,7 @@ func _actualizar() -> void:
 	acarreadores["menos"].disabled = t["acarreadores"] == 0
 	acarreadores["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
 	if es_escuela:
-		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)
-Formación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
+		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
 	else:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
 	# Solo la refinería necesita la pista de dónde salen sus técnicos.

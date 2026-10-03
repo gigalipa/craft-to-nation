@@ -13,11 +13,11 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 - **Fase 0 — completada:** PoC 1 y 2 validan la lógica de recursos, demografía, nivel urbano, serialización y reglas de blueprints y zonas.
 - **Fase 1 — verificada:** PoC 3 implementa el prototipo en primera persona sobre `GridMap`, minado y colocación, objetos multicelda y detección de edificios por volumen interno; reconoce habitaciones irregulares y de varios pisos y comprueba su acceso mediante pathfinding real.
 - **Fase 2 — completa:** PoC 4 integra `Ciudad` y `Avatar` como autoload, zonificación y una cámara cenital navegable; PoC 8 añade colonos NPC con pathfinding propio; y el HUD incluye hotbar con iconos reales, miniaturas isométricas de edificios y navegación numérica jerárquica.
-- **Fase 3 — en progreso:** PoC 6 (mundo procedural, nivelación, puestos de recolección y cuerpos de agua) está completo con alcance reducido, y PoC 5 completó minerales y las fases 2A y 2B de la economía. El mundo procedural finito de 200×200 celdas incluye dos montañas, seis minerales, mares, lagos, ríos, árboles talables y recursos agotables. Los cuatro puestos de recolección son edificios de bloques con puerta y baúl físico; `VentanaBaul` permite transferencias parciales entre el avatar y esos almacenes. La construcción manual y asistida consume materiales reales (`tierra_compactada`, `bloque_madera`, `bloque_piedra`, `estructura_hierro` y `vidrio`), devuelve recursos al minar o deconstruir e incorpora construcción fantasma pagada mediante colas temporizadas; los puestos solo se registran al terminar. Las vías de tierra pisada dan +35 % de velocidad. La siguiente entrega es la siderúrgica real con acarreo bidireccional y trabajadores técnicos; después siguen las demás refinerías y la construcción por NPCs.
+- **Fase 3 — en progreso:** PoC 6 (mundo procedural, nivelación, puestos de recolección y cuerpos de agua) está completo con alcance reducido, y PoC 5 completó minerales y las fases 2A y 2B de la economía. El mundo procedural finito de 200×200 celdas incluye dos montañas, seis minerales, mares, lagos, ríos, árboles talables y recursos agotables. Los cuatro puestos de recolección son edificios de bloques con puerta y baúl físico; `VentanaBaul` permite transferencias parciales entre el avatar y esos almacenes. La construcción manual y asistida consume materiales reales (`tierra_compactada`, `bloque_madera`, `bloque_piedra`, `estructura_hierro` y `vidrio`), devuelve recursos al minar o deconstruir e incorpora construcción fantasma pagada mediante colas temporizadas; los puestos solo se registran al terminar. Las vías de tierra pisada dan +35 % de velocidad. Ya están la siderúrgica real y las demás refinerías, la escuela técnica, las obras por colonos y los niveles de puesto con empleo por oficio (obreros, técnicos y especialistas); siguen la escuela de especialistas, el tendido de vías por colonos y los fluidos y la energía.
 - **Fases 4–7 — planeadas:** cámara dual y tropas, logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
-El proyecto Godot cuenta actualmente con **463 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en **25 escenas** `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas, HUD y jugador.
+El proyecto Godot cuenta actualmente con **523 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en **26 escenas** `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas, HUD y jugador.
 
 ## Ideas incorporadas al roadmap
 
@@ -82,6 +82,7 @@ Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 - `godot/scenes/CamaraCenitalModosTest.tscn`
 - `godot/scenes/HUDTest.tscn`
 - `godot/scenes/MiniaturaRendererTest.tscn`
+- `godot/scenes/ObrasTest.tscn`
 
 ## Contribuir
 

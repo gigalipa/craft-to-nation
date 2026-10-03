@@ -2,8 +2,8 @@ extends PanelContainer
 
 ## Panel de un puesto de recolección (clic izquierdo sobre él en la cenital,
 ## ver CamaraCenital._procesar_clic). Se construye por código: título, filas
-## "Recolectores/Técnicos/Aprendices [-] n [+]" y "Acarreadores [-] n [+]", desempleados/técnicos libres,
-## almacén local, producción y distancia al núcleo. Las reglas viven en
+## "Obreros/Técnicos/Especialistas/Aprendices [-] n [+] (libres)" y "Acarreadores ...", el título muestra el
+## nivel del puesto; además almacén local, producción y distancia al núcleo. Las reglas viven en
 ## Economia/Colonos; esto solo las muestra y les pasa los clics.
 
 const HUDScript = preload("res://scripts/HUD.gd")
@@ -23,7 +23,7 @@ const NOMBRES_PUESTO := {
 ## Mensaje para el jugador (el HUD lo envía a las notificaciones).
 signal aviso(texto: String)
 
-const NOMBRES_ROL := {"recolector": "Recolectores", "tecnico": "Técnicos", "aprendiz": "Aprendices", "acarreador": "Acarreadores"}
+const NOMBRES_ROL := {"recolector": "Obreros", "tecnico": "Técnicos", "especialista": "Especialistas", "aprendiz": "Aprendices", "acarreador": "Acarreadores"}
 
 var esquina := Recoleccion.SIN_PUESTO
 
@@ -34,7 +34,7 @@ var _almacen := TemaHUD.etiqueta()
 var _produccion := TemaHUD.etiqueta()
 var _distancia := TemaHUD.etiqueta()
 var _demoler := Button.new()
-var _filas := {}  # rol -> {"cantidad": Label, "menos": Button, "mas": Button}
+var _filas := {}  # rol -> {"fila": HBoxContainer, "cantidad": Label, "menos": Button, "mas": Button, "libres": Label}
 
 
 func _ready() -> void:
@@ -53,7 +53,7 @@ func _ready() -> void:
 	add_child(caja)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	caja.add_child(_titulo)
-	for rol in ["recolector", "tecnico", "aprendiz", "acarreador"]:
+	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
 	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
@@ -68,7 +68,7 @@ func _ready() -> void:
 func _crear_fila(rol: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
 	var nombre := TemaHUD.etiqueta(NOMBRES_ROL[rol])
-	nombre.custom_minimum_size.x = 110.0
+	nombre.custom_minimum_size.x = 96.0
 	var menos := Button.new()
 	menos.text = "-"
 	menos.custom_minimum_size = Vector2(28, 28)
@@ -82,9 +82,11 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	mas.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(mas)
 	mas.pressed.connect(func() -> void: Colonos.contratar(esquina, rol))
-	for nodo in [nombre, menos, cantidad, mas]:
+	var libres := TemaHUD.etiqueta()
+	libres.custom_minimum_size.x = 70.0
+	for nodo in [nombre, menos, cantidad, mas, libres]:
 		fila.add_child(nodo)
-	_filas[rol] = {"fila": fila, "cantidad": cantidad, "menos": menos, "mas": mas}
+	_filas[rol] = {"fila": fila, "cantidad": cantidad, "menos": menos, "mas": mas, "libres": libres}
 	return fila
 
 
@@ -114,39 +116,62 @@ func _actualizar() -> void:
 	var puesto: Dictionary = Economia.puestos[esquina]
 	var t: Dictionary = Economia.trabajadores_de(esquina)
 	var es_escuela: bool = Economia.es_escuela(esquina)
-	var rol_produccion := "aprendiz" if es_escuela else ("tecnico" if Economia.es_refineria(esquina) else "recolector")
-	# Quién se puede contratar: técnicos libres (formados en la escuela) para una refinería, desempleados para el resto.
-	var libres: int = Colonos.tecnicos_libres() if rol_produccion == "tecnico" else Ciudad.demografia["desempleado"]
+	var con_niveles: bool = Economia.tiene_niveles(esquina)
+	# Oficios que producen aquí: aprendices en la escuela, solo técnicos en la refinería, los tres oficios en los puestos con niveles.
+	var oficios: Array = ["aprendiz"] if es_escuela else (["recolector", "tecnico", "especialista"] if con_niveles else ["tecnico"])
 	var estado := ""
 	if not puesto["activo"]:
 		estado = " (inactivo)"
 	elif puesto["agotado"]:
 		estado = " (agotado)"
-	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + estado
-	for rol in ["recolector", "tecnico", "aprendiz"]:
-		_filas[rol]["fila"].visible = rol == rol_produccion
-	_filas["acarreador"]["fila"].visible = not es_escuela  # una escuela no mueve recursos
-	_filas[rol_produccion]["cantidad"].text = str(t["recolectores"])  # técnicos y aprendices cuentan bajo "recolectores"
-	_filas["acarreador"]["cantidad"].text = str(t["acarreadores"])
-	_filas[rol_produccion]["menos"].disabled = t["recolectores"] == 0
-	_filas["acarreador"]["menos"].disabled = t["acarreadores"] == 0
+	var nivel := ", nivel %d" % Economia.nivel_de(esquina) if con_niveles else ""
+	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + nivel + estado
 	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0
-	_filas[rol_produccion]["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or puesto["agotado"]
-	_filas["acarreador"]["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
+	for rol in ["recolector", "tecnico", "especialista", "aprendiz"]:
+		var fila: Dictionary = _filas[rol]
+		var empleados: int = _empleados(rol, t, con_niveles)
+		var libres: int = _libres_de(rol)
+		fila["fila"].visible = oficios.has(rol) and (rol != "especialista" or libres > 0 or empleados > 0)
+		fila["cantidad"].text = str(empleados)
+		fila["libres"].text = "(%d libres)" % libres
+		fila["menos"].disabled = empleados == 0
+		fila["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or not Economia.admite_rol(esquina, rol)
+	var acarreadores: Dictionary = _filas["acarreador"]
+	acarreadores["fila"].visible = not es_escuela  # una escuela no mueve recursos
+	acarreadores["cantidad"].text = str(t["acarreadores"])
+	acarreadores["libres"].text = "(%d libres)" % Ciudad.demografia["desempleado"]
+	acarreadores["menos"].disabled = t["acarreadores"] == 0
+	acarreadores["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
 	if es_escuela:
-		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
+		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)
+Formación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
 	else:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
-	if rol_produccion == "tecnico":
-		_libres.text = "Técnicos libres: %d" % libres if libres > 0 else "Técnicos libres: 0 (fórmalos en una escuela técnica)"
-	else:
-		_libres.text = "Desempleados libres: %d" % libres
+	# Solo la refinería necesita la pista de dónde salen sus técnicos.
+	_libres.visible = not es_escuela and not con_niveles and Colonos.tecnicos_libres() == 0
+	_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
 	_almacen.visible = not es_escuela
 	_produccion.visible = not es_escuela
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
 	_demoler.text = "Cancelar demolición" if Obras.esta_marcado(Obras.id_en_columna(esquina)) else "Demoler"
+
+
+## Cuántos del oficio "rol" trabajan en el puesto: en los puestos con niveles se cuenta por rango; en la
+## refinería y la escuela, todos sus recolectores (técnicos o aprendices).
+func _empleados(rol: String, t: Dictionary, con_niveles: bool) -> int:
+	if con_niveles:
+		return Economia.contar_rango(esquina, Economia.RANGO_DE_ROL.get(rol, 0))
+	return t["recolectores"]
+
+
+## Colonos libres de ese oficio que se podrían contratar: técnicos y especialistas libres, o desempleados.
+func _libres_de(rol: String) -> int:
+	match rol:
+		"tecnico": return Colonos.tecnicos_libres()
+		"especialista": return Colonos.especialistas_libres()
+	return Ciudad.demografia["desempleado"]
 
 
 ## Marca (o desmarca) el edificio del puesto para demolición, sin activar la herramienta.

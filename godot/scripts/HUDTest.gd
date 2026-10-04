@@ -755,7 +755,7 @@ func probar_panel_niveles() -> void:
 	assert(panel._titulo.text == "Puesto maderero, nivel 1", "nivel en el título: %s" % panel._titulo.text)
 	assert(panel._filas["recolector"]["fila"].visible and panel._filas["tecnico"]["fila"].visible and panel._filas["acarreador"]["fila"].visible)
 	assert(not panel._filas["aprendiz"]["fila"].visible)
-	assert(panel._filas["especialista"]["fila"].visible == (Colonos.especialistas_libres() > 0), "la fila de especialistas solo aparece si hay alguno")
+	assert(panel._filas["especialista"]["fila"].visible, "la fila de especialistas siempre aparece en puestos con niveles")
 	assert(panel._filas["tecnico"]["libres"].text == "(%d libres)" % Colonos.tecnicos_libres())
 	assert(panel._filas["recolector"]["libres"].text == "(%d libres)" % Ciudad.demografia["desempleado"])
 	Economia.asignar(esquina8, "tecnico", 99999)

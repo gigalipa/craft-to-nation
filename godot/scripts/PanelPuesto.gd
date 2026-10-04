@@ -143,7 +143,7 @@ func _actualizar() -> void:
 			fila["nombre"].text = NOMBRES_ROL[rol]
 		var empleados: int = _empleados(rol, t, con_niveles)
 		var libres: int = _libres_de(rol)
-		fila["fila"].visible = oficios.has(rol) and (rol != "especialista" or libres > 0 or empleados > 0)
+		fila["fila"].visible = oficios.has(rol)
 		fila["cantidad"].text = str(empleados)
 		fila["libres"].text = "(%d libres)" % libres
 		fila["menos"].disabled = empleados == 0

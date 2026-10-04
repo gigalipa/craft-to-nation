@@ -35,7 +35,9 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 			Ciudad.registrar_instalacion(metadata["id_edificio"], info["tipo"])
 		print("Puesto '%s' construido en (%d, %d)." % [info["tipo"], info["esquina"].x, info["esquina"].y])
 		metadata.erase("puesto_nuevo")  # a partir de aquí, un reconstruir cae en la rama "puesto" (reactivar), no en esta (evita re-registrar y huérfanos en _puesto_de — revisión de código, 2026-09-29).
-		return "Puesto construido."
+		var PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
+		var nombre_puesto: String = PanelPuestoScript.NOMBRES_PUESTO.get(info["tipo"], info["tipo"])
+		return "Edificio construido: %s." % nombre_puesto
 	if metadata.has("puesto"):
 		Economia.reactivar_puesto(metadata["puesto"])
 		print("Puesto reactivado en ", metadata["puesto"], ".")
@@ -66,7 +68,8 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 	print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
-	return "Edificio construido."
+	var nombre_edificio: String = str(blueprint.get("nombre", "Edificio residencial"))
+	return "Edificio construido: %s." % nombre_edificio
 
 
 ## Efectos de revertir una celda de un edificio ("resultado" es lo que devuelve

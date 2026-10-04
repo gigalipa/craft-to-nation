@@ -40,6 +40,7 @@ var _produccion := TemaHUD.etiqueta()
 var _energia := TemaHUD.etiqueta()
 var _distancia := TemaHUD.etiqueta()
 var _demoler := Button.new()
+var _dialogo_demoler := ConfirmationDialog.new()
 var _filas := {}  # rol -> {"fila": HBoxContainer, "cantidad": Label, "menos": Button, "mas": Button, "libres": Label}
 
 
@@ -69,6 +70,12 @@ func _ready() -> void:
 	TemaHUD.estilizar_boton(_demoler)
 	_demoler.pressed.connect(_on_demoler)
 	caja.add_child(_demoler)
+	_dialogo_demoler.title = "Confirmar demolición"
+	_dialogo_demoler.dialog_text = "¿Demoler este puesto? Comenzará en 5 horas de juego."
+	_dialogo_demoler.ok_button_text = "Confirmar"
+	_dialogo_demoler.cancel_button_text = "Cancelar"
+	_dialogo_demoler.confirmed.connect(_confirmar_demoler)
+	add_child(_dialogo_demoler)
 
 
 func _crear_fila(rol: String) -> HBoxContainer:
@@ -218,7 +225,9 @@ func _actualizar() -> void:
 		_energia.visible = false
 
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
-	_demoler.text = "Cancelar demolición" if Obras.esta_marcado(Obras.id_en_columna(esquina)) else "Demoler"
+	var id_puesto: int = Obras.id_en_columna(esquina)
+	var en_demo: bool = Obras.esta_marcado(id_puesto) or Obras.esta_programada(id_puesto)
+	_demoler.text = "Cancelar demolición" if en_demo else "Demoler"
 
 
 static func texto_estado_energia(conectado: bool, demanda: float, factor: float, capacidad_red: float) -> String:
@@ -263,9 +272,24 @@ func _on_demoler() -> void:
 	if id == -1:
 		aviso.emit("No se encontró el edificio del puesto.")
 		return
-	var motivo: String = Obras.alternar_marca(id)
+	if Obras.esta_programada(id) or Obras.esta_marcado(id):
+		var motivo: String = Obras.cancelar_demolicion(id)
+		if motivo != "":
+			aviso.emit(motivo)
+		_actualizar()
+		return
+	_dialogo_demoler.popup_centered()
+
+
+func _confirmar_demoler() -> void:
+	var id: int = Obras.id_en_columna(esquina)
+	if id == -1:
+		aviso.emit("No se encontró el edificio del puesto.")
+		return
+	var motivo: String = Obras.programar_demolicion(id, 5)
 	if motivo != "":
 		aviso.emit(motivo)
+	_actualizar()
 
 
 static func _texto_recursos(recursos: Dictionary, vacio: String, sufijo: String = "") -> String:

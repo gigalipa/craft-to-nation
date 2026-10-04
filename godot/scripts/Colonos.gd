@@ -96,6 +96,8 @@ func _ready() -> void:
 		economia = Economia
 	if obras == null:
 		obras = Obras
+	if obras != null and obras.colonos == null:
+		obras.colonos = self
 	ciudad.tick_simulado.connect(reconciliar)
 
 

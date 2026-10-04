@@ -26,6 +26,7 @@ const DURACION_RECLAMO_MS := 3000  # tras actuar el jugador a mano sobre un edif
 var mundo: Object = null
 var ciudad: Object = null  # Ciudad
 var zona: Object = null  # Zonificacion
+var colonos: Object = null  # Colonos
 
 ## Funciones de fin de obra; sustituibles en las pruebas.
 var al_completar: Callable = FinalizacionObras.completar_construccion
@@ -33,6 +34,7 @@ var al_deconstruir: Callable = FinalizacionObras.al_deconstruir
 var al_retirar: Callable = FinalizacionObras.retirar_edificio
 
 var marcados: Dictionary = {}  # id -> true
+var demolicion_programada: Dictionary = {}  # id -> horas restantes
 var abandonadas: Dictionary = {}  # id -> true
 var pausadas: Dictionary = {}  # id -> recurso que falta
 var pausadas_por_jugador: Dictionary = {}  # id -> true (pausa pedida desde la ventana del edificio)
@@ -46,16 +48,67 @@ func _ready() -> void:
 		ciudad = Ciudad
 	if zona == null:
 		zona = Zonificacion
+	if colonos == null:
+		colonos = Colonos
+	if ciudad != null and not ciudad.tick_simulado.is_connected(simular_hora):
+		ciudad.tick_simulado.connect(simular_hora)
 
 
 func esta_marcado(id: int) -> bool:
 	return marcados.has(id)
 
 
-## Marca o desmarca un edificio para demolición. Devuelve "" si lo hizo, o el
+func esta_programada(id: int) -> bool:
+	return demolicion_programada.has(id)
+
+
+func horas_programadas(id: int) -> int:
+	return demolicion_programada.get(id, 0)
+
+
+## Programa la demolición para iniciar tras "horas" de simulación.
+func programar_demolicion(id: int, horas: int = 5) -> String:
+	if mundo == null or not mundo.edificio_orden.has(id):
+		return "Eso no es un edificio."
+	if _es_del_nucleo(id):
+		return "El núcleo urbano no se puede demoler."
+	demolicion_programada[id] = horas
+	abandonadas.erase(id)
+	marca_cambiada.emit(id, true)
+	return ""
+
+
+## Cancela una demolición programada o en curso.
+func cancelar_demolicion(id: int) -> String:
+	var habia_p: bool = demolicion_programada.erase(id)
+	var habia_m: bool = marcados.erase(id)
+	if habia_p or habia_m:
+		marca_cambiada.emit(id, false)
+	return ""
+
+
+## Avanza la cuenta regresiva de las demoliciones programadas.
+func simular_hora() -> void:
+	var para_marcar: Array[int] = []
+	for id in demolicion_programada:
+		demolicion_programada[id] -= 1
+		if demolicion_programada[id] <= 0:
+			para_marcar.append(id)
+	for id in para_marcar:
+		demolicion_programada.erase(id)
+		marcados[id] = true
+		abandonadas.erase(id)
+		marca_cambiada.emit(id, true)
+		aviso.emit("Demolición iniciada.")
+
+
+## Marca o desmarca un edificio para demolición inmediata. Devuelve "" si lo hizo, o el
 ## motivo del rechazo. Desmarcar uno que los colonos ya empezaron a demoler lo deja
 ## abandonado (ver _demoler_un_paso()); uno que nadie tocó sigue siendo una obra normal.
 func alternar_marca(id: int) -> String:
+	if demolicion_programada.has(id):
+		cancelar_demolicion(id)
+		return ""
 	if marcados.has(id):
 		marcados.erase(id)
 		marca_cambiada.emit(id, false)
@@ -85,13 +138,15 @@ func abandonar(id: int) -> void:
 
 ## El edificio dejó de existir (o se retiró): borra todo rastro de él.
 func olvidar(id: int) -> void:
-	var estaba_marcado := marcados.erase(id)
+	var habia_m: bool = marcados.erase(id)
+	var habia_p: bool = demolicion_programada.erase(id)
+	var habia_marca: bool = habia_m or habia_p
 	abandonadas.erase(id)
 	pausadas.erase(id)
 	_necesidades.erase(id)
 	pausadas_por_jugador.erase(id)
 	_reclamos.erase(id)
-	if estaba_marcado:
+	if habia_marca:
 		marca_cambiada.emit(id, false)
 
 
@@ -178,6 +233,8 @@ func siguiente_tarea(desde: Vector3i, id_colono: int = -1) -> Dictionary:
 		for id in _candidatas(tipo):
 			if _vetada(id, id_colono):
 				continue
+			if colonos != null and colonos.obreros_en(id) >= 4:
+				continue
 			var distancia: float = Vector3(desde).distance_to(Vector3(mundo.edificio_a_celdas[id][0]))
 			if distancia < mejor_distancia - 0.0001 or (absf(distancia - mejor_distancia) <= 0.0001 and id < mejor):
 				mejor = id
@@ -225,7 +282,9 @@ func resumen_de(id: int) -> Dictionary:
 		for recurso in costo:
 			faltantes[recurso] = faltantes.get(recurso, 0) + costo[recurso]
 	var estado := "completo"
-	if marcados.has(id):
+	if demolicion_programada.has(id):
+		estado = "demolicion_programada"
+	elif marcados.has(id):
 		estado = "demolicion"
 	elif progreso < orden.size():
 		estado = "construccion"
@@ -242,6 +301,7 @@ func resumen_de(id: int) -> Dictionary:
 	return {
 		"nombre": nombre, "tipo": tipo, "estado": estado, "pausada": estado != "completo" and (pausadas_por_jugador.has(id) or abandonadas.has(id)),
 		"salud": float(progreso) / maxf(float(orden.size()), 1.0), "faltantes": faltantes,
+		"horas_demolicion": demolicion_programada.get(id, 0),
 	}
 
 

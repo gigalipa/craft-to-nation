@@ -58,6 +58,15 @@ class ObrasPanelFalso extends RefCounted:
 	func esta_marcado(id: int) -> bool:
 		return marcados.has(id)
 
+	func esta_programada(_id: int) -> bool:
+		return false
+
+	func programar_demolicion(id: int, _horas: int = 5) -> String:
+		return alternar_marca(id)
+
+	func cancelar_demolicion(id: int) -> String:
+		return alternar_marca(id)
+
 
 class ColonosPanelFalso extends RefCounted:
 	func obreros_en(_id: int) -> int:
@@ -794,6 +803,7 @@ func probar_panel_edificio() -> void:
 	panel._pausar.pressed.emit()
 	assert(obras.pausas == 1 and panel._pausar.text == "Reanudar" and panel._estado.text.contains("pausada"), "pausar actúa sobre Obras y cambia la etiqueta")
 	panel._demoler.pressed.emit()
+	panel._dialogo_demoler.confirmed.emit()
 	assert(obras.marcados.has(7) and panel._demoler.text == "Cancelar demolición" and panel._pausar.text == "Reanudar", "demoler marca el edificio")
 	obras.rechazo = "El núcleo urbano no se puede demoler."
 	panel._demoler.pressed.emit()

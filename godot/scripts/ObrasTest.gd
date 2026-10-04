@@ -59,6 +59,13 @@ class ZonaFalsa extends RefCounted:
 		return celda == nucleo
 
 
+class ColonosMock extends RefCounted:
+	var conteos: Dictionary = {}
+
+	func obreros_en(id: int) -> int:
+		return conteos.get(id, 0)
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -290,4 +297,50 @@ func ejecutar_pruebas() -> void:
 	obras11e.alternar_pausa(1)
 	assert(not obras11e.resumen_de(1)["pausada"] and obras11e.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 1, "Reanudar la devuelve a los colonos")
 
-	print("\n=== Las 11 pruebas de Obras pasaron correctamente ===")
+	print("\n=== TEST 12: tope de cuadrilla a 4 obreros y demolición programada con espera de 5 horas ===")
+	var mundo12 := MundoObraFalso.new()
+	mundo12.agregar(1, Vector3i(5, 0, 5), 20, 5)
+	var obras12: Node = _nuevas(mundo12)
+
+	# Mock colonos con tope de cuadrilla
+	var col_mock := ColonosMock.new()
+	obras12.colonos = col_mock
+
+	col_mock.conteos[1] = 4
+	assert(obras12.siguiente_tarea(Vector3i(5, 1, 5)).is_empty(), "con 4 obreros asignados la obra no se ofrece a otro colono")
+	col_mock.conteos[1] = 3
+	assert(obras12.siguiente_tarea(Vector3i(5, 1, 5))["id"] == 1, "con 3 obreros sí se ofrece")
+
+	# Demolición programada
+	assert(obras12.programar_demolicion(1, 5) == "")
+	assert(obras12.esta_programada(1) and not obras12.esta_marcado(1))
+	assert(obras12.horas_programadas(1) == 5)
+	assert(obras12.resumen_de(1)["estado"] == "demolicion_programada")
+	assert(obras12.resumen_de(1)["horas_demolicion"] == 5)
+
+	# Durante la espera no se ofrece para demoler
+	mundo12.edificio_progreso[1] = 20  # construcción terminada
+	assert(obras12.siguiente_tarea(Vector3i(5, 1, 5)).is_empty(), "durante la espera de demolición no se ofrece demoler")
+
+	# Simulamos 4 horas
+	for _i in range(4):
+		obras12.simular_hora()
+	assert(obras12.horas_programadas(1) == 1 and not obras12.esta_marcado(1))
+
+	# A la 5ª hora se marca para demoler
+	obras12.simular_hora()
+	assert(not obras12.esta_programada(1) and obras12.esta_marcado(1))
+	assert(obras12.resumen_de(1)["estado"] == "demolicion")
+	assert(obras12.siguiente_tarea(Vector3i(5, 1, 5)) == {"tipo": "demoler", "id": 1}, "al cumplirse las 5 h se ofrece demoler")
+
+	# Cancelar demolición
+	obras12.cancelar_demolicion(1)
+	assert(not obras12.esta_marcado(1))
+
+	# Cancelar durante la espera
+	obras12.programar_demolicion(1, 5)
+	assert(obras12.esta_programada(1))
+	obras12.cancelar_demolicion(1)
+	assert(not obras12.esta_programada(1))
+
+	print("\n=== Las 12 pruebas de Obras pasaron correctamente ===")

@@ -5,6 +5,8 @@ extends Node3D
 ## marcados). Mismo patrón que ZonaOverlay.gd y NivelacionOverlay.gd; no toca el mundo.
 
 const COLOR := Color(1.0, 0.15, 0.15, 0.35)
+const COLOR_DEMOLICION := Color(1.0, 0.15, 0.15, 0.35)
+const COLOR_PROGRAMADA := Color(1.0, 0.6, 0.1, 0.35)
 const DESF := 0.5  # una celda ocupa [celda, celda+1]: su centro está en celda + DESF
 const PRIORIDAD := 3
 
@@ -18,17 +20,24 @@ var obras: Object = null:
 			obras.marca_cambiada.connect(_on_marca_cambiada)
 
 var _malla: BoxMesh
-var _material: StandardMaterial3D
+var _material_demolicion: StandardMaterial3D
+var _material_programada: StandardMaterial3D
 
 
 func _init() -> void:
 	_malla = BoxMesh.new()
 	_malla.size = Vector3.ONE * 1.02  # un pelo más grande: evita el z-fighting con las caras del edificio
-	_material = StandardMaterial3D.new()
-	_material.albedo_color = COLOR
-	_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_material.render_priority = PRIORIDAD
+	_material_demolicion = StandardMaterial3D.new()
+	_material_demolicion.albedo_color = COLOR_DEMOLICION
+	_material_demolicion.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_material_demolicion.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_material_demolicion.render_priority = PRIORIDAD
+
+	_material_programada = StandardMaterial3D.new()
+	_material_programada.albedo_color = COLOR_PROGRAMADA
+	_material_programada.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_material_programada.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_material_programada.render_priority = PRIORIDAD
 
 
 func _on_marca_cambiada(_id: int, _marcado: bool) -> void:
@@ -45,6 +54,14 @@ func reconstruir() -> void:
 		for celda: Vector3i in obras.celdas_de(id):
 			var caja := MeshInstance3D.new()
 			caja.mesh = _malla
-			caja.material_override = _material
+			caja.material_override = _material_demolicion
 			caja.position = Vector3(celda) + Vector3(DESF, DESF, DESF)
 			add_child(caja)
+	if "demolicion_programada" in obras:
+		for id: int in obras.demolicion_programada:
+			for celda: Vector3i in obras.celdas_de(id):
+				var caja := MeshInstance3D.new()
+				caja.mesh = _malla
+				caja.material_override = _material_programada
+				caja.position = Vector3(celda) + Vector3(DESF, DESF, DESF)
+				add_child(caja)

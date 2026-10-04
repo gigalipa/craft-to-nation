@@ -63,6 +63,14 @@ func hay_via_en_columna(xz: Vector2i) -> bool:
 	return _columnas.get(xz, 0) > 0
 
 
+## Columnas XZ con al menos una celda de vía.
+func columnas() -> Array[Vector2i]:
+	var resultado: Array[Vector2i] = []
+	for k in _columnas:
+		resultado.append(k)
+	return resultado
+
+
 ## Esquina local (0 o 1 en cada eje) que el overlay de "soporte" debe
 ## omitir, o Vector2i(-1, -1) si no es una celda "notch" (overlay
 ## cuadrado normal) — ver "notches" más arriba.

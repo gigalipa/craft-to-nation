@@ -8,6 +8,12 @@ const EconomiaScript = preload("res://scripts/Economia.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
+const EnergiaScript = preload("res://scripts/Energia.gd")
+
+class ZonificacionFalsaEconomia:
+	var celdas_influencia: Dictionary = {}
+	func dentro_de_influencia(celda: Vector2i) -> bool:
+		return celdas_influencia.has(celda)
 
 const ESQ := Vector2i(10, 10)
 const ESQ_REF := Vector2i(30, 30)
@@ -879,4 +885,90 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(carga36["carbon"], 150.0 * 0.75))
 	assert(is_equal_approx(carga36["agua"], 150.0 * 0.25))
 
-	print("\n=== Las 36 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 37: Balance energético, factor de déficit y consumo proporcional en centrales ===")
+	var c37: Node = CiudadScript.new()
+	var e37: Node = EconomiaScript.new()
+	e37.ciudad = c37
+	var z37 := ZonificacionFalsaEconomia.new()
+	for x in range(21):
+		for z in range(21):
+			z37.celdas_influencia[Vector2i(x, z)] = true
+	e37.zonificacion = z37
+
+	# Registramos una central térmica en [0, 0]
+	var esq_central := Vector2i(0, 0)
+	e37.registrar_puesto(esq_central, "central_termoelectrica", 5, 5, {})
+	e37.puestos[esq_central]["presentes"] = {1: true, 2: true, 3: true}
+	e37.puestos[esq_central]["almacen"] = {"combustible": 10.0}
+
+	# Caso A: demanda 0 / capacidad 60 => quema 0
+	e37.simular_hora()
+	var resA: Dictionary = e37.resumen_energia()
+	assert(resA["demanda"] == 0.0)
+	assert(resA["capacidad"] == 60.0)
+	assert(resA["entregada"] == 0.0)
+	assert(resA["factor"] == 1.0)
+	assert(resA["deficit"] == false)
+	assert(is_equal_approx(e37.puestos[esq_central]["almacen"]["combustible"], 10.0))
+
+	# Caso B: demanda 15 / capacidad 60 => quema 0.75
+	var esq_ref := Vector2i(5, 5)
+	e37.registrar_puesto(esq_ref, "refineria_petrolera", 5, 5, {})
+	var pres_ref := {}
+	for i in range(15):
+		pres_ref[10 + i] = true
+	e37.puestos[esq_ref]["presentes"] = pres_ref
+	e37.puestos[esq_ref]["almacen"] = {"crudo": 100.0}
+
+	e37.simular_hora()
+	var resB: Dictionary = e37.resumen_energia()
+	assert(is_equal_approx(resB["demanda"], 15.0))
+	assert(is_equal_approx(resB["capacidad"], 60.0))
+	assert(is_equal_approx(resB["entregada"], 15.0))
+	assert(is_equal_approx(resB["factor"], 1.0))
+	assert(resB["deficit"] == false)
+	assert(is_equal_approx(e37.puestos[esq_central]["almacen"]["combustible"], 9.25))
+
+	# Caso C: demanda 50 / capacidad 20 => factor 0.4 para todos; desconectado => factor 0
+	e37.puestos[esq_central]["presentes"] = {1: true}
+	var pres50 := {}
+	for i in range(50):
+		pres50[100 + i] = true
+	e37.puestos[esq_ref]["presentes"] = pres50
+	var esq_desc := Vector2i(50, 50)
+	e37.registrar_puesto(esq_desc, "productor_combustible", 5, 5, {})
+	e37.puestos[esq_desc]["presentes"] = {200: true, 201: true}
+
+	var redC: Dictionary = EnergiaScript.calcular(e37.puestos, z37, e37.vias, c37)
+	assert(is_equal_approx(redC["resumen"]["demanda"], 50.0))
+	assert(is_equal_approx(redC["resumen"]["capacidad"], 20.0))
+	assert(is_equal_approx(redC["resumen"]["factor"], 0.4))
+	assert(is_equal_approx(redC["factores"][esq_ref], 0.4))
+	assert(redC["factores"][esq_desc] == 0.0)
+
+	# Caso D: dos centrales reparten quema proporcionalmente a su capacidad (20 vs 60, total 80)
+	var esq_central2 := Vector2i(10, 0)
+	e37.registrar_puesto(esq_central2, "central_termoelectrica", 5, 5, {})
+	e37.puestos[esq_central2]["presentes"] = {301: true, 302: true, 303: true}
+	e37.puestos[esq_central]["almacen"] = {"combustible": 5.0}
+	e37.puestos[esq_central2]["almacen"] = {"combustible": 5.0}
+	var pres20 := {}
+	for i in range(20):
+		pres20[i] = true
+	e37.puestos[esq_ref]["presentes"] = pres20
+	e37.puestos.erase(esq_desc)
+
+	e37.simular_hora()
+	assert(is_equal_approx(e37.puestos[esq_central]["almacen"]["combustible"], 5.0 - 0.25))
+	assert(is_equal_approx(e37.puestos[esq_central2]["almacen"]["combustible"], 5.0 - 0.75))
+
+	# Caso E: prioridad combustible -> crudo -> carbon
+	e37.puestos.erase(esq_central2)
+	e37.puestos[esq_central]["presentes"] = {1: true}
+	e37.puestos[esq_central]["almacen"] = {"combustible": 0.2, "crudo": 0.5, "carbon": 2.0}
+	e37.simular_hora()
+	assert(not e37.puestos[esq_central]["almacen"].has("combustible"))
+	assert(not e37.puestos[esq_central]["almacen"].has("crudo"))
+	assert(is_equal_approx(e37.puestos[esq_central]["almacen"]["carbon"], 1.7))
+
+	print("\n=== Las 37 pruebas de Economia pasaron correctamente ===")

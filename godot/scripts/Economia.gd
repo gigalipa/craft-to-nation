@@ -23,6 +23,8 @@ signal trabajadores_liberados(ids: Array)
 ## los convierte (ver Colonos._on_cohorte_graduada()).
 signal cohorte_graduada(esquina: Vector2i, ids: Array)
 
+const Energia = preload("res://scripts/Energia.gd")
+
 ## Valores «ninguno» de la celda de servicio (X, Z de la puerta) y del depósito
 ## (celda del baúl) de un puesto sin plantilla.
 const SIN_SERVICIO := Vector2i.MAX
@@ -72,7 +74,21 @@ var ciudad: Object = null  # Ciudad
 ## VoxelWorld, inyectable (Main.gd lo asigna). Sin él los puestos producen sin
 ## consumir el mundo.
 var mundo: Object = null
+var zonificacion: Object = null
+var vias: Object = null
+var _ultimo_resumen_energia: Dictionary = {
+	"demanda": 0.0,
+	"capacidad": 0.0,
+	"entregada": 0.0,
+	"factor": 1.0,
+	"deficit": false,
+	"conectados": {},
+}
 var _horas_desde_recalculo := 0
+
+func resumen_energia() -> Dictionary:
+	return _ultimo_resumen_energia.duplicate()
+
 
 ## true mientras _actualizar_agotamiento() libera personal y reevalúa el área: evita que cada liberación
 ## recalcule por su cuenta.
@@ -343,6 +359,23 @@ static func _total(almacen: Dictionary) -> float:
 ## en proporción (el exceso se pierde: la producción se frena contra el tope y
 ## avisa de que falta acarreo).
 func simular_hora() -> void:
+	var obj_zonif: Object = zonificacion if zonificacion != null else Zonificacion
+	var obj_vias: Object = vias if vias != null else Vias
+	var red: Dictionary = Energia.calcular(puestos, obj_zonif, obj_vias, ciudad)
+	_ultimo_resumen_energia = red.get("resumen", {})
+	var factores_energia: Dictionary = red.get("factores", {})
+	var quema_energia: Dictionary = red.get("quema", {})
+
+	for esq_central: Vector2i in quema_energia:
+		if puestos.has(esq_central):
+			var local_central: Dictionary = puestos[esq_central]["almacen"]
+			var quemado: Dictionary = quema_energia[esq_central]
+			for tipo_comb: String in quemado:
+				var cant: float = quemado[tipo_comb]
+				local_central[tipo_comb] = maxf(0.0, local_central.get(tipo_comb, 0.0) - cant)
+				if local_central[tipo_comb] <= 1e-9:
+					local_central.erase(tipo_comb)
+
 	var horas_investigacion := 0.0
 	for esquina in puestos:
 		var p: Dictionary = puestos[esquina]
@@ -350,13 +383,18 @@ func simular_hora() -> void:
 			continue
 		_liberar_acarreadores_si_agotado(esquina)
 		if es_universidad(esquina):
-			horas_investigacion += float(p["presentes"].size())
+			var factor_uni: float = 1.0
+			if ciudad != null and ciudad.nivel_investigado + 1 == 3:
+				factor_uni = factores_energia.get(esquina, 0.0)
+			horas_investigacion += float(p["presentes"].size()) * factor_uni
 			continue
 		if es_escuela(esquina):
 			_formar(esquina)
 			continue
 		if es_refineria(esquina):
-			_refinar(esquina)
+			_refinar(esquina, factores_energia.get(esquina, 0.0))
+			continue
+		if p["tipo"] == "central_termoelectrica":
 			continue
 		var producido: Dictionary = produccion_por_hora(esquina)
 		var total_producido := _total(producido)
@@ -572,12 +610,12 @@ func _formar(esquina: Vector2i) -> void:
 ## no cupiera en el almacén (compartido entre insumo y producto), esa hora no se refina.
 ## ponytail: todo o nada al llenarse; con las recetas actuales (2 -> 1, 3 -> 1) el total nunca crece,
 ## así que solo importaría para una receta que multiplique (aserradero).
-func _refinar(esquina: Vector2i) -> void:
+func _refinar(esquina: Vector2i, factor_energia: float = 1.0) -> void:
 	var p: Dictionary = puestos[esquina]
 	var presentes: int = p["presentes"].size()
 	if presentes <= 0:
 		return
-	var resultado: Dictionary = CadenaMinerales.procesar_receta(insumo_de(esquina), presentes, 1.0, p["almacen"], 1.0, float(p["capacidad"]))
+	var resultado: Dictionary = CadenaMinerales.procesar_receta(insumo_de(esquina), presentes, 1.0, p["almacen"], factor_energia, float(p["capacidad"]))
 	if _total(resultado) > p["capacidad"] + 1e-9:
 		return
 	for recurso in resultado.keys():

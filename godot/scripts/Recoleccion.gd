@@ -182,6 +182,7 @@ func cupo_de(tipo: String) -> int:
 		"caza_recoleccion": return PERSONAL_MAXIMO_CAZA_RECOLECCION
 		"pesca_frutos_mar": return PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
 		"universidad": return 3
+		"central_termoelectrica": return 4
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.PERSONAL_MAXIMO_REFINERIA
 	if ESCUELAS.has(tipo):
@@ -196,6 +197,7 @@ func capacidad_almacen_de(tipo: String) -> int:
 		"maderero": return CAPACIDAD_ALMACENAMIENTO_MADERERO
 		"caza_recoleccion": return CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION
 		"pesca_frutos_mar": return CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR
+		"central_termoelectrica": return 300
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.CAPACIDAD_ALMACENAMIENTO_REFINERIA
 	return 0

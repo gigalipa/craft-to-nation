@@ -9,6 +9,12 @@ extends Node
 const NiveladorVia = preload("res://scripts/NiveladorVia.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
+const EnergiaScript = preload("res://scripts/Energia.gd")
+
+class ZonificacionFalsa:
+	var celdas_influencia: Dictionary = {}
+	func dentro_de_influencia(celda: Vector2i) -> bool:
+		return celdas_influencia.has(celda)
 
 ## Generador falso: altura = x + z (una pendiente diagonal simple para
 ## probar niveles de bloque distintos entre vértices vecinos).
@@ -434,4 +440,47 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	Vias.notches.clear()
-	print("\n=== Las 33 pruebas de Vias pasaron correctamente ===")
+
+	print("\n=== TEST 34: Transmisión energética por topología de vías y zona de influencia ===")
+	var z_falsa = ZonificacionFalsa.new()
+	for x in range(6):
+		for z in range(6):
+			z_falsa.celdas_influencia[Vector2i(x, z)] = true
+
+	var puestos_test: Dictionary = {
+		Vector2i(2, 2): {"tipo": "universidad", "ancho": 2, "alto": 2, "activo": true, "presentes": {1: true}},
+		Vector2i(10, 10): {"tipo": "universidad", "ancho": 1, "alto": 1, "activo": true, "presentes": {1: true}},
+		Vector2i(8, 0): {"tipo": "universidad", "ancho": 1, "alto": 1, "activo": true, "presentes": {1: true}},
+		Vector2i(10, 2): {"tipo": "universidad", "ancho": 1, "alto": 1, "activo": true, "presentes": {1: true}},
+	}
+
+	var red0: Dictionary = EnergiaScript.calcular(puestos_test, z_falsa, Vias)
+	assert(red0["resumen"]["conectados"][Vector2i(2, 2)] == true)
+	assert(red0["resumen"]["conectados"][Vector2i(10, 10)] == false)
+	assert(red0["resumen"]["conectados"][Vector2i(8, 0)] == false)
+	assert(red0["resumen"]["conectados"][Vector2i(10, 2)] == false)
+
+	# Vía ortogonal conectada tocando influencia en [5, 0] y llegando hasta [7, 0] con rampa Y!=
+	Vias.agregar([Vector3i(6, 1, 0), Vector3i(7, 3, 0)], "tierra_pisada")
+	# Vía diagonal aislada en [9, 2]
+	Vias.agregar([Vector3i(9, 1, 2)], "tierra_pisada")
+
+	var red1: Dictionary = EnergiaScript.calcular(puestos_test, z_falsa, Vias)
+	assert(red1["resumen"]["conectados"][Vector2i(2, 2)] == true)
+	assert(red1["resumen"]["conectados"][Vector2i(10, 10)] == false)
+	assert(red1["resumen"]["conectados"][Vector2i(8, 0)] == true)
+	assert(red1["resumen"]["conectados"][Vector2i(10, 2)] == false)
+
+	# Corte y restauración del único tramo
+	Vias.quitar([Vector3i(6, 1, 0)])
+	var red_cortada: Dictionary = EnergiaScript.calcular(puestos_test, z_falsa, Vias)
+	assert(red_cortada["resumen"]["conectados"][Vector2i(8, 0)] == false)
+
+	Vias.agregar([Vector3i(6, 1, 0)], "tierra_pisada")
+	var red_restaurada: Dictionary = EnergiaScript.calcular(puestos_test, z_falsa, Vias)
+	assert(red_restaurada["resumen"]["conectados"][Vector2i(8, 0)] == true)
+
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+	print("\n=== Las 34 pruebas de Vias pasaron correctamente ===")

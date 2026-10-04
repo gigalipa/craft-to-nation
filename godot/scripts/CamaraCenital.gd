@@ -1035,13 +1035,28 @@ func _frente_es_suelo_firme(frente: Vector2i) -> bool:
 	return mundo.obtener_tipo(Vector3i(frente.x, mundo.altura_en(frente.x, frente.y), frente.y)) != "agua"
 
 
+func _despejes_puertas_del_mundo() -> Dictionary:
+	var mapa: Dictionary = {}  # Vector2i -> int (y_puerta)
+	if mundo == null:
+		return mapa
+	for id: int in mundo.edificio_despeje:
+		var despeje: Dictionary = mundo.edificio_despeje[id]
+		for celda: Vector3i in despeje:
+			var tipo: String = despeje[celda]
+			if tipo == "puerta_inferior":
+				mapa[Vector2i(celda.x, celda.z)] = celda.y
+			elif tipo == "puerta_superior":
+				mapa[Vector2i(celda.x, celda.z)] = celda.y - 1
+	return mapa
+
+
 ## Nivel base del blueprint activo en "esquina" (ver
 ## NiveladorTerreno.calcular_base_y()) más la validación de sus frentes.
 ## Fuente ÚNICA de base_y para el clic y la previsualización. Devuelve el
 ## mismo diccionario que calcular_base_y(); "motivo" ∈ {"", "pendiente",
 ## "puertas", "frente"} (clave de MENSAJES_BASE_Y).
 func _base_y_blueprint(esquina: Vector2i) -> Dictionary:
-	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, _blueprint_activo["celdas_3d"])
+	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, _blueprint_activo["celdas_3d"], NiveladorTerreno.SIN_PUERTA_GUIA, _despejes_puertas_del_mundo())
 	if not resultado["valido"]:
 		return resultado
 	for frente: Vector2i in resultado["frentes"]:
@@ -1061,7 +1076,7 @@ func _base_y_blueprint(esquina: Vector2i) -> Dictionary:
 ## residencial) y el terreno frente a la puerta de salida se nivela a ese
 ## nivel (revisión de código, 2026-09-29).
 func _base_y_puesto(esquina: Vector2i, tipo: String, giros: int) -> Dictionary:
-	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, PlantillasPuesto.celdas(tipo, giros), PlantillasPuesto.puerta_de_entrada(tipo, giros))
+	var resultado: Dictionary = nivelador_puesto.calcular_base_y(esquina, PlantillasPuesto.celdas(tipo, giros), PlantillasPuesto.puerta_de_entrada(tipo, giros), _despejes_puertas_del_mundo())
 	if not resultado["valido"]:
 		return resultado
 	for frente: Vector2i in resultado["frentes"]:

@@ -365,4 +365,13 @@ func ejecutar_pruebas() -> void:
 	assert(biblioteca_24.find_item_by_name("mesa_estudio") != -1, "la biblioteca tiene el bloque")
 	assert(biblioteca_24.find_item_by_name("baul") != -1 and biblioteca_24.find_item_by_name("bloque_acero") != -1, "y conserva los anteriores")
 
-	print("\n=== Las 24 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 25: puertas enfrentadas nivelan la puerta nueva a la cota Y de la puerta existente ===")
+	var base_sin_ajeno: Dictionary = nivelador_x.calcular_base_y(Vector2i(10, 10), _casa_4x5())
+	assert(base_sin_ajeno["valido"] and base_sin_ajeno["base_y"] == 9)
+	var despejes_enfrente: Dictionary = {Vector2i(9, 12): 10}
+	var base_con_enfrente: Dictionary = nivelador_x.calcular_base_y(Vector2i(10, 10), _casa_4x5(), NiveladorTerreno.SIN_PUERTA_GUIA, despejes_enfrente)
+	assert(base_con_enfrente["valido"])
+	assert(base_con_enfrente["base_y"] + 1 == 10, "la puerta nueva queda a nivel Y=10")
+	assert(base_con_enfrente["fachada"][Vector2i(9, 12)] == 9, "el suelo de fachada queda a Y=9 (bajo la puerta)")
+
+	print("\n=== Las 25 pruebas de NiveladorTerreno pasaron correctamente ===")

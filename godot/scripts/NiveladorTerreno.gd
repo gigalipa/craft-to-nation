@@ -165,7 +165,7 @@ static func _arriba_abajo(a: Vector3i, b: Vector3i) -> bool:
 ## ella, solo esa puerta decide base_y y las demás puertas inferiores (p. ej.
 ## la salida de una refinería) nivelan el terreno de su frente al mismo nivel
 ## que el de la guía, cavando o rellenando.
-func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary, puerta_guia: Vector3i = SIN_PUERTA_GUIA) -> Dictionary:
+func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary, puerta_guia: Vector3i = SIN_PUERTA_GUIA, despejes_existentes: Dictionary = {}) -> Dictionary:
 	var huella: Dictionary = {}  # Vector2i -> true
 	var columnas: Array[Vector2i] = []
 	for rel in celdas_3d:
@@ -190,6 +190,13 @@ func calcular_base_y(esquina: Vector2i, celdas_3d: Dictionary, puerta_guia: Vect
 			var columna_puerta := esquina + xz
 			var frente := columna_puerta + direccion
 			var suelo_frente: int = _generador.altura_en(frente.x, frente.y)
+
+			# Puertas enfrentadas: si el frente coincide con el despeje de una puerta existente
+			if not despejes_existentes.is_empty():
+				var y_existente: int = despejes_existentes.get(frente, despejes_existentes.get(columna_puerta + direccion * 2, -1))
+				if y_existente != -1:
+					suelo_frente = y_existente - 1
+
 			if abs(_generador.altura_en(columna_puerta.x, columna_puerta.y) - suelo_frente) > LIMITE_PENDIENTE:
 				return _base_y_invalida(respaldo, "pendiente", frentes)
 			frentes.append(frente)

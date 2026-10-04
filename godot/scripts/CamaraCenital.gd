@@ -625,6 +625,7 @@ func _velocidad_altura(altura_actual: float) -> float:
 
 
 func _process(delta: float) -> void:
+	_actualizar_visibilidad_zonas()
 	if not current:
 		return
 
@@ -1351,12 +1352,21 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
-		if tecla.pressed and tecla.keycode == KEY_ESCAPE:
-			salir_de_todos_los_modos()
-		elif tecla.pressed:
-			var digito := _digito_de_tecla(tecla.keycode)
-			if digito != -1:
-				_manejar_tecla_numerica(digito)
+		if tecla.pressed and not tecla.echo:
+			if tecla.keycode == KEY_ESCAPE:
+				salir_de_todos_los_modos()
+			elif tecla.keycode == KEY_Z:
+				_manejar_tecla_z()
+			elif tecla.keycode == KEY_X:
+				_manejar_tecla_x()
+			elif tecla.keycode == KEY_LEFT:
+				_manejar_flecha_izquierda()
+			elif tecla.keycode == KEY_RIGHT:
+				_manejar_flecha_derecha()
+			else:
+				var digito := _digito_de_tecla(tecla.keycode)
+				if digito != -1:
+					_manejar_tecla_numerica(digito)
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
@@ -1393,7 +1403,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_intentar_zoom(VELOCIDAD_ZOOM)
 
 
-## 1-9 si "keycode" es una tecla numérica de esa fila, -1 si no.
+## 1-9 si "keycode" es una tecla numérica 1..9, 10 si es 0, -1 si no.
 func _digito_de_tecla(keycode: int) -> int:
 	match keycode:
 		KEY_1: return 1
@@ -1405,6 +1415,7 @@ func _digito_de_tecla(keycode: int) -> int:
 		KEY_7: return 7
 		KEY_8: return 8
 		KEY_9: return 9
+		KEY_0: return 10
 	return -1
 
 
@@ -1439,28 +1450,31 @@ func _manejar_tecla_zonificar(n: int) -> void:
 
 ## Con Construir activo: sin categoría elegida, N selecciona la categoría N
 ## (CATEGORIAS_CONSTRUIR); con una categoría abierta, N selecciona su
-## edificio N (o no hace nada si esa categoría no tiene esa posición, p. ej.
-## una categoría con menos edificios).
+## edificio N paginado (o no hace nada si esa categoría no tiene esa posición).
 func _manejar_tecla_construir(n: int) -> void:
 	if _categoria_construir == "":
 		if n >= 1 and n <= CATEGORIAS_CONSTRUIR.size():
 			_elegir_categoria(CATEGORIAS_CONSTRUIR[n - 1])
 		return
+	var pag := 1
+	if hud != null and hud.has_method("pagina_actual"):
+		pag = hud.pagina_actual(_categoria_construir)
+	var idx := (pag - 1) * 10 + (n - 1)
 	match _categoria_construir:
 		"residencial":
-			if n >= 1 and n <= 5:
-				_alternar_modo_colocar_blueprint(n - 1)
+			if idx >= 0 and idx < 5:
+				_alternar_modo_colocar_blueprint(idx)
 		"periferico":
-			if n >= 1 and n <= PUESTOS_PERIFERICO.size():
-				_alternar_puesto_por_tipo(PUESTOS_PERIFERICO[n - 1])
+			if idx >= 0 and idx < PUESTOS_PERIFERICO.size():
+				_alternar_puesto_por_tipo(PUESTOS_PERIFERICO[idx])
 		"industrial":
-			if n >= 1 and n <= PUESTOS_INDUSTRIAL.size():
-				_alternar_puesto_por_tipo(PUESTOS_INDUSTRIAL[n - 1])
+			if idx >= 0 and idx < PUESTOS_INDUSTRIAL.size():
+				_alternar_puesto_por_tipo(PUESTOS_INDUSTRIAL[idx])
 		"investigacion":
-			if n >= 1 and n <= PUESTOS_INVESTIGACION.size():
-				_alternar_puesto_por_tipo(PUESTOS_INVESTIGACION[n - 1])
+			if idx >= 0 and idx < PUESTOS_INVESTIGACION.size():
+				_alternar_puesto_por_tipo(PUESTOS_INVESTIGACION[idx])
 		"vias":
-			if n == 1:
+			if idx == 0:
 				_alternar_modo_trazar_via()
 
 
@@ -1484,6 +1498,7 @@ func _elegir_categoria(categoria: String) -> void:
 		else:
 			_categoria_construir = ""
 			hud.set_modo("construir", "", "")
+		_actualizar_visibilidad_zonas()
 		return
 	_salir_de_modo_colocar_blueprint(false)
 	_salir_de_modo_colocar_puesto(false)
@@ -1491,6 +1506,69 @@ func _elegir_categoria(categoria: String) -> void:
 	_categoria_construir = categoria
 	hud.set_giros_construccion(0)
 	hud.set_modo("construir", "", categoria)
+	_actualizar_visibilidad_zonas()
+
+
+func _manejar_tecla_z() -> void:
+	if modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via:
+		_salir_de_modo_colocar_blueprint(false)
+		_salir_de_modo_colocar_puesto(false)
+		_salir_de_modo_trazar_via(false)
+		if _categoria_construir != "":
+			hud.set_modo("construir", "", _categoria_construir)
+		else:
+			hud.set_modo("construir", "", "")
+		_actualizar_visibilidad_zonas()
+		return
+
+	if _categoria_construir != "":
+		if hud != null and hud.has_method("pagina_actual") and hud.pagina_actual(_categoria_construir) > 1:
+			hud.pagina_anterior(_categoria_construir)
+			return
+		_categoria_construir = ""
+		hud.set_modo("construir", "", "")
+		_actualizar_visibilidad_zonas()
+		return
+
+	if _menu_construir_abierto:
+		_salir_de_modo_menu_construir()
+		return
+
+	if modo_zonificar:
+		_salir_de_modo_zonificar()
+		return
+
+	if modo_demoler:
+		_salir_de_modo_demoler()
+		return
+
+
+func _manejar_tecla_x() -> void:
+	if _categoria_construir != "":
+		if hud != null and hud.has_method("pagina_siguiente"):
+			hud.pagina_siguiente(_categoria_construir)
+
+
+func _manejar_flecha_izquierda() -> void:
+	if _categoria_construir != "":
+		if hud != null and hud.has_method("pagina_anterior"):
+			hud.pagina_anterior(_categoria_construir)
+
+
+func _manejar_flecha_derecha() -> void:
+	if _categoria_construir != "":
+		if hud != null and hud.has_method("pagina_siguiente"):
+			hud.pagina_siguiente(_categoria_construir)
+
+
+func _actualizar_visibilidad_zonas() -> void:
+	if overlay == null or not is_instance_valid(overlay):
+		return
+	var visible_zonas: bool = modo_zonificar or (
+		_categoria_construir != "" and _categoria_construir != "periferico" and _categoria_construir != "vias"
+	)
+	if overlay.has_method("set_mostrar_zonas"):
+		overlay.set_mostrar_zonas(visible_zonas)
 
 
 ## Igual que el resto de controles: aplica el zoom tentativamente, y solo
@@ -1683,6 +1761,7 @@ func _alternar_modo_menu_construir() -> void:
 	_categoria_construir = ""
 	hud.set_giros_construccion(0)
 	hud.set_modo("construir", "", "")
+	_actualizar_visibilidad_zonas()
 
 
 ## Segunda pulsación de la tecla `1` (o "Construir" de nuevo) con el menú
@@ -1699,6 +1778,7 @@ func _salir_de_modo_menu_construir() -> void:
 	_menu_construir_abierto = false
 	_categoria_construir = ""
 	hud.set_modo("")
+	_actualizar_visibilidad_zonas()
 
 
 ## Activa/cancela el modo de colocación de blueprint (toggle simple, un solo
@@ -1779,6 +1859,7 @@ func salir_de_todos_los_modos() -> void:
 	_categoria_construir = ""
 	hud.set_modo("")
 	hud.cerrar_panel_puesto()
+	_actualizar_visibilidad_zonas()
 
 
 ## Cancela la selección de esquinas de zona en curso (tras el primer
@@ -1901,6 +1982,7 @@ func _alternar_modo_zonificar() -> void:
 	hud.cerrar_panel_puesto()
 	modo_zonificar = true
 	_mostrar_contexto_zona()
+	_actualizar_visibilidad_zonas()
 
 
 func _salir_de_modo_zonificar() -> void:
@@ -1910,6 +1992,7 @@ func _salir_de_modo_zonificar() -> void:
 	if estaba:
 		hud.set_modo("")
 		hud.ocultar_contexto()
+	_actualizar_visibilidad_zonas()
 
 
 ## Activa/desactiva el modo trazador de vías: categoría "vias" del menú

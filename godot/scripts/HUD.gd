@@ -197,6 +197,30 @@ func set_giros_construccion(giros: int) -> void:
 	_barra_modos.set_giros(giros)
 
 
+func pagina_actual(cat: String = "") -> int:
+	if _barra_modos != null and _barra_modos.has_method("pagina_actual"):
+		return _barra_modos.pagina_actual(cat)
+	return 1
+
+
+func total_paginas(cat: String = "") -> int:
+	if _barra_modos != null and _barra_modos.has_method("total_paginas"):
+		return _barra_modos.total_paginas(cat)
+	return 1
+
+
+func pagina_anterior(cat: String = "") -> bool:
+	if _barra_modos != null and _barra_modos.has_method("pagina_anterior"):
+		return _barra_modos.pagina_anterior(cat)
+	return false
+
+
+func pagina_siguiente(cat: String = "") -> bool:
+	if _barra_modos != null and _barra_modos.has_method("pagina_siguiente"):
+		return _barra_modos.pagina_siguiente(cat)
+	return false
+
+
 func mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "") -> void:
 	_contexto.mostrar(nombre, costo, acciones, valido, extra)
 

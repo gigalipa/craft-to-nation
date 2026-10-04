@@ -74,12 +74,24 @@ var _materiales: Dictionary = {}
 ## nueva selección (ver previsualizar()) y en reconstruir(), que se llama
 ## tras cualquier cambio real de terreno.
 var _cache_altura: Dictionary = {}
+var mostrar_zonas := false
+var _planos_zonas_pintadas: Array[MeshInstance3D] = []
+
+
+func set_mostrar_zonas(valor: bool) -> void:
+	if mostrar_zonas == valor:
+		return
+	mostrar_zonas = valor
+	for plano in _planos_zonas_pintadas:
+		if is_instance_valid(plano):
+			plano.visible = mostrar_zonas
 
 
 func reconstruir() -> void:
 	for hijo in get_children():
 		hijo.queue_free()
 	_planos_previsualizacion.clear()
+	_planos_zonas_pintadas.clear()
 	_cache_altura.clear()
 
 	if Zonificacion.nucleo_declarado:
@@ -97,7 +109,10 @@ func reconstruir() -> void:
 	for celda in Zonificacion.zonas:
 		var tipo: String = Zonificacion.zonas[celda]
 		var color: Color = COLOR_POR_ZONA.get(tipo, Color.WHITE)
-		_agregar_plano(celda, color, PRIORIDAD_ZONA)
+		var plano: MeshInstance3D = _agregar_plano(celda, color, PRIORIDAD_ZONA)
+		if plano != null:
+			plano.visible = mostrar_zonas
+			_planos_zonas_pintadas.append(plano)
 
 
 ## Dibuja (sin modificar Zonificacion.zonas) el rectángulo entre "esquina_a"

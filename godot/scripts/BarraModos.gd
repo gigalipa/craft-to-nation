@@ -102,6 +102,8 @@ var ZONAS := [
 	[Zonificacion.MARCADOR_BORRAR, "Borrar", "3", null],
 ]
 
+const ITEMS_POR_PAGINA := 10
+
 var _panel_principal := PanelContainer.new()
 var _panel_categorias := PanelContainer.new()
 var _panel_zonas := PanelContainer.new()
@@ -122,6 +124,8 @@ var _giros_menu := 0
 var _modo := ""
 var _categoria := ""  # categoría activa dentro de Construir ("" = lista de categorías)
 var _puesto := ""  # tipo de edificio activo (Construir) o tipo de zona activo (Zonificar)
+var _paginas := {}  # id de categoría -> int (1-based)
+var _controles_paginacion := {}  # id de categoría -> Dictionary con controles de paginación
 
 
 func _ready() -> void:
@@ -178,6 +182,7 @@ func _ready() -> void:
 			var columna_vacia := _nueva_columna(panel)
 			columna_vacia.add_child(TemaHUD.etiqueta("Próximamente"))
 			continue
+		_paginas[id] = 1
 		var columna_edificios := _nueva_columna(panel)
 		for edificio in edificios:
 			var tipo: String = edificio[0]
@@ -188,6 +193,37 @@ func _ready() -> void:
 			)
 			columna_edificios.add_child(boton)
 			_botones_construccion[tipo] = boton
+
+		var cont_pag := HBoxContainer.new()
+		cont_pag.alignment = BoxContainer.ALIGNMENT_CENTER
+		cont_pag.add_theme_constant_override("separation", 6)
+		cont_pag.visible = false
+		var btn_prev := Button.new()
+		btn_prev.text = "← (Z)"
+		btn_prev.custom_minimum_size = Vector2(40, 24)
+		TemaHUD.estilizar_boton(btn_prev)
+		btn_prev.pressed.connect(func() -> void:
+			pagina_anterior(id)
+		)
+		var lbl_pag := TemaHUD.etiqueta("Pág 1/1")
+		lbl_pag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var btn_next := Button.new()
+		btn_next.text = "→ (X)"
+		btn_next.custom_minimum_size = Vector2(40, 24)
+		TemaHUD.estilizar_boton(btn_next)
+		btn_next.pressed.connect(func() -> void:
+			pagina_siguiente(id)
+		)
+		cont_pag.add_child(btn_prev)
+		cont_pag.add_child(lbl_pag)
+		cont_pag.add_child(btn_next)
+		columna_edificios.add_child(cont_pag)
+		_controles_paginacion[id] = {
+			"contenedor": cont_pag,
+			"prev": btn_prev,
+			"next": btn_next,
+			"label": lbl_pag,
+		}
 
 	add_child(_panel_zonas)
 	var columna_zonas := _nueva_columna(_panel_zonas)
@@ -258,16 +294,26 @@ func _poner_tecla(boton: Button, tecla: String, ancho_texto: float) -> void:
 	if tecla == "":
 		return
 	var esquinas := Control.new()
+	esquinas.name = "EsquinasTecla"
 	esquinas.set_anchors_preset(Control.PRESET_FULL_RECT)
 	esquinas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	boton.add_child(esquinas)
 	var etiqueta_tecla := TemaHUD.etiqueta(tecla)
+	etiqueta_tecla.name = "EtiquetaTecla"
 	etiqueta_tecla.add_theme_font_size_override("font_size", 12)
 	etiqueta_tecla.add_theme_color_override("font_color", TemaHUD.DORADO)
 	esquinas.add_child(etiqueta_tecla)
 	TemaHUD.poner_en_esquina_inferior(etiqueta_tecla)  # a MARGEN_X / MARGEN_Y del marco
 	var margen: float = etiqueta_tecla.get_minimum_size().x + TemaHUD.MARGEN_X + 4.0
 	boton.custom_minimum_size.x = maxf(boton.custom_minimum_size.x, ancho_texto + 2.0 * margen)
+
+
+func _actualizar_tecla_boton(boton: Button, nueva_tecla: String) -> void:
+	var esquinas := boton.get_node_or_null("EsquinasTecla")
+	if esquinas != null:
+		var etiqueta := esquinas.get_node_or_null("EtiquetaTecla") as Label
+		if etiqueta != null:
+			etiqueta.text = nueva_tecla
 
 
 ## Botón del submenú Construir: miniatura 3D (espacio fijo TAMANO_MINIATURA x
@@ -408,11 +454,44 @@ func _celdas_residencial_giradas(indice: int = 0) -> Dictionary:
 ## Construir: la categoría cuyo panel de edificios está abierto ("" = todavía
 ## en la lista de categorías).
 func set_modo(modo: String, sub: String = "", categoria: String = "") -> void:
+	if categoria != "" and _categoria != categoria:
+		_paginas[categoria] = 1
 	_modo = modo
 	_puesto = sub
 	_categoria = categoria
 	if is_inside_tree():
 		_refrescar()
+
+
+func total_paginas(cat: String = "") -> int:
+	var cat_id := cat if cat != "" else _categoria
+	var edificios: Array = CONSTRUCCIONES_POR_CATEGORIA.get(cat_id, [])
+	return maxi(1, ceili(float(edificios.size()) / float(ITEMS_POR_PAGINA)))
+
+
+func pagina_actual(cat: String = "") -> int:
+	var cat_id := cat if cat != "" else _categoria
+	return _paginas.get(cat_id, 1)
+
+
+func pagina_anterior(cat: String = "") -> bool:
+	var cat_id := cat if cat != "" else _categoria
+	var pag: int = _paginas.get(cat_id, 1)
+	if pag > 1:
+		_paginas[cat_id] = pag - 1
+		_refrescar()
+		return true
+	return false
+
+
+func pagina_siguiente(cat: String = "") -> bool:
+	var cat_id := cat if cat != "" else _categoria
+	var pag: int = _paginas.get(cat_id, 1)
+	if pag < total_paginas(cat_id):
+		_paginas[cat_id] = pag + 1
+		_refrescar()
+		return true
+	return false
 
 
 func _cambiar_texto_boton_construccion(btn: Button, nuevo_texto: String) -> void:
@@ -434,6 +513,26 @@ func _refrescar() -> void:
 		_botones_categoria[id].set_pressed_no_signal(id == _categoria)
 	for id in _paneles_construccion:
 		_paneles_construccion[id].visible = _modo == "construir" and _categoria == id
+		var edificios: Array = CONSTRUCCIONES_POR_CATEGORIA.get(id, [])
+		var pag: int = _paginas.get(id, 1)
+		var tot_pag: int = total_paginas(id)
+		if _controles_paginacion.has(id):
+			var ctrl: Dictionary = _controles_paginacion[id]
+			(ctrl["contenedor"] as Control).visible = tot_pag > 1
+			(ctrl["label"] as Label).text = "Pág %d/%d" % [pag, tot_pag]
+			(ctrl["prev"] as Button).disabled = pag <= 1
+			(ctrl["next"] as Button).disabled = pag >= tot_pag
+		if id != "residencial":
+			for i in range(edificios.size()):
+				var tipo_ed: String = edificios[i][0]
+				if _botones_construccion.has(tipo_ed):
+					var btn_ed: Button = _botones_construccion[tipo_ed]
+					var en_pag: bool = (i >= (pag - 1) * ITEMS_POR_PAGINA) and (i < pag * ITEMS_POR_PAGINA)
+					btn_ed.visible = en_pag
+					if en_pag:
+						var local_idx: int = i - (pag - 1) * ITEMS_POR_PAGINA
+						var tecla_str: String = str(local_idx + 1) if local_idx < 9 else ("0" if local_idx == 9 else "")
+						_actualizar_tecla_boton(btn_ed, tecla_str)
 	for tipo in _botones_construccion:
 		_botones_construccion[tipo].set_pressed_no_signal(_modo == "construir" and tipo == _puesto)
 

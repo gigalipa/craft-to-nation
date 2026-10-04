@@ -232,6 +232,11 @@ func _candidatas(tipo: String) -> Array[int]:
 	return ids
 
 
+## true si hay alguna obra de construcción o demolición pendiente con materiales disponibles.
+func hay_obras_pendientes() -> bool:
+	return not _candidatas("construir").is_empty() or not _candidatas("demoler").is_empty()
+
+
 ## La tarea que le toca a un colono libre que está en "desde": primero construir,
 ## luego demoler; en cada grupo la obra más cercana (en empate, la de id menor).
 ## {} si no hay trabajo para él.

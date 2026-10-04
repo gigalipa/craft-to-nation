@@ -87,11 +87,17 @@ class BuscadorEspia extends "res://scripts/BuscadorRutas.gd":
 
 ## Obras falsas: ofrece una tarea fija y anota cada llamada a trabajar().
 class ObrasFalsa extends RefCounted:
+	signal marca_cambiada(id: int, marcado: bool)
+
+	var colonos: Object = null
 	var tarea: Dictionary = {}
 	var huella: Array = []
 	var resultado: Dictionary = {"estado": "avanzo", "espera": 0.0}
 	var trabajos: Array = []
 	var vetos: Array = []
+
+	func hay_obras_pendientes() -> bool:
+		return not tarea.is_empty()
 
 	func siguiente_tarea(_desde: Vector3i, _id_colono: int = -1) -> Dictionary:
 		return tarea
@@ -1369,5 +1375,19 @@ func ejecutar_pruebas() -> void:
 	assert(colonos49.contratar(esq_cent, "acarreador"))
 	assert(colonos49.colonos[desemp49]["trabajo"]["rol"] == "acarreador")
 	assert(colonos49.colonos[desemp49]["tipo"] == "obrero")
+	print("\n=== TEST 50: un colono ocioso interrumpe su deambular o espera inmediatamente al haber obra pendiente ===")
+	var ciudad50: Node = CiudadScript.new()
+	var colonos50: Node = _nuevo_con_puesto(ciudad50)
+	var obras50 := ObrasFalsa.new()
+	colonos50.obras = obras50
+	var libre50: int = colonos50.agregar_colono("desempleado", Vector3i(1, 1, 7))
+	# Sin obra, deambula o espera
+	colonos50.avanzar(0.1)
+	assert(colonos50.colonos[libre50]["tarea"].is_empty(), "sin obras no tiene tarea")
+	# Ahora aparece una obra: el colono ocioso la toma inmediatamente en el siguiente avance
+	obras50.tarea = {"tipo": "construir", "id": 10}
+	obras50.huella = [Vector2i(6, 6)]
+	colonos50.avanzar(0.1)
+	assert(colonos50.colonos[libre50]["tarea"] == {"tipo": "construir", "id": 10}, "el colono interrumpe el deambular y toma la obra de inmediato")
 
-	print("\n=== Las 49 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== Las 50 pruebas de Colonos pasaron correctamente ===")

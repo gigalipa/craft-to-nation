@@ -266,15 +266,15 @@ func probar_ventana_poblacion_empleo() -> void:
 	var textos: Array = _textos(ventana._caja)
 	assert("Población total: 11" in textos, "salió %s" % [textos])
 	assert("Camas construidas: %d" % Ciudad.capacidad_camas_construida in textos, "salió %s" % [textos])
-	assert("Técnicos: 5 · 3 empleados · 2 sin empleo" in textos, "salió %s" % [textos])
-	assert("Obreros: 4 · 1 empleados · 3 sin empleo" in textos, "salió %s" % [textos])
-	assert("Desempleados: 2" in textos, "solo el total: %s" % [textos])
+	assert("Técnicos: 5 · 3 empleados · 2 desempleados" in textos, "salió %s" % [textos])
+	assert("Obreros: 6 · 1 empleado · 5 desempleados" in textos, "salió %s" % [textos])
+	assert(not textos.any(func(t: String) -> bool: return t.begins_with("Desempleados:")), "no hay fila separada de desempleados: %s" % [textos])
 	assert(not textos.any(func(t: String) -> bool: return t.contains("Ciudadanos") or t.contains("Especialistas")), "los tipos sin habitantes no salen")
 	assert(not textos.any(func(t: String) -> bool: return t.contains("Puestos de trabajo")), "la lista de puestos pasó a Ocupaciones")
 	# Un técnico libre cuenta como sin empleo aunque los demás trabajen: el mínimo de "sin empleo" es 0.
 	Ciudad.demografia["tecnico"] = 2
 	ventana._actualizar()
-	assert("Técnicos: 2 · 3 empleados · 0 sin empleo" in _textos(ventana._caja), "salió %s" % [_textos(ventana._caja)])
+	assert("Técnicos: 2 · 3 empleados · 0 desempleados" in _textos(ventana._caja), "salió %s" % [_textos(ventana._caja)])
 	# El botón vive fuera del contenido dinámico: sobrevive a los fotogramas y emite la señal.
 	var boton: Button = ventana._boton_ocupaciones
 	assert(boton != null and boton.text == "Ocupaciones" and boton.get_parent() == ventana._caja_raiz)

@@ -65,7 +65,16 @@ var economia: Object = null:  # Economia
 			valor.cohorte_graduada.connect(_on_cohorte_graduada)
 
 ## Coordinador de obras (Obras en el juego): reparte la construcción y demolición a los colonos libres.
-var obras: Object = null
+var obras: Object = null:
+	set(valor):
+		if obras != null and obras.has_signal("marca_cambiada") and obras.marca_cambiada.is_connected(_on_marca_cambiada):
+			obras.marca_cambiada.disconnect(_on_marca_cambiada)
+		obras = valor
+		if obras != null:
+			if obras.get("colonos") == null:
+				obras.colonos = self
+			if obras.has_signal("marca_cambiada") and not obras.marca_cambiada.is_connected(_on_marca_cambiada):
+				obras.marca_cambiada.connect(_on_marca_cambiada)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
 ## "moviendo", "espera", "bloqueo", "trabajo", "tarea", "carga", "fase", "fallos_servicio"}. "fase" del acarreador:
@@ -96,8 +105,11 @@ func _ready() -> void:
 		economia = Economia
 	if obras == null:
 		obras = Obras
-	if obras != null and obras.colonos == null:
-		obras.colonos = self
+	elif obras != null:
+		if obras.colonos == null:
+			obras.colonos = self
+		if obras.has_signal("marca_cambiada") and not obras.marca_cambiada.is_connected(_on_marca_cambiada):
+			obras.marca_cambiada.connect(_on_marca_cambiada)
 	if ciudad != null:
 		if not ciudad.tick_simulado.is_connected(reconciliar):
 			ciudad.tick_simulado.connect(reconciliar)
@@ -263,8 +275,15 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		_avanzar_evacuacion(c, delta)
 		return
 	if c["espera"] > 0.0:
-		c["espera"] -= delta
-		return
+		if c["trabajo"].is_empty() and c["tarea"].is_empty() and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
+			if obras != null and obras.has_method("hay_obras_pendientes") and obras.hay_obras_pendientes():
+				c["espera"] = 0.0
+			else:
+				c["espera"] -= delta
+				return
+		else:
+			c["espera"] -= delta
+			return
 	if not c.get("busqueda", {}).is_empty():
 		_avanzar_busqueda(c)  # sigue buscando el camino que empezó en un fotograma anterior
 		return
@@ -274,6 +293,15 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		else:
 			_decidir_trabajo(c)
 		return
+	if c["trabajo"].is_empty() and c["tarea"].is_empty() and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
+		if obras != null and obras.has_method("hay_obras_pendientes") and obras.hay_obras_pendientes():
+			var tarea: Dictionary = obras.siguiente_tarea(c["celda"], c["id"])
+			if not tarea.is_empty():
+				var vacia: Array[Vector3i] = []
+				c["ruta"] = vacia
+				c["tarea"] = tarea
+				_trabajar_en_obra(c)
+				return
 	_iniciar_paso(c, delta)
 
 
@@ -393,6 +421,20 @@ func _on_obra_a_fantasma(id_obra: int) -> void:
 			mundo.otorgar_permiso_salida(id_obra, c["id"])
 			c["evacuando"] = id_obra
 			c["ruta_de_evacuacion"] = false  # se planifica en el siguiente paso, cuando no esté a medio paso
+	despertar_ociosos()
+
+
+func _on_marca_cambiada(_id: int, _marcado: bool) -> void:
+	despertar_ociosos()
+
+
+## Cancela el deambular o la espera de los colonos libres para que puedan tomar
+## obras de inmediato cuando se emplaza una construcción o se marca una demolición.
+func despertar_ociosos() -> void:
+	for c in colonos.values():
+		if c["trabajo"].is_empty() and c["tarea"].is_empty() and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
+			_dejar_lo_que_hacia(c)
+
 
 
 ## Mientras evacúa no hace otra cosa: cuando ya no está dentro del volumen
@@ -755,7 +797,7 @@ func obreros_en(id: int) -> int:
 ## ofrece Obras (construir o demoler lo más cercano) y la sigue hasta que se acaba; sin obras
 ## deambula. Un colono con puesto ni pasa por aquí.
 func _decidir_ocioso(c: Dictionary) -> void:
-	if obras != null and (c["tipo"] == "desempleado" or c["tipo"] == "tecnico"):
+	if obras != null and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
 		if c["tarea"].is_empty():
 			c["tarea"] = obras.siguiente_tarea(c["celda"], c["id"])
 		if not c["tarea"].is_empty():

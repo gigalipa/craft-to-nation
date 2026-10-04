@@ -92,6 +92,12 @@ func restaurar() -> void:
 	visible = abierta
 
 
+func _formato_empleo(nombre: String, total: int, con_puesto: int, sin_puesto: int) -> String:
+	var texto_emp := "1 empleado" if con_puesto == 1 else "%d empleados" % con_puesto
+	var texto_des := "1 desempleado" if sin_puesto == 1 else "%d desempleados" % sin_puesto
+	return "%s: %d · %s · %s" % [nombre, total, texto_emp, texto_des]
+
+
 func _actualizar() -> void:
 	for hijo in _caja.get_children():
 		hijo.free()
@@ -100,14 +106,20 @@ func _actualizar() -> void:
 	_caja.add_child(TemaHUD.etiqueta(""))
 	var empleados := _empleados_por_tipo()
 	for tipo in NOMBRES_TIPO:
+		if tipo == "desempleado":
+			continue
 		var cantidad: int = Ciudad.demografia.get(tipo, 0)
+		if tipo == "obrero":
+			cantidad += Ciudad.demografia.get("desempleado", 0)
 		if cantidad <= 0:
 			continue
-		if tipo == "ciudadano" or tipo == "desempleado":  # sin puesto posible: solo el total
+		if tipo == "ciudadano":  # sin puesto posible: solo el total
 			_caja.add_child(TemaHUD.etiqueta("%s: %d" % [NOMBRES_TIPO[tipo], cantidad]))
 		else:
 			var con_puesto: int = empleados.get(tipo, 0)
-			_caja.add_child(TemaHUD.etiqueta("%s: %d · %d empleados · %d sin empleo" % [NOMBRES_TIPO[tipo], cantidad, con_puesto, maxi(cantidad - con_puesto, 0)]))
+			var sin_puesto: int = maxi(cantidad - con_puesto, 0)
+			_caja.add_child(TemaHUD.etiqueta(_formato_empleo(NOMBRES_TIPO[tipo], cantidad, con_puesto, sin_puesto)))
+
 
 
 ## Colonos con puesto, por tipo (un aprendiz es obrero empleado; un técnico libre, sin empleo).

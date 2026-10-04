@@ -964,7 +964,7 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i],
 		if not ignorar_vias and Vias.hay_via_en_columna(xz):
 			return true
 		var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
-		if mundo.id_de_edificio(celda_superficie) != -1 or Construccion.construccion_de(celda_superficie) != -1:
+		if mundo.id_de_edificio(celda_superficie) != -1:
 			return true
 	return false
 
@@ -1200,11 +1200,10 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas_union),
 		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, _altura_blueprint(_blueprint_activo)),
 		"resultado_fachada": mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA),
-		# La huella ESTRUCTURAL sí rechaza sobre una vía (no se puede construir
-		# encima de una ruta); el despeje de puertas/ventanas la ignora —
-		# el frente de una puerta sobre una vía es justo lo esperado, no un
-		# choque (reportado jugando en vivo, 2026-09-23).
-		"choca": _huella_choca_con_otro_puesto(esquina, columnas) or _huella_choca_con_otro_puesto(esquina, columnas_fachada, true),
+		# La huella ESTRUCTURAL sí rechaza sobre una vía o edificio (no se puede
+		# construir encima de ellos); el despeje y bloques de nivelación de
+		# puertas/ventanas se pueden compartir entre estructuras vecinas.
+		"choca": _huella_choca_con_otro_puesto(esquina, columnas),
 		"en_tierra": _huella_tiene_columna_en_tierra(esquina, columnas),
 		"motivo_despeje": mundo.motivo_despeje_invalido(celdas_mundo, fachada),
 	}
@@ -2385,7 +2384,7 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		"columnas_union": columnas_union,
 		"relieve_union_valido": nivelador_puesto.verificar_pendiente(esquina, columnas_union),
 		"resultado_fachada": mundo.verificar_huella_libre(esquina, columnas_fachada, ALTURA_PUERTA),
-		"choca_fachada": _huella_choca_con_otro_puesto(esquina, columnas_fachada, true),
+		"choca_fachada": false,
 		"fachada": fachada,
 		"celdas_plantilla": celdas_plantilla,
 		"celdas_mundo": celdas_plantilla,

@@ -72,6 +72,7 @@ func _ready() -> void:
 	_dialogo_demoler.ok_button_text = "Confirmar"
 	_dialogo_demoler.cancel_button_text = "Cancelar"
 	_dialogo_demoler.confirmed.connect(_confirmar_demoler)
+	TemaHUD.estilizar_dialogo(_dialogo_demoler)
 	add_child(_dialogo_demoler)
 
 	_asignar_nucleo.pressed.connect(_on_asignar_nucleo)
@@ -79,6 +80,7 @@ func _ready() -> void:
 	_dialogo_traslado.ok_button_text = "Confirmar"
 	_dialogo_traslado.cancel_button_text = "Cancelar"
 	_dialogo_traslado.confirmed.connect(_confirmar_traslado)
+	TemaHUD.estilizar_dialogo(_dialogo_traslado)
 	add_child(_dialogo_traslado)
 
 

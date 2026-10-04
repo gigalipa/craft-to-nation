@@ -66,14 +66,16 @@ func descartar_pendientes(id: int, tipos_a_descartar: Array) -> Array[Vector3i]:
 	for i in range(indice, orden.size()):
 		var celda: Vector3i = orden[i]
 		if tipos_a_descartar.has(datos["tipos"][celda]):
-			_celda_a_construccion.erase(celda)
+			if _celda_a_construccion.get(celda) == id:
+				_celda_a_construccion.erase(celda)
 			descartadas.append(celda)
 		else:
 			nuevo_orden.append(celda)
 	datos["orden"] = nuevo_orden
 	if nuevo_orden.size() <= indice:
 		for c in nuevo_orden:
-			_celda_a_construccion.erase(c)
+			if _celda_a_construccion.get(c) == id:
+				_celda_a_construccion.erase(c)
 		_construcciones.erase(id)
 	return descartadas
 
@@ -119,6 +121,7 @@ func avanzar(id: int) -> Dictionary:
 	var completa: bool = datos["indice"] >= orden.size()
 	if completa:
 		for c in orden:
-			_celda_a_construccion.erase(c)
+			if _celda_a_construccion.get(c) == id:
+				_celda_a_construccion.erase(c)
 		_construcciones.erase(id)
 	return {"celda": celda, "tipo": tipo, "completa": completa, "metadata": metadata, "orden": orden}

@@ -24,6 +24,8 @@ const ViaPreviewOverlayScript = preload("res://scripts/ViaPreviewOverlay.gd")
 class MundoFalso extends Node:
 	func altura_en(_x: int, _z: int) -> int:
 		return 12
+	func id_de_edificio(_celda: Vector3i) -> int:
+		return -1
 
 
 func _ready() -> void:
@@ -206,4 +208,13 @@ func ejecutar_pruebas() -> void:
 	assert(not camara13.overlay.mostrar_zonas, "zonas ocultas en menú de categorías")
 	camara13.hud.queue_free()
 
-	print("\n=== Las 13 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 14: _huella_choca_con_otro_puesto no rechaza por bloques de nivelación huérfanos/en cola ===")
+	var camara14: Camera3D = _camara()
+	var mundo14 := MundoFalso.new()
+	camara14.mundo = mundo14
+	var cols: Array[Vector2i] = [Vector2i(0, 0)]
+	assert(not camara14._huella_choca_con_otro_puesto(Vector2i(0, 0), cols), "bloques de nivelación no causan choque")
+	camara14.hud.queue_free()
+	mundo14.free()
+
+	print("\n=== Las 14 pruebas de CamaraCenitalModosTest pasaron correctamente ===")

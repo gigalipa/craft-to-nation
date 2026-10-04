@@ -75,6 +75,7 @@ func _ready() -> void:
 	_dialogo_demoler.ok_button_text = "Confirmar"
 	_dialogo_demoler.cancel_button_text = "Cancelar"
 	_dialogo_demoler.confirmed.connect(_confirmar_demoler)
+	TemaHUD.estilizar_dialogo(_dialogo_demoler)
 	add_child(_dialogo_demoler)
 
 

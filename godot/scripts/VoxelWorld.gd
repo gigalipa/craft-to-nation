@@ -435,7 +435,10 @@ func es_terreno_natural(celda: Vector3i) -> bool:
 ## bloquea. Árboles, estructuras y otros edificios siempre bloquean. Usada por
 ## verificar_despejes() y por el overlay de celdas reservadas.
 func despeje_bloqueado(celda: Vector3i, terreno_a_nivelar: Dictionary = {}) -> bool:
-	if obtener_tipo(celda) == "":
+	var tipo: String = obtener_tipo(celda)
+	if tipo == "":
+		return false
+	if tipo == "fantasma" and not celda_a_edificio.has(celda):
 		return false
 	var columna := Vector2i(celda.x, celda.z)
 	if terreno_a_nivelar.has(columna) and celda.y > terreno_a_nivelar[columna] and es_terreno_natural(celda):
@@ -1803,6 +1806,8 @@ func estampar_puesto(celdas: Dictionary, esquina: Vector2i) -> int:
 ## ocupa la celda.
 func _reemplazar_celda(celda: Vector3i, tipo: String) -> void:
 	var actual: String = obtener_tipo(celda)
+	if actual == tipo:
+		return
 	if actual == "follaje":
 		eliminar_follaje(celda)
 	elif actual != "agua":
@@ -2019,6 +2024,8 @@ func _acreditar_excavacion(celda: Vector3i) -> void:
 ## aplicado nunca).
 func _bloqueado_por_falta_de(tipo: String, celda: Vector3i) -> String:
 	if tipo == "aire" or tipo == "fantasma":
+		return ""
+	if obtener_tipo(celda) == tipo:
 		return ""
 	var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
 	var cobrado: Dictionary = {}

@@ -374,4 +374,14 @@ func ejecutar_pruebas() -> void:
 	assert(base_con_enfrente["base_y"] + 1 == 10, "la puerta nueva queda a nivel Y=10")
 	assert(base_con_enfrente["fachada"][Vector2i(9, 12)] == 9, "el suelo de fachada queda a Y=9 (bajo la puerta)")
 
-	print("\n=== Las 25 pruebas de NiveladorTerreno pasaron correctamente ===")
+	print("\n=== TEST 26: bloques fantasma de nivelación no bloquean despeje de puertas enfrentadas ===")
+	var mundo_test: Node = VoxelWorldScript.new()
+	mundo_test.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_test.cell_size = Vector3.ONE
+	mundo_test._indexar_biblioteca()
+	var celda_compartida := Vector3i(15, 2, 15)
+	mundo_test.colocar_bloque(celda_compartida, "fantasma")
+	assert(not mundo_test.despeje_bloqueado(celda_compartida), "un bloque fantasma de nivelación no bloquea el despeje")
+	mundo_test.free()
+
+	print("\n=== Las 26 pruebas de NiveladorTerreno pasaron correctamente ===")

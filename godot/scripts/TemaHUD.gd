@@ -55,6 +55,33 @@ static func estilizar_boton(boton: Button) -> void:
 	boton.focus_mode = Control.FOCUS_NONE
 
 
+## Estiliza un AcceptDialog / ConfirmationDialog para que coincida con el HUD
+## (fondo verde oscuro, marco dorado, texto crema y botones temáticos).
+static func estilizar_dialogo(dialogo: AcceptDialog) -> void:
+	var estilo_fondo := caja()
+	dialogo.add_theme_stylebox_override("panel", estilo_fondo)
+
+	var estilo_borde := caja()
+	estilo_borde.expand_margin_top = 30.0
+	dialogo.add_theme_stylebox_override("embedded_border", estilo_borde)
+	dialogo.add_theme_stylebox_override("embedded_unfocused_border", estilo_borde)
+	dialogo.add_theme_color_override("title_color", Color(1.0, 0.85, 0.4))
+	dialogo.add_theme_color_override("close_color", DORADO)
+	dialogo.add_theme_color_override("close_pressed_color", Color(1.0, 0.85, 0.4))
+
+	var lbl := dialogo.get_label()
+	if lbl != null:
+		lbl.add_theme_color_override("font_color", TEXTO)
+
+	var ok := dialogo.get_ok_button()
+	if ok != null:
+		estilizar_boton(ok)
+	if dialogo is ConfirmationDialog:
+		var cancel := (dialogo as ConfirmationDialog).get_cancel_button()
+		if cancel != null:
+			estilizar_boton(cancel)
+
+
 ## Ancla "etiqueta" a la esquina inferior izquierda (o derecha) de su padre, que debe ser un Control
 ## simple (un Container pisaría las anclas), a MARGEN_X / MARGEN_Y del marco. Crece hacia adentro,
 ## así que sirve para textos que cambian de ancho. Los márgenes se miden desde el borde exterior del

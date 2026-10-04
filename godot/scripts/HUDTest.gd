@@ -809,6 +809,8 @@ func probar_panel_edificio() -> void:
 	assert(panel._obreros.visible and panel._obreros.text == "Obreros: 3", "obreros")
 	assert(panel._materiales.visible and panel._materiales.text.contains("15") and panel._materiales.text.contains("4"), "faltan 15 de piedra y hay 4: %s" % panel._materiales.text)
 	assert(panel._pausar.visible and panel._pausar.text == "Pausar construcción" and panel._demoler.text == "Demoler", "botones")
+	assert(panel._dialogo_demoler.has_theme_stylebox_override("panel"), "dialogo estilizado con panel")
+	assert(panel._dialogo_demoler.get_theme_color("title_color") == Color(1.0, 0.85, 0.4), "titulo dorado en dialogo")
 	panel._pausar.pressed.emit()
 	assert(obras.pausas == 1 and panel._pausar.text == "Reanudar" and panel._estado.text.contains("pausada"), "pausar actúa sobre Obras y cambia la etiqueta")
 	panel._demoler.pressed.emit()

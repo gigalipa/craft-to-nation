@@ -1526,7 +1526,13 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 ## Alterna el puesto de "tipo" con su huella: categoría Periférico del menú
 ## Construir (tecla numérica o clic — ver HUD.construccion_pedida).
 func _alternar_puesto_por_tipo(tipo: String) -> void:
-	if (tipo == "escuela_especialistas" or tipo == "refineria_petrolera" or tipo == "productor_combustible" or tipo == "central_termoelectrica") and Ciudad.nivel_investigado < 2:
+	if tipo == "escuela_especialistas" and Economia.contar_tipo("escuela_tecnica") < 1:
+		hud.notificar("Requiere al menos 1 Escuela técnica construida.")
+		return
+	if tipo == "universidad" and Economia.contar_tipo("escuela_especialistas") < 1:
+		hud.notificar("Requiere al menos 1 Escuela de especialistas construida.")
+		return
+	if (tipo == "refineria_petrolera" or tipo == "productor_combustible" or tipo == "central_termoelectrica") and Ciudad.nivel_investigado < 2:
 		hud.notificar("Requiere Metalurgia Aplicada.")
 		return
 	match tipo:
@@ -2288,6 +2294,10 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 ## validaba al hacer clic; "" si es válida. La previsualización considera válida
 ## exactamente lo que el clic aceptaría.
 func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
+	if _tipo_puesto_activo == "escuela_especialistas" and Economia.contar_tipo("escuela_tecnica") < 1:
+		return "Colocación rechazada: requiere al menos 1 escuela técnica construida."
+	if _tipo_puesto_activo == "universidad" and Economia.contar_tipo("escuela_especialistas") < 1:
+		return "Colocación rechazada: requiere al menos 1 escuela de especialistas construida."
 	if ev["en_influencia"]:
 		return "No se puede colocar un puesto dentro de la zona de influencia."
 	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)

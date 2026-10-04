@@ -245,12 +245,8 @@ func _empleados(rol: String, t: Dictionary, con_niveles: bool) -> int:
 ## Colonos libres de ese oficio que se podrían contratar: técnicos y especialistas libres, o desempleados.
 func _libres_de(rol: String) -> int:
 	if rol == "investigador":
-		var siguiente: int = Ciudad.nivel_investigado + 1
-		if siguiente == 2:
-			return Colonos.tecnicos_libres() + Colonos.especialistas_libres()
-		elif siguiente == 3:
-			return Colonos.especialistas_libres()
-		return 0
+		var libres_inv: int = Colonos.investigadores_libres() if Colonos.has_method("investigadores_libres") else 0
+		return libres_inv + Colonos.especialistas_libres()
 	if rol == "aprendiz" and Economia.puestos.has(esquina):
 		var tipo_p: String = Economia.puestos[esquina]["tipo"]
 		if Recoleccion.ESCUELAS.has(tipo_p) and Recoleccion.ESCUELAS[tipo_p]["origen"] == "tecnico":

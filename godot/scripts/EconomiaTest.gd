@@ -866,7 +866,7 @@ func ejecutar_pruebas() -> void:
 	# La 9ª hora completa los 20 h y activa la investigación
 	e35.simular_hora()
 	assert(c35.nivel_investigado == 2)
-	assert(e35.puestos[esq_uni]["recolectores"].is_empty(), "al completar investigación libera a los investigadores")
+	assert(e35.puestos[esq_uni]["recolectores"].size() == 2, "al completar investigación preserva a los investigadores")
 
 	print("\n=== TEST 36: acarreo multientrada de productor_combustible (carbon y agua) ===")
 	var c36: Node = CiudadScript.new()

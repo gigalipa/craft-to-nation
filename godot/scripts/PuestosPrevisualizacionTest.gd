@@ -508,4 +508,38 @@ func ejecutar_pruebas() -> void:
 	Zonificacion.nucleo_declarado = false
 	mundo15.free()
 
-	print("\n=== Las 15 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== TEST 16: requisitos encadenados: escuela de especialistas requiere escuela técnica; universidad requiere escuela de especialistas ===")
+	Recoleccion.puestos.clear()
+	Economia.puestos.clear()
+	var mundo16: Node = _mundo_plano()
+	var esquina16 := Vector2i(24, 18)
+	Zonificacion.declarar_nucleo([Vector2i(30, 30), Vector2i(31, 30), Vector2i(30, 31), Vector2i(31, 31)])
+	Zonificacion.pintar_zona(esquina16, esquina16 + Vector2i(6, 6), Zonificacion.ZONAS_PINTABLES[0])
+
+	# Escuela de especialistas sin escuela técnica: rechazada
+	var cam_esp: Camera3D = _camara(mundo16, "escuela_especialistas")
+	var ev_esp: Dictionary = cam_esp._evaluar_puesto(esquina16)
+	assert("escuela técnica" in cam_esp._mensaje_rechazo_puesto(ev_esp), "sin escuela técnica no se puede colocar escuela de especialistas")
+
+	# Registramos una escuela técnica construida
+	Economia.registrar_puesto(Vector2i(5, 5), "escuela_tecnica", 5, 5, {})
+	ev_esp = cam_esp._evaluar_puesto(esquina16)
+	assert(cam_esp._mensaje_rechazo_puesto(ev_esp) == "", "con escuela técnica ya es válida")
+	cam_esp.free()
+
+	# Universidad sin escuela de especialistas: rechazada
+	var cam_uni: Camera3D = _camara(mundo16, "universidad")
+	var ev_uni: Dictionary = cam_uni._evaluar_puesto(esquina16)
+	assert("escuela de especialistas" in cam_uni._mensaje_rechazo_puesto(ev_uni), "sin escuela de especialistas no se puede colocar universidad")
+
+	# Registramos una escuela de especialistas construida
+	Economia.registrar_puesto(Vector2i(12, 12), "escuela_especialistas", 5, 5, {})
+	ev_uni = cam_uni._evaluar_puesto(esquina16)
+	assert(cam_uni._mensaje_rechazo_puesto(ev_uni) == "", "con escuela de especialistas ya es válida")
+	cam_uni.free()
+
+	Economia.puestos.clear()
+	Zonificacion.nucleo_declarado = false
+	mundo16.free()
+
+	print("\n=== Las 16 pruebas de previsualización de puestos pasaron correctamente ===")

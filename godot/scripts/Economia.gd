@@ -122,6 +122,15 @@ func _ready() -> void:
 	ciudad.tick_simulado.connect(simular_hora)
 
 
+## Cantidad de puestos construidos de "tipo".
+func contar_tipo(tipo: String) -> int:
+	var total := 0
+	for p in puestos.values():
+		if p.get("tipo", "") == tipo:
+			total += 1
+	return total
+
+
 ## Registra un puesto recién colocado, sin trabajadores. "tasas" son las de
 ## Recoleccion.tasas_de_entorno() al colocarlo y "entorno" el de
 ## Recoleccion.entorno_de_puesto() ({} = el puesto no consume ni recalcula).
@@ -419,11 +428,7 @@ func simular_hora() -> void:
 			if concedido > 0.0:
 				p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + concedido
 	if horas_investigacion > 0.0 and ciudad != null:
-		var completo: bool = ciudad.actualizar_investigacion(horas_investigacion)
-		if completo:
-			for esquina in puestos:
-				if es_universidad(esquina):
-					_liberar_de(esquina, puestos[esquina]["recolectores"].duplicate())
+		ciudad.actualizar_investigacion(horas_investigacion)
 	_horas_desde_recalculo += 1
 	if _horas_desde_recalculo >= TICKS_RECALCULO:
 		_horas_desde_recalculo = 0

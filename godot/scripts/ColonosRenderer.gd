@@ -16,7 +16,7 @@ const COLORES_TIPO := {
 	"obrero": Color(0.9, 0.6, 0.2),
 	"tecnico": Color(0.3, 0.6, 0.9),
 	"especialista": Color(0.6, 0.4, 0.9),
-	"investigador": Color(0.3, 0.8, 0.5),
+	"investigador": Color(0.95, 0.95, 0.95),
 	"militar": Color(0.8, 0.25, 0.25),
 }
 

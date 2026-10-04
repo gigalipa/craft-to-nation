@@ -564,19 +564,21 @@ func _celda_aparicion() -> Vector3i:
 ## no admite ese oficio (en ese caso no se toca nada).
 func contratar(esquina: Vector2i, rol: String) -> bool:
 	if rol == "investigador":
-		var siguiente: int = ciudad.nivel_investigado + 1
-		var candidatos_inv: Array[int] = []
-		if siguiente == 2:
-			candidatos_inv = _ids_sin_puesto("tecnico") + _ids_sin_puesto("especialista")
-		elif siguiente == 3:
+		var candidatos_inv: Array[int] = _ids_sin_puesto("investigador")
+		var es_nuevo_investigador := false
+		if candidatos_inv.is_empty():
 			candidatos_inv = _ids_sin_puesto("especialista")
+			es_nuevo_investigador = true
 		if candidatos_inv.is_empty():
 			return false
 		candidatos_inv.sort()
 		var id_inv: int = candidatos_inv[0]
 		if not economia.asignar(esquina, rol, id_inv):
 			return false
+		if es_nuevo_investigador:
+			ciudad.reasignar_tipo("especialista", "investigador")
 		var c_inv: Dictionary = colonos[id_inv]
+		c_inv["tipo"] = "investigador"
 		c_inv["trabajo"] = {"puesto": esquina, "rol": rol}
 		c_inv["fase"] = ""
 		c_inv["carga"] = {}
@@ -612,6 +614,11 @@ func tecnicos_libres() -> int:
 ## Especialistas sin puesto (hoy ninguno: la escuela de especialistas todavía no existe).
 func especialistas_libres() -> int:
 	return _ids_sin_puesto("especialista").size()
+
+
+## Investigadores sin puesto (formados a partir de especialistas).
+func investigadores_libres() -> int:
+	return _ids_sin_puesto("investigador").size()
 
 
 ## Despide al último colono contratado con ese rol en el puesto; queda sin
@@ -690,7 +697,7 @@ func _quedar_sin_puesto(c: Dictionary) -> void:
 	c["fase"] = ""
 	c["fallos_servicio"] = 0
 	c["retirar_al_entregar"] = false
-	if tipo_previo != "tecnico" and tipo_previo != "especialista":
+	if tipo_previo != "tecnico" and tipo_previo != "especialista" and tipo_previo != "investigador":
 		c["tipo"] = "desempleado"
 		ciudad.reasignar_tipo(tipo_previo, "desempleado")
 	_dejar_lo_que_hacia(c)

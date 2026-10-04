@@ -1319,7 +1319,7 @@ func ejecutar_pruebas() -> void:
 	assert(colonos47.colonos[tecnico47]["tipo"] == "tecnico" and colonos47.economia.nivel_de(Vector2i(2, 2)) == 2, "vacío conserva el nivel 2")
 	assert(not colonos47.contratar(Vector2i(2, 2), "recolector"), "ya no admite obreros")
 
-	print("\n=== TEST 48: contratar() en universidad: técnicos/especialistas en nivel 2, solo especialistas en nivel 3 ===")
+	print("\n=== TEST 48: contratar() en universidad: educa especialistas a investigadores (cuerpo blanco) ===")
 	var ciudad48: Node = CiudadScript.new()
 	var colonos48: Node = _nuevo_con_puesto(ciudad48)
 	var esq_u := Vector2i(80, 80)
@@ -1331,27 +1331,24 @@ func ejecutar_pruebas() -> void:
 	ciudad48.demografia["tecnico"] = 1
 	ciudad48.demografia["especialista"] = 1
 
-	# Siguiente nivel es 2 (nivel_investigado == 1): admite técnico o especialista, pero no desempleado
-	assert(ciudad48.nivel_investigado == 1)
-	assert(colonos48.contratar(esq_u, "investigador"))  # contrata al de id menor entre tecnicos y especialistas (tec48)
-	assert(colonos48.colonos[tec48]["trabajo"]["rol"] == "investigador")
-	assert(colonos48.colonos[tec48]["tipo"] == "tecnico", "conserva oficio tecnico")
-	assert(ciudad48.demografia["tecnico"] == 1 and ciudad48.demografia["desempleado"] == 1)
-
-	# Sube a nivel investigado 2 (siguiente nivel 3): solo admite especialista
-	ciudad48.nivel_investigado = 2
+	# Solo especialistas (o investigadores previos) se contratan: no tecnicos ni desempleados
 	assert(colonos48.contratar(esq_u, "investigador"))  # contrata a esp48
 	assert(colonos48.colonos[esp48]["trabajo"]["rol"] == "investigador")
-	assert(colonos48.colonos[esp48]["tipo"] == "especialista", "conserva oficio especialista")
+	assert(colonos48.colonos[esp48]["tipo"] == "investigador", "pasa a oficio investigador")
+	assert(ciudad48.demografia["especialista"] == 0 and ciudad48.demografia["investigador"] == 1)
 	assert(colonos48.especialistas_libres() == 0)
 
-	# Con solo desempleados libres no admite contratación para investigador
-	assert(not colonos48.contratar(esq_u, "investigador"), "desempleado no puede ser investigador")
+	# Con solo técnicos y desempleados libres no admite contratación para investigador
+	assert(not colonos48.contratar(esq_u, "investigador"), "tecnico o desempleado no puede ser investigador")
 
-	# Despedir devuelve al colono libre con su oficio intacto
+	# Despedir conserva el oficio de investigador
 	assert(colonos48.despedir(esq_u, "investigador"))
-	assert(colonos48.colonos[esp48]["tipo"] == "especialista" and colonos48.colonos[esp48]["trabajo"].is_empty())
-	assert(colonos48.especialistas_libres() == 1)
+	assert(colonos48.colonos[esp48]["tipo"] == "investigador" and colonos48.colonos[esp48]["trabajo"].is_empty())
+	assert(colonos48.investigadores_libres() == 1)
+
+	# Se puede volver a contratar al investigador libre
+	assert(colonos48.contratar(esq_u, "investigador"))
+	assert(colonos48.investigadores_libres() == 0)
 
 	print("\n=== TEST 49: contratar() en central_termoelectrica y refinerias de combustible ===")
 	var ciudad49: Node = CiudadScript.new()

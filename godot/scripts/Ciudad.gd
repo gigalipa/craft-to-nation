@@ -68,6 +68,12 @@ const COSTOS_INVESTIGACION := {
 	3: {"nombre": "Automatización Industrial", "hierro": 800, "madera": 100, "horas_investigador": 50},
 }
 
+## Sofisticación física: tipo de puesto -> nivel de instalación (2 o 3).
+const TIPO_INSTALACION := {
+	"siderurgica": 2, "refineria_tierras_raras": 2, "aserradero": 2, "carbonera": 2,
+	"refineria_petrolera": 3, "productor_combustible": 3, "central_termoelectrica": 3,
+}
+
 const CATEGORIAS_COMIDA := [
 	"sembradios", "granjas_animales", "recoleccion_caza",
 	"hidroponia", "pesca", "sintetico",
@@ -165,6 +171,7 @@ class Avatar:
 
 
 var instalaciones := {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0}
+var instalaciones_edificio: Dictionary = {}  # id_edificio -> int (2 o 3)
 var demografia: Dictionary = {}
 var almacen: Dictionary = {}
 var desahuciados := 0
@@ -313,23 +320,74 @@ var vivienda_libre: float:
 	get: return float(capacidad_camas_construida) - vivienda_ocupada
 
 
-## Acumula horas-investigador y activa el siguiente nivel al completar el umbral.
-func actualizar_investigacion() -> void:
+## Registra una instalación física completada (tipo 2 o 3) identificada por id_edificio. Idempotente.
+func registrar_instalacion(id_edificio: int, tipo_puesto: String) -> void:
+	if id_edificio == -1 or not TIPO_INSTALACION.has(tipo_puesto):
+		return
+	if instalaciones_edificio.has(id_edificio):
+		return
+	instalaciones_edificio[id_edificio] = TIPO_INSTALACION[tipo_puesto]
+	_recalcular_instalaciones()
+
+
+## Retira una instalación física que empieza a deconstruirse.
+func desregistrar_instalacion(id_edificio: int) -> void:
+	if instalaciones_edificio.erase(id_edificio):
+		_recalcular_instalaciones()
+
+
+func _recalcular_instalaciones() -> void:
+	var conteo := {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0}
+	for nivel_inst: int in instalaciones_edificio.values():
+		var clave: String = "tipo_%d" % nivel_inst
+		conteo[clave] = conteo.get(clave, 0) + 1
+	instalaciones = conteo
+
+
+## Verifica si el stock alcanza para pagar todos los recursos de "costos" {recurso: cantidad}.
+## Las tablas cuentan como madera si está presente ese recurso.
+func puede_pagar(costos: Dictionary) -> bool:
+	for recurso in costos:
+		if not almacen.has(recurso):
+			return false
+		var cant: float = (almacen[recurso] as Recurso).cantidad
+		if recurso == "madera" and almacen.has("tablas"):
+			cant += (almacen["tablas"] as Recurso).cantidad
+		if cant < float(costos[recurso]):
+			return false
+	return true
+
+
+## Cobro atómico: valida primero que alcance para todo el diccionario; si falta
+## cualquier recurso, devuelve false sin cobrar nada. Si alcanza, descuenta todo.
+func consumir_costos(costos: Dictionary) -> bool:
+	if not puede_pagar(costos):
+		return false
+	for recurso in costos:
+		consumir_costo(recurso, float(costos[recurso]))
+	return true
+
+
+## Acumula horas-investigador explícitas y activa el siguiente nivel al completar el umbral.
+## Devuelve true solo si se completó y activó la investigación en este llamado.
+func actualizar_investigacion(horas: float) -> bool:
 	var siguiente: int = nivel_investigado + 1
 	if not COSTOS_INVESTIGACION.has(siguiente):
-		return
+		return false
 	var costo: Dictionary = COSTOS_INVESTIGACION[siguiente]
 	if nivel_potencial < siguiente:
-		return  # el ratio de instalaciones aún no habilita esta investigación
-	if demografia["investigador"] <= 0:
-		return
+		return false  # el ratio de instalaciones aún no habilita esta investigación
+	if horas <= 0.0:
+		return false
 
-	progreso_investigacion[siguiente] += demografia["investigador"]
-	if progreso_investigacion[siguiente] >= costo["horas_investigador"]:
-		var hierro_ok: bool = (almacen["hierro"] as Recurso).consumir(costo["hierro"])
-		var madera_ok: bool = (almacen["madera"] as Recurso).consumir(costo["madera"])
-		if hierro_ok and madera_ok:
+	var meta: float = float(costo["horas_investigador"])
+	progreso_investigacion[siguiente] = min(meta, progreso_investigacion.get(siguiente, 0.0) + horas)
+	if progreso_investigacion[siguiente] >= meta:
+		var costos_pago := {"hierro": costo["hierro"], "madera": costo["madera"]}
+		if consumir_costos(costos_pago):
 			nivel_investigado = siguiente
+			return true
+	return false
 
 
 ## Desplaza el bono de moral gradualmente hacia el objetivo de diversidad activa.
@@ -475,7 +533,6 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 			referencia[clave] = (almacen[clave] as Recurso).cantidad
 
 	regular_densidad_vertical()
-	actualizar_investigacion()
 	actualizar_bono_variedad()
 
 	var gasto_poblacion := 0.0

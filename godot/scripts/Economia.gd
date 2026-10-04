@@ -43,7 +43,7 @@ const CARGA_MINIMA := 10.0
 ## "tecnico" opera la receta en las refinerías y, en los puestos de recolección, recolecta como técnico;
 ## "recolector" (un obrero) y "especialista" solo existen en los puestos de recolección; "aprendiz" solo en las
 ## escuelas. "acarreador" vale en los puestos de recolección y en las refinerías (ver roles_de()).
-const ROLES := ["recolector", "tecnico", "especialista", "aprendiz", "acarreador"]
+const ROLES := ["recolector", "tecnico", "especialista", "aprendiz", "investigador", "acarreador"]
 
 ## Rango de oficio de quien recolecta: es el nivel mínimo de puesto que ocupa (ver nivel_de()). Obrero 1,
 ## técnico 2, especialista 3.
@@ -191,6 +191,8 @@ func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 func roles_de(esquina: Vector2i) -> Array:
 	if es_escuela(esquina):
 		return ["aprendiz"]
+	if es_universidad(esquina):
+		return ["investigador"]
 	return ["tecnico", "acarreador"] if es_refineria(esquina) else ["recolector", "tecnico", "especialista", "acarreador"]
 
 
@@ -341,11 +343,15 @@ static func _total(almacen: Dictionary) -> float:
 ## en proporción (el exceso se pierde: la producción se frena contra el tope y
 ## avisa de que falta acarreo).
 func simular_hora() -> void:
+	var horas_investigacion := 0.0
 	for esquina in puestos:
 		var p: Dictionary = puestos[esquina]
 		if not p["activo"]:
 			continue
 		_liberar_acarreadores_si_agotado(esquina)
+		if es_universidad(esquina):
+			horas_investigacion += float(p["presentes"].size())
+			continue
 		if es_escuela(esquina):
 			_formar(esquina)
 			continue
@@ -364,6 +370,12 @@ func simular_hora() -> void:
 			var concedido: float = _extraer(esquina, recurso, producido[recurso] * factor)
 			if concedido > 0.0:
 				p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + concedido
+	if horas_investigacion > 0.0 and ciudad != null:
+		var completo: bool = ciudad.actualizar_investigacion(horas_investigacion)
+		if completo:
+			for esquina in puestos:
+				if es_universidad(esquina):
+					_liberar_de(esquina, puestos[esquina]["recolectores"].duplicate())
 	_horas_desde_recalculo += 1
 	if _horas_desde_recalculo >= TICKS_RECALCULO:
 		_horas_desde_recalculo = 0
@@ -513,6 +525,11 @@ func es_refineria(esquina: Vector2i) -> bool:
 ## true si el puesto es una escuela (Recoleccion.ESCUELAS): forma a sus aprendices en vez de producir.
 func es_escuela(esquina: Vector2i) -> bool:
 	return puestos.has(esquina) and Recoleccion.ESCUELAS.has(puestos[esquina]["tipo"])
+
+
+## true si el puesto es una universidad: investiga proyectos de ciudad.
+func es_universidad(esquina: Vector2i) -> bool:
+	return puestos.has(esquina) and puestos[esquina]["tipo"] == "universidad"
 
 
 ## Recurso principal que consume la refinería (tipo_entrada de su receta, p. ej. "hierro").

@@ -1002,8 +1002,8 @@ func _actualizar_previsualizacion_puesto() -> void:
 			_actualizar_area_accion_agua(centro_agua, celdas_agua)
 		else:
 			_ocultar_area_accion()
-	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo):
-		_ocultar_area_accion()  # ni una refinería ni una escuela tienen área de acción ni tasa de recolección
+	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad":
+		_ocultar_area_accion()  # ni una refinería ni un edificio de investigación tienen área de acción ni tasa de recolección
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
@@ -1326,7 +1326,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar"]
 const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]
-const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas"]
+const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas", "universidad"]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1534,7 +1534,7 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas", "universidad":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 
@@ -2236,8 +2236,8 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 	if extremo_agua_indice != -1 and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
 		giros = (giros + 2) % 4
 	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo)
-	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
-	var es_urbano: bool = es_refineria or es_escuela  # se construyen dentro de la zona de influencia, los demás puestos fuera
+	var es_residencial: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad"
+	var es_urbano: bool = es_refineria or es_residencial  # se construyen dentro de la zona de influencia, los demás puestos fuera
 	var dentro_de_influencia: bool = Zonificacion.dentro_de_influencia(centro)
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	# Fachada, como en los edificios declarados: las 2 columnas delante de todo el lado
@@ -2267,7 +2267,7 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		"en_tierra": en_tierra,
 		"en_influencia": dentro_de_influencia and not es_urbano,  # los puestos periféricos no pueden ir dentro
 		"fuera_de_influencia": es_urbano and not dentro_de_influencia,  # las refinerías y la escuela solo pueden ir dentro
-		"zona_correcta": not es_urbano or _huella_en_zona_correcta(esquina, columnas, Zonificacion.ZONAS_PINTABLES[0 if es_escuela else 1]),  # la escuela, sobre residencial; las refinerías, sobre industrial
+		"zona_correcta": not es_urbano or _huella_en_zona_correcta(esquina, columnas, Zonificacion.ZONAS_PINTABLES[0 if es_residencial else 1]),  # la escuela/universidad, sobre residencial; las refinerías, sobre industrial
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas),
 		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, altura_plantilla),
 		"choca": _huella_choca_con_otro_puesto(esquina, columnas),
@@ -2291,11 +2291,13 @@ func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 	if ev["en_influencia"]:
 		return "No se puede colocar un puesto dentro de la zona de influencia."
 	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
+	var es_universidad: bool = _tipo_puesto_activo == "universidad"
+	var nombre_rechazo: String = "una universidad" if es_universidad else ("una escuela" if es_escuela else "una refinería")
 	if ev["fuera_de_influencia"]:
-		return "Colocación rechazada: %s solo puede construirse dentro de la zona de influencia." % ("una escuela" if es_escuela else "una refinería")
+		return "Colocación rechazada: %s solo puede construirse dentro de la zona de influencia." % nombre_rechazo
 	if not ev["zona_correcta"]:
-		if es_escuela:
-			return "Colocación rechazada: una escuela solo puede construirse sobre una zona residencial."
+		if es_escuela or es_universidad:
+			return "Colocación rechazada: %s solo puede construirse sobre una zona residencial." % nombre_rechazo
 		return "Colocación rechazada: una refinería solo puede construirse sobre una zona industrial."
 	if not ev["relieve_valido"]:
 		return "Colocación rechazada: la pendiente de esta huella supera el límite permitido."
@@ -2534,6 +2536,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 		},
 	}
 	var id_edificio: int = mundo.iniciar_construccion_fantasma(relleno_orden, tipos_relleno, orden_estructura, celdas_plantilla, metadata)
+	metadata["id_edificio"] = id_edificio
 	var follaje: Array = []
 	follaje.append_array(ev["resultado_huella"]["follaje_a_eliminar"])
 	follaje.append_array(ev["resultado_fachada"]["follaje_a_eliminar"])

@@ -20,11 +20,12 @@ const NOMBRES_PUESTO := {
 	"carbonera": "Carbonera",
 	"escuela_tecnica": "Escuela técnica",
 	"escuela_especialistas": "Escuela de especialistas",
+	"universidad": "Universidad",
 }
 ## Mensaje para el jugador (el HUD lo envía a las notificaciones).
 signal aviso(texto: String)
 
-const NOMBRES_ROL := {"recolector": "Obreros", "tecnico": "Técnicos", "especialista": "Especialistas", "aprendiz": "Aprendices", "acarreador": "Acarreadores"}
+const NOMBRES_ROL := {"recolector": "Obreros", "tecnico": "Técnicos", "especialista": "Especialistas", "aprendiz": "Aprendices", "investigador": "Investigadores", "acarreador": "Acarreadores"}
 
 var esquina := Recoleccion.SIN_PUESTO
 
@@ -54,7 +55,7 @@ func _ready() -> void:
 	add_child(caja)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	caja.add_child(_titulo)
-	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "acarreador"]:
+	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "investigador", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
 	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
@@ -117,9 +118,10 @@ func _actualizar() -> void:
 	var puesto: Dictionary = Economia.puestos[esquina]
 	var t: Dictionary = Economia.trabajadores_de(esquina)
 	var es_escuela: bool = Economia.es_escuela(esquina)
+	var es_universidad: bool = Economia.es_universidad(esquina)
 	var con_niveles: bool = Economia.tiene_niveles(esquina)
-	# Oficios que producen aquí: aprendices en la escuela, solo técnicos en la refinería, los tres oficios en los puestos con niveles.
-	var oficios: Array = ["aprendiz"] if es_escuela else (["recolector", "tecnico", "especialista"] if con_niveles else ["tecnico"])
+	# Oficios que producen aquí: investigadores en la universidad, aprendices en la escuela, solo técnicos en la refinería, los tres oficios en los puestos con niveles.
+	var oficios: Array = ["investigador"] if es_universidad else (["aprendiz"] if es_escuela else (["recolector", "tecnico", "especialista"] if con_niveles else ["tecnico"]))
 	var estado := ""
 	if not puesto["activo"]:
 		estado = " (inactivo)"
@@ -131,7 +133,7 @@ func _actualizar() -> void:
 	var origen_escuela: String = Recoleccion.ESCUELAS[puesto["tipo"]]["origen"] if es_escuela else ""
 	var nombre_aprendiz: String = "Técnicos en formación" if origen_escuela == "tecnico" else "Aprendices"
 	_filas["aprendiz"]["nombre"].text = nombre_aprendiz
-	for rol in ["recolector", "tecnico", "especialista", "aprendiz"]:
+	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "investigador"]:
 		var fila: Dictionary = _filas[rol]
 		if rol != "aprendiz" or not es_escuela:
 			fila["nombre"].text = NOMBRES_ROL[rol]
@@ -141,23 +143,38 @@ func _actualizar() -> void:
 		fila["cantidad"].text = str(empleados)
 		fila["libres"].text = "(%d libres)" % libres
 		fila["menos"].disabled = empleados == 0
-		fila["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or not Economia.admite_rol(esquina, rol)
+		var limite_inv: bool = (rol == "investigador" and not Ciudad.COSTOS_INVESTIGACION.has(Ciudad.nivel_investigado + 1))
+		fila["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or not Economia.admite_rol(esquina, rol) or limite_inv
 	var acarreadores: Dictionary = _filas["acarreador"]
-	acarreadores["fila"].visible = not es_escuela  # una escuela no mueve recursos
+	acarreadores["fila"].visible = not es_escuela and not es_universidad  # ni una escuela ni una universidad mueven recursos
 	acarreadores["cantidad"].text = str(t["acarreadores"])
 	acarreadores["libres"].text = "(%d libres)" % Ciudad.demografia["desempleado"]
 	acarreadores["menos"].disabled = t["acarreadores"] == 0
 	acarreadores["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
-	if es_escuela:
+	if es_universidad:
+		var siguiente: int = Ciudad.nivel_investigado + 1
+		if Ciudad.COSTOS_INVESTIGACION.has(siguiente):
+			var info_inv: Dictionary = Ciudad.COSTOS_INVESTIGACION[siguiente]
+			var req: String = "Técnicos o especialistas" if siguiente == 2 else "Especialistas"
+			var prog: float = Ciudad.progreso_investigacion.get(siguiente, 0.0)
+			var meta: float = float(info_inv["horas_investigador"])
+			_trabajadores.text = "Investigadores: %d / %d (presentes: %d)\nProyecto: %s (Nivel %d)\nRequisito: %s\nProgreso: %.1f / %.1f h\nCostos: %d hierro, %d madera" % [t["recolectores"], puesto["cupo"], t["presentes"], info_inv["nombre"], siguiente, req, prog, meta, info_inv["hierro"], info_inv["madera"]]
+		else:
+			_trabajadores.text = "Investigadores: %d / %d (presentes: %d)\nTodas las investigaciones completadas" % [t["recolectores"], puesto["cupo"], t["presentes"]]
+	elif es_escuela:
 		var horas: int = Recoleccion.ESCUELAS[puesto["tipo"]]["horas"]
 		_trabajadores.text = "%s: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [nombre_aprendiz, t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), horas]
 	else:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
-	# Solo la refinería necesita la pista de dónde salen sus técnicos.
-	_libres.visible = not es_escuela and not con_niveles and Colonos.tecnicos_libres() == 0
-	_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
-	_almacen.visible = not es_escuela
-	_produccion.visible = not es_escuela
+	var siguiente_inv: int = Ciudad.nivel_investigado + 1
+	var sin_candidatos_inv: bool = es_universidad and _libres_de("investigador") == 0 and Ciudad.COSTOS_INVESTIGACION.has(siguiente_inv)
+	_libres.visible = (not es_escuela and not con_niveles and not es_universidad and Colonos.tecnicos_libres() == 0) or sin_candidatos_inv
+	if sin_candidatos_inv:
+		_libres.text = "Sin candidatos libres: requiere %s" % ("técnicos o especialistas" if siguiente_inv == 2 else "especialistas")
+	else:
+		_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
+	_almacen.visible = not es_escuela and not es_universidad
+	_produccion.visible = not es_escuela and not es_universidad
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
@@ -174,6 +191,13 @@ func _empleados(rol: String, t: Dictionary, con_niveles: bool) -> int:
 
 ## Colonos libres de ese oficio que se podrían contratar: técnicos y especialistas libres, o desempleados.
 func _libres_de(rol: String) -> int:
+	if rol == "investigador":
+		var siguiente: int = Ciudad.nivel_investigado + 1
+		if siguiente == 2:
+			return Colonos.tecnicos_libres() + Colonos.especialistas_libres()
+		elif siguiente == 3:
+			return Colonos.especialistas_libres()
+		return 0
 	if rol == "aprendiz" and Economia.puestos.has(esquina):
 		var tipo_p: String = Economia.puestos[esquina]["tipo"]
 		if Recoleccion.ESCUELAS.has(tipo_p) and Recoleccion.ESCUELAS[tipo_p]["origen"] == "tecnico":

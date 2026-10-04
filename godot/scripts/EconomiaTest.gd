@@ -828,4 +828,38 @@ func ejecutar_pruebas() -> void:
 	e34.reactivar_puesto(ESQ)
 	assert(e34.asignar(ESQ, "recolector", 3), "tras reactivar sigue en nivel 1 y admite obreros")
 
-	print("\n=== Las 34 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 35: universidad como puesto de investigación, agregación de horas y liberación al completar ===")
+	var c35: Node = CiudadScript.new()
+	c35.instalaciones["tipo_2"] = 3  # habilita nivel potencial 2
+	c35.almacen["hierro"].cantidad = 500.0
+	c35.almacen["madera"].cantidad = 500.0
+	var e35: Node = EconomiaScript.new()
+	e35.ciudad = c35
+	var esq_uni := Vector2i(70, 70)
+	e35.registrar_puesto(esq_uni, "universidad", 5, 5, {})
+	assert(e35.puestos[esq_uni]["cupo"] == 3)
+	assert(e35.puestos[esq_uni]["capacidad"] == 0)
+	assert(e35.roles_de(esq_uni) == ["investigador"])
+	assert(e35.asignar(esq_uni, "investigador", 101))
+	assert(e35.asignar(esq_uni, "investigador", 102))
+	assert(not e35.asignar(esq_uni, "recolector", 103), "no admite recolector")
+	# Sin presencia no suma horas
+	e35.simular_hora()
+	assert(c35.progreso_investigacion[2] == 0.0)
+	# Marcando 2 presentes: suma 2 horas por simular_hora()
+	e35.marcar_presente(101, true)
+	e35.marcar_presente(102, true)
+	e35.simular_hora()
+	assert(c35.progreso_investigacion[2] == 2.0)
+	# Avanzamos hasta completar el nivel 2 (meta 20 h, faltan 18 h -> 9 horas con 2 presentes)
+	for _i in range(8):
+		e35.simular_hora()
+	assert(c35.progreso_investigacion[2] == 18.0)
+	assert(c35.nivel_investigado == 1)
+	assert(e35.puestos[esq_uni]["recolectores"].size() == 2)
+	# La 9ª hora completa los 20 h y activa la investigación
+	e35.simular_hora()
+	assert(c35.nivel_investigado == 2)
+	assert(e35.puestos[esq_uni]["recolectores"].is_empty(), "al completar investigación libera a los investigadores")
+
+	print("\n=== Las 35 pruebas de Economia pasaron correctamente ===")

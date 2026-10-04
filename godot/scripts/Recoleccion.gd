@@ -33,7 +33,7 @@ const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Madera/h por recolector bajo la cual un maderero se da por agotado (decisión del usuario, 2026-10-02).
 const UMBRAL_AGOTADO_MADERERO := 0.5
 
-const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas"]
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas", "universidad"]
 ## Escuelas: tipo de puesto -> {"origen", "destino", "horas"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
 ## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
 ## conserva (4 obreros = 3 técnicos, 3 técnicos = 2 especialistas) y quien sobra se va de la ciudad.
@@ -181,6 +181,7 @@ func cupo_de(tipo: String) -> int:
 		"maderero": return PERSONAL_MAXIMO_MADERERO
 		"caza_recoleccion": return PERSONAL_MAXIMO_CAZA_RECOLECCION
 		"pesca_frutos_mar": return PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
+		"universidad": return 3
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.PERSONAL_MAXIMO_REFINERIA
 	if ESCUELAS.has(tipo):

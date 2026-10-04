@@ -55,6 +55,7 @@ func ejecutar_pruebas() -> void:
 	urbe.almacen["hierro"].cantidad = 1000
 	urbe.almacen["madera"].cantidad = 1000
 	for i in range(10):  # 5 investigadores * 10 ticks = 50 horas-investigador > umbral de Nivel 2 (20) y Nivel 3 (50)
+		urbe.actualizar_investigacion(5.0)
 		urbe.simular_tick(jugador.tasa_hambre)
 	print("Nivel Investigado: ", urbe.nivel_investigado, " | Nivel Efectivo: ", urbe.nivel)
 	assert(urbe.nivel_investigado >= 2)
@@ -318,4 +319,61 @@ func ejecutar_pruebas() -> void:
 	talado.almacen["hierro"].cantidad = 3.0
 	assert(talado.consumir_costo("hierro", 3.0) and not talado.consumir_costo("hierro", 1.0), "un recurso que no es madera se cobra normal")
 
-	print("\n=== Las 23 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 24: horas explícitas de investigación, atomicidad de cobro e instalaciones físicas ===")
+	var ciu24: Node = CiudadScript.new()
+	ciu24.instalaciones["tipo_2"] = 3  # habilita nivel potencial 2
+	ciu24.almacen["hierro"].cantidad = 100.0
+	ciu24.almacen["madera"].cantidad = 100.0
+	var hierro_antes: float = ciu24.almacen["hierro"].cantidad
+	var madera_antes: float = ciu24.almacen["madera"].cantidad
+	assert(not ciu24.consumir_costos({"hierro": hierro_antes + 1.0, "madera": 1.0}))
+	assert(ciu24.almacen["hierro"].cantidad == hierro_antes)
+	assert(ciu24.almacen["madera"].cantidad == madera_antes)
+	assert(ciu24.consumir_costos({"hierro": 10.0, "madera": 10.0}))
+	assert(ciu24.almacen["hierro"].cantidad == hierro_antes - 10.0)
+	assert(ciu24.almacen["madera"].cantidad == madera_antes - 10.0)
+
+	# 0 horas no avanza
+	assert(not ciu24.actualizar_investigacion(0.0))
+	assert(ciu24.progreso_investigacion[2] == 0.0)
+	# 2 investigadores aportan 2 h
+	assert(not ciu24.actualizar_investigacion(2.0))
+	assert(ciu24.progreso_investigacion[2] == 2.0)
+
+	# Nivel potencial insuficiente pausa el progreso
+	ciu24.instalaciones["tipo_2"] = 0  # baja a nivel potencial 1
+	assert(not ciu24.actualizar_investigacion(5.0))
+	assert(ciu24.progreso_investigacion[2] == 2.0, "potencial insuficiente no pierde progreso pero no avanza")
+	ciu24.instalaciones["tipo_2"] = 3  # recupera potencial 2
+
+	# Recursos insuficientes al umbral: progreso queda topado en 20 h sin cobro parcial
+	ciu24.almacen["hierro"].cantidad = 10.0
+	ciu24.almacen["madera"].cantidad = 10.0
+	assert(not ciu24.actualizar_investigacion(30.0))
+	assert(ciu24.progreso_investigacion[2] == 20.0, "progreso topado en 20 h")
+	assert(ciu24.almacen["hierro"].cantidad == 10.0, "no cobró hierro parcial")
+	assert(ciu24.nivel_investigado == 1)
+
+	# Al reponer recursos completa una vez
+	ciu24.almacen["hierro"].cantidad = 500.0
+	ciu24.almacen["madera"].cantidad = 500.0
+	assert(ciu24.actualizar_investigacion(1.0))
+	assert(ciu24.nivel_investigado == 2)
+	assert(ciu24.almacen["hierro"].cantidad == 200.0, "cobró exactamente 300 hierro")
+	assert(ciu24.almacen["madera"].cantidad == 300.0, "cobró exactamente 200 madera")
+
+	# Sofisticación física: registro idempotente de instalaciones
+	var ciu_inst: Node = CiudadScript.new()
+	assert(ciu_inst.instalaciones["tipo_2"] == 0)
+	ciu_inst.registrar_instalacion(10, "siderurgica")
+	assert(ciu_inst.instalaciones["tipo_2"] == 1)
+	ciu_inst.registrar_instalacion(10, "siderurgica")
+	assert(ciu_inst.instalaciones["tipo_2"] == 1, "idempotente")
+	ciu_inst.registrar_instalacion(11, "aserradero")
+	assert(ciu_inst.instalaciones["tipo_2"] == 2)
+	ciu_inst.desregistrar_instalacion(10)
+	assert(ciu_inst.instalaciones["tipo_2"] == 1)
+	ciu_inst.desregistrar_instalacion(10)
+	assert(ciu_inst.instalaciones["tipo_2"] == 1, "desregistrar dos veces es no-op")
+
+	print("\n=== Las 24 pruebas de Ciudad pasaron correctamente ===")

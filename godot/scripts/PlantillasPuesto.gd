@@ -44,6 +44,7 @@ const MATERIAL := {
 	"aserradero": "bloque_madera",
 	"escuela_tecnica": "adobe",
 	"escuela_especialistas": "bloque_piedra",
+	"universidad": "bloque_piedra",
 }
 
 const PLANTILLAS := {
@@ -123,6 +124,14 @@ const PLANTILLAS := {
 	# Escuela de especialistas: interior de 3 x 3 con 3 mesas de estudio (M, una por aprendiz)
 	# al fondo; quedan 5 sitios libres más el vestíbulo. Sin baúl: no maneja recursos.
 	"escuela_especialistas": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##d##", "#...#", "#...#", "#MMM#", "#####"],
+		["##D##", "V...V", "#...#", "V...V", "#####"],
+		["#####", "#####", "#####", "#####", "#####"],
+	]},
+	# Universidad: interior de 3 x 3 con 3 mesas de estudio (M, una por investigador)
+	# al fondo; quedan 5 sitios libres más el vestíbulo. Sin baúl: no maneja recursos.
+	"universidad": {"capas": [
 		["#####", "#####", "#####", "#####", "#####"],
 		["##d##", "#...#", "#...#", "#MMM#", "#####"],
 		["##D##", "V...V", "#...#", "V...V", "#####"],

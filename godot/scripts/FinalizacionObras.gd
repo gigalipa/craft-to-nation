@@ -22,7 +22,7 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 		var info: Dictionary = metadata["puesto_nuevo"]
 		var entorno: Dictionary = {}
 		var tasas: Dictionary = {}
-		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]):
+		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]) and info["tipo"] != "universidad":
 			var centro: Vector2i = info["centro"]
 			var altura: int = mundo.altura_en(centro.x, centro.y)
 			entorno = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"])
@@ -31,6 +31,8 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 		# info["y_base"] es la Y de la losa de piso (capa 0, ver PlantillasPuesto.gd);
 		# el piso interior TRANSITABLE (donde vive la puerta) es una capa arriba.
 		Economia.registrar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"], tasas, entorno, info["servicio"], info["deposito"], info["y_base"] + 1, info.get("salida", Economia.SIN_SERVICIO), info.get("chimenea", Economia.SIN_DEPOSITO))
+		if metadata.has("id_edificio"):
+			Ciudad.registrar_instalacion(metadata["id_edificio"], info["tipo"])
 		print("Puesto '%s' construido en (%d, %d)." % [info["tipo"], info["esquina"].x, info["esquina"].y])
 		metadata.erase("puesto_nuevo")  # a partir de aquí, un reconstruir cae en la rama "puesto" (reactivar), no en esta (evita re-registrar y huérfanos en _puesto_de — revisión de código, 2026-09-29).
 		return "Puesto construido."
@@ -72,6 +74,7 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 ## y dejar de producir si es un puesto (idempotente).
 static func al_deconstruir(mundo: Object, resultado: Dictionary) -> void:
 	Ciudad.retirar_edificio_residencial(resultado["id"])
+	Ciudad.desregistrar_instalacion(resultado["id"])
 	var metadata_obra: Dictionary = mundo.edificio_metadata.get(resultado["id"], {})
 	if metadata_obra.has("puesto"):
 		Economia.desactivar_puesto(metadata_obra["puesto"])
@@ -82,6 +85,7 @@ static func al_deconstruir(mundo: Object, resultado: Dictionary) -> void:
 ## Elimina por completo un edificio ya reducido a fantasma vacío y limpia lo que
 ## dependía de él.
 static func retirar_edificio(mundo: Object, id: int) -> void:
+	Ciudad.desregistrar_instalacion(id)
 	var metadata_final: Dictionary = mundo.edificio_metadata.get(id, {})  # eliminar_edificio() la borra
 	var esquina: Vector2i = mundo.eliminar_edificio(id)
 	if metadata_final.has("puesto"):

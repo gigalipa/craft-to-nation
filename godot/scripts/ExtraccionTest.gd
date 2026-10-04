@@ -10,6 +10,13 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
 const PlayerScript = preload("res://scripts/Player.gd")
 
+
+class HUDFalso extends CanvasLayer:
+	var ultimo_aviso := ""
+
+	func notificar(mensaje: String) -> void:
+		ultimo_aviso = mensaje
+
 ## Generador falso: densidad frutal fija, la que se le asigne.
 class GeneradorFrutalFalso:
 	var densidad := 0.5
@@ -110,11 +117,14 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 7: Player._cobrar_colocacion()/_reembolsar_colocacion() cobran y reembolsan de Ciudad.almacen ===")
 	var jugador_costo: CharacterBody3D = PlayerScript.new()
+	var hud_costo := HUDFalso.new()
+	jugador_costo.hud = hud_costo
 	Ciudad.almacen["piedra"].cantidad = 5.0
 	assert(jugador_costo._cobrar_colocacion("bloque_piedra"), "con 5 piedra alcanza para 1 bloque_piedra (5 piedra)")
 	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 0.0), "se descontaron las 5")
 	assert(not jugador_costo._cobrar_colocacion("bloque_piedra"), "sin stock, rechaza")
 	assert(Ciudad.almacen["piedra"].cantidad == 0.0, "el rechazo no descuenta nada")
+	assert(hud_costo.ultimo_aviso == "No hay suficiente piedra para colocar: bloque de piedra", "el rechazo también se notifica")
 	jugador_costo._reembolsar_colocacion("bloque_piedra")
 	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 5.0), "reembolsa exactamente lo que costaba")
 

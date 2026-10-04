@@ -49,6 +49,16 @@ func _camara(mundo: Node, tipo: String, giros: int = 0) -> Camera3D:
 	return camara
 
 
+## HUD real con el único hijo que Main.tscn aporta fuera de HUD._init().
+func _hud_prueba() -> CanvasLayer:
+	var hud: CanvasLayer = HUDScript.new()
+	var oxigeno := Label.new()
+	oxigeno.name = "OxigenoLabel"
+	hud.add_child(oxigeno)
+	add_child(hud)
+	return hud
+
+
 ## Cada caja del fantasma está en la celda real de un bloque de la plantilla, y su
 ## color es el "esperado" (o el destacado propio de puertas y ventanas si es válida).
 func _verificar_fantasma(camara: Camera3D, mundo: Node, esquina: Vector2i, ev: Dictionary, color: Color, valida: bool) -> void:
@@ -176,11 +186,7 @@ func ejecutar_pruebas() -> void:
 	assert(camara6._resumen_blueprint_texto.contains("Camas: 1"), "cuenta la cama del blueprint")
 	assert(camara6._resumen_blueprint_texto.contains("piedra"), "bloque_piedra cuesta piedra")
 
-	var hud6: CanvasLayer = HUDScript.new()
-	var oxigeno6 := Label.new()
-	oxigeno6.name = "OxigenoLabel"
-	hud6.add_child(oxigeno6)
-	add_child(hud6)
+	var hud6: CanvasLayer = _hud_prueba()
 	camara6.hud = hud6
 	# Mismo orden que el código real: mostrar_contexto() recibe el resumen YA
 	# calculado como texto_extra, en vez de que algo lo actualice después.
@@ -194,8 +200,7 @@ func ejecutar_pruebas() -> void:
 	print("=== TEST 7: colocar un puesto arma una cola de construcción pagada, no lo estampa al instante ===")
 	var mundo7: Node = _mundo_plano()
 	var camara7: Camera3D = _camara(mundo7, "maderero")
-	camara7.hud = HUDScript.new()
-	add_child(camara7.hud)
+	camara7.hud = _hud_prueba()
 	var esquina7 := Vector2i(20, 20)
 	var ev7: Dictionary = camara7._evaluar_puesto(esquina7)
 	assert(camara7._mensaje_rechazo_puesto(ev7) == "", "válida sobre suelo plano")
@@ -260,8 +265,7 @@ func ejecutar_pruebas() -> void:
 			mundo9.colocar_bloque(Vector3i(x, 0, z), "agua")
 	var esquina9 := Vector2i(10, 10)
 	var camara9: Camera3D = _camara(mundo9, "pesca_frutos_mar", 0)
-	camara9.hud = HUDScript.new()
-	add_child(camara9.hud)
+	camara9.hud = _hud_prueba()
 	var ev9: Dictionary = camara9._evaluar_puesto(esquina9)
 	assert(camara9._mensaje_rechazo_puesto(ev9) == "", "válida en pesca: %s" % camara9._mensaje_rechazo_puesto(ev9))
 	var extremo9: Array[Vector2i] = CamaraCenitalScript._celdas_extremo_pesca(camara9._ancho_puesto_activo, camara9._alto_puesto_activo, ev9["extremo_agua_indice"])
@@ -288,8 +292,7 @@ func ejecutar_pruebas() -> void:
 	# resurtir) cae en la rama "puesto" (reactivar), no en "puesto_nuevo".
 	var mundo10: Node = _mundo_plano()
 	var camara10: Camera3D = _camara(mundo10, "maderero")
-	camara10.hud = HUDScript.new()
-	add_child(camara10.hud)
+	camara10.hud = _hud_prueba()
 	var esquina10 := Vector2i(30, 4)
 	var ev10: Dictionary = camara10._evaluar_puesto(esquina10)
 	assert(camara10._mensaje_rechazo_puesto(ev10) == "", "válida sobre suelo plano")
@@ -351,8 +354,7 @@ func ejecutar_pruebas() -> void:
 	# "fantasma", ver VoxelWorld.gd:1982).
 	var mundo11: Node = _mundo_plano()
 	var camara11: Camera3D = _camara(mundo11, "mina")
-	camara11.hud = HUDScript.new()
-	add_child(camara11.hud)
+	camara11.hud = _hud_prueba()
 	var esquina11 := Vector2i(30, 20)
 	var ev11: Dictionary = camara11._evaluar_puesto(esquina11)
 	assert(camara11._mensaje_rechazo_puesto(ev11) == "", "válida sobre suelo plano (ya parejo)")
@@ -476,8 +478,7 @@ func ejecutar_pruebas() -> void:
 	Zonificacion.despintar_zona(esquina14 + Vector2i(0, 4), esquina14 + Vector2i(4, 4))
 	assert("zona residencial" in camara14._mensaje_rechazo_puesto(camara14._evaluar_puesto(esquina14)), "toda la huella debe estar sobre zona residencial")
 	Zonificacion.pintar_zona(esquina14, esquina14 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[0])
-	camara14.hud = HUDScript.new()
-	add_child(camara14.hud)
+	camara14.hud = _hud_prueba()
 	camara14._confirmar_puesto(esquina14)
 	var info14: Dictionary = {}
 	for meta14 in mundo14.edificio_metadata.values():

@@ -434,3 +434,4 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	Vias.notches.clear()
+	print("\n=== Las 33 pruebas de Vias pasaron correctamente ===")

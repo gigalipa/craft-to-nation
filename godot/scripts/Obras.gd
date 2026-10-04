@@ -123,12 +123,21 @@ func alternar_marca(id: int) -> String:
 	return ""
 
 
-## true si alguna celda del edificio es del núcleo urbano (que no se demuele).
+## true si el edificio es del núcleo urbano (que no se demuele).
 func _es_del_nucleo(id: int) -> bool:
-	for celda: Vector3i in mundo.edificio_a_celdas[id]:
-		if zona.celda_es_del_nucleo(Vector2i(celda.x, celda.z)):
-			return true
+	if zona != null and zona.get("id_nucleo") != null and zona.id_nucleo == id:
+		return true
+	if ciudad != null and ciudad.get("id_nucleo") != null and ciudad.id_nucleo == id:
+		return true
+	if mundo != null and mundo.edificio_a_celdas.has(id):
+		for celda: Vector3i in mundo.edificio_a_celdas[id]:
+			if zona != null and zona.celda_es_del_nucleo(Vector2i(celda.x, celda.z)):
+				return true
 	return false
+
+
+func es_del_nucleo(id: int) -> bool:
+	return _es_del_nucleo(id)
 
 
 ## El jugador deconstruyó parte de este edificio a mano: los colonos no lo reconstruyen.

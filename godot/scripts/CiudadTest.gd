@@ -386,4 +386,35 @@ func ejecutar_pruebas() -> void:
 	assert(ciu25.almacen.has("crudo") and ciu25.almacen["crudo"].cantidad == 0.0 and ciu25.almacen["crudo"].limite == Ciudad.LIMITE_BASE)
 	assert(ciu25.almacen.has("combustible") and ciu25.almacen["combustible"].cantidad == 0.0 and ciu25.almacen["combustible"].limite == Ciudad.LIMITE_BASE)
 
-	print("\n=== Las 25 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 26: traslado de núcleo urbano y desahucio priorizado ===")
+	var ciu26: Node = CiudadScript.new()
+	ciu26.migracion_activa = false
+	ciu26.guardar_datos_nucleo(1, [1], 1)
+	ciu26.registrar_edificio_residencial(2, [4], 2)
+	assert(ciu26.camas_de(1) == 1)
+	assert(ciu26.camas_de(2) == 4)
+	assert(ciu26.baules_de(1) == 1)
+	assert(ciu26.baules_de(2) == 2)
+
+	ciu26.demografia["investigador"] = 4
+	assert(absf(ciu26.vivienda_ocupada - 4.0) < 0.001)
+
+	var deficit: float = ciu26.calcular_deficit_traslado(2)
+	assert(absf(deficit - 3.0) < 0.001)
+
+	ciu26.demografia["obrero"] = 12
+	ciu26.programar_traslado_nucleo(2, 2)
+	assert(ciu26.esta_traslado_programado(2))
+	assert(ciu26.horas_traslado_programado() == 2)
+	ciu26.simular_tick(0.0)
+	assert(ciu26.horas_traslado_programado() == 1)
+	assert(ciu26.id_nucleo == 1)
+	ciu26.simular_tick(0.0)
+	assert(not ciu26.esta_traslado_programado(2))
+	assert(ciu26.id_nucleo == 2)
+	assert(ciu26.camas_de(2) == 4)
+	assert(ciu26.camas_de(1) == 1)
+	assert(ciu26.demografia["obrero"] == 0, "obreros desahuciados antes de tocar investigadores")
+	assert(ciu26.demografia["investigador"] == 1, "solo queda 1 investigador en la 1 cama restante")
+
+	print("\n=== Las 26 pruebas de Ciudad pasaron correctamente ===")

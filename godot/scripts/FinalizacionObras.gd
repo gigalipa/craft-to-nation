@@ -48,7 +48,13 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 	# no suma camas (no llegan colonos todavía) ni baúles al tope del almacén; en
 	# cambio, declararlo duplica los topes del inventario.
 	if not Zonificacion.nucleo_declarado:
-		Zonificacion.declarar_nucleo(metadata["huella_xz"])
+		var camas_iniciales: Array[int] = []
+		for piso in blueprint["pisos"]:
+			camas_iniciales.append((piso.get("camas", []) as Array).size())
+		var baules_iniciales: int = BlueprintValidator.contar_baules(blueprint)
+		var id_edificio: int = metadata.get("id_edificio", -1)
+		Ciudad.guardar_datos_nucleo(id_edificio, camas_iniciales, baules_iniciales)
+		Zonificacion.declarar_nucleo(metadata["huella_xz"], id_edificio)
 		Ciudad.ampliar_almacen()
 		print("Núcleo urbano declarado (no habitable: no llegan colonos todavía). Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max, ". Topes del inventario duplicados.")
 		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])

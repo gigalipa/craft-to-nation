@@ -47,6 +47,7 @@ const MARCADOR_BORRAR := "borrar"
 var limite_mundo := Vector2i.ZERO
 
 var nucleo_declarado := false
+var id_nucleo := -1
 var influencia_min := Vector2i.ZERO
 var influencia_max := Vector2i.ZERO
 var zonas: Dictionary = {}  # Vector2i(x,z) -> String
@@ -76,12 +77,22 @@ var _contribuciones: Dictionary = {}  # int (id de edificio) -> {"huella": Array
 var _caja_nucleo: Dictionary = {}
 
 
+func _ready() -> void:
+	if get_node_or_null("/root/Ciudad") != null:
+		var c = get_node("/root/Ciudad")
+		if c.has_signal("nucleo_reasignado"):
+			c.nucleo_reasignado.connect(func(nuevo: int, viejo: int) -> void:
+				reasignar_nucleo(nuevo, [], viejo)
+			)
+
+
 ## Bootstrap del núcleo urbano: se llama una sola vez, cuando se declara el
 ## primer edificio residencial válido (ver Player.gd::_declarar_edificio).
 ## Llamadas repetidas se ignoran — el núcleo urbano no se puede redeclarar.
-func declarar_nucleo(huella: Array) -> void:
+func declarar_nucleo(huella: Array, id: int = -1) -> void:
 	if nucleo_declarado:
 		return
+	id_nucleo = id
 	_huella_nucleo = huella.duplicate()
 	_caja_nucleo = _caja_expandida(_huella_nucleo, MARGEN_ZONA_INFLUENCIA)
 	nucleo_declarado = true
@@ -89,6 +100,31 @@ func declarar_nucleo(huella: Array) -> void:
 
 	for celda in huella:
 		zonas[celda] = "residencial_investigacion"
+
+
+## Reasigna el núcleo urbano a un nuevo edificio ya construido.
+func reasignar_nucleo(nuevo_id: int, nueva_huella: Array = [], id_anterior: int = -1, categoria_anterior: String = "residencial") -> void:
+	if not nucleo_declarado:
+		return
+	var id_viejo: int = id_anterior if id_anterior != -1 else id_nucleo
+	var huella_vieja: Array = _huella_nucleo.duplicate()
+
+	var huella_nueva: Array = nueva_huella
+	if huella_nueva.is_empty() and _contribuciones.has(nuevo_id):
+		huella_nueva = _contribuciones[nuevo_id]["huella"].duplicate()
+
+	retirar_contribucion(nuevo_id)
+
+	if id_viejo != -1 and not huella_vieja.is_empty():
+		ampliar_influencia(id_viejo, huella_vieja, categoria_anterior)
+
+	id_nucleo = nuevo_id
+	if not huella_nueva.is_empty():
+		_huella_nucleo = huella_nueva.duplicate()
+		_caja_nucleo = _caja_expandida(_huella_nucleo, MARGEN_ZONA_INFLUENCIA)
+		_recalcular_influencia()
+		for celda in _huella_nucleo:
+			zonas[celda] = "residencial_investigacion"
 
 
 ## Registra la huella de "id" (con el margen correspondiente a "categoria")

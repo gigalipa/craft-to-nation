@@ -98,7 +98,11 @@ func _ready() -> void:
 		obras = Obras
 	if obras != null and obras.colonos == null:
 		obras.colonos = self
-	ciudad.tick_simulado.connect(reconciliar)
+	if ciudad != null:
+		if not ciudad.tick_simulado.is_connected(reconciliar):
+			ciudad.tick_simulado.connect(reconciliar)
+		if ciudad.has_signal("nucleo_reasignado") and not ciudad.nucleo_reasignado.is_connected(_on_nucleo_reasignado):
+			ciudad.nucleo_reasignado.connect(_on_nucleo_reasignado)
 
 
 func _process(delta: float) -> void:
@@ -219,6 +223,27 @@ func _reasignar_hogares() -> void:
 	for c in colonos.values():
 		if c["hogar"] == -1 or not ciudad.edificios_residenciales.has(c["hogar"]):
 			c["hogar"] = _elegir_hogar()
+
+
+func _on_nucleo_reasignado(nuevo_id: int, id_viejo: int) -> void:
+	mudar_residentes(nuevo_id, id_viejo)
+	reconciliar()
+	_reasignar_hogares()
+
+
+func mudar_residentes(de_hogar: int, a_hogar: int) -> void:
+	for c in colonos.values():
+		if c.get("hogar", -1) == de_hogar:
+			c["hogar"] = a_hogar
+
+
+func residentes_en(hogar_id: int) -> Dictionary:
+	var conteo: Dictionary = {}
+	for c in colonos.values():
+		if c.get("hogar", -1) == hogar_id:
+			var tipo: String = c.get("tipo", "")
+			conteo[tipo] = conteo.get(tipo, 0) + 1
+	return conteo
 
 
 func avanzar(delta: float) -> void:

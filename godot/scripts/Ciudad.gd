@@ -13,6 +13,8 @@ extends Node
 ## Emitida al final de cada simular_tick(); Colonos.gd (Plan 2) la escucha
 ## para reconciliar los colonos visibles con demografia.
 signal tick_simulado
+signal nucleo_reasignado(nuevo_id: int, id_viejo: int)
+signal traslado_nucleo_programado_cambiado(activo: bool)
 
 const SEGUNDOS_POR_TICK := 2.0
 
@@ -189,6 +191,10 @@ var edificios_residenciales: Dictionary = {}
 var baules_por_edificio: Dictionary = {}
 ## true desde que se declara el núcleo urbano (duplica los topes).
 var almacen_ampliado := false
+var id_nucleo := -1
+var camas_nucleo: Array = []
+var baules_nucleo := 0
+var traslado_nucleo: Dictionary = {}  # {"id": nuevo_id, "horas": 5}
 ## Horas de juego transcurridas (1 por simular_tick); reloj de los frutos del avatar.
 var horas_juego := 0
 
@@ -476,6 +482,83 @@ func ampliar_almacen() -> void:
 	recalcular_limites()
 
 
+func guardar_datos_nucleo(id: int, camas: Array, baules: int) -> void:
+	id_nucleo = id
+	camas_nucleo = camas.duplicate()
+	baules_nucleo = baules
+
+
+func camas_de(id: int) -> int:
+	if id == id_nucleo:
+		var c := 0
+		for cant in camas_nucleo:
+			c += cant
+		return c
+	if edificios_residenciales.has(id):
+		var c := 0
+		for cant in edificios_residenciales[id]:
+			c += cant
+		return c
+	return 0
+
+
+func baules_de(id: int) -> int:
+	if id == id_nucleo:
+		return baules_nucleo
+	return baules_por_edificio.get(id, 0)
+
+
+func programar_traslado_nucleo(nuevo_id: int, horas: int = 5) -> void:
+	traslado_nucleo = {"id": nuevo_id, "horas": horas}
+	traslado_nucleo_programado_cambiado.emit(true)
+
+
+func cancelar_traslado_nucleo() -> void:
+	traslado_nucleo = {}
+	traslado_nucleo_programado_cambiado.emit(false)
+
+
+func esta_traslado_programado(edificio_id: int) -> bool:
+	return not traslado_nucleo.is_empty() and traslado_nucleo.get("id", -1) == edificio_id
+
+
+func horas_traslado_programado() -> int:
+	return traslado_nucleo.get("horas", 0)
+
+
+func calcular_deficit_traslado(nuevo_id: int) -> float:
+	var limites: Dictionary = NIVELES_VIVIENDA[nivel]
+	var camas_perdidas := 0
+	var camas_ganadas := 0
+	var c_nuevo: Array = edificios_residenciales.get(nuevo_id, [])
+	for i in range(mini(c_nuevo.size(), limites["pisos"])):
+		camas_perdidas += mini(c_nuevo[i], limites["camas_por_piso"])
+	for i in range(mini(camas_nucleo.size(), limites["pisos"])):
+		camas_ganadas += mini(camas_nucleo[i], limites["camas_por_piso"])
+	var nueva_capacidad: float = float(capacidad_camas_construida - camas_perdidas + camas_ganadas)
+	return maxf(0.0, vivienda_ocupada - nueva_capacidad)
+
+
+## Reasigna el núcleo urbano a un nuevo edificio residencial.
+func reasignar_nucleo(nuevo_id: int) -> void:
+	var id_viejo: int = id_nucleo
+	var camas_del_nuevo: Array = edificios_residenciales.get(nuevo_id, []).duplicate()
+	var baules_del_nuevo: int = baules_por_edificio.get(nuevo_id, 0)
+
+	retirar_edificio_residencial(nuevo_id)
+
+	if id_viejo != -1 and not camas_nucleo.is_empty():
+		registrar_edificio_residencial(id_viejo, camas_nucleo, baules_nucleo)
+
+	id_nucleo = nuevo_id
+	camas_nucleo = camas_del_nuevo
+	baules_nucleo = baules_del_nuevo
+
+	regular_densidad_vertical()
+	nucleo_reasignado.emit(nuevo_id, id_viejo)
+	recalcular_limites()
+
+
 ## tope = base x (FACTOR_NUCLEO si el núcleo está declarado) + baúles x bono.
 ## Si el tope baja por debajo del stock (se deconstruyó un edificio), el stock
 ## se conserva y simplemente no entra nada nuevo (ver Recurso.agregar()).
@@ -549,6 +632,14 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	if referencia.is_empty():
 		for clave in almacen:
 			referencia[clave] = (almacen[clave] as Recurso).cantidad
+
+	if not traslado_nucleo.is_empty():
+		traslado_nucleo["horas"] -= 1
+		if traslado_nucleo["horas"] <= 0:
+			var destino: int = traslado_nucleo["id"]
+			traslado_nucleo = {}
+			traslado_nucleo_programado_cambiado.emit(false)
+			reasignar_nucleo(destino)
 
 	regular_densidad_vertical()
 	actualizar_bono_variedad()

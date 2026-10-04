@@ -36,6 +36,7 @@ class ObrasPanelFalso extends RefCounted:
 	var marcados: Dictionary = {}
 	var pausas := 0
 	var rechazo := ""
+	var es_nucleo := false
 
 	func resumen_de(_id: int) -> Dictionary:
 		return resumen
@@ -67,10 +68,16 @@ class ObrasPanelFalso extends RefCounted:
 	func cancelar_demolicion(id: int) -> String:
 		return alternar_marca(id)
 
+	func es_del_nucleo(_id: int) -> bool:
+		return es_nucleo
+
 
 class ColonosPanelFalso extends RefCounted:
 	func obreros_en(_id: int) -> int:
 		return 3
+
+	func residentes_en(_id: int) -> Dictionary:
+		return {"obrero": 2}
 
 
 class ObrasFalsa extends RefCounted:
@@ -794,7 +801,9 @@ func probar_panel_edificio() -> void:
 	panel.aviso.connect(func(texto: String) -> void: avisos.append(texto))
 	panel.abrir(7)
 	assert(panel.visible, "se abre")
-	assert(panel._titulo.text == "Casa" and panel._tipo.text.contains("Residencial"), "nombre y tipo")
+	assert(panel._titulo.text == "Edificio residencial" and panel._tipo.text.contains("Residencial"), "nombre y tipo")
+	assert(panel._camas.visible and panel._baules.visible and panel._residentes.visible, "info residencial")
+	assert(panel._residentes.text.contains("Obrero: 2"), "residentes listados")
 	assert(panel._estado.text.contains("En construcción") and not panel._estado.text.contains("pausada"), "estado")
 	assert(panel._salud.text == "Salud: 25 %", "salud: %s" % panel._salud.text)
 	assert(panel._obreros.visible and panel._obreros.text == "Obreros: 3", "obreros")
@@ -811,6 +820,15 @@ func probar_panel_edificio() -> void:
 	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "completo", "pausada": false, "salud": 1.0, "faltantes": {}}
 	panel._actualizar()
 	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible, "completo: 100 %, sin materiales, sin obreros y sin botón de pausa")
+	assert(panel._asignar_nucleo.visible, "residencial completo permite asignar como núcleo")
+
+	obras.es_nucleo = true
+	panel._actualizar()
+	assert(panel._titulo.text == "Núcleo urbano", "título núcleo")
+	assert(not panel._demoler.visible, "núcleo sin botón demoler")
+	assert(not panel._asignar_nucleo.visible, "núcleo sin botón asignar núcleo")
+
+	obras.es_nucleo = false
 	obras.resumen = {}
 	panel._process(0.0)
 	assert(not panel.visible, "se cierra solo si el edificio desaparece")

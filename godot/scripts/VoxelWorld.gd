@@ -862,12 +862,17 @@ func _retirar_bloque(celda: Vector3i) -> void:
 ## celdas_pagadas). Terreno natural, relleno gratis (ConstructorVias,
 ## surtir_construccion) y tipos sin costo (p.ej. "hierba") no reembolsan nada.
 func _reembolsar_si_corresponde(celda: Vector3i, tipo: String) -> void:
-	if not celdas_pagadas.get(celda, false):
+	if not celdas_pagadas.has(celda):
 		return
+	var cobrado = celdas_pagadas[celda]
 	celdas_pagadas.erase(celda)
-	var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
-	for recurso in costo:
-		Ciudad.almacen[recurso].agregar(costo[recurso])
+	if cobrado is Dictionary:
+		for recurso in cobrado:
+			Ciudad.almacen[recurso].agregar(cobrado[recurso])
+	elif cobrado:
+		var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
+		for recurso in costo:
+			Ciudad.almacen[recurso].agregar(costo[recurso])
 
 
 ## Retira "celda" porque un puesto la extrajo (sin las guardas de minar_bloque()).
@@ -2016,10 +2021,16 @@ func _bloqueado_por_falta_de(tipo: String, celda: Vector3i) -> String:
 	if tipo == "aire" or tipo == "fantasma":
 		return ""
 	var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
+	var cobrado: Dictionary = {}
 	for recurso in costo:
-		if not Ciudad.consumir_costo(recurso, costo[recurso]):
+		var detalle: Dictionary = Ciudad.consumir_costo_con_detalle(recurso, costo[recurso])
+		if detalle.is_empty():
+			for r in cobrado:
+				Ciudad.almacen[r].agregar(cobrado[r])
 			return recurso
-	celdas_pagadas[celda] = true
+		for r in detalle:
+			cobrado[r] = cobrado.get(r, 0.0) + detalle[r]
+	celdas_pagadas[celda] = cobrado
 	return ""
 
 

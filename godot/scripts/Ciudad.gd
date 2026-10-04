@@ -229,20 +229,35 @@ func _init() -> void:
 		fuentes_comida_activas[categoria] = 0.0
 
 
-## Cobra "monto" de "recurso" del stock central (true si alcanzó; false y sin cobrar si no). Las
-## tablas cuentan como madera (GDD Sec. 4): un costo en madera se paga primero con tablas y el resto con
-## madera. El reembolso (VoxelWorld/Player) devuelve todo como madera, que vale lo mismo.
-func consumir_costo(recurso: String, monto: float) -> bool:
+## Cobra "monto" de "recurso" del stock central devolviendo un desglose {recurso: cantidad}
+## de lo efectivamente descontado, o {} si no alcanza. Para "madera", cobra primero con tablas
+## y el remanente con madera cruda.
+func consumir_costo_con_detalle(recurso: String, monto: float) -> Dictionary:
 	if recurso != "madera":
-		return (almacen[recurso] as Recurso).consumir(monto)
+		if not almacen.has(recurso) or (almacen[recurso] as Recurso).cantidad < monto:
+			return {}
+		(almacen[recurso] as Recurso).consumir(monto)
+		return {recurso: monto}
 	var tablas: Recurso = almacen["tablas"]
 	var madera: Recurso = almacen["madera"]
 	if tablas.cantidad + madera.cantidad < monto:
-		return false
+		return {}
 	var de_tablas: float = minf(tablas.cantidad, monto)
+	var de_madera: float = monto - de_tablas
 	tablas.cantidad -= de_tablas
-	madera.cantidad -= monto - de_tablas
-	return true
+	madera.cantidad -= de_madera
+	var desglose: Dictionary = {}
+	if de_tablas > 0.0:
+		desglose["tablas"] = de_tablas
+	if de_madera > 0.0:
+		desglose["madera"] = de_madera
+	return desglose
+
+
+## Cobra "monto" de "recurso" del stock central (true si alcanzó; false y sin cobrar si no). Las
+## tablas cuentan como madera (GDD Sec. 4): un costo en madera se paga primero con tablas y el resto con madera.
+func consumir_costo(recurso: String, monto: float) -> bool:
+	return not consumir_costo_con_detalle(recurso, monto).is_empty()
 
 
 func _ready() -> void:

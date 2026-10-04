@@ -318,6 +318,10 @@ func ejecutar_pruebas() -> void:
 	assert(not talado.consumir_costo("madera", 8.0) and talado.almacen["madera"].cantidad == 7.0, "sin alcanzar no cobra nada")
 	talado.almacen["hierro"].cantidad = 3.0
 	assert(talado.consumir_costo("hierro", 3.0) and not talado.consumir_costo("hierro", 1.0), "un recurso que no es madera se cobra normal")
+	talado.almacen["madera"].cantidad = 10.0
+	talado.almacen["tablas"].cantidad = 4.0
+	var detalle: Dictionary = talado.consumir_costo_con_detalle("madera", 6.0)
+	assert(detalle == {"tablas": 4.0, "madera": 2.0}, "desglosa exactamente lo cobrado: %s" % detalle)
 
 	print("\n=== TEST 24: horas explícitas de investigación, atomicidad de cobro e instalaciones físicas ===")
 	var ciu24: Node = CiudadScript.new()

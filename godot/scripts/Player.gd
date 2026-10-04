@@ -871,21 +871,30 @@ func _colocar() -> void:
 	# reembolse — a diferencia de colocado_por_jugador, que también marcan
 	# flujos gratis (ConstructorVias, surtir_construccion) y por eso no sirve
 	# para decidir el reembolso (hallado en revisión de código, 2026-09-29).
-	mundo.celdas_pagadas[celda_destino] = true
+	mundo.celdas_pagadas[celda_destino] = _ultimo_cobro_colocacion.duplicate()
 	if tipo == "puerta" or tipo == "cama":
-		mundo.celdas_pagadas[segunda_celda] = true
+		mundo.celdas_pagadas[segunda_celda] = _ultimo_cobro_colocacion.duplicate()
 
+
+var _ultimo_cobro_colocacion: Dictionary = {}
 
 ## Descuenta de Ciudad.almacen el costo de "tipo" (NiveladorTerrenoScript.
 ## COSTO_POR_CELDA); true si se cobró (o si "tipo" no tiene costo definido).
 ## false y sin cobrar nada si falta stock — usa el mismo recurso para
 ## avisar cuál falta.
 func _cobrar_colocacion(tipo: String) -> bool:
+	_ultimo_cobro_colocacion = {}
 	var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(tipo, {})
 	for recurso in costo:
-		if not Ciudad.consumir_costo(recurso, costo[recurso]):
+		var detalle: Dictionary = Ciudad.consumir_costo_con_detalle(recurso, costo[recurso])
+		if detalle.is_empty():
+			for r in _ultimo_cobro_colocacion:
+				Ciudad.almacen[r].agregar(_ultimo_cobro_colocacion[r])
+			_ultimo_cobro_colocacion = {}
 			_avisar_colocacion_rechazada("No hay suficiente %s para colocar: %s" % [_nombre_recurso(recurso), _nombre_bloque(tipo)])
 			return false
+		for r in detalle:
+			_ultimo_cobro_colocacion[r] = _ultimo_cobro_colocacion.get(r, 0.0) + detalle[r]
 	return true
 
 
@@ -893,9 +902,14 @@ func _cobrar_colocacion(tipo: String) -> bool:
 ## colocar_puerta()/colocar_cama()/colocar_bloque() igual falló (sitio
 ## ocupado) — evita perder el recurso ya descontado.
 func _reembolsar_colocacion(tipo: String) -> void:
-	var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(tipo, {})
-	for recurso in costo:
-		Ciudad.almacen[recurso].agregar(costo[recurso])
+	if not _ultimo_cobro_colocacion.is_empty():
+		for recurso in _ultimo_cobro_colocacion:
+			Ciudad.almacen[recurso].agregar(_ultimo_cobro_colocacion[recurso])
+		_ultimo_cobro_colocacion = {}
+	else:
+		var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(tipo, {})
+		for recurso in costo:
+			Ciudad.almacen[recurso].agregar(costo[recurso])
 
 
 ## true si "columna" (X,Z absolutos) está encerrada por celdas de "celdas"

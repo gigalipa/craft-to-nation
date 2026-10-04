@@ -157,4 +157,13 @@ func ejecutar_pruebas() -> void:
 	mundo_costo.minar_bloque(Vector3i(4, 0, 0))
 	assert(Ciudad.almacen["tierra"].cantidad == 0.0, "colocado_por_jugador no basta para reembolsar: solo celdas_pagadas (evita crear tierra de la nada al nivelar vías/rellenar blueprints)")
 
-	print("\n=== Las 11 pruebas de la extracción del avatar pasaron correctamente ===")
+	print("\n=== TEST 12: minar un bloque pagado con tablas reembolsa tablas, no madera ===")
+	Ciudad.almacen["tablas"].cantidad = 0.0
+	Ciudad.almacen["madera"].cantidad = 0.0
+	mundo_costo.colocar_bloque(Vector3i(5, 0, 0), "bloque_madera", true)
+	mundo_costo.celdas_pagadas[Vector3i(5, 0, 0)] = {"tablas": 5.0}
+	mundo_costo.minar_bloque(Vector3i(5, 0, 0))
+	assert(is_equal_approx(Ciudad.almacen["tablas"].cantidad, 5.0), "reembolsa 5 tablas")
+	assert(is_equal_approx(Ciudad.almacen["madera"].cantidad, 0.0), "no crea madera cruda")
+
+	print("\n=== Las 12 pruebas de la extracción del avatar pasaron correctamente ===")

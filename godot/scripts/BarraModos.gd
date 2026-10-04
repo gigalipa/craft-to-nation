@@ -552,7 +552,14 @@ func _refrescar() -> void:
 				if i < cant_res:
 					btn.visible = true
 					var bp: Dictionary = Blueprints.obtener_residencial(i)
-					var nom: String = bp.get("nombre", "Residencial" if i == 0 else "Residencial %d" % (i + 1))
+					var nom: String = bp.get("nombre", "")
+					if nom == "" or nom == "Estructura_Detectada":
+						var camas: int = BlueprintValidatorScript.contar_camas(bp)
+						var baules: int = BlueprintValidatorScript.contar_baules(bp)
+						if camas > 0 or baules > 0:
+							nom = "Residencia %dx%d" % [camas, baules]
+						else:
+							nom = "Residencial" if i == 0 else "Residencial %d" % (i + 1)
 					_cambiar_texto_boton_construccion(btn, nom)
 					btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
 				else:

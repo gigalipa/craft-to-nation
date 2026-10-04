@@ -253,8 +253,8 @@ static func validar_limites_vivienda(blueprint: Dictionary, limites: Dictionary)
 ## Ciudad.recalcular_limites()).
 static func contar_baules(blueprint: Dictionary) -> int:
 	var total := 0
-	for piso in blueprint["pisos"]:
-		for tipo in (piso["celdas"] as Dictionary).values():
+	for piso in blueprint.get("pisos", []):
+		for tipo in (piso.get("celdas", {}) as Dictionary).values():
 			if tipo == "baul":
 				total += 1
 	return total
@@ -262,7 +262,7 @@ static func contar_baules(blueprint: Dictionary) -> int:
 
 static func contar_camas(blueprint: Dictionary) -> int:
 	var total := 0
-	for piso in blueprint["pisos"]:
+	for piso in blueprint.get("pisos", []):
 		total += (piso.get("camas", []) as Array).size()
 	return total
 
@@ -755,8 +755,12 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		celdas_relevantes, pisos, bandas, indices_capa, huella_local, aire_interior, x_min, y_min, z_min
 	)
 
+	var total_camas := contar_camas({"pisos": pisos})
+	var total_baules := contar_baules({"pisos": pisos})
+	var nombre_blueprint := "Residencia %dx%d" % [total_camas, total_baules]
+
 	var resultado := {
-		"nombre": "Estructura_Detectada",
+		"nombre": nombre_blueprint,
 		"tipo": "residencial",
 		"categoria": "residencial",  # ponytail: única categoría real declarable en esta PoC; ver Zonificacion.MARGEN_POR_CATEGORIA
 		"zona_permitida": "residencial_investigacion",

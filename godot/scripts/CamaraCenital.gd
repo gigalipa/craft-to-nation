@@ -1332,8 +1332,10 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		var tipo_celda: String = _blueprint_activo["celdas_3d"][rel]
 		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
-	_actualizar_resumen_materiales(esquina, ev, valida)
-	hud.mostrar_contexto("Edificio residencial", {}, ["[Ctrl+rueda] ROTAR", "COLOCAR (clic)"], valida, _resumen_blueprint_texto)
+	var titulo_bp: String = _blueprint_activo.get("nombre", "Edificio residencial")
+	if titulo_bp == "" or titulo_bp == "Estructura_Detectada":
+		titulo_bp = "Edificio residencial"
+	hud.mostrar_contexto(titulo_bp, {}, ["[Ctrl+rueda] ROTAR", "COLOCAR (clic)"], valida, _resumen_blueprint_texto)
 	_actualizar_overlays(esquina, ev)
 
 

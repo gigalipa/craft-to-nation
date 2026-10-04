@@ -332,6 +332,7 @@ func ejecutar_pruebas() -> void:
 	var blueprint_casa := BlueprintValidator.estructura_a_blueprint(estructura_casa)
 	print("Pisos abstractos: ", blueprint_casa["pisos"].size(), " (esperados: 1 — suelo y techo son losas, se descartan)")
 	assert(blueprint_casa["pisos"].size() == 1)
+	assert(blueprint_casa["nombre"] == "Residencia 1x1", "nombre generado: %s" % blueprint_casa["nombre"])
 
 	resultado = BlueprintValidator.validar_blueprint(blueprint_casa)
 	print("Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])

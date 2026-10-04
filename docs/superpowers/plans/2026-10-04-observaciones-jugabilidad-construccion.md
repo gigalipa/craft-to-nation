@@ -38,19 +38,19 @@
 - `Ciudad.consumir_costo(recurso, monto) -> bool`: descuenta primero de `tablas` y luego de `madera`.
 - `VoxelWorld._reembolsar_si_corresponde(celda, tipo)`: devuelve el recurso efectivamente pagado (registrado en `celdas_pagadas[celda]`).
 
-- [ ] **Step 1: Escribir pruebas para preferencia de tablas y reembolso exacto**
+- [x] **Step 1: Escribir pruebas para preferencia de tablas y reembolso exacto**
 En `CiudadTest.gd`, verificar que `consumir_costo("madera", 5.0)` agota 5 tablas si hay 5 disponibles y deja intacta la madera cruda. En `ExtraccionTest.gd`, verificar que si una celda se pagó con tablas, minar esa celda reembolsa tablas.
 
-- [ ] **Step 2: Ejecutar pruebas y confirmar fallo/comportamiento esperado**
+- [x] **Step 2: Ejecutar pruebas y confirmar fallo/comportamiento esperado**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Implementar registro de recurso pagado en VoxelWorld**
+- [x] **Step 3: Implementar registro de recurso pagado en VoxelWorld**
 Guardar en `celdas_pagadas[celda]` el recurso cobrado (p. ej. `"tablas"` o `"madera"`) para devolver exactamente ese recurso al minar.
 
-- [ ] **Step 4: Ejecutar pruebas y verificar éxito**
+- [x] **Step 4: Ejecutar pruebas y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: prioriza tablas en bloques de madera con reembolso simetrico"`
 
 ---
@@ -66,20 +66,20 @@ Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 - `FinalizacionObras.gd`: emite `"Edificio construido: %s." % nombre` al completar un puesto/industria.
 - `PanelPuesto.gd`: `fila["fila"].visible = oficios.has(rol)` (la fila de especialista no se oculta si `libres == 0`).
 
-- [ ] **Step 1: Escribir aserciones de notificación y visibilidad de especialista**
+- [x] **Step 1: Escribir aserciones de notificación y visibilidad de especialista**
 En `HUDTest.gd`, verificar que en un puesto con niveles (`mina`, `caza_recoleccion`, `maderero`, `pesca_frutos_mar`) la fila de `especialista` es visible aun con 0 especialistas y nivel 1.
 
-- [ ] **Step 2: Ejecutar pruebas y confirmar fallo**
+- [x] **Step 2: Ejecutar pruebas y confirmar fallo**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Ajustar FinalizacionObras y PanelPuesto**
+- [x] **Step 3: Ajustar FinalizacionObras y PanelPuesto**
 Modificar el retorno de `FinalizacionObras.gd` para usar el nombre amigable del edificio.
 Eliminar la condición `(rol != "especialista" or libres > 0 or empleados > 0)` en `PanelPuesto.gd:146` para que siempre se muestre la fila de especialistas si el puesto tiene niveles.
 
-- [ ] **Step 4: Ejecutar pruebas y verificar éxito**
+- [x] **Step 4: Ejecutar pruebas y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: notifica nombre de edificio y muestra selector de especialistas en nivel 1"`
 
 ---
@@ -102,20 +102,20 @@ Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 - `ColonosRenderer.COLORES_TIPO["investigador"] = Color(0.95, 0.95, 0.95)` (blanco).
 - `Economia.simular_hora()`: no despide investigadores al completar un nivel de investigación.
 
-- [ ] **Step 1: Escribir pruebas para requisitos encadenados y persistencia de investigadores**
+- [x] **Step 1: Escribir pruebas para requisitos encadenados y persistencia de investigadores**
 En `PuestosPrevisualizacionTest.gd`, verificar rechazo de escuela de especialistas sin escuela técnica y de universidad sin escuela de especialistas.
 En `EconomiaTest.gd`, verificar que al completar investigación los investigadores siguen asignados a la universidad.
 
-- [ ] **Step 2: Ejecutar pruebas y confirmar fallo**
+- [x] **Step 2: Ejecutar pruebas y confirmar fallo**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Implementar requisitos encadenados y color blanco de investigador**
+- [x] **Step 3: Implementar requisitos encadenados y color blanco de investigador**
 Actualizar `CamaraCenital.gd`, cambiar color a blanco en `ColonosRenderer.gd` y remover la desasignación automática en `Economia.gd`.
 
-- [ ] **Step 4: Ejecutar pruebas y verificar éxito**
+- [x] **Step 4: Ejecutar pruebas y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: encadena requisitos de investigacion y preserva investigadores"`
 
 ---
@@ -135,20 +135,20 @@ Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 - `Obras.programar_demolicion(id, horas=5)`: estado de espera con cuenta regresiva.
 - `MarcasDemolicionOverlay.gd`: dibuja tinte naranja (`Color(1.0, 0.6, 0.1, 0.35)`) durante la espera y rojo (`Color(1.0, 0.1, 0.1, 0.45)`) al estar marcada para obra.
 
-- [ ] **Step 1: Escribir pruebas de tope de 4 colonos y espera de demolición**
+- [x] **Step 1: Escribir pruebas de tope de 4 colonos y espera de demolición**
 En `ObrasTest.gd`, verificar que una obra con 4 obreros asignados no se ofrece a un 5.º colono.
 Verificar que la demolición programada dura 5 horas de juego y puede cancelarse.
 
-- [ ] **Step 2: Ejecutar pruebas y confirmar fallo**
+- [x] **Step 2: Ejecutar pruebas y confirmar fallo**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Implementar tope y temporizador de demolición**
+- [x] **Step 3: Implementar tope y temporizador de demolición**
 Implementar límite en `Obras.siguiente_tarea`, contador horario en `Obras.simular_hora()`, overlay naranja en `MarcasDemolicionOverlay.gd` y diálogo/botón de cancelación en `PanelEdificio.gd`/`PanelPuesto.gd`.
 
-- [ ] **Step 4: Ejecutar pruebas y verificar éxito**
+- [x] **Step 4: Ejecutar pruebas y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: limita cuadrilla a 4 obreros y programa demolicion con espera"`
 
 ---
@@ -173,19 +173,19 @@ Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
   - Reasigna el núcleo, calcula camas y aplica desahucio priorizado general: `desempleado > obrero > tecnico > especialista > investigador > militar`.
   - Actualiza ancla de influencia en `Zonificacion`.
 
-- [ ] **Step 1: Escribir pruebas para reasignación de núcleo y desahucio ordenado**
+- [x] **Step 1: Escribir pruebas para reasignación de núcleo y desahucio ordenado**
 En `CiudadTest.gd`, simular mudanza de núcleo a un edificio más pequeño y verificar que el desahucio afecta a desempleados/obreros antes que a especialistas o investigadores.
 
-- [ ] **Step 2: Ejecutar pruebas y confirmar fallo**
+- [x] **Step 2: Ejecutar pruebas y confirmar fallo**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Implementar reasignación de núcleo y datos en PanelEdificio**
+- [x] **Step 3: Implementar reasignación de núcleo y datos en PanelEdificio**
 Implementar `Ciudad.reasignar_nucleo`, vincular con `Zonificacion` y actualizar `PanelEdificio.gd` con la ventana modal y tiempos de gracia.
 
-- [ ] **Step 4: Ejecutar pruebas y verificar éxito**
+- [x] **Step 4: Ejecutar pruebas y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: amplia panel residencial y permite trasladar nucleo urbano"`
 
 ---
@@ -204,20 +204,20 @@ Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 - `Blueprints.obtener_residenciales() -> Array[Dictionary]`.
 - `BarraModos.gd`: `Construir > Residencial` lista los hasta 5 blueprints con miniaturas y numeración `1` a `5`.
 
-- [ ] **Step 1: Escribir pruebas de memoria FIFO de 5 blueprints**
+- [x] **Step 1: Escribir pruebas de memoria FIFO de 5 blueprints**
 En `BlueprintsTest.gd`, declarar 6 blueprints y verificar que los primeros 5 se conservan en orden inverso y el más antiguo se descarta.
 En `HUDTest.gd`, verificar que `BarraModos` genera botones para los blueprints guardados.
 
-- [ ] **Step 2: Ejecutar pruebas y confirmar fallo**
+- [x] **Step 2: Ejecutar pruebas y confirmar fallo**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Implementar cola de blueprints y submenú residencial**
+- [x] **Step 3: Implementar cola de blueprints y submenú residencial**
 Actualizar `Blueprints.gd` y `BarraModos.gd` para soportar selección de blueprints residenciales indexados.
 
-- [ ] **Step 4: Ejecutar pruebas y verificar éxito**
+- [x] **Step 4: Ejecutar pruebas y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: almacena hasta 5 blueprints residenciales con miniaturas"`
 
 ---
@@ -232,19 +232,19 @@ Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 **Interfaces:**
 - `NiveladorTerreno.calcular_base_y()`: detecta si la columna frontal de una puerta coincide con el despeje/frente de una puerta existente y toma su cota $Y$.
 
-- [ ] **Step 1: Escribir prueba de alineación de puertas enfrentadas**
+- [x] **Step 1: Escribir prueba de alineación de puertas enfrentadas**
 En `NiveladorTerrenoTest.gd`, simular una puerta existente en altura $Y=10$ con frente en $(5, 5)$, y un nuevo blueprint cuya puerta tiene frente en $(5, 5)$; verificar que `base_y` iguala la altura de la puerta existente.
 
-- [ ] **Step 2: Ejecutar prueba y confirmar fallo**
+- [x] **Step 2: Ejecutar prueba y confirmar fallo**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Implementar detección de puerta enfrentada en calcular_base_y**
+- [x] **Step 3: Implementar detección de puerta enfrentada en calcular_base_y**
 Consultar el mapa de puertas/edificios existentes en el mundo y ajustar `suelo_frente` a la cota de la puerta enfrentada.
 
-- [ ] **Step 4: Ejecutar prueba y verificar éxito**
+- [x] **Step 4: Ejecutar prueba y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: alinea cota Y de blueprints ante puertas enfrentadas"`
 
 ---
@@ -262,18 +262,18 @@ Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 - `BarraModos.gd`: soporte de paginación (páginas de 10 ítems, teclas 1–9 y 0, flechas, teclas Z y X).
 - `ZonaOverlay.set_zonas_visibles(visible: bool)`: oculta planos de zonas específicas en vista libre, periféricos y vías.
 
-- [ ] **Step 1: Escribir pruebas de paginación y visibilidad de zonas**
+- [x] **Step 1: Escribir pruebas de paginación y visibilidad de zonas**
 En `CamaraCenitalModosTest.gd`, verificar que `Z` en página 1 regresa de submenú, y en página 2 regresa a página 1.
 En `HUDTest.gd`, verificar que `set_zonas_visibles(false)` oculta las zonas coloreadas dejando visible el área de influencia.
 
-- [ ] **Step 2: Ejecutar pruebas y confirmar fallo**
+- [x] **Step 2: Ejecutar pruebas y confirmar fallo**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 3: Implementar paginación y visibilidad condicional**
+- [x] **Step 3: Implementar paginación y visibilidad condicional**
 Actualizar `BarraModos.gd`, enrutamiento de teclas en `CamaraCenital.gd` y visibilidad en `ZonaOverlay.gd`.
 
-- [ ] **Step 4: Ejecutar pruebas y verificar éxito**
+- [x] **Step 4: Ejecutar pruebas y verificar éxito**
 Ejecutar: `powershell -ExecutionPolicy Bypass -File .\tools\run-godot-tests.ps1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 `git commit -m "feat: pagina menus con teclas ZX y condiciona visibilidad de zonas"`

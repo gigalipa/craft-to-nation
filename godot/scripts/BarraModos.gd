@@ -61,6 +61,10 @@ const CATEGORIAS := [
 const CONSTRUCCIONES_POR_CATEGORIA := {
 	"residencial": [
 		["residencial", "Residencial", "1"],
+		["residencial_1", "Residencial 2", "2"],
+		["residencial_2", "Residencial 3", "3"],
+		["residencial_3", "Residencial 4", "4"],
+		["residencial_4", "Residencial 5", "5"],
 	],
 	"periferico": [
 		["caza_recoleccion", "Caza", "1"],
@@ -107,10 +111,12 @@ var _botones_construccion := {}  # tipo de edificio -> Button
 var _botones_zona := {}  # tipo de zona -> Button
 var _paneles_construccion := {}  # id de categoría -> PanelContainer (uno visible a la vez)
 var _miniaturas_construccion := {}  # tipo con miniatura -> TextureRect
+var _miniaturas_residencial_extra := {}  # residencial_1..4 -> TextureRect
 ## SubViewport vivo detrás de cada miniatura actual — se libera (queue_free())
 ## antes de crear el siguiente en cada re-render, para no acumular uno por
 ## cada rotación/refresco (reporte de revisión, 2026-09-30).
 var _viewports_construccion := {}  # tipo con miniatura -> SubViewport
+var _viewports_residenciales_extra := {}  # residencial_1..4 -> SubViewport
 var _biblioteca_construccion: MeshLibrary
 var _giros_menu := 0
 var _modo := ""
@@ -281,14 +287,17 @@ func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> B
 	columna.alignment = BoxContainer.ALIGNMENT_CENTER
 	columna.add_theme_constant_override("separation", 2)
 
-	if TIPOS_CON_MINIATURA.has(tipo):
+	if TIPOS_CON_MINIATURA.has(tipo) or tipo.begins_with("residencial_"):
 		var miniatura := TextureRect.new()
 		miniatura.custom_minimum_size = Vector2(TAMANO_MINIATURA, TAMANO_MINIATURA)
 		miniatura.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		miniatura.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		miniatura.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		columna.add_child(miniatura)
-		_miniaturas_construccion[tipo] = miniatura
+		if tipo.begins_with("residencial_"):
+			_miniaturas_residencial_extra[tipo] = miniatura
+		else:
+			_miniaturas_construccion[tipo] = miniatura
 
 	var etiqueta := TemaHUD.etiqueta(nombre)
 	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -311,6 +320,37 @@ func set_giros(giros: int) -> void:
 func _actualizar_miniaturas() -> void:
 	for tipo in _miniaturas_construccion:
 		(_miniaturas_construccion[tipo] as TextureRect).texture = _renderizar_miniatura(tipo)
+	for tipo in _miniaturas_residencial_extra:
+		var idx: int = tipo.trim_prefix("residencial_").to_int()
+		if idx < Blueprints.cantidad_residenciales():
+			(_miniaturas_residencial_extra[tipo] as TextureRect).texture = _renderizar_miniatura_extra(tipo, idx)
+		else:
+			(_miniaturas_residencial_extra[tipo] as TextureRect).texture = null
+
+
+func _renderizar_miniatura_extra(tipo: String, idx: int) -> Texture2D:
+	if _viewports_residenciales_extra.has(tipo):
+		(_viewports_residenciales_extra[tipo] as SubViewport).queue_free()
+		_viewports_residenciales_extra.erase(tipo)
+
+	var celdas: Dictionary = _celdas_residencial_giradas(idx)
+	if celdas.is_empty():
+		return null
+	if _biblioteca_construccion == null:
+		_biblioteca_construccion = MiniaturaRendererScript.cargar_biblioteca()
+	var piezas: Array = []
+	for celda in celdas:
+		var tipo_bloque: String = celdas[celda]
+		if TIPOS_SIN_MALLA_MINIATURA.has(tipo_bloque):
+			continue
+		var malla: Mesh = MiniaturaRendererScript.malla_de_item(_biblioteca_construccion, tipo_bloque)
+		if malla != null:
+			piezas.append([malla, Vector3(celda.x, celda.y, celda.z), null])
+	if piezas.is_empty():
+		return null
+	var viewport: SubViewport = MiniaturaRendererScript.renderizar_viewport(piezas, DIRECCION_CAMARA_MINIATURA, self)
+	_viewports_residenciales_extra[tipo] = viewport
+	return viewport.get_texture()
 
 
 ## Libera el SubViewport anterior de "tipo" (si había uno) antes de armar el
@@ -346,8 +386,10 @@ func _renderizar_miniatura(tipo: String) -> Texture2D:
 ## BlueprintValidator.rotar_celdas_3d()) — sin mutar el blueprint guardado en
 ## Blueprints, solo una vista para la miniatura. {} si no hay ninguno
 ## declarado todavía.
-func _celdas_residencial_giradas() -> Dictionary:
-	var blueprint: Dictionary = Blueprints.obtener(ZONA_RESIDENCIAL)
+func _celdas_residencial_giradas(indice: int = 0) -> Dictionary:
+	var blueprint: Dictionary = Blueprints.obtener_residencial(indice)
+	if blueprint.is_empty():
+		blueprint = Blueprints.obtener(ZONA_RESIDENCIAL, indice)
 	if blueprint.is_empty():
 		return {}
 	var celdas: Dictionary = blueprint["celdas_3d"]
@@ -373,6 +415,15 @@ func set_modo(modo: String, sub: String = "", categoria: String = "") -> void:
 		_refrescar()
 
 
+func _cambiar_texto_boton_construccion(btn: Button, nuevo_texto: String) -> void:
+	for hijo in btn.get_children():
+		if hijo is VBoxContainer:
+			for nieto in hijo.get_children():
+				if nieto is Label:
+					nieto.text = nuevo_texto
+					return
+
+
 func _refrescar() -> void:
 	var activo := _modo if _modo != "" else "ver"
 	for id in _botones:
@@ -385,11 +436,29 @@ func _refrescar() -> void:
 		_paneles_construccion[id].visible = _modo == "construir" and _categoria == id
 	for tipo in _botones_construccion:
 		_botones_construccion[tipo].set_pressed_no_signal(_modo == "construir" and tipo == _puesto)
-	# Residencial sigue siendo clickeable sin blueprint declarado (el clic
-	# dispara la misma notificación de siempre, ver CamaraCenital.
-	# _alternar_modo_colocar_blueprint()); solo se atenúa como pista visual.
-	if _botones_construccion.has("residencial"):
-		_botones_construccion["residencial"].modulate = Color(1.0, 1.0, 1.0, 0.4 if Blueprints.obtener(ZONA_RESIDENCIAL).is_empty() else 1.0)
+
+	var cant_res := Blueprints.cantidad_residenciales()
+	for i in range(5):
+		var id_res := "residencial" if i == 0 else "residencial_%d" % i
+		if _botones_construccion.has(id_res):
+			var btn: Button = _botones_construccion[id_res]
+			if cant_res == 0:
+				if i == 0:
+					btn.visible = true
+					_cambiar_texto_boton_construccion(btn, "Residencial")
+					btn.modulate = Color(1.0, 1.0, 1.0, 0.4)
+				else:
+					btn.visible = false
+			else:
+				if i < cant_res:
+					btn.visible = true
+					var bp: Dictionary = Blueprints.obtener_residencial(i)
+					var nom: String = bp.get("nombre", "Residencial" if i == 0 else "Residencial %d" % (i + 1))
+					_cambiar_texto_boton_construccion(btn, nom)
+					btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
+				else:
+					btn.visible = false
+
 	if _modo == "construir" and (_categoria == "residencial" or _categoria == "periferico" or _categoria == "investigacion"):
 		_actualizar_miniaturas()
 

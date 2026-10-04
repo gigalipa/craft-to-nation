@@ -260,6 +260,7 @@ var _menu_construir_abierto := false
 ## todavía en la lista de categorías, ver BarraModos.CATEGORIAS).
 var _categoria_construir := ""
 var _blueprint_activo: Dictionary = {}
+var _indice_blueprint_activo := -1
 ## Giro actual del blueprint en colocación (0-3), solo para sincronizar la
 ## miniatura del menú Construir (HUD.set_giros_construccion()) — a
 ## diferencia de _giros_puesto, _rotar_blueprint() no necesitaba llevar un
@@ -1432,8 +1433,8 @@ func _manejar_tecla_construir(n: int) -> void:
 		return
 	match _categoria_construir:
 		"residencial":
-			if n == 1:
-				_alternar_modo_colocar_blueprint()
+			if n >= 1 and n <= 5:
+				_alternar_modo_colocar_blueprint(n - 1)
 		"periferico":
 			if n >= 1 and n <= PUESTOS_PERIFERICO.size():
 				_alternar_puesto_por_tipo(PUESTOS_PERIFERICO[n - 1])
@@ -1559,7 +1560,10 @@ func _on_modo_pedido(modo: String) -> void:
 ## puesto periférico.
 func _on_construccion_pedida(tipo: String) -> void:
 	if tipo == "residencial":
-		_alternar_modo_colocar_blueprint()
+		_alternar_modo_colocar_blueprint(0)
+	elif tipo.begins_with("residencial_"):
+		var idx: int = tipo.trim_prefix("residencial_").to_int()
+		_alternar_modo_colocar_blueprint(idx)
 	elif tipo == "vias":
 		_alternar_modo_trazar_via()
 	else:
@@ -1688,12 +1692,14 @@ func _salir_de_modo_menu_construir() -> void:
 ## el de "residencial_investigacion"). Si no hay ningún blueprint guardado
 ## todavía, avisa y no entra al modo. Solo se llama con la categoría
 ## "residencial" del menú Construir ya abierta.
-func _alternar_modo_colocar_blueprint() -> void:
-	if modo_colocar_blueprint:
+func _alternar_modo_colocar_blueprint(indice: int = 0) -> void:
+	if modo_colocar_blueprint and _indice_blueprint_activo == indice:
 		_salir_de_modo_colocar_blueprint()
 		print("Modo colocar blueprint cancelado.")
 		return
-	var blueprint: Dictionary = Blueprints.obtener("residencial_investigacion")
+	var blueprint: Dictionary = Blueprints.obtener_residencial(indice)
+	if blueprint.is_empty():
+		blueprint = Blueprints.obtener("residencial_investigacion", indice)
 	if blueprint.is_empty():
 		print("No hay ningún blueprint guardado todavía — declara un edificio primero.")
 		hud.notificar("No hay ningún blueprint guardado todavía — declara un edificio primero.")
@@ -1704,18 +1710,15 @@ func _alternar_modo_colocar_blueprint() -> void:
 		_salir_de_modo_colocar_puesto(false)
 	if modo_trazar_via:
 		_salir_de_modo_trazar_via(false)
-	# Duplicado (no la misma referencia): _rotar_blueprint() reemplaza
-	# "celdas_3d"/"huella_relativa"/"ancho"/"profundidad" en _blueprint_activo
-	# en cada rotación — sobre el dict original de Blueprints.obtener(), eso
-	# rotaría PERMANENTEMENTE el blueprint guardado (mismo objeto Dictionary
-	# por referencia), afectando toda colocación futura, no solo la actual.
+	_indice_blueprint_activo = indice
 	_blueprint_activo = blueprint.duplicate()
 	_crear_huella_blueprint(_blueprint_activo["celdas_3d"])
 	modo_colocar_blueprint = true
 	_giros_blueprint = 0
 	_resumen_blueprint_vigente = SIN_RESUMEN
 	_overlay_vigente = SIN_RESUMEN
-	hud.set_modo("construir", "residencial", "residencial")
+	var sub: String = "residencial" if indice == 0 else "residencial_%d" % indice
+	hud.set_modo("construir", sub, "residencial")
 	hud.set_giros_construccion(0)
 	print("Modo colocar blueprint activo: haz clic dentro de una zona residencial para confirmar (misma tecla para cancelar, Ctrl+rueda para rotar).")
 
@@ -1725,6 +1728,7 @@ func _alternar_modo_colocar_blueprint() -> void:
 func _salir_de_modo_colocar_blueprint(cerrar_menu: bool = true) -> void:
 	var estaba := modo_colocar_blueprint
 	modo_colocar_blueprint = false
+	_indice_blueprint_activo = -1
 	_mostrar_huella_blueprint(false)
 	_blueprint_activo = {}
 	_overlay_nivelacion.ocultar()

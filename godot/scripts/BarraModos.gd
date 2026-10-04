@@ -73,6 +73,9 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["refineria_tierras_raras", "Tierras raras", "2"],
 		["aserradero", "Aserradero", "3"],
 		["carbonera", "Carbonera", "4"],
+		["refineria_petrolera", "Refinería petrolera", "5"],
+		["productor_combustible", "Productor combustible", "6"],
+		["central_termoelectrica", "Central termoeléctrica", "7"],
 	],
 	"investigacion": [
 		["escuela_tecnica", "Escuela técnica", "1"],
@@ -86,7 +89,7 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 
 ## Tipos con miniatura 3D real (mina/caza/madera/pesca + el blueprint
 ## residencial); "vias" no tiene malla que previsualizar, es un botón de texto.
-const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas", "universidad"]
+const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad"]
 
 ## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
 var ZONAS := [

@@ -22,7 +22,7 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 		var info: Dictionary = metadata["puesto_nuevo"]
 		var entorno: Dictionary = {}
 		var tasas: Dictionary = {}
-		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]) and info["tipo"] != "universidad":
+		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]) and info["tipo"] != "universidad" and info["tipo"] != "central_termoelectrica":
 			var centro: Vector2i = info["centro"]
 			var altura: int = mundo.altura_en(centro.x, centro.y)
 			entorno = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"])

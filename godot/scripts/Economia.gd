@@ -209,7 +209,9 @@ func roles_de(esquina: Vector2i) -> Array:
 		return ["aprendiz"]
 	if es_universidad(esquina):
 		return ["investigador"]
-	return ["tecnico", "acarreador"] if es_refineria(esquina) else ["recolector", "tecnico", "especialista", "acarreador"]
+	if es_refineria(esquina) or (puestos.has(esquina) and puestos[esquina]["tipo"] == "central_termoelectrica"):
+		return ["tecnico", "acarreador"]
+	return ["recolector", "tecnico", "especialista", "acarreador"]
 
 
 ## true si el puesto tiene niveles (Recoleccion.TIPOS_CON_NIVELES).
@@ -630,9 +632,21 @@ func _refinar(esquina: Vector2i, factor_energia: float = 1.0) -> void:
 ## del espacio libre. {} si no es refinería o no hay nada que llevar.
 ## ponytail: reparto fijo por receta; si el almacén se desbalancea mucho, esto no lo corrige.
 func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
-	if not es_refineria(esquina):
+	if not puestos.has(esquina):
 		return {}
 	var p: Dictionary = puestos[esquina]
+	if p["tipo"] == "central_termoelectrica":
+		var libre_central: float = p["capacidad"] - _total(p["almacen"])
+		if libre_central <= 1e-9:
+			return {}
+		for tipo_comb in ["combustible", "crudo", "carbon"]:
+			if ciudad != null and ciudad.almacen.has(tipo_comb) and ciudad.almacen[tipo_comb].cantidad > 1e-9:
+				var cant: float = minf(minf(CAPACIDAD_CARGA, libre_central), ciudad.almacen[tipo_comb].cantidad)
+				if cant > 1e-9:
+					return {tipo_comb: cant}
+		return {}
+	if not es_refineria(esquina):
+		return {}
 	var entradas: Dictionary = entradas_de(esquina)
 	var suma: float = 0.0
 	for recurso in entradas:
@@ -660,6 +674,12 @@ func insumo_a_cargar(esquina: Vector2i) -> float:
 
 ## true si el almacén local no alcanza para producir ni 1 unidad de producto (falta algún insumo).
 func falta_insumo(esquina: Vector2i) -> bool:
+	if not puestos.has(esquina):
+		return false
+	var p: Dictionary = puestos[esquina]
+	if p["tipo"] == "central_termoelectrica":
+		var stock: float = p["almacen"].get("combustible", 0.0) + p["almacen"].get("crudo", 0.0) + p["almacen"].get("carbon", 0.0)
+		return stock < 1.0 - 1e-9
 	var entradas: Dictionary = entradas_de(esquina)
 	var salida: int = CadenaMinerales.RECETAS[insumo_de(esquina)]["cantidad_salida"]
 	for recurso in entradas:
@@ -679,9 +699,16 @@ func conviene_cargar(esquina: Vector2i) -> bool:
 ## true si la refinería está produciendo ahora: hay técnicos presentes, tiene insumo para un lote
 ## completo y espacio en el almacén local. Es lo que el humo de la chimenea muestra.
 func esta_refinando(esquina: Vector2i) -> bool:
-	if not es_refineria(esquina):
+	if not puestos.has(esquina):
 		return false
 	var p: Dictionary = puestos[esquina]
+	if p["tipo"] == "central_termoelectrica":
+		if not p["activo"] or p["presentes"].is_empty():
+			return false
+		var stock: float = p["almacen"].get("combustible", 0.0) + p["almacen"].get("crudo", 0.0) + p["almacen"].get("carbon", 0.0)
+		return stock > 1e-9 and _ultimo_resumen_energia.get("entregada", 0.0) > 1e-9
+	if not es_refineria(esquina):
+		return false
 	if not p["activo"] or p["presentes"].is_empty() or _total(p["almacen"]) >= p["capacidad"] - 1e-9:
 		return false
 	var entradas: Dictionary = entradas_de(esquina)

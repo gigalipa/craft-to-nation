@@ -971,4 +971,31 @@ func ejecutar_pruebas() -> void:
 	assert(not e37.puestos[esq_central]["almacen"].has("crudo"))
 	assert(is_equal_approx(e37.puestos[esq_central]["almacen"]["carbon"], 1.7))
 
-	print("\n=== Las 37 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 38: Puestos industriales de combustible y energía (cupo, capacidad, insumos_a_cargar, refinando) ===")
+	var c38: Node = CiudadScript.new()
+	c38.almacen["crudo"].cantidad = 50.0
+	c38.almacen["combustible"].cantidad = 40.0
+	var e38: Node = EconomiaScript.new()
+	e38.ciudad = c38
+
+	# Refinería petrolera
+	var esq_pet := Vector2i(10, 10)
+	e38.registrar_puesto(esq_pet, "refineria_petrolera", 5, 5, {})
+	assert(e38.puestos[esq_pet]["cupo"] == 4)
+	assert(e38.puestos[esq_pet]["capacidad"] == 1000)
+	assert(e38.roles_de(esq_pet) == ["tecnico", "acarreador"])
+	assert(e38.falta_insumo(esq_pet) == true)
+	var carga_pet: Dictionary = e38.insumos_a_cargar(esq_pet)
+	assert(carga_pet.has("crudo") and is_equal_approx(carga_pet["crudo"], 50.0))
+
+	# Central termoeléctrica
+	var esq_cen := Vector2i(20, 20)
+	e38.registrar_puesto(esq_cen, "central_termoelectrica", 5, 5, {})
+	assert(e38.puestos[esq_cen]["cupo"] == 4)
+	assert(e38.puestos[esq_cen]["capacidad"] == 300)
+	assert(e38.roles_de(esq_cen) == ["tecnico", "acarreador"])
+	assert(e38.falta_insumo(esq_cen) == true)
+	var carga_cen: Dictionary = e38.insumos_a_cargar(esq_cen)
+	assert(carga_cen.has("combustible") and is_equal_approx(carga_cen["combustible"], 40.0))
+
+	print("\n=== Las 38 pruebas de Economia pasaron correctamente ===")

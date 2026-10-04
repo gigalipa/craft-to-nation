@@ -1353,4 +1353,24 @@ func ejecutar_pruebas() -> void:
 	assert(colonos48.colonos[esp48]["tipo"] == "especialista" and colonos48.colonos[esp48]["trabajo"].is_empty())
 	assert(colonos48.especialistas_libres() == 1)
 
-	print("\n=== Las 48 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 49: contratar() en central_termoelectrica y refinerias de combustible ===")
+	var ciudad49: Node = CiudadScript.new()
+	var colonos49: Node = _nuevo_con_puesto(ciudad49)
+	var esq_cent := Vector2i(90, 90)
+	colonos49.economia.registrar_puesto(esq_cent, "central_termoelectrica", 5, 5, {})
+	var desemp49: int = colonos49.agregar_colono("desempleado", Vector3i(1, 1, 1))
+	var tec49: int = colonos49.agregar_colono("tecnico", Vector3i(1, 1, 2))
+	ciudad49.demografia["desempleado"] = 1
+	ciudad49.demografia["tecnico"] = 1
+
+	# rol tecnico solo admite técnicos, no desempleados
+	assert(colonos49.contratar(esq_cent, "tecnico"))
+	assert(colonos49.colonos[tec49]["trabajo"]["rol"] == "tecnico")
+	assert(not colonos49.contratar(esq_cent, "tecnico"), "sin técnicos libres no puede contratar otro")
+
+	# rol acarreador admite desempleados (pasa a obrero)
+	assert(colonos49.contratar(esq_cent, "acarreador"))
+	assert(colonos49.colonos[desemp49]["trabajo"]["rol"] == "acarreador")
+	assert(colonos49.colonos[desemp49]["tipo"] == "obrero")
+
+	print("\n=== Las 49 pruebas de Colonos pasaron correctamente ===")

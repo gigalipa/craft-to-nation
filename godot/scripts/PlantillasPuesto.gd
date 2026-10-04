@@ -45,6 +45,9 @@ const MATERIAL := {
 	"escuela_tecnica": "adobe",
 	"escuela_especialistas": "bloque_piedra",
 	"universidad": "bloque_piedra",
+	"refineria_petrolera": "estructura_hierro",
+	"productor_combustible": "bloque_piedra",
+	"central_termoelectrica": "bloque_piedra",
 }
 
 const PLANTILLAS := {
@@ -137,6 +140,35 @@ const PLANTILLAS := {
 		["##D##", "V...V", "#...#", "V...V", "#####"],
 		["#####", "#####", "#####", "#####", "#####"],
 	]},
+	# Refinería petrolera: torre de refinación de 3 capas de chimenea en el centro (2, 2).
+	"refineria_petrolera": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#...#", "#..B#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#####", "#####", "#####", "#####"],
+		[".....", ".....", "..#..", ".....", "....."],
+		[".....", ".....", "..#..", ".....", "....."],
+		[".....", ".....", "..#..", ".....", "....."],
+	], "chimenea": Vector2i(2, 2)},
+	# Productor de combustible: chimenea en (3, 3) y baúl en (1, 1).
+	"productor_combustible": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#B..#", "#...#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#####", "#####", "#####", "#####"],
+		[".....", ".....", ".....", "...#.", "....."],
+		[".....", ".....", ".....", "...#.", "....."],
+	], "chimenea": Vector2i(3, 3)},
+	# Central termoeléctrica: chimenea alta en (1, 1).
+	"central_termoelectrica": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#...#", "#..B#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#####", "#####", "#####", "#####"],
+		[".....", ".#...", ".....", ".....", "....."],
+		[".....", ".#...", ".....", ".....", "....."],
+		[".....", ".#...", ".....", ".....", "....."],
+	], "chimenea": Vector2i(1, 1)},
 }
 
 

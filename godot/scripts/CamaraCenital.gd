@@ -1002,7 +1002,7 @@ func _actualizar_previsualizacion_puesto() -> void:
 			_actualizar_area_accion_agua(centro_agua, celdas_agua)
 		else:
 			_ocultar_area_accion()
-	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad":
+	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad" or _tipo_puesto_activo == "central_termoelectrica":
 		_ocultar_area_accion()  # ni una refinería ni un edificio de investigación tienen área de acción ni tasa de recolección
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
@@ -1325,7 +1325,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 ## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar"]
-const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]
+const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica"]
 const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas", "universidad"]
 
 
@@ -1526,7 +1526,7 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 ## Alterna el puesto de "tipo" con su huella: categoría Periférico del menú
 ## Construir (tecla numérica o clic — ver HUD.construccion_pedida).
 func _alternar_puesto_por_tipo(tipo: String) -> void:
-	if tipo == "escuela_especialistas" and Ciudad.nivel_investigado < 2:
+	if (tipo == "escuela_especialistas" or tipo == "refineria_petrolera" or tipo == "productor_combustible" or tipo == "central_termoelectrica") and Ciudad.nivel_investigado < 2:
 		hud.notificar("Requiere Metalurgia Aplicada.")
 		return
 	match tipo:
@@ -1534,7 +1534,7 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas", "universidad":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 
@@ -2235,7 +2235,7 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 	var giros := _giros_puesto
 	if extremo_agua_indice != -1 and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
 		giros = (giros + 2) % 4
-	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo)
+	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "central_termoelectrica"
 	var es_residencial: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad"
 	var es_urbano: bool = es_refineria or es_residencial  # se construyen dentro de la zona de influencia, los demás puestos fuera
 	var dentro_de_influencia: bool = Zonificacion.dentro_de_influencia(centro)
@@ -2292,13 +2292,13 @@ func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 		return "No se puede colocar un puesto dentro de la zona de influencia."
 	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
 	var es_universidad: bool = _tipo_puesto_activo == "universidad"
-	var nombre_rechazo: String = "una universidad" if es_universidad else ("una escuela" if es_escuela else "una refinería")
+	var nombre_rechazo: String = "una universidad" if es_universidad else ("una escuela" if es_escuela else ("una central termoeléctrica" if _tipo_puesto_activo == "central_termoelectrica" else "una refinería"))
 	if ev["fuera_de_influencia"]:
 		return "Colocación rechazada: %s solo puede construirse dentro de la zona de influencia." % nombre_rechazo
 	if not ev["zona_correcta"]:
 		if es_escuela or es_universidad:
 			return "Colocación rechazada: %s solo puede construirse sobre una zona residencial." % nombre_rechazo
-		return "Colocación rechazada: una refinería solo puede construirse sobre una zona industrial."
+		return "Colocación rechazada: una refinería o central solo puede construirse sobre una zona industrial."
 	if not ev["relieve_valido"]:
 		return "Colocación rechazada: la pendiente de esta huella supera el límite permitido."
 	if not ev["resultado_huella"]["valida"]:
@@ -2516,7 +2516,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	if deposito_local != Vector3i.MAX:
 		deposito = Vector3i(esquina.x + deposito_local.x, y_base + deposito_local.y, esquina.y + deposito_local.z)
 	var chimenea := Economia.SIN_DEPOSITO
-	if CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo):
+	if CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "central_termoelectrica":
 		var chimenea_local: Vector3i = PlantillasPuesto.celda_chimenea(_tipo_puesto_activo, giros)
 		chimenea = Vector3i(esquina.x + chimenea_local.x, y_base + chimenea_local.y, esquina.y + chimenea_local.z)
 	var metadata := {

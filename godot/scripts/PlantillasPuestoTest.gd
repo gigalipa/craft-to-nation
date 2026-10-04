@@ -280,4 +280,26 @@ func ejecutar_pruebas() -> void:
 	for bloque14 in PlantillasPuesto.celdas("escuela_especialistas", 0).values():
 		assert(mundo14._id_por_tipo.has(bloque14), "falta el bloque " + bloque14)
 
-	print("\n=== Las 14 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 15: las 3 industrias (refineria_petrolera, productor_combustible, central_termoelectrica) cumplen con entrada, salida, baúl y chimenea ===")
+	for tipo15 in ["refineria_petrolera", "productor_combustible", "central_termoelectrica"]:
+		assert(PlantillasPuesto.dimensiones(tipo15) == Vector2i(5, 5))
+		var base15: Dictionary = PlantillasPuesto.celdas(tipo15, 0)
+		var conteo15 := {"puerta_inferior": 0, "vidrio": 0, "baul": 0}
+		for c15 in base15:
+			if conteo15.has(base15[c15]):
+				conteo15[base15[c15]] += 1
+		assert(conteo15["puerta_inferior"] == 2, "%s: puerta de entrada y de salida" % tipo15)
+		assert(conteo15["vidrio"] >= 2, "%s: tiene ventanas" % tipo15)
+		assert(conteo15["baul"] == 1, "%s: tiene baúl" % tipo15)
+		for giros15 in range(4):
+			assert(PlantillasPuesto.celda_de_servicio(tipo15, giros15) != PlantillasPuesto.celda_de_salida(tipo15, giros15), "%s: entrada y salida distintas" % tipo15)
+			var tope15: Vector3i = PlantillasPuesto.celda_chimenea(tipo15, giros15)
+			var celdas15: Dictionary = PlantillasPuesto.celdas(tipo15, giros15)
+			assert(celdas15[tope15] == PlantillasPuesto.MATERIAL[tipo15], "%s: tope de chimenea de su material" % tipo15)
+			assert(not celdas15.has(tope15 + Vector3i(0, 1, 0)), "%s: nada sobre la chimenea" % tipo15)
+			assert(tope15.y == PlantillasPuesto.altura(tipo15) - 1)
+		var mundo15: Node = _mundo()
+		for bloque15 in base15.values():
+			assert(mundo15._id_por_tipo.has(bloque15), "falta el bloque " + bloque15)
+
+	print("\n=== Las 15 pruebas de PlantillasPuesto pasaron correctamente ===")

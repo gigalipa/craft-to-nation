@@ -490,4 +490,22 @@ func ejecutar_pruebas() -> void:
 	Zonificacion.nucleo_declarado = false  # no contaminar otras pruebas de esta escena
 	mundo14.free()
 
-	print("\n=== Las 14 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== TEST 15: central_termoelectrica y refinerias de combustible solo se colocan en zona industrial ===")
+	Recoleccion.puestos.clear()
+	var mundo15: Node = _mundo_plano()
+	var esquina15 := Vector2i(24, 18)
+	var camara15: Camera3D = _camara(mundo15, "central_termoelectrica")
+	Zonificacion.declarar_nucleo([Vector2i(30, 30), Vector2i(31, 30), Vector2i(30, 31), Vector2i(31, 31)])
+	# Sobre zona residencial se rechaza
+	Zonificacion.pintar_zona(esquina15, esquina15 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[0])
+	var ev15: Dictionary = camara15._evaluar_puesto(esquina15)
+	assert("zona industrial" in camara15._mensaje_rechazo_puesto(ev15))
+	# Sobre zona industrial se acepta
+	Zonificacion.pintar_zona(esquina15, esquina15 + Vector2i(4, 4), Zonificacion.ZONAS_PINTABLES[1])
+	ev15 = camara15._evaluar_puesto(esquina15)
+	assert(camara15._mensaje_rechazo_puesto(ev15) == "")
+	camara15.free()
+	Zonificacion.nucleo_declarado = false
+	mundo15.free()
+
+	print("\n=== Las 15 pruebas de previsualización de puestos pasaron correctamente ===")

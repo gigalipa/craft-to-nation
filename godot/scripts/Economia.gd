@@ -84,10 +84,17 @@ var _ultimo_resumen_energia: Dictionary = {
 	"deficit": false,
 	"conectados": {},
 }
+var balance_energia: Dictionary:
+	get: return _ultimo_resumen_energia.duplicate()
+
+var _factores_energia: Dictionary = {}
 var _horas_desde_recalculo := 0
 
 func resumen_energia() -> Dictionary:
 	return _ultimo_resumen_energia.duplicate()
+
+func factor_energia_de(esquina: Vector2i) -> float:
+	return _factores_energia.get(esquina, 0.0)
 
 
 ## true mientras _actualizar_agotamiento() libera personal y reevalúa el área: evita que cada liberación
@@ -366,6 +373,7 @@ func simular_hora() -> void:
 	var red: Dictionary = Energia.calcular(puestos, obj_zonif, obj_vias, ciudad)
 	_ultimo_resumen_energia = red.get("resumen", {})
 	var factores_energia: Dictionary = red.get("factores", {})
+	_factores_energia = factores_energia.duplicate()
 	var quema_energia: Dictionary = red.get("quema", {})
 
 	for esq_central: Vector2i in quema_energia:

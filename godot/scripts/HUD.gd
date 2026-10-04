@@ -48,6 +48,9 @@ const NOMBRES_RECURSO := {
 	"acero": "Acero",
 	"mineral_refinado": "Mineral refinado",
 	"tablas": "Tablas",
+	"agua": "Agua",
+	"crudo": "Crudo",
+	"combustible": "Combustible",
 }
 
 const NOMBRES_TASA := {

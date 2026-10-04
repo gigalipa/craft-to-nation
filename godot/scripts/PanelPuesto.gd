@@ -21,6 +21,9 @@ const NOMBRES_PUESTO := {
 	"escuela_tecnica": "Escuela técnica",
 	"escuela_especialistas": "Escuela de especialistas",
 	"universidad": "Universidad",
+	"refineria_petrolera": "Refinería petrolera",
+	"productor_combustible": "Productor de combustible",
+	"central_termoelectrica": "Central termoeléctrica",
 }
 ## Mensaje para el jugador (el HUD lo envía a las notificaciones).
 signal aviso(texto: String)
@@ -34,6 +37,7 @@ var _trabajadores := TemaHUD.etiqueta()
 var _libres := TemaHUD.etiqueta()
 var _almacen := TemaHUD.etiqueta()
 var _produccion := TemaHUD.etiqueta()
+var _energia := TemaHUD.etiqueta()
 var _distancia := TemaHUD.etiqueta()
 var _demoler := Button.new()
 var _filas := {}  # rol -> {"fila": HBoxContainer, "cantidad": Label, "menos": Button, "mas": Button, "libres": Label}
@@ -57,7 +61,7 @@ func _ready() -> void:
 	caja.add_child(_titulo)
 	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "investigador", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
-	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _distancia]:
+	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _energia, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		etiqueta.custom_minimum_size.x = 250.0
@@ -174,11 +178,60 @@ func _actualizar() -> void:
 	else:
 		_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
 	_almacen.visible = not es_escuela and not es_universidad
-	_produccion.visible = not es_escuela and not es_universidad
+	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica"
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
+
+	if puesto["tipo"] == "central_termoelectrica":
+		_energia.visible = true
+		var t_pres: int = t["presentes"]
+		var alm: Dictionary = puesto["almacen"]
+		var stock: float = alm.get("combustible", 0.0) + alm.get("crudo", 0.0) + alm.get("carbon", 0.0)
+		var cap_esta: float = minf(float(t_pres), stock) * 20.0
+		var res: Dictionary = Economia.balance_energia
+		var cap_total: float = res.get("capacidad", 0.0)
+		var entregada_total: float = res.get("entregada", 0.0)
+		var uso: float = 0.0
+		if cap_total > 1e-9:
+			uso = entregada_total * (cap_esta / cap_total)
+		var comb_actual := "ninguno"
+		for c in ["combustible", "crudo", "carbon"]:
+			if alm.get(c, 0.0) > 1e-9:
+				comb_actual = "%s (%.1f)" % [HUDScript.NOMBRES_RECURSO.get(c, c), alm[c]]
+				break
+		_energia.text = "Capacidad: %.0f E/h\nGeneración usada: %.1f E/h\nCombustible actual: %s" % [cap_esta, uso, comb_actual]
+	elif puesto["tipo"] == "refineria_petrolera" or puesto["tipo"] == "productor_combustible" or es_universidad:
+		_energia.visible = true
+		var res: Dictionary = Economia.balance_energia
+		var conectados: Dictionary = res.get("conectados", {})
+		var conectado: bool = conectados.get(esquina, false)
+		var demanda: float = 0.0
+		if puesto["tipo"] == "refineria_petrolera" or puesto["tipo"] == "productor_combustible":
+			demanda = float(t["presentes"]) * 1.0
+		elif es_universidad and Ciudad.nivel_investigado + 1 == 3:
+			demanda = float(t["presentes"]) * 2.0
+		var factor: float = Economia.factor_energia_de(esquina)
+		var cap_red: float = res.get("capacidad", 0.0)
+		var estado_e: String = texto_estado_energia(conectado, demanda, factor, cap_red)
+		_energia.text = "Energía: %s" % estado_e
+	else:
+		_energia.visible = false
+
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
 	_demoler.text = "Cancelar demolición" if Obras.esta_marcado(Obras.id_en_columna(esquina)) else "Demoler"
+
+
+static func texto_estado_energia(conectado: bool, demanda: float, factor: float, capacidad_red: float) -> String:
+	if not conectado:
+		return "Sin conexión"
+	if demanda <= 0.0:
+		return "Sin demanda"
+	if capacidad_red <= 0.0:
+		return "Sin generación"
+	if factor < 1.0 - 1e-9:
+		return "Déficit %d %%" % roundi(factor * 100.0)
+	return "Con energía"
+
 
 
 ## Cuántos del oficio "rol" trabajan en el puesto: en los puestos con niveles se cuenta por rango; en la

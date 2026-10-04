@@ -22,6 +22,7 @@ var moral := TemaHUD.etiqueta()
 var comida := TemaHUD.etiqueta()
 var almacen_total := TemaHUD.etiqueta()
 var critico := TemaHUD.etiqueta()
+var energia := TemaHUD.etiqueta()
 var era := TemaHUD.etiqueta(ERA_ACTUAL)
 var nivel := TemaHUD.etiqueta()
 
@@ -34,6 +35,10 @@ static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String
 
 static func texto_comida(cantidad: float, limite: float, tasa: float) -> String:
 	return "Comida %.0f/%.0f %s" % [cantidad, limite, texto_tasa(tasa)]
+
+
+static func texto_energia(entregada: float, demanda: float) -> String:
+	return "Energía: %.0f/%.0f E/h" % [entregada, demanda]
 
 
 ## Fracción 0-1 del bono de moral respecto al máximo (acotada).
@@ -104,6 +109,7 @@ func _ready() -> void:
 	almacen_total.gui_input.connect(_on_clic.bind("almacen"))
 	fila.add_child(almacen_total)
 	fila.add_child(critico)
+	fila.add_child(energia)
 	var espacio := Control.new()
 	espacio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	espacio.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -152,6 +158,13 @@ func actualizar() -> void:
 		var recurso = Ciudad.almacen[clave]
 		critico.text = "Crítico: %s %s" % [recurso.nombre, texto_tasa(recurso.tasa_neta_promedio)]
 		_colorear_por_tasa(critico, recurso.tasa_neta_promedio)
+
+	var res_e: Dictionary = Economia.balance_energia if Economia != null else {}
+	var entregada_e: float = res_e.get("entregada", 0.0)
+	var demanda_e: float = res_e.get("demanda", 0.0)
+	var deficit_e: bool = res_e.get("deficit", false)
+	energia.text = texto_energia(entregada_e, demanda_e)
+	energia.add_theme_color_override("font_color", TemaHUD.INVALIDO if deficit_e else TemaHUD.TEXTO)
 
 	nivel.text = "Nivel %d" % Ciudad.nivel
 

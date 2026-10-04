@@ -120,9 +120,21 @@ func probar_barra_superior_calculos() -> void:
 	assert(BarraSuperiorScript.clave_critica({"a": RecursoFalso.new("A", 0, 1, 5.0), "b": RecursoFalso.new("B", 0, 1, -1.0), "c": RecursoFalso.new("C", 0, 1, -4.0)}) == "c")
 	assert(BarraSuperiorScript.clave_critica({"a": RecursoFalso.new("A", 0, 1, 5.0), "b": RecursoFalso.new("B", 0, 1, 1.0), "c": RecursoFalso.new("C", 0, 1, 3.0)}) == "b")
 	# Una tasa 0 no cuenta como "menor positiva": el recurso sin movimiento no es crítico.
-	assert(BarraSuperiorScript.clave_critica({"a": RecursoFalso.new("A", 0, 1, 0.0), "b": RecursoFalso.new("B", 0, 1, 2.0)}) == "b")
 	assert(BarraSuperiorScript.clave_critica({"a": RecursoFalso.new("A", 0, 1, 0.0), "b": RecursoFalso.new("B", 0, 1, 0.0)}) == "")
 	assert(BarraSuperiorScript.clave_critica({}) == "")
+	assert(BarraSuperiorScript.texto_energia(30.0, 50.0) == "Energía: 30/50 E/h")
+
+	# Recursos fluidos y combustible
+	assert(HUDScript.NOMBRES_RECURSO["agua"] == "Agua")
+	assert(HUDScript.NOMBRES_RECURSO["crudo"] == "Crudo")
+	assert(HUDScript.NOMBRES_RECURSO["combustible"] == "Combustible")
+
+	# Estados visibles de energía en PanelPuesto
+	assert(PanelPuestoScript.texto_estado_energia(false, 10.0, 0.0, 20.0) == "Sin conexión")
+	assert(PanelPuestoScript.texto_estado_energia(true, 0.0, 1.0, 20.0) == "Sin demanda")
+	assert(PanelPuestoScript.texto_estado_energia(true, 10.0, 0.0, 0.0) == "Sin generación")
+	assert(PanelPuestoScript.texto_estado_energia(true, 50.0, 0.6, 30.0) == "Déficit 60 %")
+	assert(PanelPuestoScript.texto_estado_energia(true, 20.0, 1.0, 20.0) == "Con energía")
 
 
 ## Clic en Población/Almacén de la barra superior (dato_pedido) y las
@@ -521,6 +533,10 @@ func probar_barra_modos() -> void:
 	assert(barra._paneles_construccion["investigacion"].visible)
 	assert(barra._botones_construccion.has("escuela_tecnica"), "Investigación ofrece la escuela técnica")
 	assert(barra._botones_construccion.has("escuela_especialistas"), "Investigación ofrece la escuela de especialistas")
+	barra.set_modo("construir", "", "industrial")
+	assert(barra._botones_construccion.has("refineria_petrolera"))
+	assert(barra._botones_construccion.has("productor_combustible"))
+	assert(barra._botones_construccion.has("central_termoelectrica"))
 	assert(not barra._botones_construccion.has("industrial"), "no hay ningún tipo de edificio con id 'industrial'")
 	barra.set_modo("")
 

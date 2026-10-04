@@ -234,11 +234,11 @@ func ejecutar_pruebas() -> void:
 	print("Comida tras 300 ticks: ", recien_nacida.almacen["comida"].cantidad)
 	assert(not hubo_hambruna, "no debe haber hambruna en los primeros 10 minutos")
 
-	print("\n=== TEST 18: el almacén tiene los 11 recursos de la economía ===")
+	print("\n=== TEST 18: el almacén tiene los 14 recursos de la economía ===")
 	var ocho: Node = CiudadScript.new()
-	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas"]:
+	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas", "agua", "crudo", "combustible"]:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
-	assert(ocho.almacen.size() == 11)
+	assert(ocho.almacen.size() == 14)
 	assert(ocho.almacen["acero"].cantidad == 0.0 and ocho.almacen["acero"].limite == 500.0, "el acero empieza en 0 con el tope inicial")
 	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
 	assert(ocho.almacen["comida"].cantidad == ocho.COMIDA_INICIAL, "la comida inicial es COMIDA_INICIAL")
@@ -376,4 +376,10 @@ func ejecutar_pruebas() -> void:
 	ciu_inst.desregistrar_instalacion(10)
 	assert(ciu_inst.instalaciones["tipo_2"] == 1, "desregistrar dos veces es no-op")
 
-	print("\n=== Las 24 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 25: recursos fluidos agua, crudo y combustible ===")
+	var ciu25: Node = CiudadScript.new()
+	assert(ciu25.almacen.has("agua") and ciu25.almacen["agua"].cantidad == 0.0 and ciu25.almacen["agua"].limite == Ciudad.LIMITE_BASE)
+	assert(ciu25.almacen.has("crudo") and ciu25.almacen["crudo"].cantidad == 0.0 and ciu25.almacen["crudo"].limite == Ciudad.LIMITE_BASE)
+	assert(ciu25.almacen.has("combustible") and ciu25.almacen["combustible"].cantidad == 0.0 and ciu25.almacen["combustible"].limite == Ciudad.LIMITE_BASE)
+
+	print("\n=== Las 25 pruebas de Ciudad pasaron correctamente ===")

@@ -104,4 +104,50 @@ func ejecutar_pruebas() -> void:
 		assert(Recoleccion.cupo_de(tipo_9) == 4 and Recoleccion.capacidad_almacen_de(tipo_9) == 1000, tipo_9 + ": 4 técnicos, almacén 1000")
 	print("OK: las recetas nuevas producen y consumen según la ficha; cupo 4 y almacén 1000 en todas las refinerías.")
 
-	print("\n=== Las 9 pruebas de CadenaMinerales pasaron correctamente ===")
+	print("\n=== TEST 10: recetas de combustible (petroleo y combustible_sintetico), energía y espacio ===")
+	# petroleo: 1 trabajador * 1.0 lote/h -> consume 2 crudo, produce 1 combustible
+	var almac_p := {"crudo": 10.0}
+	var res_p: Dictionary = CadenaMinerales.procesar_receta("petroleo", 1, 1.0, almac_p, 1.0)
+	assert(is_equal_approx(res_p["crudo"], 8.0))
+	assert(is_equal_approx(res_p["combustible"], 1.0))
+	assert(almac_p["crudo"] == 10.0, "almacen original no se muta")
+
+	# combustible_sintetico: 1 trabajador * 1.0 lote/h -> consume 3 carbon + 1 agua, produce 2 combustible
+	var almac_s := {"carbon": 10.0, "agua": 5.0}
+	var res_s: Dictionary = CadenaMinerales.procesar_receta("combustible_sintetico", 1, 1.0, almac_s, 1.0)
+	assert(is_equal_approx(res_s["carbon"], 7.0))
+	assert(is_equal_approx(res_s["agua"], 4.0))
+	assert(is_equal_approx(res_s["combustible"], 2.0))
+
+	# Factor de energía 0: no produce ni consume
+	var res_p0: Dictionary = CadenaMinerales.procesar_receta("petroleo", 1, 1.0, {"crudo": 10.0}, 0.0)
+	assert(is_equal_approx(res_p0["crudo"], 10.0) and is_equal_approx(res_p0["combustible"], 0.0))
+
+	# Factor de energía 0.4: escala al 40 % sin redondear
+	var res_p4: Dictionary = CadenaMinerales.procesar_receta("petroleo", 1, 1.0, {"crudo": 10.0}, 0.4)
+	assert(is_equal_approx(res_p4["crudo"], 10.0 - 0.8))
+	assert(is_equal_approx(res_p4["combustible"], 0.4))
+
+	var res_s4: Dictionary = CadenaMinerales.procesar_receta("combustible_sintetico", 1, 1.0, {"carbon": 10.0, "agua": 5.0}, 0.4)
+	assert(is_equal_approx(res_s4["carbon"], 10.0 - 1.2))
+	assert(is_equal_approx(res_s4["agua"], 5.0 - 0.4))
+	assert(is_equal_approx(res_s4["combustible"], 0.8))
+
+	# Salida casi llena: si solo cabe 1.0 de producto, la producción se limita proporcionalmente antes de consumir
+	# combustible_sintetico produce 2/lote. Con espacio para 1 combustible en almacén de 1000:
+	var almac_lleno := {"carbon": 10.0, "agua": 5.0, "combustible": 999.0}
+	var res_lleno: Dictionary = CadenaMinerales.procesar_receta("combustible_sintetico", 1, 1.0, almac_lleno, 1.0, 1000.0)
+	assert(is_equal_approx(res_lleno["combustible"], 1000.0), "tope en 1000 combustible")
+	# Produjo 1.0 combustible (0.5 lotes) -> consumió 1.5 carbon y 0.5 agua
+	assert(is_equal_approx(res_lleno["carbon"], 8.5))
+	assert(is_equal_approx(res_lleno["agua"], 4.5))
+
+	# Recetas sólidas conservan sus tasas y no consumen energía
+	var res_solido: Dictionary = CadenaMinerales.procesar_receta("hierro", 1, 1.0, {"hierro": 10.0, "carbon": 10.0}, 0.0)
+	assert(is_equal_approx(res_solido["acero"], 4.0), "receta de hierro funciona sin energía (factor 0)")
+
+	for tipo_f in ["refineria_petrolera", "productor_combustible"]:
+		assert(CadenaMinerales.RECETAS.has(CadenaMinerales.REFINERIAS[tipo_f]), tipo_f + " apunta a una receta válida")
+		assert(Recoleccion.cupo_de(tipo_f) == 4 and Recoleccion.capacidad_almacen_de(tipo_f) == 1000)
+
+	print("\n=== Las 10 pruebas de CadenaMinerales pasaron correctamente ===")

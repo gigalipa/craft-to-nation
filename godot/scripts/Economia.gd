@@ -577,7 +577,7 @@ func _refinar(esquina: Vector2i) -> void:
 	var presentes: int = p["presentes"].size()
 	if presentes <= 0:
 		return
-	var resultado: Dictionary = CadenaMinerales.procesar_tick(1.0, p["almacen"], {insumo_de(esquina): presentes})
+	var resultado: Dictionary = CadenaMinerales.procesar_receta(insumo_de(esquina), presentes, 1.0, p["almacen"], 1.0, float(p["capacidad"]))
 	if _total(resultado) > p["capacidad"] + 1e-9:
 		return
 	for recurso in resultado.keys():

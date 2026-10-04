@@ -862,4 +862,21 @@ func ejecutar_pruebas() -> void:
 	assert(c35.nivel_investigado == 2)
 	assert(e35.puestos[esq_uni]["recolectores"].is_empty(), "al completar investigación libera a los investigadores")
 
-	print("\n=== Las 35 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 36: acarreo multientrada de productor_combustible (carbon y agua) ===")
+	var c36: Node = CiudadScript.new()
+	c36.almacen["carbon"].cantidad = 500.0
+	c36.almacen["agua"].cantidad = 500.0
+	var e36: Node = EconomiaScript.new()
+	e36.ciudad = c36
+	var esq_prod := Vector2i(90, 90)
+	e36.registrar_puesto(esq_prod, "productor_combustible", 5, 5, {})
+	assert(e36.es_refineria(esq_prod))
+	assert(e36.insumo_de(esq_prod) == "combustible_sintetico")
+	var entradas36: Dictionary = e36.entradas_de(esq_prod)
+	assert(entradas36 == {"carbon": 3, "agua": 1})
+	var carga36: Dictionary = e36.insumos_a_cargar(esq_prod)
+	# Proporción de la receta: carbon 3/4 = 75%, agua 1/4 = 25% de CAPACIDAD_CARGA (150)
+	assert(is_equal_approx(carga36["carbon"], 150.0 * 0.75))
+	assert(is_equal_approx(carga36["agua"], 150.0 * 0.25))
+
+	print("\n=== Las 36 pruebas de Economia pasaron correctamente ===")

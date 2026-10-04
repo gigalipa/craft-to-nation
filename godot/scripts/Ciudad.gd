@@ -221,6 +221,9 @@ func _init() -> void:
 		"acero": Recurso.new("Acero", 0, LIMITE_BASE),  # lo produce la siderúrgica (ver Economia.gd)
 		"mineral_refinado": Recurso.new("Mineral refinado", 0, LIMITE_BASE),  # refinería de tierras raras
 		"tablas": Recurso.new("Tablas", 0, LIMITE_BASE),  # aserradero; cuentan como madera (consumir_costo())
+		"agua": Recurso.new("Agua", 0, LIMITE_BASE),
+		"crudo": Recurso.new("Crudo", 0, LIMITE_BASE),
+		"combustible": Recurso.new("Combustible", 0, LIMITE_BASE),
 	}
 	for categoria in CATEGORIAS_COMIDA:
 		fuentes_comida_activas[categoria] = 0.0

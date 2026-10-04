@@ -259,7 +259,13 @@ func admite_rol(esquina: Vector2i, rol: String) -> bool:
 		return true
 	var p: Dictionary = puestos[esquina]
 	var rango: int = RANGO_DE_ROL[rol]
-	return rango > p["nivel"] or (rango == p["nivel"] and not p["agotado"])
+	if rango >= p["nivel"]:
+		return rango > p["nivel"] or (rango == p["nivel"] and not p["agotado"])
+	# rango < p["nivel"]: permite retroceder de nivel si no está agotado en ese rango
+	if mundo != null and p.has("entorno") and not p["entorno"].is_empty():
+		var tasas_rango: Dictionary = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"], rango)
+		return not _sin_tasas(tasas_rango)
+	return not p.get("agotado", false)
 
 
 ## Recalcula el nivel como el rango mínimo de los recolectores; sin recolectores lo conserva. Si cambió,

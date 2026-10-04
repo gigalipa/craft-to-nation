@@ -1313,8 +1313,10 @@ func ejecutar_pruebas() -> void:
 	assert(colonos47.especialistas_libres() == 1 and colonos47.tecnicos_libres() == 1)
 	assert(colonos47.contratar(Vector2i(2, 2), "tecnico"))
 	assert(colonos47.economia.nivel_de(Vector2i(2, 2)) == 2, "solo técnicos: nivel 2")
-	assert(not colonos47.contratar(Vector2i(2, 2), "recolector"), "un obrero no entra a un puesto de nivel 2")
-	assert(colonos47.colonos[desempleado47]["tipo"] == "desempleado" and ciudad47.demografia["desempleado"] == 1 and ciudad47.demografia["obrero"] == 0, "el rechazo no toca al colono ni la demografía")
+	assert(colonos47.contratar(Vector2i(2, 2), "recolector"), "un obrero entra si nivel 1 no está agotado")
+	assert(colonos47.economia.nivel_de(Vector2i(2, 2)) == 1, "con un obrero y un técnico el nivel retrocede a 1")
+	assert(colonos47.despedir(Vector2i(2, 2), "recolector"))
+	assert(colonos47.economia.nivel_de(Vector2i(2, 2)) == 2, "al despedir al obrero vuelve a nivel 2")
 	assert(colonos47.contratar(Vector2i(2, 2), "especialista"))
 	assert(colonos47.colonos[especialista47]["tipo"] == "especialista" and colonos47.colonos[especialista47]["trabajo"]["puesto"] == Vector2i(2, 2))
 	assert(ciudad47.demografia["especialista"] == 1 and ciudad47.demografia["tecnico"] == 1 and ciudad47.demografia["desempleado"] == 1, "contratar un oficio ya formado no cambia la demografía")
@@ -1323,7 +1325,8 @@ func ejecutar_pruebas() -> void:
 	assert(colonos47.colonos[especialista47]["tipo"] == "especialista" and ciudad47.demografia["especialista"] == 1 and colonos47.especialistas_libres() == 1, "el especialista despedido sigue siéndolo")
 	assert(colonos47.despedir(Vector2i(2, 2), "tecnico"))
 	assert(colonos47.colonos[tecnico47]["tipo"] == "tecnico" and colonos47.economia.nivel_de(Vector2i(2, 2)) == 2, "vacío conserva el nivel 2")
-	assert(not colonos47.contratar(Vector2i(2, 2), "recolector"), "ya no admite obreros")
+	assert(colonos47.contratar(Vector2i(2, 2), "recolector"), "puesto vacío admite obrero si nivel 1 tiene recurso")
+	assert(colonos47.economia.nivel_de(Vector2i(2, 2)) == 1)
 
 	print("\n=== TEST 48: contratar() en universidad: educa especialistas a investigadores (cuerpo blanco) ===")
 	var ciudad48: Node = CiudadScript.new()
@@ -1389,5 +1392,53 @@ func ejecutar_pruebas() -> void:
 	obras50.huella = [Vector2i(6, 6)]
 	colonos50.avanzar(0.1)
 	assert(colonos50.colonos[libre50]["tarea"] == {"tipo": "construir", "id": 10}, "el colono interrumpe el deambular y toma la obra de inmediato")
+	print("\n=== TEST 51: orden de prioridad de transporte y desempate por cantidad ===")
+	var c_comida_20 := {"id": 1, "carga": {"comida": 20.0}, "trabajo": {"rol": "acarreador"}}
+	var c_comida_10 := {"id": 2, "carga": {"comida": 10.0}, "trabajo": {"rol": "acarreador"}}
+	var c_tablas_20 := {"id": 3, "carga": {"tablas": 20.0}, "trabajo": {"rol": "acarreador"}}
+	var c_acarreador_vacio := {"id": 4, "carga": {}, "trabajo": {"rol": "acarreador"}}
+	var c_obrero := {"id": 5, "carga": {}, "trabajo": {"rol": "recolector"}}
+	var c_ocioso := {"id": 6, "carga": {}, "trabajo": {}}
 
-	print("\n=== Las 50 pruebas de Colonos pasaron correctamente ===")
+	assert(colonos50._tiene_prioridad(c_comida_20, c_comida_10), "mayor cantidad del mismo recurso gana")
+	assert(not colonos50._tiene_prioridad(c_comida_10, c_comida_20))
+	assert(colonos50._tiene_prioridad(c_comida_10, c_tablas_20), "comida tiene mayor prioridad que tablas")
+	assert(colonos50._tiene_prioridad(c_tablas_20, c_acarreador_vacio), "acarreador con carga tiene mayor prioridad que vacío")
+	assert(colonos50._tiene_prioridad(c_acarreador_vacio, c_obrero), "acarreador vacío tiene mayor prioridad que obrero")
+	assert(colonos50._tiene_prioridad(c_obrero, c_ocioso), "empleado tiene mayor prioridad que ocioso")
+
+	print("\n=== TEST 52: cesión de paso e intercambio en caminos de 1 bloque y apartar al lado ===")
+	# Caso 1: En pasillo estricto (lado 3, largo 1), sin desvíos ni espacio detrás: intercambian cediendo el paso
+	var pasillo := _mundo_llano(3, 1)
+	var colonos_pasillo: Node = _nuevo(pasillo, CiudadScript.new())
+	var id_a_p: int = colonos_pasillo.agregar_colono("obrero", Vector3i(1, 1, 0))
+	var id_b_p: int = colonos_pasillo.agregar_colono("desempleado", Vector3i(2, 1, 0))
+	var col_a_p: Dictionary = colonos_pasillo.colonos[id_a_p]
+	var col_b_p: Dictionary = colonos_pasillo.colonos[id_b_p]
+	col_a_p["carga"] = {"comida": 20.0}
+	col_a_p["ruta"] = [Vector3i(2, 1, 0)]
+	col_b_p["carga"] = {"madera": 10.0}
+	col_b_p["ruta"] = [Vector3i(1, 1, 0)]
+
+	colonos_pasillo._iniciar_paso(col_a_p, 0.1)
+	assert(col_a_p["celda"] == Vector3i(2, 1, 0), "en pasillo de 1 celda el prioritario avanza")
+	assert(col_b_p["celda"] == Vector3i(1, 1, 0), "el de menor prioridad le cede el paso")
+	assert(colonos_pasillo.ocupadas[Vector3i(2, 1, 0)] == id_a_p and colonos_pasillo.ocupadas[Vector3i(1, 1, 0)] == id_b_p)
+
+	# Caso 2: En terreno abierto con celdas laterales: el de menor prioridad se aparta a un lado y el prioritario avanza
+	var mundo_abierto := _mundo_llano()
+	var colonos_abierto: Node = _nuevo(mundo_abierto, CiudadScript.new())
+	var id_a_ab: int = colonos_abierto.agregar_colono("obrero", Vector3i(5, 1, 5))
+	var id_b_ab: int = colonos_abierto.agregar_colono("desempleado", Vector3i(5, 1, 6))
+	var col_a_ab: Dictionary = colonos_abierto.colonos[id_a_ab]
+	var col_b_ab: Dictionary = colonos_abierto.colonos[id_b_ab]
+	col_a_ab["carga"] = {"comida": 20.0}
+	col_a_ab["ruta"] = [Vector3i(5, 1, 6)]
+	col_b_ab["carga"] = {"madera": 10.0}
+
+	for _i in range(5):
+		colonos_abierto.avanzar(0.1)
+	assert(col_b_ab["celda"] != Vector3i(5, 1, 6), "el de menor prioridad se apartó a un lado")
+	assert(col_a_ab["celda"] == Vector3i(5, 1, 6), "el prioritario avanzó a la celda despejada")
+
+	print("\n=== Las 52 pruebas de Colonos pasaron correctamente ===")

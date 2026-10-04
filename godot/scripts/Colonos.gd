@@ -21,6 +21,24 @@ signal tecnicos_formados(cantidad: int)
 ## Valor centinela de "no hay celda": una celda imposible.
 const INVALIDA := Vector3i(999999, 999999, 999999)
 
+## Orden de preferencia de transporte de recursos en vías estrechas o atascos.
+const ORDEN_PRIORIDAD_RECURSOS := [
+	"comida",
+	"combustible",
+	"crudo",
+	"acero",
+	"mineral_refinado",
+	"hierro",
+	"cobre",
+	"carbon",
+	"tierras_raras",
+	"tablas",
+	"madera",
+	"piedra",
+	"tierra",
+	"agua",
+]
+
 ## Placeholders sin balance real.
 const VELOCIDAD_COLONO := 2.5  # celdas por segundo
 const ESPERA_ENTRE_DESTINOS_MIN := 1.0
@@ -313,11 +331,20 @@ func _iniciar_paso(c: Dictionary, delta: float) -> void:
 		_replanificar(c)
 		return
 	if _ocupada_por_otro(siguiente, c["id"]):
-		c["bloqueo"] += delta
-		if c["bloqueo"] >= ESPERA_BLOQUEO:
-			c["bloqueo"] = 0.0
-			_esquivar(c)
-		return
+		var otro_id: int = ocupadas.get(siguiente, -1)
+		if otro_id != -1 and colonos.has(otro_id):
+			var otro: Dictionary = colonos[otro_id]
+			if not otro["moviendo"] and _tiene_prioridad(c, otro):
+				if _apartar_a_lado(otro, c["celda"]):
+					pass  # celda despejada: continúa y la toma abajo
+				elif _ceder_paso(c, otro):
+					return
+		if _ocupada_por_otro(siguiente, c["id"]):
+			c["bloqueo"] += delta
+			if c["bloqueo"] >= ESPERA_BLOQUEO:
+				c["bloqueo"] = 0.0
+				_esquivar(c)
+			return
 	c["bloqueo"] = 0.0
 	ocupadas[siguiente] = c["id"]  # reserva la celda a la que va
 	c["moviendo"] = true
@@ -383,6 +410,118 @@ func _empujar_de(celda: Vector3i) -> void:
 		if not c["trabajo"].is_empty():
 			economia.marcar_presente(id, false)
 		return
+
+
+## Calcula los factores de prioridad de un colono para resolver atascos en la vía:
+## Tier 4: Acarreador con carga (según prioridad de recurso y cantidad).
+## Tier 3: Acarreador sin carga (en viaje de transporte).
+## Tier 2: Colono con empleo o tarea activa de obra.
+## Tier 1: Colono ocioso / esperando / deambulando.
+func _prioridad_colono(c: Dictionary) -> Dictionary:
+	var tier := 1
+	var indice_recurso := 999
+	var cantidad := 0.0
+
+	if not c.get("carga", {}).is_empty():
+		tier = 4
+		for rec in c["carga"]:
+			var cant: float = float(c["carga"][rec])
+			var idx: int = ORDEN_PRIORIDAD_RECURSOS.find(rec)
+			if idx == -1:
+				idx = 900
+			if idx < indice_recurso or (idx == indice_recurso and cant > cantidad):
+				indice_recurso = idx
+				cantidad = cant
+	elif c.get("trabajo", {}).get("rol", "") == "acarreador":
+		tier = 3
+	elif not c.get("trabajo", {}).is_empty() or not c.get("tarea", {}).is_empty():
+		tier = 2
+	else:
+		tier = 1
+
+	return {"tier": tier, "recurso": indice_recurso, "cantidad": cantidad, "id": c.get("id", 0)}
+
+
+## true si c1 tiene mayor preferencia que c2 para avanzar primero.
+func _tiene_prioridad(c1: Dictionary, c2: Dictionary) -> bool:
+	var p1: Dictionary = _prioridad_colono(c1)
+	var p2: Dictionary = _prioridad_colono(c2)
+	if p1["tier"] != p2["tier"]:
+		return p1["tier"] > p2["tier"]
+	if p1["tier"] == 4:
+		if p1["recurso"] != p2["recurso"]:
+			return p1["recurso"] < p2["recurso"]  # menor índice en la lista = mayor prioridad
+		if not is_equal_approx(p1["cantidad"], p2["cantidad"]):
+			return p1["cantidad"] > p2["cantidad"]
+		return p1["id"] < p2["id"]
+	if p1["tier"] == 3:
+		return p1["id"] < p2["id"]
+	return false  # entre peatones del mismo nivel sin carga se esquivan normalmente
+
+
+
+## Intenta apartar a un colono quieto a una celda libre adyacente,
+## dejando libre el paso hacia la celda que quiere pisar el colono prioritario.
+func _apartar_a_lado(otro: Dictionary, celda_evitar: Vector3i) -> bool:
+	if otro["moviendo"]:
+		return false
+	for direccion in BuscadorRutas.DIRECCIONES:
+		var destino: Vector3i = otro["celda"] + direccion
+		if destino == celda_evitar:
+			continue
+		if not _buscador.es_transitable(destino) or _ocupada_por_otro(destino, otro["id"]):
+			continue
+		ocupadas.erase(otro["celda"])
+		ocupadas[destino] = otro["id"]
+		otro["celda"] = destino
+		otro["posicion"] = _centro_de(destino)
+		otro["ruta"] = []
+		otro["busqueda"] = {}
+		otro["espera"] = 0.0
+		if not otro["trabajo"].is_empty():
+			economia.marcar_presente(otro["id"], false)
+		return true
+	return false
+
+
+## En pasillos o caminos de 1 bloque sin desvíos laterales:
+## El colono de mayor prioridad "c" avanza a "siguiente", y "otro" le cede
+## el paso intercambiando posición hacia la celda que "c" deja libre.
+func _ceder_paso(c: Dictionary, otro: Dictionary) -> bool:
+	if otro["moviendo"]:
+		return false
+	var celda_c: Vector3i = c["celda"]
+	var celda_otro: Vector3i = otro["celda"]
+
+	ocupadas[celda_c] = otro["id"]
+	ocupadas[celda_otro] = c["id"]
+
+	c["celda"] = celda_otro
+	c["posicion"] = _centro_de(celda_otro)
+	c["ruta"].pop_front()
+	c["bloqueo"] = 0.0
+	c["busqueda"] = {}
+	if not c["trabajo"].is_empty():
+		economia.marcar_presente(c["id"], false)
+
+	otro["celda"] = celda_c
+	otro["posicion"] = _centro_de(celda_c)
+	otro["bloqueo"] = 0.0
+	otro["busqueda"] = {}
+	if not otro["ruta"].is_empty() and otro["ruta"][0] == celda_c:
+		otro["ruta"].pop_front()
+	elif not otro["ruta"].is_empty():
+		_replanificar(otro)
+	if not otro["trabajo"].is_empty():
+		economia.marcar_presente(otro["id"], false)
+
+	if c["ruta"].is_empty() and c["trabajo"].is_empty() and c["tarea"].is_empty():
+		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+	if otro["ruta"].is_empty() and otro["trabajo"].is_empty() and otro["tarea"].is_empty():
+		otro["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
+
+	return true
+
 
 
 func _ocupada_por_otro(celda: Vector3i, id: int) -> bool:

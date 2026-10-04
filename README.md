@@ -6,14 +6,14 @@
 
 **Sitio web:** [crafttonation.netlify.app](https://crafttonation.netlify.app)
 
-El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.48](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
+El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.49](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
 
 ## Estado actual
 
 - **Fase 0 — completada:** PoC 1 y 2 validan la lógica de recursos, demografía, nivel urbano, serialización y reglas de blueprints y zonas.
 - **Fase 1 — verificada:** PoC 3 implementa el prototipo en primera persona sobre `GridMap`, minado y colocación, objetos multicelda y detección de edificios por volumen interno; reconoce habitaciones irregulares y de varios pisos y comprueba su acceso mediante pathfinding real.
 - **Fase 2 — completa:** PoC 4 integra `Ciudad` y `Avatar` como autoload, zonificación y una cámara cenital navegable; PoC 8 añade colonos NPC con pathfinding propio; y el HUD incluye hotbar con iconos reales, miniaturas isométricas de edificios y navegación numérica jerárquica.
-- **Fase 3 — en progreso:** PoC 6 (mundo procedural, nivelación, puestos de recolección y cuerpos de agua) está completo con alcance reducido, y PoC 5 completó minerales y las fases 2A y 2B de la economía. El mundo procedural finito de 200×200 celdas incluye dos montañas, seis minerales, mares, lagos, ríos, árboles talables y recursos agotables. Los cuatro puestos de recolección son edificios de bloques con puerta y baúl físico; `VentanaBaul` permite transferencias parciales entre el avatar y esos almacenes. La construcción manual y asistida consume materiales reales (`tierra_compactada`, `bloque_madera`, `bloque_piedra`, `estructura_hierro` y `vidrio`), devuelve recursos al minar o deconstruir e incorpora construcción fantasma pagada mediante colas temporizadas; los puestos solo se registran al terminar. Las vías de tierra pisada dan +35 % de velocidad. Ya están la siderúrgica real y las demás refinerías, la escuela técnica, las obras por colonos y los niveles de puesto con empleo por oficio (obreros, técnicos y especialistas); siguen la escuela de especialistas, el tendido de vías por colonos y los fluidos y la energía.
+- **Fase 3 — en progreso:** PoC 6 (mundo procedural, nivelación, puestos de recolección y cuerpos de agua) está completo con alcance reducido, y PoC 5 completó minerales y las fases 2A y 2B de la economía. El mundo procedural finito de 200×200 celdas incluye dos montañas, seis minerales, mares, lagos, ríos, árboles talables y recursos agotables. Los cuatro puestos de recolección son edificios de bloques con puerta y baúl físico; `VentanaBaul` permite transferencias parciales entre el avatar y esos almacenes. La construcción manual y asistida consume materiales reales (`tierra_compactada`, `bloque_madera`, `bloque_piedra`, `estructura_hierro` y `vidrio`), devuelve recursos al minar o deconstruir e incorpora construcción fantasma pagada mediante colas temporizadas; los puestos solo se registran al terminar. Las vías de tierra pisada dan +35 % de velocidad. Ya están la siderúrgica real y las demás refinerías, la escuela técnica, las obras por colonos y los niveles de puesto con empleo por oficio (obreros, técnicos y especialistas); siguen la escuela de especialistas, la universidad e investigación, el tendido de vías por colonos y los fluidos y la energía.
 - **Fases 4–7 — planeadas:** cámara dual y tropas, logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
@@ -27,7 +27,7 @@ El proyecto Godot cuenta actualmente con **523 bloques de prueba** (conteo de ca
 - **HUD por modos:** barra superior con datos reales de la ciudad y panel contextual. En la cenital, el menú jerárquico admite navegación numérica, muestra miniaturas isométricas de los edificios y mantiene sincronizadas la selección y la rotación; en primera persona, la hotbar usa iconos reales y tarjetas completas. Las ventanas de población, almacén y baúl muestran información en vivo, mientras las notificaciones explican rechazos y eventos. Faltan batalla, escuadrón y salud.
 - **Puertas y baúles interactivos:** las puertas se abren con `E` y reaccionan a los colonos; `VentanaBaul` permite consultar y transferir cantidades parciales entre el inventario del avatar y un baúl físico.
 - **Bioma y vegetación:** implementadas las señales de fauna, frutales y árboles; el mundo genera árboles procedurales talables y el jugador puede talarlos mediante acciones repetidas.
-- **Catálogo de recursos y cadenas de producción:** el subproyecto de minerales y los materiales reales de construcción ya están conectados al mundo y a las colas de obra. La siderúrgica está diseñada como primera refinería jugable (hierro→acero, almacenamiento local, técnicos y acarreo bidireccional); su implementación y las demás refinerías siguen pendientes.
+- **Catálogo de recursos y cadenas de producción:** minerales, materiales reales de construcción, siderúrgica, refinería de tierras raras, aserradero y carbonera ya están conectados al mundo, al stock central y al acarreo. Siguen pendientes los fluidos (agua, crudo y combustible), la generación/distribución de energía y más usos de las tablas.
 - **Cuerpos de agua:** implementados (mares, lagos y ríos con corriente y cascadas, agua transparente y no sólida, natación con oxígeno, escurrimiento con niveles y secado). Cauces sinuosos y un nivel de mar que dependa del tipo de mundo siguen pendientes.
 - **Puentes:** previstos como PoC 10 en la Fase 5, reutilizando el trazado de las redes de transporte.
 - **Tallado cosmético por celda:** previsto como pulido visual, sin fase propia.
@@ -83,6 +83,12 @@ Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 - `godot/scenes/HUDTest.tscn`
 - `godot/scenes/MiniaturaRendererTest.tscn`
 - `godot/scenes/ObrasTest.tscn`
+
+En Windows también puedes ejecutar las 26 escenas en modo headless. El script falla si Godot devuelve un código distinto de cero, registra `ERROR:`/`SCRIPT ERROR` o una escena no llega a su mensaje final:
+
+```powershell
+.\tools\run-godot-tests.ps1 -GodotPath "C:\ruta\a\godot.exe"
+```
 
 ## Contribuir
 

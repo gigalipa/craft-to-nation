@@ -1,6 +1,15 @@
 # Pendientes y próximos pasos según el roadmap (GDD Sección 11)
 
-## Ruta a seguir
+## Ruta vigente
+
+1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1`, que también detecta errores de ejecución y escenas incompletas.
+2. Definir las fichas y reglas que faltan para la escuela de especialistas, universidad/investigación, fluidos, combustible y energía.
+3. Implementar la formación de especialistas y las investigaciones de activación.
+4. Completar PoC 5 con agua, crudo, combustible y energía.
+5. Completar las obras por colonos con tendido de vías, tope de cuadrilla y prioridades configurables.
+6. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
+
+## Estado detallado e historial
 
 ### 1. HUD visual interactivo — ✅ primera entrega hecha (2026-09-25)
 
@@ -16,7 +25,7 @@ Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre `VentanaBaul`, que mu
 
 ### 3. Declaración de edificios por volumen interno — ✅ hecho (2026-09-28)
 
-En este punto el jugador ya debe poder declarar y registrar distintos edificios residenciales. Pendiente de revisar: un edificio de dos niveles con una cama en cada nivel no fue reconocido por la declaración. El sistema debería cambiar a uno que detecte el **volumen interno** de una construcción, para permitir edificios personalizados de formas variadas (pirámides, cilindros, irregulares).
+Problema original: un edificio de dos niveles con una cama en cada nivel no era reconocido por la declaración. Se decidió reemplazar el análisis por losas por uno basado en el **volumen interno**, para permitir edificios personalizados de formas variadas (pirámides, cilindros e irregulares).
 
 Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la comparación de cada losa contra la huella global del edificio), más el resto del checklist de "casa aprobable": vestíbulo libre detrás de cada puerta (externa o interna) y verificación de acceso real por pathfinding a cada cama/baúl desde al menos una puerta externa. Ver `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md` y `docs/superpowers/plans/2026-09-28-volumen-interno-edificios.md`.
 
@@ -42,17 +51,19 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 
 ### 5. Resto del catálogo general de PoC 5
 
-Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`: sub-proyecto 2 (madera), 3 (fluidos: agua/crudo/combustible) y 4 (energía). El sub-proyecto 1 (minerales) ya está completo.
+Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`. Minerales y la primera entrega de madera están completos: siderúrgica, refinería de tierras raras, aserradero y carbonera son edificios reales. Quedan más usos de las tablas, el sub-proyecto de fluidos (agua/crudo/combustible) y el de energía.
 
 ### 6. Construcción/deconstrucción asistida por NPCs — ✅ hecha para edificios y puestos (2026-10-02)
 
 Los colonos libres (obreros desempleados y técnicos libres) construyen las obras puestas desde la cenital y demuelen los edificios marcados; el jugador tiene preferencia y puede pausar obras desde la ventana del edificio. Ver `docs/superpowers/specs/2026-10-02-obras-por-colonos-design.md`. Queda pendiente: tendido de vías por colonos, tope de cuadrilla por obra y prioridades configurables de obra.
 
 
-Los colonos participan en construir y deconstruir. Se apoya en el acarreo (2A) y en la extracción real (2B, ya implementada).
-Traducción de modelos .dae a blueprints construibles.
-Aplicación de primeras texturas.
-Los técnicos libres (sin puesto) también harán obras de construcción, demolición y tendido de vías, igual que los obreros desempleados.
+Pendientes de esta línea:
+
+- Tendido de vías por obreros desempleados y técnicos libres.
+- Tope de cuadrilla por obra.
+- Prioridades configurables de construcción y demolición.
+- Traducción de modelos `.dae` a blueprints construibles y aplicación de las primeras texturas, como trabajo de contenido separado.
 
 ### 7. Cola de pendientes menores de la Fase 3 — no bloqueantes
 
@@ -61,6 +72,7 @@ Pueden intercalarse en cualquier momento.
 - Cauces de río sinuosos (hoy solo ejes ortogonales del grid).
 - Corrección de pathfinding para dar mayor prioridad al uso de rutas (ignorar rutas solo si el destino no es alcanzable).
 - Percentil de nivel de mar dependiente de un "tipo de mundo" (concepto sin diseñar aún).
+- Restaurar el terreno excavado al deconstruir un edificio.
 - Revisar el dithering de Alpha Hash en ventanas cuando exista una textura real.
 - Devolver "Agregar todo" a `VentanaBaul` solo en los baúles dentro de un edificio de almacén y en los del núcleo urbano, que son los que realmente surten de recursos a la ciudad (el botón se quitó de todos los baúles el 2026-10-01; `Economia.agregar_deposito()` sigue disponible).
 

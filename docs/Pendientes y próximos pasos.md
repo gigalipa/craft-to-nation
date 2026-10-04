@@ -3,11 +3,12 @@
 ## Ruta vigente
 
 1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1`, que también detecta errores de ejecución y escenas incompletas.
-2. Definir las fichas y reglas que faltan para la escuela de especialistas, universidad/investigación, fluidos, combustible y energía.
-3. Implementar la formación de especialistas y las investigaciones de activación.
-4. Completar PoC 5 con agua, crudo, combustible y energía.
-5. Completar las obras por colonos con tendido de vías, tope de cuadrilla y prioridades configurables.
-6. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
+2. ✅ (2026-10-04) Formación de especialistas (`escuela_especialistas`), universidad e investigaciones de activación (Metalurgia Aplicada y Automatización Industrial).
+3. ✅ (2026-10-04) Fluidos (`agua`, `crudo`, `combustible`), recetas de refinería (`refineria_petrolera`, `productor_combustible`), central termoeléctrica y transmisión energética por vías e influencia con déficit horario.
+4. Completar las obras por colonos con tendido de vías, tope de cuadrilla y prioridades configurables.
+5. Implementar bombas de extracción directa en fuentes de agua y crudo.
+6. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
+7. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
 
 ## Estado detallado e historial
 
@@ -49,9 +50,9 @@ Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la compara
 8. ✅ (2026-10-02) **Techos no transitables** para los colonos.
 9. ✅ (2026-10-02) **Empujar colonos:** el jugador empuja a los colonos; los colonos no mueven al jugador, lo esquivan.
 
-### 5. Resto del catálogo general de PoC 5
+### 5. Resto del catálogo general de PoC 5 — ✅ industrias, fluidos y energía hechos (2026-10-04)
 
-Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`. Minerales y la primera entrega de madera están completos: siderúrgica, refinería de tierras raras, aserradero y carbonera son edificios reales. Quedan más usos de las tablas, el sub-proyecto de fluidos (agua/crudo/combustible) y el de energía.
+Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`. Minerales y la primera entrega de madera están completos: siderúrgica, refinería de tierras raras, aserradero y carbonera son edificios reales. El 2026-10-04 se completaron la escuela de especialistas, la universidad con investigaciones lineales automáticas (Metalurgia Aplicada y Automatización Industrial), los fluidos (`agua`, `crudo`, `combustible`), la refinería petrolera, el productor de combustible, la central termoeléctrica y la red de energía sin postes con déficit. Quedan más usos de las tablas, las bombas de extracción directa en fuentes de agua y crudo, y el consumo universal de Era 3.
 
 ### 6. Construcción/deconstrucción asistida por NPCs — ✅ hecha para edificios y puestos (2026-10-02)
 

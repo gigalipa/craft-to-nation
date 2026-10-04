@@ -127,15 +127,26 @@ Decisión funcional: las refinerías son puestos con receta, con entrada y salid
 
 Decisión funcional: la formación de técnicos es un puesto más de `Economia.puestos` (`escuela_tecnica`, plantilla de 5×5 de adobe con una puerta y 4 mesas de estudio —bloque nuevo `mesa_estudio`, 1 madera como un baúl—, sin baúl porque no maneja recursos; se coloca dentro de la zona de influencia y sobre zona residencial). Su rol es `aprendiz` (cupo 4 = la cohorte, comparte la lista de recolectores). La cohorte suma 1 h de estudio por hora de juego solo mientras los 4 aprendices están presentes (se pausa si falta uno y se reinicia con menos de 4); a `Economia.HORAS_FORMACION` (24) se gradúan: 3 pasan a técnico libre y el cuarto se va de la ciudad, porque cada jerarquía ocupa más vivienda (`Ciudad.TIPOS_POBLACION[...]["x_cama"]`: 4 obreros = 3 técnicos). Un aprendiz cuenta como obrero mientras estudia. Un técnico despedido o liberado (p. ej. al deconstruir su refinería) sigue siendo técnico. Ver `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
 
-Ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`.
+### Escuela de especialistas y Universidad (2026-10-04)
+
+- **Escuela de especialistas:** plantilla 5×5 de adobe sobre zona residencial, 3 mesas de estudio, cupo 3 técnicos aprendices. Tras 48 h continuas con los 3 presentes, se gradúan 2 especialistas libres y el tercero emigra (conservando vivienda `x_cama` 3 × 1/3 = 2 × 1/2).
+- **Universidad:** plantilla 5×5 de ladrillo/piedra sobre zona residencial, 4 mesas de estudio, cupo 4 investigadores (especialistas contratados). Investiga secuencialmente sin selección de árbol: Metalurgia Aplicada (72 h, desbloquea industrias de combustible y energía) y Automatización Industrial (120 h, desbloquea nivel 3 de ciudad).
+
+### Fluidos, Combustible y Central Termoeléctrica (2026-10-04)
+
+- Recursos añadidos: `agua`, `crudo` y `combustible`.
+- **Refinería petrolera:** plantilla 5×5 (`bloque_piedra`, chimenea con humo blanco), zona industrial, cupo 4 técnicos/especialistas. Receta `petroleo`: 2 crudo + 1 energía → 1 combustible (tasa base 1,0 lotes/técnico/h).
+- **Productor de combustible:** plantilla 5×5 (`estructura_hierro`, chimenea con humo negro), zona industrial, cupo 4 técnicos/especialistas. Receta `combustible_sintetico`: 3 carbón + 1 agua + 1 energía → 2 combustible (tasa base 1,0 lotes/técnico/h).
+- **Central termoeléctrica:** plantilla 5×5 (`estructura_hierro`, chimenea con humo negro), zona industrial, cupo 3 técnicos/especialistas, almacén 300. Quema proporcional a la demanda de la red (prioridad: combustible > crudo > carbón) produciendo hasta 20 E/h por insumo.
+- **Transmisión y déficit:** red sin postes dedicada, conectada por zona de influencia y vías de tierra pisada (`Energia.calcular()`). El balance calcula `factor = clamp(capacidad / demanda, 0.0, 1.0)` cada hora y escala proporcionalmente la producción de las refinerías consumidoras.
 
 ---
 
 ## **Próximos Pasos**
 
-* **Madera** — el aserradero y la carbonera ya son edificios reales (ver "Refinerías reales restantes" arriba); el resto del sub-proyecto (aprovechamiento de las tablas, más usos de la madera) sigue pendiente.
-* **Fluidos** (agua/crudo/combustible: bombas de extracción, refinería de crudo, productor de combustible) — sub-proyecto futuro de esta misma PoC 5.
-* **Energía** (generadores, transmisión sin red dedicada) — sub-proyecto futuro de esta misma PoC 5.
-* **Refinerías reales colocables en el mundo** — las cuatro (siderúrgica, tierras raras, aserradero y carbonera) ya son reales.
-* **Formación de técnicos** — ✅ hecha (2026-10-01), ver «Escuela técnica». La de especialistas, los niveles de edificio y la universidad están en `docs/ideas-backlog.md`.
-* **Integración con el almacén real** — hecha para la siderúrgica (el acero llega al stock central de `Ciudad`); `procesar_tick()` sigue siendo la lógica pura de la demo.
+* **Madera** — el aserradero y la carbonera ya son edificios reales; el resto del sub-proyecto (aprovechamiento de las tablas, más usos de la madera) sigue pendiente.
+* **Bombas de fluidos** (agua/crudo) — bombas de extracción en fuentes naturales (agua en costas/ríos y crudo en pozos). Las cadenas de refinado y combustible ya son funcionales.
+* **Consumo de Era 3** — consumo universal de energía en edificios civiles al investigar Automatización Industrial.
+* **Refinerías reales colocables en el mundo** — ✅ las siete industrias (siderúrgica, tierras raras, aserradero, carbonera, refinería petrolera, productor de combustible y central termoeléctrica) ya son reales y colocables.
+* **Formación e investigación** — ✅ completadas la escuela técnica, la escuela de especialistas y la universidad con Metalurgia Aplicada y Automatización Industrial.
+* **Integración con el almacén real** — implementada para todas las refinerías activas; el producto y los insumos se acarrean con el stock central de `Ciudad`.

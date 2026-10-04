@@ -563,19 +563,19 @@ func _celda_aparicion() -> Vector3i:
 ## formarlo. Falso si no hay candidato, el puesto no existe, el rol no es de ese puesto, no tiene cupo o su nivel
 ## no admite ese oficio (en ese caso no se toca nada).
 func contratar(esquina: Vector2i, rol: String) -> bool:
-	var es_oficio: bool = rol == "tecnico" or rol == "especialista"
-	var candidatos: Array[int] = _ids_sin_puesto(rol) if es_oficio else _ids_de_tipo("desempleado")
+	var origen: String = Recoleccion.ESCUELAS.get(economia.puestos.get(esquina, {}).get("tipo", ""), {}).get("origen", "") if rol == "aprendiz" else ""
+	var oficio: String = origen if origen == "tecnico" else (rol if rol == "tecnico" or rol == "especialista" else "")
+	var candidatos: Array[int] = _ids_sin_puesto(oficio) if not oficio.is_empty() else _ids_de_tipo("desempleado")
 	if candidatos.is_empty():
 		return false
 	candidatos.sort()
 	var id: int = candidatos[0]
 	if not economia.asignar(esquina, rol, id):
 		return false
-	var tipo: String = rol if es_oficio else "obrero"
-	if not es_oficio:
-		ciudad.reasignar_tipo("desempleado", tipo)
+	if oficio.is_empty():
+		ciudad.reasignar_tipo("desempleado", "obrero")
 	var c: Dictionary = colonos[id]
-	c["tipo"] = tipo
+	c["tipo"] = oficio if not oficio.is_empty() else "obrero"
 	c["trabajo"] = {"puesto": esquina, "rol": rol}
 	c["fase"] = ""
 	c["carga"] = {}

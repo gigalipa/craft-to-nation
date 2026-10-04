@@ -1326,7 +1326,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar"]
 const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera"]
-const PUESTOS_INVESTIGACION := ["escuela_tecnica"]
+const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas"]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1526,12 +1526,15 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 ## Alterna el puesto de "tipo" con su huella: categoría Periférico del menú
 ## Construir (tecla numérica o clic — ver HUD.construccion_pedida).
 func _alternar_puesto_por_tipo(tipo: String) -> void:
+	if tipo == "escuela_especialistas" and Ciudad.nivel_investigado < 2:
+		hud.notificar("Requiere Metalurgia Aplicada.")
+		return
 	match tipo:
 		"mina": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 

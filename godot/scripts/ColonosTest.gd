@@ -162,6 +162,15 @@ func _nuevo_con_escuela(ciudad: Node) -> Node:
 	return colonos
 
 
+func _nuevo_con_escuela_especialistas(ciudad: Node) -> Node:
+	var economia: Node = EconomiaScript.new()
+	economia.ciudad = ciudad
+	economia.registrar_puesto(Vector2i(2, 2), "escuela_especialistas", 2, 2, {})
+	var colonos: Node = _nuevo(_mundo_llano(), ciudad)
+	colonos.economia = economia
+	return colonos
+
+
 func _contar(colonos: Node, tipo: String) -> int:
 	var total := 0
 	for c in colonos.colonos.values():
@@ -1167,6 +1176,43 @@ func ejecutar_pruebas() -> void:
 	colonos44.reconciliar()
 	for tipo44 in ciudad44.demografia:
 		assert(_contar(colonos44, tipo44) == ciudad44.demografia[tipo44], "colonos y demografía coinciden en %s" % tipo44)
+
+	print("\n=== TEST 44b: escuela de especialistas: 3 técnicos presentes se gradúan a las 48 h como 2 especialistas, conservando vivienda ===")
+	var ciudad44b: Node = CiudadScript.new()
+	var colonos44b: Node = _nuevo_con_escuela_especialistas(ciudad44b)
+	var ids44b: Array[int] = []
+	for z44b in range(1, 4):
+		ids44b.append(colonos44b.agregar_colono("tecnico", Vector3i(6, 1, z44b)))
+	ciudad44b.demografia["tecnico"] = 3
+	for i44b in range(3):
+		assert(colonos44b.contratar(Vector2i(2, 2), "aprendiz"))
+	assert(ciudad44b.demografia["tecnico"] == 3, "un aprendiz de especialista sigue contando como técnico")
+	assert(is_equal_approx(ciudad44b.vivienda_ocupada, 1.0))
+	for id44b in ids44b:
+		colonos44b.economia.marcar_presente(id44b, true)
+	for hora44b in range(47):
+		colonos44b.economia.simular_hora()
+	assert(_contar(colonos44b, "especialista") == 0, "a las 47 h todavía no se gradúa")
+	colonos44b.economia.simular_hora()
+	assert(_contar(colonos44b, "especialista") == 2 and colonos44b.colonos.size() == 2, "salen 2 especialistas y el tercero se va")
+	assert(ciudad44b.demografia["especialista"] == 2 and ciudad44b.demografia["tecnico"] == 0)
+	assert(is_equal_approx(ciudad44b.vivienda_ocupada, 1.0), "la vivienda ocupada se conserva: 3 x 1/3 = 2 x 1/2")
+	assert(colonos44b.especialistas_libres() == 2)
+	# Reinicio al despedir
+	var ids44c: Array[int] = []
+	for z44c in range(1, 4):
+		ids44c.append(colonos44b.agregar_colono("tecnico", Vector3i(6, 1, z44c)))
+	ciudad44b.demografia["tecnico"] = 3
+	for i44c in range(3):
+		assert(colonos44b.contratar(Vector2i(2, 2), "aprendiz"))
+	for id44c in ids44c:
+		colonos44b.economia.marcar_presente(id44c, true)
+	for hora44c in range(10):
+		colonos44b.economia.simular_hora()
+	assert(colonos44b.economia.puestos[Vector2i(2, 2)]["progreso"] == 10.0)
+	assert(colonos44b.despedir(Vector2i(2, 2), "aprendiz"))
+	assert(colonos44b.economia.puestos[Vector2i(2, 2)]["progreso"] == 0.0, "despedir a un aprendiz reinicia el progreso a cero")
+	assert(colonos44b.tecnicos_libres() == 1, "el despedido sigue siendo técnico libre")
 
 	print("\n=== TEST 45: el avatar empuja a un colono quieto de su celda a una celda libre; uno que camina no se toca ===")
 	var colonos45: Node = _nuevo(_mundo_llano(), CiudadScript.new())

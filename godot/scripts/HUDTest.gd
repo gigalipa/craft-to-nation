@@ -520,6 +520,7 @@ func probar_barra_modos() -> void:
 	barra.set_modo("construir", "", "investigacion")
 	assert(barra._paneles_construccion["investigacion"].visible)
 	assert(barra._botones_construccion.has("escuela_tecnica"), "Investigación ofrece la escuela técnica")
+	assert(barra._botones_construccion.has("escuela_especialistas"), "Investigación ofrece la escuela de especialistas")
 	assert(not barra._botones_construccion.has("industrial"), "no hay ningún tipo de edificio con id 'industrial'")
 	barra.set_modo("")
 
@@ -543,10 +544,10 @@ func probar_barra_modos() -> void:
 	assert(barra._giros_menu == 1, "posmod(5, 4) == 1, mismo valor que antes: set_giros() normaliza a 0-3")
 
 	print("\n=== TEST 3e: re-renderizar una miniatura libera el SubViewport anterior, no acumula uno por cada rotación ===")
-	assert(barra._viewports_construccion.size() == 10, "una construcción con malla real por cada uno de los 10 tipos con miniatura (mina/caza/madera/pesca/las 4 refinerías/la escuela + residencial con el blueprint declarado arriba)")
+	assert(barra._viewports_construccion.size() == BarraModosScript.TIPOS_CON_MINIATURA.size(), "una construcción con malla real por cada uno de los tipos con miniatura")
 	for giro in [2, 3, 0, 1, 2, 3]:
 		barra.set_giros(giro)
-	assert(barra._viewports_construccion.size() == 10, "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones, no uno acumulado por cada llamada")
+	assert(barra._viewports_construccion.size() == BarraModosScript.TIPOS_CON_MINIATURA.size(), "sigue habiendo un solo SubViewport trackeado por tipo tras varias rotaciones")
 
 	print("\n=== TEST 3f: cada edificio (incluido Residencial) anuncia su propia tecla numérica de categoría ===")
 	var textos_residencial: Array = []
@@ -705,6 +706,12 @@ func probar_panel_escuela() -> void:
 	assert(not panel._filas["acarreador"]["fila"].visible, "una escuela no tiene acarreadores")
 	assert(not panel._almacen.visible and not panel._produccion.visible, "ni almacén local ni producción")
 	assert("Aprendices: 0 / 4" in panel._trabajadores.text and "0 / %d h" % Economia.HORAS_FORMACION in panel._trabajadores.text, "cohorte y horas: %s" % panel._trabajadores.text)
+	var esquina7e := Vector2i(905, 900)
+	Economia.registrar_puesto(esquina7e, "escuela_especialistas", 5, 5, {})
+	panel.abrir(esquina7e)
+	assert(panel._titulo.text == "Escuela de especialistas")
+	assert("Técnicos en formación: 0 / 3" in panel._trabajadores.text and "0 / 48 h" in panel._trabajadores.text)
+	Economia.puestos.erase(esquina7e)
 	panel.abrir(esquina7r)
 	assert(panel._filas["tecnico"]["fila"].visible and not panel._filas["aprendiz"]["fila"].visible and panel._filas["acarreador"]["fila"].visible)
 	assert(panel._almacen.visible and panel._filas["tecnico"]["libres"].text == "(%d libres)" % Colonos.tecnicos_libres(), "la refinería muestra los técnicos libres: %s" % panel._filas["tecnico"]["libres"].text)

@@ -541,7 +541,8 @@ func _formar(esquina: Vector2i) -> void:
 	if p["presentes"].size() < p["cupo"]:
 		return
 	p["progreso"] += 1.0
-	if p["progreso"] < HORAS_FORMACION:
+	var horas_meta: int = Recoleccion.ESCUELAS[p["tipo"]]["horas"] if Recoleccion.ESCUELAS.has(p["tipo"]) else HORAS_FORMACION
+	if p["progreso"] < horas_meta:
 		return
 	var ids: Array = p["recolectores"].duplicate()
 	for id in ids:

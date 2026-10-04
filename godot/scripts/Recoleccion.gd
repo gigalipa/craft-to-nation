@@ -33,11 +33,14 @@ const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Madera/h por recolector bajo la cual un maderero se da por agotado (decisión del usuario, 2026-10-02).
 const UMBRAL_AGOTADO_MADERERO := 0.5
 
-const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica"]
-## Escuelas: tipo de puesto -> {"origen", "destino"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "escuela_tecnica", "escuela_especialistas"]
+## Escuelas: tipo de puesto -> {"origen", "destino", "horas"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
 ## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
-## conserva (4 obreros = 3 técnicos) y quien sobra se va de la ciudad.
-const ESCUELAS := {"escuela_tecnica": {"origen": "obrero", "destino": "tecnico"}}
+## conserva (4 obreros = 3 técnicos, 3 técnicos = 2 especialistas) y quien sobra se va de la ciudad.
+const ESCUELAS := {
+	"escuela_tecnica": {"origen": "obrero", "destino": "tecnico", "horas": 24},
+	"escuela_especialistas": {"origen": "tecnico", "destino": "especialista", "horas": 48},
+}
 const ANCHO_HUELLA_MINA := 5
 const ALTO_HUELLA_MINA := 5
 

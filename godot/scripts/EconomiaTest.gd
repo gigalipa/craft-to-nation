@@ -702,6 +702,26 @@ func ejecutar_pruebas() -> void:
 	assert(e29d.asignar(ESQ_ESC, "aprendiz", 5))
 	assert(e29d.puestos[ESQ_ESC]["progreso"] == 0.0)
 
+	print("\n=== TEST 29c: la escuela de especialistas dura 48 h y tiene cupo 3 ===")
+	assert(Recoleccion.cupo_de("escuela_especialistas") == 3)
+	assert(Recoleccion.ESCUELAS["escuela_tecnica"]["horas"] == 24)
+	assert(Recoleccion.ESCUELAS["escuela_especialistas"]["horas"] == 48)
+	var e29e: Node = EconomiaScript.new()
+	e29e.ciudad = CiudadScript.new()
+	e29e.registrar_puesto(ESQ_ESC, "escuela_especialistas", 5, 5, {})
+	assert(e29e.puestos[ESQ_ESC]["cupo"] == 3)
+	for id_esp in range(1, 4):
+		assert(e29e.asignar(ESQ_ESC, "aprendiz", id_esp))
+		e29e.marcar_presente(id_esp, true)
+	var graduadas_esp: Array = []
+	e29e.cohorte_graduada.connect(func(esquina: Vector2i, ids: Array) -> void: graduadas_esp.append([esquina, ids]))
+	for h_esp in range(47):
+		e29e.simular_hora()
+	assert(e29e.puestos[ESQ_ESC]["progreso"] == 47.0 and graduadas_esp.is_empty())
+	e29e.simular_hora()
+	assert(graduadas_esp.size() == 1 and graduadas_esp[0][1] == [1, 2, 3])
+	assert(e29e.puestos[ESQ_ESC]["progreso"] == 0.0)
+
 	print("\n=== TEST 30: niveles — radios, profundidades, multiplicadores, entorno por nivel y franjas de la mina ===")
 	assert(Recoleccion.radio_de_nivel(12, 1) == 12 and Recoleccion.radio_de_nivel(12, 2) == 18 and Recoleccion.radio_de_nivel(12, 3) == 24)
 	assert(Recoleccion.radio_de_nivel(25, 2) == 37 and Recoleccion.radio_de_nivel(25, 3) == 50)

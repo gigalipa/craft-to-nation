@@ -19,6 +19,7 @@ const NOMBRES_PUESTO := {
 	"aserradero": "Aserradero",
 	"carbonera": "Carbonera",
 	"escuela_tecnica": "Escuela técnica",
+	"escuela_especialistas": "Escuela de especialistas",
 }
 ## Mensaje para el jugador (el HUD lo envía a las notificaciones).
 signal aviso(texto: String)
@@ -86,7 +87,7 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	libres.custom_minimum_size.x = 70.0
 	for nodo in [nombre, menos, cantidad, mas, libres]:
 		fila.add_child(nodo)
-	_filas[rol] = {"fila": fila, "cantidad": cantidad, "menos": menos, "mas": mas, "libres": libres}
+	_filas[rol] = {"fila": fila, "nombre": nombre, "cantidad": cantidad, "menos": menos, "mas": mas, "libres": libres}
 	return fila
 
 
@@ -127,8 +128,13 @@ func _actualizar() -> void:
 	var nivel := ", nivel %d" % Economia.nivel_de(esquina) if con_niveles else ""
 	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + nivel + estado
 	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0
+	var origen_escuela: String = Recoleccion.ESCUELAS[puesto["tipo"]]["origen"] if es_escuela else ""
+	var nombre_aprendiz: String = "Técnicos en formación" if origen_escuela == "tecnico" else "Aprendices"
+	_filas["aprendiz"]["nombre"].text = nombre_aprendiz
 	for rol in ["recolector", "tecnico", "especialista", "aprendiz"]:
 		var fila: Dictionary = _filas[rol]
+		if rol != "aprendiz" or not es_escuela:
+			fila["nombre"].text = NOMBRES_ROL[rol]
 		var empleados: int = _empleados(rol, t, con_niveles)
 		var libres: int = _libres_de(rol)
 		fila["fila"].visible = oficios.has(rol) and (rol != "especialista" or libres > 0 or empleados > 0)
@@ -143,7 +149,8 @@ func _actualizar() -> void:
 	acarreadores["menos"].disabled = t["acarreadores"] == 0
 	acarreadores["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
 	if es_escuela:
-		_trabajadores.text = "Aprendices: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), Economia.HORAS_FORMACION]
+		var horas: int = Recoleccion.ESCUELAS[puesto["tipo"]]["horas"]
+		_trabajadores.text = "%s: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [nombre_aprendiz, t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), horas]
 	else:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
 	# Solo la refinería necesita la pista de dónde salen sus técnicos.
@@ -167,6 +174,10 @@ func _empleados(rol: String, t: Dictionary, con_niveles: bool) -> int:
 
 ## Colonos libres de ese oficio que se podrían contratar: técnicos y especialistas libres, o desempleados.
 func _libres_de(rol: String) -> int:
+	if rol == "aprendiz" and Economia.puestos.has(esquina):
+		var tipo_p: String = Economia.puestos[esquina]["tipo"]
+		if Recoleccion.ESCUELAS.has(tipo_p) and Recoleccion.ESCUELAS[tipo_p]["origen"] == "tecnico":
+			return Colonos.tecnicos_libres()
 	match rol:
 		"tecnico": return Colonos.tecnicos_libres()
 		"especialista": return Colonos.especialistas_libres()

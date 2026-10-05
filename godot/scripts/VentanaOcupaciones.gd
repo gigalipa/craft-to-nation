@@ -15,13 +15,63 @@ signal edificio_pedido(esquina: Vector2i)
 ## A la derecha de Población (16 + 320 de ancho + hueco), sin solaparse con ella ni con Almacén.
 const POSICION_INICIAL := Vector2(352, 56)
 
+const CATEGORIAS := ["recoleccion", "industria", "investigacion", "energia"]
+
+const NOMBRES_CATEGORIA := {
+	"recoleccion": "Recolección",
+	"industria": "Industria",
+	"investigacion": "Investigación",
+	"energia": "Energía",
+}
+
+const CATEGORIA_DE_TIPO := {
+	"mina": "recoleccion",
+	"caza_recoleccion": "recoleccion",
+	"maderero": "recoleccion",
+	"pesca_frutos_mar": "recoleccion",
+
+	"siderurgica": "industria",
+	"refineria_tierras_raras": "industria",
+	"aserradero": "industria",
+	"carbonera": "industria",
+	"refineria_petrolera": "industria",
+	"productor_combustible": "industria",
+
+	"escuela_tecnica": "investigacion",
+	"escuela_especialistas": "investigacion",
+	"universidad": "investigacion",
+
+	"central_termoelectrica": "energia",
+}
+
 var _caja := VBoxContainer.new()
 var _caja_raiz := VBoxContainer.new()
 var abierta := false
 var _arrastrando := false
 var _offset_arrastre := Vector2.ZERO
-var _firma: Array = []  # esquinas de las filas actuales
+var _firma: Array = []  # esquinas en orden de visualización
 var _botones := {}  # esquina -> Button
+var _desplegadas := {
+	"recoleccion": true,
+	"industria": true,
+	"investigacion": true,
+	"energia": true,
+}
+var _headers_categoria := {}  # cat -> Button
+var _contenedores_categoria := {}  # cat -> Control
+
+
+static func categoria_de(tipo: String) -> String:
+	return CATEGORIA_DE_TIPO.get(tipo, "industria")
+
+
+static func orden_de(esquina: Vector2i) -> int:
+	if not Economia.puestos.has(esquina):
+		return 0
+	var p: Dictionary = Economia.puestos[esquina]
+	if p.has("orden_construccion"):
+		return p["orden_construccion"]
+	return Economia.puestos.keys().find(esquina)
 
 
 func _ready() -> void:
@@ -75,31 +125,96 @@ func cerrar() -> void:
 
 
 func _actualizar() -> void:
-	var esquinas: Array = []
+	var por_cat: Dictionary = {
+		"recoleccion": [],
+		"industria": [],
+		"investigacion": [],
+		"energia": [],
+	}
 	for esquina in Economia.puestos:
-		if Recoleccion.TIPOS_PUESTO_TRABAJO.has(Economia.puestos[esquina]["tipo"]):
-			esquinas.append(esquina)
-	if esquinas != _firma or (_firma.is_empty() and _caja.get_child_count() == 0):
-		_firma = esquinas
-		_reconstruir()
+		var tipo: String = Economia.puestos[esquina].get("tipo", "")
+		if Recoleccion.TIPOS_PUESTO_TRABAJO.has(tipo):
+			var cat := categoria_de(tipo)
+			por_cat[cat].append(esquina)
+
+	var firma_nueva: Array = []
+	for cat in CATEGORIAS:
+		por_cat[cat].sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			return orden_de(a) > orden_de(b)
+		)
+		firma_nueva.append_array(por_cat[cat])
+
+	if firma_nueva != _firma or (_firma.is_empty() and _caja.get_child_count() == 0):
+		_firma = firma_nueva
+		_reconstruir(por_cat)
+
 	for esquina in _firma:
-		_botones[esquina].text = _texto_fila(esquina)
+		if _botones.has(esquina):
+			_botones[esquina].text = _texto_fila(esquina)
 
 
-func _reconstruir() -> void:
+func _reconstruir(por_cat: Dictionary) -> void:
 	for hijo in _caja.get_children():
 		hijo.free()
 	_botones.clear()
+	_headers_categoria.clear()
+	_contenedores_categoria.clear()
+
 	if _firma.is_empty():
 		_caja.add_child(TemaHUD.etiqueta("Ninguno todavía"))
 		return
-	for esquina: Vector2i in _firma:
-		var boton := Button.new()
-		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		TemaHUD.estilizar_boton(boton)
-		boton.pressed.connect(func() -> void: edificio_pedido.emit(esquina))
-		_caja.add_child(boton)
-		_botones[esquina] = boton
+
+	for cat in CATEGORIAS:
+		var lista: Array = por_cat[cat]
+		if lista.is_empty():
+			continue
+
+		var caja_cat := VBoxContainer.new()
+		caja_cat.add_theme_constant_override("separation", 3)
+		caja_cat.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_caja.add_child(caja_cat)
+
+		var header := Button.new()
+		header.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		TemaHUD.estilizar_boton(header)
+		header.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+		caja_cat.add_child(header)
+		_headers_categoria[cat] = header
+
+		var margen := MarginContainer.new()
+		margen.add_theme_constant_override("margin_left", 12)
+		margen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caja_cat.add_child(margen)
+		_contenedores_categoria[cat] = margen
+
+		var caja_filas := VBoxContainer.new()
+		caja_filas.add_theme_constant_override("separation", 2)
+		caja_filas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		margen.add_child(caja_filas)
+
+		var desplegada: bool = _desplegadas.get(cat, true)
+		margen.visible = desplegada
+		_actualizar_header(header, cat, lista.size(), desplegada)
+
+		header.pressed.connect(func() -> void:
+			var nuevo_estado: bool = not _desplegadas.get(cat, true)
+			_desplegadas[cat] = nuevo_estado
+			margen.visible = nuevo_estado
+			_actualizar_header(header, cat, lista.size(), nuevo_estado)
+		)
+
+		for esquina: Vector2i in lista:
+			var boton := Button.new()
+			boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			TemaHUD.estilizar_boton(boton)
+			boton.pressed.connect(func() -> void: edificio_pedido.emit(esquina))
+			caja_filas.add_child(boton)
+			_botones[esquina] = boton
+
+
+func _actualizar_header(btn: Button, cat: String, cantidad: int, desplegada: bool) -> void:
+	var flecha := "▼" if desplegada else "▶"
+	btn.text = "%s %s (%d)" % [flecha, NOMBRES_CATEGORIA.get(cat, cat.capitalize()), cantidad]
 
 
 func _texto_fila(esquina: Vector2i) -> String:

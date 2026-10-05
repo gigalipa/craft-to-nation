@@ -114,6 +114,7 @@ var _liberando_todos := false
 var puestos: Dictionary = {}
 ## id de colono -> esquina del puesto donde trabaja.
 var _puesto_de: Dictionary = {}
+var _contador_orden := 0
 
 
 func _ready() -> void:
@@ -145,8 +146,10 @@ func contar_tipo(tipo: String) -> int:
 ## (ver esta_refinando()); SIN_DEPOSITO si no tiene. "progreso" son las horas de estudio de la
 ## cohorte (solo escuelas, ver _formar()).
 func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO, salida: Vector2i = SIN_SERVICIO, chimenea: Vector3i = SIN_DEPOSITO) -> void:
+	_contador_orden += 1
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
+		"orden_construccion": _contador_orden,
 		"cupo": Recoleccion.cupo_de(tipo),
 		"capacidad": Recoleccion.capacidad_almacen_de(tipo),
 		"tasas": tasas.duplicate(),

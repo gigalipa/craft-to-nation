@@ -76,7 +76,14 @@ func _actualizar() -> void:
 		hijo.free()
 	if Ciudad.almacen.is_empty():
 		_caja.add_child(TemaHUD.etiqueta("Vacío"))
-	for clave in Ciudad.almacen:
+		return
+	var claves: Array = Ciudad.almacen.keys()
+	claves.sort_custom(func(a: String, b: String) -> bool:
+		var nom_a: String = HUDScript.NOMBRES_RECURSO.get(a, Ciudad.almacen[a].nombre if Ciudad.almacen.has(a) else a)
+		var nom_b: String = HUDScript.NOMBRES_RECURSO.get(b, Ciudad.almacen[b].nombre if Ciudad.almacen.has(b) else b)
+		return nom_a.nocasecmp_to(nom_b) < 0
+	)
+	for clave in claves:
 		var recurso = Ciudad.almacen[clave]
 		var nombre: String = HUDScript.NOMBRES_RECURSO.get(clave, recurso.nombre)
 		var fila := "%s: %.0f/%.0f %s" % [nombre, recurso.cantidad, recurso.limite, BarraSuperiorScript.texto_tasa(recurso.tasa_neta_promedio)]

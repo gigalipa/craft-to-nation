@@ -115,7 +115,7 @@ func ejecutar_pruebas() -> void:
 
 func probar_barra_superior_calculos() -> void:
 	print("=== TEST 1a: BarraSuperior (cálculos estáticos) ===")
-	assert(BarraSuperiorScript.texto_poblacion(38, 48, 5) == "Población 38/48 (5)")
+	assert(BarraSuperiorScript.texto_poblacion(38, 48, 5) == "Población: 38/48 (5)")
 	assert(BarraSuperiorScript.fraccion_moral(Ciudad.BONO_MORAL_MAXIMO / 2.0) == 0.5)
 	# Moral fuera de rango: la barra se acota a 0-1.
 	assert(BarraSuperiorScript.fraccion_moral(-3.0) == 0.0)
@@ -123,7 +123,7 @@ func probar_barra_superior_calculos() -> void:
 	assert(BarraSuperiorScript.texto_tasa(12.0) == "+12.0/h")
 	assert(BarraSuperiorScript.texto_tasa(-3.0) == "-3.0/h")
 	assert(BarraSuperiorScript.texto_tasa(0.0) == "+0.0/h")
-	assert(BarraSuperiorScript.texto_comida(126.0, 200.0, -5.0) == "Comida 126/200 -5.0/h")
+	assert(BarraSuperiorScript.texto_comida(126.0, 200.0, -5.0) == "Comida: 126/200 (-5.0/h)")
 
 	var almacen := {
 		"a": RecursoFalso.new("A", 100.0, 500.0, 2.0),
@@ -138,7 +138,7 @@ func probar_barra_superior_calculos() -> void:
 	# Una tasa 0 no cuenta como "menor positiva": el recurso sin movimiento no es crítico.
 	assert(BarraSuperiorScript.clave_critica({"a": RecursoFalso.new("A", 0, 1, 0.0), "b": RecursoFalso.new("B", 0, 1, 0.0)}) == "")
 	assert(BarraSuperiorScript.clave_critica({}) == "")
-	assert(BarraSuperiorScript.texto_energia(30.0, 50.0) == "Energía: 30/50 E/h")
+	assert(BarraSuperiorScript.texto_energia(30.0, 50.0, -20.0) == "Energía: 30/50 (-20.0/h)")
 
 	# Recursos fluidos y combustible
 	assert(HUDScript.NOMBRES_RECURSO["agua"] == "Agua")
@@ -165,7 +165,7 @@ func probar_ventanas_datos() -> void:
 	clic.button_index = MOUSE_BUTTON_LEFT
 	clic.pressed = true
 	barra.poblacion.emit_signal("gui_input", clic)
-	barra.almacen_total.emit_signal("gui_input", clic)
+	barra.almacen_total.pressed.emit()
 	assert(pedidos == ["poblacion", "almacen"], "salió %s" % [pedidos])
 	barra.queue_free()
 
@@ -229,6 +229,13 @@ func probar_ventanas_datos() -> void:
 	ventana_almacen.abrir()
 	assert(ventana_almacen.visible and ventana_almacen.abierta)
 	assert(ventana_almacen._caja.get_child_count() > 0)
+	var nombres_recursos: Array = []
+	for hijo in ventana_almacen._caja.get_children():
+		if hijo is Label:
+			nombres_recursos.append((hijo as Label).text.split(":")[0])
+	var nombres_ordenados := nombres_recursos.duplicate()
+	nombres_ordenados.sort_custom(func(a: String, b: String) -> bool: return a.nocasecmp_to(b) < 0)
+	assert(nombres_recursos == nombres_ordenados, "almacen debe estar ordenado alfabeticamente: %s vs %s" % [nombres_recursos, nombres_ordenados])
 	var boton_cerrar_almacen: Button = ventana_almacen._caja_raiz.get_child(0).get_child(1)
 	ventana_almacen._process(0.0)
 	assert(ventana_almacen._caja_raiz.get_child(0).get_child(1) == boton_cerrar_almacen)
@@ -292,7 +299,7 @@ func probar_ventana_poblacion_empleo() -> void:
 
 ## Ventana Ocupaciones: una fila-botón por sitio de trabajo.
 func probar_ventana_ocupaciones() -> void:
-	print("=== TEST 1e: Ocupaciones lista los sitios de trabajo, se actualiza sin recrear filas y emite edificio_pedido ===")
+	print("=== TEST 1e: Ocupaciones lista los sitios de trabajo por categorías desplegables, ordenados por construcción ===")
 	var puestos_previos: Dictionary = Economia.puestos
 	Economia.puestos = {}
 	var ventana: PanelContainer = VentanaOcupacionesScript.new()
@@ -302,41 +309,66 @@ func probar_ventana_ocupaciones() -> void:
 	ventana.abrir()
 	assert("Ninguno todavía" in _textos(ventana._caja), "salió %s" % [_textos(ventana._caja)])
 	var e_mina := Vector2i(1000, 1000)
+	var e_madero := Vector2i(1050, 1000)
 	var e_esc := Vector2i(1100, 1000)
 	var e_bp := Vector2i(1200, 1000)
 	Economia.registrar_puesto(e_mina, "mina", 5, 5, {})
+	Economia.registrar_puesto(e_madero, "maderero", 3, 4, {})
 	Economia.registrar_puesto(e_esc, "escuela_tecnica", 5, 5, {})
 	Economia.registrar_puesto(e_bp, "blueprint", 5, 5, {})
 	Economia.puestos[e_mina]["recolectores"] = [1, 2]
 	Economia.puestos[e_mina]["acarreadores"] = [3]
 	ventana._actualizar()
-	var botones: Array = ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button)
-	assert(botones.size() == 2, "mina y escuela; el blueprint no es puesto de trabajo (%d)" % botones.size())
+
+	# Categorías presentes y blueprint ignorado
+	assert(ventana._headers_categoria.has("recoleccion"))
+	assert(ventana._headers_categoria.has("investigacion"))
+	assert(not ventana._headers_categoria.has("industria"))
+	assert(not ventana._headers_categoria.has("energia"))
 	assert(not "Ninguno todavía" in _textos(ventana._caja))
+
+	# Dentro de recolección: el más nuevo (maderero) arriba de la mina
+	var boton_madero: Button = ventana._botones[e_madero]
+	var boton_mina: Button = ventana._botones[e_mina]
+	var boton_esc: Button = ventana._botones[e_esc]
+	assert(boton_madero.get_index() < boton_mina.get_index(), "el más nuevo arriba")
+
 	var cupo_mina: int = Economia.puestos[e_mina]["cupo"]
-	var boton_mina: Button = botones[0]
 	assert(boton_mina.text == "Mina 3/%d" % cupo_mina, "salió '%s'" % boton_mina.text)
-	assert((botones[1] as Button).text.begins_with("Escuela técnica 0/"), "salió '%s'" % (botones[1] as Button).text)
+	assert(boton_esc.text.begins_with("Escuela técnica 0/"), "salió '%s'" % boton_esc.text)
+
+	# Desplegable: plegar y desplegar recolección
+	var cont_recol: Control = ventana._contenedores_categoria["recoleccion"]
+	assert(cont_recol.visible)
+	ventana._headers_categoria["recoleccion"].pressed.emit()
+	assert(not cont_recol.visible, "al hacer clic se pliega")
+	ventana._headers_categoria["recoleccion"].pressed.emit()
+	assert(cont_recol.visible, "al hacer clic se despliega")
+
 	# Sin cambiar el conjunto de puestos, los botones son los mismos pero el texto se actualiza.
 	Economia.puestos[e_mina]["acarreadores"] = []
 	Economia.puestos[e_mina]["activo"] = false
 	ventana._actualizar()
-	assert(ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button)[0] == boton_mina, "no se recrean las filas")
+	assert(ventana._botones[e_mina] == boton_mina, "no se recrean las filas")
 	assert(boton_mina.text == "Mina 2/%d (inactivo)" % cupo_mina, "salió '%s'" % boton_mina.text)
 	Economia.puestos[e_mina]["activo"] = true
 	Economia.puestos[e_mina]["agotado"] = true
 	ventana._actualizar()
 	assert(boton_mina.text == "Mina 2/%d (agotado)" % cupo_mina, "salió '%s'" % boton_mina.text)
+
 	# El clic emite la esquina de su fila.
 	var pedidos: Array = []
 	ventana.edificio_pedido.connect(func(esquina: Vector2i) -> void: pedidos.append(esquina))
 	boton_mina.pressed.emit()
-	(ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button)[1] as Button).pressed.emit()
+	boton_esc.pressed.emit()
 	assert(pedidos == [e_mina, e_esc], "salió %s" % [pedidos])
+
 	# Si cambia el conjunto, se reconstruye.
 	Economia.puestos.erase(e_esc)
 	ventana._actualizar()
-	assert(ventana._caja.get_children().filter(func(n: Node) -> bool: return n is Button).size() == 1)
+	assert(not ventana._headers_categoria.has("investigacion"))
+	assert(ventana._botones.size() == 2)
+
 	# Cierre, ocultar/restaurar, como las demás ventanas.
 	var cerrar: Button = ventana._caja_raiz.get_child(0).get_child(1)
 	ventana.ocultar_temporalmente()
@@ -361,11 +393,11 @@ func probar_barra_superior() -> void:
 	Ciudad.almacen["comida"].cantidad = 126.0
 	Ciudad.almacen["comida"].tasa_neta_promedio = -5.0
 	barra.actualizar()
-	assert(barra.comida.text.begins_with("Comida 126/"), "salió '%s'" % barra.comida.text)
+	assert(barra.comida.text.begins_with("Comida: 126/"), "salió '%s'" % barra.comida.text)
 	assert(barra.comida.get_theme_color("font_color") == BarraSuperiorScript.TemaHUD.INVALIDO)
 	Ciudad.almacen["comida"].tasa_neta_promedio = 2.0
 	barra.actualizar()
-	assert(barra.comida.text.begins_with("Comida 126/") and barra.comida.text.ends_with("+2.0/h"), "salió '%s'" % barra.comida.text)
+	assert(barra.comida.text.begins_with("Comida: 126/") and barra.comida.text.ends_with("(+2.0/h)"), "salió '%s'" % barra.comida.text)
 	assert(barra.comida.get_theme_color("font_color") == BarraSuperiorScript.TemaHUD.TEXTO)
 
 	# Comida es la de menor tasa positiva (2.0) frente al resto en 0: es la crítica.
@@ -378,7 +410,7 @@ func probar_barra_superior() -> void:
 	barra.actualizar()
 	assert(barra.critico.text == "Crítico —", "salió '%s'" % barra.critico.text)
 
-	assert(barra.almacen_total.text.begins_with("Almacén "), "salió '%s'" % barra.almacen_total.text)
+	assert(barra.almacen_total.text == "Almacén", "salió '%s'" % barra.almacen_total.text)
 	assert(barra.era.text == "Era 1 · Prehistórica")
 	assert(barra.nivel.text.begins_with("Nivel "))
 

@@ -20,7 +20,7 @@ const ERA_ACTUAL := "Era 1 · Prehistórica"
 var poblacion := TemaHUD.etiqueta()
 var moral := TemaHUD.etiqueta()
 var comida := TemaHUD.etiqueta()
-var almacen_total := TemaHUD.etiqueta()
+var almacen_total := Button.new()
 var critico := TemaHUD.etiqueta()
 var energia := TemaHUD.etiqueta()
 var era := TemaHUD.etiqueta(ERA_ACTUAL)
@@ -30,15 +30,15 @@ var _barra_moral := ProgressBar.new()
 
 
 static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String:
-	return "Población %d/%d (%d)" % [censo, camas, desempleados]
+	return "Población: %d/%d (%d)" % [censo, camas, desempleados]
 
 
 static func texto_comida(cantidad: float, limite: float, tasa: float) -> String:
-	return "Comida %.0f/%.0f %s" % [cantidad, limite, texto_tasa(tasa)]
+	return "Comida: %.0f/%.0f (%s)" % [cantidad, limite, texto_tasa(tasa)]
 
 
-static func texto_energia(entregada: float, demanda: float) -> String:
-	return "Energía: %.0f/%.0f E/h" % [entregada, demanda]
+static func texto_energia(entregada: float, demanda: float, tasa: float = 0.0) -> String:
+	return "Energía: %.0f/%.0f (%s)" % [entregada, demanda, texto_tasa(tasa)]
 
 
 ## Fracción 0-1 del bono de moral respecto al máximo (acotada).
@@ -76,6 +76,13 @@ static func clave_critica(almacen: Dictionary) -> String:
 	return elegida
 
 
+static func _separador() -> Label:
+	var sep := TemaHUD.etiqueta("|")
+	sep.add_theme_color_override("font_color", Color(0.55, 0.55, 0.50, 0.7))
+	sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return sep
+
+
 func _ready() -> void:
 	TemaHUD.aplicar_panel(self)
 	# Anclas y offsets explícitos: set_anchors_preset() en _ready() dejaba la
@@ -88,34 +95,79 @@ func _ready() -> void:
 	offset_right = 0.0
 	offset_top = 0.0
 	custom_minimum_size.y = 44.0
+
 	var fila := HBoxContainer.new()
-	fila.add_theme_constant_override("separation", 28)
+	fila.add_theme_constant_override("separation", 10)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fila)
+
+	# Grupo izquierdo: Población | Moral
+	var grupo_izq := HBoxContainer.new()
+	grupo_izq.add_theme_constant_override("separation", 8)
+	grupo_izq.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grupo_izq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
 	poblacion.mouse_filter = Control.MOUSE_FILTER_STOP
 	poblacion.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	poblacion.gui_input.connect(_on_clic.bind("poblacion"))
-	fila.add_child(poblacion)
-	fila.add_child(moral)
+	grupo_izq.add_child(poblacion)
+
+	grupo_izq.add_child(_separador())
+
+	grupo_izq.add_child(moral)
 	_barra_moral.show_percentage = false
 	_barra_moral.max_value = 1.0
-	_barra_moral.custom_minimum_size = Vector2(90, 10)
+	_barra_moral.custom_minimum_size = Vector2(70, 10)
 	_barra_moral.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_barra_moral.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fila.add_child(_barra_moral)
-	fila.add_child(comida)
-	almacen_total.mouse_filter = Control.MOUSE_FILTER_STOP
+	grupo_izq.add_child(_barra_moral)
+
+	fila.add_child(grupo_izq)
+
+	var espacio_izq := Control.new()
+	espacio_izq.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	espacio_izq.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(espacio_izq)
+
+	# Grupo central: [Almacén] Comida | Energía | Crítico
+	var grupo_cen := HBoxContainer.new()
+	grupo_cen.add_theme_constant_override("separation", 8)
+	grupo_cen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grupo_cen.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	almacen_total.text = "Almacén"
+	TemaHUD.estilizar_boton(almacen_total)
+	almacen_total.custom_minimum_size = Vector2(72, 28)
+	almacen_total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	almacen_total.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	almacen_total.gui_input.connect(_on_clic.bind("almacen"))
-	fila.add_child(almacen_total)
-	fila.add_child(critico)
-	fila.add_child(energia)
-	var espacio := Control.new()
-	espacio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	espacio.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fila.add_child(espacio)
-	fila.add_child(era)
-	fila.add_child(nivel)
+	almacen_total.pressed.connect(func() -> void: dato_pedido.emit("almacen"))
+	grupo_cen.add_child(almacen_total)
+
+	grupo_cen.add_child(comida)
+	grupo_cen.add_child(_separador())
+	grupo_cen.add_child(energia)
+	grupo_cen.add_child(_separador())
+	grupo_cen.add_child(critico)
+
+	fila.add_child(grupo_cen)
+
+	var espacio_der := Control.new()
+	espacio_der.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	espacio_der.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(espacio_der)
+
+	# Grupo derecho: Era | Nivel
+	var grupo_der := HBoxContainer.new()
+	grupo_der.add_theme_constant_override("separation", 8)
+	grupo_der.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grupo_der.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	grupo_der.add_child(era)
+	grupo_der.add_child(_separador())
+	grupo_der.add_child(nivel)
+
+	fila.add_child(grupo_der)
+
 	actualizar()
 
 
@@ -133,7 +185,7 @@ func actualizar() -> void:
 	poblacion.text = texto_poblacion(Ciudad.censo_total, Ciudad.capacidad_camas_construida, desempleados)
 	var excede: bool = Ciudad.vivienda_ocupada > Ciudad.capacidad_camas_construida
 	poblacion.add_theme_color_override("font_color", TemaHUD.INVALIDO if excede else TemaHUD.TEXTO)
-	moral.text = "Moral %+.1f" % Ciudad.bono_moral_variedad
+	moral.text = "Moral: %+.1f" % Ciudad.bono_moral_variedad
 	_barra_moral.value = fraccion_moral(Ciudad.bono_moral_variedad)
 
 	var cantidad_comida := 0.0
@@ -146,9 +198,16 @@ func actualizar() -> void:
 	comida.text = texto_comida(cantidad_comida, limite_comida, tasa_comida)
 	_colorear_por_tasa(comida, tasa_comida)
 
-	var suma: Dictionary = totales(Ciudad.almacen)
-	almacen_total.text = "Almacén %.0f/%.0f %s" % [suma["cantidad"], suma["limite"], texto_tasa(suma["tasa"])]
-	_colorear_por_tasa(almacen_total, suma["tasa"])
+	almacen_total.text = "Almacén"
+
+	var res_e: Dictionary = Economia.balance_energia if Economia != null else {}
+	var entregada_e: float = res_e.get("entregada", 0.0)
+	var demanda_e: float = res_e.get("demanda", 0.0)
+	var capacidad_e: float = res_e.get("capacidad", 0.0)
+	var tasa_e: float = capacidad_e - demanda_e
+	var deficit_e: bool = res_e.get("deficit", false)
+	energia.text = texto_energia(entregada_e, demanda_e, tasa_e)
+	energia.add_theme_color_override("font_color", TemaHUD.INVALIDO if (deficit_e or tasa_e < 0.0) else TemaHUD.TEXTO)
 
 	var clave := clave_critica(Ciudad.almacen)
 	if clave == "":
@@ -159,15 +218,9 @@ func actualizar() -> void:
 		critico.text = "Crítico: %s %s" % [recurso.nombre, texto_tasa(recurso.tasa_neta_promedio)]
 		_colorear_por_tasa(critico, recurso.tasa_neta_promedio)
 
-	var res_e: Dictionary = Economia.balance_energia if Economia != null else {}
-	var entregada_e: float = res_e.get("entregada", 0.0)
-	var demanda_e: float = res_e.get("demanda", 0.0)
-	var deficit_e: bool = res_e.get("deficit", false)
-	energia.text = texto_energia(entregada_e, demanda_e)
-	energia.add_theme_color_override("font_color", TemaHUD.INVALIDO if deficit_e else TemaHUD.TEXTO)
-
 	nivel.text = "Nivel %d" % Ciudad.nivel
 
 
 func _colorear_por_tasa(etiqueta: Label, tasa: float) -> void:
 	etiqueta.add_theme_color_override("font_color", TemaHUD.INVALIDO if tasa < 0.0 else TemaHUD.TEXTO)
+

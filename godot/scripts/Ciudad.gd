@@ -57,7 +57,7 @@ const ORDEN_DESAHUCIO := ["desempleado", "ciudadano", "obrero", "tecnico", "espe
 ## la taxonomía nueva; desempleado y ciudadano al final, porque la migración
 ## solo produce desempleados y sin ellos una ciudad hambrienta no sufriría
 ## bajas y nunca se recuperaría.
-const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico", "desempleado", "ciudadano"]
+const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico", "especialista", "investigador", "desempleado", "ciudadano"]
 
 ## Colonos que llegan por hora de juego (placeholder sin balance real). Llega
 ## un "desempleado" cada vez que el acumulador llega a 1, si hay vivienda

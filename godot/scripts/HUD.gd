@@ -263,7 +263,7 @@ static func texto_tasas_mina_por_nivel(niveles: Array) -> String:
 		var partes: Array = []
 		for recurso in niveles[i]:
 			if niveles[i][recurso] >= UMBRAL_TASA_TARJETA:
-				partes.append("%.1f %s/h" % [niveles[i][recurso], recurso])
+				partes.append("%.1f %s/h" % [niveles[i][recurso], recurso.replace("_", " ")])
 		lineas.append("  Nivel %d: %s" % [i + 1, ", ".join(partes) if not partes.is_empty() else "nada"])
 	return "Recolección prevista por trabajador:\n" + "\n".join(lineas)
 

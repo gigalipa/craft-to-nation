@@ -221,6 +221,20 @@ func ejecutar_pruebas() -> void:
 	assert(famelica.demografia["desempleado"] < 8, "la hambruna debe quitar desempleados")
 	assert(famelica.demografia["desempleado"] == 6, "bajas = max(1, int(8 * 0.25)) = 2")
 
+	print("\n=== TEST 16b: La hambruna también cobra bajas entre especialistas e investigadores ===")
+	var famelica_esp: Node = CiudadScript.new()
+	famelica_esp.registrar_edificio_residencial(1, [2, 2])
+	famelica_esp.registrar_edificio_residencial(2, [2, 2])
+	famelica_esp.migracion_activa = false
+	famelica_esp.demografia["especialista"] = 4
+	famelica_esp.demografia["investigador"] = 4
+	famelica_esp.almacen["comida"].cantidad = 0.0
+	famelica_esp.simular_tick(5.0)
+	assert(famelica_esp.demografia["especialista"] == 2, "bajas = max(1, int(8 * 0.25)) = 2 sobre especialistas")
+	famelica_esp.demografia["especialista"] = 0
+	famelica_esp.simular_tick(5.0)
+	assert(famelica_esp.demografia["investigador"] == 3, "al agotarse especialistas, cobra bajas en investigadores")
+
 	print("\n=== TEST 17: la ciudad recién creada no pasa hambruna durante 10 minutos de juego ===")
 	# Sin producción de comida, el stock inicial debe alcanzar para que el
 	# avatar coma 10 minutos (300 ticks de 2 s) sin hambruna.

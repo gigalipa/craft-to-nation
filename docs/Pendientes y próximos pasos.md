@@ -2,69 +2,59 @@
 
 ## Ruta vigente
 
-1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1`, que también detecta errores de ejecución y escenas incompletas.
+1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (553 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
 2. ✅ (2026-10-04) Formación de especialistas (`escuela_especialistas`), universidad e investigaciones de activación (Metalurgia Aplicada y Automatización Industrial).
 3. ✅ (2026-10-04) Fluidos (`agua`, `crudo`, `combustible`), recetas de refinería (`refineria_petrolera`, `productor_combustible`), central termoeléctrica y transmisión energética por vías e influencia con déficit horario.
-4. Completar las obras por colonos con tendido de vías, tope de cuadrilla y prioridades configurables.
-5. Implementar bombas de extracción directa en fuentes de agua y crudo.
-6. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
-7. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
+4. ✅ (2026-10-05) Gestión de obras y blueprints: autoasignación inmediata de ociosos, tope de cuadrilla (máx. 4 obreros por obra), hasta 5 blueprints guardados con miniaturas y nombrado automático `Residencia [camas]x[baules]`, nivelación compartida por cota de puerta guía y traslado del núcleo urbano desde el panel del edificio.
+5. ✅ (2026-10-05) Logística y tráfico: jerarquía de transporte en vías de 1 celda (recursos priorizados: comida > combustible > crudo > acero > mineral_refinado > hierro > cobre > carbón > tierras_raras > tablas > madera > piedra > tierra > agua), cesión de paso y apartados laterales, recogida en puerta de servicio (evita saturación de interiores) y retroceso de nivel en puestos según el empleado de menor rango activo.
+6. ✅ (2026-10-05) HUD y demografía: barra superior responsiva con botón de Almacén compacto, recursos destacados (Comida, Energía, Crítico), ventana de Almacén alfabética, ventana de Ocupaciones categorizada por tipo y ordenada por antigüedad, cierre de diálogos/baúles con `E` o `Escape`, y orden de bajas por hambruna ampliado a especialistas e investigadores antes que desempleados.
+7. Completar las obras por colonos con tendido de vías y prioridades configurables.
+8. Implementar bombas de extracción directa en fuentes de agua y crudo.
+9. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
+10. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
 
 ## Estado detallado e historial
 
-### 1. HUD visual interactivo — ✅ primera entrega hecha (2026-09-25)
+### 1. HUD visual interactivo — ✅ actualizado y responsivo (2026-10-05)
 
-Hecho: barra superior (recursos, población, moral, nivel), barra de modos de la cenital (Ver, Construir con menú Residencial/puestos, Zonas, Vías), hotbar 1–6 y panel contextual (ambas vistas), ventanas de Población/Almacén (clic en la barra superior, en vivo, arrastrables, persisten posición/estado), transición animada de cámara (vuelo + crossfade del HUD, órbita de la cenital según hacia dónde mira el avatar) y panel de notificaciones emergentes (esquina superior derecha, apiladas con fade-in/out de 2,5 s, 2026-09-27) con los motivos de rechazo al colocar/declarar, edificios declarados/construidos y colonos nuevos. Spec: `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`. **Queda para después:** batalla, escuadrón, salud y equipo (no hay sistema detrás); cantidades por casilla de la hotbar (cuando el inventario del avatar, el almacén central, aporte el consumo de materiales); herramientas de recolección (pala, pico, hacha); modo Demoler en la cenital; arte de los iconos de Ver/Construir/Zonas/Vías y Zona A/B/Borrar (el mecanismo de `icono` opcional ya existe en `BarraModos.gd`, ver 2026-09-30, solo falta el arte); más eventos con notificación (ciudad bajo ataque, cuando exista combate).
+Hecho: barra superior responsiva (se adapta a la resolución, botón compacto «Almacén» sin saturar con cantidades ni tasas, muestra de forma visible Comida, Energía y Recurso Crítico con tasas por hora; población muestra censo/camas y total desempleado; moral y era/nivel). Ventana de Almacén ordenada alfabéticamente. Ventana de Ocupaciones accesible desde Población con categorías colapsables (recolección, industria, investigación, energía) y edificios ordenados cronológicamente inverso (el más nuevo arriba). Cierre rápido con tecla `E` o `Escape` en ventanas de diálogo y `VentanaBaul`. Barra de modos de la cenital (Ver, Construir con miniaturas y menú Residencial/puestos, Zonas, Vías), hotbar 1–6 y panel contextual (ambas vistas), transición animada de cámara (vuelo + crossfade del HUD) y panel de notificaciones emergentes. **Queda para después:** batalla, escuadrón, salud y equipo; herramientas de recolección (pala, pico, hacha); modo Demoler en la cenital; arte de los iconos de Ver/Construir/Zonas/Vías y Zona A/B/Borrar; eventos bélicos futuros.
 
-Ventanas de datos (decisión del usuario, 2026-10-01): «Población» muestra población total, camas construidas y empleo por tipo (empleados / sin empleo); la nueva «Ocupaciones» (botón en Población) lista los sitios de trabajo con trabajadores/cupo y estado, y un clic centra la cámara en el edificio y abre su panel del puesto. Queda para después: filtros y ordenación de la lista.
+### 2. Ventana de interacción del baúl — ✅ hecho (2026-09-28, cierre con E 2026-10-05)
 
-Inspiración combinada de AoE y Minecraft. Se organiza por **modos** (construir, zonas, vías, etc.) con sus accesos directos, y no por edificios particulares: habrá demasiados como para asignar una tecla a cada uno. Va tras los edificios de recolección jugables (ya implementados) para definir la interfaz con ellos ya presentes, y antes de 2C y de las demás mecánicas para no rehacerla.
-
-### 2. Ventana de interacción del baúl — ✅ hecho (2026-09-28)
-
-Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre `VentanaBaul`, que muestra el almacén local del puesto (una fila por recurso presente en el baúl o en el stock central) con botones -/+ (1 de cada vez, 10 con Shift) y "Extraer todo" (el botón "Agregar todo" se quitó el 2026-10-01). Reemplazó al retiro automático por `E` mantenida sobre el baúl; mantener `E` quedó solo para los frutos (`Player._procesar_frutos()`). Se apoya en el despachador `_interactuar()` de `Player.gd`. Ver `godot/scripts/VentanaBaul.gd`.
+Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre `VentanaBaul`, que muestra el almacén local del puesto (una fila por recurso presente en el baúl o en el stock central) con botones -/+ (1 de cada vez, 10 con Shift) y "Extraer todo". Pulsar `E` nuevamente o `Escape` cierra la ventana.
 
 ### 3. Declaración de edificios por volumen interno — ✅ hecho (2026-09-28)
 
-Problema original: un edificio de dos niveles con una cama en cada nivel no era reconocido por la declaración. Se decidió reemplazar el análisis por losas por uno basado en el **volumen interno**, para permitir edificios personalizados de formas variadas (pirámides, cilindros e irregulares).
-
-Resuelto con un flood-fill 3D del volumen interior sellado (reemplaza la comparación de cada losa contra la huella global del edificio), más el resto del checklist de "casa aprobable": vestíbulo libre detrás de cada puerta (externa o interna) y verificación de acceso real por pathfinding a cada cama/baúl desde al menos una puerta externa. Ver `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md` y `docs/superpowers/plans/2026-09-28-volumen-interno-edificios.md`.
+Resuelto con flood-fill 3D del volumen interior sellado, vestíbulo libre detrás de cada puerta (externa o interna) y verificación de acceso real por pathfinding a cada cama/baúl desde al menos una puerta externa.
 
 ### 4. PoC 5, sub-proyecto 2C — transformación — parte 1 (costo de colocación) ✅ hecho (2026-09-29)
 
-~~Programar el consumo de recursos según los costos de "colocación" indicados en el documento de `Fichas_Consumo_Produccion.md`, y el reembolso simétrico al volver a minar un bloque colocado por el jugador (decisión del usuario, 2026-09-28).~~ Hecho: el placeholder único `pared` se reemplazó por bloques estructurales reales con costo (`tierra_compactada`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`), colocar desde la hotbar del avatar cobra el recurso crudo de `Ciudad.almacen` y volver a minar un bloque colocado reembolsa exactamente lo cobrado — ver `docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md` y `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`.
+Bloques estructurales reales con costo (`tierra_compactada`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`), cobro de `Ciudad.almacen` al colocar y reembolso al minar.
 
-~~**Parte 2: siderúrgica real**~~ ✅ hecha (2026-09-30): edificio real de 5×5 con plantilla de `bloque_piedra`, puertas de entrada y salida separadas, que solo se coloca dentro de la zona de influencia y sobre zona industrial; operada por técnicos (un desempleado se vuelve técnico al asignarlo), con acarreo de ida y vuelta núcleo → entrada → salida → núcleo (mínimo 10 unidades por viaje) y `acero` en el stock central; `bloque_acero` (3 acero por bloque, décima casilla de la hotbar, tecla `0`) ya tiene fuente de acero — ver `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md` y `docs/superpowers/plans/2026-09-30-siderurgica-real.md`.
+~~**Parte 2: industrias y refinerías**~~ ✅ hechas (2026-09-30 a 2026-10-04): siderúrgica, refinería de tierras raras, aserradero, carbonera, refinería petrolera, productor de combustible y central termoeléctrica. Formación de técnicos (escuela técnica) y especialistas (escuela de especialistas), universidad con investigaciones lineales automáticas (Metalurgia Aplicada y Automatización Industrial).
 
-~~**Parte 2, resto:** refinería de tierras raras, aserradero y carbonera~~ ✅ hechas (2026-10-01): edificios reales con plantilla, material e indicador de actividad propios (humo violáceo, humo negro, aserrín); personal máximo 4; `tasa_base` 0,5 (tierras raras y aserradero) y 2,0 (carbonera). Las tablas del aserradero son un recurso nuevo que cuenta como madera al pagar construcciones; ver `PoC_5/…Catálogo de Recursos y Cadenas de Producción.md`. La formación de técnicos ✅ está hecha (2026-10-01): la **Escuela técnica** (primer edificio de investigación, sobre zona residencial dentro de la influencia, con 4 mesas de estudio —bloque nuevo `mesa_estudio`— en vez de baúl) forma cohortes de 4 obreros que estudian 24 h y salen como 3 técnicos libres (la vivienda ocupada se conserva con `x_cama`; el cuarto colono se va de la ciudad); las refinerías solo contratan técnicos libres y un técnico despedido sigue siendo técnico. Spec: `docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md`.
+### 4b. Logística, jerarquía de transporte y niveles de puesto — ✅ completo (2026-10-05)
 
-### 4b. Correcciones y mejoras tras la escuela técnica (pruebas en vivo, 2026-10-02) — ✅ completa (2026-10-02)
+1. ✅ (2026-10-05) **Jerarquía de prioridades de acarreo:** en caminos estrechos de 1 celda, un colono o acarreador cede el paso o se aparta a una casilla libre según: acarreador con carga (comida > combustible > crudo > acero > mineral_refinado > hierro > cobre > carbón > tierras_raras > tablas > madera > piedra > tierra > agua, desempatando por cantidad y luego ID) > acarreador vacío > colono empleado > colono ocioso.
+2. ✅ (2026-10-05) **Recogida en puerta de servicio:** los acarreadores pueden transferir recursos desde la celda frontal del puesto (`servicio`) sin bloquear el interior ni atascar a los recolectores/trabajadores.
+3. ✅ (2026-10-05) **Retroceso de nivel de puestos:** un puesto que admite obreros retrocede de nivel si cuenta con ellos; el nivel del puesto lo determina el trabajador de menor rango activo (excluyendo acarreadores).
+4. ✅ (2026-10-05) **Hambruna ampliada:** `ORDEN_BAJAS_HAMBRUNA` incluye a especialistas e investigadores antes que a los desempleados.
 
-1. ✅ (2026-10-02) **Color de los técnicos:** al graduarse siguen con el color naranja claro de los obreros; deben verse azules (`ColonosRenderer.COLORES_TIPO`).
-2. ✅ (2026-10-02) Hecho: una fila -/+ por oficio (Obreros, Técnicos, Especialistas) más Acarreadores, con los libres de cada tipo. Texto original: **Elegir tipo y cantidad de empleados en un puesto:** hoy el panel de un puesto periférico solo habla de «Desempleados libres» (muestra 0 aunque haya 3 técnicos sin empleo). Diseñar la forma de elegir el tipo de ciudadano y la cantidad por tipo.
-3. ✅ (2026-10-02) Hecho para los 4 puestos de recolección: el nivel sale del rango mínimo de los recolectores, un puesto agotado a su nivel despide al rango mínimo y sube con quien queda; mina por franjas de profundidad, caza/maderero/pesca por anillos del +50 % y velocidad ×1,5/×2. `Economia.asignar` devuelve verdadero solo si el colono sigue asignado (contratar un rango mayor en un puesto aún agotado a su nuevo nivel lo despide al instante, devuelve falso y deja el nivel subido); `desactivar_puesto` (demolición) libera a todos sin cambiar el nivel. Quedan fuera la escuela de especialistas y la investigación; ver la especificación `2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md`. Texto original: **Nivel de puesto (1, 2, 3):** nivel 1 emplea obreros y técnicos; nivel 2, técnicos y especialistas; nivel 3, solo especialistas. Un puesto nivel 1 «agotado» (recursos agotados en su área o producción bajo el umbral) sigue admitiendo técnicos y, cuando solo tenga técnicos empleados, sube a nivel 2; así sigue siendo útil hasta agotar su nivel 3. Ver `docs/ideas-backlog.md` (niveles de edificio).
-4. ✅ (2026-10-02) **Hotbar y tablas:** los «Bloques de madera» disponibles solo cuentan «Madera»; deben contar también «Tablas».
-5. ✅ (2026-10-02) **Madereros agotados:** marcar el puesto como «agotado» cuando su producción baje de 0,5 madera/h (hoy mantiene empleados ocupados e improductivos demasiado tiempo).
-6. ✅ (2026-10-02) Hecho: la tarjeta de la mina lista los recursos de la franja de cada nivel (omite < 0,3/h). Texto original: **Tarjeta de información de minas por nivel:** al activar la herramienta de la mina, mostrar los recursos aproximados por nivel (omitiendo los < 0,3/h): Nivel 1 = volumen básico; Nivel 2 = solo la franja ampliada de nivel 2; Nivel 3 = solo la franja ampliada de nivel 3 (sin sumar los niveles anteriores). Una mina con especialistas desde el inicio arranca en nivel 3 y recolecta los tres volúmenes. Motivo: minas sobre trazas de hierro tan bajas que no recolectan nada.
-7. **Deconstrucción en 1ª persona:** ✅ (2026-10-02, 7a) se desactiva sola al terminar de deconstruir un edificio; con ella activa no se mina ni se coloca (se avisa con una notificación) y la tarjeta ya muestra «Marcar para demolición» (clic der.). **7b ✅ (2026-10-02):** hecho con las obras por colonos (ver sección 6; antes: cuando los NPCs construyan/demuelan: opción «Marcar para demolición» con clic derecho. En la cenital, «Demolición» solo marca edificios para que los NPCs los demuelan.)
-8. ✅ (2026-10-02) **Techos no transitables** para los colonos.
-9. ✅ (2026-10-02) **Empujar colonos:** el jugador empuja a los colonos; los colonos no mueven al jugador, lo esquivan.
+### 5. Gestión de obras y blueprints — ✅ completo (2026-10-05)
 
-### 5. Resto del catálogo general de PoC 5 — ✅ industrias, fluidos y energía hechos (2026-10-04)
+1. ✅ (2026-10-05) **Cuadrilla limitada y autoasignación:** máximo 4 obreros asignados por obra; los colonos ociosos se asignan automáticamente de forma inmediata al emplazarse o reanudarse una obra.
+2. ✅ (2026-10-05) **Almacenamiento de blueprints:** soporte de hasta 5 blueprints con miniaturas y nombrado automático `Residencia [camas]x[baules]`.
+3. ✅ (2026-10-05) **Nivelación compartida:** la cota de nivelación de un blueprint se calcula según la celda frontal de su puerta guía, permitiendo que edificios enfrentados compartan bloques de nivelación y despeje.
+4. ✅ (2026-10-05) **Traslado de núcleo urbano:** opción en la ventana de edificio para reubicar el núcleo a otra residencia sin pérdida de datos.
 
-Ver `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Catálogo de Recursos y Cadenas de Producción.md`. Minerales y la primera entrega de madera están completos: siderúrgica, refinería de tierras raras, aserradero y carbonera son edificios reales. El 2026-10-04 se completaron la escuela de especialistas, la universidad con investigaciones lineales automáticas (Metalurgia Aplicada y Automatización Industrial), los fluidos (`agua`, `crudo`, `combustible`), la refinería petrolera, el productor de combustible, la central termoeléctrica y la red de energía sin postes con déficit. Quedan más usos de las tablas, las bombas de extracción directa en fuentes de agua y crudo, y el consumo universal de Era 3.
+### 6. Construcción/deconstrucción asistida por NPCs — ✅ en progreso
 
-### 6. Construcción/deconstrucción asistida por NPCs — ✅ hecha para edificios y puestos (2026-10-02)
-
-Los colonos libres (obreros desempleados y técnicos libres) construyen las obras puestas desde la cenital y demuelen los edificios marcados; el jugador tiene preferencia y puede pausar obras desde la ventana del edificio. Ver `docs/superpowers/specs/2026-10-02-obras-por-colonos-design.md`. Queda pendiente: tendido de vías por colonos, tope de cuadrilla por obra y prioridades configurables de obra.
-
+Los colonos libres construyen y demuelen obras con tope de 4 obreros y pausa de edificio.
 
 Pendientes de esta línea:
-
 - Tendido de vías por obreros desempleados y técnicos libres.
-- Tope de cuadrilla por obra.
 - Prioridades configurables de construcción y demolición.
-- Traducción de modelos `.dae` a blueprints construibles y aplicación de las primeras texturas, como trabajo de contenido separado.
+- Traducción de modelos `.dae` a blueprints construibles y aplicación de texturas finales.
 
 ### 7. Cola de pendientes menores de la Fase 3 — no bloqueantes
 

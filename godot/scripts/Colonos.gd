@@ -1010,8 +1010,8 @@ func _decidir_trabajo(c: Dictionary) -> void:
 			c["fase"] = "recoger"
 		return
 	# fase "" o "recoger": ir al puesto y pedir la carga.
-	if not _en_puesto(c["celda"], huella_puesto, servicio, suelo):
-		_ir_junto_a(c, huella_puesto, servicio, _celdas_interiores(huella_puesto, suelo, servicio))
+	if not _en_puesto(c["celda"], huella_puesto, servicio, suelo, true):
+		_ir_junto_a(c, huella_puesto, servicio)
 		return
 	var carga: Dictionary = economia.recoger(esquina, economia.CAPACIDAD_CARGA)
 	if carga.is_empty():
@@ -1039,14 +1039,14 @@ func _decidir_acarreo_refineria(c: Dictionary, esquina: Vector2i, huella: Array,
 			c["carga"] = economia.cargar_insumo(esquina)
 			c["fase"] = "entrada" if not c["carga"].is_empty() else ""
 		"entrada":
-			if not _junto_a(c["celda"], huella, entrada):
+			if not _junto_a(c["celda"], huella, entrada) and Vector2i(c["celda"].x, c["celda"].z) != entrada:
 				_ir_junto_a(c, huella, entrada)
 				return
 			economia.descargar_insumo(esquina, c["carga"])
 			c["carga"] = {}
 			c["fase"] = "salida"
 		"salida":
-			if not _junto_a(c["celda"], huella, salida):
+			if not _junto_a(c["celda"], huella, salida) and Vector2i(c["celda"].x, c["celda"].z) != salida:
 				_ir_junto_a(c, huella, salida)
 				return
 			c["carga"] = economia.recoger_producto(esquina, economia.CAPACIDAD_CARGA)
@@ -1077,7 +1077,7 @@ func _llevar_al_nucleo(c: Dictionary) -> bool:
 ## true si el colono está "en el puesto": dentro del edificio (piso interior, a
 ## la altura "suelo" de su plantilla) o, si no cupo dentro, en la zona de servicio
 ## junto a la puerta (ver _junto_a()).
-func _en_puesto(celda: Vector3i, huella: Array, servicio: Vector2i, suelo: int) -> bool:
+func _en_puesto(celda: Vector3i, huella: Array, servicio: Vector2i, suelo: int, es_acarreador: bool = false) -> bool:
 	if suelo != economia.SIN_SUELO and huella.has(Vector2i(celda.x, celda.z)):
 		# Parado en la puerta no cuenta (taponaría la entrada): solo el piso libre interior.
 		if celda.y != suelo or mundo.obtener_tipo(celda) != "":
@@ -1086,6 +1086,8 @@ func _en_puesto(celda: Vector3i, huella: Array, servicio: Vector2i, suelo: int) 
 		# sitio libre del edificio: quien se detenga ahí a medio camino impediría entrar a los demás.
 		if _es_vestibulo(celda, huella, servicio):
 			return _celdas_interiores(huella, suelo, servicio).size() <= 1
+		return true
+	if es_acarreador and servicio != Vector2i.MAX and Vector2i(celda.x, celda.z) == servicio:
 		return true
 	return _junto_a(celda, huella, servicio)
 
@@ -1230,13 +1232,21 @@ func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX
 	if not solo_dentro:
 		var fuera: Array[Vector3i] = []
 		var candidatas: Array[Vector3i] = _celdas_junto_a(huella) if servicio == Vector2i.MAX else _celdas_de_servicio(servicio, huella)
+		if servicio != Vector2i.MAX and c.get("trabajo", {}).get("rol", "") == "acarreador":
+			var alt_s: int = mundo.altura_en(servicio.x, servicio.y)
+			if alt_s >= 0:
+				var celda_s := Vector3i(servicio.x, alt_s + 1, servicio.y)
+				if _buscador.es_transitable(celda_s) and not candidatas.has(celda_s):
+					candidatas.push_front(celda_s)
 		for celda in candidatas:
 			if not _ocupada_por_otro(celda, c["id"]):
 				fuera.append(celda)
+		if fuera.is_empty() and not candidatas.is_empty():
+			fuera = candidatas.duplicate()
 		grupos.append(fuera)
 	if grupos.is_empty():
 		return  # solo_dentro y ningún sitio libre dentro: nada que intentar
-	c["busqueda"] = {"grupos": grupos, "actual": null}
+	c["busqueda"] = {"grupos": grupos, "todos_grupos": grupos.duplicate(true), "actual": null}
 	if solo_dentro:
 		# Reintento desde la zona de espera: cerca, así que con el tope local, y sin
 		# penalizar si falla (ya está en su sitio de trabajo).
@@ -1254,6 +1264,10 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 	while true:
 		if b["actual"] == null:
 			if b["grupos"].is_empty():
+				if not b.get("reintento_sin_bloqueos", false) and b.has("todos_grupos"):
+					b["reintento_sin_bloqueos"] = true
+					b["grupos"] = b["todos_grupos"].duplicate(true)
+					continue
 				c["busqueda"] = {}
 				if b.get("deambular", false):
 					c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
@@ -1264,6 +1278,8 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 					c["espera"] = ESPERA_TRABAJO * pow(2.0, c["fallos_servicio"] - 1)
 				return
 			var opciones := _opciones_ruta(c)
+			if b.get("reintento_sin_bloqueos", false):
+				opciones["bloqueadas"] = celdas_avatar.duplicate()
 			if b.has("tope"):
 				opciones["max_nodos"] = b["tope"]
 			b["actual"] = _buscador.iniciar_busqueda_a_alguna(c["celda"], b["grupos"].pop_front(), opciones)

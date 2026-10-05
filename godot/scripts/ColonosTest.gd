@@ -1441,4 +1441,47 @@ func ejecutar_pruebas() -> void:
 	assert(col_b_ab["celda"] != Vector3i(5, 1, 6), "el de menor prioridad se apartó a un lado")
 	assert(col_a_ab["celda"] == Vector3i(5, 1, 6), "el prioritario avanzó a la celda despejada")
 
-	print("\n=== Las 52 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 53: varios acarreadores en puesto de caza lleno con recolectores transportan al núcleo sin congelarse ===")
+	var ciudad53: Node = CiudadScript.new()
+	var mundo53: MundoFalso = _mundo_llano(15, 15)
+	# Construir paredes y puerta de caza_recoleccion 4x4 en (2, 2)
+	for x53 in range(2, 6):
+		for z53 in range(2, 6):
+			mundo53.poner(Vector3i(x53, 0, z53), "bloque_madera")
+			var es_puerta53: bool = x53 == 4 and z53 == 2
+			var es_interior53: bool = (x53 in [3, 4] and z53 == 3) or (x53 == 3 and z53 == 4)
+			if es_interior53:
+				continue
+			for y53 in [1, 2]:
+				mundo53.poner(Vector3i(x53, y53, z53), "puerta_inferior" if es_puerta53 and y53 == 1 else ("puerta_superior" if es_puerta53 else "pared"))
+	var economia53: Node = EconomiaScript.new()
+	economia53.ciudad = ciudad53
+	var esquina53 := Vector2i(2, 2)
+	var servicio53 := Vector2i(4, 1)
+	economia53.registrar_puesto(esquina53, "caza_recoleccion", 4, 4, {"caza": 10.0}, {}, servicio53, Vector3i(4, 1, 4), 1)
+	economia53.puestos[esquina53]["almacen"]["comida"] = 1000.0  # almacén al tope (1000/1000)
+
+	var colonos53: Node = _nuevo(mundo53, ciudad53)
+	colonos53.economia = economia53
+
+	# 4 recolectores y 2 acarreadores
+	ciudad53.almacen["comida"].cantidad = 0.0
+	for _i in range(6):
+		colonos53.agregar_colono("desempleado", Vector3i(8, 1, 8))
+	ciudad53.demografia["desempleado"] = 6
+	for _i in range(4):
+		assert(colonos53.contratar(esquina53, "recolector"))
+	for _i in range(2):
+		assert(colonos53.contratar(esquina53, "acarreador"))
+
+	var comida_entregada := false
+	for _step in range(1500):  # hasta 150 s simulados
+		colonos53.avanzar(0.1)
+		if ciudad53.almacen["comida"].cantidad >= 100.0:
+			comida_entregada = true
+			break
+
+	assert(comida_entregada, "los acarreadores transportaron comida al almacén central sin congelarse (comida: %.1f)" % ciudad53.almacen["comida"].cantidad)
+	assert(economia53.puestos[esquina53]["almacen"]["comida"] <= 900.0, "el almacén del puesto se vació al menos dos cargas")
+
+	print("\n=== Las 53 pruebas de Colonos pasaron correctamente ===")

@@ -165,6 +165,9 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
 		if tecla.pressed and tecla.keycode == KEY_ESCAPE:
+			if hud != null and hud.ventana_baul_abierta():
+				hud.cerrar_ventana_baul()
+				return
 			# Esc desactiva primero la herramienta activa (modo deconstrucción);
 			# sin ninguna activa, libera el mouse como siempre.
 			if modo_deconstruccion:
@@ -176,6 +179,10 @@ func _input(event: InputEvent) -> void:
 		if tecla.pressed and tecla.keycode == KEY_G:
 			_alternar_modo_deconstruccion()
 		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_E:
+			if hud != null and hud.ventana_baul_abierta():
+				hud.cerrar_ventana_baul()
+				_e_consumida = true
+				return
 			_interactuar()
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
@@ -226,7 +233,7 @@ func _procesar_accion_repetida(delta: float) -> void:
 	if not Input.is_key_pressed(KEY_E):
 		_e_consumida = false
 		_aviso_sin_frutos_dado = false
-	if not camara.current:
+	if not camara.current or (hud != null and hud.ventana_baul_abierta()):
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return

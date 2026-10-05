@@ -247,6 +247,28 @@ func probar_ventanas_datos() -> void:
 	assert(not ventana_almacen.visible and not ventana_almacen.abierta)
 	ventana_almacen.queue_free()
 
+	const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
+	var ventana_baul: PanelContainer = VentanaBaulScript.new()
+	add_child(ventana_baul)
+	var esq_puesto := Vector2i(100, 100)
+	Economia.registrar_puesto(esq_puesto, "maderero", 3, 4, {})
+	ventana_baul.abrir(esq_puesto)
+	assert(ventana_baul.visible)
+	var tecla_e := InputEventKey.new()
+	tecla_e.keycode = KEY_E
+	tecla_e.pressed = true
+	ventana_baul._unhandled_key_input(tecla_e)
+	assert(not ventana_baul.visible, "pulsar E debe cerrar VentanaBaul")
+	ventana_baul.abrir(esq_puesto)
+	assert(ventana_baul.visible)
+	var tecla_esc := InputEventKey.new()
+	tecla_esc.keycode = KEY_ESCAPE
+	tecla_esc.pressed = true
+	ventana_baul._unhandled_key_input(tecla_esc)
+	assert(not ventana_baul.visible, "pulsar Escape debe cerrar VentanaBaul")
+	ventana_baul.queue_free()
+	Economia.puestos.erase(esq_puesto)
+
 
 func _textos(caja: Node) -> Array:
 	var textos: Array = []

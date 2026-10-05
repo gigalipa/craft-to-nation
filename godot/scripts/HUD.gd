@@ -407,6 +407,10 @@ func cerrar_ventana_baul() -> void:
 	_ventana_baul.cerrar()
 
 
+func ventana_baul_abierta() -> bool:
+	return _ventana_baul != null and _ventana_baul.visible
+
+
 ## Muestra la barra de progreso bajo la mira. "retrocede" (tala, deconstrucción)
 ## la pinta en naranja: indica lo que le queda a lo que se está desmontando.
 func mostrar_progreso(fraccion: float, retrocede: bool = false) -> void:

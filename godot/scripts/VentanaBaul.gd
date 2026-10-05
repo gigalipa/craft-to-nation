@@ -81,6 +81,14 @@ func cerrar() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
+func _unhandled_key_input(event: InputEvent) -> void:
+	if visible and event is InputEventKey:
+		var tecla := event as InputEventKey
+		if tecla.pressed and not tecla.echo and (tecla.keycode == KEY_E or tecla.keycode == KEY_ESCAPE):
+			cerrar()
+			get_viewport().set_input_as_handled()
+
+
 func _process(_delta: float) -> void:
 	if not visible:
 		return

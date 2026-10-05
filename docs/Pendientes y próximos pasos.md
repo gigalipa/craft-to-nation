@@ -2,10 +2,10 @@
 
 ## Ruta vigente
 
-1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (553 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
+1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (554 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
 2. ✅ (2026-10-04) Formación de especialistas (`escuela_especialistas`), universidad e investigaciones de activación (Metalurgia Aplicada y Automatización Industrial).
 3. ✅ (2026-10-04) Fluidos (`agua`, `crudo`, `combustible`), recetas de refinería (`refineria_petrolera`, `productor_combustible`), central termoeléctrica y transmisión energética por vías e influencia con déficit horario.
-4. ✅ (2026-10-05) Gestión de obras y blueprints: autoasignación inmediata de ociosos, tope de cuadrilla (máx. 4 obreros por obra), hasta 5 blueprints guardados con miniaturas y nombrado automático `Residencia [camas]x[baules]`, nivelación compartida por cota de puerta guía y traslado del núcleo urbano desde el panel del edificio.
+4. ✅ (2026-10-05) Gestión de obras y blueprints: autoasignación inmediata de ociosos, tope de cuadrilla (máx. 4 obreros por obra), hasta 5 blueprints guardados con miniaturas y nombrado automático `Residencia [camas]x[baules]`, nivelación compartida por cota de puerta guía, traslado del núcleo urbano desde el panel del edificio, y flexibilización de aberturas (puertas obligatorias únicamente en el 1er piso; pisos superiores no necesitan puertas).
 5. ✅ (2026-10-05) Logística y tráfico: jerarquía de transporte en vías de 1 celda (recursos priorizados: comida > combustible > crudo > acero > mineral_refinado > hierro > cobre > carbón > tierras_raras > tablas > madera > piedra > tierra > agua), cesión de paso y apartados laterales, recogida en puerta de servicio (evita saturación de interiores) y retroceso de nivel en puestos según el empleado de menor rango activo.
 6. ✅ (2026-10-05) HUD y demografía: barra superior responsiva con botón de Almacén compacto, recursos destacados (Comida, Energía, Crítico), ventana de Almacén alfabética, ventana de Ocupaciones categorizada por tipo y ordenada por antigüedad, cierre de diálogos/baúles con `E` o `Escape`, y orden de bajas por hambruna ampliado a especialistas e investigadores antes que desempleados.
 7. Completar las obras por colonos con tendido de vías y prioridades configurables.

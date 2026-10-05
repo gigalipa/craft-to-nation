@@ -2636,7 +2636,58 @@ func ejecutar_pruebas() -> void:
 	Obras.mundo = null
 	print("OK: la demolición por colonos retira el edificio y no deja rastro en Obras.")
 
-	print("\n=== Las 94 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 95: validar_aberturas() solo exige puerta obligatoria en el primer piso (nivel 0); pisos superiores no necesitan puertas ===")
+	# 1. Piso 0 sin puerta: debe fallar con "Falta una puerta en el primer piso."
+	var err_p0_sin_puerta := BlueprintValidator.validar_aberturas({"nivel": 0, "celdas": {"0,0": "pared", "1,0": "ventana"}})
+	assert(err_p0_sin_puerta.size() == 1 and err_p0_sin_puerta[0] == "Falta una puerta en el primer piso.", "piso 0 exige puerta")
+
+	# 2. Piso 1 sin puerta pero con ventana: debe ser válido (no exige puerta)
+	var err_p1_sin_puerta := BlueprintValidator.validar_aberturas({"nivel": 1, "celdas": {"0,0": "pared", "1,0": "ventana"}})
+	assert(err_p1_sin_puerta.is_empty(), "piso 1 no exige puerta si tiene ventana")
+
+	# 3. Piso 1 sin ventana: debe fallar con "Falta una ventana en el segundo piso."
+	var err_p1_sin_ventana := BlueprintValidator.validar_aberturas({"nivel": 1, "celdas": {"0,0": "pared"}})
+	assert(err_p1_sin_ventana.size() == 1 and err_p1_sin_ventana[0] == "Falta una ventana en el segundo piso.", "piso 1 exige ventana")
+
+	# 4. Piso 1 con puerta opcional y ventana: también válido
+	var err_p1_con_puerta := BlueprintValidator.validar_aberturas({"nivel": 1, "celdas": {"0,0": "puerta", "1,0": "ventana"}})
+	assert(err_p1_con_puerta.is_empty(), "piso 1 con puerta opcional es válido")
+
+	# 5. Blueprint de 2 pisos donde piso 0 tiene puerta+ventana y piso 1 tiene solo ventana (sin puerta): validar_blueprint() lo acepta
+	var bp_2p_sin_puerta_arriba := {
+		"nombre": "Casa_2P_Sin_Puerta_Arriba",
+		"tipo": "residencial",
+		"zona_permitida": "residencial_investigacion",
+		"pisos": [
+			{
+				"nivel": 0,
+				"celdas": {
+					"0,0": "pared", "1,0": "puerta", "2,0": "pared",
+					"0,1": "pared",                  "2,1": "pared",
+					"0,2": "pared", "1,2": "pared",  "2,2": "pared",
+					"0,3": "pared", "1,3": "baul",   "2,3": "pared",
+					"0,4": "pared", "1,4": "ventana","2,4": "pared"
+				},
+				"camas": [{"pos": "1,3"}]
+			},
+			{
+				"nivel": 1,
+				"celdas": {
+					"0,0": "pared", "1,0": "pared",  "2,0": "pared",
+					"0,1": "pared",                  "2,1": "pared",
+					"0,2": "pared", "1,2": "pared",  "2,2": "pared",
+					"0,3": "pared", "1,3": "baul",   "2,3": "pared",
+					"0,4": "pared", "1,4": "ventana","2,4": "pared"
+				},
+				"camas": [{"pos": "1,3"}]
+			}
+		]
+	}
+	var res_bp_2p := BlueprintValidator.validar_blueprint(bp_2p_sin_puerta_arriba, "residencial_investigacion")
+	assert(res_bp_2p["valido"], "blueprint de 2 pisos sin puerta en el segundo piso es válido: %s" % str(res_bp_2p["errores"]))
+	print("OK: puertas solo obligatorias en primer piso; pisos superiores admiten ausencia de puerta.")
+
+	print("\n=== Las 95 pruebas de BlueprintValidator pasaron correctamente ===")
 
 
 ## Sustituto mínimo del HUD para las pruebas de Player: solo cuenta avisos.

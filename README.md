@@ -17,7 +17,7 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 - **Fases 4–7 — planeadas:** cámara dual y tropas, logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
-El proyecto Godot cuenta actualmente con **553 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en **26 escenas** `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas, HUD y jugador.
+El proyecto Godot cuenta actualmente con **554 bloques de prueba** (conteo de cabeceras `=== TEST` en los scripts) repartidos en **26 escenas** `*Test.tscn`: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas, HUD y jugador.
 
 ## Ideas incorporadas al roadmap
 

@@ -165,10 +165,11 @@ static func validar_altura_piso(piso: Dictionary) -> Array:
 static func validar_aberturas(piso: Dictionary) -> Array:
 	var errores: Array = []
 	var tipos_presentes: Array = piso["celdas"].values()
-	if not tipos_presentes.has("puerta"):
-		errores.append("Falta una puerta en el %s." % _texto_piso(piso["nivel"]))
+	var nivel: int = piso.get("nivel", 0)
+	if nivel == 0 and not tipos_presentes.has("puerta"):
+		errores.append("Falta una puerta en el %s." % _texto_piso(nivel))
 	if not tipos_presentes.has("ventana"):
-		errores.append("Falta una ventana en el %s." % _texto_piso(piso["nivel"]))
+		errores.append("Falta una ventana en el %s." % _texto_piso(nivel))
 	return errores
 
 

@@ -2029,6 +2029,8 @@ func _salir_de_modo_trazar_via(cerrar_menu: bool = true) -> void:
 	modo_trazar_via = false
 	_hay_tramo_en_curso = false
 	_tramos_fijos.clear()
+	_ultimo_origen_preview = SIN_VERTICE_PREVIO
+	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	via_preview.limpiar()
 	if estaba and cerrar_menu:
 		_menu_construir_abierto = false
@@ -2164,6 +2166,8 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 			_confirmar_trazo_via()
 			_hay_tramo_en_curso = false
 			_tramos_fijos.clear()
+			_ultimo_origen_preview = SIN_VERTICE_PREVIO
+			_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 			via_preview.limpiar()
 		return
 
@@ -2186,6 +2190,8 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 		_confirmar_trazo_via()
 		_hay_tramo_en_curso = false
 		_tramos_fijos.clear()
+		_ultimo_origen_preview = SIN_VERTICE_PREVIO
+		_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 		via_preview.limpiar()
 		return
 
@@ -2193,9 +2199,12 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 
 
 func _cancelar_tramo_via() -> void:
-	if not _hay_tramo_en_curso:
+	if not _hay_tramo_en_curso and _tramos_fijos.is_empty():
 		return
 	_hay_tramo_en_curso = false
+	_tramos_fijos.clear()
+	_ultimo_origen_preview = SIN_VERTICE_PREVIO
+	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	via_preview.limpiar()
 	print("Trazado de vía cancelado.")
 

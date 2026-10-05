@@ -217,4 +217,26 @@ func ejecutar_pruebas() -> void:
 	camara14.hud.queue_free()
 	mundo14.free()
 
-	print("\n=== Las 14 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 15: _cancelar_tramo_via limpia tramos fijos, estado y cache de previsualizacion ===")
+	var camara15: Camera3D = _camara()
+	var mundo15 := MundoFalso.new()
+	camara15.mundo = mundo15
+	camara15._alternar_modo_trazar_via()
+	assert(camara15.modo_trazar_via, "modo trazar vía activo")
+	camara15._hay_tramo_en_curso = true
+	var tramo_prueba: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 1)]
+	camara15._tramos_fijos.append(tramo_prueba)
+	camara15._ultimo_origen_preview = Vector2i(0, 0)
+	camara15._ultimo_vertice_preview = Vector2i(1, 1)
+	assert(camara15._vertice_pertenece_a_via(Vector2i(0, 0)), "el vertice pertenecia al tramo acumulado antes de cancelar")
+
+	camara15._cancelar_tramo_via()
+	assert(not camara15._hay_tramo_en_curso, "ya no hay tramo en curso tras cancelar")
+	assert(camara15._tramos_fijos.is_empty(), "_tramos_fijos debe quedar vacio tras cancelar")
+	assert(camara15._ultimo_origen_preview == CamaraCenitalScript.SIN_VERTICE_PREVIO, "cache de origen reiniciada")
+	assert(camara15._ultimo_vertice_preview == CamaraCenitalScript.SIN_VERTICE_PREVIO, "cache de vertice reiniciada")
+	assert(not camara15._vertice_pertenece_a_via(Vector2i(0, 0)), "el vertice ya no pertenece a ninguna via acumulada")
+	camara15.hud.queue_free()
+	mundo15.free()
+
+	print("\n=== Las 15 pruebas de CamaraCenitalModosTest pasaron correctamente ===")

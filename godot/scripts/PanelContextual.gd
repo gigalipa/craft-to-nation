@@ -9,6 +9,7 @@ const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const ICONO_CLIC_DERECHO := "res://assets/icons/click_der.svg"
 const ICONO_CLIC_IZQUIERDO := "res://assets/icons/click_izq.svg"
+const ICONO_SCROLL := "res://assets/icons/scroll.svg"
 const ANCHO_PANEL := 420.0
 const ANCHO_TEXTO := 320.0
 
@@ -58,15 +59,39 @@ static func texto_costo(costo_dic: Dictionary, bloques_dic: Dictionary = {}) -> 
 
 
 ## Texto BBCode de "lista_acciones" para el RichTextLabel "acciones": cambia
-## las marcas de texto "(clic der.)"/"(clic izq.)" por el ícono del ratón
-## (más compacto y consistente con el diseño del HUD que la palabra suelta;
-## el de clic izquierdo es el mismo ícono reflejado en espejo).
+## las marcas de texto "(clic der.)"/"(clic izq.)"/"(scroll)" por el ícono del
+## ratón o la rueda de desplazamiento (más compacto y consistente con el diseño
+## del HUD que la palabra suelta; el de clic izquierdo es el mismo ícono reflejado).
 static func texto_acciones(lista_acciones: Array) -> String:
 	var partes: Array = []
 	for accion in lista_acciones:
 		var parte: String = accion
 		parte = parte.replace("(clic der.)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+		parte = parte.replace("(click der.)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+		parte = parte.replace("(clic derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+		parte = parte.replace("(click derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+
+		parte = parte.replace("(doble clic izq.)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(doble click izq.)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(doble clic)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(doble click)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
+
 		parte = parte.replace("(clic izq.)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(click izq.)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(clic izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(click izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(clic)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+		parte = parte.replace("(click)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+
+		parte = parte.replace("[Ctrl+rueda]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+		parte = parte.replace("[Ctrl+scroll]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+		parte = parte.replace("(Ctrl+rueda)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+		parte = parte.replace("(Ctrl+scroll)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+		parte = parte.replace("Ctrl+rueda", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+		parte = parte.replace("Ctrl+scroll", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+		parte = parte.replace("(scroll)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
+		parte = parte.replace("(rueda)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
+
 		partes.append(parte)
 	return "  ·  ".join(partes)
 

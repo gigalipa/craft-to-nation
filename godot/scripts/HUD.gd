@@ -252,7 +252,7 @@ func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, cost
 	var almacenamiento := "" if Recoleccion.ESCUELAS.has(tipo) else " · Almacenamiento: %d" % Recoleccion.capacidad_almacen_de(tipo)
 	var prevision: String = texto_tasas_mina_por_nivel(tasas_por_nivel) if tipo == "mina" and not tasas_por_nivel.is_empty() else texto_tasas(tipo, tasas)
 	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, prevision]
-	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+rueda] ROTAR", "COLOCAR (clic)"], valida, extra, bloques)
+	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra, bloques)
 
 
 ## Recolección prevista de una mina por nivel: la franja de cada nivel por separado (sin sumar los anteriores),

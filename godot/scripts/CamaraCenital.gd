@@ -1334,7 +1334,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 	var titulo_bp: String = _blueprint_activo.get("nombre", "Edificio residencial")
 	if titulo_bp == "" or titulo_bp == "Estructura_Detectada":
 		titulo_bp = "Edificio residencial"
-	hud.mostrar_contexto(titulo_bp, {}, ["[Ctrl+rueda] ROTAR", "COLOCAR (clic)"], valida, _resumen_blueprint_texto)
+	hud.mostrar_contexto(titulo_bp, {}, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, _resumen_blueprint_texto)
 	_actualizar_overlays(esquina, ev)
 
 
@@ -2019,7 +2019,7 @@ func _alternar_modo_trazar_via() -> void:
 	_ultimo_origen_preview = SIN_VERTICE_PREVIO
 	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	hud.set_modo("construir", "vias", "vias")
-	hud.mostrar_contexto("Trazar vía", {}, ["FIJAR PUNTO (clic)", "CONFIRMAR (doble clic)", "[Esc] SALIR"])
+	hud.mostrar_contexto("Trazar vía", {}, ["(clic izq.) FIJAR PUNTO", "(doble clic) CONFIRMAR", "(clic der.) CANCELAR", "[Esc] SALIR"])
 
 
 ## "cerrar_menu" en false lo usa _elegir_categoria() al cambiar de categoría o
@@ -2050,7 +2050,7 @@ func _alternar_modo_demoler() -> void:
 	hud.cerrar_panel_puesto()
 	modo_demoler = true
 	hud.set_modo("demoler")
-	hud.mostrar_contexto("Demoler", {}, ["(clic izq.) MARCAR PARA DEMOLICIÓN\n[Esc] Salir"])
+	hud.mostrar_contexto("Demoler", {}, ["(clic izq.) MARCAR PARA DEMOLICIÓN", "[Esc] SALIR"])
 
 
 func _salir_de_modo_demoler() -> void:

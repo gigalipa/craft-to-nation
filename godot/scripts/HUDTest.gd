@@ -523,6 +523,14 @@ func probar_panel_desvanece() -> void:
 	panel.mostrar("Puerta", {}, ["(clic der.) COLOCAR", "[E] INTERACTUAR"])
 	assert(panel.acciones.get_parsed_text().contains("[E] INTERACTUAR"), "el atajo de tecla se muestra literal, antes de la acción")
 	assert(PanelContextualScript.texto_acciones(["MARCAR PARA DEMOLICIÓN (clic der.)"]).contains("click_der.svg"), "la acción de demolición lleva el ícono del clic derecho")
+	assert(PanelContextualScript.texto_acciones(["(clic izq.) COLOCAR"]).contains("click_izq.svg"), "clic izq lleva el icono del clic izquierdo")
+	assert(PanelContextualScript.texto_acciones(["(doble clic) CONFIRMAR"]).contains("click_izq.svg") and PanelContextualScript.texto_acciones(["(doble clic) CONFIRMAR"]).contains("(x2)"), "doble clic lleva el icono de clic izquierdo con (x2)")
+	assert(PanelContextualScript.texto_acciones(["[Ctrl+scroll] ROTAR"]).contains("scroll.svg"), "scroll lleva el icono de scroll")
+	assert(PanelContextualScript.texto_acciones(["[Ctrl+rueda] ROTAR"]).contains("scroll.svg"), "rueda lleva el icono de scroll")
+	assert(PanelContextualScript.texto_acciones(["COLOCAR (clic)"]).contains("click_izq.svg"), "(clic) simple se mapea al icono de clic izquierdo")
+	assert(ResourceLoader.load("res://assets/icons/click_der.svg") != null, "click_der.svg es un recurso cargable")
+	assert(ResourceLoader.load("res://assets/icons/click_izq.svg") != null, "click_izq.svg es un recurso cargable")
+	assert(ResourceLoader.load("res://assets/icons/scroll.svg") != null, "scroll.svg es un recurso cargable")
 
 	# Un segundo temporal reinicia la cuenta: el temporizador del primero no lo oculta.
 	panel.mostrar_temporal("Pared", {}, ["COLOCAR"], 0.05)

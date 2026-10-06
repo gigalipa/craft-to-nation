@@ -47,16 +47,21 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 	# El primer edificio declarado es el núcleo urbano: no es habitable, así que
 	# no suma camas (no llegan colonos todavía) ni baúles al tope del almacén; en
 	# cambio, declararlo duplica los topes del inventario.
-	if not Zonificacion.nucleo_declarado:
+	if not Zonificacion.nucleo_declarado or Ciudad.remodelando_nucleo:
+		Ciudad.remodelando_nucleo = false
 		var camas_iniciales: Array[int] = []
 		for piso in blueprint["pisos"]:
 			camas_iniciales.append((piso.get("camas", []) as Array).size())
 		var baules_iniciales: int = BlueprintValidator.contar_baules(blueprint)
 		var id_edificio: int = metadata.get("id_edificio", -1)
 		Ciudad.guardar_datos_nucleo(id_edificio, camas_iniciales, baules_iniciales)
-		Zonificacion.declarar_nucleo(metadata["huella_xz"], id_edificio)
-		Ciudad.ampliar_almacen()
-		print("Núcleo urbano declarado (no habitable: no llegan colonos todavía). Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max, ". Topes del inventario duplicados.")
+		if not Zonificacion.nucleo_declarado:
+			Zonificacion.declarar_nucleo(metadata["huella_xz"], id_edificio)
+			Ciudad.ampliar_almacen()
+			print("Núcleo urbano declarado (no habitable: no llegan colonos todavía). Zona de influencia: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max, ". Topes del inventario duplicados.")
+		else:
+			Zonificacion.id_nucleo = id_edificio
+			print("Núcleo urbano remodelado y redeclarado. ID: ", id_edificio)
 		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
 		return "Núcleo urbano declarado."
 
@@ -104,6 +109,33 @@ static func retirar_edificio(mundo: Object, id: int) -> void:
 	Economia.quitar_puesto(esquina)  # libera a sus trabajadores (no-op si era un edificio)
 	Obras.olvidar(id)  # sin marca ni estado de obra: el edificio ya no existe
 	print("Edificio deconstruido por completo.")
+
+
+## Inicia la remodelación de un edificio: desdeclara sus bloques en VoxelWorld para edición
+## libre, reubica residentes en Ciudad/Colonos, retira influencia y cancela obras.
+static func iniciar_remodelacion(mundo: Object, id: int) -> Dictionary:
+	if mundo == null or not mundo.edificio_a_celdas.has(id):
+		return {"exito": false, "motivo": "El edificio no existe."}
+	var res_ciudad: Dictionary = Ciudad.iniciar_remodelacion_residencial(id)
+	if not res_ciudad.get("exito", false):
+		return res_ciudad
+	mundo.desdeclarar_edificio(id)
+	Zonificacion.retirar_contribucion(id)
+	Obras.olvidar(id)
+	if Colonos != null and Colonos.has_method("reubicar_por_remodelacion"):
+		Colonos.reubicar_por_remodelacion(id)
+	var es_nucleo: bool = res_ciudad.get("es_nucleo", false)
+	var sin_techo: int = res_ciudad.get("sin_techo_generados", 0)
+	var nombre: String = "el núcleo urbano" if es_nucleo else ("el edificio %d" % id)
+	var mensaje: String = "Remodelación iniciada para %s: ahora en edición libre." % nombre
+	if sin_techo > 0:
+		mensaje += " (%d colono(s) sin techo)." % sin_techo
+	return {
+		"exito": true,
+		"es_nucleo": es_nucleo,
+		"sin_techo_generados": sin_techo,
+		"mensaje": mensaje,
+	}
 
 
 ## Intervalo hasta el próximo paso de la obra a la que pertenece "celda": el mismo

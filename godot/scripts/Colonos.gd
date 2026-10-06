@@ -165,13 +165,16 @@ func reconciliar() -> void:
 	var demografia: Dictionary = ciudad.demografia
 	for tipo in demografia:
 		var existentes: Array[int] = _ids_de_tipo(tipo)
-		while existentes.size() > demografia[tipo]:
+		var meta: int = demografia[tipo]
+		if tipo == "desempleado" and ciudad.get("sin_techo") != null:
+			meta += ciudad.sin_techo
+		while existentes.size() > meta:
 			_retirar(existentes.pop_back())
-		while existentes.size() < demografia[tipo]:
+		while existentes.size() < meta:
 			var celda: Vector3i = _celda_aparicion()
 			if celda == INVALIDA:
 				break  # sin celda de aparición transitable: se reintenta en el siguiente tick
-			existentes.append(agregar_colono(tipo, celda, _elegir_hogar()))
+			existentes.append(agregar_colono(tipo, celda, _elegir_hogar(tipo)))
 	_reasignar_hogares()
 
 
@@ -227,32 +230,60 @@ func _ocupacion_hogar(id: int) -> float:
 	return total
 
 
-## El hogar con menor ocupación relativa (ocupación / camas); en empate, el de
-## id menor. -1 si no hay ningún edificio residencial con camas. El hogar solo
-## determina a dónde entra el colono: el límite vinculante de población es la
-## capacidad global de Ciudad, y un hogar puede quedar algo por encima.
-## ponytail: no fuerza capacidad por casa; añadirlo si hace falta un tope
-## individual.
-func _elegir_hogar() -> int:
+## El hogar con menor ocupación relativa (ocupación / camas) que aún tenga espacio
+## para el tipo de colono dado (peso 1 / x_cama); en empate, el de id menor.
+## Si todos los hogares están llenos, busca el de menor ratio para no dejar al
+## colono sin hogar si la ciudad aún tiene capacidad global.
+func _elegir_hogar(tipo: String = "desempleado") -> int:
 	var ids: Array = ciudad.edificios_residenciales.keys()
 	ids.sort()
-	var mejor := -1
-	var mejor_ratio := INF
+	var peso: float = 1.0 / float(ciudad.TIPOS_POBLACION.get(tipo, {"x_cama": 4})["x_cama"])
+	var mejor_con_espacio := -1
+	var mejor_ratio_espacio := INF
+	var mejor_fallback := -1
+	var mejor_ratio_fallback := INF
+
 	for id: int in ids:
-		var capacidad := _capacidad_hogar(id)
+		var capacidad: float = ciudad.camas_efectivas_de(id) if ciudad.has_method("camas_efectivas_de") else _capacidad_hogar(id)
 		if capacidad <= 0.0:
 			continue
-		var ratio := _ocupacion_hogar(id) / capacidad
-		if ratio < mejor_ratio - 1e-9:
-			mejor = id
-			mejor_ratio = ratio
-	return mejor
+		var ocupacion := _ocupacion_hogar(id)
+		var ratio := ocupacion / capacidad
+		if ocupacion + peso <= capacidad + 1e-6:
+			if ratio < mejor_ratio_espacio - 1e-9:
+				mejor_con_espacio = id
+				mejor_ratio_espacio = ratio
+		if ratio < mejor_ratio_fallback - 1e-9:
+			mejor_fallback = id
+			mejor_ratio_fallback = ratio
+
+	if mejor_con_espacio != -1:
+		return mejor_con_espacio
+	return mejor_fallback
 
 
 func _reasignar_hogares() -> void:
 	for c in colonos.values():
 		if c["hogar"] == -1 or not ciudad.edificios_residenciales.has(c["hogar"]):
-			c["hogar"] = _elegir_hogar()
+			c["hogar"] = -1
+	var sin_techo_tope: int = ciudad.sin_techo if ciudad != null and ciudad.get("sin_techo") != null else 0
+	var candidatos_sin_hogar: Array[Dictionary] = []
+	for c in colonos.values():
+		if c["hogar"] == -1:
+			candidatos_sin_hogar.append(c)
+	var con_cama: int = max(0, candidatos_sin_hogar.size() - sin_techo_tope)
+	for i in range(candidatos_sin_hogar.size()):
+		if i < con_cama:
+			candidatos_sin_hogar[i]["hogar"] = _elegir_hogar(candidatos_sin_hogar[i]["tipo"])
+		else:
+			candidatos_sin_hogar[i]["hogar"] = -1
+
+
+func reubicar_por_remodelacion(de_hogar: int) -> void:
+	for c in colonos.values():
+		if c.get("hogar", -1) == de_hogar:
+			c["hogar"] = -1
+	_reasignar_hogares()
 
 
 func _on_nucleo_reasignado(nuevo_id: int, id_viejo: int) -> void:
@@ -293,7 +324,7 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		_avanzar_evacuacion(c, delta)
 		return
 	if c["espera"] > 0.0:
-		if c["trabajo"].is_empty() and c["tarea"].is_empty() and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
+		if c["trabajo"].is_empty() and c["tarea"].is_empty() and not _es_sin_techo(c) and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
 			if obras != null and obras.has_method("hay_obras_pendientes") and obras.hay_obras_pendientes():
 				c["espera"] = 0.0
 			else:
@@ -311,7 +342,7 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		else:
 			_decidir_trabajo(c)
 		return
-	if c["trabajo"].is_empty() and c["tarea"].is_empty() and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
+	if c["trabajo"].is_empty() and c["tarea"].is_empty() and not _es_sin_techo(c) and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
 		if obras != null and obras.has_method("hay_obras_pendientes") and obras.hay_obras_pendientes():
 			var tarea: Dictionary = obras.siguiente_tarea(c["celda"], c["id"])
 			if not tarea.is_empty():
@@ -764,6 +795,18 @@ func _celda_aparicion() -> Vector3i:
 	return respaldo
 
 
+func _es_sin_techo(c: Dictionary) -> bool:
+	return ciudad != null and ciudad.get("sin_techo") != null and ciudad.sin_techo > 0 and c.get("hogar", -1) == -1
+
+
+func _filtrar_con_hogar(ids: Array[int]) -> Array[int]:
+	var aptos: Array[int] = []
+	for id in ids:
+		if colonos.has(id) and not _es_sin_techo(colonos[id]):
+			aptos.append(id)
+	return aptos
+
+
 ## Contrata a un colono para un puesto con un rol. Para "recolector", "aprendiz" y "acarreador" toma
 ## a un desempleado (el de id menor) y lo pasa a obrero en Ciudad.demografia y en el colono. Para
 ## "tecnico" y "especialista" toma a un libre de ese oficio (el de id menor): ya tiene su oficio, así que no
@@ -772,10 +815,10 @@ func _celda_aparicion() -> Vector3i:
 ## no admite ese oficio (en ese caso no se toca nada).
 func contratar(esquina: Vector2i, rol: String) -> bool:
 	if rol == "investigador":
-		var candidatos_inv: Array[int] = _ids_sin_puesto("investigador")
+		var candidatos_inv: Array[int] = _filtrar_con_hogar(_ids_sin_puesto("investigador"))
 		var es_nuevo_investigador := false
 		if candidatos_inv.is_empty():
-			candidatos_inv = _ids_sin_puesto("especialista")
+			candidatos_inv = _filtrar_con_hogar(_ids_sin_puesto("especialista"))
 			es_nuevo_investigador = true
 		if candidatos_inv.is_empty():
 			return false
@@ -795,7 +838,7 @@ func contratar(esquina: Vector2i, rol: String) -> bool:
 		return true
 	var origen: String = Recoleccion.ESCUELAS.get(economia.puestos.get(esquina, {}).get("tipo", ""), {}).get("origen", "") if rol == "aprendiz" else ""
 	var oficio: String = origen if origen == "tecnico" else (rol if rol == "tecnico" or rol == "especialista" else "")
-	var candidatos: Array[int] = _ids_sin_puesto(oficio) if not oficio.is_empty() else _ids_de_tipo("desempleado")
+	var candidatos: Array[int] = _filtrar_con_hogar(_ids_sin_puesto(oficio) if not oficio.is_empty() else _ids_de_tipo("desempleado"))
 	if candidatos.is_empty():
 		return false
 	candidatos.sort()
@@ -1199,10 +1242,21 @@ func _celdas_de_servicio(servicio: Vector2i, huella: Array) -> Array[Vector3i]:
 ## servicio, si el puesto tiene puerta), con una sola búsqueda por grupo; si ninguno es
 ## alcanzable, espera y reintenta.
 func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX, interiores: Array[Vector3i] = [], solo_dentro := false) -> void:
+	var destinos_reservados := {}
+	var puesto_c = c.get("trabajo", {}).get("puesto")
+	if puesto_c != null:
+		for otro in colonos.values():
+			if otro["id"] != c["id"] and not otro["ruta"].is_empty():
+				if otro.get("trabajo", {}).get("puesto") == puesto_c:
+					destinos_reservados[otro["ruta"].back()] = true
 	var dentro: Array[Vector3i] = []
 	for celda in interiores:
-		if not _ocupada_por_otro(celda, c["id"]):
+		if not _ocupada_por_otro(celda, c["id"]) and not destinos_reservados.has(celda):
 			dentro.append(celda)
+	if dentro.is_empty() and not interiores.is_empty():
+		for celda in interiores:
+			if not _ocupada_por_otro(celda, c["id"]):
+				dentro.append(celda)
 	# La celda pegada a la puerta por dentro no se ocupa (taponaría la entrada), salvo que sea
 	# el único sitio libre del edificio: se llena desde el fondo.
 	if interiores.size() > 1:
@@ -1264,7 +1318,7 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 	while true:
 		if b["actual"] == null:
 			if b["grupos"].is_empty():
-				if not b.get("reintento_sin_bloqueos", false) and b.has("todos_grupos"):
+				if not b.get("reintento_sin_bloqueos", false) and not b.get("reintento", false) and b.has("todos_grupos"):
 					b["reintento_sin_bloqueos"] = true
 					b["grupos"] = b["todos_grupos"].duplicate(true)
 					continue

@@ -254,16 +254,30 @@ func probar_ventanas_datos() -> void:
 	Economia.registrar_puesto(esq_puesto, "maderero", 3, 4, {})
 	ventana_baul.abrir(esq_puesto)
 	assert(ventana_baul.visible)
+	assert(ventana_baul.custom_minimum_size == Vector2(320, 260), "VentanaBaul debe tener tamaño acotado de 320x260")
+	assert(ventana_baul.grow_horizontal == Control.GROW_DIRECTION_BOTH and ventana_baul.grow_vertical == Control.GROW_DIRECTION_BOTH, "VentanaBaul debe crecer hacia ambos lados para permanecer centrada")
+	assert(ventana_baul.offset_left == -160.0 and ventana_baul.offset_top == -130.0, "VentanaBaul debe tener offsets centrados respecto a anclas 0.5")
+	var scroll_encontrado := false
+	for hijo in ventana_baul.get_children():
+		for sub in hijo.get_children():
+			if sub is ScrollContainer:
+				scroll_encontrado = true
+				break
+	assert(scroll_encontrado, "VentanaBaul debe contener un ScrollContainer para la lista de recursos")
 	var tecla_e := InputEventKey.new()
 	tecla_e.keycode = KEY_E
 	tecla_e.pressed = true
 	ventana_baul._unhandled_key_input(tecla_e)
-	assert(not ventana_baul.visible, "pulsar E debe cerrar VentanaBaul")
+	assert(ventana_baul.visible, "en el mismo fotograma de apertura no debe cerrarse por propagación")
+	ventana_baul._frame_apertura -= 1
+	ventana_baul._unhandled_key_input(tecla_e)
+	assert(not ventana_baul.visible, "pulsar E en fotograma posterior debe cerrar VentanaBaul")
 	ventana_baul.abrir(esq_puesto)
 	assert(ventana_baul.visible)
 	var tecla_esc := InputEventKey.new()
 	tecla_esc.keycode = KEY_ESCAPE
 	tecla_esc.pressed = true
+	ventana_baul._frame_apertura -= 1
 	ventana_baul._unhandled_key_input(tecla_esc)
 	assert(not ventana_baul.visible, "pulsar Escape debe cerrar VentanaBaul")
 	ventana_baul.queue_free()
@@ -455,7 +469,7 @@ func probar_panel_contextual() -> void:
 	assert(panel.visible)
 	assert(panel.titulo.text == "TALLER MADERERO")
 	assert(panel.costo.text == "24 madera · 8 piedra" and panel.costo.visible)
-	assert(panel.acciones.text == "ROTAR  ·  COLOCAR")
+	assert(panel.acciones.text == "ROTAR\nCOLOCAR")
 	assert(panel.validez.visible and panel.validez.text == "Ubicación válida")
 	assert(panel.extra.visible and panel.extra.text == "Personal máximo: 5")
 
@@ -524,7 +538,7 @@ func probar_panel_desvanece() -> void:
 	assert(panel.acciones.get_parsed_text().contains("[E] INTERACTUAR"), "el atajo de tecla se muestra literal, antes de la acción")
 	assert(PanelContextualScript.texto_acciones(["MARCAR PARA DEMOLICIÓN (clic der.)"]).contains("click_der.svg"), "la acción de demolición lleva el ícono del clic derecho")
 	assert(PanelContextualScript.texto_acciones(["(clic izq.) COLOCAR"]).contains("click_izq.svg"), "clic izq lleva el icono del clic izquierdo")
-	assert(PanelContextualScript.texto_acciones(["(doble clic) CONFIRMAR"]).contains("click_izq.svg") and PanelContextualScript.texto_acciones(["(doble clic) CONFIRMAR"]).contains("(x2)"), "doble clic lleva el icono de clic izquierdo con (x2)")
+	assert(PanelContextualScript.texto_acciones(["(doble clic) CONFIRMAR"]).contains("click_izq.svg") and PanelContextualScript.texto_acciones(["(doble clic) CONFIRMAR"]).contains("x2"), "doble clic lleva el icono de clic izquierdo con x2")
 	assert(PanelContextualScript.texto_acciones(["[Ctrl+scroll] ROTAR"]).contains("scroll.svg"), "scroll lleva el icono de scroll")
 	assert(PanelContextualScript.texto_acciones(["[Ctrl+rueda] ROTAR"]).contains("scroll.svg"), "rueda lleva el icono de scroll")
 	assert(PanelContextualScript.texto_acciones(["COLOCAR (clic)"]).contains("click_izq.svg"), "(clic) simple se mapea al icono de clic izquierdo")
@@ -878,20 +892,35 @@ func probar_panel_edificio() -> void:
 	assert(obras.pausas == 1 and panel._pausar.text == "Reanudar" and panel._estado.text.contains("pausada"), "pausar actúa sobre Obras y cambia la etiqueta")
 	panel._demoler.pressed.emit()
 	panel._dialogo_demoler.confirmed.emit()
+	panel._dialogo_demoler.hide()
 	assert(obras.marcados.has(7) and panel._demoler.text == "Cancelar demolición" and panel._pausar.text == "Reanudar", "demoler marca el edificio")
 	obras.rechazo = "El núcleo urbano no se puede demoler."
 	panel._demoler.pressed.emit()
 	assert(avisos == ["El núcleo urbano no se puede demoler."], "un rechazo se avisa")
 	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "completo", "pausada": false, "salud": 1.0, "faltantes": {}}
+	ciudad.registrar_edificio_residencial(7, [2])
 	panel._actualizar()
 	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible, "completo: 100 %, sin materiales, sin obreros y sin botón de pausa")
 	assert(panel._asignar_nucleo.visible, "residencial completo permite asignar como núcleo")
+	assert(panel._remodelar.visible and panel._remodelar.text == "Iniciar remodelación", "botón remodelar visible")
+	assert(panel._colonizable.visible and panel._toggle_colonizable.visible, "colonizabilidad visible")
+	assert(panel._colonizable.text.contains("Colonizable: SÍ"), "primer edificio es colonizable SÍ")
+	assert(panel._toggle_colonizable.text == "Pausar colonización")
+	panel._toggle_colonizable.pressed.emit()
+	assert(not ciudad.es_colonizable(7), "toggle pausa colonización")
+	assert(panel._colonizable.text.contains("Colonizable: NO"), "texto actualizado a NO")
+	assert(panel._toggle_colonizable.text == "Permitir colonización")
+	panel._remodelar.pressed.emit()
+	assert(panel._dialogo_remodelar.visible, "abre dialogo de remodelar")
+	panel._dialogo_remodelar.hide()
 
 	obras.es_nucleo = true
 	panel._actualizar()
 	assert(panel._titulo.text == "Núcleo urbano", "título núcleo")
 	assert(not panel._demoler.visible, "núcleo sin botón demoler")
 	assert(not panel._asignar_nucleo.visible, "núcleo sin botón asignar núcleo")
+	assert(panel._remodelar.visible, "núcleo permite remodelar")
+	assert(not panel._colonizable.visible, "núcleo no tiene colonizabilidad de camas")
 
 	obras.es_nucleo = false
 	obras.resumen = {}

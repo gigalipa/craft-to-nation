@@ -195,6 +195,15 @@ var id_nucleo := -1
 var camas_nucleo: Array = []
 var baules_nucleo := 0
 var traslado_nucleo: Dictionary = {}  # {"id": nuevo_id, "horas": 5}
+## true mientras el núcleo urbano está en proceso de remodelación
+var remodelando_nucleo := false
+## Control de colonizabilidad de residenciales (buffers e inmigración)
+var primer_residencial_registrado := false
+var colonizable_por_edificio: Dictionary = {}  # id -> bool (true = inmigración externa)
+var horas_apertura_colonizacion: Dictionary = {}  # id -> int (horas restantes para apertura a inmigrantes)
+## Colonos sin techo tras remodelaciones sin camas suficientes
+var sin_techo := 0
+var tiempo_sin_techo := 0
 ## Horas de juego transcurridas (1 por simular_tick); reloj de los frutos del avatar.
 var horas_juego := 0
 
@@ -291,7 +300,7 @@ var total_instalaciones: int:
 	get: return int(_suma_dict(instalaciones))
 
 var censo_total: int:
-	get: return int(_suma_dict(demografia))
+	get: return int(_suma_dict(demografia)) + sin_techo
 
 var indice_sofisticacion: float:
 	get:
@@ -332,6 +341,18 @@ var capacidad_camas_construida: int:
 				total += mini(camas_por_piso[i], limites["camas_por_piso"])
 		return total
 
+## Capacidad de camas en edificios con colonizabilidad ACTIVA (disponibles para inmigración)
+var capacidad_camas_colonizable: int:
+	get:
+		var limites: Dictionary = NIVELES_VIVIENDA[nivel]
+		var total := 0
+		for id: int in edificios_residenciales:
+			if colonizable_por_edificio.get(id, false):
+				var camas_por_piso: Array = edificios_residenciales[id]
+				for i in range(mini(camas_por_piso.size(), limites["pisos"])):
+					total += mini(camas_por_piso[i], limites["camas_por_piso"])
+		return total
+
 ## Suma de 1 / x_cama de cada habitante: la vivienda que ocupa la población.
 var vivienda_ocupada: float:
 	get:
@@ -342,6 +363,9 @@ var vivienda_ocupada: float:
 
 var vivienda_libre: float:
 	get: return float(capacidad_camas_construida) - vivienda_ocupada
+
+var vivienda_colonizable_libre: float:
+	get: return maxf(0.0, float(capacidad_camas_colonizable) - vivienda_ocupada)
 
 
 ## Registra una instalación física completada (tipo 2 o 3) identificada por id_edificio. Idempotente.
@@ -459,9 +483,24 @@ func reasignar_tipo(de: String, a: String) -> bool:
 ## por id: registrar dos veces el mismo edificio (p. ej. al deconstruirlo y
 ## volver a completarlo) no duplica sus camas.
 func registrar_edificio_residencial(id: int, camas_por_piso: Array, baules: int = 0) -> void:
+	var es_nuevo: bool = not edificios_residenciales.has(id)
 	edificios_residenciales[id] = camas_por_piso.duplicate()
 	baules_por_edificio[id] = baules
+	if es_nuevo and not colonizable_por_edificio.has(id):
+		if not primer_residencial_registrado:
+			primer_residencial_registrado = true
+			colonizable_por_edificio[id] = true
+		else:
+			colonizable_por_edificio[id] = false
+			horas_apertura_colonizacion[id] = 24
 	recalcular_limites()
+	# Si había colonos sin techo y ahora hay camas libres, se reincorporan como desempleados
+	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
+	while sin_techo > 0 and vivienda_libre >= espacio_minimo - 1e-6:
+		sin_techo -= 1
+		demografia["desempleado"] += 1
+	if sin_techo == 0:
+		tiempo_sin_techo = 0
 
 
 ## Retira las camas de un edificio residencial que empieza a deconstruirse
@@ -473,7 +512,94 @@ func registrar_edificio_residencial(id: int, camas_por_piso: Array, baules: int 
 func retirar_edificio_residencial(id: int) -> void:
 	edificios_residenciales.erase(id)
 	baules_por_edificio.erase(id)
+	colonizable_por_edificio.erase(id)
+	horas_apertura_colonizacion.erase(id)
 	recalcular_limites()
+
+
+## Consulta si el edificio residencial permite actualmente inmigración externa.
+func es_colonizable(id: int) -> bool:
+	return colonizable_por_edificio.get(id, false)
+
+
+## Horas de juego restantes para apertura automática de colonización.
+func horas_colonizacion_restantes(id: int) -> int:
+	return horas_apertura_colonizacion.get(id, 0)
+
+
+## Alterna manualmente el estado de colonizabilidad de un edificio residencial.
+func alternar_colonizable(id: int) -> void:
+	if not edificios_residenciales.has(id):
+		return
+	var actual: bool = colonizable_por_edificio.get(id, false)
+	colonizable_por_edificio[id] = not actual
+	horas_apertura_colonizacion.erase(id)
+
+
+## Calcula cuántos colonos quedarían sin techo si se remodela el edificio "id".
+func calcular_sin_techo_al_remodelar(id: int) -> int:
+	if id == id_nucleo or not edificios_residenciales.has(id):
+		return 0
+	var limites: Dictionary = NIVELES_VIVIENDA[nivel]
+	var camas_perdidas := 0
+	var c_edificio: Array = edificios_residenciales[id]
+	for i in range(mini(c_edificio.size(), limites["pisos"])):
+		camas_perdidas += mini(c_edificio[i], limites["camas_por_piso"])
+	var nueva_capacidad: float = float(capacidad_camas_construida - camas_perdidas)
+	var exceso: float = maxf(0.0, vivienda_ocupada - nueva_capacidad)
+	if exceso <= 1e-6:
+		return 0
+	var cont := 0
+	var occ := vivienda_ocupada
+	var demo_temp: Dictionary = demografia.duplicate()
+	while occ > nueva_capacidad + 1e-6:
+		var quitado := false
+		for tipo in ORDEN_DESAHUCIO:
+			if demo_temp[tipo] > 0:
+				demo_temp[tipo] -= 1
+				occ -= 1.0 / float(TIPOS_POBLACION[tipo]["x_cama"])
+				cont += 1
+				quitado = true
+				break
+		if not quitado:
+			break
+	return cont
+
+
+## Inicia la remodelación cívica de un edificio: el núcleo no desaloja; en residenciales
+## reubica residentes en camas libres (incluso buffers) y pasa el exceso a "sin techo".
+func iniciar_remodelacion_residencial(id: int) -> Dictionary:
+	if id == id_nucleo:
+		remodelando_nucleo = true
+		id_nucleo = -1
+		camas_nucleo.clear()
+		baules_nucleo = 0
+		return {"exito": true, "es_nucleo": true, "sin_techo_generados": 0}
+	if not edificios_residenciales.has(id):
+		return {"exito": false, "motivo": "El edificio no es residencial ni núcleo."}
+
+	var limites: Dictionary = NIVELES_VIVIENDA[nivel]
+	var camas_perdidas := 0
+	var c_edificio: Array = edificios_residenciales[id]
+	for i in range(mini(c_edificio.size(), limites["pisos"])):
+		camas_perdidas += mini(c_edificio[i], limites["camas_por_piso"])
+	var nueva_capacidad: float = float(capacidad_camas_construida - camas_perdidas)
+
+	var nuevos_sin_techo := 0
+	while vivienda_ocupada > nueva_capacidad + 1e-6:
+		var desahuciado := false
+		for tipo in ORDEN_DESAHUCIO:
+			if demografia[tipo] > 0:
+				demografia[tipo] -= 1
+				sin_techo += 1
+				nuevos_sin_techo += 1
+				desahuciado = true
+				break
+		if not desahuciado:
+			break
+
+	retirar_edificio_residencial(id)
+	return {"exito": true, "es_nucleo": false, "sin_techo_generados": nuevos_sin_techo}
 
 
 ## Se declaró el núcleo urbano: los topes del almacén se duplican. Idempotente.
@@ -500,6 +626,17 @@ func camas_de(id: int) -> int:
 			c += cant
 		return c
 	return 0
+
+
+func camas_efectivas_de(id: int) -> int:
+	if id == id_nucleo or not edificios_residenciales.has(id):
+		return 0
+	var limites: Dictionary = NIVELES_VIVIENDA[nivel]
+	var c := 0
+	var c_edificio: Array = edificios_residenciales[id]
+	for i in range(mini(c_edificio.size(), limites["pisos"])):
+		c += mini(c_edificio[i], limites["camas_por_piso"])
+	return c
 
 
 func baules_de(id: int) -> int:
@@ -614,7 +751,7 @@ func _migrar(hambruna: bool) -> int:
 	var llegados := 0
 	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
 	while _migrantes_acumulados >= 1.0:
-		if hambruna or vivienda_libre < espacio_minimo - 1e-6:
+		if hambruna or sin_techo > 0 or vivienda_colonizable_libre < espacio_minimo - 1e-6:
 			_migrantes_acumulados = 1.0
 			break
 		demografia["desempleado"] += 1
@@ -641,12 +778,34 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 			traslado_nucleo_programado_cambiado.emit(false)
 			reasignar_nucleo(destino)
 
+	# Actualizar cuentas regresivas de 24h para apertura de colonizabilidad
+	var expirados_col: Array[int] = []
+	for ed_id: int in horas_apertura_colonizacion:
+		horas_apertura_colonizacion[ed_id] -= 1
+		if horas_apertura_colonizacion[ed_id] <= 0:
+			expirados_col.append(ed_id)
+	for ed_id in expirados_col:
+		horas_apertura_colonizacion.erase(ed_id)
+		colonizable_por_edificio[ed_id] = true
+
+	# Temporizador de 24h para colonos sin techo (exilio si no consiguen cama)
+	if sin_techo > 0:
+		tiempo_sin_techo += 1
+		if tiempo_sin_techo >= 24:
+			desahuciados += sin_techo
+			bono_moral_variedad = maxf(-15.0, bono_moral_variedad - 10.0)
+			sin_techo = 0
+			tiempo_sin_techo = 0
+	else:
+		tiempo_sin_techo = 0
+
 	regular_densidad_vertical()
 	actualizar_bono_variedad()
 
 	var gasto_poblacion := 0.0
 	for tipo in demografia:
 		gasto_poblacion += demografia[tipo] * TIPOS_POBLACION[tipo]["comida"]
+	gasto_poblacion += sin_techo * TIPOS_POBLACION["desempleado"]["comida"]
 	var gasto_total: float = gasto_poblacion + avatar_consumo
 
 	if periodo_elecciones_restante > 0:

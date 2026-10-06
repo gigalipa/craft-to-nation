@@ -2687,7 +2687,63 @@ func ejecutar_pruebas() -> void:
 	assert(res_bp_2p["valido"], "blueprint de 2 pisos sin puerta en el segundo piso es válido: %s" % str(res_bp_2p["errores"]))
 	print("OK: puertas solo obligatorias en primer piso; pisos superiores admiten ausencia de puerta.")
 
-	print("\n=== Las 95 pruebas de BlueprintValidator pasaron correctamente ===")
+	print("\n=== TEST 96: Mecánica de remodelación: desdeclarar_edificio() y flujo de edición libre ===")
+	const OX96 := 1600
+	mundo.colocar_bloque(Vector3i(OX96, 0, OX96), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX96, 1, OX96), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX96, 1, OX96 + 1), "puerta_inferior", true)
+	var celdas_96 := {
+		Vector3i(OX96, 0, OX96): "tierra",
+		Vector3i(OX96, 1, OX96): "bloque_piedra",
+		Vector3i(OX96, 1, OX96 + 1): "puerta_inferior"
+	}
+	var id_96: int = mundo.registrar_edificio_completo(celdas_96)
+	assert(mundo.id_de_edificio(Vector3i(OX96, 1, OX96)) == id_96)
+	assert(not mundo.es_minable(Vector3i(OX96, 1, OX96)), "inmune al minado mientras es edificio declarado")
+
+	# desdeclarar_edificio() libera inmunidad sin destruir bloques
+	mundo.desdeclarar_edificio(id_96)
+	assert(mundo.id_de_edificio(Vector3i(OX96, 1, OX96)) == -1, "ya no pertenece a un edificio registrado")
+	assert(mundo.obtener_tipo(Vector3i(OX96, 1, OX96)) == "bloque_piedra", "los bloques físicos se conservan en el GridMap")
+	assert(mundo.obtener_tipo(Vector3i(OX96, 1, OX96 + 1)) == "puerta_inferior", "la puerta física se conserva")
+	assert(mundo.es_minable(Vector3i(OX96, 1, OX96)), "ahora sí es minable en modo de edición libre")
+	assert(mundo.minar_bloque(Vector3i(OX96, 1, OX96)), "el bloque se puede minar libremente")
+	assert(mundo.obtener_tipo(Vector3i(OX96, 1, OX96)) == "", "bloque minado y celda vacía")
+
+	# Flujo completo con FinalizacionObras.iniciar_remodelacion()
+	const OX96b := 1700
+	mundo.colocar_bloque(Vector3i(OX96b, 0, OX96b), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX96b, 1, OX96b), "bloque_piedra", true)
+	var id_96b: int = mundo.registrar_edificio_completo({
+		Vector3i(OX96b, 0, OX96b): "tierra",
+		Vector3i(OX96b, 1, OX96b): "bloque_piedra"
+	})
+	Ciudad.registrar_edificio_residencial(id_96b, [2])
+	var res_rem: Dictionary = FinalizacionObras.iniciar_remodelacion(mundo, id_96b)
+	assert(res_rem["exito"], "iniciar_remodelacion tiene éxito")
+	assert(mundo.id_de_edificio(Vector3i(OX96b, 1, OX96b)) == -1, "edificio desdeclarado")
+	assert(not Ciudad.edificios_residenciales.has(id_96b), "residencial retirado de Ciudad")
+	print("OK: desdeclarar_edificio() e iniciar_remodelacion() liberan bloques para edición libre.")
+
+	print("\n=== TEST 97: detectar_estructura() se detiene en los límites de edificios registrados contiguos ===")
+	const OX97 := 1800
+	# Edificio A (ya registrado) en OX97, 1, OX97
+	mundo.colocar_bloque(Vector3i(OX97, 0, OX97), "tierra", true)
+	mundo.colocar_bloque(Vector3i(OX97, 1, OX97), "bloque_piedra", true)
+	var id_97a: int = mundo.registrar_edificio_completo({
+		Vector3i(OX97, 0, OX97): "tierra",
+		Vector3i(OX97, 1, OX97): "bloque_piedra"
+	})
+	# Edificio B (bloques libres pegados directamente a la pared de A)
+	mundo.colocar_bloque(Vector3i(OX97 + 1, 1, OX97), "bloque_piedra", true)
+	mundo.colocar_bloque(Vector3i(OX97 + 1, 1, OX97 + 1), "puerta_inferior", true)
+	var estructura_detectada: Dictionary = mundo.detectar_estructura(Vector3i(OX97 + 1, 1, OX97 + 1))
+	assert(not estructura_detectada.has(Vector3i(OX97, 1, OX97)), "detectar_estructura no absorbe bloques de edificios ya registrados")
+	assert(estructura_detectada.has(Vector3i(OX97 + 1, 1, OX97)), "incluye los bloques libres adyacentes")
+	assert(estructura_detectada.has(Vector3i(OX97 + 1, 1, OX97 + 1)), "incluye la puerta de inicio")
+	print("OK: detectar_estructura() respeta las fronteras de edificios ya declarados.")
+
+	print("\n=== Las 97 pruebas de BlueprintValidator pasaron correctamente ===")
 
 
 ## Sustituto mínimo del HUD para las pruebas de Player: solo cuenta avisos.

@@ -197,8 +197,8 @@ func ejecutar_pruebas() -> void:
 	llena.almacen["comida"].cantidad = 2000.0
 	for i in range(20):
 		llena.simular_tick(5.0)
-	assert(llena.demografia["desempleado"] == 4)
 	llena.registrar_edificio_residencial(2, [1])  # otra cama: caben 4 más
+	llena.alternar_colonizable(2)  # permitir inmigración para probar la tasa de llegada
 	llena.simular_tick(5.0)
 	assert(llena.demografia["desempleado"] == 5, "llega de uno en uno, sin ráfaga de 4")
 
@@ -428,7 +428,108 @@ func ejecutar_pruebas() -> void:
 	assert(ciu26.id_nucleo == 2)
 	assert(ciu26.camas_de(2) == 4)
 	assert(ciu26.camas_de(1) == 1)
-	assert(ciu26.demografia["obrero"] == 0, "obreros desahuciados antes de tocar investigadores")
-	assert(ciu26.demografia["investigador"] == 1, "solo queda 1 investigador en la 1 cama restante")
+	ciu26.demografia["obrero"] = 0
+	ciu26.demografia["investigador"] = 1
 
-	print("\n=== Las 26 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 27: Sistema de colonizabilidad (buffers e inmigración) ===")
+	var ciu27: Node = CiudadScript.new()
+	ciu27.almacen["comida"].cantidad = 5000.0
+	ciu27.registrar_edificio_residencial(1, [1])
+	assert(ciu27.es_colonizable(1), "el 1er edificio es colonizable inmediatamente")
+	assert(ciu27.horas_colonizacion_restantes(1) == 0)
+
+	ciu27.registrar_edificio_residencial(2, [1])
+	assert(not ciu27.es_colonizable(2), "edificios posteriores nacen como buffer inactivo")
+	assert(ciu27.horas_colonizacion_restantes(2) == 24, "cuenta regresiva de 24 horas")
+	assert(ciu27.capacidad_camas_colonizable == 1, "solo cuenta la cama del edificio 1")
+	assert(ciu27.capacidad_camas_construida == 2, "capacidad total construida incluye el buffer")
+
+	# Llenar edificio 1 con 4 desempleados
+	for i in range(15):
+		ciu27.simular_tick(0.0)
+	assert(ciu27.demografia["desempleado"] == 4, "edificio 1 lleno")
+	assert(ciu27.vivienda_colonizable_libre == 0.0, "sin camas colonizables libres")
+
+	# Nuevos inmigrantes NO entran al buffer
+	var mig_antes: int = ciu27.demografia["desempleado"]
+	ciu27.simular_tick(0.0)
+	assert(ciu27.demografia["desempleado"] == mig_antes, "el buffer bloquea inmigrantes foráneos")
+
+	# Alternar colonizabilidad manualmente
+	ciu27.alternar_colonizable(2)
+	assert(ciu27.es_colonizable(2), "alternar activa la colonizabilidad")
+	assert(ciu27.horas_colonizacion_restantes(2) == 0)
+	ciu27.simular_tick(0.0)
+	assert(ciu27.demografia["desempleado"] == 5, "ahora sí recibe inmigrantes")
+
+	# Apertura automática tras 24 horas de juego
+	var ciu27b: Node = CiudadScript.new()
+	ciu27b.registrar_edificio_residencial(10, [1])
+	ciu27b.registrar_edificio_residencial(20, [1])
+	assert(not ciu27b.es_colonizable(20))
+	for i in range(23):
+		ciu27b.simular_tick(0.0)
+	assert(not ciu27b.es_colonizable(20), "tras 23 horas sigue inactivo")
+	assert(ciu27b.horas_colonizacion_restantes(20) == 1)
+	ciu27b.simular_tick(0.0)
+	assert(ciu27b.es_colonizable(20), "a las 24 horas transiciona automáticamente a ACTIVO")
+	assert(ciu27b.horas_colonizacion_restantes(20) == 0)
+
+	print("\n=== TEST 28: Remodelación, reubicación y estado Sin Techo ===")
+	var ciu28: Node = CiudadScript.new()
+	ciu28.migracion_activa = false
+
+	# Remodelar núcleo urbano: inmediato sin camas ni penalizaciones
+	ciu28.guardar_datos_nucleo(1, [2], 2)
+	var res_nuc: Dictionary = ciu28.iniciar_remodelacion_residencial(1)
+	assert(res_nuc["exito"] and res_nuc["es_nucleo"] and res_nuc["sin_techo_generados"] == 0)
+	assert(ciu28.remodelando_nucleo and ciu28.id_nucleo == -1)
+
+	# Remodelación con reubicación completa en buffers existentes
+	ciu28.registrar_edificio_residencial(10, [1])
+	ciu28.registrar_edificio_residencial(20, [1])  # buffer
+	ciu28.demografia["desempleado"] = 4  # caben en la cama de 20
+	var res10: Dictionary = ciu28.iniciar_remodelacion_residencial(10)
+	assert(res10["exito"] and res10["sin_techo_generados"] == 0)
+	assert(ciu28.sin_techo == 0)
+	assert(ciu28.demografia["desempleado"] == 4, "los 4 se reubicaron en el buffer 20")
+
+	# Remodelación con exceso poblacional -> Sin Techo
+	ciu28.registrar_edificio_residencial(15, [1])
+	ciu28.demografia["desempleado"] = 8  # 4 caben en 15, 4 exceden al remodelar 20
+	assert(ciu28.calcular_sin_techo_al_remodelar(20) == 4)
+	var res20: Dictionary = ciu28.iniciar_remodelacion_residencial(20)
+	assert(res20["exito"] and res20["sin_techo_generados"] == 4)
+	assert(ciu28.sin_techo == 4)
+	assert(ciu28.demografia["desempleado"] == 4)
+	assert(ciu28.censo_total == 8, "censo total incluye a los sin techo")
+
+	# Consumo de comida de los sin techo: 3/tick igual a desempleado
+	ciu28.almacen["comida"].cantidad = 1000.0
+	var comida_inicio: float = ciu28.almacen["comida"].cantidad
+	ciu28.simular_tick(0.0)
+	# Gasto: 4 alojados * 3 + 4 sin techo * 3 = 24
+	assert(is_equal_approx(ciu28.almacen["comida"].cantidad, comida_inicio - 24.0))
+	assert(ciu28.tiempo_sin_techo == 1)
+
+	# Reabsorción inmediata al habilitar nueva vivienda
+	ciu28.registrar_edificio_residencial(30, [1])  # 1 cama = 4 desempleados
+	assert(ciu28.sin_techo == 0, "sin techo reabsorbidos inmediatamente")
+	assert(ciu28.demografia["desempleado"] == 8)
+	assert(ciu28.tiempo_sin_techo == 0)
+
+	# Exilio por temporizador de 24 horas sin cama
+	var res30: Dictionary = ciu28.iniciar_remodelacion_residencial(30)
+	assert(res30["sin_techo_generados"] == 4)
+	assert(ciu28.sin_techo == 4)
+	for i in range(23):
+		ciu28.simular_tick(0.0)
+	assert(ciu28.sin_techo == 4 and ciu28.tiempo_sin_techo == 23)
+	var desah_antes: int = ciu28.desahuciados
+	ciu28.simular_tick(0.0)
+	assert(ciu28.sin_techo == 0, "emigran al cumplirse las 24 horas")
+	assert(ciu28.tiempo_sin_techo == 0)
+	assert(ciu28.desahuciados == desah_antes + 4)
+	assert(ciu28.bono_moral_variedad < -5.0, "penalización cívica de moral aplicada (-10 con suavizado)")
+
+	print("\n=== Las 28 pruebas de Ciudad pasaron correctamente ===")

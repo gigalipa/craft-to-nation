@@ -103,6 +103,8 @@ func _actualizar() -> void:
 		hijo.free()
 	_caja.add_child(TemaHUD.etiqueta("Población total: %d" % Ciudad.censo_total))
 	_caja.add_child(TemaHUD.etiqueta("Camas construidas: %d" % Ciudad.capacidad_camas_construida))
+	if Ciudad.sin_techo > 0:
+		_caja.add_child(TemaHUD.etiqueta("Sin techo: %d" % Ciudad.sin_techo))
 	_caja.add_child(TemaHUD.etiqueta(""))
 	var empleados := _empleados_por_tipo()
 	for tipo in NOMBRES_TIPO:

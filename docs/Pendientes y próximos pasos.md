@@ -2,22 +2,23 @@
 
 ## Ruta vigente
 
-1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (554 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
+1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (562 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
 2. ✅ (2026-10-04) Formación de especialistas (`escuela_especialistas`), universidad e investigaciones de activación (Metalurgia Aplicada y Automatización Industrial).
 3. ✅ (2026-10-04) Fluidos (`agua`, `crudo`, `combustible`), recetas de refinería (`refineria_petrolera`, `productor_combustible`), central termoeléctrica y transmisión energética por vías e influencia con déficit horario.
 4. ✅ (2026-10-05) Gestión de obras y blueprints: autoasignación inmediata de ociosos, tope de cuadrilla (máx. 4 obreros por obra), hasta 5 blueprints guardados con miniaturas y nombrado automático `Residencia [camas]x[baules]`, nivelación compartida por cota de puerta guía, traslado del núcleo urbano desde el panel del edificio, y flexibilización de aberturas (puertas obligatorias únicamente en el 1er piso; pisos superiores no necesitan puertas).
-5. ✅ (2026-10-05) Logística y tráfico: jerarquía de transporte en vías de 1 celda (recursos priorizados: comida > combustible > crudo > acero > mineral_refinado > hierro > cobre > carbón > tierras_raras > tablas > madera > piedra > tierra > agua), cesión de paso y apartados laterales, recogida en puerta de servicio (evita saturación de interiores) y retroceso de nivel en puestos según el empleado de menor rango activo.
-6. ✅ (2026-10-05) HUD y demografía: barra superior responsiva con botón de Almacén compacto, recursos destacados (Comida, Energía, Crítico), ventana de Almacén alfabética, ventana de Ocupaciones categorizada por tipo y ordenada por antigüedad, cierre de diálogos/baúles con `E` o `Escape`, y orden de bajas por hambruna ampliado a especialistas e investigadores antes que desempleados.
-7. Completar las obras por colonos con tendido de vías y prioridades configurables.
-8. Implementar bombas de extracción directa en fuentes de agua y crudo.
-9. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
-10. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
+5. ✅ (2026-10-05) Logística, tráfico y pathfinding: jerarquía de transporte en vías de 1 celda (recursos priorizados: comida > combustible > crudo > acero > mineral_refinado > hierro > cobre > carbón > tierras_raras > tablas > madera > piedra > tierra > agua), cesión de paso y apartados laterales, recogida en puerta de servicio, retroceso de nivel en puestos según el empleado de menor rango activo, y reserva de destinos interiores en escuelas técnicas evitando bucles entre exterior y vestíbulo.
+6. ✅ (2026-10-05) HUD, tarjetas contextuales y trazado de vías: barra superior responsiva con botón de Almacén compacto, recursos destacados (Comida, Energía, Crítico), ventana de Almacén alfabética, ventana de Ocupaciones categorizada por tipo y ordenada por antigüedad; tarjetas contextuales de herramientas e interacción con presentación por línea, iconos SVG de clic izquierdo/derecho y scroll (`click_izq.svg`, `click_der.svg`, `scroll.svg`) y doble clic `x2`; y trazador de vías con cancelación limpia de tramos y previsualización, más ficha técnica con recursos calculados dinámicamente por celda (`Vias.ficha_tecnica`).
+7. ✅ (2026-10-06) **Remodelación de edificaciones y sistema de colonizabilidad:** desdeclaración de edificios sin demoler para permitir modificaciones estructurales (apuntando a la puerta principal con `Shift + B` / botón en `PanelEdificio`), excepción limpia para el Núcleo Urbano, buffers habitables de inmigración con contador de 24h y toggle manual, reubicación cívica, y estado temporal de "sin techo" (consumo de desempleado, bloqueo laboral y exilio a las 24h con penalización moral; ver `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`).
+8. Completar las obras por colonos con tendido de vías y prioridades configurables.
+9. Implementar bombas de extracción directa en fuentes de agua y crudo.
+10. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
+11. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
 
 ## Estado detallado e historial
 
 ### 1. HUD visual interactivo — ✅ actualizado y responsivo (2026-10-05)
 
-Hecho: barra superior responsiva (se adapta a la resolución, botón compacto «Almacén» sin saturar con cantidades ni tasas, muestra de forma visible Comida, Energía y Recurso Crítico con tasas por hora; población muestra censo/camas y total desempleado; moral y era/nivel). Ventana de Almacén ordenada alfabéticamente. Ventana de Ocupaciones accesible desde Población con categorías colapsables (recolección, industria, investigación, energía) y edificios ordenados cronológicamente inverso (el más nuevo arriba). Cierre rápido con tecla `E` o `Escape` en ventanas de diálogo y `VentanaBaul`. Barra de modos de la cenital (Ver, Construir con miniaturas y menú Residencial/puestos, Zonas, Vías), hotbar 1–6 y panel contextual (ambas vistas), transición animada de cámara (vuelo + crossfade del HUD) y panel de notificaciones emergentes. **Queda para después:** batalla, escuadrón, salud y equipo; herramientas de recolección (pala, pico, hacha); modo Demoler en la cenital; arte de los iconos de Ver/Construir/Zonas/Vías y Zona A/B/Borrar; eventos bélicos futuros.
+Hecho: barra superior responsiva (se adapta a la resolución, botón compacto «Almacén» sin saturar con cantidades ni tasas, muestra de forma visible Comida, Energía y Recurso Crítico con tasas por hora; población muestra censo/camas y total desempleado; moral y era/nivel). Ventana de Almacén ordenada alfabéticamente. Ventana de Ocupaciones accesible desde Población con categorías colapsables (recolección, industria, investigación, energía) y edificios ordenados cronológicamente inverso (el más nuevo arriba). Cierre rápido con tecla `E` o `Escape` en ventanas de diálogo y `VentanaBaul`. Barra de modos de la cenital (Ver, Construir con miniaturas y menú Residencial/puestos, Zonas, Vías), hotbar 1–6 y panel contextual (ambas vistas) con instrucciones desglosadas por línea, iconos vectoriales SVG de clic izquierdo, derecho y scroll (`click_izq.svg`, `click_der.svg`, `scroll.svg`), formato `x2` para doble clic y ficha técnica dinámica de vías (recursos por celda, velocidad, energía y vehículos). Transición animada de cámara (vuelo + crossfade del HUD) y panel de notificaciones emergentes. **Queda para después:** batalla, escuadrón, salud y equipo; herramientas de recolección (pala, pico, hacha); modo Demoler en la cenital; arte de los iconos de Ver/Construir/Zonas/Vías y Zona A/B/Borrar; eventos bélicos futuros.
 
 ### 2. Ventana de interacción del baúl — ✅ hecho (2026-09-28, cierre con E 2026-10-05)
 
@@ -46,6 +47,31 @@ Bloques estructurales reales con costo (`tierra_compactada`, `bloque_madera`, `b
 2. ✅ (2026-10-05) **Almacenamiento de blueprints:** soporte de hasta 5 blueprints con miniaturas y nombrado automático `Residencia [camas]x[baules]`.
 3. ✅ (2026-10-05) **Nivelación compartida:** la cota de nivelación de un blueprint se calcula según la celda frontal de su puerta guía, permitiendo que edificios enfrentados compartan bloques de nivelación y despeje.
 4. ✅ (2026-10-05) **Traslado de núcleo urbano:** opción en la ventana de edificio para reubicar el núcleo a otra residencia sin pérdida de datos.
+
+### 5b. Remodelación de edificaciones y sistema de colonizabilidad — ✅ implementado y verificado (2026-10-06)
+
+Basado en `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`. Permite editar edificios declarados sin deconstruirlos, protegiendo la capacidad cívica mediante buffers habitables y gestionando la sobrepoblación temporal. Probado en `CiudadTest.gd`, `BlueprintValidatorTest.gd` y `HUDTest.gd`.
+
+1. **Mecánica de Remodelación ("Desdeclaración" / Edición libre):**
+   - **`VoxelWorld.desdeclarar_edificio(id_edificio)`:** libera la protección de celdas (`inmunidad_minado` y `edificio_por_celda`) y metadatos estructurales sin destruir ningún bloque del `GridMap`.
+   - **Activación:** botón `[Iniciar Remodelación]` en `PanelEdificio` (cenital) y atajo `Shift + B` apuntando a la puerta principal del edificio registrado (1ª persona, en simetría directa: `B` declara, `Shift + B` desdeclara).
+   - **Núcleo Urbano:** no contiene camas ni residentes; al remodelarse pasa inmediatamente a edición libre sin reubicaciones ni penalizaciones demográficas.
+2. **Reubicación de Residentes y Estado "Sin Techo":**
+   - **Reubicación prioritaria en buffers:** busca camas libres en cualquier edificio residencial registrado, **incluso si su colonizabilidad está inactiva** (los buffers protegen a ciudadanos existentes).
+   - **Colonos "Sin Techo":** si las camas totales de la colonia no alcanzan:
+     - Consumen comida a tasa de desempleado (3 unidades/tick).
+     - No pueden trabajar ni ser asignados a puestos/industrias mientras carezcan de vivienda.
+     - Temporizador de 24 horas de simulación: si no consiguen cama en ese plazo, emigran/abandonan la ciudad con penalización temporal en la moral cívica.
+3. **Sistema de Colonizabilidad (Control de Inmigración Externa):**
+   - Controla exclusivamente la llegada de **nuevos colonos inmigrantes** desde el exterior (no restringe a los ciudadanos locales).
+   - **Primer edificio residencial:** nace como `Colonizable: ACTIVO` automáticamente.
+   - **Edificios posteriores (2 en adelante):** nacen como `Colonizable: INACTIVO` (buffer protegido) con cuenta regresiva de **24 horas de juego** para apertura automática a `ACTIVO`.
+   - **Control manual en `PanelEdificio`:** muestra estado `[Colonizable: SÍ/NO]`, tiempo restante para apertura y botón toggle `[Permitir Colonización]` / `[Pausar Colonización]` para congelar o forzar la apertura inmediatamente.
+4. **Desglose de tareas técnicas por módulo:**
+   - **Backend (`Ciudad.gd`):** rastreo de `sin_techo`, consumo, bloqueo laboral, contador 24h y exilio, propiedades `colonizable` y temporizador de apertura en edificios.
+   - **Mundo (`VoxelWorld.gd`):** método `desdeclarar_edificio(id_edificio)` liberando celdas de `inmunidad_minado` y `edificio_por_celda` sin alterar bloques físicos.
+   - **Jugador (`Player.gd`):** atajo `Shift + B` apuntando a la puerta principal de un edificio registrado para invocar `iniciar_remodelacion()`.
+   - **UI / HUD (`PanelEdificio.gd`):** botón `[Iniciar Remodelación]`, indicador de colonizabilidad, contador y botón toggle.
 
 ### 6. Construcción/deconstrucción asistida por NPCs — ✅ en progreso
 

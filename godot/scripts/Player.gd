@@ -175,13 +175,17 @@ func _input(event: InputEvent) -> void:
 			else:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		if tecla.pressed and tecla.keycode == KEY_B:
-			_declarar_edificio()
+			if tecla.shift_pressed:
+				_iniciar_remodelacion()
+			else:
+				_declarar_edificio()
 		if tecla.pressed and tecla.keycode == KEY_G:
 			_alternar_modo_deconstruccion()
 		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_E:
 			if hud != null and hud.ventana_baul_abierta():
 				hud.cerrar_ventana_baul()
 				_e_consumida = true
+				get_viewport().set_input_as_handled()
 				return
 			_interactuar()
 		if tecla.pressed and tecla.keycode == KEY_K:
@@ -353,11 +357,16 @@ func _interactuar() -> void:
 		if base != Vector3i.MAX:
 			mundo.puertas.alternar(base)
 			_e_consumida = true
+			get_viewport().set_input_as_handled()
 			return
-	var esquina: Vector2i = Economia.puesto_con_deposito(_celda_impactada())
+	var celda := _celda_impactada()
+	var esquina: Vector2i = Economia.puesto_con_deposito(celda)
 	if esquina != Recoleccion.SIN_PUESTO:
 		hud.abrir_ventana_baul(esquina)
 		_e_consumida = true
+		get_viewport().set_input_as_handled()
+	elif mundo.obtener_tipo(celda) == "baul":
+		hud.notificar("Este baúl no pertenece a un puesto de trabajo con depósito activo.")
 
 
 ## Frutos: mantener E sobre un árbol con frutos. No consume el árbol (ver
@@ -1111,6 +1120,32 @@ func _declarar_edificio() -> void:
 	var id_edificio: int = mundo.registrar_edificio_completo(celdas, metadata)
 	metadata["id_edificio"] = id_edificio
 	_completar_construccion(metadata)
+
+
+## Inicia la remodelación ("desdeclaración") de un edificio apuntando a su puerta principal
+## con Shift + B (simetría con B para declarar). Pasa el edificio a edición libre.
+func _iniciar_remodelacion() -> void:
+	if not raycast.is_colliding() or mundo == null:
+		return
+	var celda := _celda_impactada()
+	var tipo_apuntado: String = mundo.obtener_tipo(celda)
+	if tipo_apuntado != "puerta_inferior" and tipo_apuntado != "puerta_superior":
+		_notificar_rechazo("Remodelar edificio: apunta a la puerta principal de la estructura.")
+		return
+	var id_edificio: int = mundo.id_de_edificio(celda)
+	if id_edificio == -1:
+		_notificar_rechazo("Remodelar edificio: esa estructura no es un edificio declarado.")
+		return
+	var resumen: Dictionary = Obras.resumen_de(id_edificio)
+	if not resumen.is_empty() and resumen.get("estado", "") != "completo":
+		_notificar_rechazo("Remodelar edificio: solo se pueden remodelar edificios terminados.")
+		return
+	var resultado: Dictionary = FinalizacionObras.iniciar_remodelacion(mundo, id_edificio)
+	if resultado.get("exito", false):
+		if hud != null:
+			hud.notificar(resultado.get("mensaje", "Remodelación iniciada."))
+	else:
+		_notificar_rechazo("Remodelar edificio: %s" % resultado.get("motivo", "no se pudo remodelar."))
 
 
 ## Tecla de prueba (K): simula la muerte del jugador para poder probar la

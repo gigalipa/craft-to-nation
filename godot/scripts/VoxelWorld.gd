@@ -1306,7 +1306,7 @@ func detectar_estructura(origen: Vector3i) -> Dictionary:
 	var pendientes: Array = [origen]
 	while not pendientes.is_empty():
 		var actual: Vector3i = pendientes.pop_back()
-		if visitados.has(actual) or not es_celda_estructural(actual):
+		if visitados.has(actual) or not es_celda_estructural(actual) or celda_a_edificio.has(actual):
 			continue
 		visitados[actual] = obtener_tipo(actual)
 		for delta in VECINOS_3D:
@@ -1675,6 +1675,51 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_relleno_cola.erase(id)
 	# El follaje registrado que aún no se retiró se queda donde está: al
 	# emplazar no se modificó nada, y quitar el edificio a tiempo no debe hacerlo.
+	for columna: Vector2i in edificio_follaje.get(id, []):
+		if _follaje_por_columna.has(columna) and _follaje_por_columna[columna]["id"] == id:
+			_follaje_por_columna.erase(columna)
+	edificio_follaje.erase(id)
+	for celda_despeje in edificio_despeje.get(id, []):
+		if celda_a_despeje.has(celda_despeje):
+			celda_a_despeje[celda_despeje].erase(id)
+			if celda_a_despeje[celda_despeje].is_empty():
+				celda_a_despeje.erase(celda_despeje)
+	edificio_despeje.erase(id)
+	cuerpos_obra().liberar(id)
+	edificio_volumen.erase(id)
+	permisos_salida.erase(id)
+	fantasmas_cambiados.emit()
+	return esquina
+
+
+## Libera la protección de celdas (inmunidad al minado) y metadatos de un
+## edificio declarado SIN destruir ningún bloque en el GridMap ni alterar parejas
+## de puertas/camas. Permite remodelar la estructura libremente.
+func desdeclarar_edificio(id: int) -> Vector2i:
+	if not edificio_a_celdas.has(id):
+		return Vector2i.ZERO
+	var celdas: Array = edificio_a_celdas[id]
+	var esquina := Vector2i(celdas[0].x, celdas[0].z)
+	for celda in celdas:
+		esquina.x = min(esquina.x, celda.x)
+		esquina.y = min(esquina.y, celda.z)
+		celda_a_edificio.erase(celda)
+	edificio_a_celdas.erase(id)
+	for reservada: Vector3i in edificio_sobre_techo.get(id, []):
+		if celda_sobre_techo.get(reservada, -1) == id:
+			celda_sobre_techo.erase(reservada)
+	edificio_sobre_techo.erase(id)
+	edificio_orden.erase(id)
+	edificio_tipos.erase(id)
+	edificio_progreso.erase(id)
+	edificio_metadata.erase(id)
+	if edificio_relleno_cola.has(id):
+		var pendientes: Array[Vector3i] = Construccion.descartar_pendientes(edificio_relleno_cola[id], ["aire", "fantasma", "tierra"])
+		for celda_pendiente in pendientes:
+			if obtener_tipo(celda_pendiente) == "fantasma":
+				set_cell_item(celda_pendiente, GridMap.INVALID_CELL_ITEM)
+				_avisar_si_junto_a_translucido(celda_pendiente)
+	edificio_relleno_cola.erase(id)
 	for columna: Vector2i in edificio_follaje.get(id, []):
 		if _follaje_por_columna.has(columna) and _follaje_por_columna[columna]["id"] == id:
 			_follaje_por_columna.erase(columna)

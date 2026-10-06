@@ -7,6 +7,7 @@ extends Node
 const ColonosScript = preload("res://scripts/Colonos.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
 const EconomiaScript = preload("res://scripts/Economia.gd")
+const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 
 
 class MundoFalso extends RefCounted:
@@ -1484,4 +1485,63 @@ func ejecutar_pruebas() -> void:
 	assert(comida_entregada, "los acarreadores transportaron comida al almacén central sin congelarse (comida: %.1f)" % ciudad53.almacen["comida"].cantidad)
 	assert(economia53.puestos[esquina53]["almacen"]["comida"] <= 900.0, "el almacén del puesto se vació al menos dos cargas")
 
-	print("\n=== Las 53 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 54: aprendices contratados llegan a la escuela técnica y están presentes ===")
+	var ciudad54: Node = CiudadScript.new()
+	var mundo54: MundoFalso = _mundo_llano(20, 20)
+	var esquina54 := Vector2i(2, 2)
+	var bloques54: Dictionary = PlantillasPuesto.en_mundo("escuela_tecnica", 0, esquina54, 0)
+	for celda54 in bloques54:
+		mundo54.poner(celda54, bloques54[celda54])
+	var servicio54: Vector2i = esquina54 + PlantillasPuesto.celda_de_servicio("escuela_tecnica", 0)
+	var economia54: Node = EconomiaScript.new()
+	economia54.ciudad = ciudad54
+	economia54.registrar_puesto(esquina54, "escuela_tecnica", 5, 5, {}, {}, servicio54, EconomiaScript.SIN_DEPOSITO, 1)
+
+	var colonos54: Node = _nuevo(mundo54, ciudad54)
+	colonos54.economia = economia54
+
+	# 4 aprendices contratados que parten desde fuera del edificio
+	var ids54: Array[int] = []
+	for i in range(4):
+		var id_ap: int = colonos54.agregar_colono("desempleado", Vector3i(12 + i, 1, 12))
+		ids54.append(id_ap)
+	ciudad54.demografia["desempleado"] = 4
+	for i in range(4):
+		assert(colonos54.contratar(esquina54, "aprendiz"))
+
+	for _step in range(1500):
+		colonos54.avanzar(0.1)
+		if economia54.puestos[esquina54]["presentes"].size() == 4:
+			break
+
+	var pasos_con_4 := 0
+	var pasos_con_menos := 0
+	for _step in range(200):
+		colonos54.avanzar(0.1)
+		if economia54.puestos[esquina54]["presentes"].size() == 4:
+			pasos_con_4 += 1
+		else:
+			pasos_con_menos += 1
+
+	print("TEST 54 estabilidad: pasos con 4 presentes: %d, pasos con < 4: %d" % [pasos_con_4, pasos_con_menos])
+	for id_c in ids54:
+		var c_ap: Dictionary = colonos54.colonos[id_c]
+		print("  colono %d: celda=%s espera=%.2f ruta=%s fallos=%d" % [id_c, c_ap["celda"], c_ap["espera"], c_ap["ruta"].size(), c_ap["fallos_servicio"]])
+	assert(pasos_con_menos == 0, "los 4 aprendices se mantienen presentes de forma continua")
+
+	# Despedir a un aprendiz y contratar un reemplazo desde fuera
+	colonos54.despedir(esquina54, "aprendiz")
+	assert(economia54.puestos[esquina54]["presentes"].size() == 3)
+	var id_nuevo: int = colonos54.agregar_colono("desempleado", Vector3i(15, 1, 15))
+	ciudad54.demografia["desempleado"] += 1
+	assert(colonos54.contratar(esquina54, "aprendiz"))
+
+	var restablecido := false
+	for _step in range(1500):
+		colonos54.avanzar(0.1)
+		if economia54.puestos[esquina54]["presentes"].size() == 4:
+			restablecido = true
+			break
+	assert(restablecido, "el aprendiz de reemplazo llega a la escuela técnica y se restablecen los 4 presentes")
+
+	print("\n=== Las 54 pruebas de Colonos pasaron correctamente ===")

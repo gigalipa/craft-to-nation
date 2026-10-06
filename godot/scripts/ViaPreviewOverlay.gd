@@ -17,6 +17,7 @@ const DESF := 0.5
 @onready var mundo: Node = get_node("../VoxelWorld")
 
 var _planos: Array[MeshInstance3D] = []
+var cantidad_celdas: int = 0
 
 
 ## "vertices" es el tramo en curso (origen + ruta hasta el cursor, sin
@@ -35,11 +36,13 @@ func previsualizar_tramo(vertices: Array[Vector2i], valido: bool) -> void:
 		for x in range(mini(a.x, b.x) - 1, maxi(a.x, b.x) + 1):
 			for z in range(mini(a.y, b.y) - 1, maxi(a.y, b.y) + 1):
 				columnas[Vector2i(x, z)] = true
+	cantidad_celdas = columnas.size()
 	for col in columnas:
 		_agregar_plano(col, color)
 
 
 func limpiar() -> void:
+	cantidad_celdas = 0
 	for plano in _planos:
 		plano.queue_free()
 	_planos.clear()

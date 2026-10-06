@@ -243,6 +243,11 @@ func ocultar_contexto() -> void:
 	_contexto.ocultar()
 
 
+func set_extra_contexto(texto: String) -> void:
+	if _contexto != null:
+		_contexto.set_extra(texto)
+
+
 ## Panel contextual de un puesto de recolección: costo real (ver
 ## CamaraCenital._resumen_materiales_puesto() — antes de esta rama era un
 ## placeholder fijo, "10 tierra · 10 madera · 5 piedra" para los 4 tipos por

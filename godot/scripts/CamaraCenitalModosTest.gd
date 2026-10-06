@@ -239,4 +239,31 @@ func ejecutar_pruebas() -> void:
 	camara15.hud.queue_free()
 	mundo15.free()
 
-	print("\n=== Las 15 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 16: salir de modo colocar puesto o vias con cerrar_menu=false oculta el contexto ===")
+	var camara16: Camera3D = _camara()
+	var mundo16 := MundoFalso.new()
+	camara16.mundo = mundo16
+	camara16._alternar_modo_trazar_via()
+	assert(camara16.hud._contexto.visible, "el contexto se mostro al iniciar trazar vias")
+	camara16._salir_de_modo_trazar_via(false)
+	assert(not camara16.hud._contexto.visible, "el contexto se oculta al salir del modo vias aunque cerrar_menu=false")
+	camara16.hud.queue_free()
+	mundo16.free()
+
+	print("\n=== TEST 17: zonificacion muestra instrucciones de clicks y actualiza al marcar primera esquina ===")
+	var camara17: Camera3D = _camara()
+	var mundo17 := MundoFalso.new()
+	camara17.mundo = mundo17
+	camara17._alternar_modo_zonificar()
+	assert(camara17.hud._contexto.visible, "contexto visible al zonificar")
+	assert("FIJAR ESQUINA" in camara17.hud._contexto.acciones.text, "muestra fijar esquina inicialmente")
+	camara17.esperando_segunda_esquina = true
+	camara17._mostrar_contexto_zona()
+	assert("CONFIRMAR ÁREA" in camara17.hud._contexto.acciones.text, "muestra confirmar area tras primer clic")
+	camara17._cancelar_pintado_zona()
+	assert(not camara17.esperando_segunda_esquina)
+	assert("FIJAR ESQUINA" in camara17.hud._contexto.acciones.text, "vuelve a fijar esquina al cancelar")
+	camara17.hud.queue_free()
+	mundo17.free()
+
+	print("\n=== Las 17 pruebas de CamaraCenitalModosTest pasaron correctamente ===")

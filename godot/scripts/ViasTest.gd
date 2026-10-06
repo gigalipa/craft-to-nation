@@ -483,4 +483,52 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 	Vias.notches.clear()
-	print("\n=== Las 34 pruebas de Vias pasaron correctamente ===")
+
+	print("\n=== TEST 35: Vias.ficha_tecnica() formatea información y calcula recursos por celda ===")
+	var ficha_tierra: String = Vias.ficha_tecnica("tierra_pisada", 0)
+	assert(ficha_tierra.contains("Vía de tierra pisada"))
+	assert(ficha_tierra.contains("Recursos: N/A"))
+	assert(ficha_tierra.contains("Velocidad: +35%"))
+	assert(ficha_tierra.contains("Transmisión de energía: No"))
+	assert(ficha_tierra.contains("Tránsito vehicular: No"))
+
+	var ficha_tierra_con_celdas: String = Vias.ficha_tecnica("tierra_pisada", 16)
+	assert(ficha_tierra_con_celdas.contains("Recursos: N/A"), "tierra pisada sin costo sigue siendo N/A con celdas")
+
+	# Vía simulada con costo simple (p. ej. calzada de piedra con 2 piedra/celda)
+	Vias.TIPOS["calzada_test"] = {
+		"nombre": "Calzada de piedra",
+		"bono_velocidad": 1.50,
+		"costo": {"piedra": 2},
+		"energia": false,
+		"transito": "Carretas y carros",
+	}
+	var ficha_calzada_0: String = Vias.ficha_tecnica("calzada_test", 0)
+	assert(ficha_calzada_0.contains("Recursos: 2 piedra/celda"))
+	assert(ficha_calzada_0.contains("Velocidad: +50%"))
+	assert(ficha_calzada_0.contains("Tránsito vehicular: Carretas y carros"))
+
+	var ficha_calzada_8: String = Vias.ficha_tecnica("calzada_test", 8)
+	assert(ficha_calzada_8.contains("Recursos: 16 piedra"), "8 celdas x 2 piedra/celda = 16 piedra")
+
+	# Vía simulada con costo compuesto y transmisión de energía
+	Vias.TIPOS["carretera_test"] = {
+		"nombre": "Carretera asfaltada",
+		"bono_velocidad": 1.75,
+		"costo": {"piedra": 4, "crudo": 1},
+		"energia": true,
+		"transito": "Camiones",
+	}
+	var ficha_carretera_0: String = Vias.ficha_tecnica("carretera_test", 0)
+	assert(ficha_carretera_0.contains("Recursos: 4 piedra + 1 crudo/celda"))
+	assert(ficha_carretera_0.contains("Velocidad: +75%"))
+	assert(ficha_carretera_0.contains("Transmisión de energía: Sí"))
+	assert(ficha_carretera_0.contains("Tránsito vehicular: Camiones"))
+
+	var ficha_carretera_10: String = Vias.ficha_tecnica("carretera_test", 10)
+	assert(ficha_carretera_10.contains("Recursos: 40 piedra + 10 crudo"))
+
+	Vias.TIPOS.erase("calzada_test")
+	Vias.TIPOS.erase("carretera_test")
+
+	print("\n=== Las 35 pruebas de Vias pasaron correctamente ===")

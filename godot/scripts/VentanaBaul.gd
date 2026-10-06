@@ -16,6 +16,9 @@ extends PanelContainer
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 
+const ANCHO_VENTANA := 320.0
+const ALTURA_VENTANA := 260.0
+
 var esquina := Recoleccion.SIN_PUESTO
 
 var _contenido := VBoxContainer.new()
@@ -32,27 +35,47 @@ func _ready() -> void:
 	visible = false
 	TemaHUD.aplicar_panel(self)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	# Centrada de verdad: los anchors solos ya centran el ORIGEN, pero el
-	# contenido (número de filas visibles) cambia el tamaño de la ventana en
-	# cada _actualizar(), así que los offsets se recalculan en cada resize en
-	# vez de fijarlos una sola vez en _ready() (con PRESET_CENTER, antes de
-	# construir el contenido, quedaban calculados sobre un tamaño de 0x0).
+	# Centrada con altura fija acotada: evita desbordar la pantalla en resoluciones
+	# o ventanas pequeñas. El título "BAÚL" con la "X" arriba y el botón "Extraer todo"
+	# abajo quedan siempre visibles, mientras que la lista de recursos hace scroll.
 	anchor_left = 0.5
 	anchor_top = 0.5
 	anchor_right = 0.5
 	anchor_bottom = 0.5
+	grow_horizontal = Control.GROW_DIRECTION_BOTH
+	grow_vertical = Control.GROW_DIRECTION_BOTH
+	custom_minimum_size = Vector2(ANCHO_VENTANA, ALTURA_VENTANA)
+	size = Vector2(ANCHO_VENTANA, ALTURA_VENTANA)
+	offset_left = -ANCHO_VENTANA / 2.0
+	offset_right = ANCHO_VENTANA / 2.0
+	offset_top = -ALTURA_VENTANA / 2.0
+	offset_bottom = ALTURA_VENTANA / 2.0
 	resized.connect(func() -> void:
 		offset_left = -size.x / 2.0
 		offset_right = size.x / 2.0
 		offset_top = -size.y / 2.0
 		offset_bottom = size.y / 2.0)
-	custom_minimum_size = Vector2(300, 0)
 	var caja := VBoxContainer.new()
+	caja.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	caja.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	caja.add_theme_constant_override("separation", 6)
 	add_child(caja)
+
 	caja.add_child(_fila_titulo())
-	caja.add_child(_contenido)
+
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	caja.add_child(scroll)
+
+	_contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_contenido)
+
 	for recurso in Ciudad.almacen:
 		_contenido.add_child(_crear_fila_recurso(recurso))
+
 	var fila_botones := HBoxContainer.new()
 	var extraer := Button.new()
 	extraer.text = "Extraer todo"
@@ -64,11 +87,15 @@ func _ready() -> void:
 	caja.add_child(fila_botones)
 
 
+var _frame_apertura := -1
+
+
 func abrir(nueva_esquina: Vector2i) -> void:
 	if not Economia.tiene_puesto(nueva_esquina):
 		return
 	esquina = nueva_esquina
 	visible = true
+	_frame_apertura = Engine.get_process_frames()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_actualizar()
 
@@ -83,6 +110,8 @@ func cerrar() -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if visible and event is InputEventKey:
+		if Engine.get_process_frames() == _frame_apertura:
+			return
 		var tecla := event as InputEventKey
 		if tecla.pressed and not tecla.echo and (tecla.keycode == KEY_E or tecla.keycode == KEY_ESCAPE):
 			cerrar()
@@ -150,6 +179,10 @@ func _crear_fila_recurso(recurso: String) -> HBoxContainer:
 		Economia.agregar_uno(esquina, recurso, _incremento()))
 	fila.add_child(menos)
 	fila.add_child(mas)
+	var margen_der := Control.new()
+	margen_der.custom_minimum_size = Vector2(4, 0)
+	margen_der.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_child(margen_der)
 	_filas[recurso] = {"fila": fila, "etiqueta": etiqueta, "menos": menos, "mas": mas}
 	return fila
 

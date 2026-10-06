@@ -1676,16 +1676,16 @@ func _salir_de_modo_colocar_puesto(cerrar_menu: bool = true) -> void:
 	_giros_fantasma_puesto = -1
 	modo_colocar_puesto = false
 	_ocultar_area_accion()
-	_tipo_puesto_activo = ""
-	if estaba and cerrar_menu:
-		# El menú Construir queda marcado "abierto" hasta ahora (se abrió con
-		# la tecla `1` antes de elegir este puesto) — sin esto, confirmar o
-		# deseleccionar la colocación cerraba el HUD pero dejaba el flag colgado, y la
-		# siguiente tecla `1` solo volvía a cerrar (ya cerrado) en vez de abrir.
-		_menu_construir_abierto = false
-		_categoria_construir = ""
-		hud.set_modo("")
+	if estaba:
 		hud.ocultar_contexto()
+		if cerrar_menu:
+			# El menú Construir queda marcado "abierto" hasta ahora (se abrió con
+			# la tecla `1` antes de elegir este puesto) — sin esto, confirmar o
+			# deseleccionar la colocación cerraba el HUD pero dejaba el flag colgado, y la
+			# siguiente tecla `1` solo volvía a cerrar (ya cerrado) en vez de abrir.
+			_menu_construir_abierto = false
+			_categoria_construir = ""
+			hud.set_modo("")
 
 
 ## Ctrl + rueda del mouse, solo con un puesto en modo colocación: rota la
@@ -1779,6 +1779,7 @@ func _salir_de_modo_menu_construir() -> void:
 	_menu_construir_abierto = false
 	_categoria_construir = ""
 	hud.set_modo("")
+	hud.ocultar_contexto()
 	_actualizar_visibilidad_zonas()
 
 
@@ -1829,12 +1830,13 @@ func _salir_de_modo_colocar_blueprint(cerrar_menu: bool = true) -> void:
 	_blueprint_activo = {}
 	_overlay_nivelacion.ocultar()
 	_overlay_vigente = SIN_RESUMEN
-	if estaba and cerrar_menu:
-		# Mismo motivo que en _salir_de_modo_colocar_puesto().
-		_menu_construir_abierto = false
-		_categoria_construir = ""
-		hud.set_modo("")
+	if estaba:
 		hud.ocultar_contexto()
+		if cerrar_menu:
+			# Mismo motivo que en _salir_de_modo_colocar_puesto().
+			_menu_construir_abierto = false
+			_categoria_construir = ""
+			hud.set_modo("")
 
 
 ## Sale de cualquier modo de interacción de esta cámara (colocar blueprint,
@@ -1860,6 +1862,7 @@ func salir_de_todos_los_modos() -> void:
 	_categoria_construir = ""
 	hud.set_modo("")
 	hud.cerrar_panel_puesto()
+	hud.ocultar_contexto()
 	_actualizar_visibilidad_zonas()
 
 
@@ -1874,6 +1877,8 @@ func _cancelar_pintado_zona() -> void:
 		return
 	esperando_segunda_esquina = false
 	overlay.limpiar_previsualizacion()
+	if modo_zonificar:
+		_mostrar_contexto_zona()
 	print("Pintado de zona cancelado.")
 
 
@@ -2019,7 +2024,7 @@ func _alternar_modo_trazar_via() -> void:
 	_ultimo_origen_preview = SIN_VERTICE_PREVIO
 	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	hud.set_modo("construir", "vias", "vias")
-	hud.mostrar_contexto("Trazar vía", {}, ["(clic izq.) FIJAR PUNTO", "(doble clic) CONFIRMAR", "(clic der.) CANCELAR", "[Esc] SALIR"])
+	hud.mostrar_contexto("Trazar vía", {}, ["(clic izq.) FIJAR PUNTO", "(doble clic) CONFIRMAR", "(clic der.) CANCELAR", "[Esc] SALIR"], null, Vias.ficha_tecnica("tierra_pisada", 0))
 
 
 ## "cerrar_menu" en false lo usa _elegir_categoria() al cambiar de categoría o
@@ -2032,11 +2037,12 @@ func _salir_de_modo_trazar_via(cerrar_menu: bool = true) -> void:
 	_ultimo_origen_preview = SIN_VERTICE_PREVIO
 	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	via_preview.limpiar()
-	if estaba and cerrar_menu:
-		_menu_construir_abierto = false
-		_categoria_construir = ""
-		hud.set_modo("")
+	if estaba:
 		hud.ocultar_contexto()
+		if cerrar_menu:
+			_menu_construir_abierto = false
+			_categoria_construir = ""
+			hud.set_modo("")
 
 
 ## Activa/desactiva el modo demoler (menú principal, tecla `3`). Con él activo, el clic
@@ -2070,7 +2076,8 @@ func _elegir_zona(tipo: String) -> void:
 
 func _mostrar_contexto_zona() -> void:
 	hud.set_modo("zonificar", tipo_zona_seleccionada)
-	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, ["[1] Zona Residencial", "[2] Zona Industrial", "[3] Borrar", "[Esc] Salir"], null, _categorias_permitidas_zona())
+	var accion_esquina: String = "(clic izq.) CONFIRMAR ÁREA" if esperando_segunda_esquina else "(clic izq.) FIJAR ESQUINA"
+	hud.mostrar_contexto("Zonificación: %s" % _nombre_zona_seleccionada(), {}, [accion_esquina, "(clic der.) CANCELAR", "[Esc] SALIR"], null, _categorias_permitidas_zona())
 
 
 func _nombre_zona_seleccionada() -> String:
@@ -2131,6 +2138,7 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 		esperando_segunda_esquina = true
 		print("Primera esquina de la zona: ", primera_esquina)
 		overlay.previsualizar(primera_esquina, primera_esquina, tipo_zona_seleccionada)
+		_mostrar_contexto_zona()
 		return
 
 	if tipo_zona_seleccionada == Zonificacion.MARCADOR_BORRAR:
@@ -2144,6 +2152,7 @@ func _procesar_clic(posicion_pantalla: Vector2) -> void:
 			hud.notificar("Todavía no existe una zona de influencia — declara tu primer edificio residencial primero.")
 	esperando_segunda_esquina = false
 	overlay.reconstruir()
+	_mostrar_contexto_zona()
 
 
 ## Clic con el modo trazador activo — ver spec de vías Sección 4.
@@ -2169,6 +2178,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 			_ultimo_origen_preview = SIN_VERTICE_PREVIO
 			_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 			via_preview.limpiar()
+			hud.set_extra_contexto(Vias.ficha_tecnica("tierra_pisada", 0))
 		return
 
 	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
@@ -2193,6 +2203,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 		_ultimo_origen_preview = SIN_VERTICE_PREVIO
 		_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 		via_preview.limpiar()
+		hud.set_extra_contexto(Vias.ficha_tecnica("tierra_pisada", 0))
 		return
 
 	_vertice_inicio_tramo = vertice
@@ -2206,6 +2217,7 @@ func _cancelar_tramo_via() -> void:
 	_ultimo_origen_preview = SIN_VERTICE_PREVIO
 	_ultimo_vertice_preview = SIN_VERTICE_PREVIO
 	via_preview.limpiar()
+	hud.set_extra_contexto(Vias.ficha_tecnica("tierra_pisada", 0))
 	print("Trazado de vía cancelado.")
 
 
@@ -2235,6 +2247,7 @@ func _actualizar_preview_vertice_inicial() -> void:
 	var vertice := _vertice_bajo_mouse(get_viewport().get_mouse_position())
 	var vertices: Array[Vector2i] = [vertice, vertice]
 	via_preview.previsualizar_tramo(vertices, _trazador_via.vertice_transitable(vertice))
+	hud.set_extra_contexto(Vias.ficha_tecnica("tierra_pisada", 0))
 
 
 ## Vista previa en vivo del trazo actual: los tramos YA fijados
@@ -2269,6 +2282,8 @@ func _actualizar_preview_via() -> void:
 		vertices.append(_vertice_inicio_tramo)
 	vertices.append_array(ruta)
 	via_preview.previsualizar_tramo(vertices, not ruta.is_empty())
+	var celdas_preview: int = via_preview.cantidad_celdas if (_hay_tramo_en_curso or not _tramos_fijos.is_empty()) else 0
+	hud.set_extra_contexto(Vias.ficha_tecnica("tierra_pisada", celdas_preview))
 
 
 ## Confirma TODOS los tramos acumulados (_tramos_fijos) de una sola vez —

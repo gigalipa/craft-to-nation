@@ -65,35 +65,41 @@ static func texto_costo(costo_dic: Dictionary, bloques_dic: Dictionary = {}) -> 
 static func texto_acciones(lista_acciones: Array) -> String:
 	var partes: Array = []
 	for accion in lista_acciones:
-		var parte: String = accion
-		parte = parte.replace("(clic der.)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
-		parte = parte.replace("(click der.)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
-		parte = parte.replace("(clic derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
-		parte = parte.replace("(click derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+		var lineas: Array = str(accion).split("\n")
+		for linea in lineas:
+			var parte: String = linea.strip_edges()
+			if parte.is_empty():
+				continue
+			parte = parte.replace("(clic der.)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+			parte = parte.replace("(click der.)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+			parte = parte.replace("(clic derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+			parte = parte.replace("(click derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
 
-		parte = parte.replace("(doble clic izq.)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(doble click izq.)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(doble clic)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(doble click)", "[img=12x17]%s[/img] (x2)" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(doble clic izq.)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(doble click izq.)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(doble clic der.)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_DERECHO)
+			parte = parte.replace("(doble click der.)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_DERECHO)
+			parte = parte.replace("(doble clic)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(doble click)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_IZQUIERDO)
 
-		parte = parte.replace("(clic izq.)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(click izq.)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(clic izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(click izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(clic)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
-		parte = parte.replace("(click)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(clic izq.)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(click izq.)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(clic izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(click izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(clic)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(click)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 
-		parte = parte.replace("[Ctrl+rueda]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-		parte = parte.replace("[Ctrl+scroll]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-		parte = parte.replace("(Ctrl+rueda)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-		parte = parte.replace("(Ctrl+scroll)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-		parte = parte.replace("Ctrl+rueda", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-		parte = parte.replace("Ctrl+scroll", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-		parte = parte.replace("(scroll)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
-		parte = parte.replace("(rueda)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("[Ctrl+rueda]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("[Ctrl+scroll]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("(Ctrl+rueda)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("(Ctrl+scroll)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("Ctrl+rueda", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("Ctrl+scroll", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("(scroll)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("(rueda)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
 
-		partes.append(parte)
-	return "  ·  ".join(partes)
+			partes.append(parte)
+	return "\n".join(partes)
 
 
 const DORADO_TEXTO := Color(1.0, 0.85, 0.4)

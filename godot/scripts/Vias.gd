@@ -14,13 +14,54 @@ extends Node
 ## implementen, nunca antes.
 var TIPOS: Dictionary = {
 	"tierra_pisada": {
+		"nombre": "Vía de tierra pisada",
 		"ancho": 2,
 		"sentido": "doble",
 		"bono_velocidad": 1.35,
 		"costo": {},
+		"energia": false,
+		"transito": "No",
 		"material": preload("res://assets/mat_tierra_pisada.tres"),
 	},
 }
+
+
+## Ficha técnica para la tarjeta contextual al trazar vías (ver GDD Sección 4).
+## "cantidad_celdas": 0 muestra el costo unitario por celda (p. ej. "2 piedra/celda" o "N/A"),
+## > 0 muestra el costo total calculado para ese tramo (p. ej. "16 piedra" o "N/A").
+func ficha_tecnica(tipo: String, cantidad_celdas: int = 0) -> String:
+	if not TIPOS.has(tipo):
+		return ""
+	var datos: Dictionary = TIPOS[tipo]
+	var nombre: String = datos.get("nombre", tipo.capitalize())
+	var costo_dic: Dictionary = datos.get("costo", {})
+
+	var recursos_str := "N/A"
+	if not costo_dic.is_empty():
+		var partes: Array = []
+		if cantidad_celdas > 0:
+			for recurso in costo_dic:
+				partes.append("%d %s" % [costo_dic[recurso] * cantidad_celdas, recurso])
+			recursos_str = " + ".join(partes)
+		else:
+			for recurso in costo_dic:
+				partes.append("%d %s" % [costo_dic[recurso], recurso])
+			recursos_str = "%s/celda" % " + ".join(partes)
+
+	var bono: float = datos.get("bono_velocidad", 1.0)
+	var pct: int = roundi((bono - 1.0) * 100)
+	var vel_str: String = ("+%d%%" % pct) if pct >= 0 else ("%d%%" % pct)
+
+	var energia_str: String = "Sí" if datos.get("energia", false) else "No"
+	var transito_str: String = datos.get("transito", "No")
+
+	return "%s\nRecursos: %s\nVelocidad: %s\nTransmisión de energía: %s\nTránsito vehicular: %s" % [
+		nombre,
+		recursos_str,
+		vel_str,
+		energia_str,
+		transito_str
+	]
 
 ## Celda de SOPORTE (el bloque que lleva la vía en su cara superior:
 ## terreno nivelado, relleno, o una cuna_recta/cuna_esquina) -> tipo.

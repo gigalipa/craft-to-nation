@@ -116,6 +116,7 @@ func ejecutar_pruebas() -> void:
 	probar_ventana_ocupaciones()
 	probar_panel_escuela()
 	probar_panel_niveles()
+	probar_panel_extractores_y_refinerias()
 	probar_panel_edificio()
 	probar_marcas_demolicion()
 
@@ -867,6 +868,80 @@ func probar_panel_niveles() -> void:
 	Economia.liberar(99999)
 	panel.queue_free()
 	Economia.puestos.erase(esquina8)
+
+
+func probar_panel_extractores_y_refinerias() -> void:
+	print("=== TEST 8b: PanelPuesto para extractores, almacén y selección de combustible en central ===")
+	# 1. Estación de bombeo
+	var esq_bombeo := Vector2i(1000, 1000)
+	Economia.registrar_puesto(esq_bombeo, "estacion_bombeo", 4, 6, {"agua": 2.0})
+	var panel: PanelContainer = PanelPuestoScript.new()
+	add_child(panel)
+	panel.abrir(esq_bombeo)
+	assert(panel._titulo.text == "Estación de bombeo")
+	assert(panel._filas["tecnico"]["fila"].visible, "admite técnicos")
+	assert(not panel._filas["recolector"]["fila"].visible and not panel._filas["acarreador"]["fila"].visible, "sin obreros ni acarreadores")
+	assert(panel._puertos.visible, "muestra puertos")
+	assert("Salida agua" in panel._puertos.text and "Desconectado" in panel._puertos.text, "puerto de agua de salida")
+
+	# 2. Centro de extracción
+	var esq_ext := Vector2i(1020, 1000)
+	var dp := {"tipo_pozo": "crudo", "bloques_hierro": 3, "perforacion": Vector2i(1022, 1002), "y_superficie": 5, "y_fondo": 0}
+	var entorno_ext := {"datos_perforacion": dp}
+	Economia.registrar_puesto(esq_ext, "centro_extraccion", 5, 5, {"crudo": 5.0}, entorno_ext)
+	Economia.puestos[esq_ext]["crudo_restante"] = 15
+	panel.abrir(esq_ext)
+	assert(panel._titulo.text == "Centro de extracción")
+	assert(panel._crudo_restante.visible, "etiqueta de crudo restante visible")
+	assert("15" in panel._crudo_restante.text, "muestra cantidad de crudo restante")
+	assert(not panel._filas["acarreador"]["fila"].visible, "centro de extracción no tiene acarreadores")
+
+	# 3. Central termoeléctrica con selector de combustible
+	var esq_central := Vector2i(1040, 1000)
+	Economia.registrar_puesto(esq_central, "central_termoelectrica", 5, 5, {})
+	panel.abrir(esq_central)
+	assert(panel._selector_combustible.visible, "selector de combustible visible en central")
+	assert(panel._filas["acarreador"]["fila"].visible, "carbón permite acarreadores")
+	assert(Economia.puestos[esq_central]["combustible_activo"] == "carbon")
+	# Cambiar a combustible líquido
+	panel._botones_combustible["combustible"].pressed.emit()
+	assert(Economia.puestos[esq_central]["combustible_activo"] == "combustible")
+	assert(not panel._filas["acarreador"]["fila"].visible, "combustible líquido oculta acarreadores")
+	assert("Combustible: Desconectado" in panel._puertos.text or "Entrada combustible" in panel._puertos.text, "puerto de combustible")
+
+	# 4. Almacén
+	var esq_alm := Vector2i(1060, 1000)
+	Economia.registrar_puesto(esq_alm, "almacen", 5, 5, {})
+	panel.abrir(esq_alm)
+	assert(panel._titulo.text == "Almacén")
+	assert(not panel._filas["recolector"]["fila"].visible and not panel._filas["tecnico"]["fila"].visible and not panel._filas["acarreador"]["fila"].visible, "almacén sin trabajadores")
+	assert(panel._puertos.visible, "almacén muestra sus 6 puertos")
+
+	# 5. Estados de conexión y derrame en vivo
+	Canalizaciones.reiniciar()
+	var celda_p_out := Vector3i(1000, 4, 1000)
+	var celda_p_in := Vector3i(1001, 4, 1000)
+	Canalizaciones.puertos_conectados[celda_p_out] = 99
+	Canalizaciones.tipo_por_puerto[celda_p_out] = "puerto_agua_out"
+	Canalizaciones.puertos_conectados[celda_p_in] = 99
+	Canalizaciones.tipo_por_puerto[celda_p_in] = "puerto_agua_in"
+	Canalizaciones.tipo_por_red[99] = "tuberia"
+	Canalizaciones.recurso_por_red[99] = "agua"
+	Canalizaciones.red_a_celdas[99] = [celda_p_out, celda_p_in]
+	panel.abrir(esq_bombeo)
+	assert("Conectado" in panel._puertos.text and "🟢" in panel._puertos.text, "puerto en estado Conectado con indicador verde")
+
+	# Simular derrame en la red
+	Canalizaciones.derrames_activos[celda_p_in] = "agua"
+	panel._actualizar()
+	assert("Derrame" in panel._puertos.text and "🔴" in panel._puertos.text, "puerto en estado Derrame con indicador rojo")
+	Canalizaciones.reiniciar()
+
+	panel.queue_free()
+	Economia.puestos.erase(esq_bombeo)
+	Economia.puestos.erase(esq_ext)
+	Economia.puestos.erase(esq_central)
+	Economia.puestos.erase(esq_alm)
 
 
 func probar_panel_edificio() -> void:

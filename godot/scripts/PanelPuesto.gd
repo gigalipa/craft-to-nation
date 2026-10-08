@@ -9,6 +9,8 @@ extends PanelContainer
 const HUDScript = preload("res://scripts/HUD.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
+const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
+
 const NOMBRES_PUESTO := {
 	"mina": "Mina",
 	"caza_recoleccion": "Caza y recolección",
@@ -24,6 +26,9 @@ const NOMBRES_PUESTO := {
 	"refineria_petrolera": "Refinería petrolera",
 	"productor_combustible": "Productor de combustible",
 	"central_termoelectrica": "Central termoeléctrica",
+	"estacion_bombeo": "Estación de bombeo",
+	"centro_extraccion": "Centro de extracción",
+	"almacen": "Almacén",
 }
 ## Mensaje para el jugador (el HUD lo envía a las notificaciones).
 signal aviso(texto: String)
@@ -38,6 +43,10 @@ var _libres := TemaHUD.etiqueta()
 var _almacen := TemaHUD.etiqueta()
 var _produccion := TemaHUD.etiqueta()
 var _energia := TemaHUD.etiqueta()
+var _crudo_restante := TemaHUD.etiqueta()
+var _selector_combustible := HBoxContainer.new()
+var _botones_combustible: Dictionary = {}
+var _puertos := TemaHUD.etiqueta()
 var _distancia := TemaHUD.etiqueta()
 var _demoler := Button.new()
 var _dialogo_demoler := ConfirmationDialog.new()
@@ -62,7 +71,23 @@ func _ready() -> void:
 	caja.add_child(_titulo)
 	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "investigador", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
-	for etiqueta in [_trabajadores, _libres, _almacen, _produccion, _energia, _distancia]:
+	# Selector de combustible para central termoeléctrica
+	var lbl_comb := TemaHUD.etiqueta("Combustible:")
+	_selector_combustible.add_child(lbl_comb)
+	for id_c in ["carbon", "combustible", "crudo"]:
+		var btn := Button.new()
+		btn.text = HUDScript.NOMBRES_RECURSO.get(id_c, id_c).capitalize()
+		TemaHUD.estilizar_boton(btn)
+		btn.pressed.connect(func() -> void:
+			if Economia.tiene_puesto(esquina):
+				Economia.cambiar_combustible_central(esquina, id_c)
+				_actualizar()
+		)
+		_selector_combustible.add_child(btn)
+		_botones_combustible[id_c] = btn
+	caja.add_child(_selector_combustible)
+
+	for etiqueta in [_trabajadores, _libres, _crudo_restante, _almacen, _produccion, _energia, _puertos, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		etiqueta.custom_minimum_size.x = 250.0
@@ -132,8 +157,8 @@ func _actualizar() -> void:
 	var es_escuela: bool = Economia.es_escuela(esquina)
 	var es_universidad: bool = Economia.es_universidad(esquina)
 	var con_niveles: bool = Economia.tiene_niveles(esquina)
-	# Oficios que producen aquí: investigadores en la universidad, aprendices en la escuela, solo técnicos en la refinería, los tres oficios en los puestos con niveles.
-	var oficios: Array = ["investigador"] if es_universidad else (["aprendiz"] if es_escuela else (["recolector", "tecnico", "especialista"] if con_niveles else ["tecnico"]))
+	# Oficios que producen aquí: vacíos en el almacén, investigadores en la universidad, aprendices en la escuela, solo técnicos en la refinería/extractores, los tres oficios en los puestos con niveles.
+	var oficios: Array = [] if puesto["tipo"] == "almacen" else (["investigador"] if es_universidad else (["aprendiz"] if es_escuela else (["recolector", "tecnico", "especialista"] if con_niveles else ["tecnico"])))
 	var estado := ""
 	if not puesto["activo"]:
 		estado = " (inactivo)"
@@ -158,12 +183,14 @@ func _actualizar() -> void:
 		var limite_inv: bool = (rol == "investigador" and not Ciudad.COSTOS_INVESTIGACION.has(Ciudad.nivel_investigado + 1))
 		fila["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or not Economia.admite_rol(esquina, rol) or limite_inv
 	var acarreadores: Dictionary = _filas["acarreador"]
-	acarreadores["fila"].visible = not es_escuela and not es_universidad  # ni una escuela ni una universidad mueven recursos
+	acarreadores["fila"].visible = Economia.roles_de(esquina).has("acarreador")
 	acarreadores["cantidad"].text = str(t["acarreadores"])
 	acarreadores["libres"].text = "(%d libres)" % Ciudad.demografia["desempleado"]
 	acarreadores["menos"].disabled = t["acarreadores"] == 0
 	acarreadores["mas"].disabled = sin_cupo or Ciudad.demografia["desempleado"] <= 0 or not puesto["activo"]
-	if es_universidad:
+	if puesto["tipo"] == "almacen":
+		_trabajadores.text = "Almacén logístico (sin personal)"
+	elif es_universidad:
 		var siguiente: int = Ciudad.nivel_investigado + 1
 		if Ciudad.COSTOS_INVESTIGACION.has(siguiente):
 			var info_inv: Dictionary = Ciudad.COSTOS_INVESTIGACION[siguiente]
@@ -180,17 +207,21 @@ func _actualizar() -> void:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
 	var siguiente_inv: int = Ciudad.nivel_investigado + 1
 	var sin_candidatos_inv: bool = es_universidad and _libres_de("investigador") == 0 and Ciudad.COSTOS_INVESTIGACION.has(siguiente_inv)
-	_libres.visible = (not es_escuela and not con_niveles and not es_universidad and Colonos.tecnicos_libres() == 0) or sin_candidatos_inv
+	_libres.visible = (not es_escuela and not con_niveles and not es_universidad and puesto["tipo"] != "almacen" and Colonos.tecnicos_libres() == 0) or sin_candidatos_inv
 	if sin_candidatos_inv:
 		_libres.text = "Sin candidatos libres: requiere %s" % ("técnicos o especialistas" if siguiente_inv == 2 else "especialistas")
 	else:
 		_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
 	_almacen.visible = not es_escuela and not es_universidad
-	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica"
+	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica" and puesto["tipo"] != "almacen"
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
 
 	if puesto["tipo"] == "central_termoelectrica":
+		_selector_combustible.visible = true
+		var comb_act: String = puesto.get("combustible_activo", "carbon")
+		for id_c in _botones_combustible:
+			_botones_combustible[id_c].disabled = (id_c == comb_act)
 		_energia.visible = true
 		var t_pres: int = t["presentes"]
 		var alm: Dictionary = puesto["almacen"]
@@ -209,6 +240,7 @@ func _actualizar() -> void:
 				break
 		_energia.text = "Capacidad: %.0f E/h\nGeneración usada: %.1f E/h\nCombustible actual: %s" % [cap_esta, uso, comb_actual]
 	elif puesto["tipo"] == "refineria_petrolera" or puesto["tipo"] == "productor_combustible" or es_universidad:
+		_selector_combustible.visible = false
 		_energia.visible = true
 		var res: Dictionary = Economia.balance_energia
 		var conectados: Dictionary = res.get("conectados", {})
@@ -223,7 +255,36 @@ func _actualizar() -> void:
 		var estado_e: String = texto_estado_energia(conectado, demanda, factor, cap_red)
 		_energia.text = "Energía: %s" % estado_e
 	else:
+		_selector_combustible.visible = false
 		_energia.visible = false
+
+	if puesto["tipo"] == "centro_extraccion":
+		_crudo_restante.visible = true
+		var dp: Dictionary = puesto.get("entorno", {}).get("datos_perforacion", {})
+		if dp.get("tipo_pozo", "") == "crudo":
+			_crudo_restante.text = "Crudo restante en pozo: %d bloques" % puesto.get("crudo_restante", 0)
+		else:
+			_crudo_restante.text = "Pozo de agua (inagotable)"
+	else:
+		_crudo_restante.visible = false
+
+	var lista_puertos: Array[Dictionary] = _puertos_del_puesto()
+	if not lista_puertos.is_empty():
+		_puertos.visible = true
+		var lineas: Array = ["Puertos de conexión:"]
+		for p_data in lista_puertos:
+			var estado_texto := "Desconectado"
+			var simbolo := "⚪"
+			if p_data["estado"] == "conectado":
+				estado_texto = "Conectado"
+				simbolo = "🟢"
+			elif p_data["estado"] == "derrame":
+				estado_texto = "Derrame"
+				simbolo = "🔴"
+			lineas.append("• %s: %s %s" % [p_data["nombre"], simbolo, estado_texto])
+		_puertos.text = "\n".join(lineas)
+	else:
+		_puertos.visible = false
 
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
 	var id_puesto: int = Obras.id_en_columna(esquina)
@@ -313,3 +374,73 @@ func _distancia_al_nucleo() -> String:
 	var puesto: Dictionary = Economia.puestos[esquina]
 	var centro_puesto := Vector2(esquina) + Vector2(puesto["ancho"], puesto["alto"]) / 2.0
 	return "%d celdas" % roundi(centro_nucleo.distance_to(centro_puesto))
+
+
+func _puertos_del_puesto() -> Array[Dictionary]:
+	var puesto: Dictionary = Economia.puestos.get(esquina, {})
+	var tipo: String = puesto.get("tipo", "")
+	var lista_info: Array = PlantillasPuesto.puertos_de(tipo)
+	if lista_info.is_empty():
+		return []
+
+	var m: Object = Economia.mundo if Economia.mundo != null else (get_tree().root.find_child("VoxelWorld", true, false) if get_tree() != null and get_tree().root != null else null)
+	var ancho: int = puesto.get("ancho", 0)
+	var alto: int = puesto.get("alto", 0)
+	var suelo: int = puesto.get("suelo", 0)
+	var y_puerto: int = suelo + 4
+
+	var celdas_puerto_encontradas: Array[Dictionary] = []
+	if m != null and m.has_method("obtener_tipo"):
+		for dx in range(ancho):
+			for dz in range(alto):
+				var celda := Vector3i(esquina.x + dx, y_puerto, esquina.y + dz)
+				var tipo_b: String = m.obtener_tipo(celda)
+				if tipo_b.begins_with("puerto_"):
+					var estado := "desconectado"
+					if Canalizaciones != null and Canalizaciones.has_method("estado_de_puerto"):
+						estado = Canalizaciones.estado_de_puerto(celda)
+					celdas_puerto_encontradas.append({
+						"celda": celda,
+						"tipo_bloque": tipo_b,
+						"estado": estado,
+					})
+
+	var resultado: Array[Dictionary] = []
+	for i in range(lista_info.size()):
+		var info: Dictionary = lista_info[i]
+		var estado := "desconectado"
+		var celda_asoc := Vector3i.ZERO
+		for c_data in celdas_puerto_encontradas:
+			var tipo_b: String = c_data["tipo_bloque"]
+			var rec_b: String = ""
+			if tipo_b.begins_with("puerto_agua"): rec_b = "agua"
+			elif tipo_b.begins_with("puerto_crudo"): rec_b = "crudo"
+			elif tipo_b.begins_with("puerto_combustible"): rec_b = "combustible"
+			var dir_b: String = "Entrada" if tipo_b.ends_with("_in") else "Salida"
+			if rec_b == info.get("recurso", "") and dir_b == info.get("direccion", ""):
+				estado = c_data["estado"]
+				celda_asoc = c_data["celda"]
+				break
+
+		if estado == "desconectado" and Canalizaciones != null and Canalizaciones.has_method("estado_de_puerto"):
+			for p_celda in Canalizaciones.puertos_conectados:
+				if p_celda.x >= esquina.x and p_celda.x < esquina.x + ancho and p_celda.z >= esquina.y and p_celda.z < esquina.y + alto:
+					var tipo_p: String = Canalizaciones.tipo_por_puerto.get(p_celda, "")
+					var rec_b: String = ""
+					if tipo_p.begins_with("puerto_agua"): rec_b = "agua"
+					elif tipo_p.begins_with("puerto_crudo"): rec_b = "crudo"
+					elif tipo_p.begins_with("puerto_combustible"): rec_b = "combustible"
+					var dir_b: String = "Entrada" if tipo_p.ends_with("_in") else "Salida"
+					if rec_b == info.get("recurso", "") and dir_b == info.get("direccion", ""):
+						estado = Canalizaciones.estado_de_puerto(p_celda)
+						celda_asoc = p_celda
+						break
+
+		resultado.append({
+			"nombre": info.get("nombre", "Puerto"),
+			"recurso": info.get("recurso", ""),
+			"direccion": info.get("direccion", ""),
+			"estado": estado,
+			"celda": celda_asoc,
+		})
+	return resultado

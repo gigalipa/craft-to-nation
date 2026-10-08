@@ -135,6 +135,12 @@ const COLOR_DESTACADO := {
 	"puerta_inferior": Color(1.0, 0.2, 0.8, 0.6),
 	"puerta_superior": Color(1.0, 0.2, 0.8, 0.6),
 	"vidrio": Color(0.5, 1.0, 0.2, 0.6),
+	"puerto_agua_in": Color(0.2, 0.6, 0.9, 0.8),
+	"puerto_agua_out": Color(0.1, 0.3, 0.7, 0.8),
+	"puerto_crudo_in": Color(0.4, 0.3, 0.1, 0.9),
+	"puerto_crudo_out": Color(0.25, 0.18, 0.05, 0.9),
+	"puerto_combustible_in": Color(0.9, 0.5, 0.1, 0.8),
+	"puerto_combustible_out": Color(0.8, 0.2, 0.1, 0.8),
 }
 
 
@@ -171,13 +177,49 @@ const TIPOS_ARBOL := ["madera", "follaje"]
 ## translúcido (ver docs/superpowers/specs/2026-09-13-culling-caras-
 ## translucidas-design.md). GridMap sigue siendo la única fuente de verdad
 ## para ocupación/colisión: esto es puramente visual.
-const TIPOS_TRANSLUCIDOS: Array[String] = ["agua", "vidrio"]
+const TIPOS_TRANSLUCIDOS: Array[String] = ["agua", "vidrio", "crudo", "combustible"]
+const TIPOS_LIQUIDOS: Array[String] = ["agua", "crudo", "combustible"]
 
 ## Tipos de las dos celdas de una puerta. Su malla y su colisión NO las da
 ## GridMap (el ítem queda vacío en _indexar_biblioteca()): las da Puertas.gd,
 ## con una lámina fina por puerta. Ver
 ## docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md.
 const TIPOS_PUERTA: Array[String] = ["puerta_inferior", "puerta_superior"]
+
+## Tipos de bloques de puerto de fluidos (entrada/salida de tuberías).
+const TIPOS_PUERTO: Array[String] = [
+	"puerto_agua_in", "puerto_agua_out",
+	"puerto_crudo_in", "puerto_crudo_out",
+	"puerto_combustible_in", "puerto_combustible_out"
+]
+
+const COLORES_PUERTO := {
+	"puerto_agua_in": Color(0.2, 0.6, 0.9),
+	"puerto_agua_out": Color(0.1, 0.3, 0.7),
+	"puerto_crudo_in": Color(0.4, 0.3, 0.1),
+	"puerto_crudo_out": Color(0.25, 0.18, 0.05),
+	"puerto_combustible_in": Color(0.9, 0.5, 0.1),
+	"puerto_combustible_out": Color(0.8, 0.2, 0.1),
+}
+
+static func es_puerto(tipo: String) -> bool:
+	return TIPOS_PUERTO.has(tipo)
+
+static func recurso_de_puerto(tipo: String) -> String:
+	if tipo.begins_with("puerto_agua"):
+		return "agua"
+	elif tipo.begins_with("puerto_crudo"):
+		return "crudo"
+	elif tipo.begins_with("puerto_combustible"):
+		return "combustible"
+	return ""
+
+static func direccion_de_puerto(tipo: String) -> String:
+	if tipo.ends_with("_in"):
+		return "in"
+	elif tipo.ends_with("_out"):
+		return "out"
+	return ""
 
 const VECINOS_3D: Array[Vector3i] = [
 	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
@@ -402,6 +444,8 @@ func calcular_despeje(celdas_mundo: Dictionary) -> Dictionary:
 			profundidad = 1
 		elif tipo == "puerta_inferior" or tipo == "puerta_superior":
 			profundidad = 2
+		elif es_puerto(tipo):
+			profundidad = 1
 		else:
 			continue
 
@@ -481,6 +525,8 @@ func motivo_despeje_invalido(celdas_mundo: Dictionary, terreno_a_nivelar: Dictio
 			var tipo: String = despeje[celda_despeje]
 			if tipo == "vidrio":
 				return "Un vidrio no tiene el espacio libre exigido hacia afuera."
+			elif es_puerto(tipo):
+				return "Un puerto de tubería no tiene el espacio libre exigido hacia afuera."
 			return "Una puerta no tiene el espacio libre exigido hacia afuera."
 	return despeje_camas_invalido(celdas_mundo, terreno_a_nivelar)
 
@@ -614,6 +660,50 @@ func _indexar_biblioteca() -> void:
 		if _id_por_tipo.has(tipo):
 			mesh_library.set_item_mesh(_id_por_tipo[tipo], null)
 			mesh_library.set_item_shapes(_id_por_tipo[tipo], [])
+
+	# El bloque "crudo" es un fluido translúcido sin colisión sólida propia en el GridMap.
+	if not _id_por_tipo.has("crudo"):
+		var id_crudo: int = mesh_library.get_last_unused_item_id()
+		mesh_library.create_item(id_crudo)
+		mesh_library.set_item_name(id_crudo, "crudo")
+		mesh_library.set_item_mesh(id_crudo, null)
+		mesh_library.set_item_shapes(id_crudo, [])
+		_id_por_tipo["crudo"] = id_crudo
+		_tipo_por_id[id_crudo] = "crudo"
+	else:
+		mesh_library.set_item_mesh(_id_por_tipo["crudo"], null)
+		mesh_library.set_item_shapes(_id_por_tipo["crudo"], [])
+
+	# El bloque "combustible" es un fluido translúcido sin colisión sólida propia en el GridMap.
+	if not _id_por_tipo.has("combustible"):
+		var id_comb: int = mesh_library.get_last_unused_item_id()
+		mesh_library.create_item(id_comb)
+		mesh_library.set_item_name(id_comb, "combustible")
+		mesh_library.set_item_mesh(id_comb, null)
+		mesh_library.set_item_shapes(id_comb, [])
+		_id_por_tipo["combustible"] = id_comb
+		_tipo_por_id[id_comb] = "combustible"
+	else:
+		mesh_library.set_item_mesh(_id_por_tipo["combustible"], null)
+		mesh_library.set_item_shapes(_id_por_tipo["combustible"], [])
+
+	# Los bloques de puerto ("puerto_*_in/out") se registran dinámicamente si no existen en la MeshLibrary.
+	for tipo_puerto in TIPOS_PUERTO:
+		if not _id_por_tipo.has(tipo_puerto):
+			var id_p: int = mesh_library.get_last_unused_item_id()
+			mesh_library.create_item(id_p)
+			mesh_library.set_item_name(id_p, tipo_puerto)
+			var malla := BoxMesh.new()
+			malla.size = Vector3.ONE
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = COLORES_PUERTO.get(tipo_puerto, Color.GRAY)
+			malla.material = mat
+			mesh_library.set_item_mesh(id_p, malla)
+			var forma := BoxShape3D.new()
+			forma.size = Vector3.ONE
+			mesh_library.set_item_shapes(id_p, [forma, Transform3D.IDENTITY])
+			_id_por_tipo[tipo_puerto] = id_p
+			_tipo_por_id[id_p] = tipo_puerto
 
 
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
@@ -800,7 +890,7 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 	# disparar un escurrimiento por cada uno — un futuro bloque de agua
 	# colocado a mano por el jugador (aún sin UI, ver sesión de diseño
 	# 2026-09-18) sí debe escurrir de inmediato, igual que al minar.
-	if tipo == "agua" and por_jugador:
+	if TIPOS_LIQUIDOS.has(tipo) and por_jugador:
 		_escurrir_agua_desde([celda])
 	return true
 
@@ -810,7 +900,7 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 ## vacío), ni parte de un edificio, ni una celda vacía.
 func es_minable(celda: Vector3i) -> bool:
 	var tipo: String = obtener_tipo(celda)
-	if tipo == "agua" or tipo == "bedrock":
+	if TIPOS_LIQUIDOS.has(tipo) or tipo == "bedrock":
 		return false
 	if celda_a_edificio.has(celda):
 		return false
@@ -852,7 +942,7 @@ func _retirar_bloque(celda: Vector3i) -> void:
 	var vecinos_agua: Array[Vector3i] = []
 	for delta in VECINOS_3D:
 		var vecino: Vector3i = celda + delta
-		if obtener_tipo(vecino) == "agua":
+		if TIPOS_LIQUIDOS.has(obtener_tipo(vecino)):
 			vecinos_agua.append(vecino)
 	if not vecinos_agua.is_empty():
 		_escurrir_agua_desde(vecinos_agua)
@@ -1495,7 +1585,7 @@ func eliminar_follaje(celda: Vector3i) -> void:
 ## regla especial.
 const ORDEN_GRUPOS_EDIFICIO := [
 	["tierra"],
-	["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "bloque_acero", "puerta_inferior", "puerta_superior", "vidrio"],
+	["adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "bloque_acero", "puerta_inferior", "puerta_superior", "vidrio", "puerto_agua_in", "puerto_agua_out", "puerto_crudo_in", "puerto_crudo_out", "puerto_combustible_in", "puerto_combustible_out"],
 	["cama_cabecera", "cama_pies", "baul", "mesa_estudio"],
 ]
 
@@ -2254,3 +2344,38 @@ func drenar_agua(x: int, z: int) -> int:
 		y += 1
 		reemplazados += 1
 	return reemplazados
+
+
+## Coloca la tubería de hierro de un centro de extracción desde y_sup - 1 hasta y_fondo.
+## Devuelve la cantidad de bloques de estructura_hierro colocados.
+func colocar_tuberia_extraccion(columna: Vector2i, y_sup: int, y_fondo: int) -> int:
+	var colocados := 0
+	var id_hierro: int = _id_por_tipo.get("estructura_hierro", GridMap.INVALID_CELL_ITEM)
+	if id_hierro == GridMap.INVALID_CELL_ITEM:
+		return 0
+	for y in range(y_sup - 1, y_fondo - 1, -1):
+		var celda := Vector3i(columna.x, y, columna.y)
+		var actual: String = obtener_tipo(celda)
+		if actual == "agua":
+			_nivel_agua.erase(celda)
+			_encolar_secado_alrededor(celda)
+			bloque_translucido_cambiado.emit(celda)
+		elif actual == "crudo":
+			bloque_translucido_cambiado.emit(celda)
+		set_cell_item(celda, id_hierro)
+		colocados += 1
+	return colocados
+
+
+## Retira la tubería de hierro y reembolsa los bloques de estructura_hierro a Ciudad.almacen.
+func retirar_tuberia_extraccion(columna: Vector2i, y_sup: int, y_fondo: int, obj_ciudad: Object = null) -> int:
+	var c: Object = obj_ciudad if obj_ciudad != null else Ciudad
+	var retirados := 0
+	for y in range(y_sup - 1, y_fondo - 1, -1):
+		var celda := Vector3i(columna.x, y, columna.y)
+		if obtener_tipo(celda) == "estructura_hierro":
+			set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+			retirados += 1
+	if retirados > 0 and c != null and c.almacen.has("hierro"):
+		c.almacen["hierro"].agregar(float(retirados * 5))
+	return retirados

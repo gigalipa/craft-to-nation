@@ -268,4 +268,54 @@ func ejecutar_pruebas() -> void:
 	assert(sin_fantasma_t10 == 10 * 6, "al quitar el fantasma el agua recupera su cara de arriba (10 caras en total), salió %d vértices" % sin_fantasma_t10)
 	print("OK: eliminar el edificio avisa al renderer y el agua recupera su cara de arriba.")
 
+	print("\n=== TEST 11: bloque crudo se renderiza con culling de caras internas y material de crudo ===")
+	var mundo_t11: Node = VoxelWorld.new()
+	mundo_t11.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t11.cell_size = Vector3.ONE * 1.0
+	mundo_t11._indexar_biblioteca()
+	var render_t11: Node3D = TranslucidosRendererScript.new()
+	render_t11.voxel_world = mundo_t11
+	render_t11._indexar_materiales()
+	mundo_t11.bloque_translucido_cambiado.connect(render_t11._on_bloque_translucido_cambiado)
+
+	var celdas_emitidas_crudo: Array[Vector3i] = []
+	mundo_t11.bloque_translucido_cambiado.connect(func(c: Vector3i) -> void: celdas_emitidas_crudo.append(c))
+
+	# Colocar dos celdas contiguas de crudo en (0,0,0) y (1,0,0)
+	mundo_t11.colocar_bloque(Vector3i(0, 0, 0), "crudo")
+	assert(celdas_emitidas_crudo.has(Vector3i(0, 0, 0)), "colocar crudo emite bloque_translucido_cambiado")
+	mundo_t11.colocar_bloque(Vector3i(1, 0, 0), "crudo")
+	render_t11.flush_pendientes()
+
+	var chunk_t11: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(0, 0, 0))
+	assert(render_t11._mesh_por_chunk.has("crudo"), "renderiza capa crudo")
+	assert(render_t11._mesh_por_chunk["crudo"].has(chunk_t11), "chunk de crudo creado")
+	var mesh_crudo: MeshInstance3D = render_t11._mesh_por_chunk["crudo"][chunk_t11]
+	assert(mesh_crudo.get_surface_override_material(0) == render_t11._material_por_tipo["crudo"], "usa material de crudo")
+
+	var vertices_crudo: PackedVector3Array = mesh_crudo.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	assert(vertices_crudo.size() == 8 * 6, "dos celdas contiguas de crudo deben tener culling en cara compartida (8 caras = 48 vértices), salieron %d" % vertices_crudo.size())
+	print("\n=== TEST 12: bloque combustible es translucido y liquido, renderizado con material ambar ===")
+	assert(VoxelWorld.TIPOS_TRANSLUCIDOS.has("combustible"), "combustible debe ser translucido")
+	assert(VoxelWorld.TIPOS_LIQUIDOS.has("combustible"), "combustible debe ser liquido")
+
+	var render_t12: Node3D = TranslucidosRendererScript.new()
+	render_t12.voxel_world = mundo_t11
+	render_t12._indexar_materiales()
+	mundo_t11.bloque_translucido_cambiado.connect(render_t12._on_bloque_translucido_cambiado)
+	assert(render_t12._material_por_tipo.has("combustible"), "debe indexar material de combustible")
+	var mat_comb: StandardMaterial3D = render_t12._material_por_tipo["combustible"]
+	assert(mat_comb != null, "material de combustible no nulo")
+
+	mundo_t11.colocar_bloque(Vector3i(10, 0, 0), "combustible")
+	mundo_t11.colocar_bloque(Vector3i(11, 0, 0), "combustible")
+	render_t12.flush_pendientes()
+	var chunk_t12: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(10, 0, 0))
+	assert(render_t12._mesh_por_chunk.has("combustible"), "renderiza capa combustible")
+	assert(render_t12._mesh_por_chunk["combustible"].has(chunk_t12), "chunk de combustible creado")
+	var mesh_comb: MeshInstance3D = render_t12._mesh_por_chunk["combustible"][chunk_t12]
+	var vertices_comb: PackedVector3Array = mesh_comb.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	assert(vertices_comb.size() == 8 * 6, "dos celdas contiguas de combustible deben tener culling en cara compartida (8 caras = 48 vertices), salieron %d" % vertices_comb.size())
+	print("OK: combustible clasificado, renderizado con culling y material ambar.")
+
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

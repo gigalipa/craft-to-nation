@@ -91,7 +91,7 @@ static func _chunk_de(celda: Vector3i) -> Vector3i:
 static func _cara_visible(tipo_propio: String, tipo_vecino: String, direccion: Vector3i) -> bool:
 	if tipo_vecino != "" and not VoxelWorld.TIPOS_TRANSLUCIDOS.has(tipo_vecino):
 		return false
-	if tipo_propio == "agua":
+	if tipo_propio == "agua" or tipo_propio == "crudo" or tipo_propio == "combustible":
 		if direccion == ARRIBA:
 			return true
 		if direccion == -ARRIBA:
@@ -118,6 +118,28 @@ static func _esquinas_cara(centro: Vector3, direccion: Vector3i) -> Array[Vector
 	return esquinas
 
 
+static func _crear_material_crudo() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.06, 0.05, 0.04, 0.94)
+	mat.roughness = 0.1
+	mat.metallic = 0.1
+	mat.metallic_specular = 0.8
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.render_priority = 2
+	return mat
+
+
+static func _crear_material_combustible() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.55, 0.1, 0.75)
+	mat.roughness = 0.15
+	mat.metallic = 0.0
+	mat.metallic_specular = 0.6
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.render_priority = 2
+	return mat
+
+
 ## Carga los materiales de cada tipo translúcido — recursos independientes
 ## (ver mat_agua.tres/mat_ventana.tres), no leídos de mesh_library: una vez
 ## vacía la malla del ítem correspondiente (Task 4), ya no habría ninguna
@@ -125,6 +147,8 @@ static func _esquinas_cara(centro: Vector3, direccion: Vector3i) -> Array[Vector
 func _indexar_materiales() -> void:
 	_material_por_tipo["agua"] = MATERIAL_AGUA
 	_material_por_tipo["vidrio"] = MATERIAL_VENTANA
+	_material_por_tipo["crudo"] = _crear_material_crudo()
+	_material_por_tipo["combustible"] = _crear_material_combustible()
 	assert(_material_por_tipo.size() == VoxelWorld.TIPOS_TRANSLUCIDOS.size(), "cada tipo en VoxelWorld.TIPOS_TRANSLUCIDOS necesita un material aquí")
 
 

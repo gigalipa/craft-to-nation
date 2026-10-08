@@ -996,7 +996,13 @@ func _trabajar_en_obra(c: Dictionary) -> void:
 	if huella.is_empty():
 		c["tarea"] = {}  # la obra ya no existe
 		return
-	if not _junto_a(c["celda"], huella):
+	var en_posicion: bool = false
+	if tarea["id"] < 0:
+		var xz := Vector2i(c["celda"].x, c["celda"].z)
+		en_posicion = huella.has(xz) or _junto_a(c["celda"], huella)
+	else:
+		en_posicion = _junto_a(c["celda"], huella)
+	if not en_posicion:
 		if c["fallos_servicio"] >= FALLOS_PARA_VETAR:
 			obras.vetar(tarea["id"], c["id"])
 			c["tarea"] = {}
@@ -1015,6 +1021,7 @@ func _trabajar_en_obra(c: Dictionary) -> void:
 			c["tarea"] = {}  # pausada, completa, terminada o inválida: pide otra tarea
 			if resultado["estado"] == "pausada":
 				c["espera"] = ESPERA_TRABAJO
+
 
 
 ## Lo que hace un trabajador cuando está quieto, sin ruta ni espera: un

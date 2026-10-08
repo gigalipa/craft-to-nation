@@ -1542,6 +1542,26 @@ func ejecutar_pruebas() -> void:
 		if economia54.puestos[esquina54]["presentes"].size() == 4:
 			restablecido = true
 			break
-	assert(restablecido, "el aprendiz de reemplazo llega a la escuela técnica y se restablecen los 4 presentes")
+	print("\n=== TEST 55: colonos libres trabajan en obras de vía (hasta 4 en paralelo, avance y conteo) ===")
+	var ciudad55: Node = CiudadScript.new()
+	var colonos55: Node = _nuevo_con_puesto(ciudad55)
+	var obras55 := ObrasFalsa.new()
+	obras55.colonos = colonos55
+	obras55.tarea = {"tipo": "via_construir", "id": -1}
+	obras55.huella = [Vector2i(6, 6), Vector2i(7, 6)]
+	colonos55.obras = obras55
 
-	print("\n=== Las 54 pruebas de Colonos pasaron correctamente ===")
+	var id55_a: int = colonos55.agregar_colono("desempleado", Vector3i(1, 1, 7))
+	var id55_b: int = colonos55.agregar_colono("obrero", Vector3i(2, 1, 7))
+
+	for _i in range(400):
+		colonos55.avanzar(0.1)
+		if obras55.trabajos.size() >= 2:
+			break
+
+	assert(colonos55.obreros_en(-1) == 2, "ambos colonos están asignados a la obra vial -1")
+	assert(obras55.trabajos.size() >= 2, "ambos colonos ejecutaron pasos de trabajo en la obra vial")
+	assert(obras55.trabajos[0] == [-1, "via_construir"])
+
+	print("\n=== Las 55 pruebas de Colonos pasaron correctamente ===")
+

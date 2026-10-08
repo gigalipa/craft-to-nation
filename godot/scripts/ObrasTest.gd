@@ -8,6 +8,8 @@ extends Node
 const ObrasScript = preload("res://scripts/Obras.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
+const ConstructorViasScript = preload("res://scripts/ConstructorVias.gd")
+
 
 
 class MundoObraFalso extends RefCounted:
@@ -49,6 +51,37 @@ class MundoObraFalso extends RefCounted:
 		edificio_progreso.erase(id)
 		edificio_metadata.erase(id)
 		return Vector2i.ZERO
+
+	var celdas_mundo: Dictionary = {}
+	var colocado_por_jugador: Dictionary = {}
+	var _ids: Dictionary = {"tierra": 1, "cuna_recta": 2, "cuna_esquina": 3}
+
+	func altura_en(_x: int, _z: int) -> int:
+		return 0
+
+	func obtener_tipo(celda: Vector3i) -> String:
+		return celdas_mundo.get(celda, "")
+
+	func talar_bloque_de_arbol(_celda: Vector3i, _dano: int) -> void:
+		pass
+
+	func eliminar_follaje(_celda: Vector3i) -> void:
+		pass
+
+	func colocar_bloque(celda: Vector3i, tipo: String, _por_jugador: bool) -> void:
+		celdas_mundo[celda] = tipo
+
+	func set_cell_item(celda: Vector3i, id: int, _orientacion: int = 0) -> void:
+		if id == -1:
+			celdas_mundo.erase(celda)
+		else:
+			for k in _ids:
+				if _ids[k] == id:
+					celdas_mundo[celda] = k
+
+	func id_de_tipo(tipo: String) -> int:
+		return _ids.get(tipo, 1)
+
 
 
 ## Zona falsa: solo la celda (0, 0) es del núcleo urbano.
@@ -343,4 +376,113 @@ func ejecutar_pruebas() -> void:
 	obras12.cancelar_demolicion(1)
 	assert(not obras12.esta_programada(1))
 
-	print("\n=== Las 12 pruebas de Obras pasaron correctamente ===")
+	print("\n=== TEST 13: prioridades de obras (Alta, Normal, Baja) y jerarquía de asignación ===")
+	var mundo13 := MundoObraFalso.new()
+	mundo13.agregar(1, Vector3i(10, 0, 10), 5, 0)  # lejos
+	mundo13.agregar(2, Vector3i(3, 0, 3), 5, 0)   # cerca
+	mundo13.agregar(3, Vector3i(4, 0, 4), 5, 5)   # para demoler
+	var obras13: Node = _nuevas(mundo13)
+
+	# Constantes y valores por defecto
+	assert(obras13.PRIORIDAD_ALTA == 2 and obras13.PRIORIDAD_NORMAL == 1 and obras13.PRIORIDAD_BAJA == 0)
+	assert(obras13.prioridad_de(1) == obras13.PRIORIDAD_NORMAL, "prioridad por defecto es Normal")
+	assert(obras13.prioridad_de(2) == obras13.PRIORIDAD_NORMAL)
+
+	# Ambas en Normal: elige la más cercana (2)
+	assert(obras13.siguiente_tarea(Vector3i(2, 1, 2)) == {"tipo": "construir", "id": 2})
+
+	# Si la lejana (1) pasa a Alta, se prefiere 1 sobre la cercana en Normal (2)
+	obras13.fijar_prioridad(1, obras13.PRIORIDAD_ALTA)
+	assert(obras13.prioridad_de(1) == obras13.PRIORIDAD_ALTA)
+	assert(obras13.siguiente_tarea(Vector3i(2, 1, 2)) == {"tipo": "construir", "id": 1})
+
+	# Marcamos edificio 3 para demoler
+	assert(obras13.alternar_marca(3) == "")
+	# Alta (1) le gana a Demolición (3)
+	assert(obras13.siguiente_tarea(Vector3i(2, 1, 2)) == {"tipo": "construir", "id": 1})
+
+	# Si 1 pasa a Normal, Normal (1 y 2) le gana a Demolición (3)
+	obras13.fijar_prioridad(1, obras13.PRIORIDAD_NORMAL)
+	assert(obras13.siguiente_tarea(Vector3i(2, 1, 2))["tipo"] == "construir")
+
+	# Si ambas en construcción pasan a Baja (0), Demolición (3) le gana a Baja
+	obras13.fijar_prioridad(1, obras13.PRIORIDAD_BAJA)
+	obras13.fijar_prioridad(2, obras13.PRIORIDAD_BAJA)
+	assert(obras13.siguiente_tarea(Vector3i(2, 1, 2)) == {"tipo": "demoler", "id": 3})
+
+	# Al olvidar la obra, se limpia la prioridad
+	obras13.olvidar(1)
+	assert(obras13.prioridad_de(1) == obras13.PRIORIDAD_NORMAL)
+	print("\n=== TEST 14: obras de vías (creación, asignación, fusión y ejecución paso a paso) ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+
+	var mundo14 := MundoObraFalso.new()
+	# Edificio 1 con prioridad Baja (0)
+	mundo14.agregar(1, Vector3i(10, 0, 10), 3, 0)
+	var obras14: Node = _nuevas(mundo14)
+	obras14.fijar_prioridad(1, obras14.PRIORIDAD_BAJA)
+
+	# Planificar tramo de vía
+	var sin_choque := func(_cols): return false
+	var vertices1: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0)]
+	var plan1: Dictionary = ConstructorViasScript.planificar(mundo14, vertices1, sin_choque)
+	assert(not plan1.is_empty())
+
+	# Crear obra de vía
+	var id_via1: int = obras14.crear_obra_via(plan1)
+	assert(id_via1 < 0, "las obras de vías tienen ID negativo")
+	assert(obras14.hay_obras_pendientes())
+	assert(obras14.huella_de(id_via1).size() > 0)
+	assert(obras14.celdas_de(id_via1).size() == plan1["pasos"].size())
+
+	# Jerarquía: Vías están sobre edificios de prioridad Baja (0)
+	var tarea_libre: Dictionary = obras14.siguiente_tarea(Vector3i(0, 1, 0))
+	assert(tarea_libre == {"tipo": "via_construir", "id": id_via1}, "Vías tienen preferencia sobre edificios de prioridad Baja")
+
+	# Si edificio 1 sube a Normal (1), el edificio le gana al tendido de vía
+	obras14.fijar_prioridad(1, obras14.PRIORIDAD_NORMAL)
+	assert(obras14.siguiente_tarea(Vector3i(0, 1, 0)) == {"tipo": "construir", "id": 1}, "Edificios Normal ganan a vías")
+	obras14.fijar_prioridad(1, obras14.PRIORIDAD_BAJA)
+
+	# Fusión de tramos contiguos: trazar un tramo que comparte vértices se fusiona en id_via1
+	var vertices2: Array[Vector2i] = [Vector2i(1, 0), Vector2i(2, 0)]
+	var plan2: Dictionary = ConstructorViasScript.planificar(mundo14, vertices2, sin_choque)
+	var pasos_antes: int = obras14.obras_vias[id_via1]["pasos"].size()
+	var id_via2: int = obras14.crear_obra_via(plan2)
+	assert(id_via2 == id_via1, "Tramos conectados se fusionan bajo la misma obra")
+	assert(obras14.obras_vias[id_via1]["pasos"].size() > pasos_antes)
+
+	# Ejecutar pasos con trabajar()
+	var pasos_totales: int = obras14.obras_vias[id_via1]["pasos"].size()
+	for i in range(pasos_totales - 1):
+		var r: Dictionary = obras14.trabajar(id_via1, "via_construir")
+		assert(r["estado"] == "avanzo")
+	# Último paso completa la obra
+	var r_final: Dictionary = obras14.trabajar(id_via1, "via_construir")
+	assert(r_final["estado"] == "completa")
+	assert(not obras14.obras_vias.has(id_via1), "la obra completada se limpia")
+	assert(Vias.celdas.size() > 0, "todas las celdas quedaron registradas en Vias")
+
+	# Demolición de vías
+	var celda_demoler: Vector3i = Vias.celdas.keys()[0]
+	var id_dem_via: int = obras14.crear_demolicion_via([celda_demoler])
+	assert(id_dem_via < 0)
+	# Demoliciones le ganan a obras viales y a edificios Baja
+	assert(obras14.siguiente_tarea(Vector3i(0, 1, 0)) == {"tipo": "via_demoler", "id": id_dem_via})
+	var r_dem: Dictionary = obras14.trabajar(id_dem_via, "via_demoler")
+	# Reclamar una obra de vía cede el turno frente a colonos pero permite el trabajo manual
+	var plan3: Dictionary = ConstructorViasScript.planificar(mundo14, vertices1, sin_choque)
+	var id_via3: int = obras14.crear_obra_via(plan3)
+	obras14.reclamar(id_via3)
+	assert(obras14.esta_reclamada(id_via3))
+	# Los colonos ven la obra cedida y esperan
+	var r_colono: Dictionary = obras14.trabajar(id_via3, "via_construir")
+	assert(r_colono["estado"] == "pausada", "Colonos no tocan obra reclamada por el jugador")
+	# El jugador trabaja manualmente sin ser bloqueado
+	var r_manual: Dictionary = obras14.trabajar_via(id_via3)
+	assert(r_manual["estado"] == "avanzo" or r_manual["estado"] == "completa", "El trabajo manual del jugador no se bloquea a sí mismo")
+
+	print("\n=== Las 14 pruebas de Obras pasaron correctamente ===")
+

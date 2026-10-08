@@ -139,4 +139,17 @@ func ejecutar_pruebas() -> void:
 	var en_limite := Vector3(0.4, 3.0, 199.6)
 	assert(Player._limitar_al_mundo(en_limite, 200, 200) == en_limite, "exactamente en el límite no cambia")
 
-	print("\n=== Las 9 pruebas de Player pasaron correctamente ===")
+	print("\n=== TEST 10: _alternar_modo_vias() conmuta modo_vias y es mutuamente excluyente con modo_deconstruccion ===")
+	var j := Player.new()
+	assert(not j.modo_vias and not j.modo_deconstruccion, "inicia con ambos modos apagados")
+	j._alternar_modo_vias()
+	assert(j.modo_vias and not j.modo_deconstruccion, "activa modo vias")
+	j._alternar_modo_deconstruccion()
+	assert(not j.modo_vias and j.modo_deconstruccion, "activar modo deconstruccion desactiva modo vias")
+	j._alternar_modo_vias()
+	assert(j.modo_vias and not j.modo_deconstruccion, "activar modo vias desactiva modo deconstruccion")
+	j._alternar_modo_vias()
+	assert(not j.modo_vias and not j.modo_deconstruccion, "desactiva modo vias")
+	j.free()
+
+	print("\n=== Las 10 pruebas de Player pasaron correctamente ===")

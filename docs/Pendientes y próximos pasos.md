@@ -2,14 +2,14 @@
 
 ## Ruta vigente
 
-1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (562 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
+1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (570 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
 2. ✅ (2026-10-04) Formación de especialistas (`escuela_especialistas`), universidad e investigaciones de activación (Metalurgia Aplicada y Automatización Industrial).
 3. ✅ (2026-10-04) Fluidos (`agua`, `crudo`, `combustible`), recetas de refinería (`refineria_petrolera`, `productor_combustible`), central termoeléctrica y transmisión energética por vías e influencia con déficit horario.
 4. ✅ (2026-10-05) Gestión de obras y blueprints: autoasignación inmediata de ociosos, tope de cuadrilla (máx. 4 obreros por obra), hasta 5 blueprints guardados con miniaturas y nombrado automático `Residencia [camas]x[baules]`, nivelación compartida por cota de puerta guía, traslado del núcleo urbano desde el panel del edificio, y flexibilización de aberturas (puertas obligatorias únicamente en el 1er piso; pisos superiores no necesitan puertas).
 5. ✅ (2026-10-05) Logística, tráfico y pathfinding: jerarquía de transporte en vías de 1 celda (recursos priorizados: comida > combustible > crudo > acero > mineral_refinado > hierro > cobre > carbón > tierras_raras > tablas > madera > piedra > tierra > agua), cesión de paso y apartados laterales, recogida en puerta de servicio, retroceso de nivel en puestos según el empleado de menor rango activo, y reserva de destinos interiores en escuelas técnicas evitando bucles entre exterior y vestíbulo.
 6. ✅ (2026-10-05) HUD, tarjetas contextuales y trazado de vías: barra superior responsiva con botón de Almacén compacto, recursos destacados (Comida, Energía, Crítico), ventana de Almacén alfabética, ventana de Ocupaciones categorizada por tipo y ordenada por antigüedad; tarjetas contextuales de herramientas e interacción con presentación por línea, iconos SVG de clic izquierdo/derecho y scroll (`click_izq.svg`, `click_der.svg`, `scroll.svg`) y doble clic `x2`; y trazador de vías con cancelación limpia de tramos y previsualización, más ficha técnica con recursos calculados dinámicamente por celda (`Vias.ficha_tecnica`).
 7. ✅ (2026-10-06) **Remodelación de edificaciones y sistema de colonizabilidad:** desdeclaración de edificios sin demoler para permitir modificaciones estructurales (apuntando a la puerta principal con `Shift + B` / botón en `PanelEdificio`), excepción limpia para el Núcleo Urbano, buffers habitables de inmigración con contador de 24h y toggle manual, reubicación cívica, y estado temporal de "sin techo" (consumo de desempleado, bloqueo laboral y exilio a las 24h con penalización moral; ver `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`).
-8. Completar las obras por colonos con tendido de vías y prioridades configurables.
+8. ✅ (2026-10-07) **Tendido de vías por colonos y prioridades configurables de obras:** ejecución incremental de obras viales (`ConstructorVias.planificar` y `ejecutar_paso`) por colonos libres (hasta 4 obreros por obra, fusión automática de tramos contiguos); sistema de prioridades configurables por obra en `PanelEdificio` (Alta=2, Normal=1, Baja=0, desempate por orden de emplazamiento); jerarquía global de despacho en `Obras.gd` (Construcción Alta > Construcción Normal > Demoliciones > Tendido de vías > Construcción Baja); overlays dedicados `ViaObraOverlay` (perímetro en tierra) y `ViaDemolicionOverlay` (franja translúcida naranja guiada); herramienta unificada de demolición (tecla `3` cenital) para edificios o vías en red guiadas (búsqueda en red, doble clic para confirmar, clic derecho para cancelar, conservando bloques de nivelación); y herramienta en 1ª persona (tecla `V` en `Player.gd`) con modo exclusivo para avanzar obras o demoler vías manualmente.
 9. Implementar bombas de extracción directa en fuentes de agua y crudo.
 10. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
 11. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
@@ -73,13 +73,43 @@ Basado en `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`. Permite editar edi
    - **Jugador (`Player.gd`):** atajo `Shift + B` apuntando a la puerta principal de un edificio registrado para invocar `iniciar_remodelacion()`.
    - **UI / HUD (`PanelEdificio.gd`):** botón `[Iniciar Remodelación]`, indicador de colonizabilidad, contador y botón toggle.
 
-### 6. Construcción/deconstrucción asistida por NPCs — ✅ en progreso
+### 6. Construcción/deconstrucción asistida por NPCs — ✅ tendido de vías y prioridades completadas (2026-10-07)
 
-Los colonos libres construyen y demuelen obras con tope de 4 obreros y pausa de edificio.
+Los colonos libres construyen y demuelen obras de edificios y vías con tope de 4 obreros y pausa de edificio.
+
+1. **Prioridades configurables por obra:**
+   - Botón cíclico en `PanelEdificio`: `Prioridad: Normal` (por defecto) -> `Baja` -> `Alta`.
+   - Desempate por orden cronológico de emplazamiento (ID más antiguo primero).
+   - Jerarquía global de asignación de mano de obra en `Obras.siguiente_tarea()`:
+     1. Obras de construcción con prioridad Alta (2).
+     2. Obras de construcción con prioridad Normal (1).
+     3. Demoliciones (edificios y vías marcadas).
+     4. Obras de tendido de vías (`via_construir`).
+     5. Obras de construcción con prioridad Baja (0).
+
+2. **Tendido de vías incremental por colonos:**
+   - Desglose en `ConstructorVias.planificar()` y `ejecutar_paso()`: registro progresivo celda a celda en `Vias.gd` y colocación de cuñas y relleno en `GridMap`.
+   - Soporte para hasta 4 obreros en paralelo por obra vial.
+   - Fusión automática de tramos de vía contiguos o conectados como una única obra compartida.
+   - Posicionamiento de trabajo de colonos tanto adyacente como dentro de la huella del tramo vial.
+
+3. **Overlays visuales de obra y demolición vial:**
+   - `ViaObraOverlay`: dibuja el contorno/perímetro alámbrico en el suelo de las celdas viales pendientes de construir.
+   - `ViaDemolicionOverlay`: dibuja una franja plana translúcida de color naranja guiada sobre las celdas seleccionadas para demoler.
+
+4. **Herramienta unificada de demolición en cámara cenital (Tecla 3):**
+   - Contextual al hacer clic:
+     - Sobre un edificio: conmuta su marca de demolición.
+     - Sobre una vía existente: inicia la selección guiada de demolición sobre la red de vías (`Vias.buscar_camino_en_red()`). Cada clic en una bifurcación fija el camino, doble clic confirma la orden de demolición y clic derecho cancela la selección.
+     - Retira cuñas y el registro en `Vias.gd` sin tocar los bloques de nivelación o terreno base.
+
+5. **Herramienta de interacción con vías en 1ª persona (Tecla V):**
+   - Modo exclusivo activable con `V` en `Player.gd` (bloquea minado, tala y colocación de bloques ordinarios).
+   - Clic izquierdo sobre celda con obra vial: avanza un paso de construcción (`Obras.trabajar_via`).
+   - Clic derecho sobre celda con vía construida: desmonta el tramo de vía (`Obras.trabajar_demoler_via`).
+   - Reclama temporalmente la obra para evitar que los colonos interfieran mientras el jugador trabaja.
 
 Pendientes de esta línea:
-- Tendido de vías por obreros desempleados y técnicos libres.
-- Prioridades configurables de construcción y demolición.
 - Traducción de modelos `.dae` a blueprints construibles y aplicación de texturas finales.
 
 ### 7. Cola de pendientes menores de la Fase 3 — no bloqueantes

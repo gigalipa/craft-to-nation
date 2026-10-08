@@ -110,7 +110,9 @@ var _progreso_accion: RefCounted = ProgresoAccionScript.new()
 var _cara_apuntada: MeshInstance3D = CaraApuntadaScript.new()
 
 var modo_deconstruccion := false
+var modo_vias := false
 const INTERVALO_AVISO_DECONSTRUCCION_MS := 2000
+
 var _ultimo_aviso_deconstruccion_ms := -INTERVALO_AVISO_DECONSTRUCCION_MS
 var _id_listo_para_remocion := -1
 var _ticks_listo_para_remocion := 0
@@ -168,10 +170,12 @@ func _input(event: InputEvent) -> void:
 			if hud != null and hud.ventana_baul_abierta():
 				hud.cerrar_ventana_baul()
 				return
-			# Esc desactiva primero la herramienta activa (modo deconstrucción);
+			# Esc desactiva primero la herramienta activa (modo deconstrucción o modo vías);
 			# sin ninguna activa, libera el mouse como siempre.
 			if modo_deconstruccion:
 				_alternar_modo_deconstruccion()
+			elif modo_vias:
+				_alternar_modo_vias()
 			else:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		if tecla.pressed and tecla.keycode == KEY_B:
@@ -181,6 +185,8 @@ func _input(event: InputEvent) -> void:
 				_declarar_edificio()
 		if tecla.pressed and tecla.keycode == KEY_G:
 			_alternar_modo_deconstruccion()
+		if tecla.pressed and tecla.keycode == KEY_V:
+			_alternar_modo_vias()
 		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_E:
 			if hud != null and hud.ventana_baul_abierta():
 				hud.cerrar_ventana_baul()
@@ -195,7 +201,7 @@ func _input(event: InputEvent) -> void:
 			if indice >= 0 and indice < tipos_disponibles.size():
 				tipo_seleccionado = indice
 				hud.set_tipo_hotbar(indice)
-				if not modo_deconstruccion:
+				if not modo_deconstruccion and not modo_vias:
 					hud.mostrar_contexto_bloque(indice, tipos_disponibles[indice])
 				print("Tipo de bloque seleccionado: ", tipos_disponibles[tipo_seleccionado])
 
@@ -208,11 +214,23 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
 		if boton.button_index == MOUSE_BUTTON_LEFT:
+			if modo_vias:
+				_minando = boton.pressed
+				if boton.pressed:
+					_temporizador_accion = 0.0
+					_trabajar_via_manual()
+				return
 			_minando = boton.pressed
 			if boton.pressed and modo_deconstruccion:
 				_temporizador_accion = 0.0
 				_deconstruir()
 		elif boton.button_index == MOUSE_BUTTON_RIGHT:
+			if modo_vias:
+				_colocando = boton.pressed
+				if boton.pressed:
+					_temporizador_accion = 0.0
+					_demoler_via_manual()
+				return
 			if modo_deconstruccion:
 				# Con el modo activo no se coloca; el clic derecho queda reservado a «Marcar para demolición» (7b).
 				_colocando = false
@@ -228,6 +246,7 @@ func _input(event: InputEvent) -> void:
 				_aviso_colocacion_dado = false
 
 
+
 ## Mientras el jugador mantiene un botón: E recolecta frutos, el clic izquierdo
 ## mina/tala (por tiempo) o deconstruye (por repetición, con su contador) y el
 ## derecho coloca (por repetición). Prioridad frutos > izquierdo > derecho, como
@@ -241,12 +260,27 @@ func _procesar_accion_repetida(delta: float) -> void:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return
+	if modo_vias:
+		_progreso_accion.soltar()
+		hud.ocultar_progreso()
+		if _minando:
+			_temporizador_accion += delta
+			if _temporizador_accion >= FinalizacionObras.INTERVALO_PASO:
+				_temporizador_accion = 0.0
+				_trabajar_via_manual()
+		elif _colocando:
+			_temporizador_accion += delta
+			if _temporizador_accion >= FinalizacionObras.INTERVALO_PASO:
+				_temporizador_accion = 0.0
+				_demoler_via_manual()
+		return
 	if Input.is_key_pressed(KEY_E):
 		_procesar_frutos(delta)
 		return
 	if _minando:
 		_procesar_minado(delta)
 		return
+
 	_progreso_accion.soltar()
 	if not _colocando or _colocacion_bloqueada_tras_completar:
 		hud.ocultar_progreso()
@@ -350,8 +384,11 @@ func _procesar_tala(celda: Vector3i, delta: float) -> void:
 ## automático que hacía _procesar_frutos(), ver "Pendientes"). Mantener E
 ## sigue siendo _procesar_frutos(), solo para los frutos.
 func _interactuar() -> void:
+	if modo_vias or modo_deconstruccion:
+		return
 	if not raycast.is_colliding() or mundo == null:
 		return
+
 	if mundo.puertas != null:
 		var base: Vector3i = mundo.puertas.celda_de_colisionador(raycast.get_collider())
 		if base != Vector3i.MAX:
@@ -461,7 +498,15 @@ func _physics_process(delta: float) -> void:
 ## Panel fijo mientras el modo deconstrucción (G) está activo. Main lo repone al
 ## volver de la cenital, cuyo set_vista() descarta el panel.
 func mostrar_contexto_deconstruccion() -> void:
-	hud.mostrar_contexto("Deconstruir", {}, ["(clic izq.) DECONSTRUIR\n(clic der.) MARCAR PARA DEMOLICIÓN\n[G] Salir del modo deconstrucción"])  # un solo elemento: cada instrucción en su línea
+	if hud != null:
+		hud.mostrar_contexto("Deconstruir", {}, ["(clic izq.) DECONSTRUIR\n(clic der.) MARCAR PARA DEMOLICIÓN\n[G] Salir del modo deconstrucción"])  # un solo elemento: cada instrucción en su línea
+
+
+## Panel fijo mientras el modo de vías (V) está activo.
+func mostrar_contexto_vias() -> void:
+	if hud != null:
+		hud.mostrar_contexto("Vías", {}, ["(clic izq.) CONSTRUIR VÍA\n(clic der.) DEMOLER VÍA\n[V] Salir del modo vías"])
+
 
 
 ## Overlay verde sobre la cara apuntada, solo si el raycast golpea algo (su largo
@@ -718,11 +763,131 @@ func _celda_impactada() -> Vector3i:
 func _alternar_modo_deconstruccion() -> void:
 	modo_deconstruccion = not modo_deconstruccion
 	if modo_deconstruccion:
+		if modo_vias:
+			modo_vias = false
 		mostrar_contexto_deconstruccion()
 	else:
-		hud.ocultar_contexto()
+		if hud != null:
+			hud.ocultar_contexto()
 	_id_listo_para_remocion = -1
 	_ticks_listo_para_remocion = 0
+
+
+func _alternar_modo_vias() -> void:
+	modo_vias = not modo_vias
+	if modo_vias:
+		if modo_deconstruccion:
+			modo_deconstruccion = false
+		mostrar_contexto_vias()
+	else:
+		if hud != null:
+			hud.ocultar_contexto()
+
+
+func _trabajar_via_manual() -> void:
+	if not raycast.is_colliding() or mundo == null:
+		return
+	var celda := _celda_impactada()
+	var col := Vector2i(celda.x, celda.z)
+	var id_via: int = Obras.obra_via_en_columna(col)
+	if id_via == 0:
+		var col_arriba := Vector2i(celda.x, celda.z)
+		var id_arriba := Obras.obra_via_en_columna(col_arriba)
+		if id_arriba != 0:
+			id_via = id_arriba
+		else:
+			hud.notificar("No hay ninguna obra de vía pendiente en esa celda.")
+			return
+
+	if not Obras.obras_vias.has(id_via):
+		return
+
+	var obra: Dictionary = Obras.obras_vias[id_via]
+
+	# Determinar el vértice 2x2 correspondiente a la columna apuntada
+	var candidatos: Array[Vector2i] = [
+		col,
+		col + Vector2i(1, 0),
+		col + Vector2i(0, 1),
+		col + Vector2i(1, 1),
+	]
+	var mejor_vertice := col
+	var mas_pasos := -1
+	for v in candidatos:
+		var cols_v: Array[Vector2i] = Vias.bloque_de_vertice(v)
+		var cuenta := 0
+		for p in obra["pasos"]:
+			if cols_v.has(p["columna"]):
+				cuenta += 1
+		if cuenta > mas_pasos:
+			mas_pasos = cuenta
+			mejor_vertice = v
+
+	var cols_seccion: Array[Vector2i] = Vias.bloque_de_vertice(mejor_vertice)
+	var celdas_pasos: Array[Vector3i] = []
+	for p in obra["pasos"]:
+		if cols_seccion.has(p["columna"]):
+			celdas_pasos.append(p["celda"])
+
+	if celdas_pasos.is_empty():
+		celdas_pasos.append(celda)
+
+	Obras.reclamar(id_via)
+	var completada := false
+	for c in celdas_pasos:
+		if not Obras.obras_vias.has(id_via):
+			completada = true
+			break
+		var res: Dictionary = Obras.trabajar_via(id_via, c)
+		if res.get("estado") == "completa":
+			completada = true
+
+	if completada:
+		hud.notificar("Vía completada.")
+
+
+func _demoler_via_manual() -> void:
+	if not raycast.is_colliding() or mundo == null:
+		return
+	var celda := _celda_impactada()
+	var col := Vector2i(celda.x, celda.z)
+	if not Vias.hay_via_en_columna(col):
+		var celda_arriba := celda + Vector3i(0, 1, 0)
+		var celda_abajo := celda - Vector3i(0, 1, 0)
+		if Vias.es_via(celda_arriba):
+			col = Vector2i(celda_arriba.x, celda_arriba.z)
+		elif Vias.es_via(celda_abajo):
+			col = Vector2i(celda_abajo.x, celda_abajo.z)
+		else:
+			hud.notificar("No hay ninguna vía construida en esa celda.")
+			return
+
+	var celdas_seccion: Array[Vector3i] = Vias.celdas_de_seccion(col)
+	if celdas_seccion.is_empty():
+		var c_unica: Vector3i = Vias.celda_en_columna(col)
+		if c_unica != Vector3i.ZERO:
+			celdas_seccion = [c_unica]
+
+	if celdas_seccion.is_empty():
+		hud.notificar("No hay ninguna vía construida en esa celda.")
+		return
+
+	var id_dem := 0
+	for c in celdas_seccion:
+		for id_cand in Obras.obras_demolicion_vias:
+			if Obras.obras_demolicion_vias[id_cand]["celdas"].has(c):
+				id_dem = id_cand
+				break
+		if id_dem != 0:
+			break
+
+	if id_dem == 0:
+		id_dem = Obras.crear_demolicion_via(celdas_seccion)
+
+	Obras.reclamar(id_dem)
+	for c in celdas_seccion:
+		Obras.trabajar_demoler_via(id_dem, c)
+
 
 
 ## Clic derecho con el modo deconstrucción: marca (o desmarca) para demolición el edificio

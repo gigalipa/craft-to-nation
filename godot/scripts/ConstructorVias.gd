@@ -26,16 +26,13 @@ const TIPO_VIA := "tierra_pisada"
 ## Sección 6) para no acoplar esta clase a Recoleccion/Construccion.
 ## Devuelve false (nada se construye) si "vertices" tiene menos de 2
 ## elementos o si "choca" rechaza cualquier columna tocada.
-static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable) -> bool:
+## Desglosa la construcción de la vía en un plan detallado de pasos (celdas y cuñas).
+## Devuelve {} si vertices tiene menos de 2 elementos o si "choca" rechaza cualquier columna.
+static func planificar(mundo: Object, vertices: Array[Vector2i], choca: Callable) -> Dictionary:
 	if vertices.size() < 2:
-		return false
+		return {}
 
 	var nivelador := NiveladorVia.new(mundo)
-	# Suavizado de "V" (decisión del usuario jugando en vivo, 2026-09-23):
-	# un vértice interior más bajo que sus dos vecinos se sube al más alto
-	# de ellos, ANTES de calcular ningún plan de transición — así toda la
-	# ruta usa el mismo nivel por vértice de punta a punta, en vez de que
-	# cada tramo recalcule su propio nivel bruto por separado.
 	var niveles: Array[int] = nivelador.niveles_efectivos(vertices)
 
 	var columnas_totales: Array[Vector2i] = []
@@ -44,28 +41,24 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 			if not columnas_totales.has(col):
 				columnas_totales.append(col)
 
-	# Los planes de transición se calculan ANTES del choque: en un paso
-	# diagonal, las columnas de remate (cuna_diag_lat_izq/der) caen FUERA
-	# del bloque de soporte de cualquiera de los dos vértices — sin esto,
-	# el choque nunca las comprobaría contra edificios/puestos existentes.
 	var planes: Array[Dictionary] = []
 	var notches: Array[Dictionary] = []
 	var solapes_totales: Array[Vector2i] = []
 	for i in range(vertices.size() - 1):
-		var plan: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1], niveles[i], niveles[i + 1])
-		planes.append(plan)
+		var plan_trans: Dictionary = nivelador.plan_transicion(vertices[i], vertices[i + 1], niveles[i], niveles[i + 1])
+		planes.append(plan_trans)
 		notches.append_array(nivelador.notches_de_paso(vertices[i], vertices[i + 1]))
 		for col in nivelador.columnas_solape(vertices[i], vertices[i + 1]):
 			if not solapes_totales.has(col):
 				solapes_totales.append(col)
-		if plan.is_empty():
+		if plan_trans.is_empty():
 			continue
-		for dato: Dictionary in plan["cunas"]:
+		for dato: Dictionary in plan_trans["cunas"]:
 			if not columnas_totales.has(dato["columna"]):
 				columnas_totales.append(dato["columna"])
 
 	if choca.call(columnas_totales):
-		return false
+		return {}
 
 	var objetivo_relleno: Dictionary = {}  # Vector2i -> int
 	for i in range(vertices.size()):
@@ -74,55 +67,108 @@ static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable)
 			objetivo_relleno[col] = maxi(objetivo_relleno.get(col, nivel), nivel)
 
 	var cunas: Dictionary = {}  # Vector2i -> Dictionary
-	for plan: Dictionary in planes:
-		if plan.is_empty():
+	for plan_trans: Dictionary in planes:
+		if plan_trans.is_empty():
 			continue
-		for col in plan["relleno_extra"]:
-			objetivo_relleno[col] = maxi(objetivo_relleno.get(col, 0), plan["y_base"])
-		for dato: Dictionary in plan["cunas"]:
-			cunas[dato["columna"]] = {"y": plan["y_base"], "tipo": dato["tipo"], "direccion_alta": dato["direccion_alta"]}
+		for col in plan_trans["relleno_extra"]:
+			objetivo_relleno[col] = maxi(objetivo_relleno.get(col, 0), plan_trans["y_base"])
+		for dato: Dictionary in plan_trans["cunas"]:
+			cunas[dato["columna"]] = {"y": plan_trans["y_base"], "tipo": dato["tipo"], "direccion_alta": dato["direccion_alta"]}
 	for col in cunas:
 		objetivo_relleno.erase(col)
 
-	var celdas_soporte: Array[Vector3i] = []
-	for col in objetivo_relleno:
-		var y: int = objetivo_relleno[col]
-		_nivelar_columna(mundo, col, y)
-		celdas_soporte.append(Vector3i(col.x, y, col.y))
-	for col in cunas:
-		var datos: Dictionary = cunas[col]
-		_nivelar_columna(mundo, col, datos["y"])
-		# La cuña va UNA celda por encima de "y" (= y_base, la superficie del
-		# lado bajo): su cara inferior descansa sobre la cara superior real
-		# del lado bajo (mundo Y = y_base+1), no sobre la celda de piso en sí
-		# (ver C3 de la revisión final — colocarla en "y" cavaba una zanja de
-		# un bloque en vez de tender un puente).
-		var celda_cuna := Vector3i(col.x, datos["y"] + 1, col.y)
-		mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(datos["tipo"]), _orientacion(datos["direccion_alta"], datos["tipo"]))
-		mundo.colocado_por_jugador[celda_cuna] = true
-		celdas_soporte.append(celda_cuna)
-
-	Vias.agregar(celdas_soporte, TIPO_VIA)
-
-	# Marca las celdas "notch" (siempre planas, ver notches_de_paso())
-	# para que ViasRenderer dibuje un triángulo en vez de un cuadrado
-	# completo ahí — borde recto en diagonal en vez de escalonado. Salvo
-	# que esa misma columna sea TAMBIÉN la bisagra (solape) de OTRO tramo
-	# del trazo — en un tramo diagonal largo (3+ vértices seguidos), el
-	# notch_b de un paso coincide con el solape del siguiente: ahí hace
-	# falta el cuadrado completo para conectar ambos tramos, no un
-	# triángulo — solo los 2 extremos sueltos de todo el trazo se
-	# recortan (reportado jugando en vivo: sin este filtro, cada bisagra
-	# interior se recortaba también, dando un patrón en damero en vez de
-	# una línea recta).
+	var notches_filtrados: Dictionary = {}
 	for dato: Dictionary in notches:
 		var col: Vector2i = dato["columna"]
 		if solapes_totales.has(col):
 			continue
 		if objetivo_relleno.has(col):
-			Vias.marcar_notch(Vector3i(col.x, objetivo_relleno[col], col.y), dato["esquina_omitida"])
+			notches_filtrados[col] = dato["esquina_omitida"]
 
+	var pasos: Array[Dictionary] = []
+	var columnas_agregadas: Dictionary = {}
+
+	var agregar_paso_col := func(col: Vector2i) -> void:
+		if columnas_agregadas.has(col):
+			return
+		columnas_agregadas[col] = true
+		if cunas.has(col):
+			var datos: Dictionary = cunas[col]
+			pasos.append({
+				"tipo": "cuna",
+				"columna": col,
+				"y": datos["y"],
+				"celda": Vector3i(col.x, datos["y"] + 1, col.y),
+				"cuna_tipo": datos["tipo"],
+				"direccion_alta": datos["direccion_alta"]
+			})
+		elif objetivo_relleno.has(col):
+			var y: int = objetivo_relleno[col]
+			var p := {
+				"tipo": "nivelar",
+				"columna": col,
+				"y": y,
+				"celda": Vector3i(col.x, y, col.y)
+			}
+			if notches_filtrados.has(col):
+				p["notch"] = notches_filtrados[col]
+			pasos.append(p)
+
+	for i in range(vertices.size()):
+		for col in nivelador.bloque_de_vertice(vertices[i]):
+			agregar_paso_col.call(col)
+		if i < planes.size():
+			var plan_trans: Dictionary = planes[i]
+			if not plan_trans.is_empty():
+				for dato: Dictionary in plan_trans["cunas"]:
+					agregar_paso_col.call(dato["columna"])
+				for col in plan_trans["relleno_extra"]:
+					agregar_paso_col.call(col)
+
+	for col in objetivo_relleno:
+		agregar_paso_col.call(col)
+	for col in cunas:
+		agregar_paso_col.call(col)
+
+	return {
+		"vertices": vertices,
+		"columnas": columnas_totales,
+		"pasos": pasos
+	}
+
+
+## Ejecuta un único paso de obra vial (nivelar o cuña) y registra la celda en Vias.gd.
+## Devuelve la celda de soporte resultante (Vector3i).
+static func ejecutar_paso(mundo: Object, paso: Dictionary) -> Vector3i:
+	var col: Vector2i = paso["columna"]
+	if paso["tipo"] == "nivelar":
+		_nivelar_columna(mundo, col, paso["y"])
+		var celda: Vector3i = paso["celda"]
+		if paso.has("notch"):
+			Vias.marcar_notch(celda, paso["notch"])
+		Vias.agregar([celda], TIPO_VIA)
+		return celda
+	elif paso["tipo"] == "cuna":
+		_nivelar_columna(mundo, col, paso["y"])
+		var celda_cuna: Vector3i = paso["celda"]
+		mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(paso["cuna_tipo"]), _orientacion(paso["direccion_alta"], paso["cuna_tipo"]))
+		mundo.colocado_por_jugador[celda_cuna] = true
+		Vias.agregar([celda_cuna], TIPO_VIA)
+		return celda_cuna
+	return Vector3i.ZERO
+
+
+## Intenta construir la vía que pasa por "vertices" (en orden, sin
+## vértices consecutivos repetidos). Construcción instantánea completa.
+## Devuelve false si "vertices" tiene menos de 2 elementos o si "choca" rechaza.
+static func construir(mundo: Object, vertices: Array[Vector2i], choca: Callable) -> bool:
+	var plan := planificar(mundo, vertices, choca)
+	if plan.is_empty():
+		return false
+	for paso: Dictionary in plan["pasos"]:
+		ejecutar_paso(mundo, paso)
 	return true
+
 
 
 ## Rellena "col" con "tierra" desde la superficie actual hasta

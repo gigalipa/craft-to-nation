@@ -34,9 +34,16 @@ class RecursoFalso:
 class ObrasPanelFalso extends RefCounted:
 	var resumen: Dictionary = {}
 	var marcados: Dictionary = {}
+	var prioridades: Dictionary = {}
 	var pausas := 0
 	var rechazo := ""
 	var es_nucleo := false
+
+	func fijar_prioridad(id: int, p: int) -> void:
+		prioridades[id] = p
+
+	func prioridad_de(id: int) -> int:
+		return prioridades.get(id, 1)
 
 	func resumen_de(_id: int) -> Dictionary:
 		return resumen
@@ -886,6 +893,13 @@ func probar_panel_edificio() -> void:
 	assert(panel._obreros.visible and panel._obreros.text == "Obreros: 3", "obreros")
 	assert(panel._materiales.visible and panel._materiales.text.contains("15") and panel._materiales.text.contains("4"), "faltan 15 de piedra y hay 4: %s" % panel._materiales.text)
 	assert(panel._pausar.visible and panel._pausar.text == "Pausar construcción" and panel._demoler.text == "Demoler", "botones")
+	assert(panel._prioridad.visible and panel._prioridad.text == "Prioridad: Normal", "prioridad visible y normal en construcción")
+	panel._prioridad.pressed.emit()
+	assert(obras.prioridad_de(7) == 2 and panel._prioridad.text == "Prioridad: Alta", "cicla a Alta")
+	panel._prioridad.pressed.emit()
+	assert(obras.prioridad_de(7) == 0 and panel._prioridad.text == "Prioridad: Baja", "cicla a Baja")
+	panel._prioridad.pressed.emit()
+	assert(obras.prioridad_de(7) == 1 and panel._prioridad.text == "Prioridad: Normal", "cicla a Normal")
 	assert(panel._dialogo_demoler.has_theme_stylebox_override("panel"), "dialogo estilizado con panel")
 	assert(panel._dialogo_demoler.get_theme_color("title_color") == Color(1.0, 0.85, 0.4), "titulo dorado en dialogo")
 	panel._pausar.pressed.emit()
@@ -900,7 +914,7 @@ func probar_panel_edificio() -> void:
 	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "completo", "pausada": false, "salud": 1.0, "faltantes": {}}
 	ciudad.registrar_edificio_residencial(7, [2])
 	panel._actualizar()
-	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible, "completo: 100 %, sin materiales, sin obreros y sin botón de pausa")
+	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible and not panel._prioridad.visible, "completo: 100 %, sin materiales, sin obreros, sin pausa y sin prioridad")
 	assert(panel._asignar_nucleo.visible, "residencial completo permite asignar como núcleo")
 	assert(panel._remodelar.visible and panel._remodelar.text == "Iniciar remodelación", "botón remodelar visible")
 	assert(panel._colonizable.visible and panel._toggle_colonizable.visible, "colonizabilidad visible")

@@ -18,8 +18,10 @@ Este documento es un guión de pruebas manuales paso a paso para comprobar en vi
 | **C** | Alternar entre cámara en **1ª persona** y **Cámara Cenital** (con vuelo y transición animada). |
 | **W, A, S, D** | Movimiento del avatar (1ª persona) o paneo horizontal del mapa sobre plano X/Z (cenital). |
 | **E** | Interactuar en 1ª persona (abrir/cerrar puertas y baúles) / Cerrar ventanas emergentes activas. |
+| **G** | Alternar modo deconstrucción / demolición manual (1ª persona). |
+| **V** | Alternar modo interacción con vías: clic izq. construir, clic der. demoler (1ª persona). |
 | **B / Shift + B** | Declarar estructura (**B**) / Iniciar remodelación (**Shift + B**) apuntando a la puerta (1ª persona). |
-| **Esc** | Cerrar ventana activa o volver al modo neutro "Ver" en la cenital. |
+| **Esc** | Cerrar ventana activa, salir de modo vías/deconstrucción, o volver al modo neutro "Ver" en cenital. |
 
 #### Controles de Cámara Cenital (Navegación Orbital)
 | Tecla / Acción | Función |
@@ -399,6 +401,125 @@ Este documento es un guión de pruebas manuales paso a paso para comprobar en vi
 
 ---
 
+## Bloque 12: Tendido Progresivo de Vías por Colonos y Overlay Guía
+
+> **Mecánicas implementadas:** `Obras.crear_obra_via()`, `ConstructorVias`, `ViaObraOverlay.gd`, avance celda a celda con cuadrilla de hasta 4 obreros/técnicos.
+
+### 12.1 Creación de Obra Vial en Vista Cenital
+- [ ] **Acción:** En vista cenital (**C**), entrar a Construir -> Vías (**1** -> **5**).
+- [ ] **Acción:** Fijar puntos con clic izquierdo y confirmar el trazado con **doble clic izquierdo**.
+- [ ] **Resultado esperado:**
+  - La vía **ya no aparece construida instantáneamente**.
+  - En su lugar, se genera una **Obra de Vía** visible mediante un **overlay guía de contorno perimetral en color amarillo** (`ViaObraOverlay`), que dibuja los bordes de alambre de las celdas proyectadas en el suelo.
+  - La consola o notificación confirma la creación de la obra vial.
+
+### 12.2 Asignación de Cuadrilla y Construcción Consecutiva de Extremo a Extremo
+- [ ] **Acción:** Asegurarse de tener colonos obreros o técnicos libres en la ciudad.
+- [ ] **Resultado esperado:**
+  - Los obreros libres se dirigen hacia el trazado de la obra vial.
+  - Hasta un máximo de **4 obreros** trabajan en paralelo sobre el tramo.
+  - **Orden de construcción consecutivo:** La obra avanza de un extremo al otro de la ruta paso a paso; cada celda se completa en su sitio (nivelación, relleno o cuña) a medida que avanza la vía, sin separar la obra en fases de "todas las planas primero y cuñas después".
+  - Cada colono avanza su celda: tala árboles si estorban, nivela la columna, coloca cuñas si hay rampa y registra el soporte vial en `Vias.gd`.
+  - Conforme se completan celdas, el contorno guía amarillo se retira celda por celda hasta finalizar la obra por completo.
+
+### 12.3 Fusión de Tramos Contiguos
+- [ ] **Acción:** Mientras una obra de vía está en curso (aún incompleta), trazar y confirmar con doble clic un nuevo tramo contiguo que empiece o conecte con la obra existente.
+- [ ] **Resultado esperado:**
+  - El nuevo tramo se **fusiona limpiamente** con la obra vial en curso en lugar de crear una cuadrilla duplicada.
+  - La cuadrilla máxima sigue siendo de 4 obreros para todo el conjunto contiguo.
+
+---
+
+## Bloque 13: Herramienta Unificada de Demolición (Edificios y Vías)
+
+> **Mecánicas implementadas:** Modo Demoler cenital (tecla `3`), `_procesar_clic_demoler()`, trazado guiado naranja con `ViaDemolicionOverlay.gd`, selección de sección completa (4 celdas / 2 canales), bifurcaciones y remoción de vías.
+
+### 13.1 Detección Contextual: Edificios vs Vías
+- [ ] **Acción:** En vista cenital (**C**), activar el modo **Demoler** pulsando la tecla **`3`** (o haciendo clic en Demoler en el menú principal).
+- [ ] **Prueba sobre edificio:** Hacer clic izquierdo sobre un edificio construido.
+  - **Resultado:** Alterna la marca roja de demolición del edificio (comportamiento estándar).
+- [ ] **Prueba sobre vía existente:** Hacer clic izquierdo sobre cualquier celda con vía construida.
+  - **Resultado:** Se activa el modo guiado de **Demolición de Vía**.
+
+### 13.2 Previsualización Guiada Naranja (Sección Completa / Ambos Canales / Esquinas Fieles)
+- [ ] **Acción:** Al hacer clic en una celda de vía, mover el cursor a lo largo del trazado de la vía atravesando esquinas o curvas de 90°.
+- [ ] **Resultado esperado:**
+  - Se muestra un **overlay translúcido color naranja** (`ViaDemolicionOverlay`) resaltando el camino sobre la red de vías entre el inicio y el cursor.
+  - **Ambos canales y esquinas completas:** La previsualización abarca las secciones completas de 4 celdas (ancho de 2 bloques) y sigue fielmente las esquinas de 90° sin saltos diagonales ni huecos en el vértice exterior, cubriendo todo el ancho del tramo sin requerir clics adicionales en la esquina.
+  - La tarjeta contextual indica: `(clic izq.) ELEGIR RAMA`, `(doble clic) CONFIRMAR DEMOLICIÓN`, `(clic der.) CANCELAR`.
+- [ ] **Bifurcaciones:** Si la vía se divide en una intersección con múltiples salidas, hacer clic izquierdo sobre la rama deseada para guiar el camino de remoción.
+
+### 13.3 Confirmación con Outline Naranja y Ejecución de Demolición Vial
+- [ ] **Acción:** Presionar **doble clic izquierdo** sobre el tramo naranja previsualizado.
+- [ ] **Resultado esperado:**
+  - Se confirma la demolición del tramo completo (ambos canales): entra en la cola de demoliciones de `Obras`.
+  - **Outline Naranja Persistente:** Al confirmar, la vía queda marcada en el suelo con un **overlay de outline / alambre naranja** (`ViaDemolicionOverlay`) en los bordes de cada celda programada para demolición.
+  - A medida que los colonos (o el jugador en 1ª persona) avanzan en la demolición, el outline naranja se va retirando celda a celda hasta desaparecer por completo al concluir el tramo.
+  - Al completar la demolición, se retira el registro de vía en `Vias.gd` y se eliminan las cuñas físicas, preservando el terreno nivelado intacto.
+- [ ] **Cancelación:** Si en lugar de doble clic se presiona **clic derecho**, el trazado naranja se cancela y se limpia inmediatamente.
+
+---
+
+## Bloque 14: Intervención Manual en 1ª Persona (Modo Vías `V`)
+
+> **Mecánicas implementadas:** Tecla `V` en 1ª persona, `Player._alternar_modo_vias()`, `_trabajar_via_manual()` y `_demoler_via_manual()`.
+
+### 14.1 Activación del Modo Vías con Tecla `V`
+- [ ] **Acción:** En primera persona, presionar la tecla **`V`**.
+- [ ] **Resultado esperado:**
+  - Se activa el modo de vías: en el panel contextual inferior se muestra:
+    - `(clic izq.) CONSTRUIR VÍA`
+    - `(clic der.) DEMOLER VÍA`
+    - `[V] Salir del modo vías`
+  - Mientras el modo esté activo, el clic no mina bloques comunes ni abre puertas/baúles; se concentra en la red vial.
+
+### 14.2 Acelerar Construcción de Obra Vial a Mano (Clic Izquierdo)
+- [ ] **Acción:** Caminar hacia una celda con contorno amarillo de obra vial pendiente.
+- [ ] **Acción:** Apuntar a la sección y hacer **clic izquierdo** (o mantener presionado).
+- [ ] **Resultado esperado:**
+  - El avatar ejecuta y avanza la **sección completa** (las celdas del bloque 2x2 correspondiente): se colocan de inmediato las láminas de vía y/o cuñas físicas en el mundo y se retira el alambre amarillo de esa sección completa.
+  - No emite notificaciones repetitivas en cada clic (el feedback visual directo de la aparición de las láminas/cuñas en el terreno es inmediato); únicamente notifica *"Vía completada."* al finalizar la totalidad de la obra vial.
+  - La obra queda reclamada temporalmente por el jugador (`Obras.reclamar()`) para que los colonos no interfieran mientras el jugador trabaja en ella.
+
+### 14.3 Demolición Manual Inmediata de Vía (Clic Derecho)
+- [ ] **Acción:** Con el modo `V` activo, apuntar a una sección de vía ya construida y hacer **clic derecho** (o mantener presionado mientras se camina).
+- [ ] **Resultado esperado:**
+  - Se retira de inmediato la sección completa (las 4 celdas del bloque 2x2 y cuñas asociadas a ese tramo) del mundo real.
+  - La textura y estructura de vía desaparecen al instante sin notificaciones repetitivas emergentes.
+- [ ] **Acción adicional:** Pulsar **`V`** nuevamente (o **Esc**) para salir del modo de vías y volver a la interacción estándar.
+
+---
+
+## Bloque 15: Prioridades Configurables de Obras en Edificios
+
+> **Mecánicas implementadas:** `Obras.prioridades`, `Obras.fijar_prioridad()`, botón `[Prioridad: Normal / Alta / Baja]` en `PanelEdificio`, jerarquía estricta de tareas de colonos.
+
+### 15.1 Selector de Prioridad en PanelEdificio
+- [ ] **Acción:** En vista cenital (**C**), seleccionar un edificio que esté en estado de construcción (`estado == "construccion"`).
+- [ ] **Resultado esperado:**
+  - En la lista de botones aparece el botón interactivo: **`[Prioridad: Normal]`** (valor predeterminado al emplazar).
+- [ ] **Acción:** Hacer clic en el botón de prioridad de forma sucesiva.
+- [ ] **Resultado esperado:**
+  - El botón cicla limpiamente: `Prioridad: Normal` -> `Prioridad: Alta` -> `Prioridad: Baja` -> `Prioridad: Normal`.
+
+### 15.2 Jerarquía Estricta de Asignación de Tareas
+- [ ] **Condición de prueba:** Tener varias obras concurrentes en la ciudad:
+  1. Un edificio A con **Prioridad Alta**.
+  2. Un edificio B con **Prioridad Normal**.
+  3. Un edificio C con **Prioridad Baja**.
+  4. Una obra de **Tendido de Vía**.
+  5. Una obra de **Demolición** (edificio o vía marcado).
+- [ ] **Resultado esperado según la jerarquía del sistema:**
+  - Los colonos libres atienden primero las obras en el siguiente orden riguroso:
+    1. **Edificio en Prioridad Alta** (Edificio A).
+    2. **Edificio en Prioridad Normal** (Edificio B).
+    3. **Demoliciones** (edificios o vías marcados).
+    4. **Tendido de Vías** (obras viales pendientes).
+    5. **Edificio en Prioridad Baja** (Edificio C).
+  - El Edificio C (Baja) solo recibe trabajadores si no hay edificios Normales/Altos, ni demoliciones, ni vías pendientes.
+
+---
+
 ## Tabla de Resumen y Aprobación Rápida
 
 | Bloque | Característica comprobada | Estado (OK / Fallo) | Notas del tester |
@@ -436,3 +557,15 @@ Este documento es un guión de pruebas manuales paso a paso para comprobar en vi
 | **11.2** | 2º edificio en adelante nace con Colonizable: NO (buffer de 24h) | | |
 | **11.3** | Apertura automática a colonos tras 24 horas del juego | | |
 | **11.4** | Botón toggle `[Permitir colonización]` / `[Pausar colonización]` manual | | |
+| **12.1** | Tendido progresivo de vías con overlay perimetral guía (`ViaObraOverlay`) | | |
+| **12.2** | Cuadrilla de hasta 4 colonos nivelando y colocando cuñas paso a paso | | |
+| **12.3** | Fusión limpia de tramos viales contiguos incompletos | | |
+| **13.1** | Herramienta Demoler (tecla 3) contextual para edificios y vías | | |
+| **13.2** | Demolición de vías guiada con overlay naranja (`ViaDemolicionOverlay`) | | |
+| **13.3** | Retiro de cuñas y vías por colonos preservando nivelación del suelo | | |
+| **14.1** | Modo interacción de vías en 1ª persona con tecla `V` | | |
+| **14.2** | Acelerar obra de vía a pie con clic izquierdo | | |
+| **14.3** | Demolición manual de vía a pie con clic derecho | | |
+| **15.1** | Selector de prioridad en `PanelEdificio` (Normal -> Alta -> Baja) | | |
+| **15.2** | Jerarquía de asignación: Alta -> Normal -> Demolición -> Vías -> Baja | | |
+

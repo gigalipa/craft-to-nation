@@ -18,6 +18,8 @@ const HUDScript = preload("res://scripts/HUD.gd")
 const NivelacionOverlayScript = preload("res://scripts/NivelacionOverlay.gd")
 const ZonaOverlayScript = preload("res://scripts/ZonaOverlay.gd")
 const ViaPreviewOverlayScript = preload("res://scripts/ViaPreviewOverlay.gd")
+const ViaDemolicionOverlayScript = preload("res://scripts/ViaDemolicionOverlay.gd")
+
 
 
 ## Mundo mínimo: la cámara solo le pide altura_en(x, z).
@@ -44,7 +46,9 @@ func _camara() -> Camera3D:
 	camara._overlay_nivelacion = NivelacionOverlayScript.new()
 	camara.overlay = ZonaOverlayScript.new()
 	camara.via_preview = ViaPreviewOverlayScript.new()
+	camara.via_demolicion_overlay = ViaDemolicionOverlayScript.new()
 	return camara
+
 
 
 func ejecutar_pruebas() -> void:
@@ -263,7 +267,36 @@ func ejecutar_pruebas() -> void:
 	camara17._cancelar_pintado_zona()
 	assert(not camara17.esperando_segunda_esquina)
 	assert("FIJAR ESQUINA" in camara17.hud._contexto.acciones.text, "vuelve a fijar esquina al cancelar")
-	camara17.hud.queue_free()
-	mundo17.free()
+	print("\n=== TEST 18: modo demolición contextual (edificios y vías guiadas) ===")
+	var camara18: Camera3D = _camara()
+	var mundo18 := MundoFalso.new()
+	camara18.mundo = mundo18
 
-	print("\n=== Las 17 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	# Activar modo demoler
+	camara18._alternar_modo_demoler()
+	assert(camara18.modo_demoler)
+	assert(camara18.hud._contexto.visible)
+	assert("MARCAR PARA DEMOLICIÓN" in camara18.hud._contexto.acciones.text)
+
+	# Iniciar demolición de vía
+	var celda_inicio := Vector3i(10, 0, 10)
+	camara18._iniciar_demolicion_via(celda_inicio)
+	assert(camara18._demolicion_via_activa)
+	assert(camara18.via_demolicion_overlay.cantidad_celdas == 1)
+	assert("CONFIRMAR DEMOLICIÓN" in camara18.hud._contexto.acciones.text)
+
+	# Cancelar demolición de vía
+	camara18._cancelar_demolicion_via()
+	assert(not camara18._demolicion_via_activa)
+	assert(camara18.via_demolicion_overlay.cantidad_celdas == 0)
+
+	# Salir de modo demoler
+	camara18._salir_de_modo_demoler()
+	assert(not camara18.modo_demoler)
+	assert(not camara18.hud._contexto.visible)
+
+	camara18.hud.queue_free()
+	mundo18.free()
+
+	print("\n=== Las 18 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+

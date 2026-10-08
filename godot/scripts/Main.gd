@@ -33,6 +33,9 @@ func _ready() -> void:
 	var marcas_demolicion := preload("res://scripts/MarcasDemolicionOverlay.gd").new()
 	marcas_demolicion.obras = Obras
 	add_child(marcas_demolicion)
+	if has_node("ViaObraOverlay"):
+		$ViaObraOverlay.obras = Obras
+
 	Economia.mundo = mundo
 	mundo.obra_a_fantasma.connect(jugador._on_obra_a_fantasma)
 	Colonos.colono_creado.connect(func(_id: int) -> void: hud.notificar("Nuevo colono en la ciudad."))

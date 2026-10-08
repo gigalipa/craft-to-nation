@@ -32,6 +32,7 @@ var _materiales := TemaHUD.etiqueta()
 var _toggle_colonizable := Button.new()
 var _remodelar := Button.new()
 var _pausar := Button.new()
+var _prioridad := Button.new()
 var _demoler := Button.new()
 var _asignar_nucleo := Button.new()
 var _dialogo_demoler := ConfirmationDialog.new()
@@ -65,7 +66,7 @@ func _ready() -> void:
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		etiqueta.custom_minimum_size.x = 250.0
 		caja.add_child(etiqueta)
-	for boton in [_toggle_colonizable, _remodelar, _pausar, _demoler, _asignar_nucleo]:
+	for boton in [_toggle_colonizable, _remodelar, _pausar, _prioridad, _demoler, _asignar_nucleo]:
 		TemaHUD.estilizar_boton(boton)
 		caja.add_child(boton)
 	_toggle_colonizable.pressed.connect(func() -> void:
@@ -76,6 +77,7 @@ func _ready() -> void:
 	_pausar.pressed.connect(func() -> void:
 		obras.alternar_pausa(id)
 		_actualizar())
+	_prioridad.pressed.connect(_ciclar_prioridad)
 	_demoler.pressed.connect(_on_demoler)
 	_dialogo_demoler.title = "Confirmar demolición"
 	_dialogo_demoler.dialog_text = "¿Demoler este edificio? Comenzará en 5 horas de juego."
@@ -195,6 +197,21 @@ func _on_asignar_nucleo() -> void:
 func _confirmar_traslado() -> void:
 	if ciudad != null and ciudad.has_method("programar_traslado_nucleo"):
 		ciudad.programar_traslado_nucleo(id, 5)
+	_actualizar()
+
+
+func _ciclar_prioridad() -> void:
+	if obras == null or not obras.has_method("fijar_prioridad"):
+		return
+	var p_actual: int = obras.prioridad_de(id) if obras.has_method("prioridad_de") else 1
+	var nueva_p: int = 1
+	if p_actual == 1:
+		nueva_p = 2  # Normal -> Alta
+	elif p_actual == 2:
+		nueva_p = 0  # Alta -> Baja
+	else:
+		nueva_p = 1  # Baja -> Normal
+	obras.fijar_prioridad(id, nueva_p)
 	_actualizar()
 
 
@@ -329,6 +346,15 @@ func _actualizar() -> void:
 		_materiales.text = "Faltan: " + ", ".join(partes)
 	_pausar.visible = en_obra
 	_pausar.text = "Reanudar" if r["pausada"] else ("Pausar demolición" if estado == "demolicion" else "Pausar construcción")
+
+	var p_actual: int = obras.prioridad_de(id) if obras != null and obras.has_method("prioridad_de") else 1
+	var nom_p: String = "Normal"
+	if p_actual == 2:
+		nom_p = "Alta"
+	elif p_actual == 0:
+		nom_p = "Baja"
+	_prioridad.visible = (estado == "construccion")
+	_prioridad.text = "Prioridad: %s" % nom_p
 
 	_remodelar.visible = (es_residencial or es_nucleo) and (estado == "completo")
 	_remodelar.text = "Iniciar remodelación"

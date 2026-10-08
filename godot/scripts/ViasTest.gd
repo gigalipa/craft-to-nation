@@ -96,6 +96,21 @@ class MundoFalsoVias:
 		return _ids.get(tipo, -1)
 
 
+class ObrasFalsoOverlay extends RefCounted:
+	signal obra_via_creada(id: int)
+	signal obra_via_paso(id: int, celda: Vector3i)
+	signal obra_via_completada(id: int)
+	signal demolicion_via_creada(id: int)
+	signal demolicion_via_paso(id: int, celda: Vector3i)
+	signal demolicion_via_completada(id: int)
+	var celdas_obra: Array[Vector3i] = []
+	var celdas_demolicion: Array[Vector3i] = []
+	func todas_las_celdas_obras_vias() -> Array[Vector3i]:
+		return celdas_obra
+	func todas_las_celdas_demolicion_vias() -> Array[Vector3i]:
+		return celdas_demolicion
+
+
 func _ready() -> void:
 	ejecutar_pruebas()
 	print("=== TODAS LAS PRUEBAS DE ViasTest PASARON ===")
@@ -531,4 +546,141 @@ func ejecutar_pruebas() -> void:
 	Vias.TIPOS.erase("calzada_test")
 	Vias.TIPOS.erase("carretera_test")
 
-	print("\n=== Las 35 pruebas de Vias pasaron correctamente ===")
+	print("\n=== TEST 36: ConstructorVias.planificar() y ejecutar_paso() desglosan la obra paso a paso ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+
+	# Caso rechazo: menos de 2 vértices o choque
+	var mundo_plano := MundoFalsoVias.new()
+	assert(ConstructorVias.planificar(mundo_plano, [Vector2i(0, 0)], sin_choque).is_empty())
+	var con_choque_plan := func(_cols): return true
+	assert(ConstructorVias.planificar(mundo_plano, [Vector2i(0, 0), Vector2i(1, 0)], con_choque_plan).is_empty())
+
+	# Caso válido con desnivel
+	var mundo_pasos := MundoFalsoVias.new()
+	mundo_pasos.escalon_en_x = 1
+	mundo_pasos.altura_escalon = 1
+	var vertices_pasos: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0)]
+	var plan: Dictionary = ConstructorVias.planificar(mundo_pasos, vertices_pasos, sin_choque)
+	assert(not plan.is_empty())
+	assert(plan["vertices"] == vertices_pasos)
+	assert(plan["pasos"].size() > 0)
+
+	# Ejecutar paso a paso y comprobar registro progresivo
+	var pasos: Array = plan["pasos"]
+	assert(Vias.celdas.is_empty(), "Antes de ejecutar pasos Vias está vacío")
+	var primera_celda: Vector3i = ConstructorVias.ejecutar_paso(mundo_pasos, pasos[0])
+	assert(Vias.es_via(primera_celda), "La primera celda ejecutada ya está en Vias")
+	assert(Vias.celdas.size() == 1)
+
+	# Ejecutar el resto de pasos
+	for i in range(1, pasos.size()):
+		var c_soporte: Vector3i = ConstructorVias.ejecutar_paso(mundo_pasos, pasos[i])
+		assert(Vias.es_via(c_soporte))
+	assert(Vias.celdas.size() == pasos.size())
+	# Verificar cuñas colocadas
+	assert(mundo_pasos.celdas.get(Vector3i(0, 1, -1), "") == "cuna_recta")
+	print("\n=== TEST 37: Overlays visuales de vía (ViaObraOverlay y ViaDemolicionOverlay) ===")
+	var ViaObraOverlayScript = preload("res://scripts/ViaObraOverlay.gd")
+	var ViaDemolicionOverlayScript = preload("res://scripts/ViaDemolicionOverlay.gd")
+
+	var obras_falso := ObrasFalsoOverlay.new()
+	var obra_overlay: MeshInstance3D = ViaObraOverlayScript.new()
+	obra_overlay.obras = obras_falso
+	assert(obra_overlay.mesh == null, "Sin celdas el mesh es null")
+
+	obras_falso.celdas_obra = [Vector3i(0, 0, 0), Vector3i(1, 0, 0)]
+	obras_falso.obra_via_creada.emit(-1)
+	assert(obra_overlay.mesh != null, "Con celdas pendientes genera el alambre/mesh")
+
+	obras_falso.celdas_obra.clear()
+	obras_falso.obra_via_completada.emit(-1)
+	assert(obra_overlay.mesh == null, "Al completarse limpia el mesh")
+	obra_overlay.free()
+
+	# Prueba de ViaDemolicionOverlay
+	var demo_overlay: Node3D = ViaDemolicionOverlayScript.new()
+	demo_overlay.mostrar_tramo([Vector3i(2, 0, 2), Vector3i(3, 0, 2)])
+	assert(demo_overlay.cantidad_celdas == 2)
+	assert(demo_overlay.get_child_count() == 2)
+
+	demo_overlay.limpiar()
+	assert(demo_overlay.cantidad_celdas == 0)
+	assert(demo_overlay.get_child_count() == 0)
+	demo_overlay.free()
+
+	print("\n=== TEST 38: ConstructorVias.planificar() genera pasos consecutivos a lo largo de la ruta ===")
+	var mundo_escalon38 := MundoFalsoVias.new()
+	mundo_escalon38.escalon_en_x = 1
+	mundo_escalon38.altura_escalon = 1
+	var vertices_escalon38: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
+	var plan_escalon38: Dictionary = ConstructorVias.planificar(mundo_escalon38, vertices_escalon38, sin_choque)
+	assert(not plan_escalon38.is_empty())
+	var tipos_pasos: Array[String] = []
+	for p in plan_escalon38["pasos"]:
+		tipos_pasos.append(p["tipo"])
+	# El plan debe contener cuñas intercaladas entre las celdas, no agrupadas exclusivamente al final
+	var primer_cuna: int = tipos_pasos.find("cuna")
+	var ultimo_nivelar: int = tipos_pasos.rfind("nivelar")
+	assert(primer_cuna != -1 and ultimo_nivelar != -1)
+	assert(primer_cuna < ultimo_nivelar, "Las cuñas deben construirse en su posición física a lo largo de la ruta antes de celdas posteriores")
+
+	print("\n=== TEST 39: Vias.celdas_de_seccion() y buscar_camino_en_red() seleccionan ambos canales (4 celdas) ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+	var mundo_recta := MundoFalsoVias.new()
+	var vertices_recta: Array[Vector2i] = [Vector2i(5, 5), Vector2i(5, 7)]
+	assert(ConstructorVias.construir(mundo_recta, vertices_recta, sin_choque))
+	assert(Vias.celdas.size() > 0)
+
+	# Una columna de la vía devuelve todas las 4 celdas de su sección 2x2
+	var seccion: Array[Vector3i] = Vias.celdas_de_seccion(Vector2i(4, 5))
+	assert(seccion.size() == 4, "Cada sección de vía debe tener 4 celdas (ancho 2)")
+
+	# Camino sobre la red abarca ambos canales
+	var c_ini := Vector3i(4, 0, 4)
+	var c_fin := Vector3i(4, 0, 7)
+	var camino_red: Array[Vector3i] = Vias.buscar_camino_en_red(c_ini, c_fin)
+	assert(camino_red.size() >= 8, "Debe abarcar ambos canales a lo largo del tramo")
+
+	print("\n=== TEST 40: Búsqueda en esquinas de 90° no corta diagonalmente y outline de demolición funciona ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+	var mundo_esquina := MundoFalsoVias.new()
+	var vertices_esquina: Array[Vector2i] = [
+		Vector2i(5, 5), Vector2i(5, 6), Vector2i(5, 7), Vector2i(5, 8),
+		Vector2i(4, 8), Vector2i(3, 8), Vector2i(2, 8)
+	]
+	assert(ConstructorVias.construir(mundo_esquina, vertices_esquina, sin_choque))
+
+	# La búsqueda debe pasar obligatoriamente por el vértice de la esquina (5, 8)
+	var camino_esquina: Array[Vector2i] = Vias.buscar_camino_vertices_en_red(Vector2i(5, 5), Vector2i(2, 8))
+	assert(not camino_esquina.is_empty(), "Debe encontrar camino a lo largo de la vía")
+	assert(camino_esquina.has(Vector2i(5, 8)), "El camino debe incluir el vértice de la esquina ortogonal (5, 8) sin cortarla")
+
+	# Las celdas de demolición deben incluir el bloque de la esquina completo (ambos canales)
+	var celdas_camino: Array[Vector3i] = Vias.buscar_camino_en_red(Vector3i(4, 0, 4), Vector3i(1, 0, 7))
+	assert(celdas_camino.has(Vector3i(4, 0, 7)), "Debe incluir la celda interior de la esquina")
+	assert(celdas_camino.has(Vector3i(4, 0, 8)) or celdas_camino.has(Vector3i(5, 0, 7)), "Debe incluir las celdas de ambos canales en la esquina")
+
+	# Comprobar el outline persistente de ViaDemolicionOverlay
+	var demo_overlay40: Node3D = ViaDemolicionOverlayScript.new()
+	var obras_falso40 := ObrasFalsoOverlay.new()
+	demo_overlay40.obras = obras_falso40
+	assert(demo_overlay40._outline_instance.mesh == null, "Sin celdas de demolición el outline es null")
+
+	obras_falso40.celdas_demolicion = [Vector3i(4, 0, 7), Vector3i(5, 0, 7)]
+	obras_falso40.demolicion_via_creada.emit(-10001)
+	assert(demo_overlay40._outline_instance.mesh != null, "Con orden de demolición confirmada genera el outline")
+
+	obras_falso40.celdas_demolicion.clear()
+	obras_falso40.demolicion_via_completada.emit(-10001)
+	assert(demo_overlay40._outline_instance.mesh == null, "Al completarse la demolición limpia el outline")
+	demo_overlay40.free()
+
+	print("\n=== Las 40 pruebas de Vias pasaron correctamente ===")
+
+

@@ -158,14 +158,23 @@ const ALTURA_SOBRE_SUPERFICIE_AREA_ACCION := 1.001
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
 @onready var via_preview: Node3D = get_node("../ViaPreviewOverlay")
+@onready var via_demolicion_overlay: Node3D = get_node_or_null("../ViaDemolicionOverlay")
 @onready var hud: CanvasLayer = get_node("../HUDLayer")
 @onready var jugador: CharacterBody3D = get_node("../Player")
 
-## Modo demoler (menú principal, tecla `3`): sin submenú ni lógica de marcado
-## todavía — solo el interruptor (decisión del usuario, 2026-09-30): la idea a
-## futuro es marcar edificios para que los ciudadanos desempleados los
-## deconstruyan, pero esa lógica queda para otra tarea.
+## Modo demoler (menú principal, tecla `3`): unifica demolición de edificios
+## (marca roja) y demolición de vías guiada sobre la red existente (overlay naranja).
 var modo_demoler := false
+var _demolicion_via_activa := false
+var _demolicion_via_origen := Vector3i.ZERO
+var _demolicion_via_puntos_fijos: Array[Vector3i] = []
+var _demolicion_via_celdas_fijas: Array[Vector3i] = []
+var _demolicion_via_celdas_preview: Array[Vector3i] = []
+var _ultimo_destino_demolicion_via := Vector3i.ZERO
+var _ultimo_clic_demoler_tiempo_ms := 0
+var _ultima_celda_clic_demoler := Vector3i.ZERO
+const TIEMPO_DOBLE_CLIC_MS := 400
+
 
 ## Modo zonificación (menú principal, tecla `2`): mientras está activo, el
 ## clic izquierdo pinta zona (dos esquinas) y `1`/`2`/`3` eligen Zona
@@ -683,7 +692,10 @@ func _process(delta: float) -> void:
 			_actualizar_preview_via()
 		elif modo_trazar_via and not _hay_tramo_en_curso:
 			_actualizar_preview_vertice_inicial()
+		elif modo_demoler and _demolicion_via_activa:
+			_actualizar_preview_demolicion_via()
 		return
+
 
 	_cancelar_centrado()  # el usuario toma el control: la animación de centrado se detiene
 
@@ -1381,13 +1393,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif modo_trazar_via:
 				_procesar_clic_via(boton.position)
 			elif modo_demoler:
-				_procesar_clic_demoler(boton.position)
+				_procesar_clic_demoler(boton.position, boton.double_click)
 			else:
 				_procesar_clic_interaccion(boton.position)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
 			if modo_trazar_via:
 				_cancelar_tramo_via()
+			if modo_demoler:
+				_cancelar_demolicion_via()
 			_cancelar_pintado_zona()
+
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_WHEEL_UP:
 			if modo_colocar_puesto and Input.is_key_pressed(KEY_CTRL):
 				_rotar_huella_puesto()
@@ -2062,6 +2077,7 @@ func _alternar_modo_demoler() -> void:
 func _salir_de_modo_demoler() -> void:
 	var estaba := modo_demoler
 	modo_demoler = false
+	_cancelar_demolicion_via()
 	if estaba:
 		hud.set_modo("")
 		hud.ocultar_contexto()
@@ -2114,20 +2130,124 @@ func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
 		hud.cerrar_panel_puesto()
 
 
-## Clic con el modo demoler: marca (o desmarca) para demolición el edificio bajo el cursor.
-## _celda_bajo_mouse() es una columna (x, z): se busca el edificio que ocupa esa columna.
-func _procesar_clic_demoler(posicion_pantalla: Vector2) -> void:
-	var id: int = Obras.id_en_columna(_celda_bajo_mouse(posicion_pantalla))
-	if id == -1:
-		hud.notificar("No hay ningún edificio ahí para marcar.")
+## Clic con el modo demoler:
+## - Si apunta a un edificio: alterna marca de demolición.
+## - Si apunta a una vía: inicia o avanza la selección de demolición guiada de vía.
+## Doble clic confirma la demolición de la vía seleccionada.
+func _procesar_clic_demoler(posicion_pantalla: Vector2, es_doble_clic_evento: bool = false) -> void:
+	var ahora := Time.get_ticks_msec()
+	var celda_via := _celda_via_bajo_mouse(posicion_pantalla)
+
+	if _demolicion_via_activa:
+		var es_doble: bool = es_doble_clic_evento or (ahora - _ultimo_clic_demoler_tiempo_ms <= TIEMPO_DOBLE_CLIC_MS and celda_via == _ultima_celda_clic_demoler)
+		_ultimo_clic_demoler_tiempo_ms = ahora
+		_ultima_celda_clic_demoler = celda_via
+		if es_doble:
+			_confirmar_demolicion_via()
+			return
+
+		if celda_via != Vector3i.ZERO:
+			var camino: Array[Vector3i] = Vias.buscar_camino_en_red(_demolicion_via_origen, celda_via)
+			if not camino.is_empty():
+				for c in camino:
+					if not _demolicion_via_celdas_fijas.has(c):
+						_demolicion_via_celdas_fijas.append(c)
+				_demolicion_via_origen = celda_via
+				_demolicion_via_puntos_fijos.append(celda_via)
+				_demolicion_via_celdas_preview = _demolicion_via_celdas_fijas.duplicate()
+				if via_demolicion_overlay != null:
+					via_demolicion_overlay.mostrar_tramo(_demolicion_via_celdas_preview)
+				hud.mostrar_contexto("Demoler Vía", {}, ["(clic izq.) ELEGIR RAMA", "(doble clic) CONFIRMAR DEMOLICIÓN", "(clic der.) CANCELAR"])
 		return
-	var motivo: String = Obras.alternar_marca(id)
-	if motivo != "":
-		hud.notificar(motivo)
-	elif Obras.esta_marcado(id):
-		hud.notificar("Edificio marcado para demolición.")
-	else:
-		hud.notificar("Marca de demolición quitada.")
+
+	# Si no hay vía activa, comprueba primero si el cursor está sobre un edificio
+	var col := _celda_bajo_mouse(posicion_pantalla)
+	var id: int = Obras.id_en_columna(col)
+	if id != -1:
+		var motivo: String = Obras.alternar_marca(id)
+		if motivo != "":
+			hud.notificar(motivo)
+		elif Obras.esta_marcado(id):
+			hud.notificar("Edificio marcado para demolición.")
+		else:
+			hud.notificar("Marca de demolición quitada.")
+		return
+
+	# Si apunta a una vía existente, inicia la selección de demolición
+	if celda_via != Vector3i.ZERO:
+		_ultimo_clic_demoler_tiempo_ms = ahora
+		_ultima_celda_clic_demoler = celda_via
+		_iniciar_demolicion_via(celda_via)
+		return
+
+	hud.notificar("No hay ningún edificio ni vía ahí para demoler.")
+
+
+func _celda_via_bajo_mouse(posicion_pantalla: Vector2) -> Vector3i:
+	var col := _celda_bajo_mouse(posicion_pantalla)
+	if not Vias.hay_via_en_columna(col):
+		return Vector3i.ZERO
+	return Vias.celda_en_columna(col)
+
+
+func _iniciar_demolicion_via(celda_inicio: Vector3i) -> void:
+	_demolicion_via_activa = true
+	_demolicion_via_origen = celda_inicio
+	var celdas_iniciales: Array[Vector3i] = Vias.celdas_de_seccion(Vector2i(celda_inicio.x, celda_inicio.z))
+	if celdas_iniciales.is_empty():
+		celdas_iniciales = [celda_inicio]
+	_demolicion_via_puntos_fijos = [celda_inicio]
+	_demolicion_via_celdas_fijas = celdas_iniciales.duplicate()
+	_demolicion_via_celdas_preview = celdas_iniciales.duplicate()
+	_ultimo_destino_demolicion_via = celda_inicio
+	if via_demolicion_overlay != null:
+		via_demolicion_overlay.mostrar_tramo(_demolicion_via_celdas_preview)
+	hud.mostrar_contexto("Demoler Vía", {}, ["(mover) RECORRER VÍA", "(clic izq.) ELEGIR RAMA", "(doble clic) CONFIRMAR DEMOLICIÓN", "(clic der.) CANCELAR"])
+
+
+func _actualizar_preview_demolicion_via() -> void:
+	if not _demolicion_via_activa:
+		return
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	var celda_destino: Vector3i = _celda_via_bajo_mouse(mouse_pos)
+	if celda_destino == Vector3i.ZERO or celda_destino == _ultimo_destino_demolicion_via:
+		return
+	_ultimo_destino_demolicion_via = celda_destino
+	var camino: Array[Vector3i] = Vias.buscar_camino_en_red(_demolicion_via_origen, celda_destino)
+	if camino.is_empty():
+		return
+	var total: Array[Vector3i] = _demolicion_via_celdas_fijas.duplicate()
+	for c in camino:
+		if not total.has(c):
+			total.append(c)
+	_demolicion_via_celdas_preview = total
+	if via_demolicion_overlay != null:
+		via_demolicion_overlay.mostrar_tramo(_demolicion_via_celdas_preview)
+
+
+func _confirmar_demolicion_via() -> void:
+	var celdas_a_demoler: Array[Vector3i] = _demolicion_via_celdas_preview if not _demolicion_via_celdas_preview.is_empty() else _demolicion_via_celdas_fijas
+	if celdas_a_demoler.is_empty():
+		_cancelar_demolicion_via()
+		return
+	Obras.crear_demolicion_via(celdas_a_demoler)
+	hud.notificar("Orden de demolición de vía enviada.")
+	_cancelar_demolicion_via()
+
+
+func _cancelar_demolicion_via() -> void:
+	_demolicion_via_activa = false
+	_demolicion_via_origen = Vector3i.ZERO
+	_demolicion_via_puntos_fijos.clear()
+	_demolicion_via_celdas_fijas.clear()
+	_demolicion_via_celdas_preview.clear()
+	_ultimo_destino_demolicion_via = Vector3i.ZERO
+	_ultima_celda_clic_demoler = Vector3i.ZERO
+	if via_demolicion_overlay != null:
+		via_demolicion_overlay.limpiar()
+	if modo_demoler:
+		hud.mostrar_contexto("Demoler", {}, ["(clic izq.) MARCAR PARA DEMOLICIÓN", "[Esc] SALIR"])
+
 
 
 ## Clic con el modo zonificación activo: primera esquina o cierre del rectángulo.
@@ -2302,9 +2422,17 @@ func _confirmar_trazo_via() -> void:
 		var esquina: Vector2i = columnas_abs[0]
 		return _huella_choca_con_otro_puesto(esquina, _columnas_relativas(esquina, columnas_abs), true)
 
-	if not ConstructorVias.construir(mundo, vertices, choca):
+	var plan: Dictionary = ConstructorVias.planificar(mundo, vertices, choca)
+
+	if plan.is_empty():
 		print("Trazado rechazado: choca con un edificio, puesto u obra existente.")
 		hud.notificar("Trazado rechazado: choca con un edificio, puesto u obra existente.")
+		return
+
+	var id_obra_via: int = Obras.crear_obra_via(plan)
+	if id_obra_via != 0:
+		hud.notificar("Obra de vía planificada.")
+
 
 
 ## Confirma la colocación del puesto activo en la celda bajo el cursor si

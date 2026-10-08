@@ -26,7 +26,12 @@ const PlantillasPuestoScript = preload("res://scripts/PlantillasPuesto.gd")
 ## dibuja — ver VoxelWorld/Puertas.gd/TranslucidosRenderer.gd). La miniatura
 ## de una construcción completa los salta: es una vista general del
 ## edificio, no necesita reproducir cada mueble.
-const TIPOS_SIN_MALLA_MINIATURA := ["vidrio", "puerta_inferior", "puerta_superior"]
+const TIPOS_SIN_MALLA_MINIATURA := [
+	"vidrio", "puerta_inferior", "puerta_superior",
+	"puerto_agua_in", "puerto_agua_out",
+	"puerto_crudo_in", "puerto_crudo_out",
+	"puerto_combustible_in", "puerto_combustible_out",
+]
 
 ## Esquina superior-derecha-FRONTAL (el frente/puerta de plantillas y
 ## blueprints mira a -Z, ver PlantillasPuesto.gd) — no la diagonal simétrica
@@ -53,6 +58,7 @@ const CATEGORIAS := [
 	["industrial", "Industrial", "3"],
 	["investigacion", "Investigación", "4"],
 	["vias", "Vías", "5"],
+	["ductos", "Ductos", "6"],
 ]
 
 ## categoría -> [tipo, nombre, tecla] de sus edificios, en el orden en que
@@ -71,6 +77,8 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["maderero", "Madera", "2"],
 		["mina", "Mina", "3"],
 		["pesca_frutos_mar", "Pesca", "4"],
+		["estacion_bombeo", "Estación de bombeo", "5"],
+		["centro_extraccion", "Centro de extracción", "6"],
 	],
 	"industrial": [
 		["siderurgica", "Siderúrgica", "1"],
@@ -80,6 +88,7 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["refineria_petrolera", "Refinería petrolera", "5"],
 		["productor_combustible", "Productor combustible", "6"],
 		["central_termoelectrica", "Central termoeléctrica", "7"],
+		["almacen", "Almacén", "8"],
 	],
 	"investigacion": [
 		["escuela_tecnica", "Escuela técnica", "1"],
@@ -89,11 +98,15 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 	"vias": [
 		["vias", "Trazar vía", "1"],
 	],
+	"ductos": [
+		["acueducto", "Acueducto", "1"],
+		["tuberia", "Tubería", "2"],
+	],
 }
 
 ## Tipos con miniatura 3D real (mina/caza/madera/pesca + el blueprint
 ## residencial); "vias" no tiene malla que previsualizar, es un botón de texto.
-const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad"]
+const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen"]
 
 ## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
 var ZONAS := [

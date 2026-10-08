@@ -298,5 +298,52 @@ func ejecutar_pruebas() -> void:
 	camara18.hud.queue_free()
 	mundo18.free()
 
-	print("\n=== Las 18 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 19: Categoría Ductos (6), acueducto (6-1) y tubería (6-2) ===")
+	var camara19: Camera3D = _camara()
+	var mundo19 := MundoFalso.new()
+	camara19.mundo = mundo19
+	camara19._alternar_modo_menu_construir()
+	camara19._manejar_tecla_construir(6)
+	assert(camara19.hud._barra_modos.categoria_activa() == "ductos", "tecla 6 abre categoria ductos")
+
+	# Tecla 1 dentro de ductos: activa acueducto
+	camara19._manejar_tecla_construir(1)
+	assert(camara19.modo_trazar_ducto, "activa modo trazar ducto")
+	assert(camara19._tipo_ducto_activo == "acueducto", "tipo activo es acueducto")
+	assert(camara19.hud._barra_modos.categoria_activa() == "ductos")
+
+	# Tecla 2 dentro de ductos: cambia a tubería
+	camara19._manejar_tecla_construir(2)
+	assert(camara19.modo_trazar_ducto, "sigue en modo trazar ducto")
+	assert(camara19._tipo_ducto_activo == "tuberia", "tipo activo es tuberia")
+
+	print("\n=== TEST 20: Trazado interactivo de ductos, camino ortogonal y cancelación ===")
+	var camara20: Camera3D = _camara()
+	var mundo20 := MundoFalso.new()
+	camara20.mundo = mundo20
+	camara20._alternar_modo_trazar_ducto("acueducto")
+	assert(camara20.modo_trazar_ducto)
+	assert(not camara20._hay_tramo_ducto_en_curso)
+
+	# Camino ortogonal
+	var camino: Array = camara20._camino_ortogonal(Vector2i(0, 0), Vector2i(3, 2))
+	assert(camino[0] == Vector2i(0, 0))
+	assert(camino[-1] == Vector2i(3, 2))
+	assert(camino.size() == 6, "camino Manhattan de (0,0) a (3,2) tiene 6 celdas")
+
+	# Simular fijar primer punto
+	camara20._punto_inicio_ducto = Vector2i(0, 0)
+	var pts: Array[Vector2i] = [Vector2i(0, 0)]
+	camara20._puntos_fijos_ducto = pts
+	camara20._hay_tramo_ducto_en_curso = true
+
+	# Cancelar tramo
+	camara20._cancelar_tramo_ducto()
+	assert(not camara20._hay_tramo_ducto_en_curso)
+	assert(camara20._puntos_fijos_ducto.is_empty())
+
+	camara20.hud.queue_free()
+	mundo20.free()
+
+	print("\n=== Las 20 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
 

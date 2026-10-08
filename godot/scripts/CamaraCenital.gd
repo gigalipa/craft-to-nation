@@ -6,6 +6,7 @@ const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
 const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
+const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
 
 ## Envoltorio para NiveladorTerreno: siempre llama a altura_en(x, z, true)
 ## (ignora agua). NiveladorTerreno solo necesita .altura_en(x, z) por duck
@@ -191,6 +192,12 @@ var _hay_tramo_en_curso := false
 var _vertice_inicio_tramo := Vector2i.ZERO
 var _tramos_fijos: Array = []  # Array[Array[Vector2i]]
 var _trazador_via: RefCounted = null
+
+var modo_trazar_ducto := false
+var _tipo_ducto_activo := "tuberia"
+var _hay_tramo_ducto_en_curso := false
+var _punto_inicio_ducto := Vector2i.ZERO
+var _puntos_fijos_ducto: Array[Vector2i] = []
 
 ## Último origen/vértice bajo el mouse para los que se corrió
 ## buscar_ruta() en _actualizar_preview_via() — evita repetir la A*
@@ -692,6 +699,8 @@ func _process(delta: float) -> void:
 			_actualizar_preview_via()
 		elif modo_trazar_via and not _hay_tramo_en_curso:
 			_actualizar_preview_vertice_inicial()
+		elif modo_trazar_ducto:
+			_actualizar_preview_ducto()
 		elif modo_demoler and _demolicion_via_activa:
 			_actualizar_preview_demolicion_via()
 		return
@@ -782,6 +791,14 @@ func _process(delta: float) -> void:
 		_actualizar_previsualizacion_puesto()
 	elif esperando_segunda_esquina:
 		_actualizar_previsualizacion_zona()
+	elif modo_trazar_via and _hay_tramo_en_curso:
+		_actualizar_preview_via()
+	elif modo_trazar_via and not _hay_tramo_en_curso:
+		_actualizar_preview_vertice_inicial()
+	elif modo_trazar_ducto:
+		_actualizar_preview_ducto()
+	elif modo_demoler and _demolicion_via_activa:
+		_actualizar_preview_demolicion_via()
 
 
 ## Previsualización en vivo de la zona a pintar: mientras se espera la
@@ -1016,8 +1033,16 @@ func _actualizar_previsualizacion_puesto() -> void:
 			_actualizar_area_accion_agua(centro_agua, celdas_agua)
 		else:
 			_ocultar_area_accion()
-	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad" or _tipo_puesto_activo == "central_termoelectrica":
-		_ocultar_area_accion()  # ni una refinería ni un edificio de investigación tienen área de acción ni tasa de recolección
+	elif CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad" or _tipo_puesto_activo == "central_termoelectrica" or _tipo_puesto_activo == "almacen":
+		_ocultar_area_accion()  # ni una refinería, investigación, almacén ni central tienen área de acción ni tasa de recolección
+	elif _tipo_puesto_activo == "estacion_bombeo":
+		_ocultar_area_accion()
+		tasas = {"agua": 2.0}
+	elif _tipo_puesto_activo == "centro_extraccion":
+		_ocultar_area_accion()
+		var dp: Dictionary = ev.get("datos_perforacion", {})
+		var tipo_p: String = dp.get("tipo_pozo", "agua")
+		tasas = {tipo_p: 5.0}
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
@@ -1353,10 +1378,11 @@ func _actualizar_previsualizacion_blueprint() -> void:
 ## Categorías de Construir y sus edificios, en el mismo orden que
 ## BarraModos.CATEGORIAS/CONSTRUCCIONES_POR_CATEGORIA — deben coincidir para
 ## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
-const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias"]
-const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar"]
-const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica"]
+const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias", "ductos"]
+const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar", "estacion_bombeo", "centro_extraccion"]
+const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen"]
 const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas", "universidad"]
+const PUESTOS_DUCTOS := ["acueducto", "tuberia"]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1392,6 +1418,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_procesar_clic(boton.position)
 			elif modo_trazar_via:
 				_procesar_clic_via(boton.position)
+			elif modo_trazar_ducto:
+				_procesar_clic_ducto(boton.position, boton.double_click)
 			elif modo_demoler:
 				_procesar_clic_demoler(boton.position, boton.double_click)
 			else:
@@ -1399,6 +1427,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
 			if modo_trazar_via:
 				_cancelar_tramo_via()
+			if modo_trazar_ducto:
+				_cancelar_tramo_ducto()
 			if modo_demoler:
 				_cancelar_demolicion_via()
 			_cancelar_pintado_zona()
@@ -1492,6 +1522,11 @@ func _manejar_tecla_construir(n: int) -> void:
 		"vias":
 			if idx == 0:
 				_alternar_modo_trazar_via()
+		"ductos":
+			if idx == 0:
+				_alternar_modo_trazar_ducto("acueducto")
+			elif idx == 1:
+				_alternar_modo_trazar_ducto("tuberia")
 
 
 ## Abre el panel de edificios de "categoria" dentro de Construir (tecla
@@ -1506,10 +1541,11 @@ func _manejar_tecla_construir(n: int) -> void:
 ## ya usa _alternar_modo_colocar_puesto() al cambiar de tipo de puesto).
 func _elegir_categoria(categoria: String) -> void:
 	if _categoria_construir == categoria:
-		if modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via:
+		if modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via or modo_trazar_ducto:
 			_salir_de_modo_colocar_blueprint(false)
 			_salir_de_modo_colocar_puesto(false)
 			_salir_de_modo_trazar_via(false)
+			_salir_de_modo_trazar_ducto(false)
 			hud.set_modo("construir", "", categoria)
 		else:
 			_categoria_construir = ""
@@ -1519,6 +1555,7 @@ func _elegir_categoria(categoria: String) -> void:
 	_salir_de_modo_colocar_blueprint(false)
 	_salir_de_modo_colocar_puesto(false)
 	_salir_de_modo_trazar_via(false)
+	_salir_de_modo_trazar_ducto(false)
 	_categoria_construir = categoria
 	hud.set_giros_construccion(0)
 	hud.set_modo("construir", "", categoria)
@@ -1526,10 +1563,11 @@ func _elegir_categoria(categoria: String) -> void:
 
 
 func _manejar_tecla_z() -> void:
-	if modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via:
+	if modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via or modo_trazar_ducto:
 		_salir_de_modo_colocar_blueprint(false)
 		_salir_de_modo_colocar_puesto(false)
 		_salir_de_modo_trazar_via(false)
+		_salir_de_modo_trazar_ducto(false)
 		if _categoria_construir != "":
 			hud.set_modo("construir", "", _categoria_construir)
 		else:
@@ -1627,10 +1665,19 @@ func _alternar_modo_colocar_puesto(tipo: String, ancho: int, alto: int) -> void:
 	_giros_puesto = 0
 	_giros_fantasma_puesto = -1
 	_overlay_vigente = SIN_RESUMEN
-	hud.set_modo("construir", tipo, "periferico")
+	var cat_actual: String = _categoria_construir if _categoria_construir != "" else _categoria_de_puesto(tipo)
+	hud.set_modo("construir", tipo, cat_actual)
 	hud.set_giros_construccion(0)
 	hud.mostrar_contexto_puesto(tipo, false, {})
 	print("Modo colocar %s activo: haz clic para confirmar (misma tecla de nuevo para cancelar)." % tipo)
+
+
+func _categoria_de_puesto(tipo: String) -> String:
+	if PUESTOS_INDUSTRIAL.has(tipo):
+		return "industrial"
+	if PUESTOS_INVESTIGACION.has(tipo):
+		return "investigacion"
+	return "periferico"
 
 
 ## Alterna el puesto de "tipo" con su huella: categoría Periférico del menú
@@ -1650,7 +1697,7 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 
@@ -1768,7 +1815,7 @@ func _rotar_blueprint() -> void:
 ## _alternar_modo_colocar_blueprint()/_alternar_puesto_por_tipo()/
 ## _alternar_modo_trazar_via() sin cambios.
 func _alternar_modo_menu_construir() -> void:
-	if _menu_construir_abierto or modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via:
+	if _menu_construir_abierto or modo_colocar_blueprint or modo_colocar_puesto or modo_trazar_via or modo_trazar_ducto:
 		_salir_de_modo_menu_construir()
 		return
 	_salir_de_modo_zonificar()
@@ -1791,6 +1838,8 @@ func _salir_de_modo_menu_construir() -> void:
 		_salir_de_modo_colocar_puesto()
 	if modo_trazar_via:
 		_salir_de_modo_trazar_via()
+	if modo_trazar_ducto:
+		_salir_de_modo_trazar_ducto()
 	_menu_construir_abierto = false
 	_categoria_construir = ""
 	hud.set_modo("")
@@ -1866,6 +1915,7 @@ func salir_de_todos_los_modos() -> void:
 	_salir_de_modo_colocar_puesto()
 	_salir_de_modo_zonificar()
 	_salir_de_modo_trazar_via()
+	_salir_de_modo_trazar_ducto()
 	_salir_de_modo_demoler()
 	# Incondicional (no solo "if estaba"): cubre también el caso de que el
 	# menú Construir estuviera abierto SIN ninguna colocación activa — ese
@@ -2058,6 +2108,206 @@ func _salir_de_modo_trazar_via(cerrar_menu: bool = true) -> void:
 			_menu_construir_abierto = false
 			_categoria_construir = ""
 			hud.set_modo("")
+
+
+func _alternar_modo_trazar_ducto(tipo: String) -> void:
+	if modo_trazar_ducto and _tipo_ducto_activo == tipo:
+		_salir_de_modo_trazar_ducto()
+		return
+	_salir_de_modo_zonificar()
+	_salir_de_modo_demoler()
+	if modo_colocar_blueprint:
+		_salir_de_modo_colocar_blueprint(false)
+	if modo_colocar_puesto:
+		_salir_de_modo_colocar_puesto(false)
+	if modo_trazar_via:
+		_salir_de_modo_trazar_via(false)
+	modo_trazar_ducto = true
+	_tipo_ducto_activo = tipo
+	_categoria_construir = "ductos"
+	_menu_construir_abierto = true
+	_hay_tramo_ducto_en_curso = false
+	_puntos_fijos_ducto.clear()
+	hud.set_modo("construir", tipo, "ductos")
+	var nom: String = tipo.capitalize()
+	if Canalizaciones != null and Canalizaciones.TIPOS.has(tipo):
+		nom = Canalizaciones.TIPOS[tipo].get("nombre", tipo.capitalize())
+	var ficha: String = ""
+	if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
+		ficha = Canalizaciones.ficha_tecnica(tipo, 0, 0)
+	hud.mostrar_contexto(nom, {}, ["(clic izq.) FIJAR PUNTO", "(doble clic) CONFIRMAR", "(clic der.) CANCELAR", "[Esc] SALIR"], null, ficha)
+
+
+func _salir_de_modo_trazar_ducto(cerrar_menu: bool = true) -> void:
+	var estaba := modo_trazar_ducto
+	modo_trazar_ducto = false
+	_hay_tramo_ducto_en_curso = false
+	_puntos_fijos_ducto.clear()
+	if via_preview != null:
+		via_preview.limpiar()
+	if estaba:
+		hud.ocultar_contexto()
+		if cerrar_menu:
+			_menu_construir_abierto = false
+			_categoria_construir = ""
+			hud.set_modo("")
+
+
+func _camino_ortogonal(origen: Vector2i, destino: Vector2i) -> Array[Vector2i]:
+	var camino: Array[Vector2i] = [origen]
+	var actual := origen
+	var paso_x := 1 if destino.x > actual.x else -1
+	while actual.x != destino.x:
+		actual.x += paso_x
+		camino.append(actual)
+	var paso_y := 1 if destino.y > actual.y else -1
+	while actual.y != destino.y:
+		actual.y += paso_y
+		camino.append(actual)
+	return camino
+
+
+func _obtener_camino_ducto_actual(celda_cursor: Vector2i) -> Array[Vector2i]:
+	if not _hay_tramo_ducto_en_curso:
+		return [celda_cursor, celda_cursor]
+	var tramo_dinamico := _camino_ortogonal(_punto_inicio_ducto, celda_cursor)
+	var camino: Array[Vector2i] = _puntos_fijos_ducto.duplicate()
+	for i in range(1, tramo_dinamico.size()):
+		camino.append(tramo_dinamico[i])
+	return camino
+
+
+func _es_bloque_puerto(tipo: String) -> bool:
+	if mundo != null and mundo.has_method("es_puerto"):
+		return mundo.es_puerto(tipo)
+	return tipo.begins_with("puerto_")
+
+
+func _es_puerto_adyacente(celda_2d: Vector2i) -> bool:
+	if mundo == null:
+		return false
+	var y_suelo: int = mundo.altura_en(celda_2d.x, celda_2d.y) if mundo.has_method("altura_en") else 0
+	var celda_3d := Vector3i(celda_2d.x, y_suelo + 4, celda_2d.y)
+	for delta in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1), Vector3i(0, 0, 0)]:
+		var tipo: String = mundo.obtener_tipo(celda_3d + delta) if mundo.has_method("obtener_tipo") else ""
+		if _es_bloque_puerto(tipo):
+			return true
+	return false
+
+
+func _actualizar_preview_ducto() -> void:
+	var celda := _celda_bajo_mouse(get_viewport().get_mouse_position())
+	if not _hay_tramo_ducto_en_curso:
+		if via_preview != null:
+			via_preview.previsualizar_tramo([celda, celda], true)
+		var ficha: String = ""
+		if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
+			ficha = Canalizaciones.ficha_tecnica(_tipo_ducto_activo, 0, 0)
+		hud.set_extra_contexto(ficha)
+		return
+
+	var camino := _obtener_camino_ducto_actual(celda)
+	var geom: Dictionary = {}
+	if Canalizaciones != null and Canalizaciones.has_method("calcular_geometria_tramo"):
+		geom = Canalizaciones.calcular_geometria_tramo(_tipo_ducto_activo, camino, mundo)
+	var valido: bool = geom.get("valido", false)
+	if via_preview != null:
+		via_preview.previsualizar_tramo(camino, valido)
+	var celdas_d: int = geom.get("celdas_ducto", []).size()
+	var celdas_c: int = geom.get("celdas_columna", []).size()
+	var ficha: String = ""
+	if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
+		ficha = Canalizaciones.ficha_tecnica(_tipo_ducto_activo, celdas_d, celdas_c)
+	hud.set_extra_contexto(ficha)
+
+
+func _procesar_clic_ducto(posicion_pantalla: Vector2, es_doble_clic: bool = false) -> void:
+	var celda := _celda_bajo_mouse(posicion_pantalla)
+	if not _hay_tramo_ducto_en_curso:
+		_punto_inicio_ducto = celda
+		_puntos_fijos_ducto = [celda]
+		_hay_tramo_ducto_en_curso = true
+		_actualizar_preview_ducto()
+		return
+
+	if es_doble_clic or celda == _punto_inicio_ducto:
+		if _puntos_fijos_ducto.size() <= 1:
+			_cancelar_tramo_ducto()
+		else:
+			_confirmar_trazo_ducto()
+		return
+
+	var tramo: Array[Vector2i] = _camino_ortogonal(_punto_inicio_ducto, celda)
+	for i in range(1, tramo.size()):
+		_puntos_fijos_ducto.append(tramo[i])
+	_punto_inicio_ducto = celda
+
+	if _es_puerto_adyacente(celda):
+		_confirmar_trazo_ducto()
+	else:
+		_actualizar_preview_ducto()
+
+
+func _cancelar_tramo_ducto() -> void:
+	if not _hay_tramo_ducto_en_curso and _puntos_fijos_ducto.is_empty():
+		return
+	_hay_tramo_ducto_en_curso = false
+	_puntos_fijos_ducto.clear()
+	if via_preview != null:
+		via_preview.limpiar()
+	var ficha: String = ""
+	if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
+		ficha = Canalizaciones.ficha_tecnica(_tipo_ducto_activo, 0, 0)
+	hud.set_extra_contexto(ficha)
+	print("Trazado de canalización cancelado.")
+
+
+func _confirmar_trazo_ducto() -> void:
+	if _puntos_fijos_ducto.size() < 2:
+		hud.notificar("Trazado incompleto: requiere al menos 2 puntos.")
+		_cancelar_tramo_ducto()
+		return
+
+	var geom: Dictionary = {}
+	if Canalizaciones != null and Canalizaciones.has_method("calcular_geometria_tramo"):
+		geom = Canalizaciones.calcular_geometria_tramo(_tipo_ducto_activo, _puntos_fijos_ducto, mundo)
+	if not geom.get("valido", false):
+		var motivo: String = geom.get("motivo", "Trazado inválido.")
+		hud.notificar(motivo)
+		return
+
+	# Cobro de materiales
+	var costos_recurso := {}
+	for bloque in geom.get("costo", {}):
+		var cant: int = geom["costo"][bloque]
+		var costo_unit: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(bloque, {bloque: 1})
+		for rec in costo_unit:
+			costos_recurso[rec] = costos_recurso.get(rec, 0) + costo_unit[rec] * cant
+
+	if Ciudad != null and Ciudad.has_method("puede_pagar"):
+		if not Ciudad.puede_pagar(costos_recurso):
+			hud.notificar("Materiales insuficientes para construir el trazado.")
+			return
+		Ciudad.consumir_costos(costos_recurso)
+
+	var id_red: int = Canalizaciones.construir_tramo(_tipo_ducto_activo, geom, mundo)
+	if id_red <= 0:
+		hud.notificar("Error al construir canalización.")
+		return
+
+	# Conexión automática con puertos vecinos
+	for c_ducto: Vector3i in geom.get("celdas_ducto", []):
+		for delta in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+			var vecino: Vector3i = c_ducto + delta
+			var tipo_b: String = mundo.obtener_tipo(vecino) if mundo.has_method("obtener_tipo") else ""
+			if _es_bloque_puerto(tipo_b):
+				Canalizaciones.asignar_puerto_a_red(id_red, vecino, tipo_b)
+
+	_hay_tramo_ducto_en_curso = false
+	_puntos_fijos_ducto.clear()
+	if via_preview != null:
+		via_preview.limpiar()
+	hud.notificar("Canalización construida.")
 
 
 ## Activa/desactiva el modo demoler (menú principal, tecla `3`). Con él activo, el clic
@@ -2482,21 +2732,100 @@ func _actualizar_fantasma_puesto(esquina: Vector2i, ev: Dictionary, valida: bool
 ## lee de un blueprint ("resultado_base", "celdas_mundo") para reutilizarlo tal cual.
 ## "giros" es el giro EFECTIVO de la plantilla: en la pesca, el edificio debe caer
 ## en el extremo de tierra, así que puede diferir del giro pedido con Ctrl+rueda.
+func _profundidad_agua_en(x: int, z: int) -> int:
+	var y: int = mundo.altura_en(x, z)
+	var prof := 0
+	while y >= -100 and mundo.obtener_tipo(Vector3i(x, y, z)) == "agua":
+		prof += 1
+		y -= 1
+	var prof_alt: int = mundo.altura_en(x, z) - mundo.altura_en(x, z, true)
+	return maxi(prof, prof_alt)
+
+
 func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 	@warning_ignore("integer_division")
 	var centro := esquina + Vector2i(_ancho_puesto_activo / 2, _alto_puesto_activo / 2)
 	var columnas := _columnas_rectangulo(_ancho_puesto_activo, _alto_puesto_activo)
 	var extremo_agua_indice := -1
 	var en_tierra: bool
-	if _tipo_puesto_activo == "pesca_frutos_mar":
+	if _tipo_puesto_activo == "pesca_frutos_mar" or _tipo_puesto_activo == "estacion_bombeo":
 		extremo_agua_indice = _extremo_agua_de_huella_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo)
 		en_tierra = extremo_agua_indice != -1
 	else:
 		en_tierra = _huella_tiene_columna_en_tierra(esquina, columnas)
 	var giros := _giros_puesto
-	if extremo_agua_indice != -1 and PlantillasPuesto.indice_extremo_agua(giros) != extremo_agua_indice:
+	if extremo_agua_indice != -1 and PlantillasPuesto.indice_extremo_agua(giros, _tipo_puesto_activo) != extremo_agua_indice:
 		giros = (giros + 2) % 4
-	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "central_termoelectrica"
+
+	var profundidad_bombeo_valida := true
+	if _tipo_puesto_activo == "estacion_bombeo" and extremo_agua_indice != -1:
+		var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
+		var eje_z := _eje_largo_pesca_es_z(_ancho_puesto_activo, _alto_puesto_activo)
+		var celdas_muelle: Array[Vector2i] = []
+		if eje_z:
+			var base_dz: int = celdas_extremo[0].y
+			var df: int = 1 if extremo_agua_indice == 0 else -1
+			for dx in range(_ancho_puesto_activo):
+				celdas_muelle.append(Vector2i(dx, base_dz))
+				celdas_muelle.append(Vector2i(dx, base_dz + df))
+		else:
+			var base_dx: int = celdas_extremo[0].x
+			var df: int = 1 if extremo_agua_indice == 0 else -1
+			for dz in range(_alto_puesto_activo):
+				celdas_muelle.append(Vector2i(base_dx, dz))
+				celdas_muelle.append(Vector2i(base_dx + df, dz))
+		for rel_m in celdas_muelle:
+			var xm: int = esquina.x + rel_m.x
+			var zm: int = esquina.y + rel_m.y
+			if _profundidad_agua_en(xm, zm) < 2:
+				profundidad_bombeo_valida = false
+				break
+
+	var pozo_detectado := false
+	var datos_perforacion: Dictionary = {}
+	if _tipo_puesto_activo == "centro_extraccion":
+		var celda_perf: Vector2i = PlantillasPuesto.celda_perforacion(_tipo_puesto_activo, giros)
+		var col_perf := esquina + celda_perf
+		var y_sup: int = mundo.altura_en(col_perf.x, col_perf.y, true)
+		var tipo_pozo := ""
+		var y_tope := -99999
+		var y_fondo := 99999
+		for y in range(y_sup - 1, max(-50, y_sup - 40), -1):
+			var celda_y := Vector3i(col_perf.x, y, col_perf.y)
+			var tipo_b: String = mundo.obtener_tipo(celda_y)
+			if tipo_b == "crudo" or tipo_b == "agua":
+				if tipo_pozo == "":
+					tipo_pozo = tipo_b
+					y_tope = y
+				if tipo_b == tipo_pozo:
+					y_fondo = y
+			elif mundo.generador != null and tipo_pozo == "":
+				var prof_gen: int = y_sup - y
+				var t_gen: String = mundo.generador.tipo_pozo_en(col_perf.x, y, col_perf.y, prof_gen)
+				if t_gen == "crudo" or t_gen == "agua":
+					tipo_pozo = t_gen
+					y_tope = y
+					y_fondo = y
+			elif mundo.generador != null and tipo_pozo != "":
+				var prof_gen: int = y_sup - y
+				var t_gen: String = mundo.generador.tipo_pozo_en(col_perf.x, y, col_perf.y, prof_gen)
+				if t_gen == tipo_pozo:
+					y_fondo = y
+				else:
+					break
+		if tipo_pozo != "":
+			pozo_detectado = true
+			var H: int = y_sup - y_fondo
+			datos_perforacion = {
+				"perforacion": col_perf,
+				"y_superficie": y_sup,
+				"y_fondo": y_fondo,
+				"y_tope": y_tope,
+				"tipo_pozo": tipo_pozo,
+				"bloques_hierro": H,
+			}
+
+	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "central_termoelectrica" or _tipo_puesto_activo == "almacen"
 	var es_residencial: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad"
 	var es_urbano: bool = es_refineria or es_residencial  # se construyen dentro de la zona de influencia, los demás puestos fuera
 	var dentro_de_influencia: bool = Zonificacion.dentro_de_influencia(centro)
@@ -2529,6 +2858,9 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		"en_influencia": dentro_de_influencia and not es_urbano,  # los puestos periféricos no pueden ir dentro
 		"fuera_de_influencia": es_urbano and not dentro_de_influencia,  # las refinerías y la escuela solo pueden ir dentro
 		"zona_correcta": not es_urbano or _huella_en_zona_correcta(esquina, columnas, Zonificacion.ZONAS_PINTABLES[0 if es_residencial else 1]),  # la escuela/universidad, sobre residencial; las refinerías, sobre industrial
+		"profundidad_bombeo_valida": profundidad_bombeo_valida,
+		"pozo_detectado": pozo_detectado,
+		"datos_perforacion": datos_perforacion,
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas),
 		"resultado_huella": mundo.verificar_huella_libre(esquina, columnas, altura_plantilla),
 		"choca": _huella_choca_con_otro_puesto(esquina, columnas),
@@ -2553,17 +2885,21 @@ func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 		return "Colocación rechazada: requiere al menos 1 escuela técnica construida."
 	if _tipo_puesto_activo == "universidad" and Economia.contar_tipo("escuela_especialistas") < 1:
 		return "Colocación rechazada: requiere al menos 1 escuela de especialistas construida."
+	if _tipo_puesto_activo == "estacion_bombeo" and not ev.get("profundidad_bombeo_valida", true):
+		return "Colocación rechazada: la estación de bombeo requiere al menos 2 bloques de profundidad de agua bajo su muelle."
+	if _tipo_puesto_activo == "centro_extraccion" and not ev.get("pozo_detectado", false):
+		return "Colocación rechazada: no se detecta depósito subterráneo de agua o crudo."
 	if ev["en_influencia"]:
 		return "No se puede colocar un puesto dentro de la zona de influencia."
 	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
 	var es_universidad: bool = _tipo_puesto_activo == "universidad"
-	var nombre_rechazo: String = "una universidad" if es_universidad else ("una escuela" if es_escuela else ("una central termoeléctrica" if _tipo_puesto_activo == "central_termoelectrica" else "una refinería"))
+	var nombre_rechazo: String = "una universidad" if es_universidad else ("una escuela" if es_escuela else ("un almacén" if _tipo_puesto_activo == "almacen" else ("una central termoeléctrica" if _tipo_puesto_activo == "central_termoelectrica" else "una refinería")))
 	if ev["fuera_de_influencia"]:
 		return "Colocación rechazada: %s solo puede construirse dentro de la zona de influencia." % nombre_rechazo
 	if not ev["zona_correcta"]:
 		if es_escuela or es_universidad:
 			return "Colocación rechazada: %s solo puede construirse sobre una zona residencial." % nombre_rechazo
-		return "Colocación rechazada: una refinería o central solo puede construirse sobre una zona industrial."
+		return "Colocación rechazada: una refinería, central o almacén solo puede construirse sobre una zona industrial."
 	if not ev["relieve_valido"]:
 		return "Colocación rechazada: la pendiente de esta huella supera el límite permitido."
 	if not ev["resultado_huella"]["valida"]:
@@ -2614,7 +2950,7 @@ func _plan_relleno_puesto(esquina: Vector2i, ev: Dictionary) -> Dictionary:
 	var relleno_orden: Array[Vector3i] = []
 	var tipos_relleno: Dictionary = {}
 
-	if _tipo_puesto_activo == "pesca_frutos_mar":
+	if _tipo_puesto_activo == "pesca_frutos_mar" or _tipo_puesto_activo == "estacion_bombeo":
 		var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 		var esquinas_pilote: Array[Vector2i] = [
 			esquina + celdas_extremo[0],
@@ -2717,6 +3053,13 @@ func _resumen_materiales_puesto(esquina: Vector2i, ev: Dictionary) -> Dictionary
 			celdas_para_contar[celda] = tipo_relleno
 	var bloques: Dictionary = nivelador_puesto.contar_bloques(celdas_para_contar, 0)
 
+	if ev.has("datos_perforacion") and not ev["datos_perforacion"].is_empty():
+		var h_hierro: int = ev["datos_perforacion"].get("bloques_hierro", 0)
+		var costo_h: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get("estructura_hierro", {"hierro": 5})
+		for recurso in costo_h:
+			neto[recurso] = neto.get(recurso, 0) + costo_h[recurso] * h_hierro
+		bloques["estructura_hierro"] = bloques.get("estructura_hierro", 0) + h_hierro
+
 	return {"neto": neto, "bloques": bloques}
 
 
@@ -2752,7 +3095,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	for celda_follaje in ev["resultado_huella"]["follaje_a_eliminar"]:
 		mundo.eliminar_follaje(celda_follaje)
 	var total_drenado := 0
-	if _tipo_puesto_activo != "pesca_frutos_mar":
+	if _tipo_puesto_activo != "pesca_frutos_mar" and _tipo_puesto_activo != "estacion_bombeo":
 		for dx in range(_ancho_puesto_activo):
 			for dz in range(_alto_puesto_activo):
 				total_drenado += mundo.drenar_agua(esquina.x + dx, esquina.y + dz)
@@ -2798,7 +3141,9 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 			"deposito": deposito,
 			"chimenea": chimenea,
 			"y_base": y_base,
+			"datos_perforacion": ev.get("datos_perforacion", {}).duplicate(),
 		},
+		"datos_perforacion": ev.get("datos_perforacion", {}).duplicate(),
 	}
 	var id_edificio: int = mundo.iniciar_construccion_fantasma(relleno_orden, tipos_relleno, orden_estructura, celdas_plantilla, metadata)
 	metadata["id_edificio"] = id_edificio

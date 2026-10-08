@@ -66,6 +66,46 @@ func es_fluido_permitido(tipo_ducto: String, fluido: String) -> bool:
 	return TIPOS[tipo_ducto]["fluidos"].has(fluido)
 
 
+func es_puerto_compatible(tipo_ducto: String, tipo_puerto: String) -> bool:
+	if not TIPOS.has(tipo_ducto):
+		return false
+	var rec: String = ""
+	if tipo_puerto.begins_with("puerto_agua"):
+		rec = "agua"
+	elif tipo_puerto.begins_with("puerto_crudo"):
+		rec = "crudo"
+	elif tipo_puerto.begins_with("puerto_combustible"):
+		rec = "combustible"
+	if rec == "":
+		return false
+	return es_fluido_permitido(tipo_ducto, rec)
+
+
+func recurso_de_red(id_red: int) -> String:
+	return recurso_por_red.get(id_red, "")
+
+
+func asignar_puerto_a_red(id_red: int, celda_puerto: Vector3i, tipo_puerto: String) -> bool:
+	var tipo_ducto: String = tipo_por_red.get(id_red, "")
+	if not es_puerto_compatible(tipo_ducto, tipo_puerto):
+		return false
+	var rec_puerto: String = ""
+	if tipo_puerto.begins_with("puerto_agua"):
+		rec_puerto = "agua"
+	elif tipo_puerto.begins_with("puerto_crudo"):
+		rec_puerto = "crudo"
+	elif tipo_puerto.begins_with("puerto_combustible"):
+		rec_puerto = "combustible"
+
+	var rec_actual: String = recurso_por_red.get(id_red, "")
+	if rec_actual == "":
+		recurso_por_red[id_red] = rec_puerto
+	elif rec_actual != rec_puerto:
+		return false
+	puertos_conectados[celda_puerto] = id_red
+	return true
+
+
 func es_celda_canalizacion(celda: Vector3i) -> bool:
 	return celda_a_red.has(celda)
 

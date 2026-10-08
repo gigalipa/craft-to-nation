@@ -147,4 +147,41 @@ func ejecutar_pruebas() -> void:
 	assert(canalizaciones.obtener_red_de_celda(Vector3i(0, 14, 0)) == id_red, "celda registrada en red")
 	print("OK: Tramo construido y registrado.")
 
+	print("\n=== CANALIZACIONES TEST 7: Compatibilidad de ductos con puertos ===")
+	assert(canalizaciones.es_puerto_compatible("acueducto", "puerto_agua_in"), "acueducto compatible con puerto_agua_in")
+	assert(canalizaciones.es_puerto_compatible("acueducto", "puerto_combustible_out"), "acueducto compatible con puerto_combustible_out")
+	assert(not canalizaciones.es_puerto_compatible("acueducto", "puerto_crudo_in"), "acueducto RECHAZA puerto_crudo_in")
+	assert(not canalizaciones.es_puerto_compatible("acueducto", "puerto_crudo_out"), "acueducto RECHAZA puerto_crudo_out")
+	assert(canalizaciones.es_puerto_compatible("tuberia", "puerto_crudo_in"), "tuberia compatible con puerto_crudo_in")
+	print("OK: Compatibilidad de ducto y puerto validada.")
+
+	print("\n=== CANALIZACIONES TEST 8: Despeje exterior de puerto acepta ducto compatible ===")
+	var mundo_real: Node = VoxelWorld.new()
+	mundo_real.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_real.cell_size = Vector3.ONE * 1.0
+	mundo_real._indexar_biblioteca()
+
+	# Colocar tuberia en celda (1, 4, 0)
+	mundo_real.colocar_bloque(Vector3i(1, 4, 0), "tuberia")
+	assert(not mundo_real.despeje_bloqueado(Vector3i(1, 4, 0), {}, "puerto_crudo_out"), "tuberia en despeje de puerto_crudo_out NO bloquea")
+	assert(not mundo_real.despeje_bloqueado(Vector3i(1, 4, 0), {}, "puerto_agua_in"), "tuberia en despeje de puerto_agua_in NO bloquea")
+
+	# Colocar acueducto en (2, 4, 0)
+	mundo_real.colocar_bloque(Vector3i(2, 4, 0), "acueducto")
+	assert(not mundo_real.despeje_bloqueado(Vector3i(2, 4, 0), {}, "puerto_agua_out"), "acueducto en despeje de puerto_agua_out NO bloquea")
+	assert(mundo_real.despeje_bloqueado(Vector3i(2, 4, 0), {}, "puerto_crudo_out"), "acueducto en despeje de puerto_crudo_out SI bloquea (incompatible)")
+
+	# Colocar un bloque no ducto en (3, 4, 0)
+	mundo_real.colocar_bloque(Vector3i(3, 4, 0), "bloque_piedra")
+	assert(mundo_real.despeje_bloqueado(Vector3i(3, 4, 0), {}, "puerto_agua_out"), "bloque de piedra no ducto SI bloquea")
+	print("OK: Despeje exterior de puerto acepta ductos compatibles y rechaza incompatibles.")
+
+	print("\n=== CANALIZACIONES TEST 9: Conectar puertos a red y rechazar incompatibles ===")
+	var red_agua: int = canalizaciones.construir_tramo("tuberia", geom, mundo)
+	assert(canalizaciones.asignar_puerto_a_red(red_agua, Vector3i(0, 14, 0), "puerto_agua_out"), "asigna puerto agua out a red")
+	assert(canalizaciones.recurso_de_red(red_agua) == "agua", "recurso de la red es agua")
+	# Intentar conectar un puerto de crudo a la misma red de agua debe ser RECHAZADO
+	assert(not canalizaciones.asignar_puerto_a_red(red_agua, Vector3i(10, 14, 0), "puerto_crudo_in"), "rechaza conectar puerto crudo a red de agua")
+	print("OK: Regla de un solo recurso por red respetada.")
+
 	print("\n=== Todas las pruebas de Canalizaciones pasaron correctamente ===")

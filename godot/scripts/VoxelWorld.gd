@@ -478,12 +478,18 @@ func es_terreno_natural(celda: Vector3i) -> bool:
 ## fachada de un blueprint) — ese terreno se cava al construir, así que no
 ## bloquea. Árboles, estructuras y otros edificios siempre bloquean. Usada por
 ## verificar_despejes() y por el overlay de celdas reservadas.
-func despeje_bloqueado(celda: Vector3i, terreno_a_nivelar: Dictionary = {}) -> bool:
+func despeje_bloqueado(celda: Vector3i, terreno_a_nivelar: Dictionary = {}, tipo_origen: String = "") -> bool:
 	var tipo: String = obtener_tipo(celda)
 	if tipo == "":
 		return false
 	if tipo == "fantasma" and not celda_a_edificio.has(celda):
 		return false
+	if es_puerto(tipo_origen):
+		var rec: String = recurso_de_puerto(tipo_origen)
+		if tipo == "tuberia":
+			return false
+		elif tipo == "acueducto" and (rec == "agua" or rec == "combustible"):
+			return false
 	var columna := Vector2i(celda.x, celda.z)
 	if terreno_a_nivelar.has(columna) and celda.y > terreno_a_nivelar[columna] and es_terreno_natural(celda):
 		return false
@@ -521,11 +527,11 @@ func motivo_despeje_invalido(celdas_mundo: Dictionary, terreno_a_nivelar: Dictio
 			return "Un bloque de muro, puerta o vidrio nuevo cae dentro del espacio reservado de un edificio vecino."
 	var despeje: Dictionary = calcular_despeje(celdas_mundo)
 	for celda_despeje: Vector3i in despeje:
-		if despeje_bloqueado(celda_despeje, terreno_a_nivelar):
-			var tipo: String = despeje[celda_despeje]
-			if tipo == "vidrio":
+		var tipo_origen: String = despeje[celda_despeje]
+		if despeje_bloqueado(celda_despeje, terreno_a_nivelar, tipo_origen):
+			if tipo_origen == "vidrio":
 				return "Un vidrio no tiene el espacio libre exigido hacia afuera."
-			elif es_puerto(tipo):
+			elif es_puerto(tipo_origen):
 				return "Un puerto de tubería no tiene el espacio libre exigido hacia afuera."
 			return "Una puerta no tiene el espacio libre exigido hacia afuera."
 	return despeje_camas_invalido(celdas_mundo, terreno_a_nivelar)

@@ -24,7 +24,7 @@ var cantidad_celdas: int = 0
 ## deduplicar) — dibuja el rectángulo delimitador de cada paso consecutivo
 ## (más simple que el bloque 2x2 exacto de cada vértice, suficiente para
 ## la vista previa; la construcción real usa NiveladorVia.bloque_de_vertice()).
-func previsualizar_tramo(vertices: Array[Vector2i], valido: bool) -> void:
+func previsualizar_tramo(vertices: Array, valido: bool) -> void:
 	limpiar()
 	if vertices.size() < 2:
 		return

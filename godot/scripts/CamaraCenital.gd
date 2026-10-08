@@ -2169,9 +2169,11 @@ func _camino_ortogonal(origen: Vector2i, destino: Vector2i) -> Array[Vector2i]:
 
 func _obtener_camino_ducto_actual(celda_cursor: Vector2i) -> Array[Vector2i]:
 	if not _hay_tramo_ducto_en_curso:
-		return [celda_cursor, celda_cursor]
+		var inicio: Array[Vector2i] = [celda_cursor, celda_cursor]
+		return inicio
 	var tramo_dinamico := _camino_ortogonal(_punto_inicio_ducto, celda_cursor)
-	var camino: Array[Vector2i] = _puntos_fijos_ducto.duplicate()
+	var camino: Array[Vector2i] = []
+	camino.append_array(_puntos_fijos_ducto)
 	for i in range(1, tramo_dinamico.size()):
 		camino.append(tramo_dinamico[i])
 	return camino
@@ -2199,14 +2201,15 @@ func _actualizar_preview_ducto() -> void:
 	var celda := _celda_bajo_mouse(get_viewport().get_mouse_position())
 	if not _hay_tramo_ducto_en_curso:
 		if via_preview != null:
-			via_preview.previsualizar_tramo([celda, celda], true)
+			var pts: Array[Vector2i] = [celda, celda]
+			via_preview.previsualizar_tramo(pts, true)
 		var ficha: String = ""
 		if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
 			ficha = Canalizaciones.ficha_tecnica(_tipo_ducto_activo, 0, 0)
 		hud.set_extra_contexto(ficha)
 		return
 
-	var camino := _obtener_camino_ducto_actual(celda)
+	var camino: Array[Vector2i] = _obtener_camino_ducto_actual(celda)
 	var geom: Dictionary = {}
 	if Canalizaciones != null and Canalizaciones.has_method("calcular_geometria_tramo"):
 		geom = Canalizaciones.calcular_geometria_tramo(_tipo_ducto_activo, camino, mundo)
@@ -2225,7 +2228,8 @@ func _procesar_clic_ducto(posicion_pantalla: Vector2, es_doble_clic: bool = fals
 	var celda := _celda_bajo_mouse(posicion_pantalla)
 	if not _hay_tramo_ducto_en_curso:
 		_punto_inicio_ducto = celda
-		_puntos_fijos_ducto = [celda]
+		_puntos_fijos_ducto.clear()
+		_puntos_fijos_ducto.append(celda)
 		_hay_tramo_ducto_en_curso = true
 		_actualizar_preview_ducto()
 		return

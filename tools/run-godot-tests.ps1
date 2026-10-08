@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-	[string]$GodotPath = ""
+	[string]$GodotPath = "",
+	[string]$ProjectPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,7 +32,7 @@ function Resolve-GodotExecutable {
 }
 
 $godot = Resolve-GodotExecutable $GodotPath
-$projectPath = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\godot")).Path
+$projectPath = if ($ProjectPath) { (Resolve-Path -LiteralPath $ProjectPath).Path } else { (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\godot")).Path }
 $scenesPath = Join-Path $projectPath "scenes"
 $scenes = @(Get-ChildItem -LiteralPath $scenesPath -Filter "*Test.tscn" -File | Sort-Object Name)
 $expectedScenes = @(
@@ -39,6 +40,7 @@ $expectedScenes = @(
 	"BuscadorRutasTest.tscn",
 	"CadenaMineralesTest.tscn",
 	"CamaraCenitalModosTest.tscn",
+	"CanalizacionesTest.tscn",
 	"CiudadTest.tscn",
 	"ColonosTest.tscn",
 	"ConstruccionTest.tscn",

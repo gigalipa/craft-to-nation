@@ -30,6 +30,7 @@ CadenaMinerales="*res://scripts/CadenaMinerales.gd"
 Obras="*res://scripts/Obras.gd"
 Colonos="*res://scripts/Colonos.gd"
 Vias="*res://scripts/Vias.gd"
+Canalizaciones="*res://scripts/Canalizaciones.gd"
 
 [physics]
 

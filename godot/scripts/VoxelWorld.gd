@@ -705,6 +705,28 @@ func _indexar_biblioteca() -> void:
 			_id_por_tipo[tipo_puerto] = id_p
 			_tipo_por_id[id_p] = tipo_puerto
 
+	# Bloques de canalización ("acueducto", "tuberia")
+	var canalizaciones_meta := {
+		"acueducto": Color(0.7, 0.65, 0.55),
+		"tuberia": Color(0.35, 0.38, 0.42)
+	}
+	for tipo_c in canalizaciones_meta:
+		if not _id_por_tipo.has(tipo_c):
+			var id_c: int = mesh_library.get_last_unused_item_id()
+			mesh_library.create_item(id_c)
+			mesh_library.set_item_name(id_c, tipo_c)
+			var malla := BoxMesh.new()
+			malla.size = Vector3.ONE
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = canalizaciones_meta[tipo_c]
+			malla.material = mat
+			mesh_library.set_item_mesh(id_c, malla)
+			var forma := BoxShape3D.new()
+			forma.size = Vector3.ONE
+			mesh_library.set_item_shapes(id_c, [forma, Transform3D.IDENTITY])
+			_id_por_tipo[tipo_c] = id_c
+			_tipo_por_id[id_c] = tipo_c
+
 
 ## Genera el mundo una única vez al arrancar la escena: para cada columna
 ## (x, z) coloca la celda de superficie ("hierba", reutilizando el bloque

@@ -184,4 +184,25 @@ func ejecutar_pruebas() -> void:
 	assert(not canalizaciones.asignar_puerto_a_red(red_agua, Vector3i(10, 14, 0), "puerto_crudo_in"), "rechaza conectar puerto crudo a red de agua")
 	print("OK: Regla de un solo recurso por red respetada.")
 
+	print("\n=== CANALIZACIONES TEST 10: Flujo instantáneo a destinos y derrames físicos ===")
+	# Asignar puerto de entrada a red_agua en el otro extremo (10, 14, 0)
+	assert(canalizaciones.asignar_puerto_a_red(red_agua, Vector3i(10, 14, 0), "puerto_agua_in"), "asigna puerto agua in a red")
+	var destinos: Array = canalizaciones.destinos_de_puerto_salida(Vector3i(0, 14, 0))
+	assert(destinos.has(Vector3i(10, 14, 0)), "destino conectado encontrado")
+	assert(canalizaciones.estado_de_puerto(Vector3i(0, 14, 0)) == "conectado", "puerto en estado conectado")
+
+	# Crear una red trunca sin puerto de entrada para probar derrame
+	var puntos_derrame: Array[Vector2i] = [Vector2i(20, 20), Vector2i(21, 20), Vector2i(22, 20)]
+	var geom_derrame = canalizaciones.calcular_geometria_tramo("tuberia", puntos_derrame, mundo)
+	var red_derrame: int = canalizaciones.construir_tramo("tuberia", geom_derrame, mundo)
+	canalizaciones.asignar_puerto_a_red(red_derrame, Vector3i(20, 14, 20), "puerto_crudo_out")
+	assert(canalizaciones.destinos_de_puerto_salida(Vector3i(20, 14, 20)).is_empty(), "sin destino conectado")
+
+	# Verter derrame
+	var celda_derrame: Vector3i = canalizaciones.verter_derrame(red_derrame, "crudo", mundo)
+	assert(celda_derrame != Vector3i.ZERO, "celda de derrame generada")
+	assert(mundo.obtener_tipo(celda_derrame) == "crudo", "bloque crudo colocado fisicamente en el mundo")
+	assert(canalizaciones.estado_de_puerto(Vector3i(20, 14, 20)) == "derrame", "puerto marcado en estado derrame")
+	print("OK: Derrames colocan bloques físicos y actualizan estado a 'derrame'.")
+
 	print("\n=== Todas las pruebas de Canalizaciones pasaron correctamente ===")

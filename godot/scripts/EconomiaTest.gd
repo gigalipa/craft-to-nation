@@ -874,7 +874,7 @@ func ejecutar_pruebas() -> void:
 	assert(c35.nivel_investigado == 2)
 	assert(e35.puestos[esq_uni]["recolectores"].size() == 2, "al completar investigación preserva a los investigadores")
 
-	print("\n=== TEST 36: acarreo multientrada de productor_combustible (carbon y agua) ===")
+	print("\n=== TEST 36: acarreo de productor_combustible solo carga carbon (agua excluida de acarreo) ===")
 	var c36: Node = CiudadScript.new()
 	c36.almacen["carbon"].cantidad = 500.0
 	c36.almacen["agua"].cantidad = 500.0
@@ -887,9 +887,9 @@ func ejecutar_pruebas() -> void:
 	var entradas36: Dictionary = e36.entradas_de(esq_prod)
 	assert(entradas36 == {"carbon": 3, "agua": 1})
 	var carga36: Dictionary = e36.insumos_a_cargar(esq_prod)
-	# Proporción de la receta: carbon 3/4 = 75%, agua 1/4 = 25% de CAPACIDAD_CARGA (150)
-	assert(is_equal_approx(carga36["carbon"], 150.0 * 0.75))
-	assert(is_equal_approx(carga36["agua"], 150.0 * 0.25))
+	# Agua es líquido (se excluye de acarreo); todo el cupo de acarreo de insumo va a carbon
+	assert(is_equal_approx(carga36["carbon"], 150.0))
+	assert(not carga36.has("agua"), "el agua no se transporta por acarreo")
 
 	print("\n=== TEST 37: Balance energético, factor de déficit y consumo proporcional en centrales ===")
 	var c37: Node = CiudadScript.new()
@@ -977,32 +977,42 @@ func ejecutar_pruebas() -> void:
 	assert(not e37.puestos[esq_central]["almacen"].has("crudo"))
 	assert(is_equal_approx(e37.puestos[esq_central]["almacen"]["carbon"], 1.7))
 
-	print("\n=== TEST 38: Puestos industriales de combustible y energía (cupo, capacidad, insumos_a_cargar, refinando) ===")
+	print("\n=== TEST 38: Puestos industriales de combustible y energía (cupo, capacidad, no acarreo de líquidos, selector) ===")
 	var c38: Node = CiudadScript.new()
 	c38.almacen["crudo"].cantidad = 50.0
 	c38.almacen["combustible"].cantidad = 40.0
+	c38.almacen["carbon"].cantidad = 60.0
 	var e38: Node = EconomiaScript.new()
 	e38.ciudad = c38
 
-	# Refinería petrolera
+	# Refinería petrolera: solo técnicos, no admite acarreadores, no carga líquidos
 	var esq_pet := Vector2i(10, 10)
 	e38.registrar_puesto(esq_pet, "refineria_petrolera", 5, 5, {})
 	assert(e38.puestos[esq_pet]["cupo"] == 4)
 	assert(e38.puestos[esq_pet]["capacidad"] == 1000)
-	assert(e38.roles_de(esq_pet) == ["tecnico", "acarreador"])
-	assert(e38.falta_insumo(esq_pet) == true)
+	assert(e38.roles_de(esq_pet) == ["tecnico"], "refineria petrolera solo admite tecnicos")
 	var carga_pet: Dictionary = e38.insumos_a_cargar(esq_pet)
-	assert(carga_pet.has("crudo") and is_equal_approx(carga_pet["crudo"], 50.0))
+	assert(carga_pet.is_empty(), "acarreadores no cargan crudo ni liquidos")
 
-	# Central termoeléctrica
+	# Central termoeléctrica: selector de combustible (carbon por defecto, o combustible, o crudo)
 	var esq_cen := Vector2i(20, 20)
 	e38.registrar_puesto(esq_cen, "central_termoelectrica", 5, 5, {})
 	assert(e38.puestos[esq_cen]["cupo"] == 4)
 	assert(e38.puestos[esq_cen]["capacidad"] == 300)
+	# Modo carbon: admite acarreador y carga carbón
 	assert(e38.roles_de(esq_cen) == ["tecnico", "acarreador"])
-	assert(e38.falta_insumo(esq_cen) == true)
-	var carga_cen: Dictionary = e38.insumos_a_cargar(esq_cen)
-	assert(carga_cen.has("combustible") and is_equal_approx(carga_cen["combustible"], 40.0))
+	var carga_cen_carbon: Dictionary = e38.insumos_a_cargar(esq_cen)
+	assert(carga_cen_carbon.has("carbon") and is_equal_approx(carga_cen_carbon["carbon"], 60.0))
+	assert(not carga_cen_carbon.has("combustible") and not carga_cen_carbon.has("crudo"))
+
+	# Cambiar central a combustible líquido: desalojar acarreadores y no cargar líquidos
+	assert(e38.asignar(esq_cen, "acarreador", 101))
+	assert(e38.puestos[esq_cen]["acarreadores"].has(101))
+	e38.cambiar_combustible_central(esq_cen, "combustible")
+	assert(e38.roles_de(esq_cen) == ["tecnico"], "modo combustible no admite acarreadores")
+	assert(not e38.puestos[esq_cen]["acarreadores"].has(101), "acarreador liberado al cambiar a liquido")
+	assert(e38.insumos_a_cargar(esq_cen).is_empty(), "en modo liquido no hay carga por acarreo")
+
 	print("\n=== TEST 39: puesto en nivel 2 permite retroceder a nivel 1 al contratar obrero si no está agotado en nivel 1 ===")
 	var c39: Node = CiudadScript.new()
 	var e39: Node = EconomiaScript.new()
@@ -1020,4 +1030,56 @@ func ejecutar_pruebas() -> void:
 	assert(e39.asignar(esq_mina, "recolector", 2))
 	assert(e39.nivel_de(esq_mina) == 1, "con un obrero y un técnico el nivel retrocede a 1 (manda el menor)")
 
-	print("\n=== Las 39 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 40: roles de estacion_bombeo, centro_extraccion, productor_combustible y supresión de acarreo de líquidos ===")
+	var c40: Node = CiudadScript.new()
+	c40.almacen["agua"].cantidad = 100.0
+	c40.almacen["carbon"].cantidad = 50.0
+	var e40: Node = EconomiaScript.new()
+	e40.ciudad = c40
+
+	var esq_bom40 := Vector2i(40, 40)
+	e40.registrar_puesto(esq_bom40, "estacion_bombeo", 4, 6, {"agua": 4.0})
+	assert(e40.puestos[esq_bom40]["cupo"] == 3)
+	assert(e40.roles_de(esq_bom40) == ["tecnico"])
+	assert(e40.recoger(esq_bom40, 50.0).is_empty(), "recoger no entrega liquidos a acarreadores")
+
+	var esq_ext40 := Vector2i(50, 50)
+	e40.registrar_puesto(esq_ext40, "centro_extraccion", 5, 5, {"crudo": 5.0})
+	assert(e40.puestos[esq_ext40]["cupo"] == 3)
+	assert(e40.roles_de(esq_ext40) == ["tecnico"])
+	assert(e40.recoger(esq_ext40, 50.0).is_empty())
+
+	var esq_prod40 := Vector2i(60, 60)
+	e40.registrar_puesto(esq_prod40, "productor_combustible", 5, 5, {})
+	assert(e40.roles_de(esq_prod40) == ["tecnico", "acarreador"])
+	var carga_prod40: Dictionary = e40.insumos_a_cargar(esq_prod40)
+	assert(carga_prod40.has("carbon"), "productor combustible carga carbon por acarreo")
+	assert(not carga_prod40.has("agua"), "productor combustible no carga agua por acarreo")
+
+	print("\n=== TEST 41: Red de distribución compartida entre almacenes para fluidos ===")
+	var c41: Node = CiudadScript.new()
+	var e41: Node = EconomiaScript.new()
+	e41.ciudad = c41
+
+	# Registrar dos almacenes distantes
+	var esq_alm_a := Vector2i(10, 10)
+	var esq_alm_b := Vector2i(80, 80)
+	e41.registrar_puesto(esq_alm_a, "almacen", 5, 5, {})
+	e41.registrar_puesto(esq_alm_b, "almacen", 5, 5, {})
+
+	assert(e41.reserva_fluidos.has("agua"), "reserva_fluidos contiene agua")
+	assert(e41.reserva_fluidos.has("crudo"), "reserva_fluidos contiene crudo")
+	assert(e41.reserva_fluidos.has("combustible"), "reserva_fluidos contiene combustible")
+
+	# Ingresar agua en Almacén A
+	var ingresado: float = e41.ingresar_fluido_almacen("agua", 120.0)
+	assert(ingresado == 120.0, "se ingresan 120 unidades de agua")
+	assert(e41.reserva_fluidos["agua"] == 120.0, "reserva global de agua tiene 120")
+
+	# Retirar agua a través de Almacén B
+	var extraido: float = e41.extraer_fluido_almacen("agua", 50.0)
+	assert(extraido == 50.0, "se extraen 50 unidades de agua desde el pool compartido")
+	assert(e41.reserva_fluidos["agua"] == 70.0, "quedan 70 unidades en la reserva")
+	print("OK: Red compartida de almacenes permite extraer fluidos desde cualquier almacén.")
+
+	print("\n=== Las 41 pruebas de Economia pasaron correctamente ===")

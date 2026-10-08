@@ -46,6 +46,7 @@ const CARGA_MINIMA := 10.0
 ## "recolector" (un obrero) y "especialista" solo existen en los puestos de recolección; "aprendiz" solo en las
 ## escuelas. "acarreador" vale en los puestos de recolección y en las refinerías (ver roles_de()).
 const ROLES := ["recolector", "tecnico", "especialista", "aprendiz", "investigador", "acarreador"]
+const RECURSOS_LIQUIDOS: Array[String] = ["agua", "crudo", "combustible"]
 
 ## Rango de oficio de quien recolecta: es el nivel mínimo de puesto que ocupa (ver nivel_de()). Obrero 1,
 ## técnico 2, especialista 3.
@@ -56,7 +57,7 @@ const HORAS_FORMACION := 24
 
 ## Tipos de puesto que consumen el mundo al producir; caza/recolección y pesca
 ## no consumen bloques (sus tasas dependen del entorno, ver recalcular_tasas()).
-const TIPOS_QUE_CONSUMEN := ["mina", "maderero"]
+const TIPOS_QUE_CONSUMEN := ["mina", "maderero", "centro_extraccion"]
 
 ## Cada cuántas horas de juego se recalculan las tasas de todos los puestos
 ## según lo que queda en su entorno (árboles, bloques de mina, agua).
@@ -95,6 +96,46 @@ func resumen_energia() -> Dictionary:
 
 func factor_energia_de(esquina: Vector2i) -> float:
 	return _factores_energia.get(esquina, 0.0)
+
+
+## Depósito compartido de fluidos entre todos los almacenes industriales del mapa.
+var reserva_fluidos: Dictionary = {
+	"agua": 0.0,
+	"crudo": 0.0,
+	"combustible": 0.0,
+}
+
+func capacidad_total_fluidos() -> float:
+	var total := 0.0
+	for esquina in puestos:
+		var p: Dictionary = puestos[esquina]
+		if p.get("tipo", "") == "almacen" and p.get("activo", false):
+			total += p.get("capacidad", 1000.0)
+	return total
+
+func ingresar_fluido_almacen(recurso: String, cantidad: float) -> float:
+	if not reserva_fluidos.has(recurso):
+		return 0.0
+	var cap_total := capacidad_total_fluidos()
+	var espacio: float = INF
+	if cap_total > 0.0:
+		var total_actual := _total(reserva_fluidos)
+		espacio = maxf(0.0, cap_total - total_actual)
+	var admitido: float = minf(cantidad, espacio)
+	if admitido > 1e-9:
+		reserva_fluidos[recurso] = reserva_fluidos.get(recurso, 0.0) + admitido
+		return admitido
+	return 0.0
+
+func extraer_fluido_almacen(recurso: String, cantidad: float) -> float:
+	if not reserva_fluidos.has(recurso):
+		return 0.0
+	var disponible: float = reserva_fluidos.get(recurso, 0.0)
+	var sacado: float = minf(disponible, cantidad)
+	if sacado > 1e-9:
+		reserva_fluidos[recurso] = maxf(0.0, disponible - sacado)
+		return sacado
+	return 0.0
 
 
 ## true mientras _actualizar_agotamiento() libera personal y reevalúa el área: evita que cada liberación
@@ -147,6 +188,14 @@ func contar_tipo(tipo: String) -> int:
 ## cohorte (solo escuelas, ver _formar()).
 func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, tasas: Dictionary, entorno: Dictionary = {}, servicio: Vector2i = SIN_SERVICIO, deposito: Vector3i = SIN_DEPOSITO, suelo: int = SIN_SUELO, salida: Vector2i = SIN_SERVICIO, chimenea: Vector3i = SIN_DEPOSITO) -> void:
 	_contador_orden += 1
+	var crudo_rest := 0
+	if tipo == "centro_extraccion":
+		var dp: Dictionary = entorno.get("datos_perforacion", {})
+		if dp.get("tipo_pozo", "") == "crudo":
+			if mundo != null and dp.has("perforacion"):
+				crudo_rest = Recoleccion.contar_crudo_pozo(mundo, dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
+			else:
+				crudo_rest = dp.get("bloques_hierro", 0)
 	puestos[esquina] = {
 		"tipo": tipo, "ancho": ancho, "alto": alto,
 		"orden_construccion": _contador_orden,
@@ -163,6 +212,8 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"progreso": 0.0,  # horas que lleva estudiando la cohorte (solo escuelas)
 		"nivel": 1,  # 1-3, solo en los puestos con niveles: rango mínimo de sus recolectores (ver nivel_de())
 		"rangos": {},  # id de recolector -> rango de su oficio (RANGO_DE_ROL)
+		"combustible_activo": "carbon" if tipo == "central_termoelectrica" else "",
+		"crudo_restante": crudo_rest,
 	}
 
 
@@ -173,6 +224,9 @@ func quitar_puesto(esquina: Vector2i) -> void:
 		return
 	retirar_deposito(esquina)  # último intento (el stock pudo liberar espacio desde que empezó la deconstrucción)
 	var p: Dictionary = puestos[esquina]
+	var dp: Dictionary = p.get("entorno", {}).get("datos_perforacion", {})
+	if not dp.is_empty() and mundo != null and dp.has("perforacion"):
+		mundo.retirar_tuberia_extraccion(dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
 	var ids: Array = p["recolectores"] + p["acarreadores"]
 	for id in ids:
 		_puesto_de.erase(id)
@@ -224,11 +278,22 @@ func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 ## Roles que admite el puesto: aprendices en una escuela; técnicos y acarreadores en una refinería;
 ## obreros (recolector), técnicos, especialistas y acarreadores en los demás.
 func roles_de(esquina: Vector2i) -> Array:
+	if not puestos.has(esquina):
+		return []
+	var tipo: String = puestos[esquina]["tipo"]
+	if tipo == "almacen":
+		return []
 	if es_escuela(esquina):
 		return ["aprendiz"]
 	if es_universidad(esquina):
 		return ["investigador"]
-	if es_refineria(esquina) or (puestos.has(esquina) and puestos[esquina]["tipo"] == "central_termoelectrica"):
+	if tipo == "estacion_bombeo" or tipo == "centro_extraccion" or tipo == "refineria_petrolera":
+		return ["tecnico"]
+	if tipo == "central_termoelectrica":
+		if puestos[esquina].get("combustible_activo", "carbon") == "carbon":
+			return ["tecnico", "acarreador"]
+		return ["tecnico"]
+	if es_refineria(esquina):
 		return ["tecnico", "acarreador"]
 	return ["recolector", "tecnico", "especialista", "acarreador"]
 
@@ -461,6 +526,13 @@ func recalcular_tasas(esquina: Vector2i) -> void:
 		return
 	p["entorno"] = Recoleccion.entorno_de_nivel(p["tipo"], mundo, p["entorno"], p["nivel"])
 	p["tasas"] = Recoleccion.tasas_de_entorno(p["tipo"], mundo, p["entorno"], p["nivel"])
+	if p["tipo"] == "centro_extraccion":
+		var dp: Dictionary = p["entorno"].get("datos_perforacion", {})
+		if dp.get("tipo_pozo", "") == "crudo" and dp.has("perforacion"):
+			p["crudo_restante"] = Recoleccion.contar_crudo_pozo(mundo, dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
+			if p["crudo_restante"] <= 0:
+				p["agotado"] = true
+				p["tasas"]["crudo"] = 0.0
 	_actualizar_agotamiento(esquina)
 
 
@@ -473,6 +545,8 @@ func _extraer(esquina: Vector2i, recurso: String, unidades: float) -> float:
 	var p: Dictionary = puestos[esquina]
 	if mundo == null or p["entorno"].is_empty() or not TIPOS_QUE_CONSUMEN.has(p["tipo"]):
 		return unidades
+	if p["tipo"] == "centro_extraccion" and recurso != "crudo":
+		return unidades
 	var extraido := 0.0
 	while unidades - extraido > 1e-9:
 		var actual: Dictionary = p["en_curso"].get(recurso, {})
@@ -482,6 +556,11 @@ func _extraer(esquina: Vector2i, recurso: String, unidades: float) -> float:
 			actual = _siguiente_bloque(p, recurso)
 			if actual.is_empty():
 				p["en_curso"].erase(recurso)
+				if p["tipo"] == "centro_extraccion" and recurso == "crudo":
+					p["crudo_restante"] = 0
+					p["agotado"] = true
+					p["tasas"]["crudo"] = 0.0
+					_actualizar_agotamiento(esquina)
 				break
 			p["en_curso"][recurso] = actual
 		var tomado: float = minf(unidades - extraido, actual["restante"])
@@ -490,6 +569,14 @@ func _extraer(esquina: Vector2i, recurso: String, unidades: float) -> float:
 		if actual["restante"] <= 1e-9:
 			_terminar_bloque(actual)
 			p["en_curso"].erase(recurso)
+			if p["tipo"] == "centro_extraccion" and recurso == "crudo":
+				var dp: Dictionary = p["entorno"].get("datos_perforacion", {})
+				if not dp.is_empty() and dp.has("perforacion"):
+					p["crudo_restante"] = Recoleccion.contar_crudo_pozo(mundo, dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
+					if p["crudo_restante"] <= 0:
+						p["agotado"] = true
+						p["tasas"]["crudo"] = 0.0
+						_actualizar_agotamiento(esquina)
 	return extraido
 
 
@@ -501,6 +588,14 @@ func _siguiente_bloque(p: Dictionary, recurso: String) -> Dictionary:
 		if celda == Recoleccion.SIN_BLOQUE:
 			return {}
 		return {"tipo": "bloque", "celda": celda, "recurso": recurso, "restante": Recoleccion.rendimiento_de(recurso)}
+	if p["tipo"] == "centro_extraccion":
+		var dp: Dictionary = entorno.get("datos_perforacion", {})
+		if recurso == "crudo" and not dp.is_empty() and dp.has("perforacion"):
+			var celda: Vector3i = Recoleccion.siguiente_bloque_crudo_pozo(mundo, dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
+			if celda == Recoleccion.SIN_BLOQUE:
+				return {}
+			return {"tipo": "bloque", "celda": celda, "recurso": "crudo", "restante": Recoleccion.rendimiento_de("crudo")}
+		return {}
 	var id: int = mundo.arboles.mas_cercano_en_radio(entorno["centro"], entorno["radio_arboles"])
 	if id == -1:
 		return {}
@@ -535,15 +630,20 @@ func recoger(esquina: Vector2i, capacidad: float) -> Dictionary:
 	if not puestos.has(esquina):
 		return {}
 	var p: Dictionary = puestos[esquina]
-	var total := _total(p["almacen"])
-	if total <= 1e-9:
+	var total_solido := 0.0
+	for r in p["almacen"]:
+		if not RECURSOS_LIQUIDOS.has(r):
+			total_solido += p["almacen"][r]
+	if total_solido <= 1e-9:
 		return {}
 	# Carga parcial: solo sin recolectores o si el puesto ya no produce (resto de un área agotada).
-	if total < capacidad and not p["presentes"].is_empty() and _total(produccion_por_hora(esquina)) > 0.0:
+	if total_solido < capacidad and not p["presentes"].is_empty() and _total(produccion_por_hora(esquina)) > 0.0:
 		return {}
 	var carga: Dictionary = {}
 	var restante := capacidad
 	for recurso in p["almacen"].keys():
+		if RECURSOS_LIQUIDOS.has(recurso):
+			continue
 		if restante <= 1e-9:
 			break
 		var tomado: float = minf(p["almacen"][recurso], restante)
@@ -648,6 +748,15 @@ func _refinar(esquina: Vector2i, factor_energia: float = 1.0) -> void:
 	p["almacen"] = resultado
 
 
+func cambiar_combustible_central(esquina: Vector2i, combustible: String) -> void:
+	if not puestos.has(esquina) or puestos[esquina]["tipo"] != "central_termoelectrica":
+		return
+	var p: Dictionary = puestos[esquina]
+	p["combustible_activo"] = combustible
+	if combustible != "carbon":
+		_liberar_de(esquina, p["acarreadores"].duplicate())
+
+
 ## Qué retiraría ahora un acarreador del stock central para esta refinería: {recurso: cantidad}.
 ## Cada insumo tiene su tope en el almacén local, repartido en la proporción de la receta (así uno
 ## no llena el almacén y deja sin sitio al otro), y la carga total no pasa de CAPACIDAD_CARGA ni
@@ -658,24 +767,30 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 		return {}
 	var p: Dictionary = puestos[esquina]
 	if p["tipo"] == "central_termoelectrica":
+		if p.get("combustible_activo", "carbon") != "carbon":
+			return {}
 		var libre_central: float = p["capacidad"] - _total(p["almacen"])
 		if libre_central <= 1e-9:
 			return {}
-		for tipo_comb in ["combustible", "crudo", "carbon"]:
-			if ciudad != null and ciudad.almacen.has(tipo_comb) and ciudad.almacen[tipo_comb].cantidad > 1e-9:
-				var cant: float = minf(minf(CAPACIDAD_CARGA, libre_central), ciudad.almacen[tipo_comb].cantidad)
-				if cant > 1e-9:
-					return {tipo_comb: cant}
+		if ciudad != null and ciudad.almacen.has("carbon") and ciudad.almacen["carbon"].cantidad > 1e-9:
+			var cant: float = minf(minf(CAPACIDAD_CARGA, libre_central), ciudad.almacen["carbon"].cantidad)
+			if cant > 1e-9:
+				return {"carbon": cant}
 		return {}
 	if not es_refineria(esquina):
 		return {}
 	var entradas: Dictionary = entradas_de(esquina)
 	var suma: float = 0.0
 	for recurso in entradas:
-		suma += entradas[recurso]
+		if not RECURSOS_LIQUIDOS.has(recurso):
+			suma += entradas[recurso]
+	if suma <= 1e-9:
+		return {}
 	var plan: Dictionary = {}
 	var total: float = 0.0
 	for recurso in entradas:
+		if RECURSOS_LIQUIDOS.has(recurso):
+			continue
 		var parte: float = entradas[recurso] / suma
 		var espacio: float = p["capacidad"] * parte - p["almacen"].get(recurso, 0.0)
 		var cantidad: float = minf(minf(CAPACIDAD_CARGA * parte, espacio), ciudad.almacen[recurso].cantidad)
@@ -775,11 +890,15 @@ func producto_pendiente(esquina: Vector2i) -> float:
 ## El acarreador recoge el producto (nada más) hasta "capacidad". Sin mínimo: el mínimo lo decide
 ## Colonos al elegir si vale la pena el viaje. {} si no hay nada.
 func recoger_producto(esquina: Vector2i, capacidad: float) -> Dictionary:
+	if not es_refineria(esquina):
+		return {}
+	var producto: String = producto_de(esquina)
+	if RECURSOS_LIQUIDOS.has(producto):
+		return {}
 	var pendiente: float = producto_pendiente(esquina)
 	var tomado: float = minf(pendiente, capacidad)
 	if tomado <= 1e-9:
 		return {}
-	var producto: String = producto_de(esquina)
 	var local: Dictionary = puestos[esquina]["almacen"]
 	local[producto] -= tomado
 	if local[producto] <= 1e-9:

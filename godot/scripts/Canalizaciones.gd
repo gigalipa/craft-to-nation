@@ -49,6 +49,9 @@ var derrames_activos: Dictionary = {}
 var _siguiente_id_red := 1
 
 
+var tipo_por_puerto: Dictionary = {} # Vector3i -> String
+
+
 func reiniciar() -> void:
 	celda_a_red.clear()
 	red_a_celdas.clear()
@@ -56,6 +59,7 @@ func reiniciar() -> void:
 	recurso_por_red.clear()
 	columnas.clear()
 	puertos_conectados.clear()
+	tipo_por_puerto.clear()
 	derrames_activos.clear()
 	_siguiente_id_red = 1
 
@@ -103,7 +107,78 @@ func asignar_puerto_a_red(id_red: int, celda_puerto: Vector3i, tipo_puerto: Stri
 	elif rec_actual != rec_puerto:
 		return false
 	puertos_conectados[celda_puerto] = id_red
+	tipo_por_puerto[celda_puerto] = tipo_puerto
 	return true
+
+
+func destinos_de_puerto_salida(celda_puerto_salida: Vector3i) -> Array[Vector3i]:
+	var destinos: Array[Vector3i] = []
+	if not puertos_conectados.has(celda_puerto_salida):
+		return destinos
+	var id_red: int = puertos_conectados[celda_puerto_salida]
+	for p: Vector3i in puertos_conectados:
+		if p == celda_puerto_salida:
+			continue
+		if puertos_conectados[p] == id_red:
+			var tipo_p: String = tipo_por_puerto.get(p, "")
+			if tipo_p.ends_with("_in"):
+				destinos.append(p)
+	return destinos
+
+
+func extremos_abiertos_de_red(id_red: int) -> Array[Vector3i]:
+	var abiertos: Array[Vector3i] = []
+	if not red_a_celdas.has(id_red):
+		return abiertos
+	var celdas: Array = red_a_celdas[id_red]
+	if celdas.is_empty():
+		return abiertos
+	for c: Vector3i in celdas:
+		var vecinos_misma_red := 0
+		for delta in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+			if celda_a_red.get(c + delta, -1) == id_red:
+				vecinos_misma_red += 1
+		if vecinos_misma_red <= 1:
+			var tiene_puerto := false
+			for delta in [Vector3i(0, 0, 0), Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
+				if puertos_conectados.has(c + delta) and puertos_conectados[c + delta] == id_red:
+					tiene_puerto = true
+					break
+			if not tiene_puerto:
+				abiertos.append(c)
+	if abiertos.is_empty() and celdas.size() > 0:
+		var ultimo: Vector3i = celdas[-1]
+		if not puertos_conectados.has(ultimo):
+			abiertos.append(ultimo)
+	return abiertos
+
+
+func verter_derrame(id_red: int, recurso: String, mundo: Object) -> Vector3i:
+	var abiertos: Array[Vector3i] = extremos_abiertos_de_red(id_red)
+	if abiertos.is_empty():
+		return Vector3i.ZERO
+	var celda_extremo: Vector3i = abiertos[0]
+	if mundo != null:
+		mundo.colocar_bloque(celda_extremo, recurso, true)
+	derrames_activos[celda_extremo] = recurso
+	derrame_detectado.emit(celda_extremo, recurso)
+	return celda_extremo
+
+
+func estado_de_puerto(celda_puerto: Vector3i) -> String:
+	if not puertos_conectados.has(celda_puerto):
+		return "desconectado"
+	var id_red: int = puertos_conectados[celda_puerto]
+	for d: Vector3i in derrames_activos:
+		if celda_a_red.get(d, -1) == id_red or red_a_celdas.get(id_red, []).has(d):
+			return "derrame"
+	var tipo_p: String = tipo_por_puerto.get(celda_puerto, "")
+	if tipo_p.ends_with("_out"):
+		var destinos: Array = destinos_de_puerto_salida(celda_puerto)
+		if destinos.is_empty():
+			return "derrame"
+		return "conectado"
+	return "conectado"
 
 
 func es_celda_canalizacion(celda: Vector3i) -> bool:

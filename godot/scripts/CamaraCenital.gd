@@ -2213,11 +2213,11 @@ func _es_puerto_adyacente(celda_2d: Vector2i) -> bool:
 
 func _actualizar_preview_ducto() -> void:
 	var celda := _celda_bajo_mouse(get_viewport().get_mouse_position())
+	var ficha: String = ""
 	if not _hay_tramo_ducto_en_curso:
 		if via_preview != null:
 			var pts: Array[Vector2i] = [celda]
 			via_preview.previsualizar_tramo(pts, true, 1)
-		var ficha: String = ""
 		if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
 			ficha = Canalizaciones.ficha_tecnica(_tipo_ducto_activo, 0, 0)
 		hud.set_extra_contexto(ficha)
@@ -2233,7 +2233,6 @@ func _actualizar_preview_ducto() -> void:
 
 	var celdas_d: int = geom.get("celdas_ducto", []).size()
 	var celdas_c: int = geom.get("celdas_columna", []).size()
-	var ficha: String = ""
 	if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
 		ficha = Canalizaciones.ficha_tecnica(_tipo_ducto_activo, celdas_d, celdas_c)
 	hud.set_extra_contexto(ficha)

@@ -594,7 +594,25 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		# Comprobar si la celda invade el despeje reservado de otro puerto (Observación 3)
 		if mundo != null and "celda_a_despeje" in mundo and mundo.celda_a_despeje is Dictionary:
 			if mundo.celda_a_despeje.has(celda_tentativa):
-				var orig_desp: String = mundo.celda_a_despeje[celda_tentativa]
+				var orig_desp := ""
+				var val_desp = mundo.celda_a_despeje[celda_tentativa]
+				if val_desp is Dictionary:
+					if "edificio_despeje" in mundo and mundo.edificio_despeje is Dictionary:
+						for id_edif in val_desp:
+							var desp_dict = mundo.edificio_despeje.get(id_edif)
+							if desp_dict is Dictionary:
+								var tipo_cand: String = desp_dict.get(celda_tentativa, "")
+								if tipo_cand.begins_with("puerto_"):
+									orig_desp = tipo_cand
+									break
+				elif val_desp is int:
+					if "edificio_despeje" in mundo and mundo.edificio_despeje is Dictionary:
+						var desp_dict = mundo.edificio_despeje.get(val_desp)
+						if desp_dict is Dictionary:
+							orig_desp = desp_dict.get(celda_tentativa, "")
+				elif val_desp is String:
+					orig_desp = val_desp
+
 				if orig_desp.begins_with("puerto_"):
 					var rec_puerto := ""
 					if orig_desp.begins_with("puerto_agua"): rec_puerto = "agua"

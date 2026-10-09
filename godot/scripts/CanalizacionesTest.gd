@@ -10,7 +10,8 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 class MundoMock:
 	var _bloques: Dictionary = {} # Vector3i -> String
 	var _alturas: Dictionary = {} # Vector2i -> int
-	var celda_a_despeje: Dictionary = {} # Vector3i -> String
+	var celda_a_despeje: Dictionary = {} # Vector3i -> Variant (Dictionary o String)
+	var edificio_despeje: Dictionary = {} # int -> Dictionary
 	var altura_default: int = 10
 
 	func altura_en(x: int, z: int) -> int:
@@ -260,6 +261,14 @@ func ejecutar_pruebas() -> void:
 	var geom_inv = canalizaciones.calcular_geometria_tramo("acueducto", puntos_invaden, mundo12)
 	assert(not geom_inv.valido, "acueducto no debe invadir despeje de puerto de crudo")
 	assert("puerto de crudo" in geom_inv.motivo, "motivo debe indicar el puerto invadido: %s" % geom_inv.motivo)
+
+	# 1b. Probar formato real de VoxelWorld (Dictionary en celda_a_despeje y edificio_despeje)
+	var mundo_real_dict = MundoMock.new()
+	mundo_real_dict.celda_a_despeje[Vector3i(5, 14, 1)] = { 42: true }
+	mundo_real_dict.edificio_despeje[42] = { Vector3i(5, 14, 1): "puerto_crudo_out" }
+	var geom_dict = canalizaciones.calcular_geometria_tramo("acueducto", puntos_invaden, mundo_real_dict)
+	assert(not geom_dict.valido, "acueducto no debe invadir despeje de puerto de crudo con celda_a_despeje Dictionary")
+	assert("puerto de crudo" in geom_dict.motivo, "motivo debe indicar el puerto invadido: %s" % geom_dict.motivo)
 
 	# 2. Probar desconexión / derrame al minar bloque intermedio
 	var puntos_flujo: Array[Vector2i] = [Vector2i(0, 40), Vector2i(1, 40), Vector2i(2, 40), Vector2i(3, 40)]

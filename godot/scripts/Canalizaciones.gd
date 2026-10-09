@@ -505,13 +505,45 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 			if not indices_columna.has(n - 1):
 				indices_columna.append(n - 1)
 
+	# Detectar cruces a desnivel con canalizaciones existentes:
+	var alturas_cruce: Dictionary = {} # int (índice) -> int (altura_cruce)
+	for i in range(n):
+		var p_c: Vector2i = puntos_2d[i]
+		var h_base: int = 0
+		if i == 0 and puerto_inicio.get("existe", false):
+			h_base = puerto_inicio["altura"]
+		elif i == n - 1 and puerto_fin.get("existe", false):
+			h_base = puerto_fin["altura"]
+		else:
+			var h_s: int = mundo.altura_en(p_c.x, p_c.y) if mundo != null and mundo.has_method("altura_en") else 0
+			h_base = h_s + ALTURA_DUCTO_RELATIVA
+
+		# Comprobar si hay ducto existente en esta celda o cota
+		var y_c: int = h_base
+		while true:
+			var c_chk := Vector3i(p_c.x, y_c, p_c.y)
+			var tipo_chk: String = mundo.obtener_tipo(c_chk) if mundo != null and mundo.has_method("obtener_tipo") else ""
+			if tipo_chk == "acueducto" or tipo_chk == "tuberia" or celda_a_red.has(c_chk):
+				y_c += 1
+			else:
+				break
+
+		if y_c > h_base:
+			alturas_cruce[i] = y_c
+			if not indices_ancla.has(i):
+				indices_ancla.append(i)
+			# Un cruce elevado no lleva columna directa debajo (está sobre el ducto existente)
+			indices_columna.erase(i)
+
 	indices_ancla.sort()
 	indices_columna.sort()
 
 	# 2. Calcular alturas de las cimas de las columnas / anclas:
 	var altura_cima: Dictionary = {} # int (índice ancla) -> int (Y_ducto)
 	for idx in indices_ancla:
-		if idx == 0 and puerto_inicio.get("existe", false):
+		if alturas_cruce.has(idx):
+			altura_cima[idx] = alturas_cruce[idx]
+		elif idx == 0 and puerto_inicio.get("existe", false):
 			altura_cima[0] = puerto_inicio["altura"]
 		elif idx == n - 1 and puerto_fin.get("existe", false):
 			altura_cima[n - 1] = puerto_fin["altura"]
@@ -552,7 +584,7 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 					"indices": indices_intermedios,
 				})
 
-	# 4. Generar celdas de ducto con detección de cruce a desnivel y respeto de despejes de otros puertos
+	# 4. Generar celdas de ducto y respeto de despejes de otros puertos
 	var celdas_ducto: Array[Vector3i] = []
 	for i in range(n):
 		var p: Vector2i = puntos_2d[i]
@@ -586,11 +618,6 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 						resultado.motivo = "Trazado inválido: la tubería invade el espacio reservado del puerto de %s." % rec_puerto
 						return resultado
 
-		# Verificar si hay canalización preexistente a la misma cota
-		var tipo_existente: String = mundo.obtener_tipo(celda_tentativa) if mundo.has_method("obtener_tipo") else ""
-		if tipo_existente == "acueducto" or tipo_existente == "tuberia" or celda_a_red.has(celda_tentativa):
-			# Sobre-elevar 1 bloque para pasar por encima
-			celda_tentativa.y += 1
 		celdas_ducto.append(celda_tentativa)
 
 	resultado.celdas_ducto = celdas_ducto

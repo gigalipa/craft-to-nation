@@ -116,7 +116,10 @@ func ejecutar_pruebas() -> void:
 			break
 	assert(ducto_en_cruce != Vector3i.ZERO, "debe existir celda en (5,5)")
 	assert(ducto_en_cruce.y == 15, "la celda de cruce debe sobre-elevarse a Y=15 (14 + 1), fue %d" % ducto_en_cruce.y)
-	print("OK: Cruce a desnivel se eleva a Y=15.")
+	assert(geom_cruce.tramos_diagonales.size() == 2, "debe generar 2 tramos diagonales (subida desde columna anterior y bajada a columna siguiente)")
+	assert(geom_cruce.tramos_diagonales[0].fin == Vector3i(5, 15, 5), "el primer tramo diagonal llega al bloque elevado")
+	assert(geom_cruce.tramos_diagonales[1].inicio == Vector3i(5, 15, 5), "el segundo tramo diagonal parte del bloque elevado")
+	print("OK: Cruce a desnivel se eleva a Y=15 con tramos diagonales conectados a columnas anterior y siguiente.")
 
 	print("\n=== CANALIZACIONES TEST 5: Pendientes diagonales entre columnas ===")
 	# Terreno con pendiente entre x=0 (h=10) y x=5 (h=12)
@@ -248,6 +251,7 @@ func ejecutar_pruebas() -> void:
 	print("OK: Altura obligatoria de puerto y primera columna a 5 bloques verificada.")
 
 	print("\n=== CANALIZACIONES TEST 12: Despeje de puertos contiguos y desconexión/derrame dinámico al minar ===")
+	canalizaciones = CanalizacionesScript.new()
 	var mundo12 = MundoMock.new()
 	# 1. Registrar despeje de un puerto de crudo
 	mundo12.celda_a_despeje[Vector3i(5, 14, 1)] = "puerto_crudo_out"

@@ -7,6 +7,7 @@ const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
+const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
@@ -31,6 +32,8 @@ const VELOCIDAD_NATACION := 3.0
 ## que VELOCIDAD_NATACION, para que "dejarse caer" en el agua no se sienta
 ## como estar de pie sobre ella.
 const VELOCIDAD_HUNDIMIENTO := 1.0
+## Factor de resistencia viscosa en crudo (movimiento horizontal, nado y gravedad amortiguada).
+const FACTOR_VISCOSIDAD_CRUDO := 0.5
 
 ## Corriente de río/cascada (diseño 2026-09-17, a partir de una captura real
 ## de un río en pendiente de montaña): a mayor pendiente del cauce (ver
@@ -159,6 +162,15 @@ func _ready() -> void:
 	add_child(_cara_apuntada)
 	hud.configurar_hotbar(tipos_disponibles)
 	hud.set_tipo_hotbar(tipo_seleccionado)
+
+	# Inventario inicial para pruebas: 1000 de cada recurso y 5000 de comida
+	if Ciudad != null and Ciudad.almacen != null:
+		for r in Ciudad.almacen:
+			Ciudad.almacen[r].limite = maxf(Ciudad.almacen[r].limite, 2000.0)
+			Ciudad.almacen[r].cantidad = 1000.0
+		if Ciudad.almacen.has("comida"):
+			Ciudad.almacen["comida"].limite = maxf(Ciudad.almacen["comida"].limite, 5000.0)
+			Ciudad.almacen["comida"].cantidad = 5000.0
 
 
 func _input(event: InputEvent) -> void:
@@ -454,24 +466,29 @@ func _physics_process(delta: float) -> void:
 	var bono := 1.0
 	if mundo != null:
 		bono = Vias.bono_en(celda_pies - Vector3i(0, 1, 0))
-	velocity.x = direccion.x * VELOCIDAD * bono
-	velocity.z = direccion.z * VELOCIDAD * bono
+	var en_crudo: bool = mundo != null and mundo.obtener_tipo(celda_pies) == "crudo"
+	var factor_viscosidad: float = FACTOR_VISCOSIDAD_CRUDO if en_crudo else 1.0
+	velocity.x = direccion.x * VELOCIDAD * bono * factor_viscosidad
+	velocity.z = direccion.z * VELOCIDAD * bono * factor_viscosidad
 	if nadando:
 		if movimiento_habilitado and Input.is_key_pressed(KEY_SPACE):
-			velocity.y = VELOCIDAD_NATACION
+			velocity.y = VELOCIDAD_NATACION * factor_viscosidad
 		elif movimiento_habilitado and Input.is_key_pressed(KEY_CTRL):
-			velocity.y = -VELOCIDAD_NATACION
+			velocity.y = -VELOCIDAD_NATACION * factor_viscosidad
 		elif not mundo.columna_cascada_en(celda_pies.x, celda_pies.z).is_empty():
 			# Dentro de una cascada, la corriente cae tan rápido como la
 			# gravedad normal (diseño 2026-09-17) — mismo cálculo que la
 			# rama "sin nadar" de abajo, en vez del hundimiento pasivo.
 			velocity.y -= GRAVEDAD * delta
 		else:
-			velocity.y = -VELOCIDAD_HUNDIMIENTO
+			velocity.y = -VELOCIDAD_HUNDIMIENTO * factor_viscosidad
 	elif not is_on_floor():
-		velocity.y -= GRAVEDAD * delta
+		if en_crudo:
+			velocity.y -= (GRAVEDAD * FACTOR_VISCOSIDAD_CRUDO) * delta
+		else:
+			velocity.y -= GRAVEDAD * delta
 	elif movimiento_habilitado and Input.is_key_pressed(KEY_SPACE):
-		velocity.y = VELOCIDAD_SALTO
+		velocity.y = VELOCIDAD_SALTO * factor_viscosidad
 	else:
 		velocity.y = 0.0
 	if mundo != null:
@@ -537,11 +554,12 @@ func _profundidad_agua_en(posicion: Vector3) -> int:
 	if mundo == null:
 		return 0
 	var celda: Vector3i = _celda_en(posicion)
-	if mundo.obtener_tipo(celda) != "agua":
+	var tipo: String = mundo.obtener_tipo(celda)
+	if tipo != "agua" and tipo != "crudo":
 		return 0
 	var profundidad := 1
 	celda += Vector3i(0, 1, 0)
-	while mundo.obtener_tipo(celda) == "agua":
+	while mundo.obtener_tipo(celda) == "agua" or mundo.obtener_tipo(celda) == "crudo":
 		profundidad += 1
 		celda += Vector3i(0, 1, 0)
 	return profundidad
@@ -717,12 +735,13 @@ func _procesar_flotacion(delta: float, nadando: bool) -> void:
 		camara.position.y = _altura_camara_base
 
 
-## true si el bloque en la cámara (altura de los ojos) es agua — es lo que
+## true si el bloque en la cámara (altura de los ojos) es agua o crudo — es lo que
 ## gasta oxígeno, no _pies_en_agua() (ver _procesar_oxigeno()).
 func _cabeza_sumergida() -> bool:
 	if mundo == null:
 		return false
-	return mundo.obtener_tipo(mundo.local_to_map(mundo.to_local(camara.global_position))) == "agua"
+	var tipo: String = mundo.obtener_tipo(mundo.local_to_map(mundo.to_local(camara.global_position)))
+	return tipo == "agua" or tipo == "crudo"
 
 
 ## Aritmética pura de oxígeno, sin nodos ni estado — extraída así para poder

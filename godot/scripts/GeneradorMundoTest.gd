@@ -691,4 +691,51 @@ func ejecutar_pruebas() -> void:
 	assert(vio_caida_cascada)
 	print("OK: caida_en() es 0 fuera de río, coincide con es_cascada_en() en cada celda de río real, y el mundo real tiene tanto tramos llanos (caida=0) como cascadas (caida>=UMBRAL_CASCADA).")
 
-	print("\n=== Las 33 pruebas de GeneradorMundo pasaron correctamente ===")
+	print("\n=== TEST 34: Pozos subterráneos de agua y crudo a profundidad >= PROFUNDIDAD_POZOS ===")
+	var gen_pozos: RefCounted = GeneradorMundoScript.new(VoxelWorld.SEMILLA_MUNDO, 80, 80)
+	var encontro_agua_sub := false
+	var encontro_crudo_sub := false
+	for x in range(0, 80, 2):
+		for z in range(0, 80, 2):
+			var sup: int = gen_pozos.altura_en(x, z)
+			for prof in range(GeneradorMundoScript.PROFUNDIDAD_POZOS):
+				var y: int = sup - prof
+				var t: String = gen_pozos.tipo_en_profundidad(x, y, z, prof)
+				assert(t != "agua" and t != "crudo", "a prof < PROFUNDIDAD_POZOS nunca hay liquido subterraneo: (%d,%d,%d) prof=%d t=%s" % [x, y, z, prof, t])
+			for prof in range(GeneradorMundoScript.PROFUNDIDAD_POZOS, 25):
+				var y: int = sup - prof
+				var t: String = gen_pozos.tipo_en_profundidad(x, y, z, prof)
+				if t == "agua":
+					encontro_agua_sub = true
+				elif t == "crudo":
+					encontro_crudo_sub = true
+	assert(encontro_agua_sub, "debe encontrar pozos de agua en subsuelo")
+	assert(encontro_crudo_sub, "debe encontrar pozos de crudo en subsuelo")
+	print("OK: pozos de agua y crudo generados en subsuelo, nunca a prof < PROFUNDIDAD_POZOS.")
+
+	print("\n=== TEST 35: Exclusión mutua de pozos: un pozo nunca mezcla agua y crudo ===")
+	# Ninguna celda de pozo de crudo linda en 3D con una celda de pozo de agua
+	var celdas_liquido: Dictionary = {} # Vector3i -> String
+	for x in range(0, 60):
+		for z in range(0, 60):
+			var sup: int = gen_pozos.altura_en(x, z)
+			for prof in range(GeneradorMundoScript.PROFUNDIDAD_POZOS, 25):
+				var y: int = sup - prof
+				var t: String = gen_pozos.tipo_en_profundidad(x, y, z, prof)
+				if t == "agua" or t == "crudo":
+					celdas_liquido[Vector3i(x, y, z)] = t
+
+	var deltas_3d := [
+		Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
+		Vector3i(0, 1, 0), Vector3i(0, -1, 0),
+		Vector3i(0, 0, 1), Vector3i(0, 0, -1)
+	]
+	for pos: Vector3i in celdas_liquido:
+		var tipo_actual: String = celdas_liquido[pos]
+		for d in deltas_3d:
+			var vecino: Vector3i = pos + d
+			if celdas_liquido.has(vecino):
+				assert(celdas_liquido[vecino] == tipo_actual, "un pozo no debe mezclar agua y crudo en celdas contiguas: %s vs %s" % [tipo_actual, celdas_liquido[vecino]])
+	print("OK: exclusion mutua verificada; ningun pozo subterraneo mezcla agua y crudo.")
+
+	print("\n=== Las 35 pruebas de GeneradorMundo pasaron correctamente ===")

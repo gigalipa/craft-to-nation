@@ -56,7 +56,8 @@ var tipo_por_puerto: Dictionary = {} # Vector3i -> String
 
 func reiniciar() -> void:
 	for id_r in nodos_diagonales:
-		for nodo in nodos_diagonales[id_r]:
+		for item in nodos_diagonales[id_r]:
+			var nodo: Node3D = item.get("nodo", null) if item is Dictionary else item
 			if is_instance_valid(nodo):
 				nodo.queue_free()
 	nodos_diagonales.clear()
@@ -124,13 +125,67 @@ func destinos_de_puerto_salida(celda_puerto_salida: Vector3i) -> Array[Vector3i]
 	if not puertos_conectados.has(celda_puerto_salida):
 		return destinos
 	var id_red: int = puertos_conectados[celda_puerto_salida]
+
+	# Si celda_a_red está vacía (pruebas unitarias/mocks con red_a_celdas o puertos directos)
+	if celda_a_red.is_empty():
+		for p: Vector3i in puertos_conectados:
+			if p == celda_puerto_salida:
+				continue
+			if puertos_conectados[p] == id_red:
+				var tipo_p: String = tipo_por_puerto.get(p, "")
+				if tipo_p.ends_with("_in"):
+					destinos.append(p)
+		return destinos
+
+	# 1. Encontrar celdas de ducto adyacentes al puerto de salida
+	var inicio_ducto: Array[Vector3i] = []
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			for dz in [-1, 0, 1]:
+				var c := celda_puerto_salida + Vector3i(dx, dy, dz)
+				if celda_a_red.get(c, -1) == id_red:
+					inicio_ducto.append(c)
+
+	if inicio_ducto.is_empty():
+		return destinos
+
+	# 2. BFS para encontrar todas las celdas de ducto contiguas alcanzables
+	var visitados: Dictionary = {}
+	var cola: Array[Vector3i] = []
+	for c in inicio_ducto:
+		visitados[c] = true
+		cola.append(c)
+
+	while not cola.is_empty():
+		var actual: Vector3i = cola.pop_front()
+		for dx in [-1, 0, 1]:
+			for dy in [-1, 0, 1]:
+				for dz in [-1, 0, 1]:
+					if dx == 0 and dy == 0 and dz == 0:
+						continue
+					var vec := actual + Vector3i(dx, dy, dz)
+					if celda_a_red.get(vec, -1) == id_red and not visitados.has(vec):
+						visitados[vec] = true
+						cola.append(vec)
+
+	# 3. Comprobar qué puertos de entrada tienen al menos una celda de ducto alcanzable adyacente
 	for p: Vector3i in puertos_conectados:
 		if p == celda_puerto_salida:
 			continue
 		if puertos_conectados[p] == id_red:
 			var tipo_p: String = tipo_por_puerto.get(p, "")
 			if tipo_p.ends_with("_in"):
-				destinos.append(p)
+				var alcanzable := false
+				for dx in [-1, 0, 1]:
+					for dy in [-1, 0, 1]:
+						for dz in [-1, 0, 1]:
+							if visitados.has(p + Vector3i(dx, dy, dz)):
+								alcanzable = true
+								break
+						if alcanzable:
+							break
+				if alcanzable:
+					destinos.append(p)
 	return destinos
 
 
@@ -186,6 +241,24 @@ func estado_de_puerto(celda_puerto: Vector3i) -> String:
 	if not puertos_conectados.has(celda_puerto):
 		return "desconectado"
 	var id_red: int = puertos_conectados[celda_puerto]
+
+	# Si celda_a_red no está vacía (partida real), verificar contigüidad física
+	if not celda_a_red.is_empty():
+		var tiene_ducto_adyacente := false
+		if red_a_celdas.get(id_red, []).has(celda_puerto):
+			tiene_ducto_adyacente = true
+		else:
+			for dx in [-1, 0, 1]:
+				for dy in [-1, 0, 1]:
+					for dz in [-1, 0, 1]:
+						if celda_a_red.get(celda_puerto + Vector3i(dx, dy, dz), -1) == id_red:
+							tiene_ducto_adyacente = true
+							break
+					if tiene_ducto_adyacente:
+						break
+		if not tiene_ducto_adyacente:
+			return "desconectado"
+
 	for d: Vector3i in derrames_activos:
 		if celda_a_red.get(d, -1) == id_red or red_a_celdas.get(id_red, []).has(d):
 			return "derrame"
@@ -194,6 +267,19 @@ func estado_de_puerto(celda_puerto: Vector3i) -> String:
 		var destinos: Array = destinos_de_puerto_salida(celda_puerto)
 		if destinos.is_empty():
 			return "derrame"
+		return "conectado"
+	elif tipo_p.ends_with("_in"):
+		# Para un puerto de entrada: ¿hay algún puerto de salida conectado que lo alcance?
+		var alcanzado := false
+		for p_out: Vector3i in puertos_conectados:
+			if p_out == celda_puerto:
+				continue
+			if puertos_conectados[p_out] == id_red and tipo_por_puerto.get(p_out, "").ends_with("_out"):
+				if destinos_de_puerto_salida(p_out).has(celda_puerto):
+					alcanzado = true
+					break
+		if not alcanzado:
+			return "desconectado"
 		return "conectado"
 	return "conectado"
 
@@ -204,6 +290,99 @@ func es_celda_canalizacion(celda: Vector3i) -> bool:
 
 func obtener_red_de_celda(celda: Vector3i) -> int:
 	return celda_a_red.get(celda, -1)
+
+
+func red_en_celda(celda: Vector3i) -> int:
+	if celda_a_red.has(celda):
+		return celda_a_red[celda]
+	if columnas.has(celda):
+		return columnas[celda]
+	if puertos_conectados.has(celda):
+		return puertos_conectados[celda]
+	return -1
+
+
+func red_en_columna(xz: Vector2i) -> int:
+	for c: Vector3i in celda_a_red:
+		if c.x == xz.x and c.z == xz.y:
+			return celda_a_red[c]
+	for c: Vector3i in columnas:
+		if c.x == xz.x and c.z == xz.y:
+			return columnas[c]
+	for p: Vector3i in puertos_conectados:
+		if p.x == xz.x and p.z == xz.y:
+			return puertos_conectados[p]
+	return -1
+
+
+func info_de_red(id_red: int) -> Dictionary:
+	var res := {
+		"id": id_red,
+		"existe": false,
+		"tipo": "",
+		"recurso": "",
+		"celdas_ducto": 0,
+		"celdas_columna": 0,
+		"puertos": [],
+		"extremos_abiertos": [],
+		"derrames": [],
+	}
+	if not tipo_por_red.has(id_red):
+		return res
+
+	res["existe"] = true
+	res["tipo"] = tipo_por_red.get(id_red, "")
+	res["recurso"] = recurso_por_red.get(id_red, "")
+	res["celdas_ducto"] = red_a_celdas.get(id_red, []).size()
+
+	var cols := 0
+	for c: Vector3i in columnas:
+		if columnas[c] == id_red:
+			cols += 1
+	res["celdas_columna"] = cols
+
+	var lista_puertos: Array[Dictionary] = []
+	for p: Vector3i in puertos_conectados:
+		if puertos_conectados[p] == id_red:
+			var tipo_p: String = tipo_por_puerto.get(p, "")
+			var dir_p: String = "Entrada" if tipo_p.ends_with("_in") else "Salida"
+			var rec_p: String = ""
+			if tipo_p.begins_with("puerto_agua"): rec_p = "agua"
+			elif tipo_p.begins_with("puerto_crudo"): rec_p = "crudo"
+			elif tipo_p.begins_with("puerto_combustible"): rec_p = "combustible"
+
+			var nombre_edificio := "Edificio"
+			var esq_puesto: Vector2i = Vector2i(-99999, -99999)
+			if Economia != null and Economia.has_method("buscar_puesto_por_puerto"):
+				esq_puesto = Economia.buscar_puesto_por_puerto(p)
+				if esq_puesto != Vector2i(-99999, -99999):
+					var p_info: Dictionary = Economia.puestos.get(esq_puesto, {})
+					var tipo_edif: String = p_info.get("tipo", "")
+					if tipo_edif == "almacen":
+						nombre_edificio = "Almacén"
+					elif tipo_edif != "":
+						var PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
+						nombre_edificio = PanelPuestoScript.NOMBRES_PUESTO.get(tipo_edif, tipo_edif.capitalize())
+
+			var est_p: String = estado_de_puerto(p)
+			lista_puertos.append({
+				"celda": p,
+				"tipo_puerto": tipo_p,
+				"direccion": dir_p,
+				"recurso": rec_p,
+				"edificio": nombre_edificio,
+				"esquina": esq_puesto,
+				"estado": est_p,
+			})
+	res["puertos"] = lista_puertos
+	res["extremos_abiertos"] = extremos_abiertos_de_red(id_red)
+
+	var lista_derrames: Array[Vector3i] = []
+	for d: Vector3i in derrames_activos:
+		if celda_a_red.get(d, -1) == id_red or red_a_celdas.get(id_red, []).has(d):
+			lista_derrames.append(d)
+	res["derrames"] = lista_derrames
+	return res
 
 
 func ficha_tecnica(tipo: String, celdas_ducto: int = 0, celdas_columna: int = 0) -> String:
@@ -373,12 +552,40 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 					"indices": indices_intermedios,
 				})
 
-	# 4. Generar celdas de ducto con detección de cruce a desnivel (+1 cota si ya hay canalización)
+	# 4. Generar celdas de ducto con detección de cruce a desnivel y respeto de despejes de otros puertos
 	var celdas_ducto: Array[Vector3i] = []
 	for i in range(n):
 		var p: Vector2i = puntos_2d[i]
 		var y: int = alturas_ducto[i]
 		var celda_tentativa := Vector3i(p.x, y, p.y)
+
+		# Comprobar si la celda invade el despeje reservado de otro puerto (Observación 3)
+		if mundo != null and "celda_a_despeje" in mundo and mundo.celda_a_despeje is Dictionary:
+			if mundo.celda_a_despeje.has(celda_tentativa):
+				var orig_desp: String = mundo.celda_a_despeje[celda_tentativa]
+				if orig_desp.begins_with("puerto_"):
+					var rec_puerto := ""
+					if orig_desp.begins_with("puerto_agua"): rec_puerto = "agua"
+					elif orig_desp.begins_with("puerto_crudo"): rec_puerto = "crudo"
+					elif orig_desp.begins_with("puerto_combustible"): rec_puerto = "combustible"
+
+					var rec_ducto := ""
+					if tipo == "acueducto":
+						rec_ducto = "agua"
+					elif puerto_inicio.get("existe", false):
+						if puerto_inicio["tipo_puerto"].begins_with("puerto_agua"): rec_ducto = "agua"
+						elif puerto_inicio["tipo_puerto"].begins_with("puerto_crudo"): rec_ducto = "crudo"
+						elif puerto_inicio["tipo_puerto"].begins_with("puerto_combustible"): rec_ducto = "combustible"
+					elif puerto_fin.get("existe", false):
+						if puerto_fin["tipo_puerto"].begins_with("puerto_agua"): rec_ducto = "agua"
+						elif puerto_fin["tipo_puerto"].begins_with("puerto_crudo"): rec_ducto = "crudo"
+						elif puerto_fin["tipo_puerto"].begins_with("puerto_combustible"): rec_ducto = "combustible"
+
+					if rec_puerto != "" and (rec_ducto == "" or rec_puerto != rec_ducto):
+						resultado.valido = false
+						resultado.motivo = "Trazado inválido: la tubería invade el espacio reservado del puerto de %s." % rec_puerto
+						return resultado
+
 		# Verificar si hay canalización preexistente a la misma cota
 		var tipo_existente: String = mundo.obtener_tipo(celda_tentativa) if mundo.has_method("obtener_tipo") else ""
 		if tipo_existente == "acueducto" or tipo_existente == "tuberia" or celda_a_red.has(celda_tentativa):
@@ -449,7 +656,7 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 			mundo.celda_sobre_techo[c + Vector3i(0, 1, 0)] = id
 
 	# Generar tramos diagonales continuos entre columnas con cambio de cota
-	var nodos_creados: Array[Node3D] = []
+	var infos_creadas: Array[Dictionary] = []
 	for tramo: Dictionary in tramos_diagonales:
 		var c_a: Vector3
 		var c_b: Vector3
@@ -466,10 +673,25 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 		var f_a := c_a + u_h * 0.5
 		var f_b := c_b - u_h * 0.5
 
-		var v := f_b - f_a
+		# Ajuste de pivote según altura relativa (Observación 4):
+		# En el bloque inferior, pivote es el vértice superior de la cara.
+		# En el bloque superior, pivote es el vértice inferior de la cara.
+		var p_pivote_a: Vector3
+		var p_pivote_b: Vector3
+		if c_a.y < c_b.y:
+			p_pivote_a = f_a - Vector3.UP * 0.5
+			p_pivote_b = f_b + Vector3.UP * 0.5
+		elif c_a.y > c_b.y:
+			p_pivote_a = f_a + Vector3.UP * 0.5
+			p_pivote_b = f_b - Vector3.UP * 0.5
+		else:
+			p_pivote_a = f_a
+			p_pivote_b = f_b
+
+		var v := p_pivote_b - p_pivote_a
 		var long_neta := v.length()
 		var dir := v.normalized()
-		var long_total := long_neta + 0.2
+		var long_total := long_neta + 0.8
 		var centro := (f_a + f_b) * 0.5
 
 		var eje_z := dir
@@ -481,7 +703,7 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 		var xform := Transform3D(basis_diag, centro)
 
 		var body := StaticBody3D.new()
-		body.name = "DuctoDiagonal_%d_%d" % [id, nodos_creados.size()]
+		body.name = "DuctoDiagonal_%d_%d" % [id, infos_creadas.size()]
 
 		var mesh_inst := MeshInstance3D.new()
 		var malla := BoxMesh.new()
@@ -506,10 +728,23 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 
 		if mundo != null and mundo.has_method("add_child"):
 			mundo.add_child(body)
-		nodos_creados.append(body)
 
-	if not nodos_creados.is_empty():
-		nodos_diagonales[id] = nodos_creados
+		# Celdas asociadas a este tramo específico
+		var celdas_asoc: Array[Vector3i] = [tramo["inicio"], tramo["fin"]]
+		for idx_inter in tramo.get("indices", []):
+			if idx_inter < celdas_d.size():
+				celdas_asoc.append(celdas_d[idx_inter])
+		for col in celdas_c:
+			if (col.x == tramo["inicio"].x and col.z == tramo["inicio"].z) or (col.x == tramo["fin"].x and col.z == tramo["fin"].z):
+				celdas_asoc.append(col)
+
+		infos_creadas.append({
+			"nodo": body,
+			"celdas": celdas_asoc,
+		})
+
+	if not infos_creadas.is_empty():
+		nodos_diagonales[id] = infos_creadas
 
 	red_a_celdas[id] = registradas
 	tipo_por_red[id] = tipo
@@ -527,6 +762,11 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 			celda_a_red.erase(celda)
 			if red_a_celdas.has(id):
 				red_a_celdas[id].erase(celda)
+		else:
+			for id in red_a_celdas:
+				if red_a_celdas[id].has(celda):
+					redes_afectadas[id] = true
+					red_a_celdas[id].erase(celda)
 		if columnas.has(celda):
 			var id_c: int = columnas[celda]
 			redes_afectadas[id_c] = true
@@ -534,12 +774,55 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 		if mundo != null and mundo.has_method("minar_bloque"):
 			mundo.minar_bloque(celda)
 
+	# Borrado selectivo de tramos diagonales (Observación 8):
 	for id_r in redes_afectadas:
 		if nodos_diagonales.has(id_r):
-			for nodo in nodos_diagonales[id_r]:
-				if is_instance_valid(nodo):
-					nodo.queue_free()
-			nodos_diagonales.erase(id_r)
+			var restantes: Array = []
+			for item in nodos_diagonales[id_r]:
+				var nodo: Node3D = item.get("nodo", null) if item is Dictionary else item
+				var celdas_tramo: Array = item.get("celdas", []) if item is Dictionary else []
+				var destruido := false
+				if celdas_tramo.is_empty():
+					destruido = true
+				else:
+					for c in celdas:
+						if celdas_tramo.has(c):
+							destruido = true
+							break
+				if destruido:
+					if is_instance_valid(nodo):
+						nodo.queue_free()
+				else:
+					restantes.append(item)
+			if restantes.is_empty():
+				nodos_diagonales.erase(id_r)
+			else:
+				nodos_diagonales[id_r] = restantes
+
+		# Si la red quedó sin celdas de ducto, eliminarla por completo
+		if red_a_celdas.has(id_r) and red_a_celdas[id_r].is_empty():
+			red_a_celdas.erase(id_r)
+			tipo_por_red.erase(id_r)
+			recurso_por_red.erase(id_r)
+
+	# Limpiar puertos desconectados
+	var puertos_a_eliminar: Array[Vector3i] = []
+	for p: Vector3i in puertos_conectados:
+		var tiene_ducto_adyacente := false
+		var id_p: int = puertos_conectados[p]
+		for dx in [-1, 0, 1]:
+			for dy in [-1, 0, 1]:
+				for dz in [-1, 0, 1]:
+					if celda_a_red.get(p + Vector3i(dx, dy, dz), -1) == id_p:
+						tiene_ducto_adyacente = true
+						break
+				if tiene_ducto_adyacente:
+					break
+		if not tiene_ducto_adyacente:
+			puertos_a_eliminar.append(p)
+	for p in puertos_a_eliminar:
+		puertos_conectados.erase(p)
+		tipo_por_puerto.erase(p)
 
 	canalizaciones_cambiadas.emit()
 

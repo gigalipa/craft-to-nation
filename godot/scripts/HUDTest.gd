@@ -117,6 +117,7 @@ func ejecutar_pruebas() -> void:
 	probar_panel_escuela()
 	probar_panel_niveles()
 	probar_panel_extractores_y_refinerias()
+	probar_panel_canalizacion()
 	probar_panel_edificio()
 	probar_marcas_demolicion()
 
@@ -1037,3 +1038,45 @@ func probar_marcas_demolicion() -> void:
 	obras.marca_cambiada.emit(8, true)
 	assert(overlay.get_child_count() == 1, "la señal marca_cambiada reconstruye")
 	overlay.queue_free()
+
+
+func probar_panel_canalizacion() -> void:
+	print("=== TEST: PanelCanalizacion muestra datos de la red de ducto y sus conexiones ===")
+	var PanelCanalizacionScript = preload("res://scripts/PanelCanalizacion.gd")
+	Canalizaciones.reiniciar()
+	var red_test: int = 101
+	Canalizaciones.tipo_por_red[red_test] = "tuberia"
+	Canalizaciones.recurso_por_red[red_test] = "crudo"
+	Canalizaciones.red_a_celdas[red_test] = [Vector3i(10, 4, 10), Vector3i(11, 4, 10)]
+
+	var esq_orig := Vector2i(10, 10)
+	var esq_dest := Vector2i(20, 10)
+	Economia.registrar_puesto(esq_orig, "centro_extraccion", 5, 5, {})
+	Economia.registrar_puesto(esq_dest, "almacen", 5, 5, {})
+
+	var p_out := Vector3i(10, 4, 10)
+	var p_in := Vector3i(20, 4, 10)
+	Canalizaciones.puertos_conectados[p_out] = red_test
+	Canalizaciones.tipo_por_puerto[p_out] = "puerto_crudo_out"
+	Canalizaciones.puertos_conectados[p_in] = red_test
+	Canalizaciones.tipo_por_puerto[p_in] = "puerto_crudo_in"
+
+	var panel: PanelContainer = PanelCanalizacionScript.new()
+	add_child(panel)
+	panel.abrir(red_test)
+	assert(panel.visible, "el panel se abre")
+	assert("Tubería #101" in panel._titulo.text)
+	assert("Crudo" in panel._recurso.text)
+	assert("Centro de extracción" in panel._conexiones.text, "muestra edificio origen conectado")
+	assert("Almacén" in panel._conexiones.text, "muestra edificio destino conectado")
+
+	# Probar demoler desde el panel
+	panel._confirmar_demoler()
+	assert(not panel.visible, "tras demoler el panel se cierra")
+	assert(not Canalizaciones.tipo_por_red.has(red_test), "la red fue eliminada")
+
+	panel.queue_free()
+	Economia.puestos.erase(esq_orig)
+	Economia.puestos.erase(esq_dest)
+	Canalizaciones.reiniciar()
+	print("OK: PanelCanalizacion verificado.")

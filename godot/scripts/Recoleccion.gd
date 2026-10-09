@@ -33,7 +33,7 @@ const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Madera/h por recolector bajo la cual un maderero se da por agotado (decisión del usuario, 2026-10-02).
 const UMBRAL_AGOTADO_MADERERO := 0.5
 
-const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad"]
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen"]
 ## Escuelas: tipo de puesto -> {"origen", "destino", "horas"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
 ## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
 ## conserva (4 obreros = 3 técnicos, 3 técnicos = 2 especialistas) y quien sobra se va de la ciudad.
@@ -65,6 +65,7 @@ const GeneradorMundoScript = preload("res://scripts/GeneradorMundo.gd")
 const RENDIMIENTO_POR_BLOQUE := {
 	"tierra": 1.0, "piedra": 10.0, "hierro": 10.0, "cobre": 10.0,
 	"carbon": 10.0, "tierras_raras": 10.0, "madera": 10.0,
+	"crudo": 10.0,
 }
 
 ## Segundos que el avatar tarda en minar un bloque por tipo (material real,
@@ -183,6 +184,8 @@ func cupo_de(tipo: String) -> int:
 		"pesca_frutos_mar": return PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
 		"universidad": return 3
 		"central_termoelectrica": return 4
+		"estacion_bombeo", "centro_extraccion": return 3
+		"almacen": return 0
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.PERSONAL_MAXIMO_REFINERIA
 	if ESCUELAS.has(tipo):
@@ -198,6 +201,8 @@ func capacidad_almacen_de(tipo: String) -> int:
 		"caza_recoleccion": return CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION
 		"pesca_frutos_mar": return CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR
 		"central_termoelectrica": return 300
+		"estacion_bombeo", "centro_extraccion": return 500
+		"almacen": return 3000
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.CAPACIDAD_ALMACENAMIENTO_REFINERIA
 	return 0
@@ -471,6 +476,60 @@ func siguiente_bloque_mina(mundo: Object, centro_xz: Vector2i, altura_superficie
 	return mejor
 
 
+## Bloques de crudo conectados en el pozo a partir de la columna de perforación.
+func bloques_crudo_pozo(mundo: Object, columna_pozo: Vector2i, y_sup: int, y_fondo: int) -> Array[Vector3i]:
+	var bloques: Array[Vector3i] = []
+	var visitadas: Dictionary = {}
+	var cola: Array[Vector3i] = []
+	# Semillas: bloques de crudo en o adyacentes a la columna entre y_fondo e y_sup
+	for y in range(y_fondo, y_sup + 1):
+		for dx in range(-1, 2):
+			for dz in range(-1, 2):
+				var celda := Vector3i(columna_pozo.x + dx, y, columna_pozo.y + dz)
+				if mundo.obtener_tipo(celda) == "crudo" and not visitadas.has(celda):
+					visitadas[celda] = true
+					cola.append(celda)
+					bloques.append(celda)
+	var dirs: Array[Vector3i] = [
+		Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
+		Vector3i(0, 1, 0), Vector3i(0, -1, 0),
+		Vector3i(0, 0, 1), Vector3i(0, 0, -1)
+	]
+	var idx := 0
+	while idx < cola.size():
+		var actual: Vector3i = cola[idx]
+		idx += 1
+		for d in dirs:
+			var vecino: Vector3i = actual + d
+			if not visitadas.has(vecino) and mundo.obtener_tipo(vecino) == "crudo":
+				visitadas[vecino] = true
+				cola.append(vecino)
+				bloques.append(vecino)
+	return bloques
+
+
+## Siguiente bloque de crudo a extraer: el de mayor Y (y en caso de empate, menor distancia a la columna).
+func siguiente_bloque_crudo_pozo(mundo: Object, columna_pozo: Vector2i, y_sup: int, y_fondo: int) -> Vector3i:
+	var bloques := bloques_crudo_pozo(mundo, columna_pozo, y_sup, y_fondo)
+	if bloques.is_empty():
+		return SIN_BLOQUE
+	var mejor: Vector3i = bloques[0]
+	for b in bloques:
+		if b.y > mejor.y:
+			mejor = b
+		elif b.y == mejor.y:
+			var d_b := (Vector2i(b.x, b.z) - columna_pozo).length_squared()
+			var d_m := (Vector2i(mejor.x, mejor.z) - columna_pozo).length_squared()
+			if d_b < d_m:
+				mejor = b
+	return mejor
+
+
+## Cantidad de bloques de crudo restantes en el pozo.
+func contar_crudo_pozo(mundo: Object, columna_pozo: Vector2i, y_sup: int, y_fondo: int) -> int:
+	return bloques_crudo_pozo(mundo, columna_pozo, y_sup, y_fondo).size()
+
+
 ## Árboles vivos registrados a "radio" celdas o menos de "centro".
 func arboles_vivos_en(mundo: Object, centro: Vector2i, radio: int) -> int:
 	return mundo.arboles.ids_en_radio(centro, radio).size()
@@ -480,10 +539,12 @@ func arboles_vivos_en(mundo: Object, centro: Vector2i, radio: int) -> int:
 ## extraer: "centro" y "altura" (superficie en el centro al colocarlo);
 ## "centro_agua" (pesca); "radio_arboles" y "arboles_ref" (árboles vivos en su
 ## área al colocarlo — caza/recolección y maderero).
-func entorno_de_puesto(tipo: String, mundo: Object, centro: Vector2i, altura: int, centro_agua: Vector2i = SIN_CENTRO) -> Dictionary:
+func entorno_de_puesto(tipo: String, mundo: Object, centro: Vector2i, altura: int, centro_agua: Vector2i = SIN_CENTRO, datos_perforacion: Dictionary = {}) -> Dictionary:
 	var entorno := {"centro": centro, "altura": altura}
 	if centro_agua != SIN_CENTRO:
 		entorno["centro_agua"] = centro_agua
+	if not datos_perforacion.is_empty():
+		entorno["datos_perforacion"] = datos_perforacion.duplicate()
 	if tipo == "caza_recoleccion" or tipo == "maderero":
 		var radio: int = RADIO_AREA_MADERERO if tipo == "maderero" else RADIO_AREA_CAZA_RECOLECCION
 		entorno["radio_arboles"] = radio
@@ -538,6 +599,18 @@ func factor_arboles(mundo: Object, entorno: Dictionary) -> float:
 ## tasa_maderero()/tasas_pesca_frutos_mar()). Caza/recolección y maderero se
 ## escalan con factor_arboles(): talar el bosque reduce fauna, frutos y madera.
 func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary, nivel: int = 1) -> Dictionary:
+	if tipo == "estacion_bombeo":
+		return {"agua": 2.0}
+	if tipo == "centro_extraccion":
+		var dp: Dictionary = entorno.get("datos_perforacion", {})
+		var tipo_p: String = dp.get("tipo_pozo", entorno.get("tipo_pozo", "agua"))
+		if tipo_p == "crudo":
+			if dp.has("perforacion"):
+				var restantes: int = contar_crudo_pozo(mundo, dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
+				if restantes <= 0:
+					return {"crudo": 0.0}
+			return {"crudo": 2.5}
+		return {"agua": 5.0}
 	var centro: Vector2i = entorno["centro"]
 	if tipo == "mina":
 		return tasas_recoleccion(detectar_recursos_extraibles(mundo, centro, entorno["altura"], profundidad_de_nivel(nivel)))

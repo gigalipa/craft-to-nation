@@ -302,4 +302,56 @@ func ejecutar_pruebas() -> void:
 		for bloque15 in base15.values():
 			assert(mundo15._id_por_tipo.has(bloque15), "falta el bloque " + bloque15)
 
-	print("\n=== Las 15 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 16: plantillas de liquidos (estacion_bombeo, centro_extraccion, almacen) y mapeo de puertos ===")
+	assert(PlantillasPuesto.BLOQUES.get("1") == "puerto_agua_in")
+	assert(PlantillasPuesto.BLOQUES.get("2") == "puerto_agua_out")
+	assert(PlantillasPuesto.BLOQUES.get("3") == "puerto_crudo_in")
+	assert(PlantillasPuesto.BLOQUES.get("4") == "puerto_crudo_out")
+	assert(PlantillasPuesto.BLOQUES.get("5") == "puerto_combustible_in")
+	assert(PlantillasPuesto.BLOQUES.get("6") == "puerto_combustible_out")
+
+	# Estacion de bombeo: 4x6 con muelle en filas 4-5 y puerto_agua_out
+	assert(PlantillasPuesto.dimensiones("estacion_bombeo") == Vector2i(4, 6))
+	var celdas_bombeo: Dictionary = PlantillasPuesto.celdas("estacion_bombeo", 0)
+	var tiene_puerto_agua_out := false
+	for b in celdas_bombeo.values():
+		if b == "puerto_agua_out":
+			tiene_puerto_agua_out = true
+	assert(tiene_puerto_agua_out, "estacion_bombeo debe tener puerto_agua_out")
+
+	# Centro de extraccion: 5x5 con puerto_agua_out y puerto_crudo_out y perforacion central
+	assert(PlantillasPuesto.dimensiones("centro_extraccion") == Vector2i(5, 5))
+	var celdas_extraccion: Dictionary = PlantillasPuesto.celdas("centro_extraccion", 0)
+	var puertos_ext: Array = []
+	for b in celdas_extraccion.values():
+		if b == "puerto_agua_out" or b == "puerto_crudo_out":
+			puertos_ext.append(b)
+	assert(puertos_ext.has("puerto_agua_out") and puertos_ext.has("puerto_crudo_out"), "centro_extraccion debe tener puerto agua y crudo out")
+	assert(PlantillasPuesto.PLANTILLAS["centro_extraccion"].get("perforacion") == Vector2i(2, 2), "perforacion central en (2,2)")
+
+	# Almacen: 5x5 con 2 puertas al frente, ventana atras, 3 puertos IN a la izquierda y 3 OUT a la derecha
+	assert(PlantillasPuesto.dimensiones("almacen") == Vector2i(5, 5))
+	var celdas_almacen: Dictionary = PlantillasPuesto.celdas("almacen", 0)
+	var conteo_alm := {}
+	for b in celdas_almacen.values():
+		conteo_alm[b] = conteo_alm.get(b, 0) + 1
+	assert(conteo_alm.get("puerto_agua_in", 0) == 1)
+	assert(conteo_alm.get("puerto_agua_out", 0) == 1)
+	assert(conteo_alm.get("puerto_crudo_in", 0) == 1)
+	assert(conteo_alm.get("puerto_crudo_out", 0) == 1)
+	assert(conteo_alm.get("puerto_combustible_in", 0) == 1)
+	assert(conteo_alm.get("puerto_combustible_out", 0) == 1)
+	assert(conteo_alm.get("baul", 0) == 1)
+	assert(conteo_alm.get("puerta_inferior", 0) == 2, "2 puertas al frente")
+	assert(conteo_alm.get("vidrio", 0) >= 1, "ventana posterior")
+
+	# Todos los puertos de todas las plantillas deben ubicarse a capa 4 (y=4, 3 bloques de aire de separación del suelo)
+	var tipos_con_puertos := ["estacion_bombeo", "centro_extraccion", "almacen", "refineria_petrolera", "productor_combustible", "central_termoelectrica"]
+	for tipo_p in tipos_con_puertos:
+		var celdas_p: Dictionary = PlantillasPuesto.celdas(tipo_p, 0)
+		for pos in celdas_p:
+			var bloque: String = celdas_p[pos]
+			if VoxelWorld.es_puerto(bloque):
+				assert(pos.y == 4, "%s: puerto %s en pos %s debe estar en y=4" % [tipo_p, bloque, str(pos)])
+
+	print("\n=== Las 16 pruebas de PlantillasPuesto pasaron correctamente ===")

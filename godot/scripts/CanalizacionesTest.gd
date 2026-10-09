@@ -10,6 +10,7 @@ const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 class MundoMock:
 	var _bloques: Dictionary = {} # Vector3i -> String
 	var _alturas: Dictionary = {} # Vector2i -> int
+	var celda_a_despeje: Dictionary = {} # Vector3i -> String
 	var altura_default: int = 10
 
 	func altura_en(x: int, z: int) -> int:
@@ -24,6 +25,9 @@ class MundoMock:
 	func colocar_bloque(celda: Vector3i, tipo: String, _por_jugador: bool = true) -> bool:
 		_bloques[celda] = tipo
 		return true
+
+	func minar_bloque(celda: Vector3i) -> void:
+		_bloques.erase(celda)
 
 	func id_de_edificio(_celda: Vector3i) -> int:
 		return -1
@@ -242,6 +246,35 @@ func ejecutar_pruebas() -> void:
 	assert(geom_pto.tramos_diagonales[0].inicio == Vector3i(6, 6, 5), "diagonal inicia en ducto de puerto")
 	assert(geom_pto.tramos_diagonales[0].fin == Vector3i(11, 14, 5), "diagonal termina en cabezal de 1ra columna")
 	print("OK: Altura obligatoria de puerto y primera columna a 5 bloques verificada.")
+
+	print("\n=== CANALIZACIONES TEST 12: Despeje de puertos contiguos y desconexión/derrame dinámico al minar ===")
+	var mundo12 = MundoMock.new()
+	# 1. Registrar despeje de un puerto de crudo
+	mundo12.celda_a_despeje[Vector3i(5, 14, 1)] = "puerto_crudo_out"
+	# Trazar acueducto que pasa por (5, 14, 1) debe ser rechazado
+	var puntos_invaden: Array[Vector2i] = [Vector2i(5, 0), Vector2i(5, 1), Vector2i(5, 2)]
+	var geom_inv = canalizaciones.calcular_geometria_tramo("acueducto", puntos_invaden, mundo12)
+	assert(not geom_inv.valido, "acueducto no debe invadir despeje de puerto de crudo")
+	assert("puerto de crudo" in geom_inv.motivo, "motivo debe indicar el puerto invadido: %s" % geom_inv.motivo)
+
+	# 2. Probar desconexión / derrame al minar bloque intermedio
+	var puntos_flujo: Array[Vector2i] = [Vector2i(0, 40), Vector2i(1, 40), Vector2i(2, 40), Vector2i(3, 40)]
+	for pt in puntos_flujo:
+		mundo12.fijar_altura(pt.x, pt.y, 10)
+	var geom_flujo = canalizaciones.calcular_geometria_tramo("tuberia", puntos_flujo, mundo12)
+	var red_flujo: int = canalizaciones.construir_tramo("tuberia", geom_flujo, mundo12)
+	var p_out12 := Vector3i(0, 14, 40)
+	var p_in12 := Vector3i(3, 14, 40)
+	canalizaciones.asignar_puerto_a_red(red_flujo, p_out12, "puerto_crudo_out")
+	canalizaciones.asignar_puerto_a_red(red_flujo, p_in12, "puerto_crudo_in")
+	assert(canalizaciones.estado_de_puerto(p_out12) == "conectado")
+	assert(canalizaciones.estado_de_puerto(p_in12) == "conectado")
+
+	# Minar el bloque en x=2
+	canalizaciones.quitar_celdas([Vector3i(2, 14, 40)], mundo12)
+	assert(canalizaciones.estado_de_puerto(p_out12) == "derrame", "al romperse la vía hacia el destino, la salida pasa a derrame: %s" % canalizaciones.estado_de_puerto(p_out12))
+	assert(canalizaciones.estado_de_puerto(p_in12) == "desconectado", "al quedar inalcanzable, la entrada pasa a desconectado")
+	print("OK: Despeje y desconexión/derrame dinámico verificados.")
 
 	print("\n=== Todas las pruebas de Canalizaciones pasaron correctamente ===")
 

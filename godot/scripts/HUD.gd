@@ -25,6 +25,7 @@ const UMBRAL_TASA_TARJETA := 0.3
 
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
+const PanelCanalizacionScript = preload("res://scripts/PanelCanalizacion.gd")
 const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
 const PanelContextualScript = preload("res://scripts/PanelContextual.gd")
 const BarraModosScript = preload("res://scripts/BarraModos.gd")
@@ -64,6 +65,7 @@ const NOMBRES_TASA := {
 
 var _panel_puesto: PanelContainer
 var _panel_edificio: PanelContainer
+var _panel_canalizacion: PanelContainer
 var _barra_progreso: ProgressBar
 var _barra_superior: PanelContainer
 var _contexto: PanelContainer
@@ -109,6 +111,9 @@ func _init() -> void:
 	_panel_edificio = PanelEdificioScript.new()
 	add_child(_panel_edificio)
 	_panel_edificio.aviso.connect(notificar)
+	_panel_canalizacion = PanelCanalizacionScript.new()
+	add_child(_panel_canalizacion)
+	_panel_canalizacion.aviso.connect(notificar)
 	_notificaciones = PanelNotificacionesScript.new()
 	add_child(_notificaciones)
 
@@ -253,9 +258,11 @@ func set_extra_contexto(texto: String) -> void:
 ## placeholder fijo, "10 tierra · 10 madera · 5 piedra" para los 4 tipos por
 ## igual, reporte del usuario 2026-09-30), personal, almacenamiento y, en
 ## vivo, la recolección prevista por ciudadano según la posición del cursor.
-func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}, tasas_por_nivel: Array = []) -> void:
+func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}, tasas_por_nivel: Array = [], extra_datos: Dictionary = {}) -> void:
 	var almacenamiento := "" if Recoleccion.ESCUELAS.has(tipo) else " · Almacenamiento: %d" % Recoleccion.capacidad_almacen_de(tipo)
 	var prevision: String = texto_tasas_mina_por_nivel(tasas_por_nivel) if tipo == "mina" and not tasas_por_nivel.is_empty() else texto_tasas(tipo, tasas)
+	if tipo == "centro_extraccion" and extra_datos.has("profundidad"):
+		prevision += "\nProfundidad del pozo: %d bloques" % extra_datos["profundidad"]
 	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, prevision]
 	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra, bloques)
 
@@ -305,6 +312,16 @@ static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
 		"pesca_frutos_mar":
 			if tasas.get("pesca", 0.0) <= 0.0 and tasas.get("frutos_mar", 0.0) <= 0.0:
 				return "Recolección prevista: sin agua detectada"
+		"estacion_bombeo":
+			return "Bombeo previsto por técnico:\n  %.1f agua/h" % tasas.get("agua", 2.0)
+		"centro_extraccion":
+			if tasas.is_empty():
+				return "Extracción prevista: sin depósito subterráneo"
+			var rec: String = tasas.keys()[0]
+			var rec_nombre: String = NOMBRES_RECURSO.get(rec, rec).to_lower()
+			return "Extracción prevista por técnico:\n  %.1f %s/h" % [tasas.get(rec, 5.0), rec_nombre]
+		"almacen":
+			return "Almacén general (sin recolección)"
 	var lineas_comida: Array = []
 	for clave in tasas:
 		lineas_comida.append("%.1f comida/h por %s" % [tasas[clave], NOMBRES_TASA.get(clave, clave)])
@@ -388,18 +405,32 @@ func abrir_ventana_dato(cual: String) -> void:
 
 func abrir_panel_puesto(esquina: Vector2i) -> void:
 	_panel_edificio.cerrar()
+	_panel_canalizacion.cerrar()
 	_panel_puesto.abrir(esquina)
 
 
 func cerrar_panel_puesto() -> void:
 	_panel_puesto.cerrar()
 	_panel_edificio.cerrar()
+	_panel_canalizacion.cerrar()
 
 
 ## Ventana de un edificio u obra (ver PanelEdificio).
 func abrir_panel_edificio(id: int) -> void:
 	_panel_puesto.cerrar()
+	_panel_canalizacion.cerrar()
 	_panel_edificio.abrir(id)
+
+
+## Ventana de una canalización (ver PanelCanalizacion).
+func abrir_panel_canalizacion(id_red: int) -> void:
+	_panel_puesto.cerrar()
+	_panel_edificio.cerrar()
+	_panel_canalizacion.abrir(id_red)
+
+
+func cerrar_panel_canalizacion() -> void:
+	_panel_canalizacion.cerrar()
 
 
 ## Ventana de interacción del baúl (E apuntando al depósito de un puesto,

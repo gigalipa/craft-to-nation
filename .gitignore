@@ -36,6 +36,7 @@ Desktop.ini
 # Generated output
 build/
 dist/
+*.log
 
 # Worktrees aislados para desarrollo con subagentes (superpowers:using-git-worktrees)
 .worktrees/

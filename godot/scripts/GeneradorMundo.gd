@@ -47,6 +47,13 @@ const PROFUNDIDAD_HIERRO := 8
 const PROFUNDIDAD_TIERRAS_RARAS := 16
 const UMBRAL_TIERRAS_RARAS := 0.3
 
+## Profundidad mínima bajo superficie y umbral para pozos subterráneos de agua y crudo.
+## Nunca aparecen en la capa de tierra superficial ni cerca del suelo inmediato (profundidad >= 4).
+## MARGEN_POZO_BUFFER garantiza que ningún pozo de agua linde con uno de crudo.
+const PROFUNDIDAD_POZOS := 4
+const UMBRAL_POZO := 0.35
+const MARGEN_POZO_BUFFER := 0.20
+
 ## Umbral de _ruido_bosque.get_noise_2d() (rango [-1, 1]) por encima del cual
 ## una columna cae dentro de una zona de bosque real — ver densidad_arbol_en().
 ## 0.0 da ~50% de cobertura de zona (la mitad del bioma es "bosque posible"),
@@ -165,6 +172,8 @@ var _ruido_arbol: FastNoiseLite
 var _ruido_bosque: FastNoiseLite
 var _ruido_detalle: FastNoiseLite
 var _ruido_peces: FastNoiseLite
+var _ruido_pozo_crudo: FastNoiseLite
+var _ruido_pozo_agua: FastNoiseLite
 
 
 func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
@@ -254,6 +263,16 @@ func _init(semilla: int, ancho_mundo: int, largo_mundo: int) -> void:
 	_ruido_bosque.seed = semilla + 9
 	_ruido_bosque.noise_type = FastNoiseLite.TYPE_PERLIN
 	_ruido_bosque.frequency = 0.015
+
+	_ruido_pozo_crudo = FastNoiseLite.new()
+	_ruido_pozo_crudo.seed = semilla + 10
+	_ruido_pozo_crudo.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_pozo_crudo.frequency = 0.045
+
+	_ruido_pozo_agua = FastNoiseLite.new()
+	_ruido_pozo_agua.seed = semilla + 11
+	_ruido_pozo_agua.noise_type = FastNoiseLite.TYPE_PERLIN
+	_ruido_pozo_agua.frequency = 0.045
 
 	_semilla = semilla
 
@@ -403,6 +422,14 @@ static func _ancho_por_altura(altura: int, altura_min_naciente: int, altura_max_
 func tipo_en_profundidad(x: int, y: int, z: int, profundidad_bajo_superficie: int) -> String:
 	if profundidad_bajo_superficie < GROSOR_TIERRA:
 		return "tierra"
+	if profundidad_bajo_superficie >= PROFUNDIDAD_POZOS:
+		var r_crudo: float = _ruido_pozo_crudo.get_noise_3d(x, y, z)
+		if r_crudo > UMBRAL_POZO:
+			return "crudo"
+		var r_agua: float = _ruido_pozo_agua.get_noise_3d(x, y, z)
+		if r_agua > UMBRAL_POZO and r_crudo <= MARGEN_POZO_BUFFER:
+			return "agua"
+
 	var ruido: float = _ruido_mineral.get_noise_3d(x, y, z)
 	if profundidad_bajo_superficie >= PROFUNDIDAD_TIERRAS_RARAS and ruido > UMBRAL_TIERRAS_RARAS:
 		return "tierras_raras"
@@ -413,6 +440,30 @@ func tipo_en_profundidad(x: int, y: int, z: int, profundidad_bajo_superficie: in
 	if profundidad_bajo_superficie >= PROFUNDIDAD_CARBON and ruido > UMBRAL_CARBON:
 		return "carbon"
 	return "piedra"
+
+
+## true si la celda subterránea en (x, y, z) con la profundidad dada cae dentro de un pozo líquido.
+func es_pozo_en(x: int, y: int, z: int, profundidad_bajo_superficie: int) -> bool:
+	if profundidad_bajo_superficie < PROFUNDIDAD_POZOS:
+		return false
+	var r_crudo: float = _ruido_pozo_crudo.get_noise_3d(x, y, z)
+	if r_crudo > UMBRAL_POZO:
+		return true
+	var r_agua: float = _ruido_pozo_agua.get_noise_3d(x, y, z)
+	return r_agua > UMBRAL_POZO and r_crudo <= MARGEN_POZO_BUFFER
+
+
+## Tipo de líquido ("crudo", "agua" o "" si no es pozo).
+func tipo_pozo_en(x: int, y: int, z: int, profundidad_bajo_superficie: int) -> String:
+	if profundidad_bajo_superficie < PROFUNDIDAD_POZOS:
+		return ""
+	var r_crudo: float = _ruido_pozo_crudo.get_noise_3d(x, y, z)
+	if r_crudo > UMBRAL_POZO:
+		return "crudo"
+	var r_agua: float = _ruido_pozo_agua.get_noise_3d(x, y, z)
+	if r_agua > UMBRAL_POZO and r_crudo <= MARGEN_POZO_BUFFER:
+		return "agua"
+	return ""
 
 
 ## Altura correspondiente al percentil PERCENTIL_NIVEL_MAR de la

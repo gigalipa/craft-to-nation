@@ -1041,14 +1041,18 @@ func _actualizar_previsualizacion_puesto() -> void:
 	elif _tipo_puesto_activo == "centro_extraccion":
 		_ocultar_area_accion()
 		var dp: Dictionary = ev.get("datos_perforacion", {})
-		var tipo_p: String = dp.get("tipo_pozo", "agua")
-		tasas = {tipo_p: 5.0}
+		if ev.get("pozo_detectado", false):
+			var tipo_p: String = dp.get("tipo_pozo", "")
+			var tasa_val: float = 2.5 if tipo_p == "crudo" else 5.0
+			tasas = {tipo_p: tasa_val}
+		else:
+			tasas = {}
 	else:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MADERERO)
 	var resumen: Dictionary = _resumen_materiales_puesto(esquina, ev) if valida else {"neto": {}, "bloques": {}}
-	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, resumen["neto"], resumen["bloques"], tasas_por_nivel)
+	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, resumen["neto"], resumen["bloques"], tasas_por_nivel, ev.get("datos_perforacion", {}))
 
 
 ## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves
@@ -1998,7 +2002,7 @@ func _ocultar_area_accion() -> void:
 ## llegar a y = 0, desplazando la celda detectada muy lejos del cursor. Si
 ## el rayo no golpea nada (apunta al cielo, fuera del mundo generado), cae
 ## de vuelta a la intersección con el plano y = 0 como aproximación.
-func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
+func _celda_3d_bajo_mouse(posicion_pantalla: Vector2) -> Vector3i:
 	var origen := project_ray_origin(posicion_pantalla)
 	var direccion := project_ray_normal(posicion_pantalla)
 
@@ -2017,7 +2021,13 @@ func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
 		var normal: Vector3 = resultado["normal"]
 		punto = resultado["position"] - normal * 0.5
 
-	var celda: Vector3i = mundo.local_to_map(mundo.to_local(punto))
+	if mundo != null and mundo.has_method("local_to_map"):
+		return mundo.local_to_map(mundo.to_local(punto))
+	return Vector3i(roundi(punto.x), roundi(punto.y), roundi(punto.z))
+
+
+func _celda_bajo_mouse(posicion_pantalla: Vector2) -> Vector2i:
+	var celda := _celda_3d_bajo_mouse(posicion_pantalla)
 	return Vector2i(celda.x, celda.z)
 
 
@@ -2304,6 +2314,15 @@ func _confirmar_trazo_ducto() -> void:
 		hud.notificar("Error al construir canalización.")
 		return
 
+	# Registrar celdas pagadas para reembolso al minar
+	if mundo != null and Canalizaciones != null and Canalizaciones.TIPOS.has(_tipo_ducto_activo):
+		var costo_d: Dictionary = Canalizaciones.TIPOS[_tipo_ducto_activo].get("costo_ducto", {})
+		var costo_c: Dictionary = Canalizaciones.TIPOS[_tipo_ducto_activo].get("costo_columna", {})
+		for c: Vector3i in geom.get("celdas_ducto", []):
+			mundo.celdas_pagadas[c] = costo_d.duplicate()
+		for col: Vector3i in geom.get("celdas_columna", []):
+			mundo.celdas_pagadas[col] = costo_c.duplicate()
+
 	# Conexión automática con puertos vecinos
 	for c_ducto: Vector3i in geom.get("celdas_ducto", []):
 		for delta in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
@@ -2385,8 +2404,16 @@ func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
 	var id: int = Obras.id_en_columna(columna)
 	if id != -1:
 		hud.abrir_panel_edificio(id)
-	else:
-		hud.cerrar_panel_puesto()
+		return
+	if Canalizaciones != null:
+		var celda_3d := _celda_3d_bajo_mouse(posicion_pantalla)
+		var id_red: int = Canalizaciones.red_en_celda(celda_3d)
+		if id_red == -1:
+			id_red = Canalizaciones.red_en_columna(columna)
+		if id_red != -1:
+			hud.abrir_panel_canalizacion(id_red)
+			return
+	hud.cerrar_panel_puesto()
 
 
 ## Clic con el modo demoler:
@@ -2825,11 +2852,13 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		if tipo_pozo != "":
 			pozo_detectado = true
 			var H: int = y_sup - y_fondo
+			var prof_pozo: int = y_sup - y_tope
 			datos_perforacion = {
 				"perforacion": col_perf,
 				"y_superficie": y_sup,
 				"y_fondo": y_fondo,
 				"y_tope": y_tope,
+				"profundidad": prof_pozo,
 				"tipo_pozo": tipo_pozo,
 				"bloques_hierro": H,
 			}

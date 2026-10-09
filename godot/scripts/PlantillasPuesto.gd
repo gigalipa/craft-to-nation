@@ -28,6 +28,10 @@ const BLOQUES := {
 	# solo dice cuál es cuál (ver celda_de_servicio()/celda_de_salida()).
 	"e": "puerta_inferior", "E": "puerta_superior",
 	"s": "puerta_inferior", "S": "puerta_superior",
+	# Puertos de líquidos (entrada y salida)
+	"1": "puerto_agua_in", "2": "puerto_agua_out",
+	"3": "puerto_crudo_in", "4": "puerto_crudo_out",
+	"5": "puerto_combustible_in", "6": "puerto_combustible_out",
 }
 
 ## Material de muro de cada tipo de puesto (era de prehistoria: cada uno usa
@@ -48,6 +52,9 @@ const MATERIAL := {
 	"refineria_petrolera": "estructura_hierro",
 	"productor_combustible": "bloque_piedra",
 	"central_termoelectrica": "bloque_piedra",
+	"estacion_bombeo": "bloque_madera",
+	"centro_extraccion": "estructura_hierro",
+	"almacen": "bloque_piedra",
 }
 
 const PLANTILLAS := {
@@ -140,35 +147,68 @@ const PLANTILLAS := {
 		["##D##", "V...V", "#...#", "V...V", "#####"],
 		["#####", "#####", "#####", "#####", "#####"],
 	]},
-	# Refinería petrolera: torre de refinación de 3 capas de chimenea en el centro (2, 2).
+	# Refinería petrolera: torre de refinación en el centro (2, 2) y puertos a capa 4.
 	"refineria_petrolera": {"capas": [
 		["#####", "#####", "#####", "#####", "#####"],
 		["##e##", "#...#", "#..B#", "#...#", "##s##"],
 		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#...#", "#...#", "#...#", "#####"],
+		["#####", "3...#", "#...#", "#...6", "#####"],
 		["#####", "#####", "#####", "#####", "#####"],
 		[".....", ".....", "..#..", ".....", "....."],
 		[".....", ".....", "..#..", ".....", "....."],
 		[".....", ".....", "..#..", ".....", "....."],
 	], "chimenea": Vector2i(2, 2)},
-	# Productor de combustible: chimenea en (3, 3) y baúl en (1, 1).
+	# Productor de combustible: chimenea en (3, 3), baúl en (1, 1) y puertos a capa 4.
 	"productor_combustible": {"capas": [
 		["#####", "#####", "#####", "#####", "#####"],
 		["##e##", "#B..#", "#...#", "#...#", "##s##"],
 		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#...#", "#...#", "#...#", "#####"],
+		["#####", "1...#", "#...#", "#...6", "#####"],
 		["#####", "#####", "#####", "#####", "#####"],
 		[".....", ".....", ".....", "...#.", "....."],
 		[".....", ".....", ".....", "...#.", "....."],
 	], "chimenea": Vector2i(3, 3)},
-	# Central termoeléctrica: chimenea alta en (1, 1).
+	# Central termoeléctrica: chimenea alta en (1, 1) y puertos a capa 4.
 	"central_termoelectrica": {"capas": [
 		["#####", "#####", "#####", "#####", "#####"],
-		["##e##", "#...#", "#..B#", "#...#", "##s##"],
+		["##e##", "#..B#", "#...#", "#...#", "##s##"],
 		["##E##", "V...V", "#...#", "V...V", "##S##"],
+		["#####", "#...#", "#...#", "#...#", "#####"],
+		["#####", "5...3", "#...#", "#...#", "#####"],
 		["#####", "#####", "#####", "#####", "#####"],
 		[".....", ".#...", ".....", ".....", "....."],
 		[".....", ".#...", ".....", ".....", "....."],
 		[".....", ".#...", ".....", ".....", "....."],
 	], "chimenea": Vector2i(1, 1)},
+	# Estación de bombeo de agua superficial: muelle sobre agua (filas 4-5) y puerto a capa 4.
+	"estacion_bombeo": {"capas": [
+		["####", "####", "####", "####", "####", "####"],
+		["#d##", "#..#", "#.B#", "####", "####", "####"],
+		["#D##", "V..V", "#..#", "####", "....", "...."],
+		["####", "#..#", "#..#", "####", "....", "...."],
+		["####", "#..#", "2..#", "####", "....", "...."],
+		["####", "####", "####", "####", "....", "...."],
+	], "agua_ref": Vector2i(0, 5)},
+	# Centro de extracción subterránea: perforación central (2, 2) y puertos de salida a capa 4.
+	"centro_extraccion": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##d##", "#...#", "#B..#", "#...#", "#####"],
+		["##D##", "V...V", "#...#", "V...V", "#####"],
+		["#####", "#...#", "#...#", "#...#", "#####"],
+		["#####", "4...2", "#...#", "#...#", "#####"],
+		["#####", "#####", "#####", "#####", "#####"],
+	], "perforacion": Vector2i(2, 2)},
+	# Almacén de zona industrial: 5x5 con 2 puertas al frente, ventana atrás y 6 puertos a capa 4.
+	"almacen": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["#e#s#", "#...#", "#.B.#", "#...#", "##V##"],
+		["#E#S#", "#...#", "#...#", "#...#", "##V##"],
+		["#####", "#...#", "#...#", "#...#", "#####"],
+		["#####", "1...2", "3...4", "5...6", "#####"],
+		["#####", "#####", "#####", "#####", "#####"],
+	]},
 }
 
 
@@ -312,11 +352,19 @@ static func celda_chimenea(tipo: String, giros: int) -> Vector3i:
 	return _girar(Vector3i(columna.x, altura(tipo) - 1, columna.y), d.x, d.y, giros)
 
 
-## Solo pesca_frutos_mar: índice (0 = extremo de coordenada baja, 1 = alta) del
-## extremo de agua a lo largo del eje largo de la huella girada, con la misma
-## convención que CamaraCenital._celdas_extremo_pesca() (eje largo = Z si alto > ancho).
-static func indice_extremo_agua(giros: int) -> int:
-	var tipo := "pesca_frutos_mar"
+## Columna local (x, z) girada del pozo de perforación de un centro de extracción.
+static func celda_perforacion(tipo: String, giros: int) -> Vector2i:
+	if not PLANTILLAS.has(tipo) or not PLANTILLAS[tipo].has("perforacion"):
+		return Vector2i.ZERO
+	var d := dimensiones(tipo)
+	var p: Vector2i = PLANTILLAS[tipo]["perforacion"]
+	var girado := _girar(Vector3i(p.x, 0, p.y), d.x, d.y, giros)
+	return Vector2i(girado.x, girado.z)
+
+
+## Índice (0 = extremo de coordenada baja, 1 = alta) del extremo de agua
+## a lo largo del eje largo de la huella girada (pesca_frutos_mar o estacion_bombeo).
+static func indice_extremo_agua(giros: int, tipo: String = "pesca_frutos_mar") -> int:
 	var d := dimensiones(tipo)
 	var ref: Vector2i = PLANTILLAS[tipo]["agua_ref"]
 	var p := _girar(Vector3i(ref.x, 0, ref.y), d.x, d.y, giros)
@@ -349,4 +397,33 @@ static func fachada(tipo: String, giros: int) -> Array[Vector2i]:
 					if not vistas.has(candidata):
 						vistas[candidata] = true
 						resultado.append(candidata)
+	return resultado
+
+
+const INFO_PUERTOS_BLOQUE := {
+	"1": {"recurso": "agua", "direccion": "Entrada", "nombre": "Entrada agua"},
+	"2": {"recurso": "agua", "direccion": "Salida", "nombre": "Salida agua"},
+	"3": {"recurso": "crudo", "direccion": "Entrada", "nombre": "Entrada crudo"},
+	"4": {"recurso": "crudo", "direccion": "Salida", "nombre": "Salida crudo"},
+	"5": {"recurso": "combustible", "direccion": "Entrada", "nombre": "Entrada combustible"},
+	"6": {"recurso": "combustible", "direccion": "Salida", "nombre": "Salida combustible"},
+}
+
+
+## Puertos exteriores definidos en la plantilla del puesto (caracteres "1" a "6").
+static func puertos_de(tipo: String) -> Array[Dictionary]:
+	if not PLANTILLAS.has(tipo):
+		return []
+	var resultado: Array[Dictionary] = []
+	var vistos := {}
+	var capas: Array = PLANTILLAS[tipo]["capas"]
+	for y in range(capas.size()):
+		var filas: Array = capas[y]
+		for z in range(filas.size()):
+			var fila: String = filas[z]
+			for x in range(fila.length()):
+				var ch: String = fila[x]
+				if INFO_PUERTOS_BLOQUE.has(ch) and not vistos.has(ch):
+					vistos[ch] = true
+					resultado.append(INFO_PUERTOS_BLOQUE[ch])
 	return resultado

@@ -124,6 +124,13 @@ func ingresar_fluido_almacen(recurso: String, cantidad: float) -> float:
 	var admitido: float = minf(cantidad, espacio)
 	if admitido > 1e-9:
 		reserva_fluidos[recurso] = reserva_fluidos.get(recurso, 0.0) + admitido
+		if ciudad != null and ciudad.almacen.has(recurso):
+			if ciudad.almacen[recurso] is Object and ciudad.almacen[recurso].has_method("agregar"):
+				ciudad.almacen[recurso].agregar(admitido)
+			elif ciudad.almacen[recurso] is Object and "cantidad" in ciudad.almacen[recurso]:
+				ciudad.almacen[recurso].cantidad += admitido
+			elif ciudad.almacen[recurso] is float or ciudad.almacen[recurso] is int:
+				ciudad.almacen[recurso] += admitido
 		return admitido
 	return 0.0
 
@@ -134,6 +141,13 @@ func extraer_fluido_almacen(recurso: String, cantidad: float) -> float:
 	var sacado: float = minf(disponible, cantidad)
 	if sacado > 1e-9:
 		reserva_fluidos[recurso] = maxf(0.0, disponible - sacado)
+		if ciudad != null and ciudad.almacen.has(recurso):
+			if ciudad.almacen[recurso] is Object and ciudad.almacen[recurso].has_method("quitar"):
+				ciudad.almacen[recurso].quitar(sacado)
+			elif ciudad.almacen[recurso] is Object and "cantidad" in ciudad.almacen[recurso]:
+				ciudad.almacen[recurso].cantidad = maxf(0.0, ciudad.almacen[recurso].cantidad - sacado)
+			elif ciudad.almacen[recurso] is float or ciudad.almacen[recurso] is int:
+				ciudad.almacen[recurso] = maxf(0.0, ciudad.almacen[recurso] - sacado)
 		return sacado
 	return 0.0
 
@@ -501,12 +515,113 @@ func simular_hora() -> void:
 			var concedido: float = _extraer(esquina, recurso, producido[recurso] * factor)
 			if concedido > 0.0:
 				p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + concedido
+	_procesar_transporte_fluidos()
 	if horas_investigacion > 0.0 and ciudad != null:
 		ciudad.actualizar_investigacion(horas_investigacion)
 	_horas_desde_recalculo += 1
 	if _horas_desde_recalculo >= TICKS_RECALCULO:
 		_horas_desde_recalculo = 0
 		recalcular_todas()
+
+
+## Transporta fluidos acumulados en almacenes locales a través de tuberías conectadas.
+func _procesar_transporte_fluidos() -> void:
+	if mundo == null:
+		return
+	for esquina: Vector2i in puestos:
+		var p: Dictionary = puestos[esquina]
+		var alm: Dictionary = p.get("almacen", {})
+		if alm.is_empty():
+			continue
+
+		for rec in ["agua", "crudo", "combustible"]:
+			var cant_disp: float = alm.get(rec, 0.0)
+			if cant_disp <= 1e-9:
+				continue
+
+			var puertos_out: Array[Vector3i] = _puertos_salida_de_puesto(esquina, rec)
+			for p_out in puertos_out:
+				if cant_disp <= 1e-9:
+					break
+				if Canalizaciones == null:
+					break
+				var destinos: Array[Vector3i] = Canalizaciones.destinos_de_puerto_salida(p_out)
+				if destinos.is_empty():
+					var id_red: int = Canalizaciones.puertos_conectados.get(p_out, -1)
+					if id_red > 0 and not Canalizaciones.extremos_abiertos_de_red(id_red).is_empty():
+						var c_derrame: Vector3i = Canalizaciones.verter_derrame(id_red, rec, mundo)
+						if c_derrame != Vector3i.ZERO:
+							var derramado: float = minf(cant_disp, 10.0)
+							alm[rec] -= derramado
+							cant_disp -= derramado
+							if alm[rec] <= 1e-9:
+								alm.erase(rec)
+					continue
+
+				var cuota: float = cant_disp / float(destinos.size())
+				for p_in in destinos:
+					var enviado := 0.0
+					var esq_dest: Vector2i = _buscar_puesto_por_puerto(p_in)
+					var p_dest: Dictionary = puestos.get(esq_dest, {})
+					if p_dest.get("tipo", "") == "almacen":
+						enviado = ingresar_fluido_almacen(rec, cuota)
+					elif not p_dest.is_empty():
+						var cap_dest: float = p_dest.get("capacidad", 1000.0)
+						var espacio_dest: float = maxf(0.0, cap_dest - _total(p_dest.get("almacen", {})))
+						enviado = minf(cuota, espacio_dest)
+						if enviado > 1e-9:
+							p_dest["almacen"][rec] = p_dest["almacen"].get(rec, 0.0) + enviado
+
+					if enviado > 1e-9:
+						alm[rec] -= enviado
+						cant_disp -= enviado
+						if alm[rec] <= 1e-9:
+							alm.erase(rec)
+
+
+func _puertos_salida_de_puesto(esquina: Vector2i, rec: String) -> Array[Vector3i]:
+	var res: Array[Vector3i] = []
+	if not puestos.has(esquina):
+		return res
+	var p: Dictionary = puestos[esquina]
+	var ancho: int = p.get("ancho", 0)
+	var alto: int = p.get("alto", 0)
+	var patron := "puerto_" + rec + "_out"
+
+	# 1. Buscar en Canalizaciones.puertos_conectados dentro del área del puesto
+	if Canalizaciones != null:
+		for celda: Vector3i in Canalizaciones.puertos_conectados:
+			if celda.x >= esquina.x and celda.x < esquina.x + ancho and celda.z >= esquina.y and celda.z < esquina.y + alto:
+				if Canalizaciones.tipo_por_puerto.get(celda, "") == patron:
+					res.append(celda)
+
+	# 2. Si no encontró en Canalizaciones, escanear en mundo
+	if res.is_empty() and mundo != null and mundo.has_method("obtener_tipo"):
+		var suelo: int = p.get("suelo", 0)
+		if suelo != SIN_SUELO:
+			var y_p: int = suelo + 4
+			for dx in range(ancho):
+				for dz in range(alto):
+					var celda := Vector3i(esquina.x + dx, y_p, esquina.y + dz)
+					var tipo_b: String = mundo.obtener_tipo(celda)
+					if tipo_b == patron:
+						res.append(celda)
+	return res
+
+
+func _buscar_puesto_por_puerto(celda_puerto: Vector3i) -> Vector2i:
+	for esq: Vector2i in puestos:
+		var p: Dictionary = puestos[esq]
+		var ancho: int = p.get("ancho", 0)
+		var alto: int = p.get("alto", 0)
+		if celda_puerto.x >= esq.x and celda_puerto.x < esq.x + ancho and celda_puerto.z >= esq.y and celda_puerto.z < esq.y + alto:
+			return esq
+	return Vector2i(-99999, -99999)
+
+
+func buscar_puesto_por_puerto(celda_puerto: Vector3i) -> Vector2i:
+	return _buscar_puesto_por_puerto(celda_puerto)
+
 
 
 ## Vuelve a medir el entorno de cada puesto y actualiza sus tasas.

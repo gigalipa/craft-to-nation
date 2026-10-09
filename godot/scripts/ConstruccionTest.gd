@@ -6,6 +6,8 @@ extends Node
 ## pruebas y no debe lanzar ningún error de assert().
 
 
+const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -76,4 +78,27 @@ func ejecutar_pruebas() -> void:
 	assert(Construccion.tipo_pendiente(id_7) == "", "sin nada pendiente, devuelve vacío")
 	assert(Construccion.tipo_pendiente(999999) == "", "un id inexistente devuelve vacío")
 
-	print("\n=== Las 7 pruebas de Construccion pasaron correctamente ===")
+	print("\n=== TEST 8: helpers de puertos en VoxelWorld ===")
+	assert(VoxelWorld.es_puerto("puerto_agua_in"))
+	assert(VoxelWorld.es_puerto("puerto_crudo_out"))
+	assert(VoxelWorld.es_puerto("puerto_combustible_in"))
+	assert(not VoxelWorld.es_puerto("tierra"))
+	assert(not VoxelWorld.es_puerto("puerto_invalido"))
+	assert(VoxelWorld.recurso_de_puerto("puerto_agua_in") == "agua")
+	assert(VoxelWorld.recurso_de_puerto("puerto_crudo_out") == "crudo")
+	assert(VoxelWorld.recurso_de_puerto("puerto_combustible_in") == "combustible")
+	assert(VoxelWorld.recurso_de_puerto("tierra") == "")
+	assert(VoxelWorld.direccion_de_puerto("puerto_agua_in") == "in")
+	assert(VoxelWorld.direccion_de_puerto("puerto_agua_out") == "out")
+	assert(VoxelWorld.direccion_de_puerto("tierra") == "")
+	for p_tipo in VoxelWorld.TIPOS_PUERTO:
+		assert(VoxelWorld.COLOR_DESTACADO.has(p_tipo), "puerto %s debe tener color destacado" % p_tipo)
+
+	var mundo8: Node = VoxelWorld.new()
+	var celdas_p8 := {Vector3i(5, 1, 5): "puerto_agua_in"}
+	var desp8: Dictionary = mundo8.calcular_despeje(celdas_p8)
+	assert(desp8.size() == 4, "puerto en celda aislada tiene 4 lados externos de profundidad 1")
+	assert(desp8.values()[0] == "puerto_agua_in")
+	mundo8.free()
+
+	print("\n=== Las 8 pruebas de Construccion pasaron correctamente ===")

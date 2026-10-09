@@ -207,11 +207,16 @@ func _actualizar() -> void:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
 	var siguiente_inv: int = Ciudad.nivel_investigado + 1
 	var sin_candidatos_inv: bool = es_universidad and _libres_de("investigador") == 0 and Ciudad.COSTOS_INVESTIGACION.has(siguiente_inv)
-	_libres.visible = (not es_escuela and not con_niveles and not es_universidad and puesto["tipo"] != "almacen" and Colonos.tecnicos_libres() == 0) or sin_candidatos_inv
+	var total_trabajadores: int = t["recolectores"] + t["acarreadores"]
+	var hay_vacantes: bool = total_trabajadores < puesto["cupo"]
+	_libres.visible = (not es_escuela and not con_niveles and not es_universidad and puesto["tipo"] != "almacen" and Colonos.tecnicos_libres() == 0 and hay_vacantes) or sin_candidatos_inv
 	if sin_candidatos_inv:
 		_libres.text = "Sin candidatos libres: requiere %s" % ("técnicos o especialistas" if siguiente_inv == 2 else "especialistas")
 	else:
-		_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
+		if Ciudad.demografia.get("tecnico", 0) > 0:
+			_libres.text = "No hay técnicos libres"
+		else:
+			_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
 	_almacen.visible = not es_escuela and not es_universidad
 	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica" and puesto["tipo"] != "almacen"
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]

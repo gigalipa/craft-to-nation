@@ -8,6 +8,7 @@ extends Node
 ## las 9 pruebas y no debe lanzar ningún error de assert().
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
+const Player = preload("res://scripts/Player.gd")
 
 
 ## Mundo falso: mapea celdas de grilla a un tipo de bloque ("agua" por
@@ -16,11 +17,16 @@ const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 ## transform propio (equivalente a un GridMap sin rotar en el origen).
 class MundoFalso extends Node:
 	var celdas_agua: Dictionary = {}  # Vector3i -> true
+	var celdas_crudo: Dictionary = {}  # Vector3i -> true
 	var corriente_por_celda: Dictionary = {}  # Vector2i(x,z) -> Dictionary
 	var cascada_por_celda: Dictionary = {}  # Vector2i(x,z) -> Dictionary
 
 	func obtener_tipo(celda: Vector3i) -> String:
-		return "agua" if celdas_agua.has(celda) else "aire"
+		if celdas_agua.has(celda):
+			return "agua"
+		if celdas_crudo.has(celda):
+			return "crudo"
+		return "aire"
 
 	func to_local(global_pos: Vector3) -> Vector3:
 		return global_pos
@@ -38,6 +44,11 @@ class MundoFalso extends Node:
 func _agua_en_columna(mundo: MundoFalso, x: int, z: int, y_desde: int, y_hasta: int) -> void:
 	for y in range(y_desde, y_hasta + 1):
 		mundo.celdas_agua[Vector3i(x, y, z)] = true
+
+
+func _crudo_en_columna(mundo: MundoFalso, x: int, z: int, y_desde: int, y_hasta: int) -> void:
+	for y in range(y_desde, y_hasta + 1):
+		mundo.celdas_crudo[Vector3i(x, y, z)] = true
 
 
 func _ready() -> void:
@@ -152,4 +163,17 @@ func ejecutar_pruebas() -> void:
 	assert(not j.modo_vias and not j.modo_deconstruccion, "desactiva modo vias")
 	j.free()
 
-	print("\n=== Las 10 pruebas de Player pasaron correctamente ===")
+	print("\n=== TEST 11: profundidad y física en crudo ===")
+	var mundo_crudo := MundoFalso.new()
+	_crudo_en_columna(mundo_crudo, 0, 0, 10, 12)
+	var jugador_crudo := Player.new()
+	jugador_crudo.mundo = mundo_crudo
+	print("Profundidad en el fondo de crudo (y=10): ", jugador_crudo._profundidad_agua_en(Vector3(0, 10, 0)), " (esperada: 3)")
+	assert(jugador_crudo._profundidad_agua_en(Vector3(0, 10, 0)) == 3)
+	print("Profundidad en superficie de crudo (y=12): ", jugador_crudo._profundidad_agua_en(Vector3(0, 12, 0)), " (esperada: 1)")
+	assert(jugador_crudo._profundidad_agua_en(Vector3(0, 12, 0)) == 1)
+	assert(Player.FACTOR_VISCOSIDAD_CRUDO == 0.5, "factor viscosidad crudo debe ser 0.5")
+	jugador_crudo.free()
+	mundo_crudo.free()
+
+	print("\n=== Las 11 pruebas de Player pasaron correctamente ===")

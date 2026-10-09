@@ -542,4 +542,85 @@ func ejecutar_pruebas() -> void:
 	Zonificacion.nucleo_declarado = false
 	mundo16.free()
 
-	print("\n=== Las 16 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== TEST 17: estacion_bombeo requiere extremo de agua con al menos 2 bloques de profundidad bajo su muelle ===")
+	Recoleccion.puestos.clear()
+	var mundo17: Node = _mundo_plano()
+	# Creamos una costa: x en [10..14], z en [10..13] es tierra (y=0), z en [14..20] es agua
+	# Caso A: agua poco profunda (profundidad 1 bloque: agua en y=0, piedra en y=-1)
+	for x in range(8, 20):
+		for z in range(14, 25):
+			mundo17.set_cell_item(Vector3i(x, 0, z), GridMap.INVALID_CELL_ITEM)
+			mundo17.colocar_bloque(Vector3i(x, -1, z), "bloque_piedra")
+			mundo17.colocar_bloque(Vector3i(x, 0, z), "agua")
+	var cam_bom: Camera3D = _camara(mundo17, "estacion_bombeo")
+	var esq_bom := Vector2i(10, 10)
+	var ev_bom: Dictionary = cam_bom._evaluar_puesto(esq_bom)
+	var rech_bom: String = cam_bom._mensaje_rechazo_puesto(ev_bom)
+	assert("profundidad de agua" in rech_bom, "con 1 bloque de profundidad debe rechazar: %s" % rech_bom)
+
+	# Caso B: profundizamos el agua a 2 bloques (piedra a y=-2, agua en y=-1 e y=0)
+	for x in range(8, 20):
+		for z in range(14, 25):
+			mundo17.set_cell_item(Vector3i(x, -1, z), GridMap.INVALID_CELL_ITEM)
+			mundo17.colocar_bloque(Vector3i(x, -2, z), "bloque_piedra")
+			mundo17.colocar_bloque(Vector3i(x, -1, z), "agua")
+	ev_bom = cam_bom._evaluar_puesto(esq_bom)
+	assert(cam_bom._mensaje_rechazo_puesto(ev_bom) == "", "con 2 bloques de profundidad debe aceptar: %s" % cam_bom._mensaje_rechazo_puesto(ev_bom))
+	cam_bom.free()
+	mundo17.free()
+
+	print("\n=== TEST 18: centro_extraccion detecta pozo subterráneo, calcula bloques de hierro y rechaza si no hay pozo ===")
+	Recoleccion.puestos.clear()
+	var mundo18: Node = _mundo_plano()
+	var esq_ext := Vector2i(10, 10)
+	var cam_ext: Camera3D = _camara(mundo18, "centro_extraccion")
+
+	# Caso A: sin pozo -> rechazado
+	var ev_ext: Dictionary = cam_ext._evaluar_puesto(esq_ext)
+	var rech_ext: String = cam_ext._mensaje_rechazo_puesto(ev_ext)
+	assert("depósito subterráneo" in rech_ext, "sin pozo debe rechazar: %s" % rech_ext)
+
+	# Caso B: colocamos crudo subterráneo en la columna de perforación (10+2, 10+2) = (12, 12) a y=-4, -5, -6
+	# La superficie natural está en y=0
+	mundo18.colocar_bloque(Vector3i(12, -4, 12), "crudo")
+	mundo18.colocar_bloque(Vector3i(12, -5, 12), "crudo")
+	mundo18.colocar_bloque(Vector3i(12, -6, 12), "crudo")
+	ev_ext = cam_ext._evaluar_puesto(esq_ext)
+	assert(cam_ext._mensaje_rechazo_puesto(ev_ext) == "", "con pozo debe aceptar: %s" % cam_ext._mensaje_rechazo_puesto(ev_ext))
+	assert(ev_ext.has("datos_perforacion"), "debe incluir datos_perforacion")
+	var dp: Dictionary = ev_ext["datos_perforacion"]
+	assert(dp["tipo_pozo"] == "crudo")
+	assert(dp["y_superficie"] == 0)
+	assert(dp["y_fondo"] == -6)
+	assert(dp["bloques_hierro"] == 6, "H = 0 - (-6) = 6 bloques")
+	# Verificamos que el resumen de materiales sume los 6 bloques de estructura_hierro
+	var res_mat: Dictionary = cam_ext._resumen_materiales_puesto(esq_ext, ev_ext)
+	assert(res_mat["bloques"]["estructura_hierro"] >= 6, "debe incluir los bloques de estructura_hierro de la tubería")
+	cam_ext.free()
+	mundo18.free()
+
+	print("\n=== TEST 19: almacen es puesto industrial (requiere influencia y zona industrial) ===")
+	Recoleccion.puestos.clear()
+	var mundo19: Node = _mundo_plano()
+	var esq_alm := Vector2i(24, 18)
+	var cam_alm: Camera3D = _camara(mundo19, "almacen")
+
+	# Fuera de influencia: rechaza
+	var ev_alm: Dictionary = cam_alm._evaluar_puesto(esq_alm)
+	assert("zona de influencia" in cam_alm._mensaje_rechazo_puesto(ev_alm))
+
+	# Dentro de influencia pero zona residencial: rechaza
+	Zonificacion.declarar_nucleo([Vector2i(30, 30), Vector2i(31, 30), Vector2i(30, 31), Vector2i(31, 31)])
+	Zonificacion.pintar_zona(esq_alm, esq_alm + Vector2i(5, 5), Zonificacion.ZONAS_PINTABLES[0])
+	ev_alm = cam_alm._evaluar_puesto(esq_alm)
+	assert("zona industrial" in cam_alm._mensaje_rechazo_puesto(ev_alm))
+
+	# Dentro de influencia y zona industrial: acepta
+	Zonificacion.pintar_zona(esq_alm, esq_alm + Vector2i(5, 5), Zonificacion.ZONAS_PINTABLES[1])
+	ev_alm = cam_alm._evaluar_puesto(esq_alm)
+	assert(cam_alm._mensaje_rechazo_puesto(ev_alm) == "", "sobre zona industrial debe ser válido: %s" % cam_alm._mensaje_rechazo_puesto(ev_alm))
+	cam_alm.free()
+	Zonificacion.nucleo_declarado = false
+	mundo19.free()
+
+	print("\n=== Las 19 pruebas de previsualización de puestos pasaron correctamente ===")

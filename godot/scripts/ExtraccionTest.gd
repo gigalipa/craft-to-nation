@@ -166,4 +166,108 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(Ciudad.almacen["tablas"].cantidad, 5.0), "reembolsa 5 tablas")
 	assert(is_equal_approx(Ciudad.almacen["madera"].cantidad, 0.0), "no crea madera cruda")
 
-	print("\n=== Las 12 pruebas de la extracción del avatar pasaron correctamente ===")
+	print("\n=== TEST 13: VoxelWorld coloca y retira tubería de hierro reembolsando a Ciudad.almacen ===")
+	var mundo13: Node = _mundo_nuevo()
+	var col13 := Vector2i(20, 20)
+	var y_sup13 := 5
+	var y_fondo13 := -2
+	# Colocamos tubería desde 4 hasta -2 -> 7 bloques
+	var puestos_tubo: int = mundo13.colocar_tuberia_extraccion(col13, y_sup13, y_fondo13)
+	assert(puestos_tubo == 7, "debe colocar 7 bloques de estructura_hierro")
+	for y in range(y_sup13 - 1, y_fondo13 - 1, -1):
+		assert(mundo13.obtener_tipo(Vector3i(col13.x, y, col13.y)) == "estructura_hierro")
+	Ciudad.almacen["hierro"].cantidad = 0.0
+	var retirados_tubo: int = mundo13.retirar_tuberia_extraccion(col13, y_sup13, y_fondo13)
+	assert(retirados_tubo == 7)
+	assert(is_equal_approx(Ciudad.almacen["hierro"].cantidad, 35.0), "debe reembolsar 35 hierro (7 bloques x 5)")
+	for y in range(y_sup13 - 1, y_fondo13 - 1, -1):
+		assert(mundo13.obtener_tipo(Vector3i(col13.x, y, col13.y)) == "")
+	mundo13.free()
+
+	print("\n=== TEST 14: Recoleccion detecta bloques conectados de crudo y extrae desde mayor Y hacia el fondo ===")
+	var mundo14: Node = _mundo_nuevo()
+	var col14 := Vector2i(15, 15)
+	mundo14.colocar_bloque(Vector3i(15, -2, 15), "crudo")
+	mundo14.colocar_bloque(Vector3i(15, -3, 15), "crudo")
+	mundo14.colocar_bloque(Vector3i(15, -4, 15), "crudo")
+	mundo14.colocar_bloque(Vector3i(16, -3, 15), "crudo")  # conectado lateralmente
+	assert(Recoleccion.contar_crudo_pozo(mundo14, col14, 0, -4) == 4)
+	var sig14: Vector3i = Recoleccion.siguiente_bloque_crudo_pozo(mundo14, col14, 0, -4)
+	assert(sig14 == Vector3i(15, -2, 15), "el bloque de mayor Y debe ser el primero")
+	mundo14.retirar_bloque_extraido(sig14)
+	assert(Recoleccion.contar_crudo_pozo(mundo14, col14, 0, -4) == 3)
+	sig14 = Recoleccion.siguiente_bloque_crudo_pozo(mundo14, col14, 0, -4)
+	assert(sig14.y == -3, "el siguiente debe estar en y=-3")
+	mundo14.free()
+
+	print("\n=== TEST 15: Economia consume bloques reales de crudo, actualiza restantes y se agota al terminar ===")
+	var mundo15: Node = _mundo_nuevo()
+	var col15 := Vector2i(30, 30)
+	mundo15.colocar_bloque(Vector3i(30, -1, 30), "crudo")
+	mundo15.colocar_bloque(Vector3i(30, -2, 30), "crudo")
+	var esq_ext15 := Vector2i(28, 28)
+	var dp15 := {
+		"perforacion": col15,
+		"y_superficie": 0,
+		"y_fondo": -2,
+		"tipo_pozo": "crudo",
+		"bloques_hierro": 2,
+	}
+	var entorno15: Dictionary = Recoleccion.entorno_de_puesto("centro_extraccion", mundo15, esq_ext15 + Vector2i(2, 2), 0, Recoleccion.SIN_CENTRO, dp15)
+	var eco15: Node = preload("res://scripts/Economia.gd").new()
+	eco15.ciudad = Ciudad
+	eco15.mundo = mundo15
+	eco15.registrar_puesto(esq_ext15, "centro_extraccion", 5, 5, {"crudo": 10.0}, entorno15)
+	assert(eco15.puestos[esq_ext15]["crudo_restante"] == 2)
+	assert(eco15.asignar(esq_ext15, "tecnico", 1))
+	eco15.marcar_presente(1, true)
+	# Rendimiento por bloque de crudo es 10.0. 1 hora a tasa 10 extrae exactamente 1 bloque
+	eco15.simular_hora()
+	assert(eco15.puestos[esq_ext15]["almacen"]["crudo"] == 10.0)
+	assert(eco15.puestos[esq_ext15]["crudo_restante"] == 1, "queda 1 bloque")
+	assert(not eco15.puestos[esq_ext15]["agotado"])
+	# Segunda hora: extrae el segundo y último bloque
+	eco15.simular_hora()
+	assert(eco15.puestos[esq_ext15]["almacen"]["crudo"] == 20.0)
+	assert(eco15.puestos[esq_ext15]["crudo_restante"] == 0, "quedan 0 bloques")
+	assert(eco15.puestos[esq_ext15]["agotado"], "el pozo de crudo queda agotado")
+	assert(eco15.puestos[esq_ext15]["tasas"]["crudo"] == 0.0)
+	eco15.free()
+	mundo15.free()
+
+	print("\n=== TEST 16: Transporte de fluidos por tubería al almacén general de la ciudad ===")
+	var mundo16: Node = _mundo_nuevo()
+	var eco16: Node = preload("res://scripts/Economia.gd").new()
+	eco16.ciudad = Ciudad
+	eco16.mundo = mundo16
+	var esq_ext16 := Vector2i(50, 50)
+	var esq_alm16 := Vector2i(60, 50)
+	eco16.registrar_puesto(esq_ext16, "centro_extraccion", 5, 5, {"crudo": 10.0})
+	eco16.registrar_puesto(esq_alm16, "almacen", 5, 5, {})
+	eco16.puestos[esq_ext16]["almacen"]["crudo"] = 50.0
+	Ciudad.almacen["crudo"].cantidad = 0.0
+
+	# Conectar puerto de salida del centro de extracción con puerto de entrada del almacén
+	Canalizaciones.reiniciar()
+	var p_out16 := Vector3i(54, 4, 52)
+	var p_in16 := Vector3i(60, 4, 52)
+	Canalizaciones.tipo_por_puerto[p_out16] = "puerto_crudo_out"
+	Canalizaciones.tipo_por_puerto[p_in16] = "puerto_crudo_in"
+	Canalizaciones.puertos_conectados[p_out16] = 16
+	Canalizaciones.puertos_conectados[p_in16] = 16
+	Canalizaciones.recurso_por_red[16] = "crudo"
+	Canalizaciones.tipo_por_red[16] = "tuberia"
+	# Registrar bloque de puerto en mundo
+	mundo16.colocar_bloque(p_out16, "puerto_crudo_out")
+	mundo16.colocar_bloque(p_in16, "puerto_crudo_in")
+
+	# Procesar simular_hora en eco16
+	eco16.simular_hora()
+	assert(eco16.reserva_fluidos["crudo"] == 50.0, "el crudo fue transportado a la reserva de fluidos: %f" % eco16.reserva_fluidos["crudo"])
+	assert(Ciudad.almacen["crudo"].cantidad == 50.0, "el crudo fue transportado al almacén de la ciudad: %f" % Ciudad.almacen["crudo"].cantidad)
+	assert(eco16.puestos[esq_ext16]["almacen"].get("crudo", 0.0) == 0.0, "el almacén local quedó vacío tras el envío")
+	Canalizaciones.reiniciar()
+	eco16.free()
+	mundo16.free()
+
+	print("\n=== Las 16 pruebas de la extracción pasaron correctamente ===")

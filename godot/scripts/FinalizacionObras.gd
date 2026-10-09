@@ -5,6 +5,8 @@ extends RefCounted
 ## paso. Solo estáticos y sin estado; los mensajes se devuelven para que cada
 ## llamador los muestre a su manera (Player al HUD, Obras por su señal "aviso").
 
+const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
+
 ## Intervalo (s) entre pasos de colocar/surtir/deconstruir: el mismo para el jugador y los colonos.
 const INTERVALO_PASO := 0.20
 
@@ -22,11 +24,16 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 		var info: Dictionary = metadata["puesto_nuevo"]
 		var entorno: Dictionary = {}
 		var tasas: Dictionary = {}
-		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]) and info["tipo"] != "universidad" and info["tipo"] != "central_termoelectrica":
+		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]) and info["tipo"] != "universidad" and info["tipo"] != "central_termoelectrica" and info["tipo"] != "almacen":
 			var centro: Vector2i = info["centro"]
 			var altura: int = mundo.altura_en(centro.x, centro.y)
-			entorno = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"])
+			var dp: Dictionary = metadata.get("datos_perforacion", info.get("datos_perforacion", {}))
+			entorno = Recoleccion.entorno_de_puesto(info["tipo"], mundo, centro, altura, info["centro_agua"], dp)
 			tasas = Recoleccion.tasas_de_entorno(info["tipo"], mundo, entorno)
+		if info["tipo"] == "centro_extraccion":
+			var dp: Dictionary = metadata.get("datos_perforacion", info.get("datos_perforacion", {}))
+			if not dp.is_empty():
+				mundo.colocar_tuberia_extraccion(dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
 		Recoleccion.colocar_puesto(info["esquina"], info["tipo"], info["ancho"], info["alto"])
 		# info["y_base"] es la Y de la losa de piso (capa 0, ver PlantillasPuesto.gd);
 		# el piso interior TRANSITABLE (donde vive la puerta) es una capa arriba.
@@ -104,6 +111,9 @@ static func retirar_edificio(mundo: Object, id: int) -> void:
 	var esquina: Vector2i = mundo.eliminar_edificio(id)
 	if metadata_final.has("puesto"):
 		esquina = metadata_final["puesto"]  # la esquina del puesto, no la de las celdas de la plantilla
+	var dp: Dictionary = metadata_final.get("datos_perforacion", {})
+	if not dp.is_empty():
+		mundo.retirar_tuberia_extraccion(dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
 	Zonificacion.retirar_contribucion(id)
 	Recoleccion.quitar_puesto(esquina)
 	Economia.quitar_puesto(esquina)  # libera a sus trabajadores (no-op si era un edificio)

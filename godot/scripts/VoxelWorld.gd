@@ -975,6 +975,10 @@ func _retirar_bloque(celda: Vector3i) -> void:
 	if not vecinos_agua.is_empty():
 		_escurrir_agua_desde(vecinos_agua)
 	Vias.quitar([celda])
+	if Canalizaciones != null and Canalizaciones.has_method("quitar_celdas"):
+		if Canalizaciones.es_celda_canalizacion(celda) or Canalizaciones.columnas.has(celda):
+			Canalizaciones.quitar_celdas([celda], null)
+
 
 
 ## Reembolsa a Ciudad.almacen el costo de "tipo" (NiveladorTerreno.

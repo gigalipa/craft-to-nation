@@ -137,7 +137,16 @@ func ejecutar_pruebas() -> void:
 	# Ducto asciende desde 14 (10+4) hasta 16 (12+4)
 	assert(geom_pend.celdas_ducto[0].y == 14, "inicio a 14")
 	assert(geom_pend.celdas_ducto[-1].y == 16, "final a 16")
-	print("OK: Pendiente diagonal une cimas sin columnas intermedias adicionales.")
+	# Tramo diagonal continuo detectado entre columnas
+	assert(geom_pend.get("tramos_diagonales", []).size() == 1, "detecta 1 tramo diagonal continuo")
+	assert(geom_pend.tramos_diagonales[0].inicio == Vector3i(0, 14, 0), "inicio de diagonal en cabezal de columna 0")
+	assert(geom_pend.tramos_diagonales[0].fin == Vector3i(5, 16, 0), "fin de diagonal en cabezal de columna 5")
+	var id_pend = canalizaciones.construir_tramo("tuberia", geom_pend, mundo_pendiente)
+	assert(mundo_pendiente.obtener_tipo(Vector3i(0, 14, 0)) == "tuberia", "cubo cabezal en columna 0")
+	assert(mundo_pendiente.obtener_tipo(Vector3i(5, 16, 0)) == "tuberia", "cubo cabezal en columna 5")
+	assert(mundo_pendiente.obtener_tipo(Vector3i(2, 15, 0)) == "", "vano diagonal no coloca cubos discretos en GridMap")
+	assert(canalizaciones.obtener_red_de_celda(Vector3i(2, 15, 0)) == id_pend, "celda intermedia registrada en red")
+	print("OK: Pendiente diagonal une cimas sin columnas intermedias adicionales y con tramo diagonal continuo.")
 
 	print("\n=== CANALIZACIONES TEST 6: Construir tramo materializa bloques y registra red ===")
 	var id_red = canalizaciones.construir_tramo("tuberia", geom, mundo)

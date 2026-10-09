@@ -45,6 +45,8 @@ var columnas: Dictionary = {}
 var puertos_conectados: Dictionary = {}
 ## derrames_activos: Vector3i (extremo abierto) -> String (recurso)
 var derrames_activos: Dictionary = {}
+## nodos_diagonales: int id_red -> Array[Node3D] (mallas diagonales continuas)
+var nodos_diagonales: Dictionary = {}
 
 var _siguiente_id_red := 1
 
@@ -53,6 +55,11 @@ var tipo_por_puerto: Dictionary = {} # Vector3i -> String
 
 
 func reiniciar() -> void:
+	for id_r in nodos_diagonales:
+		for nodo in nodos_diagonales[id_r]:
+			if is_instance_valid(nodo):
+				nodo.queue_free()
+	nodos_diagonales.clear()
 	celda_a_red.clear()
 	red_a_celdas.clear()
 	tipo_por_red.clear()
@@ -62,6 +69,7 @@ func reiniciar() -> void:
 	tipo_por_puerto.clear()
 	derrames_activos.clear()
 	_siguiente_id_red = 1
+
 
 
 func es_fluido_permitido(tipo_ducto: String, fluido: String) -> bool:
@@ -135,15 +143,24 @@ func extremos_abiertos_de_red(id_red: int) -> Array[Vector3i]:
 		return abiertos
 	for c: Vector3i in celdas:
 		var vecinos_misma_red := 0
-		for delta in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
-			if celda_a_red.get(c + delta, -1) == id_red:
-				vecinos_misma_red += 1
+		for dx in [-1, 0, 1]:
+			for dy in [-1, 0, 1]:
+				for dz in [-1, 0, 1]:
+					if dx == 0 and dy == 0 and dz == 0:
+						continue
+					if celda_a_red.get(c + Vector3i(dx, dy, dz), -1) == id_red:
+						vecinos_misma_red += 1
 		if vecinos_misma_red <= 1:
 			var tiene_puerto := false
-			for delta in [Vector3i(0, 0, 0), Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, -1, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1)]:
-				if puertos_conectados.has(c + delta) and puertos_conectados[c + delta] == id_red:
-					tiene_puerto = true
-					break
+			for dx in [-1, 0, 1]:
+				for dy in [-1, 0, 1]:
+					for dz in [-1, 0, 1]:
+						var delta := Vector3i(dx, dy, dz)
+						if puertos_conectados.has(c + delta) and puertos_conectados[c + delta] == id_red:
+							tiene_puerto = true
+							break
+					if tiene_puerto:
+						break
 			if not tiene_puerto:
 				abiertos.append(c)
 	if abiertos.is_empty() and celdas.size() > 0:
@@ -271,9 +288,11 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		var h_suelo: int = mundo.altura_en(p.x, p.y)
 		altura_cima[idx] = h_suelo + ALTURA_DUCTO_RELATIVA
 
-	# 3. Interpolar alturas de ducto entre columnas contiguas:
+	# 3. Interpolar alturas de ducto entre columnas contiguas y detectar tramos diagonales:
 	var alturas_ducto: Array[int] = []
 	alturas_ducto.resize(n)
+	var tramos_diagonales: Array[Dictionary] = []
+	var indices_diagonales: Dictionary = {}
 
 	for c in range(indices_columna.size()):
 		var idx_a: int = indices_columna[c]
@@ -281,9 +300,25 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		if c < indices_columna.size() - 1:
 			var idx_b: int = indices_columna[c + 1]
 			var dist: int = idx_b - idx_a
+			var y_a: int = altura_cima[idx_a]
+			var y_b: int = altura_cima[idx_b]
+			var es_diagonal: bool = (y_a != y_b)
+			var indices_intermedios: Array[int] = []
 			for k in range(idx_a + 1, idx_b):
 				var t: float = float(k - idx_a) / float(dist)
-				alturas_ducto[k] = roundi(lerp(float(altura_cima[idx_a]), float(altura_cima[idx_b]), t))
+				alturas_ducto[k] = roundi(lerp(float(y_a), float(y_b), t))
+				if es_diagonal:
+					indices_diagonales[k] = true
+					indices_intermedios.append(k)
+			if es_diagonal:
+				var p_a: Vector2i = puntos_2d[idx_a]
+				var p_b: Vector2i = puntos_2d[idx_b]
+				tramos_diagonales.append({
+					"inicio": Vector3i(p_a.x, y_a, p_a.y),
+					"fin": Vector3i(p_b.x, y_b, p_b.y),
+					"tipo": tipo,
+					"indices": indices_intermedios,
+				})
 
 	# 4. Generar celdas de ducto con detección de cruce a desnivel (+1 cota si ya hay canalización)
 	var celdas_ducto: Array[Vector3i] = []
@@ -299,6 +334,8 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		celdas_ducto.append(celda_tentativa)
 
 	resultado.celdas_ducto = celdas_ducto
+	resultado["tramos_diagonales"] = tramos_diagonales
+	resultado["indices_diagonales"] = indices_diagonales
 
 	# 5. Generar columnas verticales desde el suelo hasta justo debajo del ducto:
 	var celdas_columna: Array[Vector3i] = []
@@ -338,21 +375,88 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 
 	var celdas_d: Array = geom["celdas_ducto"]
 	var celdas_c: Array = geom["celdas_columna"]
+	var indices_diagonales: Dictionary = geom.get("indices_diagonales", {})
+	var tramos_diagonales: Array = geom.get("tramos_diagonales", [])
 
 	# Colocar columnas
 	for col: Vector3i in celdas_c:
 		mundo.colocar_bloque(col, bloque_c, true)
 		columnas[col] = id
 
-	# Colocar ductos
+	# Colocar ductos (omitiendo celdas intermedias del vano en tramos diagonales)
 	var registradas: Array[Vector3i] = []
-	for c: Vector3i in celdas_d:
-		mundo.colocar_bloque(c, bloque_d, true)
+	for i in range(celdas_d.size()):
+		var c: Vector3i = celdas_d[i]
+		if not indices_diagonales.has(i):
+			mundo.colocar_bloque(c, bloque_d, true)
 		celda_a_red[c] = id
 		registradas.append(c)
 		# Marcar que sobre el ducto no caminan colonos
 		if mundo.has_method("registrar_edificio"):
 			mundo.celda_sobre_techo[c + Vector3i(0, 1, 0)] = id
+
+	# Generar tramos diagonales continuos entre columnas con cambio de cota
+	var nodos_creados: Array[Node3D] = []
+	for tramo: Dictionary in tramos_diagonales:
+		var c_a: Vector3
+		var c_b: Vector3
+		if mundo != null and mundo.has_method("map_to_local"):
+			c_a = mundo.map_to_local(tramo["inicio"])
+			c_b = mundo.map_to_local(tramo["fin"])
+		else:
+			c_a = Vector3(tramo["inicio"].x + 0.5, tramo["inicio"].y + 0.5, tramo["inicio"].z + 0.5)
+			c_b = Vector3(tramo["fin"].x + 0.5, tramo["fin"].y + 0.5, tramo["fin"].z + 0.5)
+
+		var d_h := Vector3(c_b.x - c_a.x, 0.0, c_b.z - c_a.z)
+		var u_h := d_h.normalized() if d_h.length_squared() > 0.0001 else Vector3.FORWARD
+
+		var f_a := c_a + u_h * 0.5
+		var f_b := c_b - u_h * 0.5
+
+		var v := f_b - f_a
+		var long_neta := v.length()
+		var dir := v.normalized()
+		var long_total := long_neta + 0.2
+		var centro := (f_a + f_b) * 0.5
+
+		var eje_z := dir
+		var eje_x := Vector3.UP.cross(eje_z).normalized()
+		if eje_x.length_squared() < 0.001:
+			eje_x = Vector3.RIGHT
+		var eje_y := eje_z.cross(eje_x).normalized()
+		var basis_diag := Basis(eje_x, eje_y, eje_z)
+		var xform := Transform3D(basis_diag, centro)
+
+		var body := StaticBody3D.new()
+		body.name = "DuctoDiagonal_%d_%d" % [id, nodos_creados.size()]
+
+		var mesh_inst := MeshInstance3D.new()
+		var malla := BoxMesh.new()
+		malla.size = Vector3(1.0, 1.0, long_total)
+		var mat := StandardMaterial3D.new()
+		if tipo == "acueducto":
+			mat.albedo_color = Color(0.7, 0.65, 0.55)
+		else:
+			mat.albedo_color = Color(0.35, 0.38, 0.42)
+		mat.roughness = 0.9
+		malla.material = mat
+		mesh_inst.mesh = malla
+		body.add_child(mesh_inst)
+
+		var col_shape := CollisionShape3D.new()
+		var box_shape := BoxShape3D.new()
+		box_shape.size = Vector3(1.0, 1.0, long_total)
+		col_shape.shape = box_shape
+		body.add_child(col_shape)
+
+		body.transform = xform
+
+		if mundo != null and mundo.has_method("add_child"):
+			mundo.add_child(body)
+		nodos_creados.append(body)
+
+	if not nodos_creados.is_empty():
+		nodos_diagonales[id] = nodos_creados
 
 	red_a_celdas[id] = registradas
 	tipo_por_red[id] = tipo
@@ -361,15 +465,28 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 
 
 ## Elimina las celdas especificadas y actualiza la red.
-func quitar_celdas(celdas: Array, mundo: Object) -> void:
+func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
+	var redes_afectadas: Dictionary = {}
 	for celda: Vector3i in celdas:
 		if celda_a_red.has(celda):
 			var id: int = celda_a_red[celda]
+			redes_afectadas[id] = true
 			celda_a_red.erase(celda)
 			if red_a_celdas.has(id):
 				red_a_celdas[id].erase(celda)
 		if columnas.has(celda):
+			var id_c: int = columnas[celda]
+			redes_afectadas[id_c] = true
 			columnas.erase(celda)
-		if mundo.has_method("minar_bloque"):
+		if mundo != null and mundo.has_method("minar_bloque"):
 			mundo.minar_bloque(celda)
+
+	for id_r in redes_afectadas:
+		if nodos_diagonales.has(id_r):
+			for nodo in nodos_diagonales[id_r]:
+				if is_instance_valid(nodo):
+					nodo.queue_free()
+			nodos_diagonales.erase(id_r)
+
 	canalizaciones_cambiadas.emit()
+

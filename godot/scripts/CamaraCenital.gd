@@ -2188,6 +2188,10 @@ func _es_bloque_puerto(tipo: String) -> bool:
 func _es_puerto_adyacente(celda_2d: Vector2i) -> bool:
 	if mundo == null:
 		return false
+	if Canalizaciones != null and Canalizaciones.has_method("buscar_puerto_adyacente"):
+		var p_info: Dictionary = Canalizaciones.buscar_puerto_adyacente(celda_2d, _tipo_ducto_activo, mundo)
+		if p_info.get("existe", false):
+			return true
 	var y_suelo: int = mundo.altura_en(celda_2d.x, celda_2d.y) if mundo.has_method("altura_en") else 0
 	var celda_3d := Vector3i(celda_2d.x, y_suelo + 4, celda_2d.y)
 	for delta in [Vector3i(1, 0, 0), Vector3i(-1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 0, -1), Vector3i(0, 0, 0)]:
@@ -2201,8 +2205,8 @@ func _actualizar_preview_ducto() -> void:
 	var celda := _celda_bajo_mouse(get_viewport().get_mouse_position())
 	if not _hay_tramo_ducto_en_curso:
 		if via_preview != null:
-			var pts: Array[Vector2i] = [celda, celda]
-			via_preview.previsualizar_tramo(pts, true)
+			var pts: Array[Vector2i] = [celda]
+			via_preview.previsualizar_tramo(pts, true, 1)
 		var ficha: String = ""
 		if Canalizaciones != null and Canalizaciones.has_method("ficha_tecnica"):
 			ficha = Canalizaciones.ficha_tecnica(_tipo_ducto_activo, 0, 0)
@@ -2215,7 +2219,8 @@ func _actualizar_preview_ducto() -> void:
 		geom = Canalizaciones.calcular_geometria_tramo(_tipo_ducto_activo, camino, mundo)
 	var valido: bool = geom.get("valido", false)
 	if via_preview != null:
-		via_preview.previsualizar_tramo(camino, valido)
+		via_preview.previsualizar_tramo(camino, valido, 1)
+
 	var celdas_d: int = geom.get("celdas_ducto", []).size()
 	var celdas_c: int = geom.get("celdas_columna", []).size()
 	var ficha: String = ""

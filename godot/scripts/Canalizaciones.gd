@@ -236,7 +236,39 @@ func ficha_tecnica(tipo: String, celdas_ducto: int = 0, celdas_columna: int = 0)
 	]
 
 
-## Calcula la geometría del tramo: celdas de ducto a Y_suelo+4,
+## Busca si una celda 2D tiene un puerto adyacente (o en la misma celda) en el mundo.
+## Devuelve Dictionary con {"existe": bool, "celda_puerto": Vector3i, "tipo_puerto": String, "altura": int}
+func buscar_puerto_adyacente(p_2d: Vector2i, tipo_ducto: String, mundo: Object) -> Dictionary:
+	var res := {"existe": false, "celda_puerto": Vector3i.ZERO, "tipo_puerto": "", "altura": 0}
+	if mundo == null:
+		return res
+
+	var vecinos_2d: Array[Vector2i] = [
+		p_2d + Vector2i(1, 0),
+		p_2d + Vector2i(-1, 0),
+		p_2d + Vector2i(0, 1),
+		p_2d + Vector2i(0, -1),
+		p_2d,
+	]
+
+	for v_2d in vecinos_2d:
+		var h_base: int = mundo.altura_en(v_2d.x, v_2d.y) if mundo.has_method("altura_en") else 10
+		var y_min: int = mini(0, h_base - 8)
+		var y_max: int = maxi(30, h_base + 15)
+		for y in range(y_min, y_max):
+			var c_3d := Vector3i(v_2d.x, y, v_2d.y)
+			var tipo_b: String = mundo.obtener_tipo(c_3d) if mundo.has_method("obtener_tipo") else ""
+			if tipo_b.begins_with("puerto_"):
+				if tipo_ducto == "" or es_puerto_compatible(tipo_ducto, tipo_b):
+					res.existe = true
+					res.celda_puerto = c_3d
+					res.tipo_puerto = tipo_b
+					res.altura = y
+					return res
+	return res
+
+
+## Calcula la geometría del tramo: celdas de ducto a Y_suelo+4 (o altura de puerto si inicia/termina en él),
 ## columnas cada 5 bloques (vano 4), esquinas de 90°, pendientes diagonales y cruces a desnivel.
 func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: Object) -> Dictionary:
 	var resultado := {
@@ -254,51 +286,72 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		return resultado
 
 	var n := puntos_2d.size()
-	# 1. Identificar posiciones que llevan columna:
-	# - Índice 0 y n-1 (extremos)
-	# - Esquinas de 90° (cambio de dirección horizontal)
-	# - Cada 5 bloques de distancia acumulada
-	var indices_columna: Array[int] = [0]
-	var ultimo_indice_col := 0
+
+	# Detectar si extremos conectan con puertos compatibles
+	var puerto_inicio: Dictionary = buscar_puerto_adyacente(puntos_2d[0], tipo, mundo)
+	var puerto_fin: Dictionary = buscar_puerto_adyacente(puntos_2d[n - 1], tipo, mundo) if n > 1 else {"existe": false}
+
+	# 1. Identificar posiciones que son anclas / llevan columna:
+	# - Índice 0 es ancla. Si no tiene puerto, lleva columna.
+	# - Esquinas de 90° son ancla y llevan columna.
+	# - Cada 5 bloques de distancia acumulada desde el ancla anterior es ancla y lleva columna.
+	# - Índice n-1 es ancla. Si no tiene puerto, lleva columna.
+	var indices_ancla: Array[int] = [0]
+	var indices_columna: Array[int] = []
+	if not puerto_inicio.get("existe", false):
+		indices_columna.append(0)
+
+	var ultimo_indice_ref := 0
 
 	for i in range(1, n - 1):
 		var dir_ant: Vector2i = puntos_2d[i] - puntos_2d[i - 1]
 		var dir_sig: Vector2i = puntos_2d[i + 1] - puntos_2d[i]
 		if dir_ant != dir_sig:
 			# Esquina
-			if not indices_columna.has(i):
+			if not indices_ancla.has(i):
+				indices_ancla.append(i)
 				indices_columna.append(i)
-				ultimo_indice_col = i
+				ultimo_indice_ref = i
 				resultado.esquinas.append(puntos_2d[i])
-		elif (i - ultimo_indice_col) >= INTERVALO_COLUMNAS:
-			if not indices_columna.has(i):
+		elif (i - ultimo_indice_ref) >= INTERVALO_COLUMNAS:
+			if not indices_ancla.has(i):
+				indices_ancla.append(i)
 				indices_columna.append(i)
-				ultimo_indice_col = i
+				ultimo_indice_ref = i
 
-	if not indices_columna.has(n - 1) and n > 1:
-		indices_columna.append(n - 1)
+	if n > 1:
+		if not indices_ancla.has(n - 1):
+			indices_ancla.append(n - 1)
+		if not puerto_fin.get("existe", false):
+			if not indices_columna.has(n - 1):
+				indices_columna.append(n - 1)
 
+	indices_ancla.sort()
 	indices_columna.sort()
 
-	# 2. Calcular alturas de las cimas de las columnas:
-	# Cima de columna en punto p es mundo.altura_en(p.x, p.y) + ALTURA_DUCTO_RELATIVA
-	var altura_cima: Dictionary = {} # int (índice) -> int (Y_ducto)
-	for idx in indices_columna:
-		var p: Vector2i = puntos_2d[idx]
-		var h_suelo: int = mundo.altura_en(p.x, p.y)
-		altura_cima[idx] = h_suelo + ALTURA_DUCTO_RELATIVA
+	# 2. Calcular alturas de las cimas de las columnas / anclas:
+	var altura_cima: Dictionary = {} # int (índice ancla) -> int (Y_ducto)
+	for idx in indices_ancla:
+		if idx == 0 and puerto_inicio.get("existe", false):
+			altura_cima[0] = puerto_inicio["altura"]
+		elif idx == n - 1 and puerto_fin.get("existe", false):
+			altura_cima[n - 1] = puerto_fin["altura"]
+		else:
+			var p: Vector2i = puntos_2d[idx]
+			var h_suelo: int = mundo.altura_en(p.x, p.y) if mundo.has_method("altura_en") else 0
+			altura_cima[idx] = h_suelo + ALTURA_DUCTO_RELATIVA
 
-	# 3. Interpolar alturas de ducto entre columnas contiguas y detectar tramos diagonales:
+	# 3. Interpolar alturas de ducto entre anclas contiguas y detectar tramos diagonales:
 	var alturas_ducto: Array[int] = []
 	alturas_ducto.resize(n)
 	var tramos_diagonales: Array[Dictionary] = []
 	var indices_diagonales: Dictionary = {}
 
-	for c in range(indices_columna.size()):
-		var idx_a: int = indices_columna[c]
+	for c in range(indices_ancla.size()):
+		var idx_a: int = indices_ancla[c]
 		alturas_ducto[idx_a] = altura_cima[idx_a]
-		if c < indices_columna.size() - 1:
-			var idx_b: int = indices_columna[c + 1]
+		if c < indices_ancla.size() - 1:
+			var idx_b: int = indices_ancla[c + 1]
 			var dist: int = idx_b - idx_a
 			var y_a: int = altura_cima[idx_a]
 			var y_b: int = altura_cima[idx_b]
@@ -327,7 +380,7 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		var y: int = alturas_ducto[i]
 		var celda_tentativa := Vector3i(p.x, y, p.y)
 		# Verificar si hay canalización preexistente a la misma cota
-		var tipo_existente: String = mundo.obtener_tipo(celda_tentativa)
+		var tipo_existente: String = mundo.obtener_tipo(celda_tentativa) if mundo.has_method("obtener_tipo") else ""
 		if tipo_existente == "acueducto" or tipo_existente == "tuberia" or celda_a_red.has(celda_tentativa):
 			# Sobre-elevar 1 bloque para pasar por encima
 			celda_tentativa.y += 1
@@ -342,7 +395,7 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 	for idx in indices_columna:
 		var p: Vector2i = puntos_2d[idx]
 		var y_ducto: int = celdas_ducto[idx].y
-		var h_suelo: int = mundo.altura_en(p.x, p.y)
+		var h_suelo: int = mundo.altura_en(p.x, p.y) if mundo.has_method("altura_en") else 0
 		for y_col in range(h_suelo + 1, y_ducto):
 			celdas_columna.append(Vector3i(p.x, y_col, p.y))
 

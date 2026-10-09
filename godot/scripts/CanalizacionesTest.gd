@@ -212,6 +212,36 @@ func ejecutar_pruebas() -> void:
 	assert(celda_derrame != Vector3i.ZERO, "celda de derrame generada")
 	assert(mundo.obtener_tipo(celda_derrame) == "crudo", "bloque crudo colocado fisicamente en el mundo")
 	assert(canalizaciones.estado_de_puerto(Vector3i(20, 14, 20)) == "derrame", "puerto marcado en estado derrame")
-	print("OK: Derrames colocan bloques físicos y actualizan estado a 'derrame'.")
+	print("\n=== CANALIZACIONES TEST 11: Inicio frente a puerto alinea altura obligatoria y coloca 1ra columna a 5 bloques ===")
+	var mundo_puerto = MundoMock.new()
+	# Suelo en h=10
+	for x in range(20):
+		mundo_puerto.fijar_altura(x, 5, 10)
+	# Puerto a altura Y=6 en (5, 6, 5)
+	mundo_puerto.colocar_bloque(Vector3i(5, 6, 5), "puerto_agua_out")
+
+	var puntos_puerto: Array[Vector2i] = []
+	for x in range(6, 14): # x = 6 a 13 (8 bloques)
+		puntos_puerto.append(Vector2i(x, 5))
+
+	var geom_pto = canalizaciones.calcular_geometria_tramo("tuberia", puntos_puerto, mundo_puerto)
+	assert(geom_pto.valido, "tramo desde puerto valido")
+	# Celda 0 frente al puerto toma obligatoriamente la altura Y=6 del puerto (no 14)
+	assert(geom_pto.celdas_ducto[0] == Vector3i(6, 6, 5), "inicio de ducto a cota del puerto Y=6")
+	# La primera celda NO debe tener columna debajo
+	var cols_pto: Dictionary = {}
+	for col in geom_pto.celdas_columna:
+		cols_pto[Vector2i(col.x, col.z)] = true
+	assert(not cols_pto.has(Vector2i(6, 5)), "no hay columna en la celda inicial frente al puerto")
+	# La primera columna debe estar exactamente a 5 bloques de distancia: x = 6 + 5 = 11
+	assert(cols_pto.has(Vector2i(11, 5)), "primera columna ubicada a 5 bloques de distancia en x=11")
+	# Altura del ducto en x=11 debe ser h_suelo + 4 = 14
+	assert(geom_pto.celdas_ducto[5] == Vector3i(11, 14, 5), "ducto en columna 1 a cota normal Y=14")
+	# Debe haber un tramo diagonal continuo que conecte (6, 6, 5) con (11, 14, 5)
+	assert(geom_pto.tramos_diagonales.size() >= 1, "debe generarse tramo diagonal desde el puerto a la 1ra columna")
+	assert(geom_pto.tramos_diagonales[0].inicio == Vector3i(6, 6, 5), "diagonal inicia en ducto de puerto")
+	assert(geom_pto.tramos_diagonales[0].fin == Vector3i(11, 14, 5), "diagonal termina en cabezal de 1ra columna")
+	print("OK: Altura obligatoria de puerto y primera columna a 5 bloques verificada.")
 
 	print("\n=== Todas las pruebas de Canalizaciones pasaron correctamente ===")
+

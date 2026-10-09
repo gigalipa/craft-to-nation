@@ -24,21 +24,29 @@ var cantidad_celdas: int = 0
 ## deduplicar) — dibuja el rectángulo delimitador de cada paso consecutivo
 ## (más simple que el bloque 2x2 exacto de cada vértice, suficiente para
 ## la vista previa; la construcción real usa NiveladorVia.bloque_de_vertice()).
-func previsualizar_tramo(vertices: Array, valido: bool) -> void:
+func previsualizar_tramo(vertices: Array, valido: bool, ancho: int = 2) -> void:
 	limpiar()
-	if vertices.size() < 2:
+	if vertices.is_empty():
 		return
 	var color: Color = COLOR_VALIDO if valido else COLOR_INVALIDO
 	var columnas: Dictionary = {}  # Vector2i -> true, sin repetir plano
-	for i in range(vertices.size() - 1):
-		var a: Vector2i = vertices[i]
-		var b: Vector2i = vertices[i + 1]
-		for x in range(mini(a.x, b.x) - 1, maxi(a.x, b.x) + 1):
-			for z in range(mini(a.y, b.y) - 1, maxi(a.y, b.y) + 1):
-				columnas[Vector2i(x, z)] = true
+	if ancho == 1:
+		for v in vertices:
+			var pt: Vector2i = v if v is Vector2i else Vector2i(v.x, v.z)
+			columnas[pt] = true
+	else:
+		if vertices.size() < 2:
+			return
+		for i in range(vertices.size() - 1):
+			var a: Vector2i = vertices[i]
+			var b: Vector2i = vertices[i + 1]
+			for x in range(mini(a.x, b.x) - 1, maxi(a.x, b.x) + 1):
+				for z in range(mini(a.y, b.y) - 1, maxi(a.y, b.y) + 1):
+					columnas[Vector2i(x, z)] = true
 	cantidad_celdas = columnas.size()
 	for col in columnas:
 		_agregar_plano(col, color)
+
 
 
 func limpiar() -> void:

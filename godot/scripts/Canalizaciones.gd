@@ -731,62 +731,66 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 
 		var d_h := Vector3(c_b.x - c_a.x, 0.0, c_b.z - c_a.z)
 		var u_h := d_h.normalized() if d_h.length_squared() > 0.0001 else Vector3.FORWARD
+		var u_perp := Vector3.UP.cross(u_h).normalized()
 
 		var f_a := c_a + u_h * 0.5
 		var f_b := c_b - u_h * 0.5
 
-		# Ajuste de pivote según altura relativa (Observación 4):
-		# En el bloque inferior, pivote es el vértice superior de la cara.
-		# En el bloque superior, pivote es el vértice inferior de la cara.
-		var p_pivote_a: Vector3
-		var p_pivote_b: Vector3
-		if c_a.y < c_b.y:
-			p_pivote_a = f_a - Vector3.UP * 0.5
-			p_pivote_b = f_b + Vector3.UP * 0.5
-		elif c_a.y > c_b.y:
-			p_pivote_a = f_a + Vector3.UP * 0.5
-			p_pivote_b = f_b - Vector3.UP * 0.5
-		else:
-			p_pivote_a = f_a
-			p_pivote_b = f_b
+		# 8 vértices del prisma que conecta de forma exacta las caras colindantes:
+		# En la cara del bloque A:
+		var v0 := f_a - u_perp * 0.5 - Vector3.UP * 0.5
+		var v1 := f_a + u_perp * 0.5 - Vector3.UP * 0.5
+		var v2 := f_a + u_perp * 0.5 + Vector3.UP * 0.5
+		var v3 := f_a - u_perp * 0.5 + Vector3.UP * 0.5
 
-		var v := p_pivote_b - p_pivote_a
-		var long_neta := v.length()
-		var dir := v.normalized()
-		var long_total := long_neta + 0.8
-		var centro := (f_a + f_b) * 0.5
+		# En la cara del bloque B:
+		var v4 := f_b - u_perp * 0.5 - Vector3.UP * 0.5
+		var v5 := f_b + u_perp * 0.5 - Vector3.UP * 0.5
+		var v6 := f_b + u_perp * 0.5 + Vector3.UP * 0.5
+		var v7 := f_b - u_perp * 0.5 + Vector3.UP * 0.5
 
-		var eje_z := dir
-		var eje_x := Vector3.UP.cross(eje_z).normalized()
-		if eje_x.length_squared() < 0.001:
-			eje_x = Vector3.RIGHT
-		var eje_y := eje_z.cross(eje_x).normalized()
-		var basis_diag := Basis(eje_x, eje_y, eje_z)
-		var xform := Transform3D(basis_diag, centro)
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
-		var body := StaticBody3D.new()
-		body.name = "DuctoDiagonal_%d_%d" % [id, infos_creadas.size()]
-
-		var mesh_inst := MeshInstance3D.new()
-		var malla := BoxMesh.new()
-		malla.size = Vector3(1.0, 1.0, long_total)
 		var mat := StandardMaterial3D.new()
 		if tipo == "acueducto":
 			mat.albedo_color = Color(0.7, 0.65, 0.55)
 		else:
 			mat.albedo_color = Color(0.35, 0.38, 0.42)
 		mat.roughness = 0.9
-		malla.material = mat
-		mesh_inst.mesh = malla
+		st.set_material(mat)
+
+		# 6 caras en orden CCW visto desde afuera (normales hacia el exterior):
+		var quads := [
+			[v3, v7, v6, v2],  # Superior
+			[v0, v1, v5, v4],  # Inferior
+			[v0, v4, v7, v3],  # Lateral izquierda
+			[v1, v2, v6, v5],  # Lateral derecha
+			[v0, v3, v2, v1],  # Tapa A
+			[v4, v5, v6, v7],  # Tapa B
+		]
+		var uvs: Array[Vector2] = [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
+		for q in quads:
+			var n: Vector3 = (q[1] - q[0]).cross(q[2] - q[0]).normalized()
+			for idx in [0, 1, 2, 0, 2, 3]:
+				st.set_normal(n)
+				st.set_uv(uvs[idx])
+				st.add_vertex(q[idx])
+
+		var mesh_inst := MeshInstance3D.new()
+		mesh_inst.mesh = st.commit()
+
+		var body := StaticBody3D.new()
+		body.name = "DuctoDiagonal_%d_%d" % [id, infos_creadas.size()]
 		body.add_child(mesh_inst)
 
 		var col_shape := CollisionShape3D.new()
-		var box_shape := BoxShape3D.new()
-		box_shape.size = Vector3(1.0, 1.0, long_total)
-		col_shape.shape = box_shape
+		var convex_shape := ConvexPolygonShape3D.new()
+		convex_shape.points = PackedVector3Array([v0, v1, v2, v3, v4, v5, v6, v7])
+		col_shape.shape = convex_shape
 		body.add_child(col_shape)
 
-		body.transform = xform
+		body.transform = Transform3D.IDENTITY
 
 		if mundo != null and mundo.has_method("add_child"):
 			mundo.add_child(body)

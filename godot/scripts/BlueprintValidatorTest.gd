@@ -3,7 +3,6 @@ extends Node
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const Player = preload("res://scripts/Player.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
-const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
 
 ## Equivalente GDScript de ejecutar_pruebas() en PoC_2 (tests 1-6), más
 ## pruebas propias de PoC 3 para "declarar edificio" (7-8, ver

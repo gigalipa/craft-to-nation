@@ -7,7 +7,6 @@ const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
-const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.

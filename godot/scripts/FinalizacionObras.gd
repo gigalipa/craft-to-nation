@@ -5,8 +5,6 @@ extends RefCounted
 ## paso. Solo estáticos y sin estado; los mensajes se devuelven para que cada
 ## llamador los muestre a su manera (Player al HUD, Obras por su señal "aviso").
 
-const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
-
 ## Intervalo (s) entre pasos de colocar/surtir/deconstruir: el mismo para el jugador y los colonos.
 const INTERVALO_PASO := 0.20
 

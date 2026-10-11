@@ -6,7 +6,6 @@ const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
 const TrazadorVias = preload("res://scripts/TrazadorVias.gd")
 const ConstructorVias = preload("res://scripts/ConstructorVias.gd")
 const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
-const BlueprintValidator = preload("res://scripts/BlueprintValidator.gd")
 
 ## Envoltorio para NiveladorTerreno: siempre llama a altura_en(x, z, true)
 ## (ignora agua). NiveladorTerreno solo necesita .altura_en(x, z) por duck

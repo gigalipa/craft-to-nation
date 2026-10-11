@@ -125,6 +125,7 @@ static func _crear_material_crudo() -> StandardMaterial3D:
 	mat.metallic = 0.1
 	mat.metallic_specular = 0.8
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.render_priority = 2
 	return mat
 
@@ -136,6 +137,7 @@ static func _crear_material_combustible() -> StandardMaterial3D:
 	mat.metallic = 0.0
 	mat.metallic_specular = 0.6
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.render_priority = 2
 	return mat
 

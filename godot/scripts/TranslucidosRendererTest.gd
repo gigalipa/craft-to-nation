@@ -292,6 +292,7 @@ func ejecutar_pruebas() -> void:
 	assert(render_t11._mesh_por_chunk["crudo"].has(chunk_t11), "chunk de crudo creado")
 	var mesh_crudo: MeshInstance3D = render_t11._mesh_por_chunk["crudo"][chunk_t11]
 	assert(mesh_crudo.get_surface_override_material(0) == render_t11._material_por_tipo["crudo"], "usa material de crudo")
+	assert(render_t11._material_por_tipo["crudo"].cull_mode == BaseMaterial3D.CULL_DISABLED, "crudo debe tener culling desactivado para verse desde arriba y sumergido")
 
 	var vertices_crudo: PackedVector3Array = mesh_crudo.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 	assert(vertices_crudo.size() == 8 * 6, "dos celdas contiguas de crudo deben tener culling en cara compartida (8 caras = 48 vértices), salieron %d" % vertices_crudo.size())
@@ -306,6 +307,7 @@ func ejecutar_pruebas() -> void:
 	assert(render_t12._material_por_tipo.has("combustible"), "debe indexar material de combustible")
 	var mat_comb: StandardMaterial3D = render_t12._material_por_tipo["combustible"]
 	assert(mat_comb != null, "material de combustible no nulo")
+	assert(mat_comb.cull_mode == BaseMaterial3D.CULL_DISABLED, "combustible debe tener culling desactivado para verse desde arriba y sumergido")
 
 	mundo_t11.colocar_bloque(Vector3i(10, 0, 0), "combustible")
 	mundo_t11.colocar_bloque(Vector3i(11, 0, 0), "combustible")

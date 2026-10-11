@@ -87,6 +87,7 @@ var _ultimo_resumen_energia: Dictionary = {
 }
 var balance_energia: Dictionary:
 	get: return _ultimo_resumen_energia.duplicate()
+	set(val): _ultimo_resumen_energia = val.duplicate()
 
 var _factores_energia: Dictionary = {}
 var _horas_desde_recalculo := 0

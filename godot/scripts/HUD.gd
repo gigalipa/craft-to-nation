@@ -35,6 +35,7 @@ const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
 const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
 const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
+const PanelLamparaScript = preload("res://scripts/PanelLampara.gd")
 
 ## Nombres de todos los recursos del almacén (los usa PanelPuesto).
 const NOMBRES_RECURSO := {
@@ -76,6 +77,7 @@ var _ventana_almacen: PanelContainer
 var _ventana_ocupaciones: PanelContainer
 var _ventana_baul: PanelContainer
 var _notificaciones: Control
+var _panel_lampara: PanelContainer
 
 
 ## Los widgets se crean en _init(), no en _ready(): en Main.tscn Player y
@@ -114,6 +116,11 @@ func _init() -> void:
 	_panel_canalizacion = PanelCanalizacionScript.new()
 	add_child(_panel_canalizacion)
 	_panel_canalizacion.aviso.connect(notificar)
+	_panel_lampara = PanelLamparaScript.new()
+	_panel_lampara.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_panel_lampara.offset_left = 16
+	_panel_lampara.offset_top = 48
+	add_child(_panel_lampara)
 	_notificaciones = PanelNotificacionesScript.new()
 	add_child(_notificaciones)
 
@@ -464,3 +471,9 @@ func ocultar_progreso() -> void:
 ## nuevo colono, etc.), no estado continuo.
 func notificar(texto: String) -> void:
 	_notificaciones.notificar(texto)
+
+
+func actualizar_panel_lampara(estado: Dictionary) -> void:
+	if _panel_lampara != null and _panel_lampara.has_method("actualizar"):
+		_panel_lampara.actualizar(estado)
+

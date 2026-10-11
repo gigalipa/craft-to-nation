@@ -145,6 +145,49 @@ var _tiempo_flotacion := 0.0
 ## borrados accidentales al mantener el click presionado.
 const TICKS_REMOCION_FINAL := 5
 
+## Lámpara del jugador: activación con tecla L, iluminación difusa OmniLight3D
+## y consumo/recarga de energía o combustibles.
+const BATERIA_LAMPARA_MAX := 72.0
+const RECARGA_BATERIA_POR_HORA := 7.2
+
+const DATOS_LUZ_LAMPARA := {
+	"electrica": {
+		"color": Color(1.0, 0.98, 0.95),
+		"rango": 18.0,
+		"energia": 1.3,
+		"horas_por_unidad": 0.0,
+		"nombre": "Eléctrica",
+	},
+	"combustible": {
+		"color": Color(1.0, 0.9, 0.7),
+		"rango": 14.0,
+		"energia": 1.0,
+		"horas_por_unidad": 10.0,
+		"nombre": "Combustible",
+	},
+	"carbon": {
+		"color": Color(1.0, 0.8, 0.5),
+		"rango": 10.0,
+		"energia": 0.75,
+		"horas_por_unidad": 6.0,
+		"nombre": "Carbón",
+	},
+	"madera": {
+		"color": Color(1.0, 0.65, 0.35),
+		"rango": 7.0,
+		"energia": 0.5,
+		"horas_por_unidad": 5.0,
+		"nombre": "Madera",
+	},
+}
+
+var lampara_encendida := false
+var bateria_lampara := BATERIA_LAMPARA_MAX
+var horas_quemadas_lampara := 0.0
+var fuente_lampara_actual := ""
+var _luz_lampara: OmniLight3D
+var _ultima_celda_zona_lampara := Vector2i.MAX
+
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -171,6 +214,18 @@ func _ready() -> void:
 		if Ciudad.almacen.has("comida"):
 			Ciudad.almacen["comida"].limite = maxf(Ciudad.almacen["comida"].limite, 5000.0)
 			Ciudad.almacen["comida"].cantidad = 5000.0
+
+	# Inicializar luz difusa de la lámpara
+	_luz_lampara = OmniLight3D.new()
+	_luz_lampara.name = "LuzLampara"
+	_luz_lampara.position = Vector3(0, 1.4, 0)
+	_luz_lampara.visible = false
+	_luz_lampara.omni_attenuation = 1.0
+	_luz_lampara.shadow_enabled = false
+	add_child(_luz_lampara)
+
+	if Ciudad != null and not Ciudad.tick_simulado.is_connected(simular_hora_lampara):
+		Ciudad.tick_simulado.connect(simular_hora_lampara)
 
 
 func _input(event: InputEvent) -> void:
@@ -206,6 +261,8 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 			_interactuar()
+		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_L:
+			alternar_lampara()
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
 		if tecla.pressed:
@@ -510,6 +567,7 @@ func _physics_process(delta: float) -> void:
 		Colonos.actualizar_avatar(_celda_en(global_position + Vector3.UP * 0.1), velocity)
 	_procesar_oxigeno(delta)
 	_procesar_flotacion(delta, nadando)
+	_procesar_zona_lampara()
 
 
 ## Panel fijo mientras el modo deconstrucción (G) está activo. Main lo repone al
@@ -565,9 +623,11 @@ func _profundidad_agua_en(posicion: Vector3) -> int:
 	return profundidad
 
 
-## Celda de grilla (VoxelWorld) bajo "posicion" — asume mundo != null.
+## Celda de grilla (VoxelWorld) bajo "posicion" — o piso matemático si mundo es null.
 func _celda_en(posicion: Vector3) -> Vector3i:
-	return mundo.local_to_map(mundo.to_local(posicion))
+	if mundo != null:
+		return mundo.local_to_map(mundo.to_local(posicion))
+	return Vector3i(floori(posicion.x), floori(posicion.y), floori(posicion.z))
 
 
 ## true si "celda" es la de los pies o la cabeza del avatar (columna de 2
@@ -1364,3 +1424,199 @@ func _completar_construccion(metadata: Dictionary) -> void:
 	var aviso: String = FinalizacionObras.completar_construccion(mundo, metadata)
 	if aviso != "":
 		hud.notificar(aviso)
+
+
+# ==============================================================================
+# LÁMPARA DEL JUGADOR (Tecla L)
+# ==============================================================================
+
+func _ciudad_produce_energia() -> bool:
+	if Economia == null:
+		return false
+	var balance: Dictionary = Economia.balance_energia
+	return balance.get("capacidad", 0.0) > 0.0 or balance.get("entregada", 0.0) > 0.0
+
+
+func _esta_en_zona_influencia() -> bool:
+	if Zonificacion == null:
+		return true
+	var pos := global_position if is_inside_tree() else position
+	var pies: Vector3i = _celda_en(pos + Vector3.UP * 0.1)
+	return Zonificacion.dentro_de_influencia(Vector2i(pies.x, pies.z))
+
+
+func evaluar_fuente_lampara() -> String:
+	var hay_energia := _ciudad_produce_energia()
+	var en_zona := _esta_en_zona_influencia()
+	if hay_energia:
+		if en_zona or bateria_lampara > 0.0:
+			return "electrica"
+
+	if Ciudad != null and Ciudad.almacen != null:
+		if Ciudad.almacen.has("combustible") and Ciudad.almacen["combustible"].cantidad >= 1.0:
+			return "combustible"
+		if Ciudad.almacen.has("carbon") and Ciudad.almacen["carbon"].cantidad >= 1.0:
+			return "carbon"
+		if Ciudad.almacen.has("madera") and Ciudad.almacen["madera"].cantidad >= 1.0:
+			return "madera"
+
+	return ""
+
+
+func alternar_lampara() -> void:
+	if lampara_encendida:
+		apagar_lampara()
+	else:
+		encender_lampara()
+
+
+func encender_lampara() -> void:
+	var fuente := evaluar_fuente_lampara()
+	if fuente == "":
+		if hud != null and hud.has_method("notificar"):
+			hud.notificar("Sin energía ni combustible para la lámpara")
+		return
+	lampara_encendida = true
+	fuente_lampara_actual = fuente
+	_aplicar_luz_lampara(fuente)
+	_actualizar_panel_lampara()
+
+
+func apagar_lampara() -> void:
+	lampara_encendida = false
+	fuente_lampara_actual = ""
+	horas_quemadas_lampara = 0.0
+	if _luz_lampara != null:
+		_luz_lampara.visible = false
+	_actualizar_panel_lampara()
+
+
+func _aplicar_luz_lampara(fuente: String) -> void:
+	if _luz_lampara == null:
+		return
+	var config: Dictionary = DATOS_LUZ_LAMPARA.get(fuente, {})
+	if config.is_empty():
+		_luz_lampara.visible = false
+		return
+	_luz_lampara.light_color = config["color"]
+	_luz_lampara.omni_range = config["rango"]
+	_luz_lampara.light_energy = config["energia"]
+	_luz_lampara.visible = true
+
+
+func _procesar_zona_lampara() -> void:
+	var pos := global_position if is_inside_tree() else position
+	var pies: Vector3i = _celda_en(pos + Vector3.UP * 0.1)
+	var celda_actual := Vector2i(pies.x, pies.z)
+	if celda_actual != _ultima_celda_zona_lampara:
+		_ultima_celda_zona_lampara = celda_actual
+		if lampara_encendida or bateria_lampara < BATERIA_LAMPARA_MAX:
+			if lampara_encendida:
+				var nueva_fuente := evaluar_fuente_lampara()
+				if nueva_fuente != fuente_lampara_actual:
+					fuente_lampara_actual = nueva_fuente
+					horas_quemadas_lampara = 0.0
+					if fuente_lampara_actual == "":
+						apagar_lampara()
+						return
+					else:
+						_aplicar_luz_lampara(fuente_lampara_actual)
+			_actualizar_panel_lampara()
+
+
+func simular_hora_lampara() -> void:
+	var en_zona := _esta_en_zona_influencia()
+	var hay_energia := _ciudad_produce_energia()
+
+	# 1. Recarga de batería en zona de influencia con energía
+	if hay_energia and en_zona:
+		if bateria_lampara < BATERIA_LAMPARA_MAX:
+			bateria_lampara = minf(BATERIA_LAMPARA_MAX, bateria_lampara + RECARGA_BATERIA_POR_HORA)
+
+	# 2. Consumo si está encendida
+	if lampara_encendida:
+		var fuente_adecuada := evaluar_fuente_lampara()
+		if fuente_adecuada != fuente_lampara_actual:
+			fuente_lampara_actual = fuente_adecuada
+			horas_quemadas_lampara = 0.0
+			_aplicar_luz_lampara(fuente_lampara_actual)
+
+		if fuente_lampara_actual == "":
+			apagar_lampara()
+			return
+
+		if fuente_lampara_actual == "electrica":
+			if not en_zona:
+				bateria_lampara = maxf(0.0, bateria_lampara - 1.0)
+				if bateria_lampara <= 0.0:
+					var siguiente := evaluar_fuente_lampara()
+					if siguiente != "" and siguiente != "electrica":
+						fuente_lampara_actual = siguiente
+						horas_quemadas_lampara = 0.0
+						_aplicar_luz_lampara(fuente_lampara_actual)
+					else:
+						apagar_lampara()
+						return
+		else:
+			horas_quemadas_lampara += 1.0
+			var datos_f: Dictionary = DATOS_LUZ_LAMPARA.get(fuente_lampara_actual, {})
+			var horas_por_u: float = datos_f.get("horas_por_unidad", 5.0)
+			if horas_quemadas_lampara >= horas_por_u:
+				horas_quemadas_lampara = 0.0
+				if Ciudad != null and Ciudad.almacen != null and Ciudad.almacen.has(fuente_lampara_actual):
+					Ciudad.almacen[fuente_lampara_actual].consumir(1.0)
+				var siguiente := evaluar_fuente_lampara()
+				if siguiente != fuente_lampara_actual:
+					fuente_lampara_actual = siguiente
+					horas_quemadas_lampara = 0.0
+					if fuente_lampara_actual == "":
+						apagar_lampara()
+						return
+					else:
+						_aplicar_luz_lampara(fuente_lampara_actual)
+
+	_actualizar_panel_lampara()
+
+
+func obtener_estado_lampara() -> Dictionary:
+	var en_zona := _esta_en_zona_influencia()
+	var hay_energia := _ciudad_produce_energia()
+	var recargando := (hay_energia and en_zona and bateria_lampara < BATERIA_LAMPARA_MAX - 0.01)
+
+	var visible_panel := lampara_encendida or recargando
+	if not visible_panel:
+		return { "visible": false }
+
+	var es_electrica := false
+	if lampara_encendida:
+		es_electrica = (fuente_lampara_actual == "electrica")
+	else:
+		es_electrica = true
+
+	var estado := {
+		"visible": true,
+		"tipo": "electrica" if es_electrica else "termica",
+		"encendida": lampara_encendida,
+		"recargando": recargando,
+		"descarga": (lampara_encendida and es_electrica and not en_zona),
+		"bateria_pct": roundi((bateria_lampara / BATERIA_LAMPARA_MAX) * 100.0),
+		"bateria_horas": roundi(bateria_lampara),
+	}
+
+	if not es_electrica:
+		var cfg: Dictionary = DATOS_LUZ_LAMPARA.get(fuente_lampara_actual, {})
+		var h_por_u: float = cfg.get("horas_por_unidad", 5.0)
+		var cant := 0.0
+		if Ciudad != null and Ciudad.almacen != null and Ciudad.almacen.has(fuente_lampara_actual):
+			cant = Ciudad.almacen[fuente_lampara_actual].cantidad
+		var tiempo_restante_h := int(maxf(0.0, cant * h_por_u - horas_quemadas_lampara))
+		estado["tiempo_restante_h"] = tiempo_restante_h
+		estado["recurso_nombre"] = cfg.get("nombre", "")
+		estado["recurso_cantidad"] = int(cant)
+
+	return estado
+
+
+func _actualizar_panel_lampara() -> void:
+	if hud != null and hud.has_method("actualizar_panel_lampara"):
+		hud.actualizar_panel_lampara(obtener_estado_lampara())

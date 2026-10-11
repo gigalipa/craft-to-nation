@@ -7,6 +7,7 @@ extends Node
 ## imprimir las 4 pruebas y no debe lanzar ningún error de assert().
 
 const Player = preload("res://scripts/Player.gd")
+const HUD = preload("res://scripts/HUD.gd")
 
 func _ready() -> void:
 	ejecutar_pruebas()
@@ -33,4 +34,25 @@ func ejecutar_pruebas() -> void:
 	print("Oxígeno tras 1s fuera del agua desde 9.5: ", resultado, " (esperado: ", Player.OXIGENO_MAXIMO, ")")
 	assert(resultado == Player.OXIGENO_MAXIMO)
 
-	print("\n=== Las 4 pruebas de Player._calcular_oxigeno() pasaron correctamente ===")
+	print("\n=== TEST 5: HUD.texto_oxigeno() formato consumo y recuperación ===")
+	assert(HUD.texto_oxigeno(90, true) == "Oxígeno: -90%")
+	assert(HUD.texto_oxigeno(30, false) == "Oxígeno: +30%")
+	assert(HUD.texto_oxigeno(0, true) == "Oxígeno: -0%")
+	assert(HUD.texto_oxigeno(100, false) == "Oxígeno: +100%")
+
+	print("\n=== TEST 6: HUD panel de oxígeno y apilamiento con lámpara ===")
+	var hud := HUD.new()
+	add_child(hud)
+	assert(not hud._panel_oxigeno.visible)
+	assert(not hud._panel_lampara.visible)
+	hud.actualizar_oxigeno(0.9, true)
+	assert(hud._panel_oxigeno.visible)
+	assert(hud._oxigeno_texto.text == "Oxígeno: -90%")
+	hud.actualizar_panel_lampara({"visible": true, "tipo": "electrica", "encendida": true, "bateria_pct": 80, "bateria_horas": 50, "descarga": true})
+	assert(hud._panel_lampara.visible)
+	assert(hud._panel_lampara.get_index() < hud._panel_oxigeno.get_index(), "el panel de lámpara debe estar arriba del panel de oxígeno")
+	hud.ocultar_oxigeno()
+	assert(not hud._panel_oxigeno.visible)
+	hud.queue_free()
+
+	print("\n=== Las pruebas de Player y HUD de oxígeno pasaron correctamente ===")

@@ -817,9 +817,11 @@ func _procesar_oxigeno(delta: float) -> void:
 	var sumergido := _cabeza_sumergida()
 	oxigeno_actual = _calcular_oxigeno(oxigeno_actual, sumergido, delta)
 	if sumergido or oxigeno_actual < OXIGENO_MAXIMO:
-		hud.actualizar_oxigeno(oxigeno_actual / OXIGENO_MAXIMO)
+		if hud != null:
+			hud.actualizar_oxigeno(oxigeno_actual / OXIGENO_MAXIMO, sumergido)
 	else:
-		hud.ocultar_oxigeno()
+		if hud != null:
+			hud.ocultar_oxigeno()
 	if oxigeno_actual <= 0.0:
 		_ejecutar_sucesion("ahogamiento")
 

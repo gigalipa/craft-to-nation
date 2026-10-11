@@ -36,6 +36,7 @@ const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
 const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
 const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
 const PanelLamparaScript = preload("res://scripts/PanelLampara.gd")
+const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
 ## Nombres de todos los recursos del almacén (los usa PanelPuesto).
 const NOMBRES_RECURSO := {
@@ -62,7 +63,7 @@ const NOMBRES_TASA := {
 	"frutos_mar": "frutos del mar",
 }
 
-@onready var oxigeno_label: Label = $OxigenoLabel
+@onready var oxigeno_label: Label = get_node_or_null("OxigenoLabel")
 
 var _panel_puesto: PanelContainer
 var _panel_edificio: PanelContainer
@@ -77,7 +78,10 @@ var _ventana_almacen: PanelContainer
 var _ventana_ocupaciones: PanelContainer
 var _ventana_baul: PanelContainer
 var _notificaciones: Control
+var _contenedor_indicadores: VBoxContainer
 var _panel_lampara: PanelContainer
+var _panel_oxigeno: PanelContainer
+var _oxigeno_texto: Label
 
 
 ## Los widgets se crean en _init(), no en _ready(): en Main.tscn Player y
@@ -116,16 +120,33 @@ func _init() -> void:
 	_panel_canalizacion = PanelCanalizacionScript.new()
 	add_child(_panel_canalizacion)
 	_panel_canalizacion.aviso.connect(notificar)
+	_contenedor_indicadores = VBoxContainer.new()
+	_contenedor_indicadores.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_contenedor_indicadores.offset_left = 16
+	_contenedor_indicadores.offset_top = 60
+	_contenedor_indicadores.add_theme_constant_override("separation", 6)
+	_contenedor_indicadores.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_contenedor_indicadores)
+
 	_panel_lampara = PanelLamparaScript.new()
-	_panel_lampara.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_panel_lampara.offset_left = 16
-	_panel_lampara.offset_top = 60
-	add_child(_panel_lampara)
+	_contenedor_indicadores.add_child(_panel_lampara)
+
+	_panel_oxigeno = PanelContainer.new()
+	TemaHUD.aplicar_panel(_panel_oxigeno)
+	_panel_oxigeno.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_oxigeno_texto = TemaHUD.etiqueta()
+	_oxigeno_texto.add_theme_font_size_override("font_size", 12)
+	_panel_oxigeno.add_child(_oxigeno_texto)
+	_panel_oxigeno.visible = false
+	_contenedor_indicadores.add_child(_panel_oxigeno)
+
 	_notificaciones = PanelNotificacionesScript.new()
 	add_child(_notificaciones)
 
 
 func _ready() -> void:
+	if oxigeno_label != null:
+		oxigeno_label.visible = false
 	set_vista(true)  # la partida empieza en 1ª persona
 
 	# Barra de progreso de minar/talar/recolectar/deconstruir, bajo la mira.
@@ -335,17 +356,32 @@ static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
 	return "Recolección prevista por ciudadano:\n  " + "\n  ".join(lineas_comida)
 
 
+static func texto_oxigeno(pct: int, sumergido: bool) -> String:
+	var signo := "-" if sumergido else "+"
+	return "Oxígeno: %s%d%%" % [signo, pct]
+
+
 ## Llamada cada física por Player._procesar_oxigeno() mientras el jugador
 ## está en agua o recuperando aire — oculta con ocultar_oxigeno() en cuanto
 ## vuelve a estar a full fuera del agua, para no saturar el HUD en seco.
-func actualizar_oxigeno(fraccion: float) -> void:
-	oxigeno_label.text = "Oxígeno: %d%%" % round(fraccion * 100)
-	oxigeno_label.modulate = COLOR_NEGATIVO if fraccion < 0.3 else COLOR_POSITIVO
-	oxigeno_label.visible = true
+func actualizar_oxigeno(fraccion: float, sumergido: bool = true) -> void:
+	var pct := int(round(fraccion * 100))
+	var txt := texto_oxigeno(pct, sumergido)
+	if _oxigeno_texto != null:
+		_oxigeno_texto.text = txt
+		_oxigeno_texto.add_theme_color_override("font_color", TemaHUD.INVALIDO if fraccion < 0.3 else TemaHUD.TEXTO)
+	if _panel_oxigeno != null:
+		_panel_oxigeno.visible = true
+	if oxigeno_label != null:
+		oxigeno_label.text = txt
+		oxigeno_label.visible = false
 
 
 func ocultar_oxigeno() -> void:
-	oxigeno_label.visible = false
+	if _panel_oxigeno != null:
+		_panel_oxigeno.visible = false
+	if oxigeno_label != null:
+		oxigeno_label.visible = false
 
 
 ## Resumen de materiales (y, para un edificio residencial, camas/baúles) en

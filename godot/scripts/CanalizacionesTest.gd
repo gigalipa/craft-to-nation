@@ -271,22 +271,24 @@ func ejecutar_pruebas() -> void:
 	assert("puerto de crudo" in geom_dict.motivo, "motivo debe indicar el puerto invadido: %s" % geom_dict.motivo)
 
 	# 2. Probar desconexión / derrame al minar bloque intermedio
-	var puntos_flujo: Array[Vector2i] = [Vector2i(0, 40), Vector2i(1, 40), Vector2i(2, 40), Vector2i(3, 40)]
+	var puntos_flujo: Array[Vector2i] = [Vector2i(0, 40), Vector2i(1, 40), Vector2i(2, 40), Vector2i(3, 40), Vector2i(4, 40), Vector2i(5, 40)]
 	for pt in puntos_flujo:
 		mundo12.fijar_altura(pt.x, pt.y, 10)
 	var geom_flujo = canalizaciones.calcular_geometria_tramo("tuberia", puntos_flujo, mundo12)
 	var red_flujo: int = canalizaciones.construir_tramo("tuberia", geom_flujo, mundo12)
 	var p_out12 := Vector3i(0, 14, 40)
-	var p_in12 := Vector3i(3, 14, 40)
+	var p_in12 := Vector3i(5, 14, 40)
 	canalizaciones.asignar_puerto_a_red(red_flujo, p_out12, "puerto_crudo_out")
 	canalizaciones.asignar_puerto_a_red(red_flujo, p_in12, "puerto_crudo_in")
 	assert(canalizaciones.estado_de_puerto(p_out12) == "conectado")
 	assert(canalizaciones.estado_de_puerto(p_in12) == "conectado")
+	assert(canalizaciones.extremos_abiertos_de_red(red_flujo).is_empty(), "red con ambos puertos conectados no tiene extremos abiertos")
 
 	# Minar el bloque en x=2
 	canalizaciones.quitar_celdas([Vector3i(2, 14, 40)], mundo12)
 	assert(canalizaciones.estado_de_puerto(p_out12) == "derrame", "al romperse la vía hacia el destino, la salida pasa a derrame: %s" % canalizaciones.estado_de_puerto(p_out12))
 	assert(canalizaciones.estado_de_puerto(p_in12) == "desconectado", "al quedar inalcanzable, la entrada pasa a desconectado")
+	assert(not canalizaciones.extremos_abiertos_de_red(red_flujo).is_empty(), "al romperse el ducto tiene extremos abiertos")
 	print("OK: Despeje y desconexión/derrame dinámico verificados.")
 
 	print("\n=== Todas las pruebas de Canalizaciones pasaron correctamente ===")

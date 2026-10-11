@@ -222,9 +222,13 @@ func extremos_abiertos_de_red(id_red: int) -> Array[Vector3i]:
 			if not tiene_puerto:
 				abiertos.append(c)
 	if abiertos.is_empty() and celdas.size() > 0:
-		var ultimo: Vector3i = celdas[-1]
-		if not puertos_conectados.has(ultimo):
-			abiertos.append(ultimo)
+		var tiene_algun_puerto := false
+		for p: Vector3i in puertos_conectados:
+			if puertos_conectados[p] == id_red:
+				tiene_algun_puerto = true
+				break
+		if not tiene_algun_puerto:
+			abiertos.append(celdas[-1])
 	return abiertos
 
 

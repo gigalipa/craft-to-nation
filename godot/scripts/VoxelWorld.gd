@@ -96,6 +96,8 @@ const TIPOS_ESTRUCTURA := [
 ## altura_en() los salta para devolver el terreno real bajo ellos.
 const TIPOS_DUCTO: Array[String] = [
 	"acueducto", "tuberia",
+	"acueducto_lineal", "acueducto_quiebre",
+	"tuberia_lineal", "tuberia_quiebre",
 ]
 
 ## La celda de superficie de cada columna del mundo se coloca como "hierba"
@@ -492,9 +494,9 @@ func despeje_bloqueado(celda: Vector3i, terreno_a_nivelar: Dictionary = {}, tipo
 		return false
 	if es_puerto(tipo_origen):
 		var rec: String = recurso_de_puerto(tipo_origen)
-		if tipo == "tuberia":
+		if tipo.begins_with("tuberia"):
 			return false
-		elif tipo == "acueducto" and (rec == "agua" or rec == "combustible"):
+		elif tipo.begins_with("acueducto") and (rec == "agua" or rec == "combustible"):
 			return false
 	var columna := Vector2i(celda.x, celda.z)
 	if terreno_a_nivelar.has(columna) and celda.y > terreno_a_nivelar[columna] and es_terreno_natural(celda):
@@ -717,10 +719,14 @@ func _indexar_biblioteca() -> void:
 			_id_por_tipo[tipo_puerto] = id_p
 			_tipo_por_id[id_p] = tipo_puerto
 
-	# Bloques de canalización ("acueducto", "tuberia")
+	# Bloques de canalización ("acueducto", "tuberia") y sus variantes lineal/quiebre
 	var canalizaciones_meta := {
 		"acueducto": Color(0.7, 0.65, 0.55),
-		"tuberia": Color(0.35, 0.38, 0.42)
+		"acueducto_lineal": Color(0.7, 0.65, 0.55),
+		"acueducto_quiebre": Color(0.7, 0.65, 0.55),
+		"tuberia": Color(0.35, 0.38, 0.42),
+		"tuberia_lineal": Color(0.35, 0.38, 0.42),
+		"tuberia_quiebre": Color(0.35, 0.38, 0.42),
 	}
 	for tipo_c in canalizaciones_meta:
 		if not _id_por_tipo.has(tipo_c):

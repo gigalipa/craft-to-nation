@@ -99,11 +99,22 @@ func ejecutar_pruebas() -> void:
 	assert(cols_l.has(Vector2i(0, 0)), "columna en inicio")
 	assert(cols_l.has(Vector2i(3, 0)), "columna OBLIGATORIA en esquina 90° (3,0)")
 	assert(cols_l.has(Vector2i(3, 3)), "columna en fin")
-	print("OK: Esquina de 90° tiene columna de soporte.")
+	assert(geom_l.nodos_ducto.size() == 3, "tres nodos ancla en tramo en L")
+	assert(geom_l.nodos_ducto[0].tipo_bloque == "acueducto_lineal", "cabezal recto en inicio")
+	assert(geom_l.nodos_ducto[1].tipo_bloque == "acueducto_quiebre", "esquina 90° clasifica como acueducto_quiebre")
+	assert(geom_l.nodos_ducto[2].tipo_bloque == "acueducto_lineal", "cabezal recto en fin")
+	# Construir tramo en L en mundo dedicado y verificar colocación física
+	var mundo_l = MundoMock.new()
+	var canalizaciones_l = CanalizacionesScript.new()
+	canalizaciones_l.construir_tramo("acueducto", geom_l, mundo_l)
+	var y_l = geom_l.celdas_ducto[0].y
+	assert(mundo_l.obtener_tipo(Vector3i(3, y_l, 0)) == "acueducto_quiebre", "esquina de 90° coloca acueducto_quiebre")
+	assert(mundo_l.obtener_tipo(Vector3i(0, y_l, 0)) == "acueducto_lineal", "cabezal/extremo recto coloca acueducto_lineal")
+	print("OK: Esquina de 90° tiene columna de soporte y bloque acueducto_quiebre.")
 
 	print("\n=== CANALIZACIONES TEST 4: Cruces a desnivel (+1 cota en intersección) ===")
 	# Colocar previamente una tubería en mundo en (5, 14, 5) orientada en Z
-	mundo.colocar_bloque(Vector3i(5, 14, 5), "tuberia")
+	mundo.colocar_bloque(Vector3i(5, 14, 5), "tuberia_lineal")
 	# Trazar una nueva tubería en X cruzando por (5, 5) horizontalmente de x=3 a x=7
 	var puntos_cruce: Array[Vector2i] = []
 	for x in range(3, 8):
@@ -150,8 +161,8 @@ func ejecutar_pruebas() -> void:
 	assert(geom_pend.tramos_diagonales[0].inicio == Vector3i(0, 14, 0), "inicio de diagonal en cabezal de columna 0")
 	assert(geom_pend.tramos_diagonales[0].fin == Vector3i(5, 16, 0), "fin de diagonal en cabezal de columna 5")
 	var id_pend = canalizaciones.construir_tramo("tuberia", geom_pend, mundo_pendiente)
-	assert(mundo_pendiente.obtener_tipo(Vector3i(0, 14, 0)) == "tuberia", "cubo cabezal en columna 0")
-	assert(mundo_pendiente.obtener_tipo(Vector3i(5, 16, 0)) == "tuberia", "cubo cabezal en columna 5")
+	assert(mundo_pendiente.obtener_tipo(Vector3i(0, 14, 0)) == "tuberia_lineal", "cubo cabezal lineal en columna 0")
+	assert(mundo_pendiente.obtener_tipo(Vector3i(5, 16, 0)) == "tuberia_lineal", "cubo cabezal lineal en columna 5")
 	assert(mundo_pendiente.obtener_tipo(Vector3i(2, 15, 0)) == "", "vano diagonal no coloca cubos discretos en GridMap")
 	assert(canalizaciones.obtener_red_de_celda(Vector3i(2, 15, 0)) == id_pend, "celda intermedia registrada en red")
 	print("OK: Pendiente diagonal une cimas sin columnas intermedias adicionales y con tramo diagonal continuo.")
@@ -159,9 +170,11 @@ func ejecutar_pruebas() -> void:
 	print("\n=== CANALIZACIONES TEST 6: Construir tramo materializa bloques y registra red ===")
 	var id_red = canalizaciones.construir_tramo("tuberia", geom, mundo)
 	assert(id_red > 0, "debe devolver un id_red valido")
-	assert(mundo.obtener_tipo(Vector3i(0, 14, 0)) == "tuberia", "bloque ducto colocado en mundo")
+	assert(mundo.obtener_tipo(Vector3i(0, 14, 0)) == "tuberia_lineal", "bloque ducto lineal colocado en mundo")
+	assert(mundo.obtener_tipo(Vector3i(2, 14, 0)) == "", "vano horizontal no coloca cubos discretos en GridMap")
 	assert(mundo.obtener_tipo(Vector3i(0, 11, 0)) == "estructura_hierro", "columna colocada en mundo")
 	assert(canalizaciones.obtener_red_de_celda(Vector3i(0, 14, 0)) == id_red, "celda registrada en red")
+	assert(canalizaciones.obtener_red_de_celda(Vector3i(2, 14, 0)) == id_red, "celda intermedia de vano registrada en red")
 	print("OK: Tramo construido y registrado.")
 
 	print("\n=== CANALIZACIONES TEST 7: Compatibilidad de ductos con puertos ===")

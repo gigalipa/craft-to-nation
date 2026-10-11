@@ -77,7 +77,7 @@ func vertice_transitable(vertice: Vector2i) -> bool:
 		for dy in range(1, 4):
 			var celda_despeje := Vector3i(col.x, nivel + dy, col.y)
 			var tipo_despeje: String = mundo.obtener_tipo(celda_despeje)
-			if tipo_despeje == "acueducto" or tipo_despeje == "tuberia":
+			if tipo_despeje.begins_with("acueducto") or tipo_despeje.begins_with("tuberia"):
 				transitable = false
 				break
 			if tipo_despeje != "" and tipo_despeje != "fantasma" and not TIPOS_ARBOL.has(tipo_despeje):

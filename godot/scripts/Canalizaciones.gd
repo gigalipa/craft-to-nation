@@ -14,7 +14,9 @@ const INTERVALO_COLUMNAS := 5
 var TIPOS: Dictionary = {
 	"acueducto": {
 		"nombre": "Acueducto",
-		"bloque_ducto": "acueducto",
+		"bloque_ducto": "acueducto_lineal",
+		"bloque_ducto_lineal": "acueducto_lineal",
+		"bloque_ducto_quiebre": "acueducto_quiebre",
 		"bloque_columna": "bloque_piedra",
 		"fluidos": ["agua", "combustible"],
 		"costo_ducto": {"bloque_piedra": 1, "bloque_madera": 1},
@@ -22,7 +24,9 @@ var TIPOS: Dictionary = {
 	},
 	"tuberia": {
 		"nombre": "Tubería",
-		"bloque_ducto": "tuberia",
+		"bloque_ducto": "tuberia_lineal",
+		"bloque_ducto_lineal": "tuberia_lineal",
+		"bloque_ducto_quiebre": "tuberia_quiebre",
 		"bloque_columna": "estructura_hierro",
 		"fluidos": ["agua", "crudo", "combustible"],
 		"costo_ducto": {"bloque_acero": 1},
@@ -542,7 +546,7 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		while true:
 			var c_chk := Vector3i(p_c.x, y_c, p_c.y)
 			var tipo_chk: String = mundo.obtener_tipo(c_chk) if mundo != null and mundo.has_method("obtener_tipo") else ""
-			if tipo_chk == "acueducto" or tipo_chk == "tuberia" or celda_a_red.has(c_chk):
+			if tipo_chk.begins_with("acueducto") or tipo_chk.begins_with("tuberia") or celda_a_red.has(c_chk):
 				y_c += 1
 			else:
 				break
@@ -571,11 +575,13 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 			var h_suelo: int = mundo.altura_en(p.x, p.y) if mundo.has_method("altura_en") else 0
 			altura_cima[idx] = h_suelo + ALTURA_DUCTO_RELATIVA
 
-	# 3. Interpolar alturas de ducto entre anclas contiguas y detectar tramos diagonales:
+	# 3. Interpolar alturas de ducto entre anclas contiguas y detectar tramos:
 	var alturas_ducto: Array[int] = []
 	alturas_ducto.resize(n)
+	var tramos: Array[Dictionary] = []
 	var tramos_diagonales: Array[Dictionary] = []
 	var indices_diagonales: Dictionary = {}
+	var indices_intermedios_totales: Dictionary = {}
 
 	for c in range(indices_ancla.size()):
 		var idx_a: int = indices_ancla[c]
@@ -590,18 +596,64 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 			for k in range(idx_a + 1, idx_b):
 				var t: float = float(k - idx_a) / float(dist)
 				alturas_ducto[k] = roundi(lerp(float(y_a), float(y_b), t))
-				if es_diagonal:
-					indices_diagonales[k] = true
-					indices_intermedios.append(k)
+				indices_intermedios.append(k)
+				indices_diagonales[k] = true
+				indices_intermedios_totales[k] = true
+
+			var p_a: Vector2i = puntos_2d[idx_a]
+			var p_b: Vector2i = puntos_2d[idx_b]
+			var datos_tramo := {
+				"inicio": Vector3i(p_a.x, y_a, p_a.y),
+				"fin": Vector3i(p_b.x, y_b, p_b.y),
+				"tipo": tipo,
+				"indices": indices_intermedios,
+				"distancia": dist,
+			}
+			# Se crea tramo si hay distancia > 1 o si hay desnivel (y_a != y_b)
+			if dist > 1 or es_diagonal:
+				tramos.append(datos_tramo)
 			if es_diagonal:
-				var p_a: Vector2i = puntos_2d[idx_a]
-				var p_b: Vector2i = puntos_2d[idx_b]
-				tramos_diagonales.append({
-					"inicio": Vector3i(p_a.x, y_a, p_a.y),
-					"fin": Vector3i(p_b.x, y_b, p_b.y),
-					"tipo": tipo,
-					"indices": indices_intermedios,
-				})
+				tramos_diagonales.append(datos_tramo)
+
+	# 3b. Clasificar nodos de ducto (Lineal vs Quiebre vs Extremo):
+	var nodos_ducto: Array[Dictionary] = []
+	var datos_tipo: Dictionary = TIPOS.get(tipo, {})
+	var b_lineal: String = datos_tipo.get("bloque_ducto_lineal", datos_tipo.get("bloque_ducto", tipo))
+	var b_quiebre: String = datos_tipo.get("bloque_ducto_quiebre", b_lineal)
+
+	for c in range(indices_ancla.size()):
+		var idx: int = indices_ancla[c]
+		var p: Vector2i = puntos_2d[idx]
+		var y: int = altura_cima[idx]
+		var celda_nodo := Vector3i(p.x, y, p.y)
+
+		var es_extremo: bool = (idx == 0 and bool(puerto_inicio.get("existe", false))) or (idx == n - 1 and bool(puerto_fin.get("existe", false)))
+		var tipo_bloque := b_lineal
+		var subtipo := "lineal"
+
+		if es_extremo:
+			subtipo = "extremo"
+			tipo_bloque = b_lineal
+		elif idx > 0 and idx < n - 1:
+			var dir_in: Vector2i = puntos_2d[idx] - puntos_2d[idx - 1]
+			var dir_out: Vector2i = puntos_2d[idx + 1] - puntos_2d[idx]
+			if dir_in != dir_out:
+				subtipo = "quiebre"
+				tipo_bloque = b_quiebre
+			else:
+				subtipo = "lineal"
+				tipo_bloque = b_lineal
+		else:
+			subtipo = "lineal"
+			tipo_bloque = b_lineal
+
+		nodos_ducto.append({
+			"indice": idx,
+			"celda": celda_nodo,
+			"subtipo": subtipo,
+			"tipo_bloque": tipo_bloque,
+			"es_extremo": es_extremo,
+		})
 
 	# 4. Generar celdas de ducto y respeto de despejes de otros puertos
 	var celdas_ducto: Array[Vector3i] = []
@@ -658,8 +710,11 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 		celdas_ducto.append(celda_tentativa)
 
 	resultado.celdas_ducto = celdas_ducto
+	resultado["nodos_ducto"] = nodos_ducto
+	resultado["tramos"] = tramos
 	resultado["tramos_diagonales"] = tramos_diagonales
 	resultado["indices_diagonales"] = indices_diagonales
+	resultado["indices_intermedios"] = indices_intermedios_totales
 
 	# 5. Generar columnas verticales desde el suelo hasta justo debajo del ducto:
 	var celdas_columna: Array[Vector3i] = []
@@ -673,7 +728,6 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 	resultado.celdas_columna = celdas_columna
 
 	# 6. Calcular costo de materiales:
-	var datos_tipo: Dictionary = TIPOS.get(tipo, {})
 	var c_ducto: Dictionary = datos_tipo.get("costo_ducto", {})
 	var c_col: Dictionary = datos_tipo.get("costo_columna", {})
 	var costo_total: Dictionary = {}
@@ -694,36 +748,45 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 	var id := _siguiente_id_red
 	_siguiente_id_red += 1
 
-	var bloque_d: String = TIPOS[tipo]["bloque_ducto"]
 	var bloque_c: String = TIPOS[tipo]["bloque_columna"]
 
 	var celdas_d: Array = geom["celdas_ducto"]
 	var celdas_c: Array = geom["celdas_columna"]
-	var indices_diagonales: Dictionary = geom.get("indices_diagonales", {})
-	var tramos_diagonales: Array = geom.get("tramos_diagonales", [])
+	var nodos_d: Array = geom.get("nodos_ducto", [])
+	var tramos_a_crear: Array = geom.get("tramos", geom.get("tramos_diagonales", []))
 
-	# Colocar columnas
+	# 1. Colocar columnas en mundo
 	for col: Vector3i in celdas_c:
 		mundo.colocar_bloque(col, bloque_c, true)
 		columnas[col] = id
 		var xz := Vector2i(col.x, col.z)
 		columnas_xz[xz] = columnas_xz.get(xz, 0) + 1
 
-	# Colocar ductos (omitiendo celdas intermedias del vano en tramos diagonales)
+	# 2. Colocar bloques de ducto en mundo (solo en nodos ancla: lineal / quiebre / extremos)
+	if not nodos_d.is_empty():
+		for nodo: Dictionary in nodos_d:
+			var c: Vector3i = nodo["celda"]
+			var tipo_b: String = nodo["tipo_bloque"]
+			mundo.colocar_bloque(c, tipo_b, true)
+	else:
+		var bloque_d: String = TIPOS[tipo]["bloque_ducto_lineal"]
+		var indices_diag: Dictionary = geom.get("indices_diagonales", {})
+		for i in range(celdas_d.size()):
+			if not indices_diag.has(i):
+				mundo.colocar_bloque(celdas_d[i], bloque_d, true)
+
+	# 3. Registrar todas las celdas en celda_a_red para topología y simulación
 	var registradas: Array[Vector3i] = []
-	for i in range(celdas_d.size()):
-		var c: Vector3i = celdas_d[i]
-		if not indices_diagonales.has(i):
-			mundo.colocar_bloque(c, bloque_d, true)
+	for c: Vector3i in celdas_d:
 		celda_a_red[c] = id
 		registradas.append(c)
 		# Marcar que sobre el ducto no caminan colonos
-		if mundo.has_method("registrar_edificio"):
+		if mundo != null and mundo.has_method("registrar_edificio"):
 			mundo.celda_sobre_techo[c + Vector3i(0, 1, 0)] = id
 
-	# Generar tramos diagonales continuos entre columnas con cambio de cota
+	# 4. Generar tramos continuos (vigas de sección 1x1, H=1) que pivotan verticalmente entre centros
 	var infos_creadas: Array[Dictionary] = []
-	for tramo: Dictionary in tramos_diagonales:
+	for tramo: Dictionary in tramos_a_crear:
 		var c_a: Vector3
 		var c_b: Vector3
 		if mundo != null and mundo.has_method("map_to_local"):
@@ -733,25 +796,29 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 			c_a = Vector3(tramo["inicio"].x + 0.5, tramo["inicio"].y + 0.5, tramo["inicio"].z + 0.5)
 			c_b = Vector3(tramo["fin"].x + 0.5, tramo["fin"].y + 0.5, tramo["fin"].z + 0.5)
 
-		var d_h := Vector3(c_b.x - c_a.x, 0.0, c_b.z - c_a.z)
+		var dir_total := c_b - c_a
+		var len_total := dir_total.length()
+		if len_total < 0.001:
+			continue
+
+		var u := dir_total / len_total
+		var d_h := Vector3(dir_total.x, 0.0, dir_total.z)
 		var u_h := d_h.normalized() if d_h.length_squared() > 0.0001 else Vector3.FORWARD
-		var u_perp := Vector3.UP.cross(u_h).normalized()
+		var w := Vector3.UP.cross(u_h).normalized()
+		var v := u.cross(w).normalized()
 
-		var f_a := c_a + u_h * 0.5
-		var f_b := c_b - u_h * 0.5
+		# 8 vértices del tramo extruido entre los centros c_a y c_b
+		# En el centro del bloque A (c_a):
+		var v0 := c_a - w * 0.5 - v * 0.5
+		var v1 := c_a + w * 0.5 - v * 0.5
+		var v2 := c_a + w * 0.5 + v * 0.5
+		var v3 := c_a - w * 0.5 + v * 0.5
 
-		# 8 vértices del prisma que conecta de forma exacta las caras colindantes:
-		# En la cara del bloque A:
-		var v0 := f_a - u_perp * 0.5 - Vector3.UP * 0.5
-		var v1 := f_a + u_perp * 0.5 - Vector3.UP * 0.5
-		var v2 := f_a + u_perp * 0.5 + Vector3.UP * 0.5
-		var v3 := f_a - u_perp * 0.5 + Vector3.UP * 0.5
-
-		# En la cara del bloque B:
-		var v4 := f_b - u_perp * 0.5 - Vector3.UP * 0.5
-		var v5 := f_b + u_perp * 0.5 - Vector3.UP * 0.5
-		var v6 := f_b + u_perp * 0.5 + Vector3.UP * 0.5
-		var v7 := f_b - u_perp * 0.5 + Vector3.UP * 0.5
+		# En el centro del bloque B (c_b):
+		var v4 := c_b - w * 0.5 - v * 0.5
+		var v5 := c_b + w * 0.5 - v * 0.5
+		var v6 := c_b + w * 0.5 + v * 0.5
+		var v7 := c_b - w * 0.5 + v * 0.5
 
 		var st := SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -762,16 +829,17 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 		else:
 			mat.albedo_color = Color(0.35, 0.38, 0.42)
 		mat.roughness = 0.9
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 		st.set_material(mat)
 
 		# 6 caras en orden CCW visto desde afuera (normales hacia el exterior):
 		var quads := [
-			[v3, v7, v6, v2],  # Superior
-			[v0, v1, v5, v4],  # Inferior
-			[v0, v4, v7, v3],  # Lateral izquierda
-			[v1, v2, v6, v5],  # Lateral derecha
-			[v0, v3, v2, v1],  # Tapa A
-			[v4, v5, v6, v7],  # Tapa B
+			[v3, v7, v6, v2],  # Superior (+v)
+			[v0, v1, v5, v4],  # Inferior (-v)
+			[v0, v4, v7, v3],  # Lateral izquierda (-w)
+			[v1, v2, v6, v5],  # Lateral derecha (+w)
+			[v0, v3, v2, v1],  # Tapa A (-u)
+			[v4, v5, v6, v7],  # Tapa B (+u)
 		]
 		var uvs: Array[Vector2] = [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
 		for q in quads:
@@ -785,7 +853,7 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 		mesh_inst.mesh = st.commit()
 
 		var body := StaticBody3D.new()
-		body.name = "DuctoDiagonal_%d_%d" % [id, infos_creadas.size()]
+		body.name = "DuctoTramo_%d_%d" % [id, infos_creadas.size()]
 		body.add_child(mesh_inst)
 
 		var col_shape := CollisionShape3D.new()

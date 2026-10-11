@@ -1705,6 +1705,8 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
+		"acueducto", "tuberia":
+			_alternar_modo_trazar_ducto(tipo)
 
 
 ## Clic en un botón del menú principal de la barra de modos: mismo efecto que su tecla.
@@ -1718,7 +1720,7 @@ func _on_modo_pedido(modo: String) -> void:
 
 ## Clic en un edificio del menú Construir: "residencial" alterna el
 ## blueprint, "vias" alterna el trazador; cualquier otro valor es un tipo de
-## puesto periférico.
+## puesto periférico o ducto.
 func _on_construccion_pedida(tipo: String) -> void:
 	if tipo == "residencial":
 		_alternar_modo_colocar_blueprint(0)
@@ -1727,6 +1729,8 @@ func _on_construccion_pedida(tipo: String) -> void:
 		_alternar_modo_colocar_blueprint(idx)
 	elif tipo == "vias":
 		_alternar_modo_trazar_via()
+	elif PUESTOS_DUCTOS.has(tipo):
+		_alternar_modo_trazar_ducto(tipo)
 	else:
 		_alternar_puesto_por_tipo(tipo)
 

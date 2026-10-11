@@ -896,4 +896,3 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 		tipo_por_puerto.erase(p)
 
 	canalizaciones_cambiadas.emit()
-

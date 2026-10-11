@@ -317,6 +317,12 @@ func ejecutar_pruebas() -> void:
 	assert(camara19.modo_trazar_ducto, "sigue en modo trazar ducto")
 	assert(camara19._tipo_ducto_activo == "tuberia", "tipo activo es tuberia")
 
+	# Clic en botón acueducto y tubería desde el HUD
+	camara19._on_construccion_pedida("acueducto")
+	assert(camara19.modo_trazar_ducto and camara19._tipo_ducto_activo == "acueducto", "clic activa acueducto")
+	camara19._on_construccion_pedida("tuberia")
+	assert(camara19.modo_trazar_ducto and camara19._tipo_ducto_activo == "tuberia", "clic activa tuberia")
+
 	print("\n=== TEST 20: Trazado interactivo de ductos, camino ortogonal y cancelación ===")
 	var camara20: Camera3D = _camara()
 	var mundo20 := MundoFalso.new()

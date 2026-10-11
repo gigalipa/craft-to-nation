@@ -120,6 +120,9 @@ func _init() -> void:
 	_panel_canalizacion = PanelCanalizacionScript.new()
 	add_child(_panel_canalizacion)
 	_panel_canalizacion.aviso.connect(notificar)
+	Economia.investigacion_finalizada.connect(func(nombre: String) -> void:
+		notificar("Investigación finalizada: %s" % nombre)
+	)
 	_contenedor_indicadores = VBoxContainer.new()
 	_contenedor_indicadores.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_contenedor_indicadores.offset_left = 16

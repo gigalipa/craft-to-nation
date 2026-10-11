@@ -855,6 +855,7 @@ func ejecutar_pruebas() -> void:
 	assert(e35.asignar(esq_uni, "investigador", 101))
 	assert(e35.asignar(esq_uni, "investigador", 102))
 	assert(not e35.asignar(esq_uni, "recolector", 103), "no admite recolector")
+	assert(e35.iniciar_investigacion(esq_uni, 2))
 	# Sin presencia no suma horas
 	e35.simular_hora()
 	assert(c35.progreso_investigacion[2] == 0.0)
@@ -863,6 +864,11 @@ func ejecutar_pruebas() -> void:
 	e35.marcar_presente(102, true)
 	e35.simular_hora()
 	assert(c35.progreso_investigacion[2] == 2.0)
+	# Pausa de investigación
+	e35.pausar_investigacion(esq_uni, true)
+	e35.simular_hora()
+	assert(c35.progreso_investigacion[2] == 2.0, "pausado no avanza")
+	e35.pausar_investigacion(esq_uni, false)
 	# Avanzamos hasta completar el nivel 2 (meta 20 h, faltan 18 h -> 9 horas con 2 presentes)
 	for _i in range(8):
 		e35.simular_hora()
@@ -870,9 +876,22 @@ func ejecutar_pruebas() -> void:
 	assert(c35.nivel_investigado == 1)
 	assert(e35.puestos[esq_uni]["recolectores"].size() == 2)
 	# La 9ª hora completa los 20 h y activa la investigación
+	var finalizada_notificada := [false]
+	e35.investigacion_finalizada.connect(func(_nom: String) -> void: finalizada_notificada[0] = true)
 	e35.simular_hora()
 	assert(c35.nivel_investigado == 2)
+	assert(finalizada_notificada[0], "emite señal de investigación finalizada")
+	assert(e35.puestos[esq_uni]["investigacion_activa"] == 0, "limpia investigación activa al completar")
 	assert(e35.puestos[esq_uni]["recolectores"].size() == 2, "al completar investigación preserva a los investigadores")
+	# Probar cancelación y reembolso
+	assert(e35.iniciar_investigacion(esq_uni, 3))
+	var h_antes: float = c35.almacen["hierro"].cantidad
+	var m_antes: float = c35.almacen["madera"].cantidad
+	c35.consumir_costos({"hierro": 800, "madera": 100})
+	e35.cancelar_investigacion(esq_uni)
+	assert(e35.puestos[esq_uni]["investigacion_activa"] == 0)
+	assert(c35.almacen["hierro"].cantidad == h_antes, "reembolsa hierro")
+	assert(c35.almacen["madera"].cantidad == m_antes, "reembolsa madera")
 
 	print("\n=== TEST 36: acarreo de productor_combustible solo carga carbon (agua excluida de acarreo) ===")
 	var c36: Node = CiudadScript.new()

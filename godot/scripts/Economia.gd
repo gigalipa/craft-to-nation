@@ -23,6 +23,9 @@ signal trabajadores_liberados(ids: Array)
 ## los convierte (ver Colonos._on_cohorte_graduada()).
 signal cohorte_graduada(esquina: Vector2i, ids: Array)
 
+## Una universidad completó una investigación tecnológica.
+signal investigacion_finalizada(nombre_tecnologia: String)
+
 const Energia = preload("res://scripts/Energia.gd")
 
 ## Valores «ninguno» de la celda de servicio (X, Z de la puerta) y del depósito
@@ -229,6 +232,8 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"rangos": {},  # id de recolector -> rango de su oficio (RANGO_DE_ROL)
 		"combustible_activo": "carbon" if tipo == "central_termoelectrica" else "",
 		"crudo_restante": crudo_rest,
+		"investigacion_activa": 0,
+		"investigacion_pausada": false,
 	}
 
 
@@ -237,6 +242,8 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 func quitar_puesto(esquina: Vector2i) -> void:
 	if not puestos.has(esquina):
 		return
+	if es_universidad(esquina):
+		cancelar_investigacion(esquina)
 	retirar_deposito(esquina)  # último intento (el stock pudo liberar espacio desde que empezó la deconstrucción)
 	var p: Dictionary = puestos[esquina]
 	var dp: Dictionary = p.get("entorno", {}).get("datos_perforacion", {})
@@ -491,17 +498,20 @@ func simular_hora() -> void:
 				if local_central[tipo_comb] <= 1e-9:
 					local_central.erase(tipo_comb)
 
-	var horas_investigacion := 0.0
 	for esquina in puestos:
 		var p: Dictionary = puestos[esquina]
 		if not p["activo"]:
 			continue
 		_liberar_acarreadores_si_agotado(esquina)
 		if es_universidad(esquina):
-			var factor_uni: float = 1.0
-			if ciudad != null and ciudad.nivel_investigado + 1 == 3:
-				factor_uni = factores_energia.get(esquina, 0.0)
-			horas_investigacion += float(p["presentes"].size()) * factor_uni
+			var id_act: int = p.get("investigacion_activa", 0)
+			if id_act > 0 and not p.get("investigacion_pausada", false):
+				var factor_uni: float = 1.0
+				if ciudad != null and id_act == 3:
+					factor_uni = factores_energia.get(esquina, 0.0)
+				var horas_uni: float = float(p["presentes"].size()) * factor_uni
+				if horas_uni > 0.0 and ciudad != null:
+					_avanzar_investigacion(esquina, id_act, horas_uni)
 			continue
 		if es_escuela(esquina):
 			_formar(esquina)
@@ -524,8 +534,6 @@ func simular_hora() -> void:
 			if concedido > 0.0:
 				p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + concedido
 	_procesar_transporte_fluidos()
-	if horas_investigacion > 0.0 and ciudad != null:
-		ciudad.actualizar_investigacion(horas_investigacion)
 	_horas_desde_recalculo += 1
 	if _horas_desde_recalculo >= TICKS_RECALCULO:
 		_horas_desde_recalculo = 0
@@ -824,6 +832,66 @@ func es_escuela(esquina: Vector2i) -> bool:
 ## true si el puesto es una universidad: investiga proyectos de ciudad.
 func es_universidad(esquina: Vector2i) -> bool:
 	return puestos.has(esquina) and puestos[esquina]["tipo"] == "universidad"
+
+
+func investigacion_en_curso_en_otra_universidad(esquina_actual: Vector2i, id_tech: int) -> bool:
+	for esq in puestos:
+		if esq != esquina_actual and es_universidad(esq):
+			if puestos[esq].get("investigacion_activa", 0) == id_tech:
+				return true
+	return false
+
+
+func iniciar_investigacion(esquina: Vector2i, id_tech: int) -> bool:
+	if not es_universidad(esquina):
+		return false
+	var p: Dictionary = puestos[esquina]
+	p["investigacion_activa"] = id_tech
+	p["investigacion_pausada"] = false
+	p["progreso"] = ciudad.progreso_investigacion.get(id_tech, 0.0) if ciudad != null else 0.0
+	return true
+
+
+func pausar_investigacion(esquina: Vector2i, pausar: bool) -> void:
+	if not es_universidad(esquina):
+		return
+	puestos[esquina]["investigacion_pausada"] = pausar
+
+
+func cancelar_investigacion(esquina: Vector2i) -> void:
+	if not es_universidad(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	var id_act: int = p.get("investigacion_activa", 0)
+	if id_act <= 0:
+		return
+	if ciudad != null and Ciudad.COSTOS_INVESTIGACION.has(id_act):
+		var costo: Dictionary = Ciudad.COSTOS_INVESTIGACION[id_act]
+		if ciudad.almacen.has("hierro"):
+			(ciudad.almacen["hierro"] as Ciudad.Recurso).agregar(float(costo["hierro"]))
+		if ciudad.almacen.has("madera"):
+			(ciudad.almacen["madera"] as Ciudad.Recurso).agregar(float(costo["madera"]))
+		ciudad.progreso_investigacion[id_act] = 0.0
+	p["investigacion_activa"] = 0
+	p["investigacion_pausada"] = false
+	p["progreso"] = 0.0
+
+
+func _avanzar_investigacion(esquina: Vector2i, id_tech: int, horas: float) -> void:
+	if not Ciudad.COSTOS_INVESTIGACION.has(id_tech) or ciudad == null:
+		return
+	var costo: Dictionary = Ciudad.COSTOS_INVESTIGACION[id_tech]
+	var meta: float = float(costo["horas_investigador"])
+	var prog_actual: float = ciudad.progreso_investigacion.get(id_tech, 0.0) + horas
+	ciudad.progreso_investigacion[id_tech] = minf(meta, prog_actual)
+	var p: Dictionary = puestos[esquina]
+	p["progreso"] = ciudad.progreso_investigacion[id_tech]
+	if ciudad.progreso_investigacion[id_tech] >= meta:
+		ciudad.nivel_investigado = max(ciudad.nivel_investigado, id_tech)
+		p["investigacion_activa"] = 0
+		p["investigacion_pausada"] = false
+		p["progreso"] = 0.0
+		investigacion_finalizada.emit(costo["nombre"])
 
 
 ## Recurso principal que consume la refinería (tipo_entrada de su receta, p. ej. "hierro").

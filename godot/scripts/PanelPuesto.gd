@@ -68,6 +68,17 @@ var _demoler := Button.new()
 var _dialogo_demoler := ConfirmationDialog.new()
 var _filas := {}  # rol -> {"fila": HBoxContainer, "cantidad": Label, "menos": Button, "mas": Button, "libres": Label}
 
+var _caja_investigacion: VBoxContainer
+var _lbl_inv_estado: Label
+var _caja_botones_tech: VBoxContainer
+var _botones_tech: Dictionary = {}  # id_tech -> Button
+var _caja_controles_inv: HBoxContainer
+var _btn_pausar_inv: Button
+var _btn_cancelar_inv: Button
+var _dialogo_investigar := ConfirmationDialog.new()
+var _dialogo_cancelar_inv := ConfirmationDialog.new()
+var _id_tech_seleccionada: int = 0
+
 
 func _ready() -> void:
 	visible = false
@@ -114,6 +125,58 @@ func _ready() -> void:
 	caja.add_child(_almacen)
 	caja.add_child(_produccion)
 	caja.add_child(_energia)
+
+	_caja_investigacion = VBoxContainer.new()
+	_caja_investigacion.add_theme_constant_override("separation", 4)
+	caja.add_child(_caja_investigacion)
+
+	_lbl_inv_estado = TemaHUD.etiqueta()
+	_lbl_inv_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lbl_inv_estado.custom_minimum_size.x = 340.0
+	_caja_investigacion.add_child(_lbl_inv_estado)
+
+	_caja_botones_tech = VBoxContainer.new()
+	_caja_botones_tech.add_theme_constant_override("separation", 4)
+	_caja_investigacion.add_child(_caja_botones_tech)
+
+	for id_tech: int in Ciudad.COSTOS_INVESTIGACION:
+		var btn := Button.new()
+		TemaHUD.estilizar_boton(btn)
+		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn.pressed.connect(func() -> void: _abrir_dialogo_investigar(id_tech))
+		_caja_botones_tech.add_child(btn)
+		_botones_tech[id_tech] = btn
+
+	_caja_controles_inv = HBoxContainer.new()
+	_caja_controles_inv.add_theme_constant_override("separation", 6)
+	_caja_investigacion.add_child(_caja_controles_inv)
+
+	_btn_pausar_inv = Button.new()
+	_btn_pausar_inv.text = "Pausar"
+	TemaHUD.estilizar_boton(_btn_pausar_inv)
+	_btn_pausar_inv.pressed.connect(_on_pausar_investigacion)
+	_caja_controles_inv.add_child(_btn_pausar_inv)
+
+	_btn_cancelar_inv = Button.new()
+	_btn_cancelar_inv.text = "Cancelar"
+	TemaHUD.estilizar_boton(_btn_cancelar_inv)
+	_btn_cancelar_inv.pressed.connect(func() -> void: _dialogo_cancelar_inv.popup_centered())
+	_caja_controles_inv.add_child(_btn_cancelar_inv)
+
+	_dialogo_investigar.title = "Confirmar investigación"
+	_dialogo_investigar.ok_button_text = "Investigar"
+	_dialogo_investigar.cancel_button_text = "Cancelar"
+	_dialogo_investigar.confirmed.connect(_confirmar_investigacion)
+	TemaHUD.estilizar_dialogo(_dialogo_investigar)
+	add_child(_dialogo_investigar)
+
+	_dialogo_cancelar_inv.title = "Confirmar cancelación"
+	_dialogo_cancelar_inv.dialog_text = "¿Cancelar la investigación en curso? Se reembolsará la totalidad de los recursos gastados."
+	_dialogo_cancelar_inv.ok_button_text = "Confirmar"
+	_dialogo_cancelar_inv.cancel_button_text = "Cancelar"
+	_dialogo_cancelar_inv.confirmed.connect(_confirmar_cancelar_investigacion)
+	TemaHUD.estilizar_dialogo(_dialogo_cancelar_inv)
+	add_child(_dialogo_cancelar_inv)
 
 	_construir_widgets_puertos()
 	caja.add_child(_puertos)
@@ -285,15 +348,11 @@ func _actualizar() -> void:
 	if puesto["tipo"] == "almacen":
 		_trabajadores.text = "Almacén logístico (sin personal)"
 	elif es_universidad:
-		var siguiente: int = Ciudad.nivel_investigado + 1
-		if Ciudad.COSTOS_INVESTIGACION.has(siguiente):
-			var info_inv: Dictionary = Ciudad.COSTOS_INVESTIGACION[siguiente]
-			var req: String = "Técnicos o especialistas" if siguiente == 2 else "Especialistas"
-			var prog: float = Ciudad.progreso_investigacion.get(siguiente, 0.0)
-			var meta: float = float(info_inv["horas_investigador"])
-			_trabajadores.text = "Investigadores: %d / %d (presentes: %d)\nProyecto: %s (Nivel %d)\nRequisito: %s\nProgreso: %.1f / %.1f h\nCostos: %d hierro, %d madera" % [t["recolectores"], puesto["cupo"], t["presentes"], info_inv["nombre"], siguiente, req, prog, meta, info_inv["hierro"], info_inv["madera"]]
-		else:
-			_trabajadores.text = "Investigadores: %d / %d (presentes: %d)\nTodas las investigaciones completadas" % [t["recolectores"], puesto["cupo"], t["presentes"]]
+		var id_act: int = puesto.get("investigacion_activa", 0)
+		var nom_proy: String = "Ninguno"
+		if id_act > 0 and Ciudad.COSTOS_INVESTIGACION.has(id_act):
+			nom_proy = Ciudad.COSTOS_INVESTIGACION[id_act]["nombre"]
+		_trabajadores.text = "Investigadores: %d / %d (presentes: %d)\nProyecto: %s" % [t["recolectores"], puesto["cupo"], t["presentes"], nom_proy]
 	elif es_escuela:
 		var horas: int = Recoleccion.ESCUELAS[puesto["tipo"]]["horas"]
 		_trabajadores.text = "%s: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [nombre_aprendiz, t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), horas]
@@ -347,8 +406,10 @@ func _actualizar() -> void:
 		var demanda: float = 0.0
 		if puesto["tipo"] == "refineria_petrolera" or puesto["tipo"] == "productor_combustible":
 			demanda = float(t["presentes"]) * 1.0
-		elif es_universidad and Ciudad.nivel_investigado + 1 == 3:
-			demanda = float(t["presentes"]) * 2.0
+		elif es_universidad:
+			var id_act_e: int = puesto.get("investigacion_activa", 0)
+			if id_act_e == 3 or (id_act_e == 0 and Ciudad.nivel_investigado + 1 == 3):
+				demanda = float(t["presentes"]) * 2.0
 		var factor: float = Economia.factor_energia_de(esquina)
 		var cap_red: float = res.get("capacidad", 0.0)
 		var estado_e: String = texto_estado_energia(conectado, demanda, factor, cap_red)
@@ -356,6 +417,64 @@ func _actualizar() -> void:
 	else:
 		_selector_combustible.visible = false
 		_energia.visible = false
+
+	_caja_investigacion.visible = es_universidad
+	if es_universidad:
+		var id_act: int = puesto.get("investigacion_activa", 0)
+		var pausada: bool = puesto.get("investigacion_pausada", false)
+		if id_act > 0 and Ciudad.COSTOS_INVESTIGACION.has(id_act):
+			var info_act: Dictionary = Ciudad.COSTOS_INVESTIGACION[id_act]
+			var nom_tech: String = info_act["nombre"]
+			var meta: float = float(info_act["horas_investigador"])
+			var prog: float = Ciudad.progreso_investigacion.get(id_act, 0.0)
+			var pct: int = int(clampf((prog / meta) * 100.0, 0.0, 100.0))
+			var restantes_h: float = maxf(0.0, meta - prog)
+			var cant_efectiva: int = t["presentes"] if t["presentes"] > 0 else t["recolectores"]
+			var str_tiempo: String
+			if cant_efectiva > 0:
+				var horas_est: int = int(ceil(restantes_h / float(cant_efectiva)))
+				str_tiempo = "%d horas" % horas_est
+			else:
+				str_tiempo = "Sin investigadores"
+			if pausada:
+				str_tiempo += " (Pausado)"
+			_lbl_inv_estado.text = "Investigación en curso: %s\nProgreso: %d%% | %s" % [nom_tech, pct, str_tiempo]
+			_lbl_inv_estado.visible = true
+			_caja_botones_tech.visible = false
+			_caja_controles_inv.visible = true
+			_btn_pausar_inv.disabled = false
+			_btn_pausar_inv.text = "Reanudar" if pausada else "Pausar"
+			_btn_cancelar_inv.disabled = false
+		else:
+			_caja_controles_inv.visible = false
+			_btn_pausar_inv.disabled = true
+			_btn_cancelar_inv.disabled = true
+			var todas_listas := true
+			for k: int in Ciudad.COSTOS_INVESTIGACION:
+				if Ciudad.nivel_investigado < k:
+					todas_listas = false
+					break
+			if todas_listas:
+				_lbl_inv_estado.text = "Todas las investigaciones completadas"
+				_caja_botones_tech.visible = false
+			else:
+				_lbl_inv_estado.text = "Investigaciones disponibles:"
+				_caja_botones_tech.visible = true
+				for id_tech: int in Ciudad.COSTOS_INVESTIGACION:
+					var btn: Button = _botones_tech[id_tech]
+					var info_tech: Dictionary = Ciudad.COSTOS_INVESTIGACION[id_tech]
+					if Ciudad.nivel_investigado >= id_tech:
+						btn.text = "✓ %s (Completada)" % info_tech["nombre"]
+						btn.disabled = true
+					elif id_tech > 2 and Ciudad.nivel_investigado < id_tech - 1:
+						btn.text = "🔒 %s (Requiere nivel %d)" % [info_tech["nombre"], id_tech - 1]
+						btn.disabled = true
+					elif Economia.investigacion_en_curso_en_otra_universidad(esquina, id_tech):
+						btn.text = "⏳ %s (En curso en otra universidad)" % info_tech["nombre"]
+						btn.disabled = true
+					else:
+						btn.text = "Investigar: %s" % info_tech["nombre"]
+						btn.disabled = false
 
 	if puesto["tipo"] == "centro_extraccion":
 		_crudo_restante.visible = true
@@ -599,3 +718,65 @@ func _puertos_del_puesto() -> Array[Dictionary]:
 			"celda": celda_asoc,
 		})
 	return resultado
+
+
+func _abrir_dialogo_investigar(id_tech: int) -> void:
+	if not Economia.tiene_puesto(esquina):
+		return
+	_id_tech_seleccionada = id_tech
+	var info: Dictionary = Ciudad.COSTOS_INVESTIGACION[id_tech]
+	var t: Dictionary = Economia.trabajadores_de(esquina)
+	var cant_inv: int = t["recolectores"]
+	var meta: float = float(info["horas_investigador"])
+	var tiempo_str: String
+	if cant_inv > 0:
+		var h_est: int = int(ceil(meta / float(cant_inv)))
+		tiempo_str = "%d horas (%d investigador%s)" % [h_est, cant_inv, "es" if cant_inv > 1 else ""]
+	else:
+		tiempo_str = "Sin investigadores asignados (se requiere al menos 1 para comenzar)"
+
+	_dialogo_investigar.title = "Investigar: %s" % info["nombre"]
+	_dialogo_investigar.dialog_text = "Costo: %d hierro, %d madera\nTiempo estimado: %s" % [info["hierro"], info["madera"], tiempo_str]
+	var btn_ok: Button = _dialogo_investigar.get_ok_button()
+	if btn_ok != null:
+		btn_ok.disabled = (cant_inv <= 0)
+	_dialogo_investigar.popup_centered()
+
+
+func _confirmar_investigacion() -> void:
+	if _id_tech_seleccionada <= 0 or not Economia.tiene_puesto(esquina):
+		return
+	var info: Dictionary = Ciudad.COSTOS_INVESTIGACION[_id_tech_seleccionada]
+	var costos := {"hierro": float(info["hierro"]), "madera": float(info["madera"])}
+	if not Ciudad.puede_pagar(costos):
+		aviso.emit("Recursos insuficientes: requiere %d hierro, %d madera" % [info["hierro"], info["madera"]])
+		return
+	if not Ciudad.consumir_costos(costos):
+		aviso.emit("Error al cobrar recursos de investigación")
+		return
+	Economia.iniciar_investigacion(esquina, _id_tech_seleccionada)
+	aviso.emit("Investigación iniciada: %s" % info["nombre"])
+	_actualizar()
+
+
+func _on_pausar_investigacion() -> void:
+	if not Economia.tiene_puesto(esquina):
+		return
+	var p: Dictionary = Economia.puestos[esquina]
+	var pausada: bool = p.get("investigacion_pausada", false)
+	Economia.pausar_investigacion(esquina, not pausada)
+	_actualizar()
+
+
+func _confirmar_cancelar_investigacion() -> void:
+	if not Economia.tiene_puesto(esquina):
+		return
+	var p: Dictionary = Economia.puestos[esquina]
+	var id_act: int = p.get("investigacion_activa", 0)
+	if id_act <= 0:
+		return
+	var nom: String = Ciudad.COSTOS_INVESTIGACION.get(id_act, {}).get("nombre", "")
+	Economia.cancelar_investigacion(esquina)
+	aviso.emit("Investigación cancelada: %s. Recursos reembolsados." % nom)
+	_actualizar()
+

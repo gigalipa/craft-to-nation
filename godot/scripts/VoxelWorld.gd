@@ -1001,11 +1001,18 @@ func _reembolsar_si_corresponde(celda: Vector3i, tipo: String) -> void:
 	celdas_pagadas.erase(celda)
 	if cobrado is Dictionary:
 		for recurso in cobrado:
-			Ciudad.almacen[recurso].agregar(cobrado[recurso])
+			if Ciudad.almacen.has(recurso):
+				Ciudad.almacen[recurso].agregar(cobrado[recurso])
+			else:
+				var costo_unit: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(recurso, {})
+				for r in costo_unit:
+					if Ciudad.almacen.has(r):
+						Ciudad.almacen[r].agregar(costo_unit[r] * cobrado[recurso])
 	elif cobrado:
 		var costo: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(tipo, {})
 		for recurso in costo:
-			Ciudad.almacen[recurso].agregar(costo[recurso])
+			if Ciudad.almacen.has(recurso):
+				Ciudad.almacen[recurso].agregar(costo[recurso])
 
 
 ## Retira "celda" porque un puesto la extrajo (sin las guardas de minar_bloque()).

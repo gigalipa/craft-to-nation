@@ -2319,10 +2319,20 @@ func _confirmar_trazo_ducto() -> void:
 	if mundo != null and Canalizaciones != null and Canalizaciones.TIPOS.has(_tipo_ducto_activo):
 		var costo_d: Dictionary = Canalizaciones.TIPOS[_tipo_ducto_activo].get("costo_ducto", {})
 		var costo_c: Dictionary = Canalizaciones.TIPOS[_tipo_ducto_activo].get("costo_columna", {})
+		var a_recursos := func(costo_bloques: Dictionary) -> Dictionary:
+			var res := {}
+			for b in costo_bloques:
+				var cant_b: int = costo_bloques[b]
+				var c_unit: Dictionary = NiveladorTerreno.COSTO_POR_CELDA.get(b, {})
+				for r in c_unit:
+					res[r] = res.get(r, 0.0) + float(c_unit[r] * cant_b)
+			return res
+		var rec_d: Dictionary = a_recursos.call(costo_d)
+		var rec_c: Dictionary = a_recursos.call(costo_c)
 		for c: Vector3i in geom.get("celdas_ducto", []):
-			mundo.celdas_pagadas[c] = costo_d.duplicate()
+			mundo.celdas_pagadas[c] = rec_d.duplicate()
 		for col: Vector3i in geom.get("celdas_columna", []):
-			mundo.celdas_pagadas[col] = costo_c.duplicate()
+			mundo.celdas_pagadas[col] = rec_c.duplicate()
 
 	# Conexión automática con puertos vecinos
 	for c_ducto: Vector3i in geom.get("celdas_ducto", []):

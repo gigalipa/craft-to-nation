@@ -166,6 +166,13 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(Ciudad.almacen["tablas"].cantidad, 5.0), "reembolsa 5 tablas")
 	assert(is_equal_approx(Ciudad.almacen["madera"].cantidad, 0.0), "no crea madera cruda")
 
+	print("\n=== TEST 12b: minar celda pagada registrada con nombre de bloque traduce a recurso ===")
+	Ciudad.almacen["piedra"].cantidad = 0.0
+	mundo_costo.colocar_bloque(Vector3i(6, 0, 0), "bloque_piedra", true)
+	mundo_costo.celdas_pagadas[Vector3i(6, 0, 0)] = {"bloque_piedra": 1}
+	mundo_costo.minar_bloque(Vector3i(6, 0, 0))
+	assert(is_equal_approx(Ciudad.almacen["piedra"].cantidad, 5.0), "reembolsa 5 piedra resolviendo COSTO_POR_CELDA de bloque_piedra")
+
 	print("\n=== TEST 13: VoxelWorld coloca y retira tubería de hierro reembolsando a Ciudad.almacen ===")
 	var mundo13: Node = _mundo_nuevo()
 	var col13 := Vector2i(20, 20)

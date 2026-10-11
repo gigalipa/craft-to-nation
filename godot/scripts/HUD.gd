@@ -119,7 +119,7 @@ func _init() -> void:
 	_panel_lampara = PanelLamparaScript.new()
 	_panel_lampara.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_panel_lampara.offset_left = 16
-	_panel_lampara.offset_top = 48
+	_panel_lampara.offset_top = 60
 	add_child(_panel_lampara)
 	_notificaciones = PanelNotificacionesScript.new()
 	add_child(_notificaciones)

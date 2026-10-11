@@ -449,7 +449,14 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 
 
 func almacen_local(esquina: Vector2i) -> Dictionary:
-	return puestos[esquina]["almacen"].duplicate() if puestos.has(esquina) else {}
+	if not puestos.has(esquina):
+		return {}
+	var p: Dictionary = puestos[esquina]
+	if p.get("tipo", "") == "almacen":
+		for r in ["agua", "crudo", "combustible"]:
+			if not p["almacen"].has(r) and reserva_fluidos.get(r, 0.0) > 1e-9:
+				p["almacen"][r] = reserva_fluidos[r]
+	return p["almacen"].duplicate()
 
 
 static func _total(almacen: Dictionary) -> float:
@@ -555,6 +562,8 @@ func _procesar_transporte_fluidos() -> void:
 							var derramado: float = minf(cant_disp, 10.0)
 							alm[rec] -= derramado
 							cant_disp -= derramado
+							if p.get("tipo", "") == "almacen":
+								extraer_fluido_almacen(rec, derramado)
 							if alm[rec] <= 1e-9:
 								alm.erase(rec)
 					continue
@@ -565,7 +574,12 @@ func _procesar_transporte_fluidos() -> void:
 					var esq_dest: Vector2i = _buscar_puesto_por_puerto(p_in)
 					var p_dest: Dictionary = puestos.get(esq_dest, {})
 					if p_dest.get("tipo", "") == "almacen":
-						enviado = ingresar_fluido_almacen(rec, cuota)
+						var cap_dest: float = p_dest.get("capacidad", 3000.0)
+						var espacio_dest: float = maxf(0.0, cap_dest - _total(p_dest.get("almacen", {})))
+						var cuota_admitida: float = minf(cuota, espacio_dest)
+						enviado = ingresar_fluido_almacen(rec, cuota_admitida)
+						if enviado > 1e-9:
+							p_dest["almacen"][rec] = p_dest["almacen"].get(rec, 0.0) + enviado
 					elif not p_dest.is_empty():
 						var cap_dest: float = p_dest.get("capacidad", 1000.0)
 						var espacio_dest: float = maxf(0.0, cap_dest - _total(p_dest.get("almacen", {})))
@@ -576,6 +590,8 @@ func _procesar_transporte_fluidos() -> void:
 					if enviado > 1e-9:
 						alm[rec] -= enviado
 						cant_disp -= enviado
+						if p.get("tipo", "") == "almacen":
+							extraer_fluido_almacen(rec, enviado)
 						if alm[rec] <= 1e-9:
 							alm.erase(rec)
 

@@ -917,6 +917,13 @@ func probar_panel_extractores_y_refinerias() -> void:
 	assert(panel._titulo.text == "Almacén")
 	assert(not panel._filas["recolector"]["fila"].visible and not panel._filas["tecnico"]["fila"].visible and not panel._filas["acarreador"]["fila"].visible, "almacén sin trabajadores")
 	assert(panel._puertos.visible, "almacén muestra sus 6 puertos")
+	assert(panel._bloques_recurso["agua"].visible and panel._bloques_recurso["crudo"].visible and panel._bloques_recurso["combustible"].visible, "almacén tiene los 3 bloques de recurso")
+	assert(panel._botones_recurso["agua"].text.contains("Agua I⚪/O⚪:"))
+	assert(panel._etiquetas_in["agua"].text.contains("* Entrada: ⚪ Desconectado"))
+	assert(panel._etiquetas_out["agua"].text.contains("* Salida: ⚪ Desconectado"))
+	Economia.puestos[esq_alm]["almacen"]["crudo"] = 50.0
+	panel._actualizar()
+	assert("50.0 Crudo" in panel._almacen.text, "el almacén muestra el crudo guardado")
 
 	# 5. Estados de conexión y derrame en vivo
 	Canalizaciones.reiniciar()

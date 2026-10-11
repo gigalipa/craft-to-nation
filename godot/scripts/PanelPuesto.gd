@@ -37,6 +37,9 @@ const NOMBRES_ROL := {"recolector": "Obreros", "tecnico": "Técnicos", "especial
 
 var esquina := Recoleccion.SIN_PUESTO
 
+class ContenedorPuertos extends VBoxContainer:
+	var text: String = ""
+
 var _titulo := TemaHUD.etiqueta()
 var _trabajadores := TemaHUD.etiqueta()
 var _libres := TemaHUD.etiqueta()
@@ -46,7 +49,20 @@ var _energia := TemaHUD.etiqueta()
 var _crudo_restante := TemaHUD.etiqueta()
 var _selector_combustible := HBoxContainer.new()
 var _botones_combustible: Dictionary = {}
-var _puertos := TemaHUD.etiqueta()
+var _puertos := ContenedorPuertos.new()
+var _desplegado_conexiones: bool = true
+var _desplegados_recursos: Dictionary = {
+	"agua": true,
+	"crudo": true,
+	"combustible": true,
+}
+var _btn_conexiones: Button
+var _caja_conexiones: VBoxContainer
+var _bloques_recurso: Dictionary = {}
+var _botones_recurso: Dictionary = {}
+var _contenedores_recurso: Dictionary = {}
+var _etiquetas_in: Dictionary = {}
+var _etiquetas_out: Dictionary = {}
 var _distancia := TemaHUD.etiqueta()
 var _demoler := Button.new()
 var _dialogo_demoler := ConfirmationDialog.new()
@@ -59,10 +75,10 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP  # los botones +/- necesitan capturar el clic
 	# Abajo a la derecha: arriba las notificaciones ocupan ese lugar (decisión del usuario, 2026-10-02).
 	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	offset_left = -280.0
+	offset_left = -372.0
 	offset_bottom = -12.0
 	offset_right = -12.0
-	custom_minimum_size.x = 268.0
+	custom_minimum_size.x = 360.0
 	grow_horizontal = Control.GROW_DIRECTION_BEGIN  # si crece, hacia la izquierda
 	grow_vertical = Control.GROW_DIRECTION_BEGIN  # y hacia arriba
 	var caja := VBoxContainer.new()
@@ -87,11 +103,23 @@ func _ready() -> void:
 		_botones_combustible[id_c] = btn
 	caja.add_child(_selector_combustible)
 
-	for etiqueta in [_trabajadores, _libres, _crudo_restante, _almacen, _produccion, _energia, _puertos, _distancia]:
+	for etiqueta in [_trabajadores, _libres, _crudo_restante, _almacen, _produccion, _energia, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		etiqueta.custom_minimum_size.x = 250.0
-		caja.add_child(etiqueta)
+		etiqueta.custom_minimum_size.x = 340.0
+
+	caja.add_child(_trabajadores)
+	caja.add_child(_libres)
+	caja.add_child(_crudo_restante)
+	caja.add_child(_almacen)
+	caja.add_child(_produccion)
+	caja.add_child(_energia)
+
+	_construir_widgets_puertos()
+	caja.add_child(_puertos)
+
+	caja.add_child(_distancia)
+
 	TemaHUD.estilizar_boton(_demoler)
 	_demoler.pressed.connect(_on_demoler)
 	caja.add_child(_demoler)
@@ -102,6 +130,72 @@ func _ready() -> void:
 	_dialogo_demoler.confirmed.connect(_confirmar_demoler)
 	TemaHUD.estilizar_dialogo(_dialogo_demoler)
 	add_child(_dialogo_demoler)
+
+
+func _construir_widgets_puertos() -> void:
+	_puertos.add_theme_constant_override("separation", 3)
+	_puertos.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_btn_conexiones = Button.new()
+	_btn_conexiones.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	TemaHUD.estilizar_boton(_btn_conexiones)
+	_btn_conexiones.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	_btn_conexiones.pressed.connect(func() -> void:
+		_desplegado_conexiones = not _desplegado_conexiones
+		_actualizar()
+	)
+	_puertos.add_child(_btn_conexiones)
+
+	var margen_con := MarginContainer.new()
+	margen_con.add_theme_constant_override("margin_left", 8)
+	margen_con.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_puertos.add_child(margen_con)
+
+	_caja_conexiones = VBoxContainer.new()
+	_caja_conexiones.add_theme_constant_override("separation", 3)
+	_caja_conexiones.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margen_con.add_child(_caja_conexiones)
+
+	for rec in ["agua", "crudo", "combustible"]:
+		var bloque := VBoxContainer.new()
+		bloque.add_theme_constant_override("separation", 2)
+		bloque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_caja_conexiones.add_child(bloque)
+		_bloques_recurso[rec] = bloque
+
+		var btn_rec := Button.new()
+		btn_rec.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		TemaHUD.estilizar_boton(btn_rec)
+		btn_rec.add_theme_color_override("font_color", TemaHUD.TEXTO)
+		btn_rec.pressed.connect(func() -> void:
+			_desplegados_recursos[rec] = not _desplegados_recursos.get(rec, true)
+			_actualizar()
+		)
+		bloque.add_child(btn_rec)
+		_botones_recurso[rec] = btn_rec
+
+		var margen_rec := MarginContainer.new()
+		margen_rec.add_theme_constant_override("margin_left", 14)
+		margen_rec.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bloque.add_child(margen_rec)
+		_contenedores_recurso[rec] = margen_rec
+
+		var caja_detalles := VBoxContainer.new()
+		caja_detalles.add_theme_constant_override("separation", 2)
+		caja_detalles.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		margen_rec.add_child(caja_detalles)
+
+		var lbl_in := TemaHUD.etiqueta()
+		lbl_in.add_theme_font_size_override("font_size", 12)
+		lbl_in.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caja_detalles.add_child(lbl_in)
+		_etiquetas_in[rec] = lbl_in
+
+		var lbl_out := TemaHUD.etiqueta()
+		lbl_out.add_theme_font_size_override("font_size", 12)
+		lbl_out.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		caja_detalles.add_child(lbl_out)
+		_etiquetas_out[rec] = lbl_out
 
 
 func _crear_fila(rol: String) -> HBoxContainer:
@@ -276,20 +370,62 @@ func _actualizar() -> void:
 	var lista_puertos: Array[Dictionary] = _puertos_del_puesto()
 	if not lista_puertos.is_empty():
 		_puertos.visible = true
-		var lineas: Array = ["Puertos de conexión:"]
-		for p_data in lista_puertos:
-			var estado_texto := "Desconectado"
-			var simbolo := "⚪"
-			if p_data["estado"] == "conectado":
-				estado_texto = "Conectado"
-				simbolo = "🟢"
-			elif p_data["estado"] == "derrame":
-				estado_texto = "Derrame"
-				simbolo = "🔴"
-			lineas.append("• %s: %s %s" % [p_data["nombre"], simbolo, estado_texto])
-		_puertos.text = "\n".join(lineas)
+		_btn_conexiones.text = "%s Conexiones" % ("▼" if _desplegado_conexiones else "▶")
+		_caja_conexiones.get_parent().visible = _desplegado_conexiones
+
+		var lineas_resumen: Array[String] = ["Puertos de conexión:"]
+
+		for rec in ["agua", "crudo", "combustible"]:
+			var p_in = null
+			var p_out = null
+			for p_data in lista_puertos:
+				if p_data["recurso"] == rec:
+					if p_data["direccion"] == "Entrada":
+						p_in = p_data
+					elif p_data["direccion"] == "Salida":
+						p_out = p_data
+
+			if p_in == null and p_out == null:
+				_bloques_recurso[rec].visible = false
+				continue
+
+			_bloques_recurso[rec].visible = true
+
+			var sim_in := _simbolo_estado(p_in["estado"]) if p_in != null else "—"
+			var sim_out := _simbolo_estado(p_out["estado"]) if p_out != null else "—"
+			var nombre_rec: String = HUDScript.NOMBRES_RECURSO.get(rec, rec.capitalize())
+			var desplegado_rec: bool = _desplegados_recursos.get(rec, true)
+			var flecha_rec := "▼" if desplegado_rec else "▶"
+
+			var texto_hdr := ""
+			if p_in != null and p_out != null:
+				texto_hdr = "%s %s I%s/O%s:" % [flecha_rec, nombre_rec, sim_in, sim_out]
+			elif p_in != null:
+				texto_hdr = "%s %s I%s:" % [flecha_rec, nombre_rec, sim_in]
+			else:
+				texto_hdr = "%s %s O%s:" % [flecha_rec, nombre_rec, sim_out]
+
+			_botones_recurso[rec].text = texto_hdr
+			_contenedores_recurso[rec].visible = desplegado_rec
+
+			if p_in != null:
+				_etiquetas_in[rec].visible = true
+				_etiquetas_in[rec].text = "* Entrada: %s %s" % [sim_in, _texto_estado(p_in["estado"])]
+				lineas_resumen.append("• %s: %s %s" % [p_in["nombre"], sim_in, _texto_estado(p_in["estado"])])
+			else:
+				_etiquetas_in[rec].visible = false
+
+			if p_out != null:
+				_etiquetas_out[rec].visible = true
+				_etiquetas_out[rec].text = "* Salida: %s %s" % [sim_out, _texto_estado(p_out["estado"])]
+				lineas_resumen.append("• %s: %s %s" % [p_out["nombre"], sim_out, _texto_estado(p_out["estado"])])
+			else:
+				_etiquetas_out[rec].visible = false
+
+		_puertos.text = "\n".join(lineas_resumen)
 	else:
 		_puertos.visible = false
+		_puertos.text = ""
 
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
 	var id_puesto: int = Obras.id_en_columna(esquina)
@@ -307,6 +443,20 @@ static func texto_estado_energia(conectado: bool, demanda: float, factor: float,
 	if factor < 1.0 - 1e-9:
 		return "Déficit %d %%" % roundi(factor * 100.0)
 	return "Con energía"
+
+
+static func _simbolo_estado(estado: String) -> String:
+	match estado:
+		"conectado": return "🟢"
+		"derrame": return "🔴"
+		_: return "⚪"
+
+
+static func _texto_estado(estado: String) -> String:
+	match estado:
+		"conectado": return "Conectado"
+		"derrame": return "Derrame"
+		_: return "Desconectado"
 
 
 

@@ -41,6 +41,8 @@ var tipo_por_red: Dictionary = {}
 var recurso_por_red: Dictionary = {}
 ## columnas: Vector3i -> int id_red
 var columnas: Dictionary = {}
+## columnas_xz: Vector2i -> int (número de bloques de columna en esa coordenada XZ)
+var columnas_xz: Dictionary = {}
 ## puertos_conectados: Vector3i (celda puerto) -> int id_red
 var puertos_conectados: Dictionary = {}
 ## derrames_activos: Vector3i (extremo abierto) -> String (recurso)
@@ -66,6 +68,7 @@ func reiniciar() -> void:
 	tipo_por_red.clear()
 	recurso_por_red.clear()
 	columnas.clear()
+	columnas_xz.clear()
 	puertos_conectados.clear()
 	tipo_por_puerto.clear()
 	derrames_activos.clear()
@@ -313,6 +316,18 @@ func red_en_columna(xz: Vector2i) -> int:
 		if p.x == xz.x and p.z == xz.y:
 			return puertos_conectados[p]
 	return -1
+
+
+func es_columna(celda: Vector3i) -> bool:
+	return columnas.has(celda)
+
+
+func tiene_columna_en(xz: Vector2i) -> bool:
+	if columnas_xz.is_empty() and not columnas.is_empty():
+		for c: Vector3i in columnas:
+			var c_xz := Vector2i(c.x, c.z)
+			columnas_xz[c_xz] = columnas_xz.get(c_xz, 0) + 1
+	return columnas_xz.has(xz)
 
 
 func info_de_red(id_red: int) -> Dictionary:
@@ -687,6 +702,8 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 	for col: Vector3i in celdas_c:
 		mundo.colocar_bloque(col, bloque_c, true)
 		columnas[col] = id
+		var xz := Vector2i(col.x, col.z)
+		columnas_xz[xz] = columnas_xz.get(xz, 0) + 1
 
 	# Colocar ductos (omitiendo celdas intermedias del vano en tramos diagonales)
 	var registradas: Array[Vector3i] = []
@@ -816,6 +833,11 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 			var id_c: int = columnas[celda]
 			redes_afectadas[id_c] = true
 			columnas.erase(celda)
+			var xz := Vector2i(celda.x, celda.z)
+			if columnas_xz.has(xz):
+				columnas_xz[xz] -= 1
+				if columnas_xz[xz] <= 0:
+					columnas_xz.erase(xz)
 		if mundo != null and mundo.has_method("minar_bloque"):
 			mundo.minar_bloque(celda)
 

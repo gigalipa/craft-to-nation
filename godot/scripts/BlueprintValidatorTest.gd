@@ -573,6 +573,14 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.altura_en(OX6, 0) == 0)
 	print("OK: altura_en() devuelve la altura del 'piso' real (0), no la del follaje que lo cubre (3).")
 
+	print("\n=== TEST 15b: altura_en() ignora ductos elevados (acueducto/tuberia) ===")
+	const OX6B := 405
+	mundo.colocar_bloque(Vector3i(OX6B, 0, 0), "hierba")
+	mundo.colocar_bloque(Vector3i(OX6B, 4, 0), "acueducto")
+	mundo.colocar_bloque(Vector3i(OX6B, 5, 0), "tuberia")
+	assert(mundo.altura_en(OX6B, 0) == 0)
+	print("OK: altura_en() devuelve la altura del 'piso' real (0), no la de los ductos que corren en el aire.")
+
 	print("\n=== TEST 16: verificar_huella_libre() detecta madera, follaje y estructura ===")
 	const OX7 := 500
 

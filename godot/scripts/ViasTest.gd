@@ -681,6 +681,47 @@ func ejecutar_pruebas() -> void:
 	assert(demo_overlay40._outline_instance.mesh == null, "Al completarse la demolición limpia el outline")
 	demo_overlay40.free()
 
-	print("\n=== Las 40 pruebas de Vias pasaron correctamente ===")
+	print("\n=== TEST 41: TrazadorVias traza en línea recta por debajo de un ducto elevado con altura libre ===")
+	Canalizaciones.reiniciar()
+	var mundo_ducto := MundoFalsoVias.new()
+	# Terreno en Y=0. Colocar un ducto que cruza a Y=4 a lo largo de X (en Z=5, de X=0 a X=10)
+	for x in range(0, 11):
+		mundo_ducto.colocar_bloque(Vector3i(x, 4, 5), "acueducto")
+	# Columnas de soporte solo en los extremos (X=0 y X=10), dejando despejado el centro
+	mundo_ducto.colocar_bloque(Vector3i(0, 1, 5), "bloque_piedra")
+	mundo_ducto.colocar_bloque(Vector3i(0, 2, 5), "bloque_piedra")
+	mundo_ducto.colocar_bloque(Vector3i(0, 3, 5), "bloque_piedra")
+	Canalizaciones.columnas[Vector3i(0, 1, 5)] = 1
+	Canalizaciones.columnas[Vector3i(0, 2, 5)] = 1
+	Canalizaciones.columnas[Vector3i(0, 3, 5)] = 1
+	Canalizaciones.columnas_xz[Vector2i(0, 5)] = 3
+
+	mundo_ducto.colocar_bloque(Vector3i(10, 1, 5), "bloque_piedra")
+	mundo_ducto.colocar_bloque(Vector3i(10, 2, 5), "bloque_piedra")
+	mundo_ducto.colocar_bloque(Vector3i(10, 3, 5), "bloque_piedra")
+	Canalizaciones.columnas[Vector3i(10, 1, 5)] = 1
+	Canalizaciones.columnas[Vector3i(10, 2, 5)] = 1
+	Canalizaciones.columnas[Vector3i(10, 3, 5)] = 1
+	Canalizaciones.columnas_xz[Vector2i(10, 5)] = 3
+
+	var trazador_ducto := TrazadorVias.new(mundo_ducto)
+	# Trazar vía en línea recta a lo largo de X=5 cruzando bajo el ducto (de Z=2 a Z=8)
+	var ruta_bajo_ducto: Array[Vector2i] = trazador_ducto.buscar_ruta(Vector2i(5, 2), Vector2i(5, 8))
+	assert(not ruta_bajo_ducto.is_empty(), "Debe encontrar ruta por debajo del ducto")
+	assert(ruta_bajo_ducto.size() == 6, "La ruta debe ser una línea recta sin rodeos (6 pasos)")
+	for v in ruta_bajo_ducto:
+		assert(v.x == 5, "La ruta debe mantenerse perfectamente recta en x=5")
+
+	print("\n=== TEST 42: TrazadorVias rechaza vértices que ocupan columnas de ducto o falta de despeje ===")
+	# El vértice (1, 6) toca la columna (0, 5): bloque_de_vertice((1, 6)) = [(0, 5), (1, 5), (0, 6), (1, 6)]
+	assert(not trazador_ducto.vertice_transitable(Vector2i(1, 6)), "No debe ser transitable si toca una columna de soporte de ducto")
+
+	# Si un ducto está a Y=2 (despeje de solo 1 bloque sobre Y=0), debe rechazarlo por altura insuficiente
+	mundo_ducto.colocar_bloque(Vector3i(5, 2, 8), "tuberia")
+	var trazador_bajo := TrazadorVias.new(mundo_ducto)
+	assert(not trazador_bajo.vertice_transitable(Vector2i(5, 8)), "Debe rechazar el vértice si el ducto invade los 3 bloques de despeje")
+	Canalizaciones.reiniciar()
+
+	print("\n=== Las 42 pruebas de Vias pasaron correctamente ===")
 
 

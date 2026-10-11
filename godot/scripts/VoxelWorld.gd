@@ -92,6 +92,12 @@ const TIPOS_ESTRUCTURA := [
 	"cama_cabecera", "cama_pies", "baul", "mesa_estudio",
 ]
 
+## Tipos de ducto elevados (acueductos y tuberías) que corren en el aire;
+## altura_en() los salta para devolver el terreno real bajo ellos.
+const TIPOS_DUCTO: Array[String] = [
+	"acueducto", "tuberia",
+]
+
 ## La celda de superficie de cada columna del mundo se coloca como "hierba"
 ## (ver _generar_terreno() — reutiliza el bloque caminable), pero
 ## geológicamente es el mismo material que el subsuelo justo debajo
@@ -863,6 +869,8 @@ func altura_en(x: int, z: int, ignorar_agua: bool = false) -> int:
 			continue
 		var tipo: String = obtener_tipo(celda)
 		if TIPOS_ARBOL.has(tipo):
+			continue
+		if TIPOS_DUCTO.has(tipo):
 			continue
 		if tipo == "fantasma":
 			continue

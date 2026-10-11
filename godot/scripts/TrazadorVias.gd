@@ -52,19 +52,38 @@ func bloque_de_vertice(vertice: Vector2i) -> Array[Vector2i]:
 	return _nivelador.bloque_de_vertice(vertice)
 
 
+const TIPOS_ARBOL: Array[String] = ["madera", "follaje", "manzana", "naranja"]
+
+
 ## true si NINGUNA de las 4 columnas del bloque de soporte de "vertice"
-## está ocupada por agua o por un edificio/obra — los árboles NO bloquean
-## (se talan al confirmar, ver spec de vías Sección 5). Usa la superficie
-## real del mundo (mundo.altura_en(x, z) + 1), igual que
-## CamaraCenital._huella_choca_con_otro_puesto().
+## está ocupada por agua, por un edificio/obra o por una columna de ducto
+## (Canalizaciones.tiene_columna_en()), y el despeje vertical (3 bloques sobre
+## el nivel de la vía) está libre de ductos u obstáculos sólidos. Los árboles
+## NO bloquean (se talan al confirmar, ver spec de vías Sección 5).
 func vertice_transitable(vertice: Vector2i) -> bool:
 	if _cache_transitable.has(vertice):
 		return _cache_transitable[vertice]
 	var transitable := true
+	var nivel: int = _nivel_cacheado(vertice)
 	for col in _nivelador.bloque_de_vertice(vertice):
-		var superficie := Vector3i(col.x, mundo.altura_en(col.x, col.y) + 1, col.y)
+		var y_suelo: int = mundo.altura_en(col.x, col.y)
+		var superficie := Vector3i(col.x, y_suelo + 1, col.y)
 		if mundo.obtener_tipo(superficie) == "agua" or mundo.id_de_edificio(superficie) != -1:
 			transitable = false
+			break
+		if Canalizaciones != null and Canalizaciones.tiene_columna_en(col):
+			transitable = false
+			break
+		for dy in range(1, 4):
+			var celda_despeje := Vector3i(col.x, nivel + dy, col.y)
+			var tipo_despeje: String = mundo.obtener_tipo(celda_despeje)
+			if tipo_despeje == "acueducto" or tipo_despeje == "tuberia":
+				transitable = false
+				break
+			if tipo_despeje != "" and tipo_despeje != "fantasma" and not TIPOS_ARBOL.has(tipo_despeje):
+				transitable = false
+				break
+		if not transitable:
 			break
 	_cache_transitable[vertice] = transitable
 	return transitable

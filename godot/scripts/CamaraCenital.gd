@@ -992,6 +992,8 @@ func _huella_choca_con_otro_puesto(esquina: Vector2i, columnas: Array[Vector2i],
 			return true
 		if not ignorar_vias and Vias.hay_via_en_columna(xz):
 			return true
+		if Canalizaciones != null and Canalizaciones.tiene_columna_en(xz):
+			return true
 		var celda_superficie := Vector3i(xz.x, mundo.altura_en(xz.x, xz.y) + 1, xz.y)
 		if mundo.id_de_edificio(celda_superficie) != -1:
 			return true

@@ -2,17 +2,22 @@
 
 ## Ruta vigente
 
-1. Mantener las 26 escenas de prueba limpias mediante `tools/run-godot-tests.ps1` (570 bloques de prueba), que también detecta errores de ejecución y escenas incompletas.
+1. Mantener las 28 escenas de prueba limpias mediante `tools/run-godot-tests.ps1`, que también detecta errores de ejecución y escenas incompletas.
 2. ✅ (2026-10-04) Formación de especialistas (`escuela_especialistas`), universidad e investigaciones de activación (Metalurgia Aplicada y Automatización Industrial).
 3. ✅ (2026-10-04) Fluidos (`agua`, `crudo`, `combustible`), recetas de refinería (`refineria_petrolera`, `productor_combustible`), central termoeléctrica y transmisión energética por vías e influencia con déficit horario.
 4. ✅ (2026-10-05) Gestión de obras y blueprints: autoasignación inmediata de ociosos, tope de cuadrilla (máx. 4 obreros por obra), hasta 5 blueprints guardados con miniaturas y nombrado automático `Residencia [camas]x[baules]`, nivelación compartida por cota de puerta guía, traslado del núcleo urbano desde el panel del edificio, y flexibilización de aberturas (puertas obligatorias únicamente en el 1er piso; pisos superiores no necesitan puertas).
 5. ✅ (2026-10-05) Logística, tráfico y pathfinding: jerarquía de transporte en vías de 1 celda (recursos priorizados: comida > combustible > crudo > acero > mineral_refinado > hierro > cobre > carbón > tierras_raras > tablas > madera > piedra > tierra > agua), cesión de paso y apartados laterales, recogida en puerta de servicio, retroceso de nivel en puestos según el empleado de menor rango activo, y reserva de destinos interiores en escuelas técnicas evitando bucles entre exterior y vestíbulo.
 6. ✅ (2026-10-05) HUD, tarjetas contextuales y trazado de vías: barra superior responsiva con botón de Almacén compacto, recursos destacados (Comida, Energía, Crítico), ventana de Almacén alfabética, ventana de Ocupaciones categorizada por tipo y ordenada por antigüedad; tarjetas contextuales de herramientas e interacción con presentación por línea, iconos SVG de clic izquierdo/derecho y scroll (`click_izq.svg`, `click_der.svg`, `scroll.svg`) y doble clic `x2`; y trazador de vías con cancelación limpia de tramos y previsualización, más ficha técnica con recursos calculados dinámicamente por celda (`Vias.ficha_tecnica`).
 7. ✅ (2026-10-06) **Remodelación de edificaciones y sistema de colonizabilidad:** desdeclaración de edificios sin demoler para permitir modificaciones estructurales (apuntando a la puerta principal con `Shift + B` / botón en `PanelEdificio`), excepción limpia para el Núcleo Urbano, buffers habitables de inmigración con contador de 24h y toggle manual, reubicación cívica, y estado temporal de "sin techo" (consumo de desempleado, bloqueo laboral y exilio a las 24h con penalización moral; ver `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`).
-8. ✅ (2026-10-07) **Tendido de vías por colonos y prioridades configurables de obras:** ejecución incremental de obras viales (`ConstructorVias.planificar` y `ejecutar_paso`) por colonos libres (hasta 4 obreros por obra, fusión automática de tramos contiguos); sistema de prioridades configurables por obra en `PanelEdificio` (Alta=2, Normal=1, Baja=0, desempate por orden de emplazamiento); jerarquía global de despacho en `Obras.gd` (Construcción Alta > Construcción Normal > Demoliciones > Tendido de vías > Construcción Baja); overlays dedicados `ViaObraOverlay` (perímetro en tierra) y `ViaDemolicionOverlay` (franja translúcida naranja guiada); herramienta unificada de demolición (tecla `3` cenital) para edificios o vías en red guiadas (búsqueda en red, doble clic para confirmar, clic derecho para cancelar, conservando bloques de nivelación); y herramienta en 1ª persona (tecla `V` en `Player.gd`) con modo exclusivo para avanzar obras o demoler vías manualmente.
-9. Implementar bombas de extracción directa en fuentes de agua y crudo.
-10. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
-11. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
+8. ✅ (2026-10-07) **Tendido de vías por colonos y prioridades configurables de obras:** ejecución incremental de obras viales (`ConstructorVias.planificar` y `ejecutar_paso`) por colonos libres (hasta 4 obreros por obra, fusión automática de tramos contiguos); sistema de prioridades configurables por obra en `PanelEdificio` (Alta=2, Normal=1, Baja=0, desempate por orden de emplazamiento); jerarquía global de despacho en `Obras.gd` (Construcción Alta > Construcción Normal > Demoliciones > Tendido de vías > Construcción Baja); overlays dedicados `ViaObraOverlay` (perímetro en tierra) y `ViaDemolicionOverlay` (franja translúcida naranja guiada); herramienta unificada de demolición (tecla `3` cenital) para edificios o vías en red guiadas; y herramienta en 1ª persona (tecla `V` en `Player.gd`) para avanzar obras o demoler vías manualmente.
+9. ✅ (2026-10-08 a 2026-10-12) **Red de tuberías y acueductos (Canalizaciones):** arquitectura modular de 4 piezas (columna, bloque de ducto lineal/quiebre, tramo continuo con pivot vertical y bloque extremo), cruces a desnivel en $Y_{suelo}+6$ con doble columna en $Y+5$, topología multi-entrada / salida única, cese de derrames al conectar, cálculo dinámico de flujos y ficha técnica con unidades legibles (`m³`, `m³/min`).
+10. ✅ (2026-10-08 a 2026-10-12) **Subsuelo, pozos de crudo y físicas de fluidos:** yacimientos profundos de petróleo en el subsuelo, lámpara minera/farol de mano (`PlayerLamparaTest.gd`, tecla `L`), físicas de fluidos (viscosidad en crudo a 0.20, spreading de líquidos: agua 7, combustible 5, crudo 3, drenado por bloques sólidos e inundación de agua estilo Minecraft al minar bloques adyacentes a agua).
+11. ✅ (2026-10-12) **Ajustes de industria, logística y energía:** acarreo de 150 unidades de carbón a central termoeléctrica si stock local < 500 (reserva 500) o abastecimiento 100% por ducto en modos líquidos; partición estricta de refinería petrolera (400 crudo / 600 combustible reservado); y presencia continua de aprendices y trabajadores en interiores.
+12. ✅ (2026-10-12) **Interfaz modal de energía (`VentanaEnergia.gd`):** botón interactivo de energía en barra superior, ventana modal con balance global, cobertura, listas de generadores/consumidores y navegación por clic con teletransporte de cámara y panel de edificio.
+13. ✅ (2026-10-12) **Pathfinding ponderado por vías:** coste de terreno natural = 8, vía de tierra pisada = 3, guiando a colonos por rutas construidas.
+14. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
+15. Bombas de extracción directa en fuentes naturales superficiales de agua.
+16. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
 
 ## Estado detallado e historial
 
@@ -112,12 +117,67 @@ Los colonos libres construyen y demuelen obras de edificios y vías con tope de 
 Pendientes de esta línea:
 - Traducción de modelos `.dae` a blueprints construibles y aplicación de texturas finales.
 
-### 7. Cola de pendientes menores de la Fase 3 — no bloqueantes
+### 7. Red de tuberías y acueductos (Canalizaciones) — ✅ completo (2026-10-12)
+
+Red física aérea para transporte de fluidos con visualización, flujo, soporte estructural y cálculo dinámico (`Canalizaciones.gd`, `CanalizacionesTest.gd`):
+
+1. **Arquitectura modular de 4 piezas:**
+   - **Columnas de soporte:** bloques estructurales verticales colocados sobre el terreno natural hasta la cota del cabezal.
+   - **Bloques de ducto (cabezales):** colocados en el tope de cada columna. Dos variantes: *Lineal* (alineación continua) y *Quiebre* (esquinas a 90°).
+   - **Tramos conectores:** secciones prismáticas de altura fija $H$ igual a un bloque y longitud/ángulo dinámicos. Pivotan verticalmente sobre el centro perpendicular de los bloques que unen, absorbiendo pendientes y desniveles sin fisuras visuales ni z-fighting. Texturizado UV mapeado longitudinalmente de forma repetida.
+   - **Bloques extremos:** conectan los tramos a los puertos de entrada o salida de los edificios.
+2. **Cruces a desnivel en $Y_{suelo}+6$:**
+   - Si una tubería cruza ortogonalmente sobre otra red a $Y_{suelo}+4$, el trazador eleva el cruce a $Y_{suelo}+6$.
+   - Coloca columnas dobles de soporte en $idx-1$ e $idx+1$ hasta $Y_{suelo}+5$ coronadas con cabezales en $Y_{suelo}+6$.
+   - La celda vertical intermedia $Y_{suelo}+5$ sobre el ducto inferior queda como aire libre, permitiendo el paso sin colisiones.
+   - Los tramos inclinados ascienden y descienden limpiamente 2 cotas.
+3. **Topología y dinámica de fluidos:**
+   - Redes independientes y homogéneas por tipo de recurso (agua, crudo o combustible).
+   - Topología multi-entrada hacia salida única: admite varios extractores que convergen hacia un único almacén o consumidor receptor.
+   - Cancelación inmediata de derrames activos tan pronto como la red conecta con un puerto de destino válido.
+   - Ficha técnica en el panel contextual con unidades legibles (`m³` para volumen transportado, `m³/min` para caudal).
+
+### 8. Subsuelo, pozos de crudo, físicas de fluidos y lámpara — ✅ completo (2026-10-12)
+
+Profundización del mundo procedural y mecánicas subterráneas (`VoxelWorld.gd`, `Player.gd`, `PlayerLamparaTest.gd`, `TranslucidosRendererTest.gd`):
+
+1. **Pozos petrolíferos y subsuelo profundo:**
+   - Generación procedural de yacimientos de petróleo en las capas subterráneas profundas.
+   - Central de extracción de crudo que bombea el fluido subterráneo y lo inyecta a la red de ductos.
+2. **Lámpara minera / Farol de mano:**
+   - Lámpara omnidireccional equipable por el jugador para exploración de cavernas y minería subterránea.
+   - Toggle mediante atajo `L` y control desde panel contextual.
+3. **Físicas y viscosidad de fluidos:**
+   - Viscosidad de crudo fijada en `0.20` con impulso de salto atenuado a `VELOCIDAD_SALTO * 0.20`, simulando densidad pesada al sumergirse.
+   - Spreading horizontal diferenciado: agua 7 bloques, combustible 5 bloques, crudo 3 bloques.
+   - Desalojo de líquidos: colocar un bloque sólido destruye el líquido existente en esa celda limpiamente.
+   - Inundación de agua estilo Minecraft: al minar o retirar un bloque sólido rodeado por agua lateral o superior, la celda vaciada se llena de agua inmediatamente.
+
+### 9. Ajustes de industria, logística, energía y pathfinding — ✅ completo (2026-10-12)
+
+Refinamiento de cadenas productivas, interfaz de control y navegación de colonos (`Colonos.gd`, `Economia.gd`, `VentanaEnergia.gd`, `Vias.gd`, `BuscadorRutas.gd`):
+
+1. **Logística de centrales termoeléctricas:**
+   - Capacidad local fijada en 500 unidades de carbón (reserva de 500).
+   - En modo carbón, si el stock < 500, acarreadores transportan lotes de 150 unidades y descargan cuando hay espacio suficiente.
+   - En modo combustible o crudo, no admite acarreadores (abastecimiento 100% por ductos).
+2. **Partición de refinerías petroleras:**
+   - Almacén de 1000 unidades particionado estrictamente: máximo 400 unidades de crudo (40%) y 600 unidades reservadas para combustible producido (60%).
+3. **Modal de energía (`VentanaEnergia.gd`):**
+   - Botón interactivo de energía en la barra superior.
+   - Ventana modal con estilo TemaHUD: muestra balance neto, demanda, generación y porcentaje de cobertura.
+   - Listas interactivas de generadores y consumidores con combustible activo, potencia y estado.
+   - Al hacer clic en un edificio de la lista, la ventana se cierra, la cámara se desplaza suavemente hacia su posición y se abre su panel de interacción.
+4. **Pathfinding ponderado y estabilidad de presencia:**
+   - Coste de paso: terreno natural = 8, vía de tierra pisada = 3, con penalización moderada (+1) por desnivel. Los colonos priorizan fuertemente desplazarse por caminos y vías construidas.
+   - Presencia continua: los trabajadores mantienen su estado de presentes mientras se desplazan hacia sus puestos de trabajo en el interior de los edificios.
+
+### 10. Cola de pendientes menores de la Fase 3 — no bloqueantes
 
 Pueden intercalarse en cualquier momento.
 
 - Cauces de río sinuosos (hoy solo ejes ortogonales del grid).
-- Corrección de pathfinding para dar mayor prioridad al uso de rutas (ignorar rutas solo si el destino no es alcanzable).
+- ~~Corrección de pathfinding para dar mayor prioridad al uso de rutas~~ — ✅ resuelto (2026-10-12) con coste 8 natural vs 3 vía.
 - Percentil de nivel de mar dependiente de un "tipo de mundo" (concepto sin diseñar aún).
 - Restaurar el terreno excavado al deconstruir un edificio.
 - Revisar el dithering de Alpha Hash en ventanas cuando exista una textura real.

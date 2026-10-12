@@ -197,6 +197,7 @@ var _tipo_ducto_activo := "tuberia"
 var _hay_tramo_ducto_en_curso := false
 var _punto_inicio_ducto := Vector2i.ZERO
 var _puntos_fijos_ducto: Array[Vector2i] = []
+var _red_origen_extension: int = -1
 
 ## Último origen/vértice bajo el mouse para los que se corrió
 ## buscar_ruta() en _actualizar_preview_via() — evita repetir la A*
@@ -2250,6 +2251,13 @@ func _procesar_clic_ducto(posicion_pantalla: Vector2, es_doble_clic: bool = fals
 		_puntos_fijos_ducto.clear()
 		_puntos_fijos_ducto.append(celda)
 		_hay_tramo_ducto_en_curso = true
+		_red_origen_extension = -1
+		if Canalizaciones != null and Canalizaciones.has_method("red_en_columna"):
+			var red_existente: int = Canalizaciones.red_en_columna(celda)
+			if red_existente > 0:
+				var tipo_red: String = Canalizaciones.tipo_de_red(red_existente) if Canalizaciones.has_method("tipo_de_red") else Canalizaciones.tipo_por_red.get(red_existente, "")
+				if tipo_red == _tipo_ducto_activo:
+					_red_origen_extension = red_existente
 		_actualizar_preview_ducto()
 		return
 
@@ -2276,6 +2284,7 @@ func _cancelar_tramo_ducto() -> void:
 		return
 	_hay_tramo_ducto_en_curso = false
 	_puntos_fijos_ducto.clear()
+	_red_origen_extension = -1
 	if via_preview != null:
 		via_preview.limpiar()
 	var ficha: String = ""
@@ -2313,7 +2322,8 @@ func _confirmar_trazo_ducto() -> void:
 			return
 		Ciudad.consumir_costos(costos_recurso)
 
-	var id_red: int = Canalizaciones.construir_tramo(_tipo_ducto_activo, geom, mundo)
+	var id_red: int = Canalizaciones.construir_tramo(_tipo_ducto_activo, geom, mundo, _red_origen_extension)
+	_red_origen_extension = -1
 	if id_red <= 0:
 		hud.notificar("Error al construir canalización.")
 		return
@@ -2343,7 +2353,7 @@ func _confirmar_trazo_ducto() -> void:
 			var vecino: Vector3i = c_ducto + delta
 			var tipo_b: String = mundo.obtener_tipo(vecino) if mundo.has_method("obtener_tipo") else ""
 			if _es_bloque_puerto(tipo_b):
-				Canalizaciones.asignar_puerto_a_red(id_red, vecino, tipo_b)
+				Canalizaciones.asignar_puerto_a_red(id_red, vecino, tipo_b, mundo)
 
 	_hay_tramo_ducto_en_curso = false
 	_puntos_fijos_ducto.clear()

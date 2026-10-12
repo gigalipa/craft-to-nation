@@ -105,7 +105,22 @@ func recurso_de_red(id_red: int) -> String:
 	return recurso_por_red.get(id_red, "")
 
 
-func asignar_puerto_a_red(id_red: int, celda_puerto: Vector3i, tipo_puerto: String) -> bool:
+func tipo_de_red(id_red: int) -> String:
+	return tipo_por_red.get(id_red, "")
+
+
+func cancelar_derrame_de_red(id_red: int, mundo: Object = null) -> void:
+	var derrames_a_borrar: Array[Vector3i] = []
+	for d: Vector3i in derrames_activos:
+		if celda_a_red.get(d, -1) == id_red or red_a_celdas.get(id_red, []).has(d):
+			derrames_a_borrar.append(d)
+	for d in derrames_a_borrar:
+		derrames_activos.erase(d)
+		if mundo != null and mundo.has_method("minar_bloque"):
+			mundo.minar_bloque(d)
+
+
+func asignar_puerto_a_red(id_red: int, celda_puerto: Vector3i, tipo_puerto: String, mundo: Object = null) -> bool:
 	var tipo_ducto: String = tipo_por_red.get(id_red, "")
 	if not es_puerto_compatible(tipo_ducto, tipo_puerto):
 		return false
@@ -124,6 +139,11 @@ func asignar_puerto_a_red(id_red: int, celda_puerto: Vector3i, tipo_puerto: Stri
 		return false
 	puertos_conectados[celda_puerto] = id_red
 	tipo_por_puerto[celda_puerto] = tipo_puerto
+
+	if tipo_puerto.ends_with("_in"):
+		cancelar_derrame_de_red(id_red, mundo)
+
+	canalizaciones_cambiadas.emit()
 	return true
 
 
@@ -193,6 +213,8 @@ func destinos_de_puerto_salida(celda_puerto_salida: Vector3i) -> Array[Vector3i]
 							break
 				if alcanzable:
 					destinos.append(p)
+	if destinos.size() > 1:
+		return [destinos[0]] as Array[Vector3i]
 	return destinos
 
 
@@ -408,6 +430,16 @@ func info_de_red(id_red: int) -> Dictionary:
 	return res
 
 
+static func nombre_recurso_legible(clave: String) -> String:
+	var nombres := {
+		"bloque_acero": "Bloque de acero",
+		"estructura_hierro": "Estructura de hierro",
+		"bloque_piedra": "Bloque de piedra",
+		"bloque_madera": "Bloque de madera",
+	}
+	return nombres.get(clave, clave.replace("_", " ").capitalize())
+
+
 func ficha_tecnica(tipo: String, celdas_ducto: int = 0, celdas_columna: int = 0) -> String:
 	if not TIPOS.has(tipo):
 		return ""
@@ -425,10 +457,10 @@ func ficha_tecnica(tipo: String, celdas_ducto: int = 0, celdas_columna: int = 0)
 		for rec in costo_c:
 			totales[rec] = totales.get(rec, 0) + costo_c[rec] * celdas_columna
 		for rec in totales:
-			partes_costo.append("%d %s" % [totales[rec], rec])
+			partes_costo.append("%d %s" % [totales[rec], nombre_recurso_legible(rec)])
 	else:
 		for rec in costo_d:
-			partes_costo.append("%d %s/m" % [costo_d[rec], rec])
+			partes_costo.append("%d %s/m" % [costo_d[rec], nombre_recurso_legible(rec)])
 
 	var costo_str: String = " + ".join(partes_costo) if not partes_costo.is_empty() else "N/A"
 	return "%s\nFluidos: %s\nMateriales: %s\nDespeje: 3 bloques\nColumnas: cada 5 bloques" % [
@@ -529,34 +561,58 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 				indices_columna.append(n - 1)
 
 	# Detectar cruces a desnivel con canalizaciones existentes:
-	var alturas_cruce: Dictionary = {} # int (índice) -> int (altura_cruce)
-	for i in range(n):
+	var cruces_detectados: Array[int] = []
+	for i in range(1, n - 1):
 		var p_c: Vector2i = puntos_2d[i]
+		var h_s: int = mundo.altura_en(p_c.x, p_c.y) if mundo != null and mundo.has_method("altura_en") else 0
 		var h_base: int = 0
 		if i == 0 and puerto_inicio.get("existe", false):
 			h_base = puerto_inicio["altura"]
 		elif i == n - 1 and puerto_fin.get("existe", false):
 			h_base = puerto_fin["altura"]
 		else:
-			var h_s: int = mundo.altura_en(p_c.x, p_c.y) if mundo != null and mundo.has_method("altura_en") else 0
 			h_base = h_s + ALTURA_DUCTO_RELATIVA
 
 		# Comprobar si hay ducto existente en esta celda o cota
-		var y_c: int = h_base
-		while true:
-			var c_chk := Vector3i(p_c.x, y_c, p_c.y)
+		var hay_ducto := false
+		for y_chk in range(h_base, h_base + 8):
+			var c_chk := Vector3i(p_c.x, y_chk, p_c.y)
 			var tipo_chk: String = mundo.obtener_tipo(c_chk) if mundo != null and mundo.has_method("obtener_tipo") else ""
 			if tipo_chk.begins_with("acueducto") or tipo_chk.begins_with("tuberia") or celda_a_red.has(c_chk):
-				y_c += 1
-			else:
+				hay_ducto = true
 				break
 
-		if y_c > h_base:
-			alturas_cruce[i] = y_c
-			if not indices_ancla.has(i):
-				indices_ancla.append(i)
-			# Un cruce elevado no lleva columna directa debajo (está sobre el ducto existente)
-			indices_columna.erase(i)
+		if hay_ducto:
+			cruces_detectados.append(i)
+
+	var alturas_cruce: Dictionary = {} # int (índice) -> int (altura_cruce)
+	for i in cruces_detectados:
+		var p_c: Vector2i = puntos_2d[i]
+		var h_s: int = mundo.altura_en(p_c.x, p_c.y) if mundo != null and mundo.has_method("altura_en") else 0
+		var y_elevado: int = h_s + 6
+
+		alturas_cruce[i] = y_elevado
+		if not indices_ancla.has(i):
+			indices_ancla.append(i)
+		indices_columna.erase(i)
+
+		# Columna de sobre-elevación y cabezal en celda adyacente anterior (i - 1)
+		if i > 0:
+			alturas_cruce[i - 1] = y_elevado
+			if not indices_ancla.has(i - 1):
+				indices_ancla.append(i - 1)
+			if not indices_columna.has(i - 1):
+				if not (i - 1 == 0 and puerto_inicio.get("existe", false)):
+					indices_columna.append(i - 1)
+
+		# Columna de sobre-elevación y cabezal en celda adyacente posterior (i + 1)
+		if i < n - 1:
+			alturas_cruce[i + 1] = y_elevado
+			if not indices_ancla.has(i + 1):
+				indices_ancla.append(i + 1)
+			if not indices_columna.has(i + 1):
+				if not (i + 1 == n - 1 and puerto_fin.get("existe", false)):
+					indices_columna.append(i + 1)
 
 	indices_ancla.sort()
 	indices_columna.sort()
@@ -610,7 +666,8 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 				"distancia": dist,
 			}
 			# Se crea tramo si hay distancia > 1 o si hay desnivel (y_a != y_b)
-			if dist > 1 or es_diagonal:
+			# o si une bloques contiguos elevados a cota de cruce
+			if dist > 1 or es_diagonal or (alturas_cruce.has(idx_a) and alturas_cruce.has(idx_b)):
 				tramos.append(datos_tramo)
 			if es_diagonal:
 				tramos_diagonales.append(datos_tramo)
@@ -741,12 +798,13 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 
 
 ## Construye físicamente el tramo en mundo y lo registra en la red.
-func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
+func construir_tramo(tipo: String, geom: Dictionary, mundo: Object, id_existente: int = -1) -> int:
 	if not geom.get("valido", false):
 		return -1
 
-	var id := _siguiente_id_red
-	_siguiente_id_red += 1
+	var id: int = id_existente if id_existente > 0 else _siguiente_id_red
+	if id_existente <= 0:
+		_siguiente_id_red += 1
 
 	var bloque_c: String = TIPOS[tipo]["bloque_columna"]
 
@@ -777,9 +835,12 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 
 	# 3. Registrar todas las celdas en celda_a_red para topología y simulación
 	var registradas: Array[Vector3i] = []
+	if red_a_celdas.has(id):
+		registradas.append_array(red_a_celdas[id])
 	for c: Vector3i in celdas_d:
 		celda_a_red[c] = id
-		registradas.append(c)
+		if not registradas.has(c):
+			registradas.append(c)
 		# Marcar que sobre el ducto no caminan colonos
 		if mundo != null and mundo.has_method("registrar_edificio"):
 			mundo.celda_sobre_techo[c + Vector3i(0, 1, 0)] = id
@@ -832,21 +893,22 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 		st.set_material(mat)
 
-		# 6 caras en orden CCW visto desde afuera (normales hacia el exterior):
-		var quads := [
-			[v3, v7, v6, v2],  # Superior (+v)
-			[v0, v1, v5, v4],  # Inferior (-v)
-			[v0, v4, v7, v3],  # Lateral izquierda (-w)
-			[v1, v2, v6, v5],  # Lateral derecha (+w)
-			[v0, v3, v2, v1],  # Tapa A (-u)
-			[v4, v5, v6, v7],  # Tapa B (+u)
+		# 6 caras en orden CCW visto desde afuera (normales hacia el exterior) con UVs longitudinales:
+		var quads_info := [
+			[[v3, v7, v6, v2], [Vector2(0.0, 0.0), Vector2(len_total, 0.0), Vector2(len_total, 1.0), Vector2(0.0, 1.0)]], # Superior (+v)
+			[[v0, v1, v5, v4], [Vector2(0.0, 0.0), Vector2(0.0, 1.0), Vector2(len_total, 1.0), Vector2(len_total, 0.0)]], # Inferior (-v)
+			[[v0, v4, v7, v3], [Vector2(0.0, 0.0), Vector2(len_total, 0.0), Vector2(len_total, 1.0), Vector2(0.0, 1.0)]], # Lateral izquierda (-w)
+			[[v1, v2, v6, v5], [Vector2(0.0, 0.0), Vector2(0.0, 1.0), Vector2(len_total, 1.0), Vector2(len_total, 0.0)]], # Lateral derecha (+w)
+			[[v0, v3, v2, v1], [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]],             # Tapa A (-u)
+			[[v4, v5, v6, v7], [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]],             # Tapa B (+u)
 		]
-		var uvs: Array[Vector2] = [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
-		for q in quads:
+		for item in quads_info:
+			var q: Array = item[0]
+			var q_uvs: Array = item[1]
 			var n: Vector3 = (q[1] - q[0]).cross(q[2] - q[0]).normalized()
 			for idx in [0, 1, 2, 0, 2, 3]:
 				st.set_normal(n)
-				st.set_uv(uvs[idx])
+				st.set_uv(q_uvs[idx])
 				st.add_vertex(q[idx])
 
 		var mesh_inst := MeshInstance3D.new()
@@ -882,7 +944,9 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object) -> int:
 		})
 
 	if not infos_creadas.is_empty():
-		nodos_diagonales[id] = infos_creadas
+		if not nodos_diagonales.has(id):
+			nodos_diagonales[id] = []
+		nodos_diagonales[id].append_array(infos_creadas)
 
 	red_a_celdas[id] = registradas
 	tipo_por_red[id] = tipo
@@ -914,10 +978,23 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 				columnas_xz[xz] -= 1
 				if columnas_xz[xz] <= 0:
 					columnas_xz.erase(xz)
-		if mundo != null and mundo.has_method("minar_bloque"):
-			mundo.minar_bloque(celda)
+		if mundo != null:
+			if mundo.has_method("set_cell_item"):
+				mundo.set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+			if mundo.has_method("minar_bloque"):
+				mundo.minar_bloque(celda)
+			var cp = mundo.get("celdas_pagadas")
+			if cp is Dictionary:
+				cp.erase(celda)
+			var cj = mundo.get("colocado_por_jugador")
+			if cj is Dictionary:
+				cj.erase(celda)
+			var ct = mundo.get("celda_sobre_techo")
+			if ct is Dictionary:
+				ct.erase(celda)
+				ct.erase(celda + Vector3i(0, 1, 0))
 
-	# Borrado selectivo de tramos diagonales (Observación 8):
+	# Borrado de tramos diagonales:
 	for id_r in redes_afectadas:
 		if nodos_diagonales.has(id_r):
 			var restantes: Array = []
@@ -925,7 +1002,7 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 				var nodo: Node3D = item.get("nodo", null) if item is Dictionary else item
 				var celdas_tramo: Array = item.get("celdas", []) if item is Dictionary else []
 				var destruido := false
-				if celdas_tramo.is_empty():
+				if (red_a_celdas.has(id_r) and red_a_celdas[id_r].is_empty()) or celdas_tramo.is_empty():
 					destruido = true
 				else:
 					for c in celdas:
@@ -937,7 +1014,7 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 						nodo.queue_free()
 				else:
 					restantes.append(item)
-			if restantes.is_empty():
+			if restantes.is_empty() or (red_a_celdas.has(id_r) and red_a_celdas[id_r].is_empty()):
 				nodos_diagonales.erase(id_r)
 			else:
 				nodos_diagonales[id_r] = restantes
@@ -947,6 +1024,7 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 			red_a_celdas.erase(id_r)
 			tipo_por_red.erase(id_r)
 			recurso_por_red.erase(id_r)
+			cancelar_derrame_de_red(id_r, mundo)
 
 	# Limpiar puertos desconectados
 	var puertos_a_eliminar: Array[Vector3i] = []

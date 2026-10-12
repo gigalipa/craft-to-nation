@@ -12,6 +12,9 @@ class MundoMock:
 	var _alturas: Dictionary = {} # Vector2i -> int
 	var celda_a_despeje: Dictionary = {} # Vector3i -> Variant (Dictionary o String)
 	var edificio_despeje: Dictionary = {} # int -> Dictionary
+	var celdas_pagadas: Dictionary = {} # Vector3i -> Variant
+	var colocado_por_jugador: Dictionary = {} # Vector3i -> bool
+	var celda_sobre_techo: Dictionary = {} # Vector3i -> int
 	var altura_default: int = 10
 
 	func altura_en(x: int, z: int) -> int:
@@ -25,13 +28,27 @@ class MundoMock:
 
 	func colocar_bloque(celda: Vector3i, tipo: String, _por_jugador: bool = true) -> bool:
 		_bloques[celda] = tipo
+		if _por_jugador:
+			colocado_por_jugador[celda] = true
 		return true
+
+	func set_cell_item(celda: Vector3i, item: int) -> void:
+		if item == GridMap.INVALID_CELL_ITEM:
+			_bloques.erase(celda)
 
 	func minar_bloque(celda: Vector3i) -> void:
 		_bloques.erase(celda)
+		celdas_pagadas.erase(celda)
+		colocado_por_jugador.erase(celda)
 
 	func id_de_edificio(_celda: Vector3i) -> int:
 		return -1
+
+	func _get(prop: StringName) -> Variant:
+		if prop == &"celdas_pagadas": return celdas_pagadas
+		if prop == &"colocado_por_jugador": return colocado_por_jugador
+		if prop == &"celda_sobre_techo": return celda_sobre_techo
+		return null
 
 	func es_terreno_natural(_celda: Vector3i) -> bool:
 		return false
@@ -112,7 +129,7 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_l.obtener_tipo(Vector3i(0, y_l, 0)) == "acueducto_lineal", "cabezal/extremo recto coloca acueducto_lineal")
 	print("OK: Esquina de 90° tiene columna de soporte y bloque acueducto_quiebre.")
 
-	print("\n=== CANALIZACIONES TEST 4: Cruces a desnivel (+1 cota en intersección) ===")
+	print("\n=== CANALIZACIONES TEST 4: Cruces a desnivel (+2 cotas en intersección, soporte adyacente a Y=5 y ducto a Y=6) ===")
 	# Colocar previamente una tubería en mundo en (5, 14, 5) orientada en Z
 	mundo.colocar_bloque(Vector3i(5, 14, 5), "tuberia_lineal")
 	# Trazar una nueva tubería en X cruzando por (5, 5) horizontalmente de x=3 a x=7
@@ -127,11 +144,33 @@ func ejecutar_pruebas() -> void:
 			ducto_en_cruce = c
 			break
 	assert(ducto_en_cruce != Vector3i.ZERO, "debe existir celda en (5,5)")
-	assert(ducto_en_cruce.y == 15, "la celda de cruce debe sobre-elevarse a Y=15 (14 + 1), fue %d" % ducto_en_cruce.y)
-	assert(geom_cruce.tramos_diagonales.size() == 2, "debe generar 2 tramos diagonales (subida desde columna anterior y bajada a columna siguiente)")
-	assert(geom_cruce.tramos_diagonales[0].fin == Vector3i(5, 15, 5), "el primer tramo diagonal llega al bloque elevado")
-	assert(geom_cruce.tramos_diagonales[1].inicio == Vector3i(5, 15, 5), "el segundo tramo diagonal parte del bloque elevado")
-	print("OK: Cruce a desnivel se eleva a Y=15 con tramos diagonales conectados a columnas anterior y siguiente.")
+	assert(ducto_en_cruce.y == 16, "la celda de cruce debe sobre-elevarse a Y=16 (10 + 6), fue %d" % ducto_en_cruce.y)
+
+	# Columnas de soporte en adyacentes anterior (4,5) y posterior (6,5) hasta Y=15 (10 + 5)
+	var cols_cruce: Dictionary = {}
+	for col in geom_cruce.celdas_columna:
+		var xz := Vector2i(col.x, col.z)
+		if not cols_cruce.has(xz):
+			cols_cruce[xz] = []
+		cols_cruce[xz].append(col.y)
+
+	assert(cols_cruce.has(Vector2i(4, 5)), "debe haber columna de soporte en celda adyacente anterior x=4")
+	assert(cols_cruce.has(Vector2i(6, 5)), "debe haber columna de soporte en celda adyacente posterior x=6")
+	assert(not cols_cruce.has(Vector2i(5, 5)), "NO debe haber columna en la celda de intersección x=5")
+	assert(cols_cruce[Vector2i(4, 5)] == [11, 12, 13, 14, 15], "columna anterior sube hasta Y=15")
+	assert(cols_cruce[Vector2i(6, 5)] == [11, 12, 13, 14, 15], "columna posterior sube hasta Y=15")
+
+	# Despeje vertical: celda (5, 15, 5) debe ser aire vacío (ni ducto ni columna)
+	assert(not geom_cruce.celdas_ducto.has(Vector3i(5, 15, 5)), "celda intermedia (5, 15, 5) no es ducto")
+	assert(not geom_cruce.celdas_columna.has(Vector3i(5, 15, 5)), "celda intermedia (5, 15, 5) no es columna")
+
+	# Tramos diagonales: sube 2 cotas a (4, 16, 5) y baja 2 cotas desde (6, 16, 5)
+	assert(geom_cruce.tramos_diagonales.size() == 2, "debe generar 2 tramos diagonales (subida de 2 cotas y bajada de 2 cotas)")
+	assert(geom_cruce.tramos_diagonales[0].inicio == Vector3i(3, 14, 5), "el primer tramo diagonal parte de Y=14")
+	assert(geom_cruce.tramos_diagonales[0].fin == Vector3i(4, 16, 5), "el primer tramo diagonal llega a la columna anterior a Y=16 (+2 cotas)")
+	assert(geom_cruce.tramos_diagonales[1].inicio == Vector3i(6, 16, 5), "el segundo tramo diagonal parte de la columna posterior a Y=16")
+	assert(geom_cruce.tramos_diagonales[1].fin == Vector3i(7, 14, 5), "el segundo tramo diagonal baja a Y=14 (-2 cotas)")
+	print("OK: Cruce a desnivel se eleva a Y=16 con 2 columnas de soporte a Y=15, despeje de aire a Y=15 y tramos inclinados de 2 cotas.")
 
 	print("\n=== CANALIZACIONES TEST 5: Pendientes diagonales entre columnas ===")
 	# Terreno con pendiente entre x=0 (h=10) y x=5 (h=12)
@@ -303,6 +342,136 @@ func ejecutar_pruebas() -> void:
 	assert(canalizaciones.estado_de_puerto(p_in12) == "desconectado", "al quedar inalcanzable, la entrada pasa a desconectado")
 	assert(not canalizaciones.extremos_abiertos_de_red(red_flujo).is_empty(), "al romperse el ducto tiene extremos abiertos")
 	print("OK: Despeje y desconexión/derrame dinámico verificados.")
+
+	print("\n=== CANALIZACIONES TEST 13: Ficha técnica legible (sin guiones bajos y con unidades) ===")
+	assert(CanalizacionesScript.nombre_recurso_legible("bloque_acero") == "Bloque de acero")
+	assert(CanalizacionesScript.nombre_recurso_legible("estructura_hierro") == "Estructura de hierro")
+	assert(CanalizacionesScript.nombre_recurso_legible("bloque_piedra") == "Bloque de piedra")
+	assert(CanalizacionesScript.nombre_recurso_legible("bloque_madera") == "Bloque de madera")
+	var ft_unit: String = canalizaciones.ficha_tecnica("tuberia", 0, 0)
+	assert("1 Bloque de acero/m" in ft_unit, "costo unitario formateado con unidad /m y nombre legible")
+	assert("bloque_acero" not in ft_unit, "no debe contener claves con guion bajo")
+	var ft_tot: String = canalizaciones.ficha_tecnica("tuberia", 10, 5)
+	assert("10 Bloque de acero" in ft_tot, "costo total ducto formateado")
+	assert("5 Estructura de hierro" in ft_tot, "costo total columna formateado")
+	assert("bloque_acero" not in ft_tot and "estructura_hierro" not in ft_tot, "sin guiones bajos en costo total")
+	print("OK: Nombres legibles en ficha técnica verificados.")
+
+	print("\n=== CANALIZACIONES TEST 14: Texturizado UV longitudinal en tramos ===")
+	canalizaciones.reiniciar()
+	var mundo14 = MundoMock.new()
+	for x in range(6):
+		mundo14.fijar_altura(x, 0, 10)
+	var pts14: Array[Vector2i] = []
+	for x in range(6):
+		pts14.append(Vector2i(x, 0))
+	var geom14 = canalizaciones.calcular_geometria_tramo("tuberia", pts14, mundo14)
+	var red14 = canalizaciones.construir_tramo("tuberia", geom14, mundo14)
+	assert(canalizaciones.nodos_diagonales.has(red14), "nodos diagonales registrados")
+	var item0: Dictionary = canalizaciones.nodos_diagonales[red14][0]
+	var body14: StaticBody3D = item0["nodo"]
+	var mesh_inst14: MeshInstance3D = null
+	for ch in body14.get_children():
+		if ch is MeshInstance3D:
+			mesh_inst14 = ch
+			break
+	assert(mesh_inst14 != null, "tramo tiene MeshInstance3D")
+	var arrays14: Array = mesh_inst14.mesh.surface_get_arrays(0)
+	var uvs14: PackedVector2Array = arrays14[Mesh.ARRAY_TEX_UV]
+	var max_u14: float = 0.0
+	for uv in uvs14:
+		if uv.x > max_u14:
+			max_u14 = uv.x
+	assert(max_u14 >= 4.9, "uv.x longitudinal escala con len_total (esperado ~5.0, fue %f)" % max_u14)
+	print("OK: Coordenadas UV escalan longitudinalmente con len_total.")
+
+	print("\n=== CANALIZACIONES TEST 15: Demolición limpia de ductos y colisionadores ===")
+	canalizaciones.reiniciar()
+	var mundo15 = MundoMock.new()
+	for x in range(4):
+		mundo15.fijar_altura(x, 0, 10)
+	mundo15.colocar_bloque(Vector3i(0, 14, 0), "puerto_agua_out")
+	var pts15: Array[Vector2i] = [Vector2i(1, 0), Vector2i(2, 0), Vector2i(3, 0)]
+	var geom15 = canalizaciones.calcular_geometria_tramo("acueducto", pts15, mundo15)
+	var red15 = canalizaciones.construir_tramo("acueducto", geom15, mundo15)
+	canalizaciones.asignar_puerto_a_red(red15, Vector3i(0, 14, 0), "puerto_agua_out")
+	mundo15.celdas_pagadas[Vector3i(1, 14, 0)] = {"bloque_piedra": 1}
+	mundo15.colocado_por_jugador[Vector3i(1, 14, 0)] = true
+	mundo15.celda_sobre_techo[Vector3i(1, 15, 0)] = red15
+
+	var celdas_a_borrar: Array = canalizaciones.red_a_celdas[red15].duplicate()
+	for col in canalizaciones.columnas:
+		if canalizaciones.columnas[col] == red15:
+			celdas_a_borrar.append(col)
+	canalizaciones.quitar_celdas(celdas_a_borrar, mundo15)
+	assert(mundo15.obtener_tipo(Vector3i(1, 14, 0)) == "", "celda adyacente al puerto queda vacía en mundo")
+	assert(not mundo15.celdas_pagadas.has(Vector3i(1, 14, 0)), "celdas_pagadas limpiado")
+	assert(not mundo15.colocado_por_jugador.has(Vector3i(1, 14, 0)), "colocado_por_jugador limpiado")
+	assert(not mundo15.celda_sobre_techo.has(Vector3i(1, 15, 0)), "celda_sobre_techo limpiado")
+	assert(not canalizaciones.red_a_celdas.has(red15), "red eliminada por completo")
+	assert(not canalizaciones.puertos_conectados.has(Vector3i(0, 14, 0)), "puerto desconectado limpiamente")
+	print("OK: Demolición limpia forzada verificada.")
+
+	print("\n=== CANALIZACIONES TEST 16: Extensión de red existente y cancelación de derrame ===")
+	var mundo16 = MundoMock.new()
+	for x in range(10):
+		mundo16.fijar_altura(x, 10, 10)
+	mundo16.colocar_bloque(Vector3i(0, 14, 10), "puerto_crudo_out")
+	mundo16.colocar_bloque(Vector3i(5, 14, 10), "puerto_crudo_in")
+
+	# Tramo inicial truncado
+	var pts16_a: Array[Vector2i] = [Vector2i(1, 10), Vector2i(2, 10)]
+	var geom16_a = canalizaciones.calcular_geometria_tramo("tuberia", pts16_a, mundo16)
+	var red16: int = canalizaciones.construir_tramo("tuberia", geom16_a, mundo16)
+	canalizaciones.asignar_puerto_a_red(red16, Vector3i(0, 14, 10), "puerto_crudo_out")
+	assert(canalizaciones.estado_de_puerto(Vector3i(0, 14, 10)) == "derrame", "red truncada en derrame")
+	var celda_derrame16: Vector3i = canalizaciones.verter_derrame(red16, "crudo", mundo16)
+	assert(canalizaciones.derrames_activos.has(celda_derrame16), "derrame activo registrado")
+
+	# Extensión de red16 conectando al puerto receptor en (5, 14, 10)
+	var pts16_b: Array[Vector2i] = [Vector2i(2, 10), Vector2i(3, 10), Vector2i(4, 10)]
+	var geom16_b = canalizaciones.calcular_geometria_tramo("tuberia", pts16_b, mundo16)
+	var red_ext: int = canalizaciones.construir_tramo("tuberia", geom16_b, mundo16, red16)
+	assert(red_ext == red16, "extensión mantiene el id de red original")
+	canalizaciones.asignar_puerto_a_red(red16, Vector3i(5, 14, 10), "puerto_crudo_in", mundo16)
+	assert(not canalizaciones.derrames_activos.has(celda_derrame16), "derrame cancelado al conectar puerto receptor")
+	assert(canalizaciones.estado_de_puerto(Vector3i(0, 14, 10)) == "conectado", "puerto origen pasa a conectado")
+	assert(canalizaciones.estado_de_puerto(Vector3i(5, 14, 10)) == "conectado", "puerto destino pasa a conectado")
+	print("OK: Extensión de red y cancelación de derrame verificadas.")
+
+	print("\n=== CANALIZACIONES TEST 17: Topología multi-entrada hacia salida única ===")
+	var mundo17 = MundoMock.new()
+	for x in range(10):
+		for z in range(30, 35):
+			mundo17.fijar_altura(x, z, 10)
+	# Dos extractores en (0, 14, 30) y (0, 14, 32)
+	mundo17.colocar_bloque(Vector3i(0, 14, 30), "puerto_agua_out")
+	mundo17.colocar_bloque(Vector3i(0, 14, 32), "puerto_agua_out")
+	# Almacén receptor único en (5, 14, 31)
+	mundo17.colocar_bloque(Vector3i(5, 14, 31), "puerto_agua_in")
+
+	# Rama 1: (1, 30) -> (3, 30) -> (3, 31) -> (4, 31)
+	var pts17_1: Array[Vector2i] = [Vector2i(1, 30), Vector2i(2, 30), Vector2i(3, 30), Vector2i(3, 31), Vector2i(4, 31)]
+	var geom17_1 = canalizaciones.calcular_geometria_tramo("acueducto", pts17_1, mundo17)
+	var red17: int = canalizaciones.construir_tramo("acueducto", geom17_1, mundo17)
+
+	# Rama 2 (extensión): (1, 32) -> (2, 32) -> (3, 32) -> (3, 31)
+	var pts17_2: Array[Vector2i] = [Vector2i(1, 32), Vector2i(2, 32), Vector2i(3, 32), Vector2i(3, 31)]
+	var geom17_2 = canalizaciones.calcular_geometria_tramo("acueducto", pts17_2, mundo17)
+	canalizaciones.construir_tramo("acueducto", geom17_2, mundo17, red17)
+
+	canalizaciones.asignar_puerto_a_red(red17, Vector3i(0, 14, 30), "puerto_agua_out")
+	canalizaciones.asignar_puerto_a_red(red17, Vector3i(0, 14, 32), "puerto_agua_out")
+	canalizaciones.asignar_puerto_a_red(red17, Vector3i(5, 14, 31), "puerto_agua_in")
+
+	var dest1 = canalizaciones.destinos_de_puerto_salida(Vector3i(0, 14, 30))
+	var dest2 = canalizaciones.destinos_de_puerto_salida(Vector3i(0, 14, 32))
+	assert(dest1 == [Vector3i(5, 14, 31)], "extractor 1 llega al almacén receptor único")
+	assert(dest2 == [Vector3i(5, 14, 31)], "extractor 2 llega al mismo almacén receptor único")
+	assert(canalizaciones.estado_de_puerto(Vector3i(0, 14, 30)) == "conectado")
+	assert(canalizaciones.estado_de_puerto(Vector3i(0, 14, 32)) == "conectado")
+	assert(canalizaciones.estado_de_puerto(Vector3i(5, 14, 31)) == "conectado")
+	print("OK: Topología multi-entrada hacia salida única verificada.")
 
 	print("\n=== Todas las pruebas de Canalizaciones pasaron correctamente ===")
 

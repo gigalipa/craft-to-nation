@@ -294,4 +294,30 @@ func ejecutar_pruebas() -> void:
 	assert(not b20.es_transitable(Vector3i(2, 2, 2)), "la celda sobre un techo está reservada")
 	assert(b20.es_transitable(Vector3i(1, 1, 2)), "el suelo de al lado sigue igual")
 
-	print("\n=== Las 20 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== TEST 21: Preferencia por vía de tierra pisada (coste 3) frente a atajo por terreno natural (coste 8) ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+	var m21 := MundoFalso.new()
+	_llano(m21, 6, 3)
+	# Terreno llano en y=0 para x in [0, 5], z in [0, 2].
+	# Atajo directo por terreno natural en z=0: (0,1,0) -> (4,1,0) (4 pasos * coste 8 = 32).
+	# Vía de tierra pisada en z=1: soporte en y=0, z=1 desde x=0 hasta x=4.
+	var celdas_via: Array = []
+	for x in range(5):
+		celdas_via.append(Vector3i(x, 0, 1))
+	Vias.agregar(celdas_via, "tierra_pisada")
+	var b21 := BuscadorRutas.new(m21)
+	var ruta21: Array[Vector3i] = b21.buscar_ruta(Vector3i(0, 1, 0), Vector3i(4, 1, 0))
+	print("Ruta con vía alternativa: ", ruta21)
+	# La ruta por la vía tiene 6 pasos: (0,1,1)->(1,1,1)->(2,1,1)->(3,1,1)->(4,1,1)->(4,1,0)
+	# Coste: 3*5 + 8 = 23 < 32 (atajo natural de 4 pasos).
+	assert(ruta21.size() == 6, "prefiere la ruta más larga en pasos pero más barata por vía")
+	assert(ruta21.has(Vector3i(2, 1, 1)), "viaja por la vía en z=1")
+	assert(not ruta21.has(Vector3i(2, 1, 0)), "no toma el atajo directo por terreno natural en z=0")
+	assert(ruta21.back() == Vector3i(4, 1, 0), "llega al destino final")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+
+	print("\n=== Las 21 pruebas de BuscadorRutas pasaron correctamente ===")

@@ -16,7 +16,7 @@ extends RefCounted
 ## Tope de nodos expandidos por consulta: suficiente para cruzar el mapa de
 ## 200x200. ponytail: búsqueda síncrona con tope fijo; pasar a búsqueda
 ## asíncrona o jerárquica si el número de NPC lo exige.
-const MAX_NODOS_EXPANDIDOS := 20000
+const MAX_NODOS_EXPANDIDOS := 30000
 
 ## Un NPC sube 1 bloque y cae hasta 3 (como salta y cae el jugador).
 const CAIDA_MAXIMA := 3
@@ -242,10 +242,12 @@ class Busqueda extends RefCounted:
 			if _expandidos > _tope:
 				terminada = true
 				return usados
-			for vecino in _buscador.vecinos(actual, _ignorar):
+			for vecino: Vector3i in _buscador.vecinos(actual, _ignorar):
 				if _cerrados.has(vecino) or _bloqueadas.has(vecino):
 					continue
-				var nuevo_costo: int = _costo[actual] + 1 + absi(vecino.y - actual.y)
+				var soporte: Vector3i = vecino - ARRIBA
+				var coste_superficie: int = Vias.coste_paso_en(soporte) if Vias != null else 1
+				var nuevo_costo: int = _costo[actual] + coste_superficie + absi(vecino.y - actual.y)
 				if not _costo.has(vecino) or nuevo_costo < _costo[vecino]:
 					_costo[vecino] = nuevo_costo
 					_padre[vecino] = actual

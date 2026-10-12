@@ -8,6 +8,8 @@ extends Node
 ## Convención: Vector2i(x, z) para columnas en planta — la coordenada
 ## mundial Z vive en el campo .y (misma convención que Zonificacion.gd).
 
+const COSTE_TERRENO_NATURAL := 8
+
 ## Catálogo por datos. Único tipo implementado: "tierra_pisada". Tipos
 ## futuros (calzada, vía férrea, cintas, tuberías, calzada peatonal — ver
 ## GDD Sección 3.1/4) se agregan aquí como filas nuevas cuando se
@@ -18,6 +20,7 @@ var TIPOS: Dictionary = {
 		"ancho": 2,
 		"sentido": "doble",
 		"bono_velocidad": 1.35,
+		"coste_ruta": 3,
 		"costo": {},
 		"energia": false,
 		"transito": "No",
@@ -98,6 +101,13 @@ func bono_en(soporte: Vector3i) -> float:
 	if not es_via(soporte):
 		return 1.0
 	return TIPOS[tipo_en(soporte)]["bono_velocidad"]
+
+
+func coste_paso_en(soporte: Vector3i) -> int:
+	if not es_via(soporte):
+		return COSTE_TERRENO_NATURAL
+	var tipo_via: String = tipo_en(soporte)
+	return TIPOS.get(tipo_via, {}).get("coste_ruta", 4)
 
 
 func hay_via_en_columna(xz: Vector2i) -> bool:

@@ -114,6 +114,7 @@ func ejecutar_pruebas() -> void:
 	probar_ventanas_datos()
 	probar_ventana_poblacion_empleo()
 	probar_ventana_ocupaciones()
+	await probar_ventana_energia()
 	probar_panel_escuela()
 	probar_panel_niveles()
 	probar_panel_extractores_y_refinerias()
@@ -175,7 +176,8 @@ func probar_ventanas_datos() -> void:
 	clic.pressed = true
 	barra.poblacion.emit_signal("gui_input", clic)
 	barra.almacen_total.pressed.emit()
-	assert(pedidos == ["poblacion", "almacen"], "salió %s" % [pedidos])
+	barra.energia.pressed.emit()
+	assert(pedidos == ["poblacion", "almacen", "energia"], "salió %s" % [pedidos])
 	barra.queue_free()
 
 	var ventana_poblacion: PanelContainer = VentanaPoblacionScript.new()
@@ -424,6 +426,128 @@ func probar_ventana_ocupaciones() -> void:
 	assert(not ventana.visible and not ventana.abierta)
 	ventana.queue_free()
 	Economia.puestos = puestos_previos
+
+
+func probar_ventana_energia() -> void:
+	print("=== TEST 1f: VentanaEnergia modal interactiva y boton en topbar ===")
+	const VentanaEnergiaScript = preload("res://scripts/VentanaEnergia.gd")
+
+	# 1. Probar clic en energía desde HUD
+	var hud: CanvasLayer = HUDScript.new()
+	var oxigeno := Label.new()
+	oxigeno.name = "OxigenoLabel"
+	hud.add_child(oxigeno)
+	add_child(hud)
+	await get_tree().process_frame
+
+	assert(not hud._ventana_energia.visible and not hud._ventana_energia.abierta)
+	hud._barra_superior.energia.pressed.emit()
+	assert(hud._ventana_energia.visible and hud._ventana_energia.abierta, "clic en boton energia de barra superior debe abrir VentanaEnergia")
+	hud.queue_free()
+
+	# 2. Probar widget VentanaEnergia de forma aislada
+	var puestos_previos: Dictionary = Economia.puestos
+	var balance_previo: Dictionary = Economia.balance_energia
+	Economia.puestos = {}
+
+	var ventana: PanelContainer = VentanaEnergiaScript.new()
+	add_child(ventana)
+	assert(not ventana.visible and not ventana.abierta)
+	assert(ventana.anchor_left == 0.5 and ventana.anchor_top == 0.5, "VentanaEnergia debe estar anclada al centro")
+	assert(ventana.custom_minimum_size == Vector2(480, 420), "VentanaEnergia debe tener tamaño 480x420")
+	assert(ventana.offset_left == -240.0 and ventana.offset_top == -210.0, "VentanaEnergia debe tener offsets centrados")
+
+	ventana.abrir()
+	assert(ventana.visible and ventana.abierta)
+
+	# 3. Encabezado con balance global
+	Economia.balance_energia = {
+		"capacidad": 100.0,
+		"demanda": 60.0,
+		"entregada": 60.0,
+		"factor": 1.0,
+		"deficit": false,
+		"conectados": {},
+	}
+	ventana._actualizar()
+	assert(ventana._lbl_capacidad.text == "Capacidad: 100 kW", "capacidad: '%s'" % ventana._lbl_capacidad.text)
+	assert(ventana._lbl_demanda.text == "Demanda: 60 kW", "demanda: '%s'" % ventana._lbl_demanda.text)
+	assert(ventana._lbl_balance.text == "Balance neto: +40 kW", "balance neto: '%s'" % ventana._lbl_balance.text)
+	assert(ventana._lbl_cobertura.text == "Cobertura: 100%", "cobertura: '%s'" % ventana._lbl_cobertura.text)
+
+	# 4. Generadores y Consumidores en lista interactiva
+	var esq_central := Vector2i(200, 200)
+	var esq_refineria := Vector2i(210, 200)
+	Economia.registrar_puesto(esq_central, "central_termoelectrica", 5, 5, {})
+	Economia.puestos[esq_central]["presentes"] = [1, 2]
+	Economia.puestos[esq_central]["almacen"] = {"carbon": 150.0}
+	Economia.puestos[esq_central]["combustible_activo"] = "carbon"
+
+	Economia.registrar_puesto(esq_refineria, "refineria_petrolera", 5, 5, {})
+	Economia.puestos[esq_refineria]["presentes"] = [3]
+
+	Economia.balance_energia = {
+		"capacidad": 40.0,
+		"demanda": 1.0,
+		"entregada": 1.0,
+		"factor": 1.0,
+		"deficit": false,
+		"conectados": {esq_central: true, esq_refineria: true},
+	}
+	ventana._actualizar()
+
+	assert(ventana._botones_generadores.has(esq_central), "central debe estar en la lista de generadores")
+	var btn_gen: Button = ventana._botones_generadores[esq_central]
+	assert("Central termoeléctrica" in btn_gen.text)
+	assert("Carbón" in btn_gen.text)
+	assert("150" in btn_gen.text, "stock local debe figurar en el boton")
+
+	assert(ventana._botones_consumidores.has(esq_refineria), "refineria debe estar en la lista de consumidores")
+	var btn_con: Button = ventana._botones_consumidores[esq_refineria]
+	assert("Refinería petrolera" in btn_con.text)
+	assert("Demanda: 1 kW" in btn_con.text)
+	assert("Conectado" in btn_con.text)
+
+	# 5. Clic en generador o consumidor: cierra ventana y emite edificio_pedido(esquina)
+	var edificios_pedidos: Array = []
+	ventana.edificio_pedido.connect(func(esq: Vector2i) -> void: edificios_pedidos.append(esq))
+
+	btn_gen.pressed.emit()
+	assert(not ventana.visible and not ventana.abierta, "clic en generador debe cerrar la ventana")
+	assert(edificios_pedidos == [esq_central], "debe emitir edificio_pedido de la central")
+
+	ventana.abrir()
+	assert(ventana.visible)
+	btn_con.pressed.emit()
+	assert(not ventana.visible and not ventana.abierta, "clic en consumidor debe cerrar la ventana")
+	assert(edificios_pedidos == [esq_central, esq_refineria], "debe emitir edificio_pedido de la refineria")
+
+	# 6. Cierre con botón X, tecla E y tecla Esc
+	ventana.abrir()
+	var boton_cerrar: Button = ventana._caja_raiz.get_child(0).get_child(1)
+	assert(boton_cerrar.text == "X")
+	boton_cerrar.pressed.emit()
+	assert(not ventana.visible and not ventana.abierta, "boton X debe cerrar VentanaEnergia")
+
+	ventana.abrir()
+	var tecla_e := InputEventKey.new()
+	tecla_e.keycode = KEY_E
+	tecla_e.pressed = true
+	ventana._frame_apertura -= 1
+	ventana._unhandled_key_input(tecla_e)
+	assert(not ventana.visible, "tecla E debe cerrar VentanaEnergia")
+
+	ventana.abrir()
+	var tecla_esc := InputEventKey.new()
+	tecla_esc.keycode = KEY_ESCAPE
+	tecla_esc.pressed = true
+	ventana._frame_apertura -= 1
+	ventana._unhandled_key_input(tecla_esc)
+	assert(not ventana.visible, "tecla Esc debe cerrar VentanaEnergia")
+
+	ventana.queue_free()
+	Economia.puestos = puestos_previos
+	Economia.balance_energia = balance_previo
 
 
 func probar_barra_superior() -> void:

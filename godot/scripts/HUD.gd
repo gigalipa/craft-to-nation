@@ -33,6 +33,7 @@ const HotbarScript = preload("res://scripts/Hotbar.gd")
 const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
+const VentanaEnergiaScript = preload("res://scripts/VentanaEnergia.gd")
 const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
 const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
 const PanelLamparaScript = preload("res://scripts/PanelLampara.gd")
@@ -76,6 +77,7 @@ var _hotbar: PanelContainer
 var _ventana_poblacion: PanelContainer
 var _ventana_almacen: PanelContainer
 var _ventana_ocupaciones: PanelContainer
+var _ventana_energia: PanelContainer
 var _ventana_baul: PanelContainer
 var _notificaciones: Control
 var _contenedor_indicadores: VBoxContainer
@@ -89,7 +91,11 @@ var _oxigeno_texto: Label
 ## configurar_hotbar() y conecta las señales) corre antes que el de este nodo.
 func _init() -> void:
 	_barra_superior = BarraSuperiorScript.new()
-	_barra_superior.dato_pedido.connect(func(cual: String) -> void: dato_pedido.emit(cual))
+	_barra_superior.dato_pedido.connect(func(cual: String) -> void:
+		dato_pedido.emit(cual)
+		if cual == "energia":
+			abrir_ventana_dato("energia")
+	)
 	add_child(_barra_superior)
 	_ventana_poblacion = VentanaPoblacionScript.new()
 	_ventana_poblacion.ocupaciones_pedidas.connect(func() -> void: abrir_ventana_dato("ocupaciones"))
@@ -97,6 +103,9 @@ func _init() -> void:
 	_ventana_ocupaciones = VentanaOcupacionesScript.new()
 	_ventana_ocupaciones.edificio_pedido.connect(func(esquina: Vector2i) -> void: edificio_pedido.emit(esquina))
 	add_child(_ventana_ocupaciones)
+	_ventana_energia = VentanaEnergiaScript.new()
+	_ventana_energia.edificio_pedido.connect(func(esquina: Vector2i) -> void: edificio_pedido.emit(esquina))
+	add_child(_ventana_energia)
 	_ventana_almacen = VentanaAlmacenScript.new()
 	add_child(_ventana_almacen)
 	_ventana_baul = VentanaBaulScript.new()
@@ -181,10 +190,12 @@ func set_vista(primera_persona: bool) -> void:
 		_ventana_poblacion.ocultar_temporalmente()
 		_ventana_ocupaciones.ocultar_temporalmente()
 		_ventana_almacen.ocultar_temporalmente()
+		_ventana_energia.ocultar_temporalmente()
 	else:
 		_ventana_poblacion.restaurar()
 		_ventana_ocupaciones.restaurar()
 		_ventana_almacen.restaurar()
+		_ventana_energia.restaurar()
 	# La ventana del baúl solo tiene sentido junto al baúl que la abrió: al
 	# cambiar de vista se cierra del todo (no se restaura, a diferencia de
 	# Población/Almacén).
@@ -437,7 +448,7 @@ static func texto_materiales(neto: Dictionary, camas: int = -1, baules: int = -1
 	return "\n".join(lineas)
 
 
-## "cual" es "poblacion", "almacen" u "ocupaciones". Ambas ventanas pueden estar abiertas a
+## "cual" es "poblacion", "almacen", "ocupaciones" o "energia". Ambas ventanas pueden estar abiertas a
 ## la vez (decisión del usuario, 2026-09-27): cada una se coloca por defecto
 ## en su propia esquina (ver POSICION_INICIAL de cada una) para no solaparse.
 func abrir_ventana_dato(cual: String) -> void:
@@ -447,6 +458,8 @@ func abrir_ventana_dato(cual: String) -> void:
 		_ventana_almacen.abrir()
 	elif cual == "ocupaciones":
 		_ventana_ocupaciones.abrir()
+	elif cual == "energia":
+		_ventana_energia.abrir()
 
 
 func abrir_panel_puesto(esquina: Vector2i) -> void:

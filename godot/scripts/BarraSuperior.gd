@@ -8,7 +8,7 @@ extends PanelContainer
 ## clicables (solo tienen efecto en la cenital, ver HUD.dato_pedido): abren
 ## una ventana con el detalle.
 
-## "poblacion" o "almacen"; solo lo escucha CamaraCenital (HUD.dato_pedido).
+## "poblacion", "almacen" o "energia"; solo lo escucha CamaraCenital (HUD.dato_pedido).
 signal dato_pedido(cual: String)
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
@@ -22,7 +22,7 @@ var moral := TemaHUD.etiqueta()
 var comida := TemaHUD.etiqueta()
 var almacen_total := Button.new()
 var critico := TemaHUD.etiqueta()
-var energia := TemaHUD.etiqueta()
+var energia := Button.new()
 var era := TemaHUD.etiqueta(ERA_ACTUAL)
 var nivel := TemaHUD.etiqueta()
 
@@ -145,7 +145,14 @@ func _ready() -> void:
 
 	grupo_cen.add_child(comida)
 	grupo_cen.add_child(_separador())
+
+	TemaHUD.estilizar_boton(energia)
+	energia.custom_minimum_size = Vector2(0, 28)
+	energia.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	energia.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	energia.pressed.connect(func() -> void: dato_pedido.emit("energia"))
 	grupo_cen.add_child(energia)
+
 	grupo_cen.add_child(_separador())
 	grupo_cen.add_child(critico)
 

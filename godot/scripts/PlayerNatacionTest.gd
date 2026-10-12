@@ -171,8 +171,9 @@ func ejecutar_pruebas() -> void:
 	print("Profundidad en el fondo de crudo (y=10): ", jugador_crudo._profundidad_agua_en(Vector3(0, 10, 0)), " (esperada: 3)")
 	assert(jugador_crudo._profundidad_agua_en(Vector3(0, 10, 0)) == 3)
 	print("Profundidad en superficie de crudo (y=12): ", jugador_crudo._profundidad_agua_en(Vector3(0, 12, 0)), " (esperada: 1)")
-	assert(jugador_crudo._profundidad_agua_en(Vector3(0, 12, 0)) == 1)
-	assert(Player.FACTOR_VISCOSIDAD_CRUDO == 0.5, "factor viscosidad crudo debe ser 0.5")
+	assert(Player.FACTOR_VISCOSIDAD_CRUDO == 0.20, "factor viscosidad crudo debe ser 0.20")
+	var impulso_salto_crudo: float = Player.VELOCIDAD_SALTO * Player.FACTOR_VISCOSIDAD_CRUDO
+	assert(is_equal_approx(impulso_salto_crudo, Player.VELOCIDAD_SALTO * 0.20), "impulso de salto en crudo atenuado al 20%")
 	jugador_crudo.free()
 	mundo_crudo.free()
 

@@ -320,4 +320,102 @@ func ejecutar_pruebas() -> void:
 	assert(vertices_comb.size() == 8 * 6, "dos celdas contiguas de combustible deben tener culling en cara compartida (8 caras = 48 vertices), salieron %d" % vertices_comb.size())
 	print("OK: combustible clasificado, renderizado con culling y material ambar.")
 
+	print("\n=== TEST 13: spreading horizontal diferenciado por tipo de liquido (agua 7, combustible 5, crudo 3) ===")
+	assert(VoxelWorld.ALCANCE_FLUJO_AGUA == 7)
+	assert(VoxelWorld.ALCANCE_FLUJO_COMBUSTIBLE == 5)
+	assert(VoxelWorld.ALCANCE_FLUJO_CRUDO == 3)
+
+	var mundo_t13: Node = VoxelWorld.new()
+	mundo_t13.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t13.cell_size = Vector3.ONE * 1.0
+	mundo_t13._indexar_biblioteca()
+
+	# Canal lineal para crudo: x en [200..205], y=1, cerrado en laterales
+	for x in range(199, 206):
+		mundo_t13.colocar_bloque(Vector3i(x, 0, 200), "bloque_piedra")
+		mundo_t13.colocar_bloque(Vector3i(x, 1, 199), "bloque_piedra")
+		mundo_t13.colocar_bloque(Vector3i(x, 1, 201), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(199, 1, 200), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(205, 1, 200), "bloque_piedra")
+
+	mundo_t13.colocar_bloque(Vector3i(200, 1, 200), "crudo", true)
+	mundo_t13._drenar_escurrimiento_para_pruebas()
+	assert(mundo_t13.obtener_tipo(Vector3i(201, 1, 200)) == "crudo", "crudo avanza celda 1")
+	assert(mundo_t13.obtener_tipo(Vector3i(202, 1, 200)) == "crudo", "crudo avanza celda 2")
+	assert(mundo_t13.obtener_tipo(Vector3i(203, 1, 200)) == "crudo", "crudo avanza celda 3")
+	assert(mundo_t13.obtener_tipo(Vector3i(204, 1, 200)) == "", "crudo no debe superar alcance 3")
+
+	# Canal lineal para combustible: x en [210..218], y=1
+	for x in range(209, 219):
+		mundo_t13.colocar_bloque(Vector3i(x, 0, 210), "bloque_piedra")
+		mundo_t13.colocar_bloque(Vector3i(x, 1, 209), "bloque_piedra")
+		mundo_t13.colocar_bloque(Vector3i(x, 1, 211), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(209, 1, 210), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(218, 1, 210), "bloque_piedra")
+
+	mundo_t13.colocar_bloque(Vector3i(210, 1, 210), "combustible", true)
+	mundo_t13._drenar_escurrimiento_para_pruebas()
+	for i in range(1, 6):
+		assert(mundo_t13.obtener_tipo(Vector3i(210 + i, 1, 210)) == "combustible", "combustible avanza celda %d" % i)
+	assert(mundo_t13.obtener_tipo(Vector3i(216, 1, 210)) == "", "combustible no debe superar alcance 5")
+
+	# Canal lineal para agua: x en [220..230], y=1
+	for x in range(219, 231):
+		mundo_t13.colocar_bloque(Vector3i(x, 0, 220), "bloque_piedra")
+		mundo_t13.colocar_bloque(Vector3i(x, 1, 219), "bloque_piedra")
+		mundo_t13.colocar_bloque(Vector3i(x, 1, 221), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(219, 1, 220), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(230, 1, 220), "bloque_piedra")
+
+	mundo_t13.colocar_bloque(Vector3i(220, 1, 220), "agua", true)
+	mundo_t13._drenar_escurrimiento_para_pruebas()
+	for i in range(1, 8):
+		assert(mundo_t13.obtener_tipo(Vector3i(220 + i, 1, 220)) == "agua", "agua avanza celda %d" % i)
+	assert(mundo_t13.obtener_tipo(Vector3i(228, 1, 220)) == "", "agua no debe superar alcance 7")
+	print("OK: alcances horizontales comprobados para agua (7), combustible (5) y crudo (3).")
+
+	print("\n=== TEST 14: desalojo y destruccion inmediata de liquidos al colocar bloques solidos ===")
+	var celdas_emitidas_t14: Array[Vector3i] = []
+	mundo_t13.bloque_translucido_cambiado.connect(func(c: Vector3i) -> void: celdas_emitidas_t14.append(c))
+
+	mundo_t13.colocar_bloque(Vector3i(300, 0, 300), "crudo")
+	celdas_emitidas_t14.clear()
+	var colocado_crudo: bool = mundo_t13.colocar_bloque(Vector3i(300, 0, 300), "bloque_piedra", true)
+	assert(colocado_crudo, "debe permitir colocar bloque solido sobre crudo")
+	assert(mundo_t13.obtener_tipo(Vector3i(300, 0, 300)) == "bloque_piedra", "tipo reemplazado a bloque_piedra")
+	assert(mundo_t13.nivel_agua_en(Vector3i(300, 0, 300)) == -1, "nivel de flujo destruido")
+	assert(celdas_emitidas_t14.has(Vector3i(300, 0, 300)), "bloque_translucido_cambiado emitido al desalojar crudo")
+
+	mundo_t13.colocar_bloque(Vector3i(301, 0, 300), "agua")
+	celdas_emitidas_t14.clear()
+	var colocado_agua: bool = mundo_t13.colocar_bloque(Vector3i(301, 0, 300), "tierra", true)
+	assert(colocado_agua, "debe permitir colocar bloque solido sobre agua")
+	assert(mundo_t13.obtener_tipo(Vector3i(301, 0, 300)) == "tierra", "tipo reemplazado a tierra")
+	assert(mundo_t13.nivel_agua_en(Vector3i(301, 0, 300)) == -1, "nivel de flujo destruido")
+	assert(celdas_emitidas_t14.has(Vector3i(301, 0, 300)), "bloque_translucido_cambiado emitido al desalojar agua")
+	print("OK: colocar bloque solido sobre liquido desaloja y destruye el liquido.")
+
+	print("\n=== TEST 15: inundacion estilo Minecraft al minar bloque solido con agua adyacente lateral o superior ===")
+	# Caso lateral: agua en (400, 1, 400), piedra en (401, 1, 400)
+	mundo_t13.colocar_bloque(Vector3i(400, 0, 400), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(401, 0, 400), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(400, 1, 400), "agua")
+	mundo_t13.colocar_bloque(Vector3i(401, 1, 400), "bloque_piedra")
+	mundo_t13.minar_bloque(Vector3i(401, 1, 400))
+	assert(mundo_t13.obtener_tipo(Vector3i(401, 1, 400)) == "agua", "inundacion inmediata al minar bloque con vecino lateral de agua")
+
+	# Caso superior: agua en (410, 2, 410), piedra en (410, 1, 410)
+	mundo_t13.colocar_bloque(Vector3i(410, 0, 410), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(410, 1, 410), "bloque_piedra")
+	mundo_t13.colocar_bloque(Vector3i(410, 2, 410), "agua")
+	mundo_t13.minar_bloque(Vector3i(410, 1, 410))
+	assert(mundo_t13.obtener_tipo(Vector3i(410, 1, 410)) == "agua", "inundacion inmediata al minar bloque con vecino superior de agua")
+
+	# Caso inferior: agua en (420, 0, 420), piedra en (420, 1, 420) — NO debe subir
+	mundo_t13.colocar_bloque(Vector3i(420, 0, 420), "agua")
+	mundo_t13.colocar_bloque(Vector3i(420, 1, 420), "bloque_piedra")
+	mundo_t13.minar_bloque(Vector3i(420, 1, 420))
+	assert(mundo_t13.obtener_tipo(Vector3i(420, 1, 420)) == "", "agua inferior no debe subir al minar celda sobre ella")
+	print("OK: inundacion estilo Minecraft confirmada para vecinos laterales y superiores.")
+
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

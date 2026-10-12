@@ -32,7 +32,7 @@ const VELOCIDAD_NATACION := 3.0
 ## como estar de pie sobre ella.
 const VELOCIDAD_HUNDIMIENTO := 1.0
 ## Factor de resistencia viscosa en crudo (movimiento horizontal, nado y gravedad amortiguada).
-const FACTOR_VISCOSIDAD_CRUDO := 0.5
+const FACTOR_VISCOSIDAD_CRUDO := 0.20
 
 ## Corriente de río/cascada (diseño 2026-09-17, a partir de una captura real
 ## de un río en pendiente de montaña): a mayor pendiente del cauce (ver

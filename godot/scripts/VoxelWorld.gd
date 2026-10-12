@@ -908,20 +908,23 @@ func altura_natural_en(x: int, z: int) -> int:
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:
 	var actual: int = get_cell_item(celda)
 	var tipo_anterior: String = _tipo_por_id.get(actual, "")
-	if actual != GridMap.INVALID_CELL_ITEM and tipo_anterior != "agua":
-		return false
+	if actual != GridMap.INVALID_CELL_ITEM:
+		if not TIPOS_LIQUIDOS.has(tipo_anterior):
+			return false
+		if TIPOS_LIQUIDOS.has(tipo) and tipo != tipo_anterior:
+			return false
 	if not _id_por_tipo.has(tipo):
 		return false
 	set_cell_item(celda, _id_por_tipo[tipo])
 	if por_jugador:
 		colocado_por_jugador[celda] = true
-	if tipo_anterior == "agua":
-		# Reemplazar agua (de flujo o fuente) por otra cosa: el agua de flujo
+	if TIPOS_LIQUIDOS.has(tipo_anterior):
+		# Reemplazar líquido (de flujo o fuente) por otra cosa: el líquido de flujo
 		# que dependía de esta celda debe revisar si sigue conectada a una
-		# fuente (ver _procesar_secado()); si se reemplaza por más agua, la
-		# celda pasa a ser una fuente (sin entrada en _nivel_agua).
+		# fuente (ver _procesar_secado()); si se reemplaza por el mismo líquido,
+		# la celda pasa a ser una fuente (sin entrada en _nivel_agua).
 		_nivel_agua.erase(celda)
-		if tipo != "agua":
+		if tipo != tipo_anterior:
 			_encolar_secado_alrededor(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo) or TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
@@ -981,13 +984,36 @@ func _retirar_bloque(celda: Vector3i) -> void:
 		puerta_cambiada.emit(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
-	var vecinos_agua: Array[Vector3i] = []
-	for delta in VECINOS_3D:
-		var vecino: Vector3i = celda + delta
-		if TIPOS_LIQUIDOS.has(obtener_tipo(vecino)):
-			vecinos_agua.append(vecino)
-	if not vecinos_agua.is_empty():
-		_escurrir_agua_desde(vecinos_agua)
+
+	# Mecánica estilo Minecraft: al vaciar una celda sólida, si algún vecino lateral o
+	# superior es agua, la celda se inunda automáticamente convirtiéndose en agua.
+	var inunda_agua := false
+	var nivel_inundacion := NIVEL_CAIDA
+	if not TIPOS_LIQUIDOS.has(tipo_anterior):
+		if obtener_tipo(celda + Vector3i(0, 1, 0)) == "agua":
+			inunda_agua = true
+			nivel_inundacion = NIVEL_CAIDA
+		else:
+			var min_nivel := 999
+			for dir_h in VECINOS_ORTOGONALES_XZ:
+				var vec_h: Vector3i = celda + Vector3i(dir_h.x, 0, dir_h.y)
+				if obtener_tipo(vec_h) == "agua":
+					min_nivel = mini(min_nivel, _nivel_efectivo(vec_h))
+			if min_nivel < ALCANCE_FLUJO_AGUA:
+				inunda_agua = true
+				nivel_inundacion = min_nivel + 1
+
+	if inunda_agua:
+		_colocar_agua_flujo(celda, nivel_inundacion)
+		_escurrir_agua_desde([celda])
+	else:
+		var vecinos_agua: Array[Vector3i] = []
+		for delta in VECINOS_3D:
+			var vecino: Vector3i = celda + delta
+			if TIPOS_LIQUIDOS.has(obtener_tipo(vecino)):
+				vecinos_agua.append(vecino)
+		if not vecinos_agua.is_empty():
+			_escurrir_agua_desde(vecinos_agua)
 	Vias.quitar([celda])
 	if Canalizaciones != null and Canalizaciones.has_method("quitar_celdas"):
 		if Canalizaciones.es_celda_canalizacion(celda) or Canalizaciones.columnas.has(celda):
@@ -1133,6 +1159,19 @@ const FRENTES_ESCURRIMIENTO_POR_FRAME := 2
 ## el nivel: al aterrizar, el agua vuelve a esparcirse con alcance completo.
 const NIVEL_CAIDA := 0
 const NIVEL_MAXIMO_FLUJO := 7
+const ALCANCE_FLUJO_AGUA := 7
+const ALCANCE_FLUJO_COMBUSTIBLE := 5
+const ALCANCE_FLUJO_CRUDO := 3
+
+
+static func alcance_flujo_por_tipo(tipo: String) -> int:
+	match tipo:
+		"combustible":
+			return ALCANCE_FLUJO_COMBUSTIBLE
+		"crudo":
+			return ALCANCE_FLUJO_CRUDO
+		_:
+			return ALCANCE_FLUJO_AGUA
 
 ## Cuántas celdas de la cola de secado se revisan por frame (ver
 ## _procesar_secado()) — mismo motivo que FRENTES_ESCURRIMIENTO_POR_FRAME: que
@@ -1207,17 +1246,30 @@ func _nivel_efectivo(celda: Vector3i) -> int:
 	return maxi(_nivel_agua.get(celda, NIVEL_CAIDA), NIVEL_CAIDA)
 
 
+func _es_liquido_de_flujo(celda: Vector3i, tipo_esperado: String = "") -> bool:
+	if not _nivel_agua.has(celda):
+		return false
+	var t: String = obtener_tipo(celda)
+	if tipo_esperado != "":
+		return t == tipo_esperado
+	return TIPOS_LIQUIDOS.has(t)
+
+
 func _es_agua_de_flujo(celda: Vector3i) -> bool:
-	return _nivel_agua.has(celda) and obtener_tipo(celda) == "agua"
+	return _es_liquido_de_flujo(celda, "agua")
 
 
-## Coloca una celda de agua de flujo con "nivel" (ver NIVEL_CAIDA/
-## NIVEL_MAXIMO_FLUJO). colocar_bloque() ya emite bloque_translucido_cambiado;
+## Coloca una celda de líquido de flujo con "nivel" (ver NIVEL_CAIDA/
+## alcances de flujo). colocar_bloque() ya emite bloque_translucido_cambiado;
 ## el nivel se fija justo después, antes de que TranslucidosRenderer
 ## reconstruya en su próximo frame.
-func _colocar_agua_flujo(celda: Vector3i, nivel: int) -> void:
-	colocar_bloque(celda, "agua")
+func _colocar_liquido_flujo(celda: Vector3i, nivel: int, tipo_liquido: String = "agua") -> void:
+	colocar_bloque(celda, tipo_liquido)
 	_nivel_agua[celda] = nivel
+
+
+func _colocar_agua_flujo(celda: Vector3i, nivel: int) -> void:
+	_colocar_liquido_flujo(celda, nivel, "agua")
 
 
 ## Cambia el nivel de una celda de flujo que ya existe y avisa al renderer.
@@ -1279,24 +1331,26 @@ func _procesar_frente_escurrimiento() -> bool:
 	if _cola_escurrimiento.is_empty():
 		return false
 	var origen: Vector3i = _cola_escurrimiento.pop_front()
-	if obtener_tipo(origen) != "agua":
+	var tipo_liquido: String = obtener_tipo(origen)
+	if not TIPOS_LIQUIDOS.has(tipo_liquido):
 		return true  # se secó antes de que le tocara su turno
 	var fondo: Vector3i = _caer_hasta_el_fondo(origen)
 	var abajo: Vector3i = fondo + Vector3i(0, -1, 0)
-	if _es_agua_de_flujo(abajo):
-		# Cae sobre agua de flujo: se une a ella y la alimenta (pasa a caer).
+	if _es_liquido_de_flujo(abajo, tipo_liquido):
+		# Cae sobre líquido de flujo del mismo tipo: se une a él y lo alimenta (pasa a caer).
 		if _nivel_agua[abajo] > NIVEL_CAIDA:
 			_cambiar_nivel_agua(abajo, NIVEL_CAIDA)
 			_cola_escurrimiento.append(abajo)
 		return true
 	var nivel: int = _nivel_efectivo(fondo)
-	if nivel >= NIVEL_MAXIMO_FLUJO:
+	var alcance_maximo: int = alcance_flujo_por_tipo(tipo_liquido)
+	if nivel >= alcance_maximo:
 		return true
 	var con_caida: Array[Vector3i] = []
 	var planas: Array[Vector3i] = []
 	for direccion_xz in VECINOS_ORTOGONALES_XZ:
 		var lateral: Vector3i = fondo + Vector3i(direccion_xz.x, 0, direccion_xz.y)
-		if _es_agua_de_flujo(lateral):
+		if _es_liquido_de_flujo(lateral, tipo_liquido):
 			if _nivel_agua[lateral] > nivel + 1:
 				_cambiar_nivel_agua(lateral, nivel + 1)
 				_cola_escurrimiento.append(lateral)
@@ -1304,7 +1358,7 @@ func _procesar_frente_escurrimiento() -> bool:
 		if not _celda_escurrible(lateral):
 			continue
 		var debajo: Vector3i = lateral + Vector3i(0, -1, 0)
-		if _celda_escurrible(debajo) or _es_agua_de_flujo(debajo):
+		if _celda_escurrible(debajo) or _es_liquido_de_flujo(debajo, tipo_liquido):
 			con_caida.append(lateral)
 		else:
 			planas.append(lateral)
@@ -1312,25 +1366,26 @@ func _procesar_frente_escurrimiento() -> bool:
 	for lateral in destinos:
 		if _esparcidas_escurrimiento >= _limite_escurrimiento:
 			break
-		_colocar_agua_flujo(lateral, nivel + 1)
+		_colocar_liquido_flujo(lateral, nivel + 1, tipo_liquido)
 		_esparcidas_escurrimiento += 1
 		_cola_escurrimiento.append(lateral)
 	return true
 
 
-## Deja caer agua desde "origen" hasta que ya no pueda seguir bajando
-## (encuentra suelo, otra agua, o el límite vertical real del mundo — ver
-## _celda_escurrible()), colocando agua que cae (NIVEL_CAIDA) en cada celda
+## Deja caer líquido desde "origen" hasta que ya no pueda seguir bajando
+## (encuentra suelo, otro líquido, o el límite vertical real del mundo — ver
+## _celda_escurrible()), colocando líquido que cae (NIVEL_CAIDA) en cada celda
 ## de la caída, y devuelve la celda final (el "fondo" real). SIN tope de
 ## seguridad propio a propósito: una caída vertical está acotada por la
 ## altura real del mundo (unas 200 celdas en el peor caso), nunca puede ser
 ## el origen de una fuga descontrolada como sí puede serlo el esparcido
 ## lateral (una caverna enorme, ver LIMITE_ESCURRIMIENTO).
 func _caer_hasta_el_fondo(origen: Vector3i) -> Vector3i:
+	var tipo_liquido: String = obtener_tipo(origen)
 	var fondo := origen
 	var abajo: Vector3i = fondo + Vector3i(0, -1, 0)
 	while _celda_escurrible(abajo):
-		_colocar_agua_flujo(abajo, NIVEL_CAIDA)
+		_colocar_liquido_flujo(abajo, NIVEL_CAIDA, tipo_liquido)
 		fondo = abajo
 		abajo = fondo + Vector3i(0, -1, 0)
 	return fondo
@@ -1349,21 +1404,22 @@ func _encolar_secado_alrededor(celda: Vector3i) -> void:
 			_cola_secado.append(vecino)
 
 
-## Verdadero si "celda" (agua de flujo) sigue conectada a una fuente: agua
-## de cualquier tipo justo encima (la alimenta cayendo), o —si corre en
-## plano— un vecino horizontal de agua con un nivel efectivo MENOR que el
+## Verdadero si "celda" (líquido de flujo) sigue conectado a una fuente: líquido
+## del mismo tipo justo encima (la alimenta cayendo), o —si corre en
+## plano— un vecino horizontal del mismo tipo con un nivel efectivo MENOR que el
 ## suyo. Como cada eslabón tiene un nivel estrictamente menor, no puede
-## haber ciclos: la cadena termina en una fuente o en agua que cae, y esta a
-## su vez en agua encima, y así hasta una fuente.
+## haber ciclos: la cadena termina en una fuente o en líquido que cae, y esta a
+## su vez en líquido encima, y así hasta una fuente.
 func _esta_alimentada(celda: Vector3i) -> bool:
-	if obtener_tipo(celda + Vector3i(0, 1, 0)) == "agua":
+	var tipo: String = obtener_tipo(celda)
+	if obtener_tipo(celda + Vector3i(0, 1, 0)) == tipo:
 		return true
 	var nivel: int = _nivel_agua[celda]
 	if nivel <= NIVEL_CAIDA:
 		return false
 	for direccion_xz in VECINOS_ORTOGONALES_XZ:
 		var vecino: Vector3i = celda + Vector3i(direccion_xz.x, 0, direccion_xz.y)
-		if obtener_tipo(vecino) == "agua" and _nivel_efectivo(vecino) < nivel:
+		if obtener_tipo(vecino) == tipo and _nivel_efectivo(vecino) < nivel:
 			return true
 	return false
 
@@ -1376,7 +1432,7 @@ func _procesar_secado() -> bool:
 	if _cola_secado.is_empty():
 		return false
 	var celda: Vector3i = _cola_secado.pop_front()
-	if not _es_agua_de_flujo(celda) or _esta_alimentada(celda):
+	if not _es_liquido_de_flujo(celda) or _esta_alimentada(celda):
 		return true
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	_nivel_agua.erase(celda)

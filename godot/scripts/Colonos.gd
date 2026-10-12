@@ -380,7 +380,11 @@ func _iniciar_paso(c: Dictionary, delta: float) -> void:
 	ocupadas[siguiente] = c["id"]  # reserva la celda a la que va
 	c["moviendo"] = true
 	if not c["trabajo"].is_empty():
-		economia.marcar_presente(c["id"], false)  # se aleja del puesto: deja de producir
+		var esq: Vector2i = c["trabajo"]["puesto"]
+		var huella_p: Array = economia.huella_de(esq)
+		var destino_final: Vector3i = c["ruta"][-1] if not c["ruta"].is_empty() else siguiente
+		if not huella_p.has(Vector2i(destino_final.x, destino_final.z)):
+			economia.marcar_presente(c["id"], false)  # se aleja del puesto: deja de producir
 	c["progreso"] = 0.0
 	_completar_paso(c, delta)
 
@@ -1055,6 +1059,9 @@ func _decidir_trabajo(c: Dictionary) -> void:
 	if economia.es_refineria(esquina):
 		_decidir_acarreo_refineria(c, esquina, huella_puesto, servicio, economia.salida_de(esquina))
 		return
+	if economia.es_central_termoelectrica(esquina):
+		_decidir_acarreo_central(c, esquina, huella_puesto, servicio)
+		return
 	if c["fase"] == "entregar":
 		if _llevar_al_nucleo(c):
 			c["fase"] = "recoger"
@@ -1108,6 +1115,113 @@ func _decidir_acarreo_refineria(c: Dictionary, esquina: Vector2i, huella: Array,
 				c["fase"] = "cargar"
 			elif economia.producto_pendiente(esquina) >= economia.CARGA_MINIMA:
 				c["fase"] = "salida"
+			else:
+				c["espera"] = ESPERA_TRABAJO
+
+
+func _distancia_a_huella(desde: Vector3i, huella: Array) -> float:
+	var d_min: float = INF
+	var pos2 := Vector2(desde.x, desde.z)
+	for cel: Vector2i in huella:
+		var d := pos2.distance_squared_to(Vector2(cel.x, cel.y))
+		if d < d_min:
+			d_min = d
+	return d_min
+
+
+func _fuente_carbon_mas_cercana(desde: Vector3i) -> Dictionary:
+	var mejor_fuente: Dictionary = {}
+	var mejor_distancia: float = INF
+
+	# 1. Núcleo urbano
+	if ciudad != null and ciudad.almacen.has("carbon") and ciudad.almacen["carbon"].cantidad > 1e-9:
+		var huella_n: Array = zona.huella_del_nucleo() if zona != null else []
+		if not huella_n.is_empty():
+			var dist: float = _distancia_a_huella(desde, huella_n)
+			mejor_distancia = dist
+			mejor_fuente = {"tipo": "nucleo", "esquina": Vector2i.MAX, "huella": huella_n, "servicio": Vector2i.MAX}
+
+	# 2. Almacenes con carbón
+	if economia != null:
+		for esq: Vector2i in economia.puestos:
+			var p: Dictionary = economia.puestos[esq]
+			if p.get("tipo", "") == "almacen" and p.get("activo", false):
+				if p.get("almacen", {}).get("carbon", 0.0) > 1e-9:
+					var huella_a: Array = economia.huella_de(esq)
+					var dist_a: float = _distancia_a_huella(desde, huella_a)
+					if dist_a < mejor_distancia:
+						mejor_distancia = dist_a
+						mejor_fuente = {"tipo": "almacen", "esquina": esq, "huella": huella_a, "servicio": economia.servicio_de(esq)}
+
+	return mejor_fuente
+
+
+## Acarreador de una central termoeléctrica: almacén/núcleo (carga 150 carbón) -> central (entrega si espacio >= 150).
+func _decidir_acarreo_central(c: Dictionary, esquina: Vector2i, huella: Array, servicio: Vector2i) -> void:
+	if not economia.puestos.has(esquina):
+		c["espera"] = ESPERA_TRABAJO
+		return
+	var p: Dictionary = economia.puestos[esquina]
+	if p.get("combustible_activo", "carbon") != "carbon":
+		if not c.get("carga", {}).is_empty():
+			if _llevar_al_nucleo(c):
+				_quedar_sin_puesto(c)
+		else:
+			_quedar_sin_puesto(c)
+		return
+
+	match c["fase"]:
+		"cargar":
+			var fuente: Dictionary = c.get("fuente_carbon", {})
+			var huella_f: Array = fuente.get("huella", [])
+			var serv_f: Vector2i = fuente.get("servicio", Vector2i.MAX)
+			if huella_f.is_empty():
+				c["fase"] = ""
+				return
+			if not _junto_a(c["celda"], huella_f, serv_f):
+				_ir_junto_a(c, huella_f, serv_f)
+				return
+			var carga: Dictionary = {}
+			if fuente.get("tipo", "") == "almacen":
+				carga = economia.cargar_carbon_de_almacen(fuente.get("esquina", Vector2i.MAX), economia.CAPACIDAD_CARGA)
+			else:
+				carga = economia.cargar_carbon_de_nucleo(economia.CAPACIDAD_CARGA)
+			if carga.is_empty() or carga.get("carbon", 0.0) <= 1e-9:
+				c["espera"] = ESPERA_TRABAJO
+				c["fase"] = ""
+				return
+			c["carga"] = carga
+			c["fase"] = "entrada"
+
+		"entrada":
+			var suelo: int = economia.suelo_de(esquina)
+			if not _junto_a(c["celda"], huella, servicio) and not _en_puesto(c["celda"], huella, servicio, suelo, true):
+				_ir_junto_a(c, huella, servicio)
+				return
+			var stock_local: float = p.get("almacen", {}).get("carbon", 0.0)
+			var espacio_libre: float = 500.0 - stock_local
+			if espacio_libre >= 150.0 - 1e-9:
+				economia.descargar_insumo(esquina, c["carga"])
+				c["carga"] = {}
+				c["fuente_carbon"] = {}
+				c["fase"] = ""
+				if p.get("almacen", {}).get("carbon", 0.0) >= 500.0 - 1e-9:
+					c["espera"] = ESPERA_TRABAJO
+			else:
+				c["espera"] = ESPERA_TRABAJO
+
+		_:
+			if not c.get("carga", {}).is_empty():
+				c["fase"] = "entrada"
+				return
+			var stock_actual: float = p.get("almacen", {}).get("carbon", 0.0)
+			if stock_actual < 500.0 - 1e-9:
+				var fuente: Dictionary = _fuente_carbon_mas_cercana(c["celda"])
+				if fuente.is_empty():
+					c["espera"] = ESPERA_TRABAJO
+					return
+				c["fuente_carbon"] = fuente
+				c["fase"] = "cargar"
 			else:
 				c["espera"] = ESPERA_TRABAJO
 

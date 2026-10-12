@@ -36,6 +36,12 @@ const REFINERIAS := {
 # los bloques de su plantilla, ver PlantillasPuesto).
 const PERSONAL_MAXIMO_REFINERIA := 4
 const CAPACIDAD_ALMACENAMIENTO_REFINERIA := 1000  # insumo y producto lo comparten
+const LIMITE_CRUDO_REFINERIA := 400.0  # máximo 40% de crudo para refinería petrolera
+const RESERVA_COMBUSTIBLE_REFINERIA := 600.0  # reserva de 60% para combustible
+
+
+func admite_crudo(almacen: Dictionary, cantidad: float = 0.0) -> bool:
+	return almacen.get("crudo", 0.0) + cantidad <= LIMITE_CRUDO_REFINERIA
 
 
 ## Procesa una receta específica de duración "delta" horas contra un almacén local:
@@ -52,7 +58,10 @@ func procesar_receta(tipo_entrada: String, num_trabajadores: int, delta: float, 
 	for recurso in receta["entradas"]:
 		lotes = minf(lotes, resultado.get(recurso, 0.0) / float(receta["entradas"][recurso]))
 	if capacidad < INF:
-		var espacio_salida: float = maxf(0.0, capacidad - resultado.get(receta["tipo_salida"], 0.0))
+		var cap_salida: float = capacidad
+		if tipo_entrada == "petroleo":
+			cap_salida = minf(capacidad, RESERVA_COMBUSTIBLE_REFINERIA)
+		var espacio_salida: float = maxf(0.0, cap_salida - resultado.get(receta["tipo_salida"], 0.0))
 		lotes = minf(lotes, espacio_salida / float(receta["cantidad_salida"]))
 		var cambio_neto: float = float(receta["cantidad_salida"])
 		for cant_in in receta["entradas"].values():

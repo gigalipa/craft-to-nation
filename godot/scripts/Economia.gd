@@ -218,7 +218,7 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"tipo": tipo, "ancho": ancho, "alto": alto,
 		"orden_construccion": _contador_orden,
 		"cupo": Recoleccion.cupo_de(tipo),
-		"capacidad": Recoleccion.capacidad_almacen_de(tipo),
+		"capacidad": 500 if tipo == "central_termoelectrica" else Recoleccion.capacidad_almacen_de(tipo),
 		"tasas": tasas.duplicate(),
 		"entorno": entorno.duplicate(),
 		"en_curso": {},
@@ -589,8 +589,7 @@ func _procesar_transporte_fluidos() -> void:
 						if enviado > 1e-9:
 							p_dest["almacen"][rec] = p_dest["almacen"].get(rec, 0.0) + enviado
 					elif not p_dest.is_empty():
-						var cap_dest: float = p_dest.get("capacidad", 1000.0)
-						var espacio_dest: float = maxf(0.0, cap_dest - _total(p_dest.get("almacen", {})))
+						var espacio_dest: float = espacio_disponible_para(esq_dest, rec)
 						enviado = minf(cuota, espacio_dest)
 						if enviado > 1e-9:
 							p_dest["almacen"][rec] = p_dest["almacen"].get(rec, 0.0) + enviado
@@ -834,6 +833,71 @@ func es_universidad(esquina: Vector2i) -> bool:
 	return puestos.has(esquina) and puestos[esquina]["tipo"] == "universidad"
 
 
+## true si el puesto es una central termoeléctrica.
+func es_central_termoelectrica(esquina: Vector2i) -> bool:
+	return puestos.has(esquina) and puestos[esquina]["tipo"] == "central_termoelectrica"
+
+
+## Espacio disponible en un puesto para un recurso específico respetando particiones y topes.
+func espacio_disponible_para(esquina: Vector2i, recurso: String) -> float:
+	if not puestos.has(esquina):
+		return 0.0
+	var p: Dictionary = puestos[esquina]
+	var cap: float = float(p.get("capacidad", 1000.0))
+	var espacio_total: float = maxf(0.0, cap - _total(p.get("almacen", {})))
+	if p.get("tipo", "") == "refineria_petrolera":
+		if recurso == "crudo":
+			var crudo_actual: float = p.get("almacen", {}).get("crudo", 0.0)
+			return minf(espacio_total, maxf(0.0, CadenaMinerales.LIMITE_CRUDO_REFINERIA - crudo_actual))
+		elif recurso == "combustible":
+			var comb_actual: float = p.get("almacen", {}).get("combustible", 0.0)
+			return minf(espacio_total, maxf(0.0, CadenaMinerales.RESERVA_COMBUSTIBLE_REFINERIA - comb_actual))
+	elif p.get("tipo", "") == "central_termoelectrica":
+		if recurso == "carbon":
+			var carb_actual: float = p.get("almacen", {}).get("carbon", 0.0)
+			return minf(espacio_total, maxf(0.0, 500.0 - carb_actual))
+	return espacio_total
+
+
+## Inyecta hasta 'cantidad' de fluido al puesto respetando sus límites.
+func inyectar_fluido_puesto(esquina: Vector2i, recurso: String, cantidad: float) -> float:
+	if not puestos.has(esquina):
+		return 0.0
+	var espacio: float = espacio_disponible_para(esquina, recurso)
+	var admitido: float = minf(cantidad, espacio)
+	if admitido > 1e-9:
+		var p: Dictionary = puestos[esquina]
+		p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + admitido
+		return admitido
+	return 0.0
+
+
+## Retira hasta 'cantidad_max' de carbón del stock central (núcleo) para abastecer a la central.
+func cargar_carbon_de_nucleo(cantidad_max: float = CAPACIDAD_CARGA) -> Dictionary:
+	if ciudad == null or not ciudad.almacen.has("carbon"):
+		return {}
+	var sacado: float = ciudad.almacen["carbon"].quitar(cantidad_max)
+	if sacado > 1e-9:
+		return {"carbon": sacado}
+	return {}
+
+
+## Retira hasta 'cantidad_max' de carbón del almacén especificado para abastecer a la central.
+func cargar_carbon_de_almacen(esquina_almacen: Vector2i, cantidad_max: float = CAPACIDAD_CARGA) -> Dictionary:
+	if not puestos.has(esquina_almacen):
+		return {}
+	var p: Dictionary = puestos[esquina_almacen]
+	var local: Dictionary = p.get("almacen", {})
+	var disp: float = local.get("carbon", 0.0)
+	var sacado: float = minf(disp, cantidad_max)
+	if sacado > 1e-9:
+		local["carbon"] -= sacado
+		if local["carbon"] <= 1e-9:
+			local.erase("carbon")
+		return {"carbon": sacado}
+	return {}
+
+
 func investigacion_en_curso_en_otra_universidad(esquina_actual: Vector2i, id_tech: int) -> bool:
 	for esq in puestos:
 		if esq != esquina_actual and es_universidad(esq):
@@ -969,11 +1033,11 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 	if p["tipo"] == "central_termoelectrica":
 		if p.get("combustible_activo", "carbon") != "carbon":
 			return {}
-		var libre_central: float = p["capacidad"] - _total(p["almacen"])
-		if libre_central <= 1e-9:
+		var stock_actual: float = p["almacen"].get("carbon", 0.0)
+		if stock_actual >= 500.0 - 1e-9:
 			return {}
 		if ciudad != null and ciudad.almacen.has("carbon") and ciudad.almacen["carbon"].cantidad > 1e-9:
-			var cant: float = minf(minf(CAPACIDAD_CARGA, libre_central), ciudad.almacen["carbon"].cantidad)
+			var cant: float = minf(CAPACIDAD_CARGA, ciudad.almacen["carbon"].cantidad)
 			if cant > 1e-9:
 				return {"carbon": cant}
 		return {}
@@ -1073,7 +1137,7 @@ func descargar_insumo(esquina: Vector2i, carga: Dictionary) -> void:
 		return
 	var p: Dictionary = puestos[esquina]
 	for recurso in carga:
-		var cabe: float = minf(carga[recurso], maxf(0.0, p["capacidad"] - _total(p["almacen"])))
+		var cabe: float = minf(carga[recurso], espacio_disponible_para(esquina, recurso))
 		if cabe > 1e-9:
 			p["almacen"][recurso] = p["almacen"].get(recurso, 0.0) + cabe
 		if carga[recurso] - cabe > 1e-9:
@@ -1139,13 +1203,13 @@ func retirar_uno(esquina: Vector2i, recurso: String, monto: float) -> float:
 func agregar_uno(esquina: Vector2i, recurso: String, monto: float) -> float:
 	if not puestos.has(esquina) or not ciudad.almacen.has(recurso):
 		return 0.0
-	var local: Dictionary = puestos[esquina]["almacen"]
-	var espacio: float = puestos[esquina]["capacidad"] - _total(local)
+	var espacio: float = espacio_disponible_para(esquina, recurso)
 	if espacio <= 0.0:
 		return 0.0
 	var salida: float = ciudad.almacen[recurso].quitar(min(espacio, monto))
 	if salida <= 1e-9:
 		return 0.0
+	var local: Dictionary = puestos[esquina]["almacen"]
 	local[recurso] = local.get(recurso, 0.0) + salida
 	return salida
 

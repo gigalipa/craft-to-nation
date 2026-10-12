@@ -150,4 +150,23 @@ func ejecutar_pruebas() -> void:
 		assert(CadenaMinerales.RECETAS.has(CadenaMinerales.REFINERIAS[tipo_f]), tipo_f + " apunta a una receta válida")
 		assert(Recoleccion.cupo_de(tipo_f) == 4 and Recoleccion.capacidad_almacen_de(tipo_f) == 1000)
 
-	print("\n=== Las 10 pruebas de CadenaMinerales pasaron correctamente ===")
+	print("\n=== TEST 11: Partición estricta de refinería petrolera (400 crudo / 600 combustible) ===")
+	assert(CadenaMinerales.LIMITE_CRUDO_REFINERIA == 400.0)
+	assert(CadenaMinerales.RESERVA_COMBUSTIBLE_REFINERIA == 600.0)
+	assert(CadenaMinerales.admite_crudo({"crudo": 399.0}))
+	assert(CadenaMinerales.admite_crudo({"crudo": 400.0}))
+	assert(not CadenaMinerales.admite_crudo({"crudo": 400.1}))
+	assert(not CadenaMinerales.admite_crudo({"crudo": 390.0}, 15.0), "390 + 15 supera 400")
+
+	# Procesar receta petróleo respeta el tope de 600 de combustible aunque capacidad total sea 1000
+	var almac_pet_casi := {"crudo": 100.0, "combustible": 599.5}
+	var res_pet: Dictionary = CadenaMinerales.procesar_receta("petroleo", 1, 1.0, almac_pet_casi, 1.0, 1000.0)
+	assert(is_equal_approx(res_pet["combustible"], 600.0), "combustible no supera 600")
+	assert(is_equal_approx(res_pet["crudo"], 99.0), "consumió 1 crudo para producir 0.5 combustible")
+
+	var almac_pet_lleno := {"crudo": 100.0, "combustible": 600.0}
+	var res_pet_lleno: Dictionary = CadenaMinerales.procesar_receta("petroleo", 1, 1.0, almac_pet_lleno, 1.0, 1000.0)
+	assert(is_equal_approx(res_pet_lleno["combustible"], 600.0))
+	assert(is_equal_approx(res_pet_lleno["crudo"], 100.0), "no consume crudo si combustible llegó a 600")
+
+	print("\n=== Las 11 pruebas de CadenaMinerales pasaron correctamente ===")

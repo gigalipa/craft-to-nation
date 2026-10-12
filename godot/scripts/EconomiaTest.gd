@@ -1017,7 +1017,7 @@ func ejecutar_pruebas() -> void:
 	var esq_cen := Vector2i(20, 20)
 	e38.registrar_puesto(esq_cen, "central_termoelectrica", 5, 5, {})
 	assert(e38.puestos[esq_cen]["cupo"] == 4)
-	assert(e38.puestos[esq_cen]["capacidad"] == 300)
+	assert(e38.puestos[esq_cen]["capacidad"] == 500)
 	# Modo carbon: admite acarreador y carga carbón
 	assert(e38.roles_de(esq_cen) == ["tecnico", "acarreador"])
 	var carga_cen_carbon: Dictionary = e38.insumos_a_cargar(esq_cen)
@@ -1101,4 +1101,75 @@ func ejecutar_pruebas() -> void:
 	assert(e41.reserva_fluidos["agua"] == 70.0, "quedan 70 unidades en la reserva")
 	print("OK: Red compartida de almacenes permite extraer fluidos desde cualquier almacén.")
 
-	print("\n=== Las 41 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 42: Logística de carbón para central (capacidad 500) y partición estricta en refinería petrolera (400/600) ===")
+	var c42: Node = CiudadScript.new()
+	c42.almacen["carbon"].cantidad = 300.0
+	c42.almacen["crudo"].cantidad = 500.0
+	var e42: Node = EconomiaScript.new()
+	e42.ciudad = c42
+
+	# 1. Central termoeléctrica: capacidad 500, acarreo de 150 si stock < 500
+	var esq_cen42 := Vector2i(25, 25)
+	e42.registrar_puesto(esq_cen42, "central_termoelectrica", 5, 5, {})
+	assert(e42.puestos[esq_cen42]["capacidad"] == 500, "capacidad fijada en 500")
+	assert(e42.es_central_termoelectrica(esq_cen42))
+
+	# Si stock < 500, insumos_a_cargar ofrece 150 (CAPACIDAD_CARGA)
+	var plan_cen: Dictionary = e42.insumos_a_cargar(esq_cen42)
+	assert(plan_cen.has("carbon") and is_equal_approx(plan_cen["carbon"], 150.0))
+
+	# Carga de carbón de núcleo retira 150
+	var cargado42: Dictionary = e42.cargar_carbon_de_nucleo(150.0)
+	assert(is_equal_approx(cargado42["carbon"], 150.0))
+	assert(is_equal_approx(c42.almacen["carbon"].cantidad, 150.0))
+
+	# Descarga en la central: con stock 0, espacio es 500 >= 150, se entregan 150
+	e42.descargar_insumo(esq_cen42, cargado42)
+	assert(is_equal_approx(e42.almacen_local(esq_cen42)["carbon"], 150.0))
+
+	# Si stock es 400, el espacio es 100 (< 150): descargar_insumo solo admite lo que cabe
+	e42.puestos[esq_cen42]["almacen"]["carbon"] = 400.0
+	assert(is_equal_approx(e42.espacio_disponible_para(esq_cen42, "carbon"), 100.0))
+	var carga_exceso := {"carbon": 150.0}
+	e42.descargar_insumo(esq_cen42, carga_exceso)
+	assert(is_equal_approx(e42.almacen_local(esq_cen42)["carbon"], 500.0))
+	assert(is_equal_approx(c42.almacen["carbon"].cantidad, 200.0), "el exceso (50) volvió al núcleo")
+
+	# Si stock >= 500, no se pide más carbón
+	assert(e42.insumos_a_cargar(esq_cen42).is_empty(), "con stock 500 no se cargan insumos")
+
+	# Modo combustible o crudo no admite acarreadores
+	e42.cambiar_combustible_central(esq_cen42, "crudo")
+	assert(e42.roles_de(esq_cen42) == ["tecnico"], "modo crudo solo admite técnicos")
+	assert(e42.insumos_a_cargar(esq_cen42).is_empty(), "modo crudo no admite carga por acarreo")
+
+	# 2. Refinería petrolera: capacidad 1000, max 400 crudo (40%) y 600 combustible (60%)
+	var esq_ref42 := Vector2i(45, 45)
+	e42.registrar_puesto(esq_ref42, "refineria_petrolera", 5, 5, {})
+	assert(e42.puestos[esq_ref42]["capacidad"] == 1000)
+	assert(is_equal_approx(e42.espacio_disponible_para(esq_ref42, "crudo"), 400.0), "espacio inicial para crudo es 400")
+	assert(is_equal_approx(e42.espacio_disponible_para(esq_ref42, "combustible"), 600.0), "espacio inicial para combustible es 600")
+
+	# Inyección de 350 unidades de crudo
+	var inyectado_1: float = e42.inyectar_fluido_puesto(esq_ref42, "crudo", 350.0)
+	assert(is_equal_approx(inyectado_1, 350.0))
+	assert(is_equal_approx(e42.puestos[esq_ref42]["almacen"]["crudo"], 350.0))
+	assert(is_equal_approx(e42.espacio_disponible_para(esq_ref42, "crudo"), 50.0), "quedan 50 unidades de espacio de crudo")
+
+	# Inyectar 100 unidades más de crudo: solo debe aceptar 50 hasta alcanzar 400
+	var inyectado_2: float = e42.inyectar_fluido_puesto(esq_ref42, "crudo", 100.0)
+	assert(is_equal_approx(inyectado_2, 50.0), "solo admite 50 unidades para no superar 400")
+	assert(is_equal_approx(e42.puestos[esq_ref42]["almacen"]["crudo"], 400.0))
+
+	# Con stock de crudo >= 400, inyección se detiene (0 admitido)
+	var inyectado_3: float = e42.inyectar_fluido_puesto(esq_ref42, "crudo", 50.0)
+	assert(is_equal_approx(inyectado_3, 0.0), "detiene inyección si stock crudo >= 400")
+	assert(is_equal_approx(e42.espacio_disponible_para(esq_ref42, "crudo"), 0.0))
+
+	# Combustible puede inyectarse / acumularse hasta 600
+	var inyectado_comb: float = e42.inyectar_fluido_puesto(esq_ref42, "combustible", 700.0)
+	assert(is_equal_approx(inyectado_comb, 600.0), "combustible se limita a reserva de 600")
+	assert(is_equal_approx(e42.puestos[esq_ref42]["almacen"]["combustible"], 600.0))
+	assert(is_equal_approx(e42.espacio_disponible_para(esq_ref42, "combustible"), 0.0))
+
+	print("\n=== Las 42 pruebas de Economia pasaron correctamente ===")

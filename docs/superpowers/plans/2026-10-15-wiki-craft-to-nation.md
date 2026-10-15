@@ -19,12 +19,29 @@
 - Cero consumo de minutos de build en Netlify por `git push`: auto-builds desactivados con `ignore = "exit 0"`.
 - Los datos numéricos de consumo y producción deben provenir de la auditoría validada contra Godot/GDD.
 
-## Execution Lines & Dependency Matrix
+## Execution Lines & Model Orchestration Matrix (Google AI Pro Stack)
 
-- **Sequential Line A (Auditoría de Datos & Scaffolding):** Task 1 (Auditoría de Fichas) -> Task 2 (Scaffolding VitePress).
-- **Sequential Line B (Contenidos & Componentes):** Task 3 (Contenidos i18n) -> Task 4 (Componentes Interactivos Vue).
-- **Sequential Line C (Despliegue & Integración Netlify):** Task 5 (Configuración de build, ignore y scripts de deploy).
-- **Global Integration Test:** `pnpm --prefix website/wiki run build` y ejecución de script de verificación de integración `python tools/verify_wiki_bundle.py`.
+- **Fase 1 (Paralelo - Archivos Disjuntos):**
+  - **Línea 1A - Auditoría de Datos:** Task 1 (`docs/Fichas_Consumo_Produccion_Consolidada.md`, `tools/verify_game_balance_data.py`).
+    - *Modelo:* Gemini 3.8 Flash (`Model: 'flash'`, Thinking: High). Cuota independiente, lectura masiva de GDD y Godot.
+    - *Verificación local:* `python tools/verify_game_balance_data.py`.
+  - **Línea 1B - Scaffolding VitePress:** Task 2 (`website/wiki/package.json`, `website/wiki/.vitepress/config.mts`, `website/wiki/src/index.md`).
+    - *Modelo:* Gemini 3.8 Flash (`Model: 'flash'`, Thinking: Medium). Setup de dependencias, base `/wiki/` e i18n.
+    - *Verificación local:* `pnpm --prefix website/wiki run build`.
+
+- **Fase 2 (Paralelo - Archivos Disjuntos):**
+  - **Línea 2A - Contenido ES & Componentes Vue:** Task 3A & Task 4 (`website/wiki/src/es/**`, `website/wiki/.vitepress/theme/components/**`).
+    - *Modelo:* Gemini 3.8 Flash (`Model: 'flash'`, Thinking: Medium). Redacción en español y componentes interactivos (`ProductionCalculator`, `ResourceBadge`).
+    - *Verificación local:* `pnpm --prefix website/wiki run build`.
+  - **Línea 2B - Contenido EN & Placeholder FR:** Task 3B (`website/wiki/src/en/**`, `website/wiki/src/fr/**`).
+    - *Modelo:* Gemini 3.8 Flash (`Model: 'flash'`, Thinking: Medium). Traducción y adaptación en inglés con placeholder francés.
+    - *Verificación local:* `pnpm --prefix website/wiki run build`.
+
+- **Fase 3 (Serie - Integración y Despliegue):**
+  - **Línea 3 - Protección Netlify & Verificación Global:** Task 5 (`website/.netlify/netlify.toml`, `tools/verify_wiki_bundle.py`, `tools/deploy_wiki.ps1`).
+    - *Modelo:* Gemini 3.8 Flash (`Model: 'flash'`, Thinking: Low).
+    - *Verificación global:* `powershell -ExecutionPolicy Bypass -File tools/deploy_wiki.ps1` con chequeo estricto de links y bundle.
+  - *Escalamiento (Single-Agent Rule):* En caso de discrepancias de integración no resueltas, se escalará a Claude Sonnet 5.5 (`Model: 'pro'`).
 
 ## Review Focus
 

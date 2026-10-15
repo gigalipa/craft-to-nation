@@ -1,0 +1,7 @@
+# website/netlify.toml
+# Configuración de despliegue para Craft to Nation en Netlify
+# Protege la cuota del plan gratuito cancelando builds automáticos por git push.
+
+[build]
+  publish = "."
+  ignore = "exit 0"

@@ -1386,7 +1386,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 ## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias", "ductos"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar", "estacion_bombeo", "centro_extraccion"]
-const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen"]
+const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen"]
 const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas", "universidad"]
 const PUESTOS_DUCTOS := ["acueducto", "tuberia"]
 
@@ -1703,7 +1703,7 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 		"acueducto", "tuberia":

@@ -16,6 +16,7 @@ const RECETAS: Dictionary = {
 	# Las tablas cuentan como madera al pagar construcciones (ver Ciudad.consumir_costo()), pero son un
 	# recurso aparte: si la salida fuera "madera", el acarreador se llevaría también la madera sin aserrar.
 	"aserradero": {"entradas": {"madera": 1}, "tipo_salida": "tablas", "cantidad_salida": 3, "tasa_base": 0.5, "energia_por_lote": 0},
+	"fabrica_bloques": {"entradas": {"piedra": 1}, "tipo_salida": "bloques_piedra", "cantidad_salida": 3, "tasa_base": 0.5, "energia_por_lote": 0},
 	"carbonera": {"entradas": {"madera": 3}, "tipo_salida": "carbon", "cantidad_salida": 1, "tasa_base": 2.0, "energia_por_lote": 0},
 	"petroleo": {"entradas": {"crudo": 2}, "tipo_salida": "combustible", "cantidad_salida": 1, "tasa_base": 1.0, "energia_por_lote": 1},
 	"combustible_sintetico": {"entradas": {"carbon": 3, "agua": 1}, "tipo_salida": "combustible", "cantidad_salida": 2, "tasa_base": 1.0, "energia_por_lote": 1},
@@ -27,6 +28,7 @@ const REFINERIAS := {
 	"siderurgica": "hierro",
 	"refineria_tierras_raras": "tierras_raras",
 	"aserradero": "aserradero",
+	"fabrica_bloques": "fabrica_bloques",
 	"carbonera": "carbonera",
 	"refineria_petrolera": "petroleo",
 	"productor_combustible": "combustible_sintetico",

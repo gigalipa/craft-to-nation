@@ -1172,4 +1172,56 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e42.puestos[esq_ref42]["almacen"]["combustible"], 600.0))
 	assert(is_equal_approx(e42.espacio_disponible_para(esq_ref42, "combustible"), 0.0))
 
-	print("\n=== Las 42 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 43: reserva_insumo en refinerías y central termoeléctrica ===")
+	var c43: Node = CiudadScript.new()
+	var e43: Node = EconomiaScript.new()
+	e43.ciudad = c43
+	assert(e43.VALORES_RESERVA_INSUMO == [0.0, 50.0, 100.0, 250.0, 500.0])
+
+	var esq_aserradero := Vector2i(10, 10)
+	e43.registrar_puesto(esq_aserradero, "aserradero", 5, 5, {})
+	assert(e43.obtener_reserva_insumo(esq_aserradero) == 0.0, "reserva inicial es 0")
+
+	# Ciclar reserva
+	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 50.0)
+	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 100.0)
+	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 250.0)
+	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 500.0)
+	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 0.0, "vuelve a 0")
+	e43.establecer_reserva_insumo(esq_aserradero, 100.0)
+	assert(e43.obtener_reserva_insumo(esq_aserradero) == 100.0)
+
+	# Insumos a cargar respetando la reserva
+	c43.almacen["madera"].cantidad = 130.0
+	# Capacidad de aserradero es 1000, CAPACIDAD_CARGA es 30.
+	# Disponible en ciudad: 130 - 100 = 30. Carga = min(30, 30) = 30.
+	var plan1: Dictionary = e43.insumos_a_cargar(esq_aserradero)
+	assert(is_equal_approx(plan1.get("madera", 0.0), 30.0))
+
+	# Si ciudad tiene 115 de madera y reserva es 100: disponible = 15 < 30. Carga = 15.
+	c43.almacen["madera"].cantidad = 115.0
+	var plan2: Dictionary = e43.insumos_a_cargar(esq_aserradero)
+	assert(is_equal_approx(plan2.get("madera", 0.0), 15.0))
+
+	# Si ciudad tiene 100 o menos de madera y reserva es 100: disponible = 0. No carga nada.
+	c43.almacen["madera"].cantidad = 90.0
+	var plan3: Dictionary = e43.insumos_a_cargar(esq_aserradero)
+	assert(plan3.is_empty(), "bajo la reserva no se cargan insumos")
+
+	# Prueba con fábrica de bloques y piedra
+	var esq_fabrica := Vector2i(20, 20)
+	e43.registrar_puesto(esq_fabrica, "fabrica_bloques", 5, 6, {})
+	e43.establecer_reserva_insumo(esq_fabrica, 50.0)
+	c43.almacen["piedra"].cantidad = 60.0
+	var plan_fb: Dictionary = e43.insumos_a_cargar(esq_fabrica)
+	assert(is_equal_approx(plan_fb.get("piedra", 0.0), 10.0), "solo puede cargar 10 de piedra dejando 50 de reserva")
+
+	# Prueba con central termoeléctrica
+	var esq_termo := Vector2i(30, 30)
+	e43.registrar_puesto(esq_termo, "central_termoelectrica", 5, 5, {})
+	e43.establecer_reserva_insumo(esq_termo, 250.0)
+	c43.almacen["carbon"].cantidad = 260.0
+	var plan_termo: Dictionary = e43.insumos_a_cargar(esq_termo)
+	assert(is_equal_approx(plan_termo.get("carbon", 0.0), 10.0), "central termoeléctrica solo carga 10 de carbón")
+
+	print("\n=== Las 43 pruebas de Economia pasaron correctamente ===")

@@ -354,4 +354,18 @@ func ejecutar_pruebas() -> void:
 			if VoxelWorld.es_puerto(bloque):
 				assert(pos.y == 4, "%s: puerto %s en pos %s debe estar en y=4" % [tipo_p, bloque, str(pos)])
 
-	print("\n=== Las 16 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 17: plantilla de fabrica_bloques (5x6, bloque_piedra, entrada/salida, baul y chimenea) ===")
+	assert(PlantillasPuesto.MATERIAL.get("fabrica_bloques") == "bloque_piedra")
+	assert(PlantillasPuesto.dimensiones("fabrica_bloques") == Vector2i(5, 6))
+	var celdas_fb: Dictionary = PlantillasPuesto.celdas("fabrica_bloques", 0)
+	var tiene_entrada_fb := false
+	var tiene_baul_fb := false
+	for b in celdas_fb.values():
+		if b == "puerta_inferior":
+			tiene_entrada_fb = true
+		if b == "baul":
+			tiene_baul_fb = true
+	assert(tiene_entrada_fb and tiene_baul_fb, "fabrica_bloques debe tener puertas y baul")
+	assert(PlantillasPuesto.PLANTILLAS["fabrica_bloques"].get("chimenea") == Vector2i(2, 3), "chimenea en (2,3)")
+
+	print("\n=== Las 17 pruebas de PlantillasPuesto pasaron correctamente ===")

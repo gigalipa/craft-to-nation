@@ -15,9 +15,10 @@
 11. ✅ (2026-10-12) **Ajustes de industria, logística y energía:** acarreo de 150 unidades de carbón a central termoeléctrica si stock local < 500 (reserva 500) o abastecimiento 100% por ducto en modos líquidos; partición estricta de refinería petrolera (400 crudo / 600 combustible reservado); y presencia continua de aprendices y trabajadores en interiores.
 12. ✅ (2026-10-12) **Interfaz modal de energía (`VentanaEnergia.gd`):** botón interactivo de energía en barra superior, ventana modal con balance global, cobertura, listas de generadores/consumidores y navegación por clic con teletransporte de cámara y panel de edificio.
 13. ✅ (2026-10-12) **Pathfinding ponderado por vías:** coste de terreno natural = 8, vía de tierra pisada = 3, guiando a colonos por rutas construidas.
-14. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial).
-15. Bombas de extracción directa en fuentes naturales superficiales de agua.
-16. Cerrar los pendientes menores de la Fase 3 y hacer una pasada de balance jugando antes de iniciar Fase 4.
+14. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial; permanece pendiente hasta que los edificios civiles tengan funciones automatizadas).
+15. ✅ (2026-10-12) **Extracción de fluidos y estaciones de bombeo:** La estación de bombeo (`estacion_bombeo`) ya existe y cumple la extracción directa desde cuerpos de agua naturales superficiales (con muelle sobre 2+ bloques de agua y `puerto_agua_out`). Por diseño, no existen afloramientos naturales de crudo superficial, por lo que no se utilizan estaciones de bombeo para crudo; el crudo se extrae exclusivamente en el subsuelo profundo mediante el centro de extracción (`centro_extraccion`).
+16. **Control de cuotas y reservas de refinamiento en industrias (aserradero, siderúrgica, fábrica de bloques, etc.):** selector/umbral de reserva de materia prima o cuota de producción para evitar que las industrias consuman el 100% de la materia prima (ej. hierro o madera), permitiendo reservar insumos para la construcción de bloques estructurales (`estructura_hierro`, tablas, etc.).
+17. **Pasada de balance en partida de larga duración:** balancear recolección, consumo y refinamiento de recursos jugando en vivo tras implementar el control de cuotas, certificando la economía antes de iniciar Fase 4 (combate y tropas).
 
 ## Estado detallado e historial
 
@@ -179,9 +180,9 @@ Pueden intercalarse en cualquier momento.
 - Cauces de río sinuosos (hoy solo ejes ortogonales del grid).
 - ~~Corrección de pathfinding para dar mayor prioridad al uso de rutas~~ — ✅ resuelto (2026-10-12) con coste 8 natural vs 3 vía.
 - Percentil de nivel de mar dependiente de un "tipo de mundo" (concepto sin diseñar aún).
-- Restaurar el terreno excavado al deconstruir un edificio.
+- ~~Restaurar el terreno excavado al deconstruir un edificio~~ — ✅ Resuelto por diseño: la mecánica queda tal como está; el terreno excavado permanece tal como se haya cavado para la colocación del edificio (la terraformación es permanente).
 - Revisar el dithering de Alpha Hash en ventanas cuando exista una textura real.
-- Devolver "Agregar todo" a `VentanaBaul` solo en los baúles dentro de un edificio de almacén y en los del núcleo urbano, que son los que realmente surten de recursos a la ciudad (el botón se quitó de todos los baúles el 2026-10-01; `Economia.agregar_deposito()` sigue disponible).
+- ~~Devolver "Agregar todo" a `VentanaBaul` solo en los baúles dentro de un edificio de almacén y en los del núcleo urbano~~ — ✅ Resuelto por diseño: no habrá botón de "agregar todo" en los baúles de puestos periféricos ni refinerías; el comportamiento actual (transferencia individual y extracción) es definitivo.
 
 ### Después de cerrar la Fase 3
 

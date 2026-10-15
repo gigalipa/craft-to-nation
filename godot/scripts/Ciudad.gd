@@ -236,6 +236,7 @@ func _init() -> void:
 		"acero": Recurso.new("Acero", 0, LIMITE_BASE),  # lo produce la siderúrgica (ver Economia.gd)
 		"mineral_refinado": Recurso.new("Mineral refinado", 0, LIMITE_BASE),  # refinería de tierras raras
 		"tablas": Recurso.new("Tablas", 0, LIMITE_BASE),  # aserradero; cuentan como madera (consumir_costo())
+		"bloques_piedra": Recurso.new("Bloques de piedra", 0, LIMITE_BASE),  # fábrica de bloques; cuentan como piedra
 		"agua": Recurso.new("Agua", 0, LIMITE_BASE),
 		"crudo": Recurso.new("Crudo", 0, LIMITE_BASE),
 		"combustible": Recurso.new("Combustible", 0, LIMITE_BASE),
@@ -246,31 +247,47 @@ func _init() -> void:
 
 ## Cobra "monto" de "recurso" del stock central devolviendo un desglose {recurso: cantidad}
 ## de lo efectivamente descontado, o {} si no alcanza. Para "madera", cobra primero con tablas
-## y el remanente con madera cruda.
+## y el remanente con madera cruda. Para "piedra", cobra primero con bloques_piedra y el remanente con piedra.
 func consumir_costo_con_detalle(recurso: String, monto: float) -> Dictionary:
-	if recurso != "madera":
+	if recurso == "madera":
+		var tablas: Recurso = almacen["tablas"]
+		var madera: Recurso = almacen["madera"]
+		if tablas.cantidad + madera.cantidad < monto:
+			return {}
+		var de_tablas: float = minf(tablas.cantidad, monto)
+		var de_madera: float = monto - de_tablas
+		tablas.cantidad -= de_tablas
+		madera.cantidad -= de_madera
+		var desglose: Dictionary = {}
+		if de_tablas > 0.0:
+			desglose["tablas"] = de_tablas
+		if de_madera > 0.0:
+			desglose["madera"] = de_madera
+		return desglose
+	elif recurso == "piedra":
+		var bloques: Recurso = almacen["bloques_piedra"]
+		var piedra: Recurso = almacen["piedra"]
+		if bloques.cantidad + piedra.cantidad < monto:
+			return {}
+		var de_bloques: float = minf(bloques.cantidad, monto)
+		var de_piedra: float = monto - de_bloques
+		bloques.cantidad -= de_bloques
+		piedra.cantidad -= de_piedra
+		var desglose: Dictionary = {}
+		if de_bloques > 0.0:
+			desglose["bloques_piedra"] = de_bloques
+		if de_piedra > 0.0:
+			desglose["piedra"] = de_piedra
+		return desglose
+	else:
 		if not almacen.has(recurso) or (almacen[recurso] as Recurso).cantidad < monto:
 			return {}
 		(almacen[recurso] as Recurso).consumir(monto)
 		return {recurso: monto}
-	var tablas: Recurso = almacen["tablas"]
-	var madera: Recurso = almacen["madera"]
-	if tablas.cantidad + madera.cantidad < monto:
-		return {}
-	var de_tablas: float = minf(tablas.cantidad, monto)
-	var de_madera: float = monto - de_tablas
-	tablas.cantidad -= de_tablas
-	madera.cantidad -= de_madera
-	var desglose: Dictionary = {}
-	if de_tablas > 0.0:
-		desglose["tablas"] = de_tablas
-	if de_madera > 0.0:
-		desglose["madera"] = de_madera
-	return desglose
 
 
-## Cobra "monto" de "recurso" del stock central (true si alcanzó; false y sin cobrar si no). Las
-## tablas cuentan como madera (GDD Sec. 4): un costo en madera se paga primero con tablas y el resto con madera.
+## Cobra "monto" de "recurso" del stock central (true si alcanzó; false y sin cobrar si no).
+## Las tablas cuentan como madera y los bloques de piedra cuentan como piedra.
 func consumir_costo(recurso: String, monto: float) -> bool:
 	return not consumir_costo_con_detalle(recurso, monto).is_empty()
 
@@ -393,7 +410,7 @@ func _recalcular_instalaciones() -> void:
 
 
 ## Verifica si el stock alcanza para pagar todos los recursos de "costos" {recurso: cantidad}.
-## Las tablas cuentan como madera si está presente ese recurso.
+## Las tablas cuentan como madera y los bloques de piedra cuentan como piedra.
 func puede_pagar(costos: Dictionary) -> bool:
 	for recurso in costos:
 		if not almacen.has(recurso):
@@ -401,9 +418,24 @@ func puede_pagar(costos: Dictionary) -> bool:
 		var cant: float = (almacen[recurso] as Recurso).cantidad
 		if recurso == "madera" and almacen.has("tablas"):
 			cant += (almacen["tablas"] as Recurso).cantidad
+		elif recurso == "piedra" and almacen.has("bloques_piedra"):
+			cant += (almacen["bloques_piedra"] as Recurso).cantidad
 		if cant < float(costos[recurso]):
 			return false
 	return true
+
+
+## Devuelve un diccionario con las cantidades efectivas de los recursos centrales,
+## unificando los recursos procesados equivalentes (tablas cuentan como madera, bloques_piedra como piedra).
+func almacen_general() -> Dictionary:
+	var resumen: Dictionary = {}
+	for clave in almacen:
+		resumen[clave] = (almacen[clave] as Recurso).cantidad
+	if almacen.has("tablas"):
+		resumen["madera"] = resumen.get("madera", 0.0) + (almacen["tablas"] as Recurso).cantidad
+	if almacen.has("bloques_piedra"):
+		resumen["piedra"] = resumen.get("piedra", 0.0) + (almacen["bloques_piedra"] as Recurso).cantidad
+	return resumen
 
 
 ## Cobro atómico: valida primero que alcance para todo el diccionario; si falta

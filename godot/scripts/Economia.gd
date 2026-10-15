@@ -40,6 +40,9 @@ const SIN_SUELO := -1
 ## los puestos más lejanos rinden menos.
 const CAPACIDAD_CARGA := 150.0
 
+## Valores admisibles para la reserva de insumo en el almacén central (Esquema A)
+const VALORES_RESERVA_INSUMO: Array[float] = [0.0, 50.0, 100.0, 250.0, 500.0]
+
 ## Mínimo de unidades que justifica un viaje del acarreador de una refinería (retirar insumo
 ## del stock central o recoger producto): evita viajes de 1 unidad. ponytail: un resto menor
 ## de este valor queda en el almacén local hasta acumular más.
@@ -234,6 +237,7 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"crudo_restante": crudo_rest,
 		"investigacion_activa": 0,
 		"investigacion_pausada": false,
+		"reserva_insumo": 0.0,
 	}
 
 
@@ -1021,10 +1025,36 @@ func cambiar_combustible_central(esquina: Vector2i, combustible: String) -> void
 		_liberar_de(esquina, p["acarreadores"].duplicate())
 
 
+func obtener_reserva_insumo(esquina: Vector2i) -> float:
+	if not puestos.has(esquina):
+		return 0.0
+	return float(puestos[esquina].get("reserva_insumo", 0.0))
+
+
+func establecer_reserva_insumo(esquina: Vector2i, valor: float) -> void:
+	if not puestos.has(esquina):
+		return
+	puestos[esquina]["reserva_insumo"] = valor
+
+
+func ciclar_reserva_insumo(esquina: Vector2i) -> float:
+	if not puestos.has(esquina):
+		return 0.0
+	var actual: float = obtener_reserva_insumo(esquina)
+	var idx: int = -1
+	for i in range(VALORES_RESERVA_INSUMO.size()):
+		if is_equal_approx(VALORES_RESERVA_INSUMO[i], actual):
+			idx = i
+			break
+	var siguiente: float = VALORES_RESERVA_INSUMO[(idx + 1) % VALORES_RESERVA_INSUMO.size()] if idx != -1 else VALORES_RESERVA_INSUMO[0]
+	establecer_reserva_insumo(esquina, siguiente)
+	return siguiente
+
+
 ## Qué retiraría ahora un acarreador del stock central para esta refinería: {recurso: cantidad}.
 ## Cada insumo tiene su tope en el almacén local, repartido en la proporción de la receta (así uno
 ## no llena el almacén y deja sin sitio al otro), y la carga total no pasa de CAPACIDAD_CARGA ni
-## del espacio libre. {} si no es refinería o no hay nada que llevar.
+## del espacio libre. Respeta el umbral de reserva_insumo fijado para la refinería/central. {} si no es refinería o no hay nada que llevar.
 ## ponytail: reparto fijo por receta; si el almacén se desbalancea mucho, esto no lo corrige.
 func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 	if not puestos.has(esquina):
@@ -1037,7 +1067,9 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 		if stock_actual >= 500.0 - 1e-9:
 			return {}
 		if ciudad != null and ciudad.almacen.has("carbon") and ciudad.almacen["carbon"].cantidad > 1e-9:
-			var cant: float = minf(CAPACIDAD_CARGA, ciudad.almacen["carbon"].cantidad)
+			var reserva_cen: float = float(p.get("reserva_insumo", 0.0))
+			var disp_cen: float = maxf(0.0, ciudad.almacen["carbon"].cantidad - reserva_cen)
+			var cant: float = minf(CAPACIDAD_CARGA, disp_cen)
 			if cant > 1e-9:
 				return {"carbon": cant}
 		return {}
@@ -1052,12 +1084,15 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 		return {}
 	var plan: Dictionary = {}
 	var total: float = 0.0
+	var reserva: float = float(p.get("reserva_insumo", 0.0))
 	for recurso in entradas:
 		if RECURSOS_LIQUIDOS.has(recurso):
 			continue
 		var parte: float = entradas[recurso] / suma
 		var espacio: float = p["capacidad"] * parte - p["almacen"].get(recurso, 0.0)
-		var cantidad: float = minf(minf(CAPACIDAD_CARGA * parte, espacio), ciudad.almacen[recurso].cantidad)
+		var stock_ciudad: float = ciudad.almacen[recurso].cantidad if (ciudad != null and ciudad.almacen.has(recurso)) else 0.0
+		var disp: float = maxf(0.0, stock_ciudad - reserva)
+		var cantidad: float = minf(minf(CAPACIDAD_CARGA * parte, espacio), disp)
 		if cantidad > 1e-9:
 			plan[recurso] = cantidad
 			total += cantidad

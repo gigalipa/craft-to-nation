@@ -34,6 +34,7 @@ const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
 const VentanaEnergiaScript = preload("res://scripts/VentanaEnergia.gd")
+const VentanaMoralScript = preload("res://scripts/VentanaMoral.gd")
 const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
 const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
 const PanelLamparaScript = preload("res://scripts/PanelLampara.gd")
@@ -78,6 +79,7 @@ var _ventana_poblacion: PanelContainer
 var _ventana_almacen: PanelContainer
 var _ventana_ocupaciones: PanelContainer
 var _ventana_energia: PanelContainer
+var _ventana_moral: PanelContainer
 var _ventana_baul: PanelContainer
 var _notificaciones: Control
 var _contenedor_indicadores: VBoxContainer
@@ -95,6 +97,8 @@ func _init() -> void:
 		dato_pedido.emit(cual)
 		if cual == "energia":
 			abrir_ventana_dato("energia")
+		elif cual == "moral":
+			abrir_ventana_dato("moral")
 	)
 	add_child(_barra_superior)
 	_ventana_poblacion = VentanaPoblacionScript.new()
@@ -106,6 +110,8 @@ func _init() -> void:
 	_ventana_energia = VentanaEnergiaScript.new()
 	_ventana_energia.edificio_pedido.connect(func(esquina: Vector2i) -> void: edificio_pedido.emit(esquina))
 	add_child(_ventana_energia)
+	_ventana_moral = VentanaMoralScript.new()
+	add_child(_ventana_moral)
 	_ventana_almacen = VentanaAlmacenScript.new()
 	add_child(_ventana_almacen)
 	_ventana_baul = VentanaBaulScript.new()
@@ -460,6 +466,8 @@ func abrir_ventana_dato(cual: String) -> void:
 		_ventana_ocupaciones.abrir()
 	elif cual == "energia":
 		_ventana_energia.abrir()
+	elif cual == "moral":
+		_ventana_moral.abrir()
 
 
 func abrir_panel_puesto(esquina: Vector2i) -> void:

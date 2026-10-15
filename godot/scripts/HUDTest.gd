@@ -115,6 +115,7 @@ func ejecutar_pruebas() -> void:
 	probar_ventana_poblacion_empleo()
 	probar_ventana_ocupaciones()
 	await probar_ventana_energia()
+	await probar_ventana_moral()
 	probar_panel_escuela()
 	probar_panel_niveles()
 	probar_panel_extractores_y_refinerias()
@@ -127,6 +128,12 @@ func probar_barra_superior_calculos() -> void:
 	print("=== TEST 1a: BarraSuperior (cálculos estáticos) ===")
 	assert(BarraSuperiorScript.texto_poblacion(38, 48, 5) == "Población: 38/48 (5)")
 	assert(BarraSuperiorScript.fraccion_moral(Ciudad.BONO_MORAL_MAXIMO / 2.0) == 0.5)
+	# Moral y emojis de estado anímico (GDD v3.56)
+	assert(BarraSuperiorScript.emoji_moral(15.0) == "😡", "moral < 20 debe ser enojado")
+	assert(BarraSuperiorScript.emoji_moral(25.0) == "🙁", "20 <= moral < 35 debe ser triste")
+	assert(BarraSuperiorScript.emoji_moral(50.0) == "😐", "35 <= moral <= 65 debe ser neutro")
+	assert(BarraSuperiorScript.emoji_moral(80.0) == "🙂", "moral > 65 debe ser feliz")
+	assert(BarraSuperiorScript.texto_moral(75.0) == "🙂 75%", "texto de moral formateado con emoji")
 	# Moral fuera de rango: la barra se acota a 0-1.
 	assert(BarraSuperiorScript.fraccion_moral(-3.0) == 0.0)
 	assert(BarraSuperiorScript.fraccion_moral(Ciudad.BONO_MORAL_MAXIMO * 4.0) == 1.0)
@@ -550,10 +557,78 @@ func probar_ventana_energia() -> void:
 	Economia.balance_energia = balance_previo
 
 
+func probar_ventana_moral() -> void:
+	print("=== TEST 1g: VentanaMoral modal interactiva y boton en topbar ===")
+	const VentanaMoralScript = preload("res://scripts/VentanaMoral.gd")
+
+	# 1. Probar clic en moral desde HUD
+	var hud: CanvasLayer = HUDScript.new()
+	var oxigeno := Label.new()
+	oxigeno.name = "OxigenoLabel"
+	hud.add_child(oxigeno)
+	add_child(hud)
+	await get_tree().process_frame
+
+	assert(not hud._ventana_moral.visible and not hud._ventana_moral.abierta)
+	hud._barra_superior.moral.pressed.emit()
+	assert(hud._ventana_moral.visible and hud._ventana_moral.abierta, "clic en boton moral de barra superior debe abrir VentanaMoral")
+	hud.queue_free()
+
+	# 2. Probar widget VentanaMoral de forma aislada
+	var ventana: PanelContainer = VentanaMoralScript.new()
+	add_child(ventana)
+	assert(not ventana.visible and not ventana.abierta)
+	assert(ventana.anchor_left == 0.5 and ventana.anchor_top == 0.5, "VentanaMoral debe estar anclada al centro")
+	assert(ventana.custom_minimum_size == Vector2(500, 420), "VentanaMoral debe tener tamaño 500x420")
+
+	ventana.abrir()
+	assert(ventana.visible and ventana.abierta)
+
+	# 3. Datos de moral reflejados
+	Ciudad.moral = 85.0
+	Ciudad.tasa_cambio_moral = 0.5
+	ventana.actualizar()
+	assert("85.0%" in ventana._lbl_moral_val.text and "🙂" in ventana._lbl_moral_val.text)
+	assert("+0.50" in ventana._lbl_tendencia.text)
+	assert("Inmigración activa" in ventana._lbl_migracion.text)
+
+	# Moral crítica
+	Ciudad.moral = 15.0
+	Ciudad.tasa_cambio_moral = -1.5
+	ventana.actualizar()
+	assert("15.0%" in ventana._lbl_moral_val.text and "😡" in ventana._lbl_moral_val.text)
+	assert("Éxodo" in ventana._lbl_migracion.text)
+
+	# 4. Cerrar con tecla Escape
+	var tecla_esc := InputEventKey.new()
+	tecla_esc.keycode = KEY_ESCAPE
+	tecla_esc.pressed = true
+	ventana._unhandled_input(tecla_esc)
+	assert(not ventana.visible and not ventana.abierta, "tecla Esc debe cerrar VentanaMoral")
+
+	# 5. Abrir y cerrar con tecla M
+	ventana.abrir()
+	var tecla_m := InputEventKey.new()
+	tecla_m.keycode = KEY_M
+	tecla_m.pressed = true
+	ventana._unhandled_input(tecla_m)
+	assert(not ventana.visible and not ventana.abierta, "tecla M debe cerrar VentanaMoral")
+
+	ventana.queue_free()
+
+
 func probar_barra_superior() -> void:
 	print("=== TEST 1b: BarraSuperior (widget con Ciudad real) ===")
 	var barra: PanelContainer = BarraSuperiorScript.new()
 	add_child(barra)
+
+	# Verificación de moral interactiva (Button)
+	assert(barra.moral is Button, "moral debe ser un Button interactivo")
+	var pedidos_moral := []
+	barra.dato_pedido.connect(func(c: String) -> void: pedidos_moral.append(c))
+	barra.moral.pressed.emit()
+	assert(pedidos_moral.has("moral"), "clic en boton moral debe emitir dato_pedido('moral')")
+
 	var respaldo := {}
 	for clave in Ciudad.almacen:
 		respaldo[clave] = Ciudad.almacen[clave].tasa_neta_promedio

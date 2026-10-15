@@ -18,7 +18,7 @@ const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const ERA_ACTUAL := "Era 1 · Prehistórica"
 
 var poblacion := TemaHUD.etiqueta()
-var moral := TemaHUD.etiqueta()
+var moral := Button.new()
 var comida := TemaHUD.etiqueta()
 var almacen_total := Button.new()
 var critico := TemaHUD.etiqueta()
@@ -31,6 +31,20 @@ var _barra_moral := ProgressBar.new()
 
 static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String:
 	return "Población: %d/%d (%d)" % [censo, camas, desempleados]
+
+
+static func emoji_moral(m: float) -> String:
+	if m < 20.0:
+		return "😡"
+	elif m < 35.0:
+		return "🙁"
+	elif m <= 65.0:
+		return "😐"
+	return "🙂"
+
+
+static func texto_moral(m: float) -> String:
+	return "%s %.0f%%" % [emoji_moral(m), m]
 
 
 static func texto_comida(cantidad: float, limite: float, tasa: float) -> String:
@@ -114,7 +128,13 @@ func _ready() -> void:
 
 	grupo_izq.add_child(_separador())
 
+	TemaHUD.estilizar_boton(moral)
+	moral.custom_minimum_size = Vector2(0, 28)
+	moral.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	moral.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	moral.pressed.connect(func() -> void: dato_pedido.emit("moral"))
 	grupo_izq.add_child(moral)
+
 	_barra_moral.show_percentage = false
 	_barra_moral.max_value = 1.0
 	_barra_moral.custom_minimum_size = Vector2(70, 10)
@@ -192,8 +212,17 @@ func actualizar() -> void:
 	poblacion.text = texto_poblacion(Ciudad.censo_total, Ciudad.capacidad_camas_construida, desempleados)
 	var excede: bool = Ciudad.vivienda_ocupada > Ciudad.capacidad_camas_construida
 	poblacion.add_theme_color_override("font_color", TemaHUD.INVALIDO if excede else TemaHUD.TEXTO)
-	moral.text = "Moral: %+.1f" % Ciudad.bono_moral_variedad
-	_barra_moral.value = fraccion_moral(Ciudad.bono_moral_variedad)
+	var m: float = Ciudad.moral if ("moral" in Ciudad) else 75.0
+	moral.text = texto_moral(m)
+	_barra_moral.value = clampf(m / 100.0, 0.0, 1.0)
+	if m < 20.0:
+		moral.add_theme_color_override("font_color", TemaHUD.INVALIDO)
+	elif m < 35.0:
+		moral.add_theme_color_override("font_color", Color(1.0, 0.65, 0.2))
+	elif m > 65.0:
+		moral.add_theme_color_override("font_color", Color(0.85, 0.95, 0.6))
+	else:
+		moral.add_theme_color_override("font_color", TemaHUD.TEXTO)
 
 	var cantidad_comida := 0.0
 	var limite_comida := 0.0

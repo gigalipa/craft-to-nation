@@ -623,4 +623,23 @@ func ejecutar_pruebas() -> void:
 	Zonificacion.nucleo_declarado = false
 	mundo19.free()
 
-	print("\n=== Las 19 pruebas de previsualización de puestos pasaron correctamente ===")
+	print("\n=== TEST 20: fabrica_bloques es puesto industrial (requiere influencia y zona industrial) ===")
+	Recoleccion.puestos.clear()
+	var mundo20: Node = _mundo_plano()
+	var esq_fb := Vector2i(24, 18)
+	var cam_fb: Camera3D = _camara(mundo20, "fabrica_bloques")
+
+	# Fuera de influencia: rechaza
+	var ev_fb: Dictionary = cam_fb._evaluar_puesto(esq_fb)
+	assert("zona de influencia" in cam_fb._mensaje_rechazo_puesto(ev_fb))
+
+	# Dentro de influencia y zona industrial: acepta
+	Zonificacion.declarar_nucleo([Vector2i(30, 30), Vector2i(31, 30), Vector2i(30, 31), Vector2i(31, 31)])
+	Zonificacion.pintar_zona(esq_fb, esq_fb + Vector2i(5, 6), Zonificacion.ZONAS_PINTABLES[1])
+	ev_fb = cam_fb._evaluar_puesto(esq_fb)
+	assert(cam_fb._mensaje_rechazo_puesto(ev_fb) == "", "sobre zona industrial debe ser válido: %s" % cam_fb._mensaje_rechazo_puesto(ev_fb))
+	cam_fb.free()
+	Zonificacion.nucleo_declarado = false
+	mundo20.free()
+
+	print("\n=== Las 20 pruebas de previsualización de puestos pasaron correctamente ===")

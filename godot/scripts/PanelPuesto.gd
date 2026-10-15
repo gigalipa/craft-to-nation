@@ -19,6 +19,7 @@ const NOMBRES_PUESTO := {
 	"siderurgica": "Siderúrgica",
 	"refineria_tierras_raras": "Refinería de tierras raras",
 	"aserradero": "Aserradero",
+	"fabrica_bloques": "Fábrica de bloques",
 	"carbonera": "Carbonera",
 	"escuela_tecnica": "Escuela técnica",
 	"escuela_especialistas": "Escuela de especialistas",
@@ -67,6 +68,8 @@ var _distancia := TemaHUD.etiqueta()
 var _demoler := Button.new()
 var _dialogo_demoler := ConfirmationDialog.new()
 var _filas := {}  # rol -> {"fila": HBoxContainer, "cantidad": Label, "menos": Button, "mas": Button, "libres": Label}
+var _fila_reserva := HBoxContainer.new()
+var _btn_reserva := Button.new()
 
 var _caja_investigacion: VBoxContainer
 var _lbl_inv_estado: Label
@@ -124,6 +127,19 @@ func _ready() -> void:
 	caja.add_child(_crudo_restante)
 	caja.add_child(_almacen)
 	caja.add_child(_produccion)
+
+	_fila_reserva.add_theme_constant_override("separation", 6)
+	var lbl_res := TemaHUD.etiqueta("Reserva central:")
+	_fila_reserva.add_child(lbl_res)
+	TemaHUD.estilizar_boton(_btn_reserva)
+	_btn_reserva.pressed.connect(func() -> void:
+		if Economia.tiene_puesto(esquina):
+			Economia.ciclar_reserva_insumo(esquina)
+			_actualizar()
+	)
+	_fila_reserva.add_child(_btn_reserva)
+	caja.add_child(_fila_reserva)
+
 	caja.add_child(_energia)
 
 	_caja_investigacion = VBoxContainer.new()
@@ -374,6 +390,13 @@ func _actualizar() -> void:
 	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica" and puesto["tipo"] != "almacen"
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
+
+	if Economia.es_refineria(esquina) or puesto["tipo"] == "central_termoelectrica":
+		_fila_reserva.visible = true
+		var val_res: float = Economia.obtener_reserva_insumo(esquina)
+		_btn_reserva.text = "%.0f u" % val_res if val_res > 0.0 else "Sin reserva (0 u)"
+	else:
+		_fila_reserva.visible = false
 
 	if puesto["tipo"] == "central_termoelectrica":
 		_selector_combustible.visible = true

@@ -36,6 +36,12 @@ class MundoBosqueFalso:
 	var arboles = preload("res://scripts/GeneradorArbol.gd").new()
 
 
+
+func _ciudad_nueva() -> Node:
+	var c: Node = CiudadScript.new()
+	c.moral = 50.0  # Moral neutral (1.0x) para pruebas unitarias previas
+	return c
+
 func _ready() -> void:
 	ejecutar_pruebas()
 
@@ -99,7 +105,7 @@ func _mundo_con_arbol() -> Array:
 
 func ejecutar_pruebas() -> void:
 	print("=== TEST 1: registrar_puesto() y huella_de() ===")
-	var e1: Node = _nueva(CiudadScript.new())
+	var e1: Node = _nueva(_ciudad_nueva())
 	assert(e1.tiene_puesto(ESQ) and not e1.tiene_puesto(Vector2i(0, 0)))
 	assert(e1.huella_de(ESQ).size() == 12 and e1.huella_de(ESQ).has(Vector2i(12, 13)))
 	assert(e1.huella_de(Vector2i(0, 0)).is_empty())
@@ -121,7 +127,7 @@ func ejecutar_pruebas() -> void:
 	assert(e1.ultimo_de(Vector2i(0, 0), "recolector") == -1)
 
 	print("\n=== TEST 3: solo producen los recolectores PRESENTES ===")
-	var e3: Node = _nueva(CiudadScript.new())
+	var e3: Node = _nueva(_ciudad_nueva())
 	e3.asignar(ESQ, "recolector", 1)
 	e3.asignar(ESQ, "recolector", 2)
 	e3.asignar(ESQ, "acarreador", 3)
@@ -140,7 +146,7 @@ func ejecutar_pruebas() -> void:
 	assert(e3.trabajadores_de(ESQ)["presentes"] == 1)
 
 	print("\n=== TEST 4: el almacén local tiene tope (el de su tipo de puesto) y el exceso se pierde ===")
-	var e4: Node = _nueva(CiudadScript.new())
+	var e4: Node = _nueva(_ciudad_nueva())
 	e4.registrar_puesto(Vector2i(50, 50), "mina", 5, 5, {"hierro": 30.0, "piedra": 10.0})
 	e4.asignar(Vector2i(50, 50), "recolector", 1)
 	e4.marcar_presente(1, true)
@@ -152,7 +158,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(local4["hierro"] / local4["piedra"], 3.0), "conserva la proporción de la tasa")
 
 	print("\n=== TEST 5: caza, frutos, pesca y algas suman en comida ===")
-	var e5: Node = _nueva(CiudadScript.new())
+	var e5: Node = _nueva(_ciudad_nueva())
 	e5.registrar_puesto(Vector2i(60, 60), "caza_recoleccion", 4, 4, {"caza": 7.5, "recoleccion": 1.25})
 	e5.asignar(Vector2i(60, 60), "recolector", 1)
 	e5.marcar_presente(1, true)
@@ -166,7 +172,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e5.almacen_local(Vector2i(70, 70))["comida"], 2.8))
 
 	print("\n=== TEST 6: recoger() entrega carga completa, o el resto si ya no hay recolectores ===")
-	var e6: Node = _nueva(CiudadScript.new())
+	var e6: Node = _nueva(_ciudad_nueva())
 	e6.asignar(ESQ, "recolector", 1)
 	e6.marcar_presente(1, true)
 	for i in range(3):
@@ -186,7 +192,7 @@ func ejecutar_pruebas() -> void:
 	assert(e6.recoger(Vector2i(0, 0), 20.0).is_empty(), "puesto inexistente")
 
 	print("\n=== TEST 7: recoger() reparte la carga entre recursos sin pasarse ===")
-	var e7: Node = _nueva(CiudadScript.new())
+	var e7: Node = _nueva(_ciudad_nueva())
 	e7.registrar_puesto(Vector2i(50, 50), "mina", 5, 5, {"hierro": 12.0, "piedra": 12.0})
 	e7.asignar(Vector2i(50, 50), "recolector", 1)
 	e7.marcar_presente(1, true)
@@ -203,7 +209,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(quedan7, 28.0))
 
 	print("\n=== TEST 8: entregar() suma al stock central y respeta su límite ===")
-	var ciudad8: Node = CiudadScript.new()
+	var ciudad8: Node = _ciudad_nueva()
 	var e8: Node = _nueva(ciudad8)
 	var antes8: float = ciudad8.almacen["madera"].cantidad
 	e8.entregar({"madera": 20.0, "tierras_raras": 4.0})
@@ -213,7 +219,7 @@ func ejecutar_pruebas() -> void:
 	assert(ciudad8.almacen["madera"].cantidad == ciudad8.almacen["madera"].limite, "lo que no cabe se pierde")
 
 	print("\n=== TEST 9: quitar_puesto() libera a los trabajadores y avisa ===")
-	var e9: Node = _nueva(CiudadScript.new())
+	var e9: Node = _nueva(_ciudad_nueva())
 	e9.asignar(ESQ, "recolector", 1)
 	e9.asignar(ESQ, "acarreador", 2)
 	var avisados := []
@@ -227,7 +233,7 @@ func ejecutar_pruebas() -> void:
 	e9.quitar_puesto(Vector2i(0, 0))  # inexistente: no hace nada
 
 	print("\n=== TEST 10: simular_hora() se dispara con Ciudad.tick_simulado ===")
-	var ciudad10: Node = CiudadScript.new()
+	var ciudad10: Node = _ciudad_nueva()
 	ciudad10.migracion_activa = false
 	var e10: Node = _nueva(ciudad10)
 	e10._ready()  # conecta el tick (fuera del árbol no se llama solo)
@@ -239,7 +245,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 11: una mina consume sus bloques y se agota ===")
 	var mundo11: Node = _mundo_con_veta()
 	var e11: Node = EconomiaScript.new()
-	e11.ciudad = CiudadScript.new()
+	e11.ciudad = _ciudad_nueva()
 	e11.mundo = mundo11
 	var esq11 := Vector2i(50, 50)
 	e11.registrar_puesto(esq11, "mina", 5, 5, {"hierro": 12.0}, {"centro": Vector2i(500, 500), "altura": 10})
@@ -265,7 +271,7 @@ func ejecutar_pruebas() -> void:
 	var mundo12: Node = datos12[0]
 	var id12: int = datos12[1]
 	var e12: Node = EconomiaScript.new()
-	e12.ciudad = CiudadScript.new()
+	e12.ciudad = _ciudad_nueva()
 	e12.mundo = mundo12
 	var entorno12 := {"centro": Vector2i(600, 600), "altura": 5, "radio_arboles": 12, "arboles_ref": 1}
 	e12.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 12.0}, entorno12)
@@ -286,7 +292,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 13: si el avatar tala el árbol o mina el bloque en curso, el puesto no produce gratis ===")
 	var datos13: Array = _mundo_con_arbol()
 	var e13: Node = EconomiaScript.new()
-	e13.ciudad = CiudadScript.new()
+	e13.ciudad = _ciudad_nueva()
 	e13.mundo = datos13[0]
 	e13.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 12.0}, {"centro": Vector2i(600, 600), "altura": 5, "radio_arboles": 12, "arboles_ref": 1})
 	e13.asignar(ESQ, "recolector", 1)
@@ -297,7 +303,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e13.almacen_local(ESQ)["madera"], 12.0), "el bloque en curso ya no existe: no suma")
 	var mundo13b: Node = _mundo_con_veta()
 	var e13b: Node = EconomiaScript.new()
-	e13b.ciudad = CiudadScript.new()
+	e13b.ciudad = _ciudad_nueva()
 	e13b.mundo = mundo13b
 	e13b.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
 	e13b.asignar(ESQ, "recolector", 1)
@@ -311,7 +317,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 14: las tasas se recalculan cada TICKS_RECALCULO horas ===")
 	assert(EconomiaScript.TICKS_RECALCULO == 6)
 	var e14: Node = EconomiaScript.new()
-	e14.ciudad = CiudadScript.new()
+	e14.ciudad = _ciudad_nueva()
 	e14.mundo = _mundo_con_veta()
 	# Tasa desactualizada a propósito (1/h): al recalcular, hierro vale 5 (1 tipo x tasa base 5).
 	e14.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 1.0}, {"centro": Vector2i(500, 500), "altura": 10})
@@ -325,7 +331,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 15: recalcular_tasas() con el área agotada deja la producción en 0, y caza/recolección sigue los árboles ===")
 	var e15: Node = EconomiaScript.new()
-	e15.ciudad = CiudadScript.new()
+	e15.ciudad = _ciudad_nueva()
 	var mundo15: Node = _mundo_con_veta()
 	e15.mundo = mundo15
 	e15.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
@@ -343,7 +349,7 @@ func ejecutar_pruebas() -> void:
 	for i in range(1, 5):
 		ids15.append(mundo_bosque.arboles.registrar([Vector3i(i, 5, i)], 3))
 	var e15b: Node = EconomiaScript.new()
-	e15b.ciudad = CiudadScript.new()
+	e15b.ciudad = _ciudad_nueva()
 	e15b.mundo = mundo_bosque
 	var esq15 := Vector2i(70, 70)
 	var entorno15: Dictionary = Recoleccion.entorno_de_puesto("caza_recoleccion", mundo_bosque, Vector2i(0, 0), 5)
@@ -359,7 +365,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 16: con el área agotada se acarrea el resto aunque haya recolectores; produciendo, la carga parcial se rechaza ===")
 	var mundo16: Node = _mundo_con_veta()
 	var e16: Node = EconomiaScript.new()
-	e16.ciudad = CiudadScript.new()
+	e16.ciudad = _ciudad_nueva()
 	e16.mundo = mundo16
 	e16.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
 	e16.asignar(ESQ, "recolector", 1)
@@ -375,7 +381,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 17: un bloque en curso reemplazado por uno del jugador no se retira ni rinde ===")
 	var mundo17: Node = _mundo_con_veta()
 	var e17: Node = EconomiaScript.new()
-	e17.ciudad = CiudadScript.new()
+	e17.ciudad = _ciudad_nueva()
 	e17.mundo = mundo17
 	e17.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
 	e17.asignar(ESQ, "recolector", 1)
@@ -389,7 +395,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e17.almacen_local(ESQ)["hierro"], 10.0), "solo rindió el natural")
 
 	print("\n=== TEST 18: un puesto se registra activo, sin agotar y, sin celda de servicio ni depósito, con los valores «ninguno» ===")
-	var e18: Node = _nueva(CiudadScript.new())
+	var e18: Node = _nueva(_ciudad_nueva())
 	assert(e18.puestos[ESQ]["activo"] and not e18.puestos[ESQ]["agotado"])
 	assert(e18.servicio_de(ESQ) == EconomiaScript.SIN_SERVICIO, "sin celda de servicio, Colonos usa el anillo de la huella")
 	assert(e18.puestos[ESQ]["deposito"] == EconomiaScript.SIN_DEPOSITO)
@@ -397,7 +403,7 @@ func ejecutar_pruebas() -> void:
 	assert(e18.servicio_de(Vector2i(0, 0)) == EconomiaScript.SIN_SERVICIO, "puesto inexistente")
 
 	print("\n=== TEST 19: desactivar_puesto() libera a todos, es idempotente, pasa el almacén al núcleo y no admite contratar ===")
-	var ciudad19: Node = CiudadScript.new()
+	var ciudad19: Node = _ciudad_nueva()
 	var madera19: float = ciudad19.almacen["madera"].cantidad
 	var e19: Node = _nueva(ciudad19)
 	e19.asignar(ESQ, "recolector", 1)
@@ -422,7 +428,7 @@ func ejecutar_pruebas() -> void:
 	e19.desactivar_puesto(Vector2i(0, 0))  # inexistente: no falla
 
 	print("\n=== TEST 20: retirar_deposito() pasa al stock central solo lo que cabe y deja el resto en el puesto ===")
-	var ciudad20: Node = CiudadScript.new()
+	var ciudad20: Node = _ciudad_nueva()
 	var e20: Node = EconomiaScript.new()
 	e20.ciudad = ciudad20
 	e20.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11), 5)
@@ -441,7 +447,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 21: al agotarse el área se liberan los recolectores, los acarreadores siguen hasta vaciar el almacén y reactivar recalcula el agotamiento ===")
 	var mundo21: Node = _mundo_con_veta()
 	var e21: Node = EconomiaScript.new()
-	e21.ciudad = CiudadScript.new()
+	e21.ciudad = _ciudad_nueva()
 	e21.mundo = mundo21
 	e21.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
 	e21.asignar(ESQ, "recolector", 1)
@@ -475,7 +481,7 @@ func ejecutar_pruebas() -> void:
 	assert(e21.puestos[ESQ]["agotado"] and not e21.asignar(ESQ, "recolector", 5))
 	# Agotamiento con el almacén ya vacío libera a los acarreadores en el mismo recálculo.
 	var e21b: Node = EconomiaScript.new()
-	e21b.ciudad = CiudadScript.new()
+	e21b.ciudad = _ciudad_nueva()
 	e21b.mundo = _mundo_con_veta()
 	e21b.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 10})
 	e21b.asignar(ESQ, "acarreador", 7)
@@ -485,7 +491,7 @@ func ejecutar_pruebas() -> void:
 	assert(e21b.trabajadores_de(ESQ)["acarreadores"] == 0, "agotado y sin almacén: el acarreador también se libera")
 
 	print("\n=== TEST 22: agregar_deposito() pasa al puesto solo lo que cabe en su almacén local y deja el resto en el stock central ===")
-	var ciudad22: Node = CiudadScript.new()
+	var ciudad22: Node = _ciudad_nueva()
 	var e22: Node = EconomiaScript.new()
 	e22.ciudad = ciudad22
 	e22.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11), 5)
@@ -499,7 +505,7 @@ func ejecutar_pruebas() -> void:
 	assert(e22.agregar_deposito(Vector2i(0, 0)).is_empty(), "puesto inexistente")
 
 	print("\n=== TEST 23: retirar_uno()/agregar_uno() mueven de a uno (VentanaBaul, botones -/+) ===")
-	var ciudad23: Node = CiudadScript.new()
+	var ciudad23: Node = _ciudad_nueva()
 	var e23: Node = EconomiaScript.new()
 	e23.ciudad = ciudad23
 	e23.registrar_puesto(ESQ, "maderero", 3, 4, {"madera": 3.0}, {}, Vector2i(11, 9), Vector3i(11, 5, 11), 5)
@@ -521,7 +527,7 @@ func ejecutar_pruebas() -> void:
 	assert(e23.agregar_uno(Vector2i(0, 0), "madera", 1.0) == 0.0, "puesto inexistente")
 
 	print("\n=== TEST 24: la siderúrgica es una refinería con cupo 4, almacén de 1000 y roles técnico/acarreador ===")
-	var ciudad24: Node = CiudadScript.new()
+	var ciudad24: Node = _ciudad_nueva()
 	var e24: Node = _con_siderurgica(ciudad24)
 	assert(e24.es_refineria(ESQ_REF) and not e24.es_refineria(Vector2i(0, 0)))
 	assert(e24.puestos[ESQ_REF]["cupo"] == 4 and e24.puestos[ESQ_REF]["capacidad"] == 1000)
@@ -539,7 +545,7 @@ func ejecutar_pruebas() -> void:
 	assert(e24c.salida_de(Vector2i(60, 60)) == EconomiaScript.SIN_SERVICIO, "sin salida indicada, SIN_SERVICIO")
 
 	print("\n=== TEST 25: refina hierro y carbón en acero según los técnicos presentes, sin producir de la nada ===")
-	var ciudad25: Node = CiudadScript.new()
+	var ciudad25: Node = _ciudad_nueva()
 	var e25: Node = _con_siderurgica(ciudad25)
 	e25.puestos[ESQ_REF]["almacen"] = {"hierro": 40.0, "carbon": 40.0}
 	e25.simular_hora()
@@ -566,7 +572,7 @@ func ejecutar_pruebas() -> void:
 	assert(e25.almacen_local(ESQ_REF) == {"hierro": 20.0, "carbon": 20.0}, "una refinería inactiva no refina")
 
 	print("\n=== TEST 26: helpers de acarreo: cargar insumos del stock central (3:4), descargarlos y recoger el producto ===")
-	var ciudad26: Node = CiudadScript.new()
+	var ciudad26: Node = _ciudad_nueva()
 	var e26: Node = _con_siderurgica(ciudad26)
 	ciudad26.almacen["hierro"].cantidad = 300.0
 	ciudad26.almacen["carbon"].cantidad = 300.0
@@ -602,7 +608,7 @@ func ejecutar_pruebas() -> void:
 	assert(e26.recoger_producto(Vector2i(0, 0), 150.0).is_empty(), "puesto inexistente")
 
 	print("\n=== TEST 27: falta_insumo(), conviene_cargar() y esta_refinando() (humo de la chimenea) ===")
-	var ciudad28: Node = CiudadScript.new()
+	var ciudad28: Node = _ciudad_nueva()
 	var e28: Node = _con_siderurgica(ciudad28)
 	assert(e28.falta_insumo(ESQ_REF), "vacía: le falta insumo")
 	assert(not e28.conviene_cargar(ESQ_REF), "pero sin nada en el stock central no hay viaje")
@@ -632,7 +638,7 @@ func ejecutar_pruebas() -> void:
 	assert(not e28.esta_refinando(Vector2i(0, 0)), "puesto inexistente")
 
 	print("\n=== TEST 28: al deconstruir, el almacén local pasa al núcleo (lo que quepa) ===")
-	var ciudad27: Node = CiudadScript.new()
+	var ciudad27: Node = _ciudad_nueva()
 	var e27: Node = _nueva(ciudad27)
 	var madera27: float = ciudad27.almacen["madera"].cantidad
 	e27.puestos[ESQ]["almacen"] = {"madera": 100.0, "piedra": 50.0}
@@ -640,7 +646,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(ciudad27.almacen["madera"].cantidad, madera27 + 100.0), "la madera pasó al stock central")
 	assert(e27.almacen_local(ESQ).is_empty(), "el almacén local quedó vacío")
 	# Si el stock está casi lleno, solo pasa lo que cabe; el resto se reintenta al quitar el puesto.
-	var ciudad27b: Node = CiudadScript.new()
+	var ciudad27b: Node = _ciudad_nueva()
 	var e27b: Node = _nueva(ciudad27b)
 	ciudad27b.almacen["madera"].cantidad = ciudad27b.almacen["madera"].limite - 30.0
 	e27b.puestos[ESQ]["almacen"] = {"madera": 100.0}
@@ -650,21 +656,21 @@ func ejecutar_pruebas() -> void:
 	e27b.quitar_puesto(ESQ)
 	assert(is_equal_approx(ciudad27b.almacen["madera"].cantidad, 70.0), "al quitar el puesto se reintenta con lo que quedaba")
 	# La siderúrgica devuelve su hierro (y su acero) al núcleo en vez de perderlos.
-	var ciudad27c: Node = CiudadScript.new()
+	var ciudad27c: Node = _ciudad_nueva()
 	var e27c: Node = _con_siderurgica(ciudad27c)
 	e27c.puestos[ESQ_REF]["almacen"] = {"hierro": 300.0, "acero": 40.0}
 	e27c.desactivar_puesto(ESQ_REF)
 	assert(is_equal_approx(ciudad27c.almacen["hierro"].cantidad, 300.0) and is_equal_approx(ciudad27c.almacen["acero"].cantidad, 40.0))
 
 	print("\n=== TEST 29: la escuela técnica forma cohortes: el conteo solo avanza con los 4 aprendices presentes y a las 24 h se gradúan ===")
-	var e29: Node = _con_escuela(CiudadScript.new())
+	var e29: Node = _con_escuela(_ciudad_nueva())
 	assert(e29.es_escuela(ESQ_ESC) and not e29.es_refineria(ESQ_ESC) and not e29.es_escuela(Vector2i(0, 0)))
 	assert(e29.puestos[ESQ_ESC]["cupo"] == 4 and e29.puestos[ESQ_ESC]["capacidad"] == 0, "cupo = cohorte; sin almacén local")
 	assert(e29.roles_de(ESQ_ESC) == ["aprendiz"], "solo aprendices")
 	assert(not e29.asignar(ESQ_ESC, "recolector", 1) and not e29.asignar(ESQ_ESC, "tecnico", 1) and not e29.asignar(ESQ_ESC, "acarreador", 1), "la escuela solo admite aprendices")
-	var e29b: Node = _nueva(CiudadScript.new())
+	var e29b: Node = _nueva(_ciudad_nueva())
 	assert(not e29b.asignar(ESQ, "aprendiz", 9), "un puesto de recolección no admite aprendices")
-	var e29c: Node = _con_siderurgica(CiudadScript.new())
+	var e29c: Node = _con_siderurgica(_ciudad_nueva())
 	assert(not e29c.asignar(ESQ_REF, "aprendiz", 9), "una refinería tampoco")
 	var graduadas29: Array = []
 	e29.cohorte_graduada.connect(func(esquina: Vector2i, ids: Array) -> void: graduadas29.append([esquina, ids]))
@@ -696,7 +702,7 @@ func ejecutar_pruebas() -> void:
 	assert(e29.trabajadores_de(ESQ_ESC) == {"recolectores": 0, "acarreadores": 0, "presentes": 0}, "los 4 ya no trabajan ahí")
 
 	print("\n=== TEST 29b: despedir a un aprendiz reinicia el conteo ===")
-	var e29d: Node = _con_escuela(CiudadScript.new())
+	var e29d: Node = _con_escuela(_ciudad_nueva())
 	for id29d in range(1, 5):
 		e29d.asignar(ESQ_ESC, "aprendiz", id29d)
 		e29d.marcar_presente(id29d, true)
@@ -713,7 +719,7 @@ func ejecutar_pruebas() -> void:
 	assert(Recoleccion.ESCUELAS["escuela_tecnica"]["horas"] == 24)
 	assert(Recoleccion.ESCUELAS["escuela_especialistas"]["horas"] == 48)
 	var e29e: Node = EconomiaScript.new()
-	e29e.ciudad = CiudadScript.new()
+	e29e.ciudad = _ciudad_nueva()
 	e29e.registrar_puesto(ESQ_ESC, "escuela_especialistas", 5, 5, {})
 	assert(e29e.puestos[ESQ_ESC]["cupo"] == 3)
 	for id_esp in range(1, 4):
@@ -760,7 +766,7 @@ func ejecutar_pruebas() -> void:
 	assert(franjas30b[0].has("hierro") and franjas30b[1].is_empty() and franjas30b[2].is_empty(), "a 3-4 de profundidad: solo el nivel 1")
 
 	print("\n=== TEST 31: el nivel del puesto es el rango mínimo de sus recolectores y limita a quién admite ===")
-	var e31: Node = _nueva(CiudadScript.new())
+	var e31: Node = _nueva(_ciudad_nueva())
 	assert(e31.nivel_de(ESQ) == 1 and e31.tiene_niveles(ESQ))
 	assert(e31.asignar(ESQ, "recolector", 1) and e31.asignar(ESQ, "tecnico", 2))
 	assert(e31.nivel_de(ESQ) == 1, "con un obrero manda el mínimo")
@@ -780,23 +786,23 @@ func ejecutar_pruebas() -> void:
 	assert(e31.nivel_de(ESQ) == 3)
 	e31.liberar(4)
 	assert(e31.nivel_de(ESQ) == 3 and e31.puestos[ESQ]["recolectores"].is_empty(), "sin recolectores conserva su nivel")
-	var e31b: Node = _nueva(CiudadScript.new())
+	var e31b: Node = _nueva(_ciudad_nueva())
 	assert(e31b.asignar(ESQ, "especialista", 1) and e31b.nivel_de(ESQ) == 3, "con especialistas desde el inicio arranca en nivel 3")
-	var e31c: Node = _con_siderurgica(CiudadScript.new())
+	var e31c: Node = _con_siderurgica(_ciudad_nueva())
 	assert(not e31c.tiene_niveles(ESQ_REF) and e31c.nivel_de(ESQ_REF) == 1)
 	assert(e31c.asignar(ESQ_REF, "tecnico", 1) and e31c.nivel_de(ESQ_REF) == 1, "una refinería no tiene niveles")
-	var e31d: Node = _con_escuela(CiudadScript.new())
+	var e31d: Node = _con_escuela(_ciudad_nueva())
 	assert(not e31d.asignar(ESQ_ESC, "tecnico", 1) and not e31d.asignar(ESQ_ESC, "especialista", 1), "la escuela solo admite aprendices")
 
 	print("\n=== TEST 32: los acarreadores no cuentan para el nivel; velocidad por nivel; ultimo_de() por oficio ===")
-	var e32: Node = _nueva(CiudadScript.new())
+	var e32: Node = _nueva(_ciudad_nueva())
 	assert(e32.asignar(ESQ, "acarreador", 1) and e32.nivel_de(ESQ) == 1)
 	assert(e32.asignar(ESQ, "tecnico", 2) and e32.nivel_de(ESQ) == 2, "el acarreador (obrero) no frena el nivel")
 	e32.marcar_presente(2, true)
 	assert(is_equal_approx(e32.produccion_por_hora(ESQ)["madera"], 3.0 * 1.5), "nivel 2: velocidad x1,5")
 	assert(e32.ultimo_de(ESQ, "tecnico") == 2 and e32.ultimo_de(ESQ, "recolector") == -1 and e32.ultimo_de(ESQ, "acarreador") == 1)
 	var e32b: Node = EconomiaScript.new()
-	e32b.ciudad = CiudadScript.new()
+	e32b.ciudad = _ciudad_nueva()
 	e32b.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0})
 	assert(e32b.asignar(ESQ, "recolector", 1) and e32b.asignar(ESQ, "tecnico", 2))
 	assert(e32b.ultimo_de(ESQ, "recolector") == 1 and e32b.ultimo_de(ESQ, "tecnico") == 2, "cada fila despide a los de su oficio")
@@ -806,7 +812,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 33: agotado a su nivel, el puesto despide a los de rango mínimo y sube con quien queda ===")
 	var e33: Node = EconomiaScript.new()
-	e33.ciudad = CiudadScript.new()
+	e33.ciudad = _ciudad_nueva()
 	e33.mundo = _mundo_con_veta()
 	# Con altura 28 el hierro (y=7) queda a 21-22 de profundidad: solo es alcanzable en el nivel 3.
 	e33.registrar_puesto(ESQ, "mina", 5, 5, {}, {"centro": Vector2i(500, 500), "altura": 28})
@@ -821,7 +827,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e33.puestos[ESQ]["tasas"]["hierro"], Recoleccion.TASAS_BASE_MINERAL["hierro"]))
 	# Personal mixto: al agotarse se va el obrero, el especialista se queda y el puesto sube.
 	var e33b: Node = EconomiaScript.new()
-	e33b.ciudad = CiudadScript.new()
+	e33b.ciudad = _ciudad_nueva()
 	e33b.mundo = _mundo_con_veta()
 	e33b.registrar_puesto(ESQ, "mina", 5, 5, {"hierro": 5.0}, {"centro": Vector2i(500, 500), "altura": 28})
 	assert(e33b.asignar(ESQ, "recolector", 1) and e33b.asignar(ESQ, "especialista", 2) and e33b.nivel_de(ESQ) == 1)
@@ -830,7 +836,7 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 34: desactivar_puesto() no sube el nivel según el orden de las bajas y avisa una vez por colono ===")
 	# Con el técnico primero el puesto subiría a 2 y rechazaría al obrero: el único orden posible es obrero, técnico.
-	var e34: Node = _nueva(CiudadScript.new())
+	var e34: Node = _nueva(_ciudad_nueva())
 	var liberados34: Array = []
 	e34.trabajadores_liberados.connect(func(ids: Array) -> void: liberados34.append_array(ids))
 	assert(e34.asignar(ESQ, "recolector", 1) and e34.asignar(ESQ, "tecnico", 2) and e34.nivel_de(ESQ) == 1)
@@ -841,7 +847,7 @@ func ejecutar_pruebas() -> void:
 	assert(e34.asignar(ESQ, "recolector", 3), "tras reactivar sigue en nivel 1 y admite obreros")
 
 	print("\n=== TEST 35: universidad como puesto de investigación, agregación de horas y liberación al completar ===")
-	var c35: Node = CiudadScript.new()
+	var c35: Node = _ciudad_nueva()
 	c35.instalaciones["tipo_2"] = 3  # habilita nivel potencial 2
 	c35.almacen["hierro"].cantidad = 500.0
 	c35.almacen["madera"].cantidad = 500.0
@@ -894,7 +900,7 @@ func ejecutar_pruebas() -> void:
 	assert(c35.almacen["madera"].cantidad == m_antes, "reembolsa madera")
 
 	print("\n=== TEST 36: acarreo de productor_combustible solo carga carbon (agua excluida de acarreo) ===")
-	var c36: Node = CiudadScript.new()
+	var c36: Node = _ciudad_nueva()
 	c36.almacen["carbon"].cantidad = 500.0
 	c36.almacen["agua"].cantidad = 500.0
 	var e36: Node = EconomiaScript.new()
@@ -911,7 +917,7 @@ func ejecutar_pruebas() -> void:
 	assert(not carga36.has("agua"), "el agua no se transporta por acarreo")
 
 	print("\n=== TEST 37: Balance energético, factor de déficit y consumo proporcional en centrales ===")
-	var c37: Node = CiudadScript.new()
+	var c37: Node = _ciudad_nueva()
 	var e37: Node = EconomiaScript.new()
 	e37.ciudad = c37
 	var z37 := ZonificacionFalsaEconomia.new()
@@ -997,7 +1003,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e37.puestos[esq_central]["almacen"]["carbon"], 1.7))
 
 	print("\n=== TEST 38: Puestos industriales de combustible y energía (cupo, capacidad, no acarreo de líquidos, selector) ===")
-	var c38: Node = CiudadScript.new()
+	var c38: Node = _ciudad_nueva()
 	c38.almacen["crudo"].cantidad = 50.0
 	c38.almacen["combustible"].cantidad = 40.0
 	c38.almacen["carbon"].cantidad = 60.0
@@ -1033,7 +1039,7 @@ func ejecutar_pruebas() -> void:
 	assert(e38.insumos_a_cargar(esq_cen).is_empty(), "en modo liquido no hay carga por acarreo")
 
 	print("\n=== TEST 39: puesto en nivel 2 permite retroceder a nivel 1 al contratar obrero si no está agotado en nivel 1 ===")
-	var c39: Node = CiudadScript.new()
+	var c39: Node = _ciudad_nueva()
 	var e39: Node = EconomiaScript.new()
 	e39.ciudad = c39
 	var esq_mina := Vector2i(30, 30)
@@ -1050,7 +1056,7 @@ func ejecutar_pruebas() -> void:
 	assert(e39.nivel_de(esq_mina) == 1, "con un obrero y un técnico el nivel retrocede a 1 (manda el menor)")
 
 	print("\n=== TEST 40: roles de estacion_bombeo, centro_extraccion, productor_combustible y supresión de acarreo de líquidos ===")
-	var c40: Node = CiudadScript.new()
+	var c40: Node = _ciudad_nueva()
 	c40.almacen["agua"].cantidad = 100.0
 	c40.almacen["carbon"].cantidad = 50.0
 	var e40: Node = EconomiaScript.new()
@@ -1076,7 +1082,7 @@ func ejecutar_pruebas() -> void:
 	assert(not carga_prod40.has("agua"), "productor combustible no carga agua por acarreo")
 
 	print("\n=== TEST 41: Red de distribución compartida entre almacenes para fluidos ===")
-	var c41: Node = CiudadScript.new()
+	var c41: Node = _ciudad_nueva()
 	var e41: Node = EconomiaScript.new()
 	e41.ciudad = c41
 
@@ -1102,7 +1108,7 @@ func ejecutar_pruebas() -> void:
 	print("OK: Red compartida de almacenes permite extraer fluidos desde cualquier almacén.")
 
 	print("\n=== TEST 42: Logística de carbón para central (capacidad 500) y partición estricta en refinería petrolera (400/600) ===")
-	var c42: Node = CiudadScript.new()
+	var c42: Node = _ciudad_nueva()
 	c42.almacen["carbon"].cantidad = 300.0
 	c42.almacen["crudo"].cantidad = 500.0
 	var e42: Node = EconomiaScript.new()
@@ -1173,7 +1179,7 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(e42.espacio_disponible_para(esq_ref42, "combustible"), 0.0))
 
 	print("\n=== TEST 43: reserva_insumo en refinerías y central termoeléctrica ===")
-	var c43: Node = CiudadScript.new()
+	var c43: Node = _ciudad_nueva()
 	var e43: Node = EconomiaScript.new()
 	e43.ciudad = c43
 	assert(e43.VALORES_RESERVA_INSUMO == [0.0, 50.0, 100.0, 250.0, 500.0])
@@ -1224,4 +1230,40 @@ func ejecutar_pruebas() -> void:
 	var plan_termo: Dictionary = e43.insumos_a_cargar(esq_termo)
 	assert(is_equal_approx(plan_termo.get("carbon", 0.0), 10.0), "central termoeléctrica solo carga 10 de carbón")
 
-	print("\n=== Las 43 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 44: Modulación de Productividad y Refinado por Moral Ciudadana ===")
+	var c44: Node = CiudadScript.new()
+	var e44: Node = EconomiaScript.new()
+	e44.ciudad = c44
+
+	var esq_mad := Vector2i(5, 5)
+	e44.registrar_puesto(esq_mad, "maderero", 3, 4, {"madera": 10.0})
+	e44.asignar(esq_mad, "recolector", 101)
+	e44.marcar_presente(101, true)
+
+	# 1. Moral 50 -> Factor 1.0 (Producción nominal: 10.0)
+	c44.moral = 50.0
+	var prod_50: Dictionary = e44.produccion_por_hora(esq_mad)
+	assert(is_equal_approx(prod_50.get("madera", 0.0), 10.0), "moral 50 rinde al 100%% (1.0x)")
+
+	# 2. Moral 0 -> Factor 0.5 (Producción mínima: 5.0)
+	c44.moral = 0.0
+	var prod_0: Dictionary = e44.produccion_por_hora(esq_mad)
+	assert(is_equal_approx(prod_0.get("madera", 0.0), 5.0), "moral 0 rinde al 50%% (0.5x)")
+
+	# 3. Moral 100 -> Factor 2.0 (Producción máxima: 20.0)
+	c44.moral = 100.0
+	var prod_100: Dictionary = e44.produccion_por_hora(esq_mad)
+	assert(is_equal_approx(prod_100.get("madera", 0.0), 20.0), "moral 100 rinde al 200%% (2.0x)")
+
+	# 4. Refinado modulado por moral en siderúrgica
+	var esq_sid := Vector2i(15, 15)
+	e44.registrar_puesto(esq_sid, "siderurgica", 5, 5, {})
+	e44.asignar(esq_sid, "tecnico", 201)
+	e44.marcar_presente(201, true)
+	c44.moral = 100.0
+	var prod_ref_100: Dictionary = e44.produccion_por_hora(esq_sid)
+	# Tasa nominal de siderúrgica con 1 técnico es 4.0 acero/h; con moral 100 (2.0x) debe ser 8.0
+	assert(is_equal_approx(prod_ref_100.get("acero", 0.0), 8.0), "refinado a moral 100 se modula al 2.0x")
+
+	print("\n=== Las 44 pruebas de Economia pasaron correctamente ===")
+

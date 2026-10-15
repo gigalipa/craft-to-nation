@@ -445,17 +445,21 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 	var resultado: Dictionary = {}
 	if not puestos.has(esquina):
 		return resultado
+	var factor_moral: float = 1.0
+	if ciudad != null and "moral" in ciudad:
+		factor_moral = ciudad.calcular_multiplicador_productividad(ciudad.moral)
+
 	if es_refineria(esquina):
 		var tasas_ref: Dictionary = CadenaMinerales.tasas_refinado({insumo_de(esquina): puestos[esquina]["presentes"].size()})
 		for entrada in tasas_ref:
-			resultado[tasas_ref[entrada]["tipo_salida"]] = tasas_ref[entrada]["produccion"]
+			resultado[tasas_ref[entrada]["tipo_salida"]] = tasas_ref[entrada]["produccion"] * factor_moral
 		return resultado
 	var p: Dictionary = puestos[esquina]
 	var presentes: int = p["presentes"].size()
 	var multiplicador: float = Recoleccion.multiplicador_de_nivel(p["tipo"], p["nivel"])
 	for clave in p["tasas"]:
 		var recurso: String = RECURSO_DE_TASA.get(clave, clave)
-		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes * multiplicador
+		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes * multiplicador * factor_moral
 	return resultado
 
 
@@ -1007,7 +1011,10 @@ func _refinar(esquina: Vector2i, factor_energia: float = 1.0) -> void:
 	var presentes: int = p["presentes"].size()
 	if presentes <= 0:
 		return
-	var resultado: Dictionary = CadenaMinerales.procesar_receta(insumo_de(esquina), presentes, 1.0, p["almacen"], factor_energia, float(p["capacidad"]))
+	var factor_moral: float = 1.0
+	if ciudad != null and "moral" in ciudad:
+		factor_moral = ciudad.calcular_multiplicador_productividad(ciudad.moral)
+	var resultado: Dictionary = CadenaMinerales.procesar_receta(insumo_de(esquina), presentes, 1.0, p["almacen"], factor_energia * factor_moral, float(p["capacidad"]))
 	if _total(resultado) > p["capacidad"] + 1e-9:
 		return
 	for recurso in resultado.keys():

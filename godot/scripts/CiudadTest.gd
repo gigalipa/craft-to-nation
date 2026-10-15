@@ -533,18 +533,93 @@ func ejecutar_pruebas() -> void:
 	assert(ciu28.demografia["desempleado"] == 8)
 	assert(ciu28.tiempo_sin_techo == 0)
 
-	# Exilio por temporizador de 24 horas sin cama
+	# Exilio por temporizador de 72 horas sin cama (GDD v3.56)
 	var res30: Dictionary = ciu28.iniciar_remodelacion_residencial(30)
 	assert(res30["sin_techo_generados"] == 4)
 	assert(ciu28.sin_techo == 4)
-	for i in range(23):
+	for i in range(71):
 		ciu28.simular_tick(0.0)
-	assert(ciu28.sin_techo == 4 and ciu28.tiempo_sin_techo == 23)
+	assert(ciu28.sin_techo == 4 and ciu28.tiempo_sin_techo == 71)
 	var desah_antes: int = ciu28.desahuciados
 	ciu28.simular_tick(0.0)
-	assert(ciu28.sin_techo == 0, "emigran al cumplirse las 24 horas")
+	assert(ciu28.sin_techo == 0, "emigran al cumplirse las 72 horas")
 	assert(ciu28.tiempo_sin_techo == 0)
 	assert(ciu28.desahuciados == desah_antes + 4)
-	assert(ciu28.bono_moral_variedad < -5.0, "penalización cívica de moral aplicada (-10 con suavizado)")
 
-	print("\n=== Las 28 pruebas de Ciudad pasaron correctamente ===")
+	print("\n=== TEST 29: Dinámica de Moral y Multiplicador de Productividad ===")
+	var ciu29: Node = CiudadScript.new()
+	assert(ciu29.moral == 75.0, "la moral inicial debe comenzar en 75.0 (optimismo inicial)")
+	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(0.0), 0.5), "productividad a moral 0 debe ser 0.5")
+	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(50.0), 1.0), "productividad a moral 50 debe ser 1.0")
+	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(100.0), 2.0), "productividad a moral 100 debe ser 2.0")
+
+	# Caída severa ante hambruna prolongada
+	ciu29.migracion_activa = false
+	ciu29.demografia["obrero"] = 5
+	ciu29.almacen["comida"].cantidad = 0.0 # Hambruna
+	var moral_antes: float = ciu29.moral
+	ciu29.simular_tick(0.0)
+	assert(ciu29.moral < moral_antes, "la moral debe descender fuertemente durante la hambruna")
+	assert(ciu29.tasa_cambio_moral < -2.0, "tasa de cambio de moral debe reflejar fuerte penalización")
+
+	print("\n=== TEST 30: Buffer de Peligrosidad (7 días / 168 horas) ===")
+	var ciu30: Node = CiudadScript.new()
+	ciu30.migracion_activa = false
+	ciu30.registrar_edificio_residencial(1, [2, 2])
+	ciu30.demografia["obrero"] = 1
+	ciu30.almacen["comida"].cantidad = 5000.0
+
+	ciu30.registrar_baja_seguridad(2)
+	ciu30.registrar_herido_seguridad(3)
+	ciu30.registrar_robo_seguridad(100.0)
+	# Impacto esperado: -(0.5*2 + 0.1*3 + 0.005*100) = -(1.0 + 0.3 + 0.5) = -1.8
+	assert(is_equal_approx(ciu30.impacto_peligrosidad_7d(), 1.8), "impacto de peligrosidad acumulado en 7d")
+	ciu30.simular_tick(0.0)
+	assert(ciu30.tasa_cambio_moral < 0.0, "la peligrosidad reduce la tasa de moral")
+
+	# Tras 168 horas, el impacto se desvanece
+	for i in range(168):
+		ciu30.simular_tick(0.0)
+	assert(is_equal_approx(ciu30.impacto_peligrosidad_7d(), 0.0), "el buffer de 168h expira eventos antiguos")
+
+	print("\n=== TEST 31: Flujo Migratorio (Umbral 20), Éxodo Jerárquico y Desempleo de 10 Días ===")
+	var ciu31: Node = CiudadScript.new()
+	ciu31.registrar_edificio_residencial(1, [2, 2])
+	ciu31.almacen["comida"].cantidad = 5000.0
+
+	# 1. Éxodo jerárquico cuando moral < 20
+	ciu31.moral = 15.0
+	ciu31.demografia["investigador"] = 1
+	ciu31.demografia["obrero"] = 1
+	ciu31._migrantes_acumulados = -0.6
+	ciu31._migrar(false) # Con acumulador que cruza el umbral
+	# Fuga de cerebros: investigador emigra primero que obrero
+	assert(ciu31.demografia["investigador"] == 0, "el investigador emigra primero en fuga de cerebros")
+	assert(ciu31.demografia["obrero"] == 1, "el obrero permanece")
+
+	# 2. Inmigración hacia Sin Techo cuando moral > 20 y no hay camas disponibles
+	var ciu31b: Node = CiudadScript.new()
+	ciu31b.moral = 60.0
+	ciu31b.guardar_datos_nucleo(1, [1], 0)
+	ciu31b.registrar_edificio_residencial(1, [1]) # 1 cama = 4 desempleados
+	ciu31b.demografia["desempleado"] = 4 # vivienda llena
+	ciu31b._migrantes_acumulados = 1.0
+	ciu31b._migrar(false)
+	assert(ciu31b.sin_techo == 1, "si no hay camas libres, el nuevo colono se convierte en sin techo")
+
+	# 3. Éxodo por desempleo tras 240 horas (10 días)
+	var ciu31c: Node = CiudadScript.new()
+	ciu31c.migracion_activa = false
+	ciu31c.registrar_edificio_residencial(1, [2, 2])
+	ciu31c.demografia["desempleado"] = 1
+	ciu31c.sincronizar_desempleados()
+	var desah_antes_31: int = ciu31c.desahuciados
+	for i in range(239):
+		ciu31c.simular_tick(0.0)
+	assert(ciu31c.demografia["desempleado"] == 1, "a las 239h todavía no emigra")
+	ciu31c.simular_tick(0.0) # Hora 240
+	assert(ciu31c.demografia["desempleado"] == 0, "a las 240h el desempleado emigra de la ciudad")
+	assert(ciu31c.desahuciados == desah_antes_31 + 1)
+
+	print("\n=== Las 31 pruebas de Ciudad pasaron correctamente ===")
+

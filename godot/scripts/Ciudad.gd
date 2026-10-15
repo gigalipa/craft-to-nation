@@ -86,6 +86,15 @@ const VENTANA_TASA_PROMEDIO := 10
 const BONO_MORAL_MAXIMO := 15.0
 const VELOCIDAD_SUAVIZADO_MORAL := 0.15
 
+## Sistema de Moral Dinámica y Población (GDD v3.56)
+const MORAL_INICIAL := 75.0
+const MORAL_NEUTRAL := 50.0
+const INERCIA_MORAL := 0.02
+const TOLERANCIA_SIN_TECHO_HORAS := 72
+const TOLERANCIA_DESEMPLEO_HORAS := 240
+const VENTANA_PELIGRO_HORAS := 168
+const ORDEN_EXODO_MORAL := ["investigador", "especialista", "tecnico", "militar", "obrero", "desempleado", "ciudadano"]
+
 ## Inventario del avatar = almacén central (ver docs/superpowers/specs/
 ## 2026-09-24-extraccion-fisica-agotamiento-design.md, Sección 6). Al empezar
 ## la partida los topes son bajos; declarar el núcleo los duplica y cada baúl
@@ -181,6 +190,15 @@ var nivel_investigado := 1
 var progreso_investigacion := {2: 0.0, 3: 0.0}
 var fuentes_comida_activas: Dictionary = {}
 var bono_moral_variedad := 0.0
+## Estado de Moral Dinámica
+var moral: float = MORAL_INICIAL
+var tasa_cambio_moral: float = 0.0
+var cola_desempleo: Array[int] = []
+var historial_peligrosidad: Array[Dictionary] = []
+var bajas_7d: int = 0
+var heridos_7d: int = 0
+var robos_7d: float = 0.0
+var cobertura_energia: float = 1.0
 var periodo_elecciones_restante := 0
 ## Edificios residenciales registrados: id de edificio (el que asigna
 ## VoxelWorld) -> Array[int] con las camas de CADA piso. Ver
@@ -470,6 +488,57 @@ func actualizar_investigacion(horas: float) -> bool:
 	return false
 
 
+## Calcula el multiplicador continuo de productividad laboral según la moral (0 a 100)
+## X = 0.5 * 2^(moral / 50). A 0 da 0.5x, a 50 da 1.0x, a 100 da 2.0x.
+static func calcular_multiplicador_productividad(p_moral: float) -> float:
+	return 0.5 * pow(2.0, clampf(p_moral, 0.0, 100.0) / 50.0)
+
+
+## Mantiene la cola de desempleados con la demografía real
+func sincronizar_desempleados() -> void:
+	var cant_real: int = demografia.get("desempleado", 0)
+	while cola_desempleo.size() < cant_real:
+		cola_desempleo.append(0)
+	while cola_desempleo.size() > cant_real:
+		cola_desempleo.pop_back()
+
+
+## Registra eventos para el buffer móvil de peligrosidad de 168h
+func registrar_baja_seguridad(cantidad: int = 1) -> void:
+	if historial_peligrosidad.is_empty():
+		historial_peligrosidad.append({"bajas": 0, "heridos": 0, "robos": 0.0})
+	historial_peligrosidad[historial_peligrosidad.size() - 1]["bajas"] += cantidad
+	_recalcular_peligrosidad_7d()
+
+
+func registrar_herido_seguridad(cantidad: int = 1) -> void:
+	if historial_peligrosidad.is_empty():
+		historial_peligrosidad.append({"bajas": 0, "heridos": 0, "robos": 0.0})
+	historial_peligrosidad[historial_peligrosidad.size() - 1]["heridos"] += cantidad
+	_recalcular_peligrosidad_7d()
+
+
+func registrar_robo_seguridad(monto: float) -> void:
+	if historial_peligrosidad.is_empty():
+		historial_peligrosidad.append({"bajas": 0, "heridos": 0, "robos": 0.0})
+	historial_peligrosidad[historial_peligrosidad.size() - 1]["robos"] += monto
+	_recalcular_peligrosidad_7d()
+
+
+func _recalcular_peligrosidad_7d() -> void:
+	bajas_7d = 0
+	heridos_7d = 0
+	robos_7d = 0.0
+	for entrada: Dictionary in historial_peligrosidad:
+		bajas_7d += entrada.get("bajas", 0)
+		heridos_7d += entrada.get("heridos", 0)
+		robos_7d += entrada.get("robos", 0.0)
+
+
+func impacto_peligrosidad_7d() -> float:
+	return 0.5 * float(bajas_7d) + 0.1 * float(heridos_7d) + 0.005 * robos_7d
+
+
 ## Desplaza el bono de moral gradualmente hacia el objetivo de diversidad activa.
 func actualizar_bono_variedad() -> void:
 	var activas := 0
@@ -506,6 +575,10 @@ func reasignar_tipo(de: String, a: String) -> bool:
 		return false
 	demografia[de] -= 1
 	demografia[a] += 1
+	if de == "desempleado" and not cola_desempleo.is_empty():
+		cola_desempleo.pop_back()
+	elif a == "desempleado":
+		cola_desempleo.append(0)
 	return true
 
 
@@ -531,6 +604,7 @@ func registrar_edificio_residencial(id: int, camas_por_piso: Array, baules: int 
 	while sin_techo > 0 and vivienda_libre >= espacio_minimo - 1e-6:
 		sin_techo -= 1
 		demografia["desempleado"] += 1
+		cola_desempleo.append(0)
 	if sin_techo == 0:
 		tiempo_sin_techo = 0
 
@@ -776,23 +850,65 @@ func recurso_critico() -> String:
 ## de golpe al liberarse espacio.
 ## ponytail: sin cola de migrantes; si el diseño pide una "bolsa" de
 ## migrantes en espera, sustituir el tope de 1 por un contador real.
+## Acumula movimiento migratorio y modula la población según la moral (umbral 20).
+## Si moral >= 20.0: Inmigración positiva hacia viviendas o "sin techo" (si hay núcleo urbano).
+## Si moral < 20.0: Éxodo poblacional con fuga de cerebros (investigador > especialista > ... > obrero).
 func _migrar(hambruna: bool) -> int:
 	if not migracion_activa:
 		return 0
+
+	# 1. Éxodo por desesperanza (Moral < 20.0)
+	if moral < 20.0:
+		_migrantes_acumulados -= 0.5
+		var salidos := 0
+		while _migrantes_acumulados <= -1.0:
+			var expulsado := false
+			for rol in ORDEN_EXODO_MORAL:
+				if demografia.get(rol, 0) > 0:
+					demografia[rol] -= 1
+					desahuciados += 1
+					expulsado = true
+					salidos += 1
+					break
+			if not expulsado:
+				if sin_techo > 0:
+					sin_techo -= 1
+					desahuciados += 1
+					salidos += 1
+					expulsado = true
+			_migrantes_acumulados += 1.0
+			if not expulsado:
+				_migrantes_acumulados = 0.0
+				break
+		sincronizar_desempleados()
+		return -salidos
+
+	# 2. Inmigración positiva (Moral >= 20.0)
 	_migrantes_acumulados += TASA_MIGRACION
 	var llegados := 0
 	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
 	while _migrantes_acumulados >= 1.0:
-		if hambruna or sin_techo > 0 or vivienda_colonizable_libre < espacio_minimo - 1e-6:
+		if hambruna:
 			_migrantes_acumulados = 1.0
 			break
-		demografia["desempleado"] += 1
-		_migrantes_acumulados -= 1.0
-		llegados += 1
+		if vivienda_colonizable_libre >= espacio_minimo - 1e-6:
+			demografia["desempleado"] += 1
+			cola_desempleo.append(0)
+			llegados += 1
+			_migrantes_acumulados -= 1.0
+		elif id_nucleo != -1:
+			# Una vez fundado el núcleo urbano, la inmigración desborda a sin techo
+			sin_techo += 1
+			llegados += 1
+			_migrantes_acumulados -= 1.0
+		else:
+			_migrantes_acumulados = 1.0
+			break
+	sincronizar_desempleados()
 	return llegados
 
 
-## Ejecuta un ciclo horario verificando alimentación, habitabilidad e investigación.
+## Ejecuta un ciclo horario verificando alimentación, habitabilidad, desempleo e investigación.
 func simular_tick(avatar_consumo: float) -> Dictionary:
 	# tasa_neta se mide entre cierres de tick consecutivos, no dentro de un
 	# tick: así incluye lo que se agrega entre ticks (entregas de acarreadores).
@@ -820,16 +936,29 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 		horas_apertura_colonizacion.erase(ed_id)
 		colonizable_por_edificio[ed_id] = true
 
-	# Temporizador de 24h para colonos sin techo (exilio si no consiguen cama)
+	# Temporizador de 72h para colonos sin techo (tolerancia ampliada de 3 días)
 	if sin_techo > 0:
 		tiempo_sin_techo += 1
-		if tiempo_sin_techo >= 24:
+		if tiempo_sin_techo >= TOLERANCIA_SIN_TECHO_HORAS:
 			desahuciados += sin_techo
+			moral = maxf(0.0, moral - 10.0)
 			bono_moral_variedad = maxf(-15.0, bono_moral_variedad - 10.0)
 			sin_techo = 0
 			tiempo_sin_techo = 0
 	else:
 		tiempo_sin_techo = 0
+
+	# Temporizador de desempleo de 10 días (240 horas de juego)
+	sincronizar_desempleados()
+	var i_des := 0
+	while i_des < cola_desempleo.size():
+		cola_desempleo[i_des] += 1
+		if cola_desempleo[i_des] >= TOLERANCIA_DESEMPLEO_HORAS:
+			cola_desempleo.remove_at(i_des)
+			demografia["desempleado"] -= 1
+			desahuciados += 1
+		else:
+			i_des += 1
 
 	regular_densidad_vertical()
 	actualizar_bono_variedad()
@@ -856,6 +985,65 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 				demografia[rol] -= quitar
 				bajas_inanicion -= quitar
 
+	# Buffer móvil de 168 horas (7 días) de peligrosidad
+	historial_peligrosidad.append({"bajas": 0, "heridos": 0, "robos": 0.0})
+	if historial_peligrosidad.size() > VENTANA_PELIGRO_HORAS:
+		historial_peligrosidad.pop_front()
+	_recalcular_peligrosidad_7d()
+
+	# Dinámica temporal de Moral (tasa horaria delta_M)
+	var delta_inercia: float = (MORAL_NEUTRAL - moral) * INERCIA_MORAL
+	var delta_escasez := 0.0
+	var todos_positivos := true
+	var hay_consumo_activo := false
+
+	var com_rec: Recurso = almacen.get("comida")
+	if com_rec != null:
+		hay_consumo_activo = true
+		if not exito_comida or com_rec.cantidad <= 0.0:
+			delta_escasez -= 3.0
+			todos_positivos = false
+		elif com_rec.tasa_neta_promedio < 0.0:
+			delta_escasez -= 0.6
+			todos_positivos = false
+		elif com_rec.tasa_neta_promedio <= 0.0:
+			todos_positivos = false
+
+	if cobertura_energia < 1.0:
+		delta_escasez -= 1.5 * (1.0 - cobertura_energia)
+		todos_positivos = false
+
+	for clave in almacen:
+		if clave == "comida":
+			continue
+		var rec: Recurso = almacen[clave]
+		if rec.tasa_neta_promedio < 0.0:
+			hay_consumo_activo = true
+			todos_positivos = false
+			if rec.cantidad <= 0.0:
+				delta_escasez -= 0.4
+			else:
+				delta_escasez -= 0.1
+		elif rec.cantidad <= 0.0 and rec.tasa_neta < 0.0:
+			hay_consumo_activo = true
+			todos_positivos = false
+			delta_escasez -= 0.4
+
+	var delta_abundancia := 0.0
+	if hay_consumo_activo and todos_positivos:
+		delta_abundancia = 0.4
+
+	var activas_dieta := 0
+	for v in fuentes_comida_activas.values():
+		if v > 0:
+			activas_dieta += 1
+	var delta_dieta: float = (float(activas_dieta) / float(CATEGORIAS_COMIDA.size())) * 0.5
+	var delta_sin_techo: float = -0.05 * float(sin_techo)
+	var delta_peligro: float = -impacto_peligrosidad_7d()
+
+	tasa_cambio_moral = delta_inercia + delta_abundancia + delta_escasez + delta_dieta + delta_sin_techo + delta_peligro
+	moral = clampf(moral + tasa_cambio_moral, 0.0, 100.0)
+
 	var migrantes: int = _migrar(not exito_comida)
 
 	for clave in almacen:
@@ -870,6 +1058,9 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 		"nivel_ciudad": nivel,
 		"nivel_potencial": nivel_potencial,
 		"bono_moral_variedad": snapped(bono_moral_variedad, 0.01),
+		"moral": snapped(moral, 0.1),
+		"tasa_cambio_moral": snapped(tasa_cambio_moral, 0.01),
+		"multiplicador_productividad": calcular_multiplicador_productividad(moral),
 		"migrantes": migrantes,
 	}
 	horas_juego += 1

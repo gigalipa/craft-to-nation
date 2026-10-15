@@ -46,6 +46,7 @@ const MATERIAL := {
 	"refineria_tierras_raras": "estructura_hierro",
 	"carbonera": "adobe",
 	"aserradero": "bloque_madera",
+	"fabrica_bloques": "bloque_piedra",
 	"escuela_tecnica": "adobe",
 	"escuela_especialistas": "bloque_piedra",
 	"universidad": "bloque_piedra",
@@ -116,6 +117,14 @@ const PLANTILLAS := {
 	], "chimenea": Vector2i(3, 3)},
 	# Aserradero: galpón largo de madera (5 x 6) con una tolva sobre el techo; sale aserrín de ella.
 	"aserradero": {"capas": [
+		["#####", "#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#...#", "#..B#", "#...#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "#...#", "##S##"],
+		["#####", "#####", "#####", "#####", "#####", "#####"],
+		[".....", ".....", ".....", "..#..", ".....", "....."],
+	], "chimenea": Vector2i(2, 3)},
+	# Fábrica de bloques: galpón de mampostería (5 x 6) con trituradora sobre el techo.
+	"fabrica_bloques": {"capas": [
 		["#####", "#####", "#####", "#####", "#####", "#####"],
 		["##e##", "#...#", "#..B#", "#...#", "#...#", "##s##"],
 		["##E##", "V...V", "#...#", "V...V", "#...#", "##S##"],

@@ -169,4 +169,20 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(res_pet_lleno["combustible"], 600.0))
 	assert(is_equal_approx(res_pet_lleno["crudo"], 100.0), "no consume crudo si combustible llegó a 600")
 
-	print("\n=== Las 11 pruebas de CadenaMinerales pasaron correctamente ===")
+	print("\n=== TEST 12: fabrica_bloques (piedra -> bloques_piedra) ===")
+	assert(CadenaMinerales.REFINERIAS.get("fabrica_bloques") == "fabrica_bloques")
+	assert(CadenaMinerales.RECETAS.has("fabrica_bloques"))
+	var receta_fb: Dictionary = CadenaMinerales.RECETAS["fabrica_bloques"]
+	assert(receta_fb["entradas"].get("piedra") == 1)
+	assert(receta_fb["tipo_salida"] == "bloques_piedra")
+	assert(receta_fb["cantidad_salida"] == 3)
+	assert(is_equal_approx(receta_fb["tasa_base"], 0.5))
+	var tasas_fb: Dictionary = CadenaMinerales.tasas_refinado({"fabrica_bloques": 1})
+	assert(is_equal_approx(tasas_fb["fabrica_bloques"]["consumo"]["piedra"], 0.5))
+	assert(is_equal_approx(tasas_fb["fabrica_bloques"]["produccion"], 1.5))
+	assert(tasas_fb["fabrica_bloques"]["tipo_salida"] == "bloques_piedra")
+	var res_fb: Dictionary = CadenaMinerales.procesar_tick(1.0, {"piedra": 10.0}, {"fabrica_bloques": 1})
+	assert(is_equal_approx(res_fb["piedra"], 9.5))
+	assert(is_equal_approx(res_fb["bloques_piedra"], 1.5))
+
+	print("\n=== Las 12 pruebas de CadenaMinerales pasaron correctamente ===")

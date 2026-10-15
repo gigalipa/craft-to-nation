@@ -248,13 +248,14 @@ func ejecutar_pruebas() -> void:
 	print("Comida tras 300 ticks: ", recien_nacida.almacen["comida"].cantidad)
 	assert(not hubo_hambruna, "no debe haber hambruna en los primeros 10 minutos")
 
-	print("\n=== TEST 18: el almacén tiene los 14 recursos de la economía ===")
+	print("\n=== TEST 18: el almacén tiene los 15 recursos de la economía ===")
 	var ocho: Node = CiudadScript.new()
-	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas", "agua", "crudo", "combustible"]:
+	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas", "bloques_piedra", "agua", "crudo", "combustible"]:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
-	assert(ocho.almacen.size() == 14)
+	assert(ocho.almacen.size() == 15)
 	assert(ocho.almacen["acero"].cantidad == 0.0 and ocho.almacen["acero"].limite == 500.0, "el acero empieza en 0 con el tope inicial")
 	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
+	assert(ocho.almacen["bloques_piedra"].cantidad == 0.0 and ocho.almacen["bloques_piedra"].limite == 500.0)
 	assert(ocho.almacen["comida"].cantidad == ocho.COMIDA_INICIAL, "la comida inicial es COMIDA_INICIAL")
 	assert(ocho.almacen["comida"].limite == 5000.0, "el tope inicial de comida es 5000")
 
@@ -336,6 +337,20 @@ func ejecutar_pruebas() -> void:
 	talado.almacen["tablas"].cantidad = 4.0
 	var detalle: Dictionary = talado.consumir_costo_con_detalle("madera", 6.0)
 	assert(detalle == {"tablas": 4.0, "madera": 2.0}, "desglosa exactamente lo cobrado: %s" % detalle)
+
+	print("\n=== TEST 23b: los bloques_piedra cuentan como piedra al pagar un costo (consumir_costo) ===")
+	var canteria: Node = CiudadScript.new()
+	canteria.almacen["piedra"].cantidad = 10.0
+	canteria.almacen["bloques_piedra"].cantidad = 5.0
+	assert(canteria.consumir_costo("piedra", 8.0))
+	assert(canteria.almacen["bloques_piedra"].cantidad == 0.0 and canteria.almacen["piedra"].cantidad == 7.0, "paga primero con bloques_piedra y el resto con piedra")
+	assert(not canteria.consumir_costo("piedra", 8.0) and canteria.almacen["piedra"].cantidad == 7.0, "sin alcanzar no cobra nada")
+	canteria.almacen["piedra"].cantidad = 10.0
+	canteria.almacen["bloques_piedra"].cantidad = 4.0
+	var detalle_p: Dictionary = canteria.consumir_costo_con_detalle("piedra", 6.0)
+	assert(detalle_p == {"bloques_piedra": 4.0, "piedra": 2.0}, "desglosa exactamente lo cobrado: %s" % detalle_p)
+	canteria.almacen["bloques_piedra"].cantidad = 4.0
+	assert(canteria.almacen_general()["piedra"] == 12.0, "almacen_general suma piedra (8) y bloques_piedra (4)")
 
 	print("\n=== TEST 24: horas explícitas de investigación, atomicidad de cobro e instalaciones físicas ===")
 	var ciu24: Node = CiudadScript.new()

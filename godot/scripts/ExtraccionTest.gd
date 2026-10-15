@@ -222,6 +222,8 @@ func ejecutar_pruebas() -> void:
 	}
 	var entorno15: Dictionary = Recoleccion.entorno_de_puesto("centro_extraccion", mundo15, esq_ext15 + Vector2i(2, 2), 0, Recoleccion.SIN_CENTRO, dp15)
 	var eco15: Node = preload("res://scripts/Economia.gd").new()
+	var moral_prev: float = Ciudad.moral if ("moral" in Ciudad) else 50.0
+	Ciudad.moral = 50.0
 	eco15.ciudad = Ciudad
 	eco15.mundo = mundo15
 	eco15.registrar_puesto(esq_ext15, "centro_extraccion", 5, 5, {"crudo": 10.0}, entorno15)
@@ -239,6 +241,7 @@ func ejecutar_pruebas() -> void:
 	assert(eco15.puestos[esq_ext15]["crudo_restante"] == 0, "quedan 0 bloques")
 	assert(eco15.puestos[esq_ext15]["agotado"], "el pozo de crudo queda agotado")
 	assert(eco15.puestos[esq_ext15]["tasas"]["crudo"] == 0.0)
+	Ciudad.moral = moral_prev
 	eco15.free()
 	mundo15.free()
 

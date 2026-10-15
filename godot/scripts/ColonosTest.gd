@@ -140,6 +140,8 @@ func _nuevo(mundo: MundoFalso, ciudad: Node) -> Node:
 ## Colonos con una Economia real (ciudad inyectada) y un maderero de 2x2 en
 ## (2, 2) con tasa 3 madera/h; mundo llano de 10x10 y el núcleo en (7..8, 7..8).
 func _nuevo_con_puesto(ciudad: Node) -> Node:
+	if ciudad != null:
+		ciudad.moral = 50.0
 	var economia: Node = EconomiaScript.new()
 	economia.ciudad = ciudad
 	economia.registrar_puesto(Vector2i(2, 2), "maderero", 2, 2, {"madera": 3.0})
@@ -151,6 +153,8 @@ func _nuevo_con_puesto(ciudad: Node) -> Node:
 ## Colonos con una siderúrgica de 2x2 en (2, 2): entrada al norte (2, 1), salida al sur (3, 4);
 ## mundo llano de 10x10 y el núcleo en (7..8, 7..8). Sin plantilla (suelo desconocido): los colonos esperan fuera.
 func _nuevo_con_siderurgica(ciudad: Node) -> Node:
+	if ciudad != null:
+		ciudad.moral = 50.0
 	var economia: Node = EconomiaScript.new()
 	economia.ciudad = ciudad
 	economia.registrar_puesto(Vector2i(2, 2), "siderurgica", 2, 2, {}, {}, Vector2i(2, 1), economia.SIN_DEPOSITO, economia.SIN_SUELO, Vector2i(3, 4))

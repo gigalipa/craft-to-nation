@@ -17,7 +17,7 @@
 13. ✅ (2026-10-12) **Pathfinding ponderado por vías:** coste de terreno natural = 8, vía de tierra pisada = 3, guiando a colonos por rutas construidas.
 14. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial; permanece pendiente hasta que los edificios civiles tengan funciones automatizadas).
 15. ✅ (2026-10-12) **Extracción de fluidos y estaciones de bombeo:** La estación de bombeo (`estacion_bombeo`) ya existe y cumple la extracción directa desde cuerpos de agua naturales superficiales (con muelle sobre 2+ bloques de agua y `puerto_agua_out`). Por diseño, no existen afloramientos naturales de crudo superficial, por lo que no se utilizan estaciones de bombeo para crudo; el crudo se extrae exclusivamente en el subsuelo profundo mediante el centro de extracción (`centro_extraccion`).
-16. **Control de cuotas y reservas de refinamiento en industrias (aserradero, siderúrgica, fábrica de bloques, etc.):** selector/umbral de reserva de materia prima o cuota de producción para evitar que las industrias consuman el 100% de la materia prima (ej. hierro o madera), permitiendo reservar insumos para la construcción de bloques estructurales (`estructura_hierro`, tablas, etc.).
+16. ✅ (2026-10-14) **Fábrica de bloques y control de reservas en refinerías:** Edificio industrial fábrica de bloques (`fabrica_bloques`, 1 piedra -> 3 bloques_piedra con prioridad de pago en bloques de piedra); y sistema de reservas de materia prima en almacén central ([0, 50, 100, 250, 500] u) en refinerías (aserradero, siderúrgica, fábrica de bloques, carbonera, tierras raras y central termoeléctrica) para proteger materias primas de construcción.
 17. **Pasada de balance en partida de larga duración:** balancear recolección, consumo y refinamiento de recursos jugando en vivo tras implementar el control de cuotas, certificando la economía antes de iniciar Fase 4 (combate y tropas).
 
 ## Estado detallado e historial
@@ -173,7 +173,26 @@ Refinamiento de cadenas productivas, interfaz de control y navegación de colono
    - Coste de paso: terreno natural = 8, vía de tierra pisada = 3, con penalización moderada (+1) por desnivel. Los colonos priorizan fuertemente desplazarse por caminos y vías construidas.
    - Presencia continua: los trabajadores mantienen su estado de presentes mientras se desplazan hacia sus puestos de trabajo en el interior de los edificios.
 
-### 10. Cola de pendientes menores de la Fase 3 — no bloqueantes
+### 10. Fábrica de bloques y control de reservas en refinerías — ✅ completo (2026-10-14)
+
+Implementación de la cadena de piedra procesada y protección de materias primas en el almacén central (`PlantillasPuesto.gd`, `CadenaMinerales.gd`, `Ciudad.gd`, `Economia.gd`, `BarraModos.gd`, `CamaraCenital.gd`, `HumoRefinerias.gd`, `PanelPuesto.gd`):
+
+1. **Fábrica de bloques (`fabrica_bloques`):**
+   - Huella 5x6 de bloques de piedra, puertas de entrada y salida diferenciadas, chimenea y baúl físico.
+   - Receta de refinado: `1 piedra -> 3 bloques_piedra` (tasa 0.5, cupo 4 técnicos/acarreadores, capacidad de almacén 1000).
+   - Humo de corte: partículas de polvo de piedra gris claro en `HumoRefinerias.gd`.
+   - Incorporación al menú cenital industrial (tecla 4) y previsualización fantasma en zona industrial.
+2. **Integración económica de `bloques_piedra`:**
+   - Decimoquinto recurso en el almacén central de `Ciudad.gd`.
+   - Cobro con prioridad: `consumir_costo_con_detalle()` y `puede_pagar()` descuentan primero los costos de piedra usando `bloques_piedra` y el remanente con `piedra` cruda (análogo a tablas y madera).
+   - Función `almacen_general()` que devuelve el stock efectivo unificado de la ciudad.
+3. **Control de reservas de materias primas (Esquema A):**
+   - Valores admisibles: `[0.0, 50.0, 100.0, 250.0, 500.0]`.
+   - Cada refinería (aserradero, siderúrgica, fábrica de bloques, carbonera, tierras raras y central termoeléctrica) dispone de su umbral individual `reserva_insumo`.
+   - Botón interactivo cíclico en `PanelPuesto.gd` para cambiar la reserva sobre la marcha.
+   - Los acarreadores retiran insumos del almacén central solo si el stock supera la reserva fijada (`disponible = maxf(0.0, stock_ciudad - reserva)`), evitando que las industrias consuman recursos esenciales para la construcción (`estructura_hierro`, tablas, piedra).
+
+### 11. Cola de pendientes menores de la Fase 3 — no bloqueantes
 
 Pueden intercalarse en cualquier momento.
 

@@ -247,6 +247,7 @@ El guión está estructurado en una **secuencia cronológica y lógica de juego*
   - Indicadores destacados: Comida, Energía y Recurso Crítico (los minerales raros formateados como `"tierras raras"`).
 - [ ] **Acción:** Hacer clic en el botón **Almacén**:
   - Lista de recursos ordenada estrictamente de la **A a la Z** en español.
+  - Comprobar la presencia del nuevo recurso `"Bloques de piedra"` (`bloques_piedra`), derivado del triturado de cantería en la fábrica de bloques.
 
 ### 4.2 Ventana de Ocupaciones y Población Unificada
 - [ ] **Acción:** Abrir Población y entrar a **Ocupaciones**:
@@ -280,11 +281,25 @@ El guión está estructurado en una **secuencia cronológica y lógica de juego*
 ### 4.7 Bajas por Hambruna Selectiva
 - [ ] **Caso crítico (0 comida):** Si la hambruna causa bajas cívicas, el orden de desahucio afecta a **especialistas e investigadores** antes que a la base obrera.
 
+### 4.8 Sistema Dinámico de Moral, Productividad y Demografía
+- [ ] **Acción:** Observar el indicador de moral en la barra superior.
+- [ ] **Resultado esperado:** Muestra un botón interactivo estilizado con estado anímico y porcentaje (arranca con optimismo pionero en `🙂 75%`). El icono reacciona dinámicamente a la moral: `😡` (<20%), `🙁` (20-35%), `😐` (35-65%) y `🙂` (>=65%).
+- [ ] **Acción:** Hacer clic en el botón de moral o presionar la tecla **`M`**.
+- [ ] **Resultado esperado:**
+  - Se despliega la ventana modal centrada `VentanaMoral`.
+  - Presenta el estado actual, la tasa horaria proyectada ($\Delta M$/h), el multiplicador de productividad laboral continuo activo ($X = 0.5 \times 2^{(Y/50)}$) y el estado del flujo migratorio.
+  - Presenta el desglose analítico completo de factores: inercia neutral, variedad de alimentos, escasez de recursos, desgaste por colonos sin techo y buffer de peligrosidad de 7 días.
+  - Se cierra limpiamente con el botón X, la tecla `Esc` o `M`.
+- [ ] **Acción (Tolerancia y Éxodo Demográfico):**
+  - Desbordar población hacia colonos "sin techo": verificar que cada uno penaliza la tasa horaria en -0.05/h y disponen de una tolerancia de 72 horas (3 días) antes de emigrar.
+  - Mantener colonos desempleados: verificar que tras 10 días continuos (240 horas de simulación) sin oficio emigran pacíficamente de la ciudad.
+  - Inducir moral crítica (<20%): verificar que el flujo migratorio se invierte en éxodo activo con fuga de talentos jerárquica (`investigador` > `especialista` > `tecnico` > `militar` > `obrero`).
+
 ---
 
 ## Bloque 5: Extracción de Fluidos y Adaptación Industrial
 
-> **Mecánicas implementadas:** Estación de bombeo (agua >= 2), Centro de extracción (escaneo, columna de hierro, stock de crudo restante), almacén de fluidos compartido (6 puertos), refinería con límites 400/600, central termoeléctrica con selector de combustible y universidad interactiva.
+> **Mecánicas implementadas:** Estación de bombeo (agua >= 2), Centro de extracción (escaneo, columna de hierro, stock de crudo restante), fábrica de bloques (huella 5x6, chimenea de cantería, receta 1 piedra -> 3 bloques y prioridad de consumo cívico en obras), control de reserva mínima en ciudad en refinerías y central termoeléctrica ([0, 50, 100, 250, 500] u), almacén de fluidos compartido (6 puertos), refinería con límites 400/600, central termoeléctrica con selector de combustible y universidad interactiva.
 
 ### 5.1 Estación de Bombeo (`1` -> `2` -> `5`)
 - [ ] **Prueba de agua somera:** Intentar colocarla en agua de 1 bloque de profundidad: rechazada con aviso *"requiere al menos 2 bloques de profundidad de agua bajo su muelle"*.
@@ -300,31 +315,60 @@ El guión está estructurado en una **secuencia cronológica y lógica de juego*
   - Indica: `Crudo restante en pozo: X bloques` (o `Pozo de agua (inagotable)`).
   - Al operar, agota bloques físicos de crudo uno a uno en tiempo real.
 
-### 5.3 Puesto Almacén de Fluidos (`1` -> `3` -> `8`)
+### 5.3 Fábrica de Bloques y Procesamiento de Piedra (`1` -> `3` -> `4`)
+- [ ] **Acción (Construcción):** En cenital, pulsar **1** (Construir) -> **3** (Industrial) -> **4** (Fábrica de bloques).
+- [ ] **Resultado esperado:**
+  - Aparece la huella 5x6 con miniatura isométrica 3D en la barra de modos.
+  - La estructura cuenta con muros de `bloque_piedra`, puerta frontal de entrada de servicio (z=0) para piedra cruda y puerta trasera de salida de producto (z=5) para bloques terminados.
+  - En el techo (`Vector2i(2, 3)`), la chimenea emite partículas de humo y polvo de cantería en tiempo real mediante `HumoRefinerias`.
+- [ ] **Acción (Producción y Rendimiento):** Asignar obreros o técnicos y suministrar piedra cruda.
+- [ ] **Resultado esperado:**
+  - Cada lote consume **1 unidad de piedra cruda** y produce **3 unidades de `bloques_piedra`** (multiplicador x3 del rendimiento mineral de cantería).
+  - Almacén local con capacidad compartida de hasta 1000 unidades.
+- [ ] **Acción (Prioridad de Consumo Cívico en Obras):** Iniciar una obra que demande piedra (cimientos, muros de `bloque_piedra`, nivelaciones):
+- [ ] **Resultado esperado:**
+  - `Ciudad.gd` descuenta prioritariamente el stock de `bloques_piedra` disponibles antes de gastar la `piedra` cruda del almacén general.
+  - La disponibilidad total de piedra en el almacén general reporta la suma conjunta de bloques procesados y piedra cruda.
+
+### 5.4 Control de Reserva de Materias Primas en Refinerías y Central Termoeléctrica
+- [ ] **Acción:** Seleccionar cualquier refinería (Siderúrgica, Aserradero, Fábrica de Bloques, Carbonera, Tierras Raras) o la Central Termoeléctrica en modo Ver (`Esc`).
+- [ ] **Resultado esperado:**
+  - En `PanelPuesto`, se muestra la fila **`Reserva central:`** con el botón interactivo de reserva.
+- [ ] **Acción (Ciclar valores):** Hacer clic sucesivo sobre el botón de reserva.
+- [ ] **Resultado esperado:**
+  - El botón cicla entre los valores predefinidos:
+    `Sin reserva (0 u)` $\to$ `50 u` $\to$ `100 u` $\to$ `250 u` $\to$ `500 u` $\to$ `Sin reserva (0 u)`.
+- [ ] **Acción (Protección contra Sobre-refinado):** Configurar una reserva de `100 u` en una refinería cuyo insumo en almacén central tenga 120 unidades.
+- [ ] **Resultado esperado:**
+  - Los acarreadores retiran un máximo de 20 unidades del almacén central para alimentar la refinería.
+  - En cuanto el stock central desciende a 100 unidades (o menos), los acarreadores detienen de inmediato el retiro de insumos, preservando el stock de materias primas intacto para las construcciones manuales y proyectos de obra del jugador.
+
+### 5.5 Puesto Almacén de Fluidos (`1` -> `3` -> `9`)
 - [ ] **Construcción:** Construir un `almacen` (5x5 de piedra).
 - [ ] **Puertos exteriores:**
   - Pared izquierda: entradas `1` (agua), `3` (crudo), `5` (combustible).
   - Pared derecha: salidas `2` (agua), `4` (crudo), `6` (combustible).
 - [ ] **Desplegables en PanelPuesto:** Al seleccionarlo, los puertos aparecen organizados en **desplegables colapsables por recurso** (Agua, Crudo, Combustible) con círculos de estado (`⚪`, `🟢`, `🔴`). Todos los almacenes comparten un depósito global de fluidos instantáneo.
 
-### 5.4 Refinería Petrolera: Límites Particionados de Stock (400 Crudo / 600 Combustible)
+### 5.6 Refinería Petrolera: Límites Particionados de Stock (400 Crudo / 600 Combustible)
 - [ ] **Construcción:** Construir una `refineria_petrolera`.
 - [ ] **Puertos:** Dispone de `puerto_crudo_in` y `puerto_combustible_out` (0 acarreadores de fluidos).
 - [ ] **Límite de capacidad:** Conectar crudo por tubería:
   - El stock local de crudo se llena hasta un **máximo de 400 unidades (40%)**.
   - Detiene la entrada de más crudo garantizando siempre **600 espacios libres (60%)** para la producción de combustible.
 
-### 5.5 Productor de Combustible
+### 5.7 Productor de Combustible
 - [ ] **Construcción:** Construir un `productor_combustible`.
 - [ ] **Puertos y logística:** Cuenta con `puerto_agua_in` y `puerto_combustible_out`. Sus acarreadores solo transportan carbón sólido.
 
-### 5.6 Central Termoeléctrica: Selector de Combustible y Acarreo de Carbón
+### 5.8 Central Termoeléctrica: Selector de Combustible, Reserva Central y Acarreo de Carbón
 - [ ] **Selector:** En `PanelPuesto`, interactuar con los botones **`[Carbón]`**, **`[Combustible]`** y **`[Crudo]`**.
+- [ ] **Reserva central:** Configurar la reserva en ciudad para carbón con el botón `Reserva central:` si se desea preservar reservas para el avatar o productores secundarios.
 - [ ] **Acarreo en modo Carbón:** Al configurar en `Carbón` y contratar acarreadores:
-  - Los acarreadores acuden al núcleo urbano o almacenes, cargan carbón y lo llevan a la central termoeléctrica para alimentarla.
+  - Los acarreadores acuden al núcleo urbano o almacenes, cargan carbón y lo llevan a la central termoeléctrica para alimentarla siempre que se respete la reserva mínima central.
 - [ ] **Modos Crudo / Combustible:** En estos modos no admite acarreadores (alimentación exclusiva por ductos).
 
-### 5.7 Universidad Interactiva: Inicio, Aceleración, Pausa y Cancelación con Reembolso
+### 5.9 Universidad Interactiva: Inicio, Aceleración, Pausa y Cancelación con Reembolso
 - [ ] **Inicio manual:** Clic en la Universidad en modo Ver: muestra el botón **`[Iniciar Investigación]`** (no arranca sola).
   - Clic abre diálogo modal con los costos en hierro y madera.
 - [ ] **Aceleración:** Asignar más investigadores presentes incrementa la velocidad de avance de la cohorte.
@@ -468,13 +512,16 @@ El guión está estructurado en una **secuencia cronológica y lógica de juego*
 | **4.5** | Prioridades de obras (`PanelEdificio` Normal/Alta/Baja) y jerarquía de tareas | | |
 | **4.6** | Puestos periféricos: acarreo en celda de servicio frontal y retroceso de nivel | | |
 | **4.7** | Hambruna selectiva: especialistas e investigadores caen antes que obreros | | |
+| **4.8** | Moral dinámica: botón con 4 emojis, modal `VentanaMoral`, tolerancia 72h sin techo y éxodo por desempleo | | |
 | **5.1** | Estación de bombeo: validación de agua $\ge 2$, muelle y `puerto_agua_out` | | |
 | **5.2** | Centro de extracción: detección de pozo, columna de hierro y stock restante | | |
-| **5.3** | Almacén de fluidos (5x5 con 6 puertos agrupados en desplegables en panel) | | |
-| **5.4** | Refinería petrolera: puertos sin acarreo y stock particionado (400 crudo / 600 comb.) | | |
-| **5.5** | Productor de combustible: puertos de fluidos y acarreo exclusivo de carbón | | |
-| **5.6** | Central termoeléctrica: selector de combustible y acarreo entrante de carbón | | |
-| **5.7** | Universidad interactiva: inicio manual, aceleración, pausa y cancelación con reembolso | | |
+| **5.3** | Fábrica de bloques (`1-3-4`): huella 5x6, chimenea, receta 1:3 y prioridad de gasto en obras | | |
+| **5.4** | Control de reserva en ciudad (`0/50/100/250/500 u`): protección contra sobre-refinado | | |
+| **5.5** | Almacén de fluidos (`1-3-9`, 5x5 con 6 puertos agrupados en desplegables en panel) | | |
+| **5.6** | Refinería petrolera: puertos sin acarreo y stock particionado (400 crudo / 600 comb.) | | |
+| **5.7** | Productor de combustible: puertos de fluidos y acarreo exclusivo de carbón | | |
+| **5.8** | Central termoeléctrica: selector de combustible, reserva central y acarreo entrante de carbón | | |
+| **5.9** | Universidad interactiva: inicio manual, aceleración, pausa y cancelación con reembolso | | |
 | **6.1** | Herramienta de ductos (`1-6-1`/`1-6-2`) con etiquetas legibles y costos dinámicos | | |
 | **6.2** | Cota elevada $Y_{suelo}+4$ con libre paso de colonos y vías terrestres por debajo | | |
 | **6.3** | Columnas cada 5 bloques (vano 4), esquinas de quiebre y mallas sin z-fighting | | |

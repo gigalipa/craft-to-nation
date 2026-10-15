@@ -18,7 +18,8 @@
 14. Consumo universal de energía en Era 3 (edificios civiles al activar Automatización Industrial; permanece pendiente hasta que los edificios civiles tengan funciones automatizadas).
 15. ✅ (2026-10-12) **Extracción de fluidos y estaciones de bombeo:** La estación de bombeo (`estacion_bombeo`) ya existe y cumple la extracción directa desde cuerpos de agua naturales superficiales (con muelle sobre 2+ bloques de agua y `puerto_agua_out`). Por diseño, no existen afloramientos naturales de crudo superficial, por lo que no se utilizan estaciones de bombeo para crudo; el crudo se extrae exclusivamente en el subsuelo profundo mediante el centro de extracción (`centro_extraccion`).
 16. ✅ (2026-10-14) **Fábrica de bloques y control de reservas en refinerías:** Edificio industrial fábrica de bloques (`fabrica_bloques`, 1 piedra -> 3 bloques_piedra con prioridad de pago en bloques de piedra); y sistema de reservas de materia prima en almacén central ([0, 50, 100, 250, 500] u) en refinerías (aserradero, siderúrgica, fábrica de bloques, carbonera, tierras raras y central termoeléctrica) para proteger materias primas de construcción.
-17. **Pasada de balance en partida de larga duración:** balancear recolección, consumo y refinamiento de recursos jugando en vivo tras implementar el control de cuotas, certificando la economía antes de iniciar Fase 4 (combate y tropas).
+17. ✅ (2026-10-15) **Sistema de Moral Dinámica, Productividad Continua y Dinámicas Poblacionales:** modelo continuo de moral [0 a 100] que modula la productividad laboral ($X = 0.5 \times 2^{(Y/50)}$) en recolección y refinado; tasa horaria $\Delta M$ afectada por superávit (+0.4/h), escasez de recursos (comida hasta -3.0/h, energía hasta -1.5/h, insumos industriales hasta -0.4/h), diversidad de dieta (+0.5/h max con 6 grupos), desgaste por colonos sin techo (-0.05/h por colono) y buffer móvil de peligrosidad de 168h (7 días); inmigración continua post-núcleo desbordando a sin techo si no hay camas libres; éxodo crítico si moral < 20.0 con fuga de cerebros jerárquica (investigador > especialista > técnico > militar > obrero); éxodo por desempleo a los 10 días (240h); tolerancia de sin techo ampliada a 72h; y botón interactivo en HUD con 4 estados emocionales (😡/🙁/😐/🙂) y modal explicativo `VentanaMoral.gd`. 28 escenas de prueba al 100% en verde.
+18. **Pasada de balance en partida de larga duración:** balancear recolección, consumo, moral y refinamiento de recursos jugando en vivo tras implementar el control de cuotas y el sistema de moral, certificando la economía antes de iniciar Fase 4 (combate y tropas).
 
 ## Estado detallado e historial
 
@@ -192,7 +193,29 @@ Implementación de la cadena de piedra procesada y protección de materias prima
    - Botón interactivo cíclico en `PanelPuesto.gd` para cambiar la reserva sobre la marcha.
    - Los acarreadores retiran insumos del almacén central solo si el stock supera la reserva fijada (`disponible = maxf(0.0, stock_ciudad - reserva)`), evitando que las industrias consuman recursos esenciales para la construcción (`estructura_hierro`, tablas, piedra).
 
-### 11. Cola de pendientes menores de la Fase 3 — no bloqueantes
+### 11. Sistema de Moral Dinámica, Productividad Continua y Demografía — ✅ completo (2026-10-15)
+
+Simulación integral y continua del clima anímico ciudadano, modulación económica de rendimientos y dinámicas migratorias (`Ciudad.gd`, `Economia.gd`, `BarraSuperior.gd`, `VentanaMoral.gd`, `HUD.gd`):
+
+1. **Simulación Dinámica de Moral:**
+   - Escala continua de 0.0 a 100.0 puntos, iniciando con optimismo pionero en 75.0 y convergiendo inercialmente a 50.0 ($\Delta_{inercia} = (50.0 - M) \times 0.02$).
+   - Factores horarios ($\Delta M$): superávit global (+0.4/h), escasez de comida (-0.6/h o -3.0/h en hambruna), déficit energético (hasta -1.5/h), balance de insumos industriales (-0.2/h a -0.4/h por recurso agotado), variedad de fuentes alimenticias (hasta +0.5/h con 6 grupos), desgaste por colonos sin techo (-0.05/h por colono) y buffer móvil de peligrosidad de 168 horas (7 días).
+2. **Modulación Continua de la Productividad Laboral:**
+   - Curva exponencial continua $X = 0.5 \times 2^{(Y/50)}$ donde $Y$ es la moral:
+     - Moral 0.0 $\rightarrow$ Rendimiento 50% ($0.50\times$).
+     - Moral 50.0 $\rightarrow$ Rendimiento estándar 100% ($1.00\times$).
+     - Moral 100.0 $\rightarrow$ Rendimiento entusiasta 200% ($2.00\times$).
+   - Aplicado a la extracción primaria en puestos y a la velocidad de refinado en todas las plantas industriales.
+3. **Dinámicas Poblacionales y Éxodo Cívico:**
+   - Inmigración continua a partir de la fundación del núcleo urbano; los colonos excedentes sin cama desbordan a «sin techo».
+   - Tolerancia de colonos «sin techo» ampliada a 72 horas (3 días) antes de emigrar.
+   - Desempleados emigran pacíficamente tras 10 días continuos (240 horas de simulación) sin oficio asignado.
+   - Umbral crítico de moral en 20.0: desata éxodo migratorio activo proporcional con fuga jerárquica de talentos (`investigador` > `especialista` > `tecnico` > `militar` > `obrero` > `desempleado` > `ciudadano`).
+4. **Interfaz Visual y HUD:**
+   - Botón interactivo de moral en `BarraSuperior.gd` con 4 estados emocionales: 😡 Crítica (<20.0), 🙁 Baja (20.0-35.0), 😐 Neutra (35.0-65.0) y 🙂 Alta (>=65.0).
+   - Ventana modal explicativa `VentanaMoral.gd` accesible con clic o tecla `M`, con métricas en vivo, multiplicador activo, tendencia horaria y desglose analítico factor por factor.
+
+### 12. Cola de pendientes menores de la Fase 3 — no bloqueantes
 
 Pueden intercalarse en cualquier momento.
 

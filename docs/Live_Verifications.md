@@ -251,6 +251,7 @@ The guide is structured in a **chronological and logical gameplay sequence**: st
   - Key counters: Food, Energy, and Critical Resource (rare minerals formatted as `"tierras raras"` / rare earths).
 - [ ] **Action:** Click the **Almacén** (Warehouse) button:
   - Resource inventory is strictly sorted **A to Z**.
+  - Verify the presence of the new resource `"Bloques de piedra"` (`bloques_piedra` / Stone blocks), produced by crushing stone in the block factory.
 
 ### 4.2 Occupations Window and Unified Population View
 - [ ] **Action:** Open Population and navigate to **Ocupaciones** (Occupations):
@@ -284,12 +285,25 @@ The guide is structured in a **chronological and logical gameplay sequence**: st
 ### 4.7 Selective Famine Casualties
 - [ ] **Critical starvation scenario (0 food):** If famine triggers colonist deaths, eviction/loss affects **specialists and researchers** before touching the core manual laborer base.
 
+### 4.8 Dynamic Morale, Continuous Productivity, and Demographic Exodus
+- [ ] **Action:** Observe the morale indicator on the top bar.
+- [ ] **Expected result:** Displays an interactive styled button showing mood and percentage (starts with pioneering optimism at `🙂 75%`). Icon reacts dynamically: `😡` (<20%), `🙁` (20-35%), `😐` (35-65%), and `🙂` (>=65%).
+- [ ] **Action:** Click the morale button or press key **`M`**.
+- [ ] **Expected result:**
+  - Opens the centered modal window `VentanaMoral`.
+  - Displays current emotional status, projected hourly rate ($\Delta M$/h), active continuous productivity multiplier ($X = 0.5 \times 2^{(Y/50)}$), and migration rate.
+  - Full analytical factor breakdown: baseline inertia, food variety, resource shortages, homelessness drag, and 7-day danger buffer.
+  - Closes cleanly with X, `Esc`, or `M`.
+- [ ] **Action (Demographic Exoduses and Tolerance):**
+  - Overflow homeless population: verify -0.05/h morale penalty per homeless colonist, and 72h (3 days) tolerance before emigration.
+  - Idle unemployed colonists: verify peaceful exodus after 10 continuous days (240 hours) without job assignment.
+  - Induce critical morale (<20%): verify migration inverts to active exodus with hierarchical brain drain (`investigador` > `especialista` > `tecnico` > `militar` > `obrero`).
 
 ---
 
 ## Block 5: Fluid Extraction and Industrial Balancing
 
-> **Implemented mechanics:** Pumping station (water depth >= 2), Extraction Center (deposit scanning, iron drill column, remaining crude reserves), shared fluid warehouse (6 ports), oil refinery storage caps (400 crude / 600 fuel), thermal power plant with fuel selector and coal hauling, and interactive research university.
+> **Implemented mechanics:** Pumping station (water depth >= 2), Extraction Center (deposit scanning, iron drill column, remaining crude reserves), block factory (5x6 footprint, stone masonry chimney, 1 stone -> 3 blocks recipe and civic consumption priority in construction), raw material reserve control in refineries and thermal power plant ([0, 50, 100, 250, 500] u), shared fluid warehouse (6 ports), oil refinery storage caps (400 crude / 600 fuel), thermal power plant with fuel selector and coal hauling, and interactive research university.
 
 ### 5.1 Pumping Station (`1` -> `2` -> `5`)
 - [ ] **Shallow water test:** Attempt placement in 1-block deep water: rejected with message *"requiere al menos 2 bloques de profundidad de agua bajo su muelle"* (requires at least 2 water blocks under pier).
@@ -305,31 +319,60 @@ The guide is structured in a **chronological and logical gameplay sequence**: st
   - Displays: `Crudo restante en pozo: X bloques` (Crude remaining in well: X blocks) or `Pozo de agua (inagotable)` (Water well: infinite).
   - During operation, physically depletes underground oil blocks one by one in real time.
 
-### 5.3 Fluid Storage Outpost (`1` -> `3` -> `8`)
+### 5.3 Block Factory and Stone Processing (`1` -> `3` -> `4`)
+- [ ] **Action (Construction):** In top-down view, press **1** (Build) -> **3** (Industrial) -> **4** (Block Factory).
+- [ ] **Expected result:**
+  - Displays the 5x6 footprint with 3D isometric preview thumbnail on the mode bar.
+  - Structure features `bloque_piedra` walls, front service entrance door (z=0) for raw stone, and rear product exit door (z=5) for finished blocks.
+  - On the roof (`Vector2i(2, 3)`), the masonry chimney emits smoke and stone dust particles in real time via `HumoRefinerias`.
+- [ ] **Action (Production and Yield):** Assign laborers or technicians and supply raw stone.
+- [ ] **Expected result:**
+  - Each batch consumes **1 unit of raw stone** and produces **3 units of `bloques_piedra`** (3x mineral yield multiplier for quarry masonry).
+  - Local storage buffer with shared capacity of up to 1000 units.
+- [ ] **Action (Civic Consumption Priority in Construction):** Initiate a construction site requiring stone (foundations, `bloque_piedra` walls, grading):
+- [ ] **Expected result:**
+  - `Ciudad.gd` preferentially deducts available `bloques_piedra` stock before consuming raw `piedra` from the general warehouse.
+  - Total reported stone availability in the general warehouse displays the combined sum of processed blocks and raw stone.
+
+### 5.4 Raw Material Reserve Control in Refineries and Thermal Power Plant
+- [ ] **Action:** Select any refinery (Steel Mill, Sawmill, Block Factory, Charcoal Kiln, Rare Earths Refinery) or the Thermal Power Plant in inspect mode (`Esc`).
+- [ ] **Expected result:**
+  - `PanelPuesto` displays the **`Reserva central:`** (Central Reserve) row with the interactive reserve toggle button.
+- [ ] **Action (Cycle values):** Successively click the reserve button.
+- [ ] **Expected result:**
+  - The button cycles through the predefined thresholds:
+    `Sin reserva (0 u)` $\to$ `50 u` $\to$ `100 u` $\to$ `250 u` $\to$ `500 u` $\to$ `Sin reserva (0 u)`.
+- [ ] **Action (Protection against Over-refining):** Configure a reserve of `100 u` on a refinery whose input raw material has 120 units in the central warehouse.
+- [ ] **Expected result:**
+  - Haulers withdraw a maximum of 20 units from the central warehouse to feed the refinery.
+  - As soon as central stock drops to 100 units (or below), haulers immediately halt raw material withdrawals, keeping the base material reserve intact for player manual building and construction projects.
+
+### 5.5 Fluid Storage Outpost (`1` -> `3` -> `9`)
 - [ ] **Construction:** Build an `almacen` (5x5 stone warehouse).
 - [ ] **Exterior ports:**
   - Left wall: inputs `1` (water), `3` (crude), `5` (fuel).
-  - Right wall: outputs `2` (water), `4` (crude), `6` (fuel).
+  - Right wall: outputs `2` (water), `4` (crudo), `6` (fuel).
 - [ ] **Dropdowns in PanelPuesto:** When selected, ports are organized into **collapsible dropdowns by resource** (Water, Crude, Fuel) with status badges (`⚪`, `🟢`, `🔴`). All fluid warehouses share an instantaneous global fluid balance.
 
-### 5.4 Oil Refinery: Partitioned Stock Limits (400 Crude / 600 Fuel)
+### 5.6 Oil Refinery: Partitioned Stock Limits (400 Crude / 600 Fuel)
 - [ ] **Construction:** Build a `refineria_petrolera`.
 - [ ] **Ports:** Features `puerto_crudo_in` and `puerto_combustible_out` (0 fluid haulers needed).
 - [ ] **Capacity partition:** Supply crude via pipeline:
   - Local crude inventory caps at a **maximum of 400 units (40%)**.
   - Halts crude intake once reached, strictly preserving **600 free slots (60%)** for refined fuel production.
 
-### 5.5 Fuel Synthesizer
+### 5.7 Fuel Synthesizer
 - [ ] **Construction:** Build a `productor_combustible`.
 - [ ] **Ports and logistics:** Features `puerto_agua_in` and `puerto_combustible_out`. Its haulers transport solid coal only.
 
-### 5.6 Thermal Power Plant: Fuel Selector and Coal Hauling
+### 5.8 Thermal Power Plant: Fuel Selector, Central Reserve, and Coal Hauling
 - [ ] **Selector:** In `PanelPuesto`, interact with buttons **`[Carbón]`** (Coal), **`[Combustible]`** (Fuel), and **`[Crudo]`** (Crude).
+- [ ] **Central reserve:** Configure the city reserve threshold for coal using the `Reserva central:` button to safeguard fuel for the player avatar lantern or secondary producers.
 - [ ] **Hauling in Coal mode:** When set to `Carbón` and assigned haulers:
-  - Haulers collect coal from the urban core or warehouses and deliver it directly to the power plant furnace.
+  - Haulers collect coal from the urban core or warehouses and deliver it directly to the power plant furnace as long as the central reserve threshold is respected.
 - [ ] **Crude / Fuel modes:** These modes disable haulers (exclusively supplied via pipeline ports).
 
-### 5.7 Interactive University: Start, Acceleration, Pause, and Cancellation with Refund
+### 5.9 Interactive University: Start, Acceleration, Pause, and Cancellation with Refund
 - [ ] **Manual start:** Click University in inspect mode: shows **`[Iniciar Investigación]`** (Start Research) button (does not auto-start).
   - Clicking opens modal showing iron and wood research costs.
 - [ ] **Acceleration:** Assigning additional active researchers accelerates cohort progress.
@@ -476,13 +519,16 @@ The guide is structured in a **chronological and logical gameplay sequence**: st
 | **4.5** | Construction priorities (`PanelEdificio` Normal/High/Low) and dispatch hierarchy | | |
 | **4.6** | Gathering outposts: doorway hauling on front cell and production tier fallback | | |
 | **4.7** | Selective famine: specialists and researchers perish before manual laborers | | |
+| **4.8** | Dynamic morale: 4 emoji mood button, `VentanaMoral` modal, 72h homeless tolerance & unemployment exodus | | |
 | **5.1** | Pumping station: water depth $\ge 2$ validation, pier, and `puerto_agua_out` | | |
 | **5.2** | Extraction center: subterranean deposit detection, iron drill column, and reserve depletion | | |
-| **5.3** | Fluid storage outpost (5x5 with 6 ports grouped in collapsible dropdowns) | | |
-| **5.4** | Oil refinery: pipe ports without hauling and partitioned stock (400 crude / 600 fuel) | | |
-| **5.5** | Fuel synthesizer: fluid ports and exclusive coal hauling | | |
-| **5.6** | Thermal power plant: fuel selector and inbound coal hauling | | |
-| **5.7** | Interactive university: manual start, acceleration, pause, and cancellation with refund | | |
+| **5.3** | Block factory (`1-3-4`): 5x6 footprint, chimney, 1:3 recipe, and construction priority | | |
+| **5.4** | Central reserve control (`0/50/100/250/500 u`): protection against over-refining | | |
+| **5.5** | Fluid storage outpost (`1-3-9`, 5x5 with 6 ports grouped in collapsible dropdowns) | | |
+| **5.6** | Oil refinery: pipe ports without hauling and partitioned stock (400 crude / 600 fuel) | | |
+| **5.7** | Fuel synthesizer: fluid ports and exclusive coal hauling | | |
+| **5.8** | Thermal power plant: fuel selector, central reserve, and inbound coal hauling | | |
+| **5.9** | Interactive university: manual start, acceleration, pause, and cancellation with refund | | |
 | **6.1** | Conduit tool (`1-6-1` / `1-6-2`) with human-readable material names and dynamic costs | | |
 | **6.2** | Elevated clearance $Y_{ground}+4$ with unobstructed colonist and road passage underneath | | |
 | **6.3** | Support pillars every 5 blocks (4-span), corner blocks, and z-fighting free mesh | | |

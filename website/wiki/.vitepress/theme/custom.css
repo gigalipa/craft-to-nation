@@ -1,0 +1,48 @@
+/**
+ * website/wiki/.vitepress/theme/custom.css
+ * Ajustes de contraste WCAG AA/AAA para Modo Claro y Modo Oscuro en la Wiki de Craft to Nation.
+ */
+
+:root {
+  /* Mayor contraste para texto principal y secundario en modo claro */
+  --vp-c-text-1: #1e293b;
+  --vp-c-text-2: #475569;
+  --vp-c-text-3: #64748b;
+
+  /* Bloques de código y diagramas ASCII con texto nítido de alto contraste */
+  --vp-code-block-color: #1e293b;
+  --vp-code-block-bg: #f1f5f9;
+}
+
+.dark {
+  /* Mayor contraste para texto principal y secundario en modo oscuro */
+  --vp-c-text-1: #f1f5f9;
+  --vp-c-text-2: #cbd5e1;
+  --vp-c-text-3: #94a3b8;
+
+  /* Bloques de código y diagramas ASCII con texto claro nítido sobre fondo oscuro */
+  --vp-code-block-color: #f1f5f9;
+  --vp-code-block-bg: #14161a;
+}
+
+/* Encabezados de tablas con texto primario para máxima legibilidad */
+.vp-doc th {
+  color: var(--vp-c-text-1);
+  font-weight: 700;
+}
+
+/* Estilo de teclas <kbd> con contraste garantizado en claro y oscuro */
+.vp-doc kbd {
+  display: inline-block;
+  padding: 0.12rem 0.42rem;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.82em;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--vp-c-text-1);
+  background-color: var(--vp-c-bg-elv);
+  border: 1px solid var(--vp-c-border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+}

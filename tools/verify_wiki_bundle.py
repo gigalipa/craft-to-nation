@@ -91,6 +91,19 @@ def verify_bundle():
             print(f"FAIL: Se detectó sintaxis LaTeX sin procesar en {md_file}")
             return False
 
+    # Verificar que no se use la variable inexistente --vp-c-bg-mute y que ResourceBadge tenga soporte Dark Mode
+    theme_dir = Path("website/wiki/.vitepress/theme")
+    for style_file in list(theme_dir.rglob("*.vue")) + list(theme_dir.rglob("*.css")):
+        content = style_file.read_text(encoding="utf-8")
+        if "--vp-c-bg-mute" in content:
+            print(f"FAIL: Se detectó uso de variable inexistente --vp-c-bg-mute en {style_file}")
+            return False
+
+    recursos_html = (dist_dir / "es/guia/recursos.html").read_text(encoding="utf-8")
+    if "--badge-text-dark" not in recursos_html or "--badge-text-light" not in recursos_html:
+        print("FAIL: Los badges de recursos no incluyen variables de contraste para modo claro y oscuro.")
+        return False
+
     print("PASS: Verificación del bundle de la wiki aprobada exitosamente.")
     print(f"  Total páginas validadas: {len(required_files)}")
     print(f"  Bundles JS: {len(js_files)} | Bundles CSS: {len(css_files)}")

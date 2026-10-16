@@ -1,5 +1,6 @@
 import DefaultTheme from 'vitepress/theme'
 import type { Theme } from 'vitepress'
+import './custom.css'
 import ResourceBadge from './components/ResourceBadge.vue'
 import ProductionCalculator from './components/ProductionCalculator.vue'
 

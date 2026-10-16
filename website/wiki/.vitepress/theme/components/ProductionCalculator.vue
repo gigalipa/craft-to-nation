@@ -276,7 +276,7 @@ const setPreset = (val: number) => {
   border-radius: 12px;
   padding: 1.5rem;
   margin: 1.5rem 0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
 .calc-header {
@@ -308,7 +308,7 @@ const setPreset = (val: number) => {
 .subtitle {
   margin: 0;
   font-size: 0.82rem;
-  color: var(--vp-c-text-2, #64748b);
+  color: var(--vp-c-text-2, #475569);
 }
 
 .calc-presets {
@@ -319,12 +319,13 @@ const setPreset = (val: number) => {
 
 .preset-label {
   font-size: 0.8rem;
-  color: var(--vp-c-text-2, #64748b);
+  font-weight: 600;
+  color: var(--vp-c-text-2, #475569);
 }
 
 .calc-presets button {
-  background: var(--vp-c-bg-mute, #e2e8f0);
-  border: 1px solid var(--vp-c-divider, #cbd5e1);
+  background: var(--vp-c-bg-elv, #ffffff);
+  border: 1px solid var(--vp-c-border, #cbd5e1);
   color: var(--vp-c-text-1, #0f172a);
   padding: 0.2rem 0.55rem;
   border-radius: 6px;
@@ -336,9 +337,9 @@ const setPreset = (val: number) => {
 
 .calc-presets button:hover,
 .calc-presets button.active {
-  background: var(--vp-c-brand, #3b82f6);
-  color: #ffffff;
-  border-color: var(--vp-c-brand, #3b82f6);
+  background: var(--vp-button-brand-bg, #3e63dd);
+  color: var(--vp-button-brand-text, #ffffff);
+  border-color: var(--vp-button-brand-bg, #3e63dd);
 }
 
 .calc-control {
@@ -355,13 +356,15 @@ const setPreset = (val: number) => {
   align-items: center;
   font-weight: 600;
   font-size: 0.95rem;
+  color: var(--vp-c-text-1, #0f172a);
   margin-bottom: 0.6rem;
 }
 
 .count-badge {
-  background: var(--vp-c-brand-soft, #eff6ff);
-  color: var(--vp-c-brand, #2563eb);
-  padding: 0.15rem 0.6rem;
+  background: var(--vp-c-brand-soft, rgba(100, 108, 255, 0.16));
+  color: var(--vp-c-brand-1, #3451b2);
+  border: 1px solid var(--vp-c-brand-1, #3451b2);
+  padding: 0.15rem 0.65rem;
   border-radius: 9999px;
   font-size: 0.85rem;
   font-weight: 700;
@@ -376,18 +379,18 @@ const setPreset = (val: number) => {
 .range-slider {
   flex: 1;
   cursor: pointer;
-  accent-color: var(--vp-c-brand, #3b82f6);
+  accent-color: var(--vp-c-brand-1, #3b82f6);
 }
 
 .number-input {
   width: 90px;
   padding: 0.4rem 0.6rem;
-  border: 1px solid var(--vp-c-divider, #cbd5e1);
+  border: 1px solid var(--vp-c-border, #cbd5e1);
   border-radius: 6px;
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
-  background: var(--vp-c-bg, #ffffff);
+  background: var(--vp-c-bg-alt, #f6f6f7);
   color: var(--vp-c-text-1, #0f172a);
 }
 
@@ -419,10 +422,10 @@ const setPreset = (val: number) => {
 
 .metric-name {
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--vp-c-text-2, #64748b);
+  color: var(--vp-c-text-2, #475569);
 }
 
 .metric-value {
@@ -434,19 +437,19 @@ const setPreset = (val: number) => {
 
 .metric-value .unit {
   font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--vp-c-text-2, #64748b);
+  font-weight: 600;
+  color: var(--vp-c-text-2, #475569);
 }
 
 .metric-sub {
-  font-size: 0.72rem;
-  color: var(--vp-c-text-3, #94a3b8);
+  font-size: 0.75rem;
+  color: var(--vp-c-text-2, #475569);
   margin-top: 0.2rem;
 }
 
 .stock-info {
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--vp-c-warning-soft, rgba(234, 179, 8, 0.14));
+  border: 1px solid rgba(234, 179, 8, 0.4);
   border-radius: 8px;
   padding: 0.9rem 1.1rem;
   margin-bottom: 1rem;
@@ -463,18 +466,18 @@ const setPreset = (val: number) => {
 
 .highlight {
   font-weight: 700;
-  color: #d97706;
+  color: var(--vp-c-warning-1, #915930);
 }
 
 .warning-text {
   margin: 0.5rem 0 0 0;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: var(--vp-c-text-2, #475569);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--vp-c-text-1, #1e293b);
 }
 
 .advanced-section {
-  border-top: 1px dashed var(--vp-c-divider, #cbd5e1);
+  border-top: 1px dashed var(--vp-c-border, #cbd5e1);
   padding-top: 0.85rem;
 }
 
@@ -483,7 +486,7 @@ const setPreset = (val: number) => {
   border: none;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--vp-c-brand, #2563eb);
+  color: var(--vp-c-brand-1, #3451b2);
   cursor: pointer;
   padding: 0;
 }
@@ -504,20 +507,21 @@ const setPreset = (val: number) => {
 
 .tech-table th,
 .tech-table td {
-  padding: 0.4rem 0.6rem;
+  padding: 0.45rem 0.65rem;
   border: 1px solid var(--vp-c-divider, #e2e8f0);
+  color: var(--vp-c-text-1, #0f172a);
   text-align: left;
 }
 
 .tech-table th {
-  background: var(--vp-c-bg-mute, #f1f5f9);
-  font-weight: 600;
+  background: var(--vp-c-default-soft, rgba(142, 150, 170, 0.14));
+  font-weight: 700;
 }
 
 .footnote {
   display: block;
-  margin-top: 0.4rem;
-  color: var(--vp-c-text-3, #94a3b8);
-  font-size: 0.75rem;
+  margin-top: 0.45rem;
+  color: var(--vp-c-text-2, #475569);
+  font-size: 0.76rem;
 }
 </style>

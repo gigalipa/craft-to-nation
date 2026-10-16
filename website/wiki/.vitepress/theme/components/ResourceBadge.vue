@@ -8,47 +8,119 @@ const props = defineProps<{
   icon?: string
 }>()
 
-const defaultStyles: Record<string, { bg: string; text: string; border: string; icon: string }> = {
-  agua: { bg: 'rgba(56, 189, 248, 0.15)', text: '#0284c7', border: '#38bdf8', icon: '💧' },
-  comida: { bg: 'rgba(234, 179, 8, 0.15)', text: '#ca8a04', border: '#eab308', icon: '🍖' },
-  madera: { bg: 'rgba(180, 83, 9, 0.15)', text: '#b45309', border: '#d97706', icon: '🪵' },
-  piedra: { bg: 'rgba(100, 116, 139, 0.15)', text: '#475569', border: '#94a3b8', icon: '🪨' },
-  hierro: { bg: 'rgba(148, 163, 184, 0.2)', text: '#334155', border: '#64748b', icon: '⛏️' },
-  cobre: { bg: 'rgba(249, 115, 22, 0.15)', text: '#c2410c', border: '#f97316', icon: '🥉' },
-  carbón: { bg: 'rgba(75, 85, 99, 0.2)', text: '#374151', border: '#4b5563', icon: '⬛' },
-  carbon: { bg: 'rgba(75, 85, 99, 0.2)', text: '#374151', border: '#4b5563', icon: '⬛' },
-  crudo: { bg: 'rgba(30, 41, 59, 0.25)', text: '#0f172a', border: '#334155', icon: '🛢️' },
-  combustible: { bg: 'rgba(239, 68, 68, 0.15)', text: '#dc2626', border: '#ef4444', icon: '⛽' },
-  acero: { bg: 'rgba(99, 102, 241, 0.15)', text: '#4f46e5', border: '#6366f1', icon: '🛡️' },
-  energía: { bg: 'rgba(245, 158, 11, 0.15)', text: '#d97706', border: '#f59e0b', icon: '⚡' },
-  energia: { bg: 'rgba(245, 158, 11, 0.15)', text: '#d97706', border: '#f59e0b', icon: '⚡' },
-  tierra: { bg: 'rgba(161, 98, 7, 0.15)', text: '#854d0e', border: '#a16207', icon: '🌱' },
-  'tierras raras': { bg: 'rgba(168, 85, 247, 0.15)', text: '#7e22ce', border: '#a855f7', icon: '💎' },
-  water: { bg: 'rgba(56, 189, 248, 0.15)', text: '#0284c7', border: '#38bdf8', icon: '💧' },
-  food: { bg: 'rgba(234, 179, 8, 0.15)', text: '#ca8a04', border: '#eab308', icon: '🍖' },
-  wood: { bg: 'rgba(180, 83, 9, 0.15)', text: '#b45309', border: '#d97706', icon: '🪵' },
-  stone: { bg: 'rgba(100, 116, 139, 0.15)', text: '#475569', border: '#94a3b8', icon: '🪨' },
-  iron: { bg: 'rgba(148, 163, 184, 0.2)', text: '#334155', border: '#64748b', icon: '⛏️' },
-  copper: { bg: 'rgba(249, 115, 22, 0.15)', text: '#c2410c', border: '#f97316', icon: '🥉' },
-  coal: { bg: 'rgba(75, 85, 99, 0.2)', text: '#374151', border: '#4b5563', icon: '⬛' },
-  'crude oil': { bg: 'rgba(30, 41, 59, 0.25)', text: '#0f172a', border: '#334155', icon: '🛢️' },
-  oil: { bg: 'rgba(30, 41, 59, 0.25)', text: '#0f172a', border: '#334155', icon: '🛢️' },
-  fuel: { bg: 'rgba(239, 68, 68, 0.15)', text: '#dc2626', border: '#ef4444', icon: '⛽' },
-  steel: { bg: 'rgba(99, 102, 241, 0.15)', text: '#4f46e5', border: '#6366f1', icon: '🛡️' },
-  energy: { bg: 'rgba(245, 158, 11, 0.15)', text: '#d97706', border: '#f59e0b', icon: '⚡' },
-  earth: { bg: 'rgba(161, 98, 7, 0.15)', text: '#854d0e', border: '#a16207', icon: '🌱' },
-  dirt: { bg: 'rgba(161, 98, 7, 0.15)', text: '#854d0e', border: '#a16207', icon: '🌱' },
-  'rare earths': { bg: 'rgba(168, 85, 247, 0.15)', text: '#7e22ce', border: '#a855f7', icon: '💎' }
+interface BadgePalette {
+  lightBg: string
+  lightText: string
+  lightBorder: string
+  darkBg: string
+  darkText: string
+  darkBorder: string
+  icon: string
 }
 
-const key = computed(() => (props.name || '').trim().toLowerCase())
-const style = computed(() => {
-  const match = defaultStyles[key.value]
+const palettes: Record<string, BadgePalette> = {
+  agua: {
+    lightBg: 'rgba(2, 132, 199, 0.12)', lightText: '#0369a1', lightBorder: '#0284c7',
+    darkBg: 'rgba(56, 189, 248, 0.16)', darkText: '#7dd3fc', darkBorder: '#38bdf8',
+    icon: '💧'
+  },
+  comida: {
+    lightBg: 'rgba(202, 138, 4, 0.14)', lightText: '#854d0e', lightBorder: '#ca8a04',
+    darkBg: 'rgba(234, 179, 8, 0.16)', darkText: '#fde047', darkBorder: '#eab308',
+    icon: '🍖'
+  },
+  madera: {
+    lightBg: 'rgba(180, 83, 9, 0.13)', lightText: '#78350f', lightBorder: '#b45309',
+    darkBg: 'rgba(245, 158, 11, 0.16)', darkText: '#fcd34d', darkBorder: '#f59e0b',
+    icon: '🪵'
+  },
+  piedra: {
+    lightBg: 'rgba(71, 85, 105, 0.13)', lightText: '#1e293b', lightBorder: '#64748b',
+    darkBg: 'rgba(148, 163, 184, 0.18)', darkText: '#e2e8f0', darkBorder: '#94a3b8',
+    icon: '🪨'
+  },
+  hierro: {
+    lightBg: 'rgba(51, 65, 85, 0.14)', lightText: '#0f172a', lightBorder: '#475569',
+    darkBg: 'rgba(148, 163, 184, 0.22)', darkText: '#f1f5f9', darkBorder: '#94a3b8',
+    icon: '⛏️'
+  },
+  cobre: {
+    lightBg: 'rgba(234, 88, 12, 0.13)', lightText: '#9a3412', lightBorder: '#ea580c',
+    darkBg: 'rgba(249, 115, 22, 0.18)', darkText: '#fdba74', darkBorder: '#fb923c',
+    icon: '🥉'
+  },
+  carbón: {
+    lightBg: 'rgba(55, 65, 81, 0.15)', lightText: '#111827', lightBorder: '#4b5563',
+    darkBg: 'rgba(156, 163, 175, 0.20)', darkText: '#f3f4f6', darkBorder: '#9ca3af',
+    icon: '⬛'
+  },
+  crudo: {
+    lightBg: 'rgba(30, 41, 59, 0.15)', lightText: '#0f172a', lightBorder: '#334155',
+    darkBg: 'rgba(100, 116, 139, 0.26)', darkText: '#f8fafc', darkBorder: '#94a3b8',
+    icon: '🛢️'
+  },
+  combustible: {
+    lightBg: 'rgba(220, 38, 38, 0.12)', lightText: '#991b1b', lightBorder: '#dc2626',
+    darkBg: 'rgba(239, 68, 68, 0.18)', darkText: '#fca5a5', darkBorder: '#f87171',
+    icon: '⛽'
+  },
+  acero: {
+    lightBg: 'rgba(79, 70, 229, 0.12)', lightText: '#3730a3', lightBorder: '#4f46e5',
+    darkBg: 'rgba(99, 102, 241, 0.20)', darkText: '#c7d2fe', darkBorder: '#818cf8',
+    icon: '🛡️'
+  },
+  energía: {
+    lightBg: 'rgba(217, 119, 6, 0.14)', lightText: '#92400e', lightBorder: '#d97706',
+    darkBg: 'rgba(245, 158, 11, 0.18)', darkText: '#fde68a', darkBorder: '#fbbf24',
+    icon: '⚡'
+  },
+  tierra: {
+    lightBg: 'rgba(161, 98, 7, 0.14)', lightText: '#713f12', lightBorder: '#a16207',
+    darkBg: 'rgba(202, 138, 4, 0.18)', darkText: '#fef08a', darkBorder: '#eab308',
+    icon: '🌱'
+  },
+  'tierras raras': {
+    lightBg: 'rgba(147, 51, 234, 0.12)', lightText: '#581c87', lightBorder: '#9333ea',
+    darkBg: 'rgba(168, 85, 247, 0.20)', darkText: '#e9d5ff', darkBorder: '#c084fc',
+    icon: '💎'
+  }
+}
+
+const aliases: Record<string, string> = {
+  carbon: 'carbón',
+  energia: 'energía',
+  water: 'agua',
+  food: 'comida',
+  wood: 'madera',
+  stone: 'piedra',
+  iron: 'hierro',
+  copper: 'cobre',
+  coal: 'carbón',
+  'crude oil': 'crudo',
+  oil: 'crudo',
+  fuel: 'combustible',
+  steel: 'acero',
+  energy: 'energía',
+  earth: 'tierra',
+  dirt: 'tierra',
+  'rare earths': 'tierras raras'
+}
+
+const key = computed(() => {
+  const raw = (props.name || '').trim().toLowerCase()
+  return aliases[raw] || raw
+})
+
+const style = computed<BadgePalette>(() => {
+  const match = palettes[key.value]
   if (match) return match
   return {
-    bg: 'var(--vp-c-bg-mute, #f1f5f9)',
-    text: 'var(--vp-c-text-1, #0f172a)',
-    border: 'var(--vp-c-divider, #cbd5e1)',
+    lightBg: 'var(--vp-c-default-soft)',
+    lightText: 'var(--vp-c-text-1)',
+    lightBorder: 'var(--vp-c-border)',
+    darkBg: 'var(--vp-c-default-soft)',
+    darkText: 'var(--vp-c-text-1)',
+    darkBorder: 'var(--vp-c-border)',
     icon: props.icon || '📦'
   }
 })
@@ -58,9 +130,12 @@ const style = computed(() => {
   <span
     class="resource-badge"
     :style="{
-      backgroundColor: color ? `${color}22` : style.bg,
-      borderColor: color || style.border,
-      color: color || style.text
+      '--badge-bg-light': color ? `${color}1f` : style.lightBg,
+      '--badge-text-light': color || style.lightText,
+      '--badge-border-light': color || style.lightBorder,
+      '--badge-bg-dark': color ? `${color}33` : style.darkBg,
+      '--badge-text-dark': color || style.darkText,
+      '--badge-border-dark': color || style.darkBorder
     }"
   >
     <span class="badge-icon">{{ icon || style.icon }}</span>
@@ -77,30 +152,46 @@ const style = computed(() => {
   padding: 0.15rem 0.55rem;
   margin: 0 0.2rem;
   border-radius: 9999px;
-  border: 1px solid;
+  border: 1px solid var(--badge-border-light);
+  background-color: var(--badge-bg-light);
+  color: var(--badge-text-light);
   font-size: 0.85em;
   font-weight: 600;
   line-height: 1.4;
   vertical-align: middle;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
+:global(.dark) .resource-badge {
+  background-color: var(--badge-bg-dark);
+  color: var(--badge-text-dark);
+  border-color: var(--badge-border-dark);
+}
+
 .resource-badge:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
 }
+
 .badge-icon {
   font-size: 0.95em;
 }
+
 .badge-name {
   white-space: nowrap;
 }
+
 .badge-category {
   font-size: 0.75em;
-  opacity: 0.85;
+  font-weight: 700;
   padding: 0.05rem 0.35rem;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.07);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+:global(.dark) .badge-category {
+  background: rgba(255, 255, 255, 0.12);
 }
 </style>

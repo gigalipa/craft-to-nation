@@ -106,6 +106,9 @@ The script is designed following **strictly the chronological order and real gam
 - [ ] **Action:** In 1st person, manually build a closed **2-story** structure using blocks from the hotbar (respecting Level 1 limits: max 2 floors and max 2 beds per floor):
   - **Ground Floor (Level 0):** Closed walls, **1 exterior door** (`7`), at least **1 glass window** (`6`), **1 or 2 beds** (`8`), and **1 chest** (`9`).
   - **Upper Floor (Level 1):** Closed walls, roof, walkable interior staircase from the ground floor, windows, and up to 2 beds, **with no exterior door**.
+- [ ] **Action (3D Aesthetic Verification):** Closely inspect the placed wooden door and glass windows:
+  - Verify that the wooden door features visible three-dimensional relief: a **brass door handle** (`Color(0.85, 0.7, 0.2)`) and **two dark metallic hinges** (`Color(0.15, 0.15, 0.15)`) on its side frame.
+  - Verify that glass window blocks display crisp wooden framing with transparent glass textures (`mat_ventana.tres` / `tex_ventana.png`).
 - [ ] **Action:** Step outside, aim at the ground-floor door, and press **`B`**.
 - [ ] **Expected Result:**
   - The structure validates and declares successfully: **it does not require an exterior door on the upper floor**.
@@ -134,8 +137,9 @@ The script is designed following **strictly the chronological order and real gam
 ### 2.4 1st Habitable Residence: `Colonizable: SÍ` and Arrival of the First Colonists
 - [ ] **Action:** Switch to overhead view (**`C`**), ensure View mode (**`Esc`**), and left-click on the newly finished residence (not the Urban Core).
 - [ ] **Expected Result:**
-  - `PanelEdificio` indicates: **`Colonizable: SÍ (inmigración activa)`** and displays the **`[Pausar colonización]`** button.
+  - `PanelEdificio` indicates: **`Colonizable: SÍ (inmigración activa)`** and displays the **`[Pausar colonización]`** button with the open-door vector icon (`puerta_abierta.svg`).
   - As hourly ticks advance (every 2 s), colonists (`desempleado`) start immigrating and walking toward their new home until its bed capacity is filled (4 unemployed/laborers per bed).
+  - With initial morale around 75% (*Pioneer Optimism* / *Optimismo pionero*), the colony operates under **Massive Immigration (`moral > 50%`)**, routing arriving colonists directly to available beds.
   - The panel breaks down how many residents of each category live in the building.
 
 ### 2.5 Remodeling the Only Populated Residence: "Homeless" (`Sin techo`) State and Reabsorption
@@ -247,13 +251,18 @@ The script is designed following **strictly the chronological order and real gam
 - [ ] **Action:** Observe the morale button on the topbar (defaulting around `🙂 75%` at start) and click it or press **`M`**.
 - [ ] **Expected Result:**
   - The centered modal window **`VentanaMoral`** styled with `TemaHUD` opens.
-  - Displays **Current Mood (`Estado Anímico Actual`)** (with visual thresholds: `😡` <20%, `🙁` 20–35%, `😐` 35–65%, `🙂` $\ge$65%), **Projected Hourly Rate** ($\Delta M$/h), continuous **Labor Productivity Multiplier** ($X = 0.5 \times 2^{(Y/50)}$, where 50% = `1.00x`, 75% $\approx$ `1.41x`, 100% = `2.00x`), and **Migration Flow** state.
-  - Details the analytical breakdown of factors:
-    1. *Inertia toward neutrality (50%)*
-    2. *Resource abundance / scarcity and energy coverage*
-    3. *Food diet variety*
-    4. *Homeless colonist drain (-0.05/h per colonist)*
-    5. *Rolling 7-day (168 h) hazard buffer*
+  - Displays **Current Mood (`Estado Anímico Actual`)** (with visual thresholds: `😡` <20%, `🙁` 20–35%, `😐` 35–65%, `🙂` $\ge$65%), **Projected Daily Rate** (`Tendencia: %+.2f / día` with vector arrows `tasa_arriba.svg`, `tasa_abajo.svg`, or `tasa_neutra.svg`), continuous **Labor Productivity Multiplier** ($X = 0.5 \times 2^{(Y/50)}$, where 50% = `1.00x`, 75% $\approx$ `1.41x`, 100% = `2.00x`), and the **Migration Flow** state.
+  - **Three Staggered Monthly Migration Tiers:**
+    1. **`Moral <= 20%` (Despair):** Displays `Migración: ⚠ Éxodo de cerebros (X/mes)` in red (`TemaHUD.INVALIDO`) alongside `investigador.svg`. Active brain drain expelling highest-skilled citizens first.
+    2. **`20% < Moral <= 50%` (Immigration with Beds):** Displays `Migración: Inmigración con camas (X/mes)` in soft green (`Color(0.85, 0.95, 0.6)`) alongside `ciudadano.svg`. **Immigrants only arrive if free beds exist in declared housing**; never overflows into homeless ("Sin techo") even if an Urban Core is founded.
+    3. **`Moral > 50%` (Massive Immigration):** Displays `Migración: Inmigración masiva (X/mes)` in bright green (`Color(0.6, 1.0, 0.6)`) with `ciudadano.svg`. Attracts a steady stream of immigrants; if all beds are full but an Urban Core exists, overflows into the streets as "Sin techo".
+  - Details the analytical breakdown of factors expressed per day (`/día`):
+    1. *Inertia toward neutrality (50%): `• Tendencia natural al equilibrio (50%): %+.2f/día`*
+    2. *Food diet variety: `• Variedad de alimentos (X/6 grupos): %+.2f/día`*
+    3. *Resource abundance & reserves: `• Abundancia y reservas: Estable` (or `Déficit de comida (-0.6/día)`, `Hambruna crítica (-3.0/día)`)*
+    4. *Homeless drain: `• Ciudadanos sin techo (X en la calle): %+.2f/día` (-0.05/day per homeless colonist)*
+    5. *Rolling 7-day (168 h) hazard buffer: `• Peligrosidad 7 días (bajas/robos): %+.2f/día`*
+  - Verify that during hourly simulation ticks (`Ciudad.gd`), morale changes by adding `tasa_cambio_moral / 24.0` per tick.
   - Closes cleanly via the `X` button, **`M`** key, or **`Esc`**.
 
 ### 4.3 Peripheral Gathering Outposts (`1 -> 2 -> 1..4`: Hunting, Lumber, Mine, Fishing)
@@ -262,6 +271,13 @@ The script is designed following **strictly the chronological order and real gam
   - Move the cursor **outside** the Zone of Influence (over forest for Hunting/Lumber, solid ground for Mine, or half-water / half-land shoreline for Fishing `4`): the footprint turns **gold (valid)** surrounded by the **blue circular halo** of its operating radius.
 - [ ] **Construction and Operation with Laborers:** Place a **Mine (`1-2-3`)** and a **Lumber Camp (`1-2-2`)** outside the Zone of Influence and let colonists complete construction.
   - Left-click on the finished outpost in View mode (`Esc`) to open `PanelPuesto`.
+  - **Header and Level Verification without Redundancy:**
+    - The outpost title displays only its name and status (`"Mina"` or `"Mina (inactivo)"`), **without repeating the redundant string** `", nivel X"`.
+    - Outpost level is cleanly represented by the Roman numeral vector badge (`romano_1.svg`) next to the building icon (`mina.svg`).
+  - **Staffing Assignment Buttons Without Text Overlap:**
+    - The `+` and `-` buttons for hiring and dismissing workers (`Recolectores`, `Acarreadores`) exhibit centered vector SVG icons (`btn_mas.svg`, `btn_menos.svg`) cleanly, without duplicate `+` or `-` text overlapping the icon.
+  - **Dynamic Production Row with Vector Icons:**
+    - Verify that the production row shows the `"Producción:"` prefix followed by each resource's **16px vector SVG icon** (`IconosHUD.crear_rect(rec, 16)`) and formatted rate (`"%.1f Recurso/h"`), or the label `"ninguna"` if no gatherers are present.
   - Hire **Gatherers (`Recolectores`)** (draws from Laborers/Unemployed) and **Haulers (`Acarreadores`)** using the `+` button:
     - Verify that once gatherers arrive inside the outpost (`presentes`), the outpost extracts physical ore/wood from the environment (the mine excavates its quarry in strips and the lumber camp chops actual trees).
     - Verify that **haulers** pick up cargo from the front exterior `servicio` cell (in front of the door) and carry it to the central warehouse without getting stuck inside the building.
@@ -473,9 +489,9 @@ The script is designed following **strictly the chronological order and real gam
 - [ ] **Unemployment (240 h) and Homelessness (72 h) Tolerance:**
   - Verify that colonists who remain in the `"Sin techo"` state for more than **72 hours (3 days)** emigrate from the colony, penalizing morale by `-10` points.
   - Verify that colonists who remain `"desempleado"` for **240 continuous hours (10 days)** without being hired peacefully emigrate, incrementing the evicted/emigrated counter.
-- [ ] **Famine (0 Food) and Critical Morale Exodus (<20%):**
-  - If `comida` stock drops to `0`, each hour of starvation causes population casualties following `ORDEN_BAJAS_HAMBRUNA` (`militar > obrero > tecnico > especialista > investigador > desempleado`) and reduces morale by **`-3.0/h`**.
-  - When morale falls below **20% (`😡`)**, migration flow reverses into an **active despair exodus**, triggering a brain drain that expels the most qualified colonists first following `ORDEN_EXODO_MORAL` (`investigador > especialista > tecnico > militar > obrero > desempleado`).
+- [ ] **Famine (0 Food) and Critical Morale Exodus (<=20%):**
+  - If `comida` stock drops to `0`, each hour of starvation causes population casualties following `ORDEN_BAJAS_HAMBRUNA` (`militar > obrero > tecnico > especialista > investigador > desempleado`) and penalizes morale at **`-3.0 / day`** (`Hambruna crítica (-3.0/día)`, deducting `3.0 / 24` per tick).
+  - When morale falls below or equal to **20% (`😡`)**, migration flow reverses into a staggered **brain drain exodus** (`Migración: ⚠ Éxodo de cerebros (X/mes)`), triggering a flight of talent that expels the most qualified colonists first following `ORDEN_EXODO_MORAL` (`investigador > especialista > tecnico > militar > obrero > desempleado`).
 - [ ] **Avatar Succession (`K` Key or Drowning):**
   - Press the debug key **`K`** in 1st person (or deplete the oxygen bar to 0 underwater): `Ciudad.suceder_avatar()` executes (if military personnel exist, it applies succession with a 5 h electoral penalty and respawns at the origin `(0, 1, 0)` with full oxygen).
 
@@ -519,7 +535,7 @@ The script is designed following **strictly the chronological order and real gam
   - In `VentanaPoblacion` and `VentanaOcupaciones`, each profession and category displays its representative icon.
   - In `VentanaMoral`, central gauge displays 32×32 px emotional mood face, and factors show balance, food, cornucopia, and shield icons.
   - In `VentanaBaul`, resources display icons and extraction buttons display `btn_menos`, `btn_mas`, and `extraer_todo`.
-  - In `PanelEdificio` and `PanelPuesto`, colonization shows lock/clock/door icons, pause/play shows button icons, priority displays Roman/arrow badges, and schools display Roman numeral level badges.
+  - In `PanelEdificio` and `PanelPuesto`, colonization shows lock/clock/door icons, pause/play shows button icons, priority displays Roman/arrow badges, schools and outposts show Roman numeral level badges (`romano_1..3.svg`), staffing `+`/`-` buttons display clean centered icons without overlapping text, and the production line renders the 16px vector SVG resource icon.
   - Modal confirmation dialogs feature OK button with green `check.svg` and Cancel with red `cruz.svg`.
 
 ---
@@ -531,10 +547,10 @@ The script is designed following **strictly the chronological order and real gam
 | **1.1** | 1st-person movement, face highlight, chopping/mining with progress bar, and block placement | | |
 | **1.2** | Swimming in water ($\ge 2$ blocks), currents, oxygen bar, and draining with solid blocks | | |
 | **1.3** | Lantern in initial Thermal mode (`L`: fuel 10h, coal 6h, wood 5h) and stacked oxygen window | | |
-| **2.1** | 1st Building declared with `B` (2 stories, floor 1 without exterior door) founds **Urban Core** & saves blueprint | | |
+| **2.1** | 1st Building with `B`: 3D doors (brass handle & hinges), crisp windows, founds **Urban Core** & saves blueprint | | |
 | **2.2** | Urban Core remodeling (`Shift+B`) in free-edit mode without losing headquarters status | | |
 | **2.3** | Painting Residential Zone (`2-1`), 3D blueprint thumbnail (`1-1`), `Ctrl+Scroll` rotation, and on-foot supplying | | |
-| **2.4** | 1st Habitable Residence spawns with `Colonizable: SÍ` and attracts the first colonists | | |
+| **2.4** | 1st Habitable Residence spawns with `Colonizable: SÍ` & massive immigration (initial morale >50%) | | |
 | **2.5** | Remodeling the only populated residence creates `"Sin techo"` colonists and redeclaring with `B` reabsorbs them | | |
 | **2.6** | 2nd Residence built by colonists spawns as a buffer (`Colonizable: NO 24h`) and relocates residents with 0 homeless | | |
 | **2.7** | Row houses (flood-fill stops at neighbor wall) and Urban Core relocation (5 h grace period) | | |
@@ -545,8 +561,8 @@ The script is designed following **strictly the chronological order and real gam
 | **3.5** | Unified overhead demolition (`3`): buildings and roads with Dijkstra around 90° corners & orange outline | | |
 | **3.6** | Construction priorities (`Normal`/`Alta`/`Baja` in `PanelEdificio`) and strict dispatch hierarchy | | |
 | **4.1** | Responsive topbar (`"tierras raras"`), alphabetical Warehouse A-Z (`"Bloques de piedra"`), Population & Occupations (▼/▶) | | |
-| **4.2** | Dynamic morale: 4-emoji button and `VentanaMoral` modal (`M`) with productivity multiplier and factor breakdown | | |
-| **4.3** | Peripheral outposts (`1-2-1..4`) outside Zone of Influence: physical extraction and hauling from `servicio` cell | | |
+| **4.2** | Dynamic morale: rate in `/día`, 3 migration tiers (<=20 exodus, 20-50 with beds, >50 massive) & factors in `VentanaMoral` | | |
+| **4.3** | Peripheral outposts (`1-2-1..4`): `PanelPuesto` clean title, Roman badges, clean +/- buttons & production row with SVG icons | | |
 | **4.4** | Road preference in pathfinding (`BuscadorRutas`: road cost 3 vs terrain 8) and loaded right-of-way priority | | |
 | **4.5** | 1st-person interaction with active outpost chest (`VentanaBaul` via `E`: centered `320x260`, scroll, and quick close) | | |
 | **5.1** | Technical School (`1-4-1` on Residential Zone): 4-apprentice cohort (24 h) graduates **3 Technicians** & mine levels | | |
@@ -564,9 +580,9 @@ The script is designed following **strictly the chronological order and real gam
 | **7.1** | Thermal Power Plant (`1-3-8`): `Carbón`/`Combustible`/`Crudo` selector, central reserve, and coal hauling | | |
 | **7.2** | Topbar "Energía" button and `VentanaEnergia`: global balance, generators, consumers, and camera teleportation | | |
 | **7.3** | Lantern switching to `LÁMPARA ELÉCTRICA🟡` (72 h battery on grid, discharge outside influence & `+7.2 h/tick` recharge) | | |
-| **7.4** | Final demographic stress: homeless (72 h) / unemployed (240 h) emigration, famine, exodus (<20% morale) & succession (`K`) | | |
+| **7.4** | Final demographic stress: homeless (72 h) / unemployed (240 h) emigration, famine (-3.0/day), exodus (<=20%) & succession (`K`) | | |
 | **8.1** | Topbar: censo icon, 4 mood face icons, warehouse icon, food trend arrow, and tri-color power bolt with kW | | |
 | **8.2** | Build Menu (104×76 px): 3-corner badges (inputs, power, output) and 3D thumbnails (roads, aqueducts, pipes) | | |
 | **8.3** | 1st-person HUD: lantern ProgressBar, oxygen bubble row, contextual tool icon beside mining progress | | |
-| **8.4** | Global and interaction windows: resource icons in warehouse/chest, professions in population/occupations, factors in morale | | |
+| **8.4** | Global & interaction windows: icons in warehouse/chest, professions in population, `PanelPuesto` Roman badges & prod. SVG | | |
 | **8.5** | Modal dialogs and controls: confirmation `check`/`cruz`, building door status icons, golden keycaps | | |

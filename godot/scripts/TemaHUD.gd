@@ -20,6 +20,10 @@ const MARGEN_Y := 2.0
 const MARGEN_CONTENIDO := 8
 
 
+const MARGEN_BOTON_LATERAL := 12
+const MARGEN_BOTON_VERTICAL := 4
+
+
 static func caja(fondo: Color = VERDE, borde: Color = DORADO) -> StyleBoxFlat:
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = fondo
@@ -27,6 +31,19 @@ static func caja(fondo: Color = VERDE, borde: Color = DORADO) -> StyleBoxFlat:
 	estilo.set_border_width_all(2)
 	estilo.set_corner_radius_all(4)
 	estilo.set_content_margin_all(MARGEN_CONTENIDO)
+	return estilo
+
+
+static func caja_boton(fondo: Color = VERDE, borde: Color = DORADO) -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = fondo
+	estilo.border_color = borde
+	estilo.set_border_width_all(2)
+	estilo.set_corner_radius_all(4)
+	estilo.content_margin_left = MARGEN_BOTON_LATERAL
+	estilo.content_margin_right = MARGEN_BOTON_LATERAL
+	estilo.content_margin_top = MARGEN_BOTON_VERTICAL
+	estilo.content_margin_bottom = MARGEN_BOTON_VERTICAL
 	return estilo
 
 
@@ -46,11 +63,12 @@ static func etiqueta(texto: String = "") -> Label:
 
 
 static func estilizar_boton(boton: Button) -> void:
-	boton.add_theme_stylebox_override("normal", caja())
-	boton.add_theme_stylebox_override("hover", caja(VERDE_CLARO))
-	boton.add_theme_stylebox_override("pressed", caja(VERDE_CLARO, Color(1.0, 0.8, 0.3)))
+	boton.add_theme_stylebox_override("normal", caja_boton())
+	boton.add_theme_stylebox_override("hover", caja_boton(VERDE_CLARO))
+	boton.add_theme_stylebox_override("pressed", caja_boton(VERDE_CLARO, Color(1.0, 0.8, 0.3)))
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	boton.add_theme_color_override("font_color", TEXTO)
+	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.96, 0.88))
 	boton.add_theme_color_override("font_pressed_color", Color(1.0, 0.85, 0.4))
 	boton.focus_mode = Control.FOCUS_NONE
 

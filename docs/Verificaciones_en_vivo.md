@@ -106,6 +106,9 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 - [ ] **Acción:** En 1ª persona, levantar manualmente con bloques de la hotbar una estructura cerrada de **2 pisos** (respetando el límite de Nivel 1: máx. 2 pisos y máx. 2 camas por piso):
   - **Planta baja (Nivel 0):** Muros cerrados, **1 puerta exterior** (`7`), al menos **1 ventana de vidrio** (`6`), **1 o 2 camas** (`8`) y **1 baúl** (`9`).
   - **Planta alta (Nivel 1):** Muros cerrados, techo, escalera interior transitable desde planta baja, ventanas y hasta 2 camas, **sin ninguna puerta exterior**.
+- [ ] **Acción (Verificación Estética 3D):** Inspeccionar de cerca la puerta de madera y las ventanas colocadas:
+  - Comprobar que la puerta de madera cuenta con relieve tridimensional visible: un **picaporte dorado** (`Color(0.85, 0.7, 0.2)`) y **dos bisagras metálicas oscuras** (`Color(0.15, 0.15, 0.15)`) en su marco lateral.
+  - Comprobar que los bloques de ventana de vidrio muestran marcos de madera nítidos con textura transparente (`mat_ventana.tres` / `tex_ventana.png`).
 - [ ] **Acción:** Salir al exterior, apuntar a la puerta de planta baja y pulsar **`B`**.
 - [ ] **Resultado esperado:**
   - La estructura se valida y declara con éxito: **no exige puerta exterior en el piso superior**.
@@ -134,8 +137,9 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 ### 2.4 1ª Residencia Habitable: `Colonizable: SÍ` y Llegada de los Primeros Colonos
 - [ ] **Acción:** Pasar a cenital (**`C`**), asegurar modo Ver (**`Esc`**) y hacer clic izquierdo sobre la residencia recién terminada (no sobre el Núcleo Urbano).
 - [ ] **Resultado esperado:**
-  - `PanelEdificio` indica: **`Colonizable: SÍ (inmigración activa)`** y muestra el botón **`[Pausar colonización]`**.
+  - `PanelEdificio` indica: **`Colonizable: SÍ (inmigración activa)`** y muestra el botón **`[Pausar colonización]`** con el ícono de puerta abierta (`puerta_abierta.svg`).
   - Con el avance de los ticks horarios (cada 2 s), comienzan a inmigrar colonos (`desempleado`) que caminan hacia su nuevo hogar hasta llenar la capacidad de sus camas (4 desempleados/obreros por cama).
+  - Al contar con una moral inicial en torno al 75% (`Optimismo pionero`), la colonia opera en régimen de **Inmigración masiva (`moral > 50%`)**, canalizando la inmigración directamente a las camas disponibles.
   - El panel desglosa exactamente cuántos residentes de cada categoría habitan el edificio.
 
 ### 2.5 Remodelación de Única Residencia Poblada: Estado "Sin Techo" y Reabsorción
@@ -247,13 +251,18 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 - [ ] **Acción:** Observar el botón de moral en la barra superior (por defecto en torno a `🙂 75%` al inicio) y hacer clic sobre él o pulsar la tecla **`M`**.
 - [ ] **Resultado esperado:**
   - Se despliega la ventana modal centrada **`VentanaMoral`** estilizada con `TemaHUD`.
-  - Muestra el **Estado Anímico Actual** (con umbrales visuales: `😡` <20%, `🙁` 20–35%, `😐` 35–65%, `🙂` $\ge$65%), la **Tasa Horaria Proyectada** ($\Delta M$/h), el **Multiplicador de Productividad Laboral** continuo ($X = 0.5 \times 2^{(Y/50)}$, donde 50% = `1.00x`, 75% $\approx$ `1.41x`, 100% = `2.00x`) y el estado del **Flujo Migratorio**.
-  - Detalla el desglose analítico de factores:
-    1. *Inercia hacia neutralidad (50%)*
-    2. *Abundancia / Escasez de recursos y cobertura energética*
-    3. *Variedad de dieta alimentaria*
-    4. *Desgaste por colonos sin techo (-0.05/h por colono)*
-    5. *Buffer móvil de peligrosidad de los últimos 7 días (168 h)*
+  - Muestra el **Estado Anímico Actual** (con umbrales visuales: `😡` <20%, `🙁` 20–35%, `😐` 35–65%, `🙂` $\ge$65%), la **Tasa Diaria Proyectada** (`Tendencia: %+.2f / día` con flechas vectoriales `tasa_arriba.svg`, `tasa_abajo.svg` o `tasa_neutra.svg`), el **Multiplicador de Productividad Laboral** continuo ($X = 0.5 \times 2^{(Y/50)}$, donde 50% = `1.00x`, 75% $\approx$ `1.41x`, 100% = `2.00x`) y el estado del **Flujo Migratorio**.
+  - **Tres Regímenes Escalonados de Migración Mensual:**
+    1. **`Moral <= 20%` (Desesperanza):** Exhibe `Migración: ⚠ Éxodo de cerebros (X/mes)` en rojo (`TemaHUD.INVALIDO`) junto al ícono de `investigador.svg`. Fuga de talentos activa que evacúa a los ciudadanos más cualificados.
+    2. **`20% < Moral <= 50%` (Migración con Camas):** Exhibe `Migración: Inmigración con camas (X/mes)` en verde suave (`Color(0.85, 0.95, 0.6)`) junto al ícono de `ciudadano.svg`. **Solo arriban inmigrantes si hay camas libres disponibles en viviendas declaradas**; jamás desborda hacia colonos "Sin techo" aunque exista núcleo urbano.
+    3. **`Moral > 50%` (Inmigración Masiva):** Exhibe `Migración: Inmigración masiva (X/mes)` en verde brillante (`Color(0.6, 1.0, 0.6)`) con `ciudadano.svg`. Atrae un flujo continuo de colonos y, si no hay camas libres pero existe núcleo urbano, desborda hacia la calle como "Sin techo".
+  - Detalla el desglose analítico de factores expresados en variación por día (`/día`):
+    1. *Inercia hacia neutralidad (50%): `• Tendencia natural al equilibrio (50%): %+.2f/día`*
+    2. *Variedad alimentaria: `• Variedad de alimentos (X/6 grupos): %+.2f/día`*
+    3. *Abundancia y reservas: `• Abundancia y reservas: Estable` (o `Déficit de comida (-0.6/día)`, `Hambruna crítica (-3.0/día)`)*
+    4. *Desgaste por colonos sin techo: `• Ciudadanos sin techo (X en la calle): %+.2f/día` (-0.05/día por cada colono desahuciado)*
+    5. *Buffer móvil de peligrosidad de los últimos 7 días: `• Peligrosidad 7 días (bajas/robos): %+.2f/día`*
+  - Comprobar que en la simulación horaria (`Ciudad.gd`), la moral se modula sumando `tasa_cambio_moral / 24.0` en cada tick.
   - Se cierra limpiamente con el botón `X`, la tecla **`M`** o **`Esc`**.
 
 ### 4.3 Puestos Periféricos de Recolección (`1 -> 2 -> 1..4`: Caza, Madera, Mina, Pesca)
@@ -262,6 +271,13 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
   - Mover el cursor **fuera** de la Zona de Influencia (sobre bosque para Caza/Maderero, terreno firme para Mina, o costa mitad agua / mitad tierra para Pesca `4`): la huella pasa a **dorada (válida)** rodeada por el **halo circular azul** de su radio de acción.
 - [ ] **Construcción y Operación con Obreros:** Emplazar una **Mina (`1-2-3`)** y un **Maderero (`1-2-2`)** fuera de la zona de influencia y dejar que los colonos completen la obra.
   - Hacer clic izquierdo sobre el puesto terminado en modo Ver (`Esc`) para abrir `PanelPuesto`.
+  - **Verificación de Encabezado y Nivel sin duplicados:**
+    - El título del puesto muestra únicamente su nombre y estado (`"Mina"` o `"Mina (inactivo)"`), **sin repetir la cadena redundante** `", nivel X"`.
+    - El nivel del puesto se refleja nítidamente mediante el ícono vectorial de número romano (`romano_1.svg`) contiguo al ícono del edificio (`mina.svg`).
+  - **Botones de Asignación de Personal sin Solapamiento:**
+    - Los botones `+` y `-` para contratar y despedir trabajadores (`Recolectores`, `Acarreadores`) exhiben sus íconos vectoriales SVG centrados (`btn_mas.svg`, `btn_menos.svg`) de forma limpia, sin mostrar texto `+` o `-` duplicado sobre el ícono.
+  - **Fila de Producción Dinámica con Íconos Vectoriales:**
+    - Comprobar que la fila de producción muestra el prefijo `"Producción:"` seguido de cada recurso con su **ícono vectorial de 16 px** (`IconosHUD.crear_rect(rec, 16)`) y la tasa formateada (`"%.1f Recurso/h"`), o la etiqueta `"ninguna"` si no hay recolectores presentes en el puesto.
   - Contratar **Recolectores** (toma Obreros/Desempleados) y **Acarreadores** con el botón `+`:
     - Verificar que cuando los recolectores llegan al interior del puesto (`presentes`), el puesto extrae mineral/madera física del entorno (la mina excava su cantera por franjas y el maderero tala árboles reales).
     - Verificar que los **acarreadores** recogen la carga desde la celda exterior frontal de `servicio` (frente a la puerta) y la llevan al almacén central sin quedarse congelados dentro del edificio.
@@ -473,9 +489,9 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 - [ ] **Tolerancia de Desempleo (240 h) y Sin Techo (72 h):**
   - Comprobar que los colonos que permanecen en estado `"Sin techo"` más de **72 horas (3 días)** emigran de la colonia penalizando `-10` puntos de moral.
   - Comprobar que los colonos que permanecen como `"desempleado"` durante **240 horas (10 días)** continuas sin ser contratados emigran pacíficamente incrementando el contador de desahuciados/emigrados.
-- [ ] **Hambruna (0 Comida) y Éxodo por Moral Crítica (<20%):**
-  - Si el stock de `comida` cae a `0`, cada hora de inanición provoca bajas en la población según `ORDEN_BAJAS_HAMBRUNA` (`militar > obrero > tecnico > especialista > investigador > desempleado`) y reduce la moral en **`-3.0/h`**.
-  - Cuando la moral cae por debajo del **20% (`😡`)**, el flujo migratorio se invierte en **éxodo activo por desesperanza**, provocando una fuga de talentos que expulsa primero a los colonos más cualificados según `ORDEN_EXODO_MORAL` (`investigador > especialista > tecnico > militar > obrero > desempleado`).
+- [ ] **Hambruna (0 Comida) y Éxodo por Moral Crítica (<=20%):**
+  - Si el stock de `comida` cae a `0`, cada hora de inanición provoca bajas en la población según `ORDEN_BAJAS_HAMBRUNA` (`militar > obrero > tecnico > especialista > investigador > desempleado`) y penaliza la moral a razón de **`-3.0 / día`** (`Hambruna crítica (-3.0/día)`, descontando `3.0 / 24` por tick).
+  - Cuando la moral cae por debajo o igual al **20% (`😡`)**, el flujo migratorio se invierte en **éxodo de cerebros** escalonado (`Migración: ⚠ Éxodo de cerebros (X/mes)`), provocando una fuga de talentos que expulsa primero a los colonos más cualificados según `ORDEN_EXODO_MORAL` (`investigador > especialista > tecnico > militar > obrero > desempleado`).
 - [ ] **Sucesión del Avatar (Tecla `K` o Ahogamiento):**
   - Pulsar la tecla de prueba **`K`** en 1ª persona (o agotar a 0 la barra de oxígeno bajo el agua): se ejecuta `Ciudad.suceder_avatar()` (si hay militares aplica sucesión con 5 h de penalización electoral y reaparece en el origen `(0, 1, 0)` con oxígeno al máximo).
 
@@ -519,7 +535,7 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
   - En `VentanaPoblacion` y `VentanaOcupaciones`, cada oficio y categoría cuenta con su ícono representativo.
   - En `VentanaMoral`, el medidor analítico central integra el rostro emocional en 32×32 px y los factores desglosan íconos de balanza, comida, cornucopia y escudo.
   - En `VentanaBaul`, cada recurso cuenta con su ícono y los botones de extracción muestran `btn_menos`, `btn_mas` y `extraer_todo`.
-  - En `PanelEdificio` y `PanelPuesto`, los estados de colonización muestran íconos de candado/reloj/puerta, los botones de pausa/play muestran sus íconos, la prioridad muestra insignias `prio_alta`/`prio_normal`/`prio_baja`, y las escuelas muestran las insignias romanas de nivel.
+  - En `PanelEdificio` y `PanelPuesto`, los estados de colonización muestran íconos de candado/reloj/puerta, los botones de pausa/play muestran sus íconos, la prioridad muestra insignias `prio_alta`/`prio_normal`/`prio_baja`, las escuelas y puestos muestran las insignias romanas de nivel (`romano_1..3.svg`), los botones `+`/`-` de personal muestran íconos centrados limpios sin texto solapado, y la línea de producción renderiza el ícono vectorial SVG de 16 px del recurso.
   - Los diálogos modales de confirmación (demoler, remodelar, etc.) exhiben el botón Aceptar con ícono `check.svg` verde y Cancelar con `cruz.svg` roja.
 
 ---
@@ -531,10 +547,10 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 | **1.1** | Movimiento en 1ª persona, resaltado de cara, tala/minado con progreso y colocación | | |
 | **1.2** | Natación en agua ($\ge 2$ bloques), corrientes, oxígeno y drenado con bloques sólidos | | |
 | **1.3** | Lámpara en modo Térmico inicial (`L`: combustible 10h, carbón 6h, madera 5h) y oxígeno apilado | | |
-| **2.1** | 1er Edificio declarado con `B` (2 plantas, piso 1 sin puerta exterior) funda el **Núcleo Urbano** y crea blueprint | | |
+| **2.1** | 1er Edificio con `B`: 3D puertas (picaporte dorado y bisagras), ventanas nítidas, funda **Núcleo Urbano** y crea blueprint | | |
 | **2.2** | Remodelación del Núcleo Urbano (`Shift+B`) en edición libre sin pérdida de sede | | |
 | **2.3** | Pintado de Zona Residencial (`2-1`), miniatura 3D de blueprint (`1-1`), rotación `Ctrl+Scroll` y surtido a pie | | |
-| **2.4** | 1ª Residencia habitable nace con `Colonizable: SÍ` y atrae a los primeros colonos | | |
+| **2.4** | 1ª Residencia habitable nace con `Colonizable: SÍ` e inmigración masiva (moral inicial >50%) | | |
 | **2.5** | Remodelación de única residencia poblada genera colonos `"Sin techo"` y redeclarar con `B` los reabsorbe | | |
 | **2.6** | 2ª Residencia construida por colonos nace como buffer (`Colonizable: NO 24h`) y permite reubicar sin dejar sin techo | | |
 | **2.7** | Edificios adosados (flood-fill se detiene en muro vecino) y traslado de Núcleo Urbano (gracia de 5 h) | | |
@@ -545,8 +561,8 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 | **3.5** | Demolición cenital unificada (`3`): edificios y vías con Dijkstra en esquinas de 90° y outline naranja | | |
 | **3.6** | Prioridades de obra (`Normal`/`Alta`/`Baja` en `PanelEdificio`) y jerarquía estricta de despacho | | |
 | **4.1** | Topbar responsiva (`"tierras raras"`), Almacén alfabético A-Z (`"Bloques de piedra"`), Población y Ocupaciones (▼/▶) | | |
-| **4.2** | Moral dinámica: botón con 4 emojis y modal `VentanaMoral` (`M`) con productividad y desglose de factores | | |
-| **4.3** | Puestos periféricos (`1-2-1..4`) fuera de zona de influencia: extracción física y acarreo en celda `servicio` | | |
+| **4.2** | Moral dinámica: tasa en `/día`, 3 regímenes migratorios (<=20 éxodo, 20-50 con camas, >50 masiva) y factores en `VentanaMoral` | | |
+| **4.3** | Puestos periféricos (`1-2-1..4`): `PanelPuesto` con títulos limpios, insignias romanas, botones +/- sin solape y fila prod. con íconos | | |
 | **4.4** | Preferencia de vías en pathfinding (`BuscadorRutas`: vía coste 3 vs campo 8) y prioridad de paso con carga | | |
 | **4.5** | Interacción en 1ª persona con baúl de puesto activo (`VentanaBaul` con `E`: centrada `320x260`, scroll y cierre rápido) | | |
 | **5.1** | Escuela técnica (`1-4-1` en Zona Residencial): cohorte de 4 aprendices (24 h) gradúa **3 Técnicos** y niveles en mina | | |
@@ -564,9 +580,9 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 | **7.1** | Central termoeléctrica (`1-3-8`): selector `Carbón`/`Combustible`/`Crudo`, reserva central y acarreo de carbón | | |
 | **7.2** | Botón "Energía" en topbar y `VentanaEnergia`: balance global, generadores, consumidores y teletransporte de cámara | | |
 | **7.3** | Conmutación de lámpara a `LÁMPARA ELÉCTRICA🟡` (batería 72 h en red, descarga fuera de influencia y recarga `+7.2 h/tick`) | | |
-| **7.4** | Estrés demográfico final: emigración por sin techo (72 h) / desempleo (240 h), hambruna, éxodo (<20% moral) y sucesión (`K`) | | |
+| **7.4** | Estrés demográfico final: emigración sin techo (72 h) / desempleo (240 h), hambruna (-3.0/día), éxodo (<=20%) y sucesión (`K`) | | |
 | **8.1** | Barra superior: censo, 4 estados de moral, almacén, tendencia de comida, y rayo interactivo tri-color de energía en kW | | |
 | **8.2** | Menú Construir (104×76 px): overlay de insignias en 3 esquinas (insumos, energía, producto) y miniaturas 3D (vías, acueducto, tubería) | | |
 | **8.3** | Interfaz 1ª persona: farol con ProgressBar de batería, burbujas de oxígeno y herramienta contextual al minar | | |
-| **8.4** | Paneles globales y de interacción: íconos de recursos en almacén/baúl, oficios en población/ocupaciones, factores en moral | | |
+| **8.4** | Paneles globales y de interacción: íconos en almacén/baúl, oficios en población, `PanelPuesto` con insignias romanas y prod. SVG | | |
 | **8.5** | Diálogos modales y controles: confirmación con `check`/`cruz`, estados de puerta en edificios y keycaps dorados | | |

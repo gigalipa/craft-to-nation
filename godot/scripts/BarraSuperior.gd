@@ -79,6 +79,31 @@ static func texto_energia(entregada: float, demanda: float, tasa: float = 0.0) -
 	return "Energía: %.0f/%.0f (%s)" % [entregada, demanda, texto_tasa(tasa)]
 
 
+static func color_nivel_moral(m: float) -> Color:
+	if m <= 20.0:
+		return TemaHUD.INVALIDO
+	elif m < 35.0:
+		return Color(1.0, 0.65, 0.2)
+	elif m <= 65.0:
+		return TemaHUD.TEXTO
+	return Color(0.45, 0.90, 0.45)
+
+
+static func formatear_energia_neta(neto: float) -> String:
+	var abs_val: float = absf(neto)
+	if is_zero_approx(neto) or abs_val < 0.05:
+		return "0 kW"
+	var signo: String = "+" if neto > 0.0 else "-"
+	if abs_val > 999.0:
+		var mw: float = abs_val / 1000.0
+		if mw < 10.0:
+			return "%s%.1f MW" % [signo, mw]
+		else:
+			return "%s%.0f MW" % [signo, mw]
+	else:
+		return "%s%.0f kW" % [signo, abs_val]
+
+
 ## Fracción 0-1 del bono de moral respecto al máximo (acotada).
 static func fraccion_moral(bono: float) -> float:
 	return clampf(bono / Ciudad.BONO_MORAL_MAXIMO, 0.0, 1.0)
@@ -146,11 +171,14 @@ func _ready() -> void:
 	grupo_izq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	TemaHUD.estilizar_boton(poblacion)
-	poblacion.custom_minimum_size = Vector2(0, 28)
+	poblacion.custom_minimum_size = Vector2(215, 28)
 	poblacion.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	poblacion.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	poblacion.pressed.connect(func() -> void: dato_pedido.emit("poblacion"))
 	poblacion.gui_input.connect(_on_clic.bind("poblacion"))
+	poblacion.text = ""
+	for prop in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]:
+		poblacion.add_theme_color_override(prop, Color.TRANSPARENT)
 
 	var hbox_pob := HBoxContainer.new()
 	hbox_pob.add_theme_constant_override("separation", 4)
@@ -178,7 +206,6 @@ func _ready() -> void:
 	hbox_pob.add_child(_lbl_pob_par2)
 
 	poblacion.add_child(hbox_pob)
-	poblacion.add_theme_color_override("font_color", Color.TRANSPARENT)
 	grupo_izq.add_child(poblacion)
 
 	grupo_izq.add_child(_separador())
@@ -188,10 +215,11 @@ func _ready() -> void:
 	moral.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	moral.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	moral.pressed.connect(func() -> void: dato_pedido.emit("moral"))
-	
-	_icono_moral = IconosHUD.crear_rect("moral_alta", Vector2(18, 18))
-	_icono_moral.set_anchors_preset(Control.PRESET_CENTER)
-	moral.add_child(_icono_moral)
+	moral.text = ""
+	moral.icon = IconosHUD.icono("moral_alta")
+	moral.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	moral.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	moral.expand_icon = true
 	grupo_izq.add_child(moral)
 
 	_barra_moral.show_percentage = false
@@ -199,6 +227,14 @@ func _ready() -> void:
 	_barra_moral.custom_minimum_size = Vector2(70, 10)
 	_barra_moral.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_barra_moral.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var fondo_barra := StyleBoxFlat.new()
+	fondo_barra.bg_color = Color(0.08, 0.12, 0.10, 0.9)
+	fondo_barra.border_color = Color(0.35, 0.30, 0.15, 0.6)
+	fondo_barra.set_border_width_all(1)
+	fondo_barra.set_corner_radius_all(3)
+	_barra_moral.add_theme_stylebox_override("background", fondo_barra)
+
 	grupo_izq.add_child(_barra_moral)
 
 	fila.add_child(grupo_izq)
@@ -216,21 +252,15 @@ func _ready() -> void:
 
 	almacen_total.text = "Almacén"
 	TemaHUD.estilizar_boton(almacen_total)
-	almacen_total.custom_minimum_size = Vector2(96, 28)
+	almacen_total.custom_minimum_size = Vector2(106, 28)
 	almacen_total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	almacen_total.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	almacen_total.pressed.connect(func() -> void: dato_pedido.emit("almacen"))
-	almacen_total.add_theme_color_override("font_color", Color.TRANSPARENT)
-	var hbox_alm := HBoxContainer.new()
-	hbox_alm.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hbox_alm.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox_alm.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox_alm.add_theme_constant_override("separation", 6)
-	_icono_almacen = IconosHUD.crear_rect("almacen", Vector2(16, 16))
-	hbox_alm.add_child(_icono_almacen)
-	_lbl_almacen = TemaHUD.etiqueta("Almacén")
-	hbox_alm.add_child(_lbl_almacen)
-	almacen_total.add_child(hbox_alm)
+	almacen_total.icon = IconosHUD.icono("almacen")
+	almacen_total.expand_icon = true
+	almacen_total.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	almacen_total.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	almacen_total.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	grupo_cen.add_child(almacen_total)
 
 	var cont_comida := HBoxContainer.new()
@@ -246,21 +276,16 @@ func _ready() -> void:
 	grupo_cen.add_child(_separador())
 
 	TemaHUD.estilizar_boton(energia)
-	energia.custom_minimum_size = Vector2(0, 28)
+	energia.custom_minimum_size = Vector2(115, 28)
 	energia.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	energia.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	energia.pressed.connect(func() -> void: dato_pedido.emit("energia"))
-	energia.add_theme_color_override("font_color", Color.TRANSPARENT)
-	var hbox_ene := HBoxContainer.new()
-	hbox_ene.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hbox_ene.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox_ene.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox_ene.add_theme_constant_override("separation", 6)
-	_icono_energia = IconosHUD.crear_rect("energia_dorado", Vector2(16, 16))
-	hbox_ene.add_child(_icono_energia)
-	_lbl_energia = TemaHUD.etiqueta("0 kW")
-	hbox_ene.add_child(_lbl_energia)
-	energia.add_child(hbox_ene)
+	energia.text = "0 kW"
+	energia.icon = IconosHUD.icono("energia_dorado")
+	energia.expand_icon = true
+	energia.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	energia.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	energia.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	grupo_cen.add_child(energia)
 
 	grupo_cen.add_child(_separador())
@@ -317,7 +342,8 @@ func _on_clic(evento: InputEvent, cual: String) -> void:
 func actualizar() -> void:
 	var desempleados: int = Ciudad.demografia.get("desempleado", 0)
 	var texto_pob := "%d/%d (%d)" % [Ciudad.censo_total, Ciudad.capacidad_camas_construida, desempleados]
-	poblacion.text = texto_pob
+	poblacion.text = ""
+	poblacion.tooltip_text = "Población: " + texto_pob
 	var excede: bool = Ciudad.vivienda_ocupada > Ciudad.capacidad_camas_construida
 	var color_pob := TemaHUD.INVALIDO if excede else TemaHUD.TEXTO
 	if _lbl_pob_censo != null:
@@ -340,9 +366,12 @@ func actualizar() -> void:
 	moral.text = ""
 	moral.tooltip_text = "Moral: %.0f%%" % m
 	var clave_moral := IconosHUD.icono_moral(m)
-	if _icono_moral != null:
-		_icono_moral.texture = IconosHUD.icono(clave_moral)
+	moral.icon = IconosHUD.icono(clave_moral)
 	_barra_moral.value = clampf(m / 100.0, 0.0, 1.0)
+	var fill_style := StyleBoxFlat.new()
+	fill_style.bg_color = color_nivel_moral(m)
+	fill_style.set_corner_radius_all(2)
+	_barra_moral.add_theme_stylebox_override("fill", fill_style)
 
 	var cantidad_comida := 0.0
 	var limite_comida := 0.0
@@ -363,32 +392,21 @@ func actualizar() -> void:
 	var demanda_e: float = res_e.get("demanda", 0.0)
 	var balance_neto: float = entregada_e - demanda_e
 	var deficit_e: bool = res_e.get("deficit", false)
-	var texto_neto: String
-	if is_zero_approx(balance_neto):
-		texto_neto = "0 kW"
-	elif balance_neto > 0:
-		texto_neto = "+%.0f kW" % balance_neto
-	else:
-		texto_neto = "%.0f kW" % balance_neto
+	var texto_neto: String = formatear_energia_neta(balance_neto)
 
 	energia.text = texto_neto
-	if _lbl_energia != null:
-		_lbl_energia.text = texto_neto
+	var ic_e := "energia_dorado"
+	var color_e: Color = TemaHUD.TEXTO
 	if deficit_e or (demanda_e > 0.0 and entregada_e < demanda_e):
-		if _icono_energia != null:
-			_icono_energia.texture = IconosHUD.icono("energia_rojo")
-		if _lbl_energia != null:
-			_lbl_energia.add_theme_color_override("font_color", TemaHUD.INVALIDO)
+		ic_e = "energia_rojo"
+		color_e = TemaHUD.INVALIDO
 	elif entregada_e <= 0.0 and demanda_e <= 0.0:
-		if _icono_energia != null:
-			_icono_energia.texture = IconosHUD.icono("energia_gris")
-		if _lbl_energia != null:
-			_lbl_energia.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-	else:
-		if _icono_energia != null:
-			_icono_energia.texture = IconosHUD.icono("energia_dorado")
-		if _lbl_energia != null:
-			_lbl_energia.add_theme_color_override("font_color", TemaHUD.TEXTO)
+		ic_e = "energia_gris"
+		color_e = Color(0.7, 0.7, 0.7)
+
+	energia.icon = IconosHUD.icono(ic_e)
+	for prop in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		energia.add_theme_color_override(prop, color_e)
 
 	var clave := clave_critica(Ciudad.almacen)
 	if clave == "":

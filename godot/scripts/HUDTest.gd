@@ -199,7 +199,7 @@ func probar_ventanas_datos() -> void:
 	# el press y el release) — el "pressed" nunca llegaba a emitirse. El
 	# botón debe sobrevivir intacto a varios fotogramas.
 	var boton_cerrar: Button = ventana_poblacion._caja_raiz.get_child(0).get_child(1)
-	assert(boton_cerrar.text == "X")
+	assert(boton_cerrar is Button and (boton_cerrar.icon != null or boton_cerrar.text == "X"))
 	for i in range(5):
 		ventana_poblacion._process(0.0)
 	assert(ventana_poblacion._caja_raiz.get_child(0).get_child(1) == boton_cerrar, "el botón de cerrar no debe recrearse en cada _process()")
@@ -473,9 +473,8 @@ func probar_ventana_energia() -> void:
 	var ventana: PanelContainer = VentanaEnergiaScript.new()
 	add_child(ventana)
 	assert(not ventana.visible and not ventana.abierta)
-	assert(ventana.anchor_left == 0.5 and ventana.anchor_top == 0.5, "VentanaEnergia debe estar anclada al centro")
 	assert(ventana.custom_minimum_size == Vector2(480, 420), "VentanaEnergia debe tener tamaño 480x420")
-	assert(ventana.offset_left == -240.0 and ventana.offset_top == -210.0, "VentanaEnergia debe tener offsets centrados")
+	assert(ventana.position == Vector2(336, 114), "VentanaEnergia debe tener posición inicial correcta")
 
 	ventana.abrir()
 	assert(ventana.visible and ventana.abierta)
@@ -545,7 +544,7 @@ func probar_ventana_energia() -> void:
 	# 6. Cierre con botón X, tecla E y tecla Esc
 	ventana.abrir()
 	var boton_cerrar: Button = ventana._caja_raiz.get_child(0).get_child(1)
-	assert(boton_cerrar.text == "X")
+	assert(boton_cerrar is Button and (boton_cerrar.icon != null or boton_cerrar.text == "X"))
 	boton_cerrar.pressed.emit()
 	assert(not ventana.visible and not ventana.abierta, "boton X debe cerrar VentanaEnergia")
 
@@ -591,8 +590,8 @@ func probar_ventana_moral() -> void:
 	var ventana: PanelContainer = VentanaMoralScript.new()
 	add_child(ventana)
 	assert(not ventana.visible and not ventana.abierta)
-	assert(ventana.anchor_left == 0.5 and ventana.anchor_top == 0.5, "VentanaMoral debe estar anclada al centro")
 	assert(ventana.custom_minimum_size == Vector2(500, 420), "VentanaMoral debe tener tamaño 500x420")
+	assert(ventana.position == Vector2(326, 114), "VentanaMoral debe tener posición inicial correcta")
 
 	ventana.abrir()
 	assert(ventana.visible and ventana.abierta)
@@ -601,7 +600,7 @@ func probar_ventana_moral() -> void:
 	Ciudad.moral = 85.0
 	Ciudad.tasa_cambio_moral = 0.5
 	ventana.actualizar()
-	assert("85.0%" in ventana._lbl_moral_val.text and "🙂" in ventana._lbl_moral_val.text)
+	assert("85.0%" in ventana._lbl_moral_val.text and ventana._rect_moral.texture != null)
 	assert("+0.50" in ventana._lbl_tendencia.text)
 	assert("Inmigración activa" in ventana._lbl_migracion.text)
 
@@ -609,7 +608,7 @@ func probar_ventana_moral() -> void:
 	Ciudad.moral = 15.0
 	Ciudad.tasa_cambio_moral = -1.5
 	ventana.actualizar()
-	assert("15.0%" in ventana._lbl_moral_val.text and "😡" in ventana._lbl_moral_val.text)
+	assert("15.0%" in ventana._lbl_moral_val.text and ventana._rect_moral.texture != null)
 	assert("Éxodo" in ventana._lbl_migracion.text)
 
 	# 4. Cerrar con tecla Escape
@@ -668,8 +667,8 @@ func probar_barra_superior() -> void:
 	assert(barra.critico.text == "Crítico —", "salió '%s'" % barra.critico.text)
 
 	assert(barra.almacen_total.text == "Almacén", "salió '%s'" % barra.almacen_total.text)
-	assert(barra.era.text == "Era 1 · Prehistórica")
-	assert(barra.nivel.text.begins_with("Nivel "))
+	assert(barra.era.text == "Prehistoria")
+	assert(barra._icono_nivel != null and barra._icono_nivel.texture != null)
 
 	for clave in respaldo:
 		Ciudad.almacen[clave].tasa_neta_promedio = respaldo[clave]

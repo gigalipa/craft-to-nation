@@ -53,6 +53,7 @@ const NOMBRES_RECURSO := {
 	"acero": "Acero",
 	"mineral_refinado": "Mineral refinado",
 	"tablas": "Tablas",
+	"bloques_piedra": "Bloques de piedra",
 	"agua": "Agua",
 	"crudo": "Crudo",
 	"combustible": "Combustible",
@@ -357,8 +358,11 @@ static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
 		var t_ref: Dictionary = CadenaMinerales.tasas_refinado({receta_clave: 1})[receta_clave]
 		var consumo: Array = []
 		for recurso in t_ref["consumo"]:
-			consumo.append("%.1f %s" % [t_ref["consumo"][recurso], NOMBRES_RECURSO[recurso].to_lower()])
-		return "Refinado previsto por técnico:\n  %s/h → %.1f %s/h" % [" + ".join(consumo), t_ref["produccion"], NOMBRES_RECURSO[t_ref["tipo_salida"]].to_lower()]
+			var nom_rec: String = NOMBRES_RECURSO.get(recurso, recurso.capitalize()).to_lower()
+			consumo.append("%.1f %s" % [t_ref["consumo"][recurso], nom_rec])
+		var salida_rec: String = t_ref.get("tipo_salida", "")
+		var nom_salida: String = NOMBRES_RECURSO.get(salida_rec, salida_rec.capitalize()).to_lower()
+		return "Refinado previsto por técnico:\n  %s/h → %.1f %s/h" % [" + ".join(consumo), t_ref["produccion"], nom_salida]
 	match tipo:
 		"mina":
 			if tasas.is_empty():
@@ -536,14 +540,15 @@ func ventana_baul_abierta() -> bool:
 func mostrar_progreso(fraccion: float, retrocede: bool = false, clave_herramienta: String = "") -> void:
 	_barra_progreso.value = clampf(fraccion, 0.0, 1.0) * 100.0
 	_barra_progreso.modulate = Color(1.0, 0.6, 0.2) if retrocede else Color(0.4, 1.0, 0.4)
+	_barra_progreso.visible = true
 	var cont := get_node_or_null("ContenedorProgreso") as Control
 	if cont != null:
 		cont.visible = true
 		var icono := cont.get_node_or_null("IconoHerramienta") as TextureRect
-		if icono != null and clave_herramienta != "":
-			icono.texture = IconosHUD.icono(clave_herramienta)
-	else:
-		_barra_progreso.visible = true
+		if icono != null:
+			if clave_herramienta != "":
+				icono.texture = IconosHUD.icono(clave_herramienta)
+			icono.visible = (icono.texture != null)
 
 
 func ocultar_progreso() -> void:
@@ -563,4 +568,3 @@ func notificar(texto: String) -> void:
 func actualizar_panel_lampara(estado: Dictionary) -> void:
 	if _panel_lampara != null and _panel_lampara.has_method("actualizar"):
 		_panel_lampara.actualizar(estado)
-

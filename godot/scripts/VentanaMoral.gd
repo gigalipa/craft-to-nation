@@ -13,6 +13,8 @@ const ALTURA_VENTANA := 420.0
 
 var abierta := false
 var _frame_apertura := -1
+var _arrastrando := false
+var _offset_arrastre := Vector2.ZERO
 
 var _caja_raiz := VBoxContainer.new()
 var _lbl_moral_val := TemaHUD.etiqueta()
@@ -39,31 +41,20 @@ func _ready() -> void:
 	TemaHUD.aplicar_panel(self)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	anchor_left = 0.5
-	anchor_top = 0.5
-	anchor_right = 0.5
-	anchor_bottom = 0.5
-	grow_horizontal = Control.GROW_DIRECTION_BOTH
-	grow_vertical = Control.GROW_DIRECTION_BOTH
+	anchor_left = 0.0
+	anchor_top = 0.0
+	anchor_right = 0.0
+	anchor_bottom = 0.0
+	position = Vector2(326, 114)
 	custom_minimum_size = Vector2(ANCHO_VENTANA, ALTURA_VENTANA)
 	size = Vector2(ANCHO_VENTANA, ALTURA_VENTANA)
-	offset_left = -ANCHO_VENTANA / 2.0
-	offset_right = ANCHO_VENTANA / 2.0
-	offset_top = -ALTURA_VENTANA / 2.0
-	offset_bottom = ALTURA_VENTANA / 2.0
-	resized.connect(func() -> void:
-		offset_left = -size.x / 2.0
-		offset_right = size.x / 2.0
-		offset_top = -size.y / 2.0
-		offset_bottom = size.y / 2.0
-	)
 
 	_caja_raiz.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caja_raiz.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_caja_raiz.add_theme_constant_override("separation", 8)
 	add_child(_caja_raiz)
 
-	_caja_raiz.add_child(_fila_titulo("Moral y Cohesión Social"))
+	_caja_raiz.add_child(_fila_titulo("MORAL Y COHESIÓN SOCIAL"))
 
 	# 1. Panel de Estado General (Moral, Tendencia, Productividad, Migración)
 	var panel_estado := PanelContainer.new()
@@ -121,8 +112,8 @@ func _ready() -> void:
 	_caja_raiz.add_child(sep_mid)
 
 	# 2. Desglose Analítico de Factores (Scroll)
-	var titulo_factores := TemaHUD.etiqueta("FACTORES QUE INFLUYEN EN LA TASA")
-	titulo_factores.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	var titulo_factores := TemaHUD.etiqueta("Factores que influyen en la tasa")
+	titulo_factores.add_theme_color_override("font_color", Color(0.95, 0.90, 0.70))
 	_caja_raiz.add_child(titulo_factores)
 
 	var scroll := ScrollContainer.new()
@@ -175,6 +166,14 @@ func _ready() -> void:
 	vbox_factores.add_child(item_seg)
 
 
+func _gui_input(evento: InputEvent) -> void:
+	if evento is InputEventMouseButton and evento.button_index == MOUSE_BUTTON_LEFT:
+		_arrastrando = evento.pressed
+		_offset_arrastre = evento.position
+	elif evento is InputEventMouseMotion and _arrastrando:
+		position += evento.position - _offset_arrastre
+
+
 func _fila_titulo(texto: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
 	fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -183,11 +182,12 @@ func _fila_titulo(texto: String) -> HBoxContainer:
 
 	var lbl := TemaHUD.etiqueta(texto)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.add_theme_color_override("font_color", Color(0.95, 0.90, 0.70))
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	lbl.add_theme_font_size_override("font_size", 16)
 	fila.add_child(lbl)
 
 	var btn_cerrar := Button.new()
+	btn_cerrar.text = ""
 	btn_cerrar.icon = IconosHUD.icono("cruz")
 	TemaHUD.estilizar_boton(btn_cerrar)
 	btn_cerrar.custom_minimum_size = Vector2(28, 24)
@@ -228,20 +228,16 @@ func actualizar() -> void:
 	var m: float = Ciudad.moral if ("moral" in Ciudad) else 75.0
 	var tasa_m: float = Ciudad.tasa_cambio_moral if ("tasa_cambio_moral" in Ciudad) else 0.0
 
-	var emoji := "🙂"
 	var color_moral := Color(0.85, 0.95, 0.6)
-	if m < 20.0:
-		emoji = "😡"
+	if m <= 20.0:
 		color_moral = TemaHUD.INVALIDO
 	elif m < 35.0:
-		emoji = "🙁"
 		color_moral = Color(1.0, 0.65, 0.2)
 	elif m <= 65.0:
-		emoji = "😐"
 		color_moral = TemaHUD.TEXTO
 
 	_rect_moral.texture = IconosHUD.icono(IconosHUD.icono_moral(m))
-	_lbl_moral_val.text = "%s Moral: %.1f%%" % [emoji, m]
+	_lbl_moral_val.text = "Moral: %.1f%%" % m
 	_lbl_moral_val.add_theme_color_override("font_color", color_moral)
 
 	var color_tasa := Color(0.85, 0.95, 0.6) if tasa_m >= 0.0 else TemaHUD.INVALIDO

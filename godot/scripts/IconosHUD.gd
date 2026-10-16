@@ -217,7 +217,7 @@ static func icono_demografia(tipo: String) -> String:
 
 ## Mapeo helper para estado de moral a clave de ícono
 static func icono_moral(moral: float) -> String:
-	if moral < 20.0:
+	if moral <= 20.0:
 		return "moral_critica"
 	elif moral < 35.0:
 		return "moral_baja"

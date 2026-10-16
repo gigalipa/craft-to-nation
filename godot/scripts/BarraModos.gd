@@ -209,7 +209,7 @@ func _ready() -> void:
 	var columna_categorias := _nueva_columna(_panel_categorias)
 	for categoria in CATEGORIAS:
 		var id: String = categoria[0]
-		var boton := _crear_boton(categoria[1], Vector2(88, 56), null, categoria[2])
+		var boton := _crear_boton(categoria[1], Vector2(88, 56), categoria[3], categoria[2])
 		boton.pressed.connect(func() -> void:
 			categoria_pedida.emit(id)
 			_refrescar()
@@ -277,7 +277,7 @@ func _ready() -> void:
 	var columna_zonas := _nueva_columna(_panel_zonas)
 	for zona in ZONAS:
 		var tipo: String = zona[0]
-		var boton := _crear_boton(zona[1], Vector2(88, 40), zona[3], zona[2])
+		var boton := _crear_boton(zona[1], Vector2(128, 56), zona[3], zona[2])
 		boton.pressed.connect(func() -> void:
 			zona_pedida.emit(tipo)
 			_refrescar()
@@ -372,9 +372,56 @@ func _actualizar_tecla_boton(boton: Button, nueva_tecla: String) -> void:
 
 
 ## Botón del submenú Construir: miniatura 3D (espacio fijo TAMANO_MINIATURA x
-## TAMANO_MINIATURA) arriba y el nombre abajo; tamaño ampliado a ~104x76 px.
+static func recursos_ordenados_de_construccion(tipo: String) -> Array:
+	if tipo == "vias":
+		return ["tierra"]
+	if tipo == "acueducto":
+		return ["bloques_piedra", "tablas"]
+	if tipo == "tuberia":
+		return ["acero", "hierro"]
+	if tipo.begins_with("residencial"):
+		return ["madera", "tierra"]
+	var plantillas_script = load("res://scripts/PlantillasPuesto.gd")
+	if plantillas_script == null or not plantillas_script.PLANTILLAS.has(tipo):
+		return METADATOS_CONSTRUCCION.get(tipo, [[]])[0]
+
+	var plantilla: Dictionary = plantillas_script.PLANTILLAS[tipo]
+	var mat_muro: String = plantillas_script.MATERIAL.get(tipo, "bloque_piedra")
+	var rec_muro: String = "piedra"
+	if mat_muro == "bloque_madera":
+		rec_muro = "madera"
+	elif mat_muro == "adobe":
+		rec_muro = "tierra"
+	elif mat_muro == "estructura_hierro":
+		rec_muro = "hierro"
+	elif mat_muro == "bloque_acero":
+		rec_muro = "acero"
+
+	var conteo := {}
+	for capa in plantilla.get("capas", []):
+		for fila in capa:
+			for c in fila:
+				if c == "#":
+					conteo[rec_muro] = conteo.get(rec_muro, 0) + 5
+				elif c in ["d", "D", "s", "S", "B", "M"]:
+					conteo["madera"] = conteo.get("madera", 0) + 1
+				elif c == "V":
+					conteo["tierra"] = conteo.get("tierra", 0) + 1
+
+	var pares := []
+	for r in conteo:
+		pares.append([conteo[r], r])
+	pares.sort_custom(func(a, b): return a[0] > b[0])
+	var res := []
+	for p in pares:
+		res.append(p[1])
+	return res if not res.is_empty() else METADATOS_CONSTRUCCION.get(tipo, [[]])[0]
+
+
+## Botón del submenú Construir: miniatura 3D (espacio fijo TAMANO_MINIATURA x
+## TAMANO_MINIATURA) arriba y el nombre abajo; tamaño ampliado a ~104x88 px.
 ## Insignias en 3 esquinas:
-## - Esquina superior izquierda: lista vertical de íconos 14x14 px de recursos necesarios.
+## - Esquina superior izquierda: lista vertical de íconos 14x14 px de recursos necesarios (de mayor a menor).
 ## - Centro superior: ícono de energía 14x14 px si requiere electricidad.
 ## - Esquina superior derecha: ícono 18x18 px del recurso o función principal.
 func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> Button:
@@ -385,6 +432,8 @@ func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> B
 	var columna := VBoxContainer.new()
 	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	columna.set_anchors_preset(Control.PRESET_FULL_RECT)
+	columna.offset_top = 16
+	columna.offset_bottom = -2
 	columna.alignment = BoxContainer.ALIGNMENT_CENTER
 	columna.add_theme_constant_override("separation", 2)
 
@@ -413,8 +462,8 @@ func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> B
 
 	var meta: Array = METADATOS_CONSTRUCCION.get(tipo, [[], false, ""])
 	if not meta.is_empty():
-		# 1. Esquina superior izquierda: lista vertical de recursos requeridos (14x14 px)
-		var lista_rec: Array = meta[0]
+		# 1. Esquina superior izquierda: lista vertical de recursos requeridos (14x14 px) de mayor a menor
+		var lista_rec: Array = recursos_ordenados_de_construccion(tipo)
 		if not lista_rec.is_empty():
 			var vbox_rec := VBoxContainer.new()
 			vbox_rec.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -448,7 +497,7 @@ func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> B
 			tr_prod.offset_bottom = 22
 			overlay.add_child(tr_prod)
 
-	boton.custom_minimum_size = Vector2(104, 76)
+	boton.custom_minimum_size = Vector2(104, 88)
 	_poner_tecla(boton, tecla, etiqueta.get_minimum_size().x)
 	return boton
 

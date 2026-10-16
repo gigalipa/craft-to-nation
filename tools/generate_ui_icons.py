@@ -270,17 +270,17 @@ def generate_icons():
   <rect x="7" y="10" width="1" height="3" fill="{BLANCO}"/>
 """))
 
-    # crudo: Barril metálico oscuro con gota negra
+    # crudo: Barril industrial azul con gota de crudo negra brillante
     write_svg("crudo.svg", svg_wrap(20, 20, f"""
-  <!-- Barril -->
-  <rect x="5" y="4" width="10" height="13" fill="{GRIS_OSCURO}"/>
-  <rect x="4" y="6" width="12" height="9" fill="{GRIS_OSCURO}"/>
-  <!-- Flejes/aros metálicos -->
-  <rect x="4" y="6" width="12" height="1" fill="{GRIS_MEDIO}"/>
-  <rect x="4" y="10" width="12" height="1" fill="{GRIS_MEDIO}"/>
-  <rect x="4" y="14" width="12" height="1" fill="{GRIS_MEDIO}"/>
+  <!-- Barril industrial azul -->
+  <rect x="5" y="4" width="10" height="13" fill="#1D63B8"/>
+  <rect x="4" y="6" width="12" height="9" fill="#2563EB"/>
+  <!-- Flejes/aros oscuros -->
+  <rect x="4" y="6" width="12" height="1" fill="#154785"/>
+  <rect x="4" y="10" width="12" height="1" fill="#154785"/>
+  <rect x="4" y="14" width="12" height="1" fill="#154785"/>
   <!-- Tapa -->
-  <rect x="6" y="3" width="8" height="1" fill="{GRIS_MEDIO}"/>
+  <rect x="6" y="3" width="8" height="1" fill="#1E40AF"/>
   <!-- Gota de crudo negra brillante -->
   <rect x="9" y="8" width="3" height="4" fill="#000000"/>
   <rect x="10" y="7" width="1" height="6" fill="#000000"/>

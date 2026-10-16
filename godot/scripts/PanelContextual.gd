@@ -11,8 +11,8 @@ const ICONO_CLIC_DERECHO := "res://assets/icons/click_der.svg"
 const ICONO_CLIC_IZQUIERDO := "res://assets/icons/click_izq.svg"
 const ICONO_SCROLL := "res://assets/icons/scroll.svg"
 const ICONO_MOUSE_MOVE := "res://assets/icons/mouse_move.svg"
-const ANCHO_PANEL := 440.0
-const ANCHO_TEXTO := 340.0
+const ANCHO_PANEL := 350.0
+const ANCHO_TEXTO := 330.0
 
 var titulo := TemaHUD.etiqueta()
 ## Índice del bloque en la hotbar ("1"-"9"), en dorado junto al título. Solo
@@ -22,6 +22,7 @@ var numero := TemaHUD.etiqueta()
 ## mostrar_bloque_temporal().
 var icono := TextureRect.new()
 var costo := TemaHUD.etiqueta()
+var _rich_costo := RichTextLabel.new()
 ## Tipo, uso ideal y método de obtención del bloque (Hotbar.DESCRIPCION).
 ## Solo la usa mostrar_bloque_temporal().
 var descripcion := TemaHUD.etiqueta()
@@ -30,6 +31,7 @@ var acciones := RichTextLabel.new()
 var disponible := TemaHUD.etiqueta()
 var validez := TemaHUD.etiqueta()
 var extra := TemaHUD.etiqueta()
+var _rich_extra := RichTextLabel.new()
 
 ## Se guarda aparte porque HUD.set_vista() puede llamarse antes de _ready().
 var _margen_inferior := 12.0
@@ -112,6 +114,83 @@ static func texto_acciones(lista_acciones: Array) -> String:
 	return "\n".join(partes)
 
 
+## Formatea el texto de costo con íconos vectoriales SVG inline
+static func _formatear_con_iconos_costo(texto: String) -> String:
+	if texto.is_empty():
+		return ""
+	var partes := texto.split(" · ")
+	var formated_partes: Array[String] = []
+	var recursos: Array[String] = [
+		"bloques_piedra", "mineral_refinado", "tierras_raras",
+		"piedra", "madera", "tierra", "hierro", "cobre", "carbon",
+		"acero", "tablas", "agua", "crudo", "combustible", "comida"
+	]
+	for parte in partes:
+		var p: String = parte
+		for rec: String in recursos:
+			if p.contains(rec):
+				var ic := IconosHUD.bbcode(rec, 16)
+				if ic != "":
+					p = "%s %s" % [ic, p]
+				break
+		formated_partes.append(p)
+	return " · ".join(formated_partes)
+
+
+## Formatea la línea extra (incluyendo materiales de blueprints, distancias y camas/baúles) con íconos vectoriales
+static func _formatear_con_iconos_extra(texto: String) -> String:
+	if texto.is_empty():
+		return ""
+	var lineas := texto.split("\n")
+	var resultado: Array[String] = []
+	var recursos: Array[String] = [
+		"bloques_piedra", "mineral_refinado", "tierras_raras",
+		"piedra", "madera", "tierra", "hierro", "cobre", "carbon",
+		"acero", "tablas", "agua", "crudo", "combustible", "comida"
+	]
+	for linea in lineas:
+		var l: String = linea
+		if l.contains("Camas:") or l.contains("Baúles:"):
+			l = l.replace("Camas:", "%s Camas:" % IconosHUD.bbcode("cama", 16))
+			l = l.replace("Baúles:", "%s Baúles:" % IconosHUD.bbcode("baul", 16))
+		elif l.begins_with("Distancia al núcleo:"):
+			l = "%s %s" % [IconosHUD.bbcode("brujula", 16), l]
+		elif l.contains("Personal máximo:"):
+			l = l.replace("Personal máximo:", "%s Personal máximo:" % IconosHUD.bbcode("ciudadano", 16))
+			l = l.replace("Almacenamiento:", "%s Almacenamiento:" % IconosHUD.bbcode("almacen", 16))
+		elif l.contains("Nivel ") and l.contains(": "):
+			var partes_nivel := l.split(": ", true, 1)
+			var sub: String = partes_nivel[1]
+			for rec: String in recursos:
+				if sub.contains(rec):
+					var ic := IconosHUD.bbcode(rec, 16)
+					if ic != "" and not sub.contains(ic):
+						sub = sub.replace(rec, "%s %s" % [ic, rec])
+			l = partes_nivel[0] + ": " + sub
+		else:
+			for rec: String in recursos:
+				var patron: String = " " + rec
+				if l.contains(patron) or l.strip_edges().ends_with(rec) or l.contains(rec + "/h"):
+					var ic := IconosHUD.bbcode(rec, 16)
+					if ic != "" and not l.contains(ic):
+						if l.strip_edges().begins_with("+ "):
+							var partes := l.split("+ ", true, 1)
+							l = partes[0] + "+ %s %s" % [ic, partes[1]]
+						else:
+							var indent := ""
+							var trimmed := l
+							if l.begins_with("  "):
+								indent = "  "
+								trimmed = l.substr(2)
+							elif l.begins_with(" "):
+								indent = " "
+								trimmed = l.substr(1)
+							l = "%s%s %s" % [indent, ic, trimmed]
+					break
+		resultado.append(l)
+	return "\n".join(resultado)
+
+
 const DORADO_TEXTO := Color(1.0, 0.85, 0.4)
 
 
@@ -144,6 +223,14 @@ func _ready() -> void:
 	costo.custom_minimum_size.x = ANCHO_TEXTO
 	costo.visible = false
 
+	_rich_costo.bbcode_enabled = true
+	_rich_costo.fit_content = true
+	_rich_costo.scroll_active = false
+	_rich_costo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rich_costo.add_theme_color_override("default_color", TemaHUD.TEXTO)
+	_rich_costo.custom_minimum_size.x = ANCHO_TEXTO
+	_rich_costo.visible = false
+
 	# RichTextLabel (no Label): "(clic der.)"/"(clic izq.)" se reemplazan por
 	# el ícono del ratón (ver texto_acciones()) en vez de quedar como texto
 	# plano. Ancho explícito: sin él, fit_content mide su alto ANTES de que
@@ -164,11 +251,33 @@ func _ready() -> void:
 	extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	extra.custom_minimum_size.x = ANCHO_TEXTO
 
-	validez.custom_minimum_size.x = ANCHO_TEXTO
+	_rich_extra.bbcode_enabled = true
+	_rich_extra.fit_content = true
+	_rich_extra.scroll_active = false
+	_rich_extra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rich_extra.add_theme_color_override("default_color", TemaHUD.TEXTO)
+	_rich_extra.custom_minimum_size.x = ANCHO_TEXTO
+	_rich_extra.visible = false
+
+	validez.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	validez.custom_minimum_size = Vector2(ANCHO_TEXTO, 46.0)
+	validez.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	validez.max_lines_visible = 3
+	validez.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 	var caja := VBoxContainer.new()
 	caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(caja)
+
+	var dummy := Control.new()
+	dummy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dummy.custom_minimum_size = Vector2.ZERO
+	dummy.size = Vector2.ZERO
+	dummy.modulate.a = 0.0
+	dummy.clip_contents = true
+	dummy.add_child(costo)
+	dummy.add_child(extra)
+	add_child(dummy)
 
 	var fila_titulo := HBoxContainer.new()
 	fila_titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -186,9 +295,9 @@ func _ready() -> void:
 	fila_cuerpo.add_child(icono)
 	var columna_texto := VBoxContainer.new()
 	columna_texto.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columna_texto.add_child(costo)
+	columna_texto.add_child(_rich_costo)
 	columna_texto.add_child(descripcion)
-	columna_texto.add_child(extra)
+	columna_texto.add_child(_rich_extra)
 	fila_cuerpo.add_child(columna_texto)
 	caja.add_child(fila_cuerpo)
 
@@ -215,6 +324,8 @@ func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valid
 	titulo.text = nombre.to_upper()
 	costo.text = texto_costo(costo_dic, bloques_dic)
 	costo.visible = not costo_dic.is_empty()
+	_rich_costo.text = _formatear_con_iconos_costo(costo.text)
+	_rich_costo.visible = costo.visible
 	acciones.text = texto_acciones(lista_acciones)
 	acciones.visible = not lista_acciones.is_empty()
 	validez.visible = typeof(valido) == TYPE_BOOL
@@ -230,6 +341,8 @@ func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valid
 			validez.add_theme_color_override("font_color", TemaHUD.INVALIDO)
 	extra.text = texto_extra
 	extra.visible = texto_extra != ""
+	_rich_extra.text = _formatear_con_iconos_extra(texto_extra)
+	_rich_extra.visible = extra.visible
 	_dejar_fijo()
 	visible = true
 
@@ -307,6 +420,8 @@ func ocultar() -> void:
 func set_extra(texto: String) -> void:
 	extra.text = texto
 	extra.visible = texto != ""
+	_rich_extra.text = _formatear_con_iconos_extra(texto)
+	_rich_extra.visible = extra.visible
 
 
 ## Distancia al borde inferior: en 1ª persona el panel sube para no tapar la hotbar.

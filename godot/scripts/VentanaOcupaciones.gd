@@ -250,7 +250,7 @@ func _fila_titulo(texto: String) -> Control:
 	fila.add_child(cont_tit)
 
 	var cerrar_boton := Button.new()
-	cerrar_boton.text = "X"
+	cerrar_boton.text = ""
 	cerrar_boton.icon = IconosHUD.icono("cruz")
 	cerrar_boton.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(cerrar_boton)

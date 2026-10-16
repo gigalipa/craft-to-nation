@@ -17,6 +17,8 @@ const ALTURA_VENTANA := 420.0
 
 var abierta := false
 var _frame_apertura := -1
+var _arrastrando := false
+var _offset_arrastre := Vector2.ZERO
 
 var _caja_raiz := VBoxContainer.new()
 var _lbl_capacidad := TemaHUD.etiqueta()
@@ -38,24 +40,13 @@ func _ready() -> void:
 	TemaHUD.aplicar_panel(self)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
-	anchor_left = 0.5
-	anchor_top = 0.5
-	anchor_right = 0.5
-	anchor_bottom = 0.5
-	grow_horizontal = Control.GROW_DIRECTION_BOTH
-	grow_vertical = Control.GROW_DIRECTION_BOTH
+	anchor_left = 0.0
+	anchor_top = 0.0
+	anchor_right = 0.0
+	anchor_bottom = 0.0
+	position = Vector2(336, 114)
 	custom_minimum_size = Vector2(ANCHO_VENTANA, ALTURA_VENTANA)
 	size = Vector2(ANCHO_VENTANA, ALTURA_VENTANA)
-	offset_left = -ANCHO_VENTANA / 2.0
-	offset_right = ANCHO_VENTANA / 2.0
-	offset_top = -ALTURA_VENTANA / 2.0
-	offset_bottom = ALTURA_VENTANA / 2.0
-	resized.connect(func() -> void:
-		offset_left = -size.x / 2.0
-		offset_right = size.x / 2.0
-		offset_top = -size.y / 2.0
-		offset_bottom = size.y / 2.0
-	)
 
 	_caja_raiz.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caja_raiz.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -331,6 +322,14 @@ static func _demanda_consumidor(p: Dictionary) -> float:
 	return 0.0
 
 
+func _gui_input(evento: InputEvent) -> void:
+	if evento is InputEventMouseButton and evento.button_index == MOUSE_BUTTON_LEFT:
+		_arrastrando = evento.pressed
+		_offset_arrastre = evento.position
+	elif evento is InputEventMouseMotion and _arrastrando:
+		position += evento.position - _offset_arrastre
+
+
 func _fila_titulo(texto: String) -> Control:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -345,7 +344,7 @@ func _fila_titulo(texto: String) -> Control:
 	fila.add_child(cont_tit)
 
 	var cerrar_boton := Button.new()
-	cerrar_boton.text = "X"
+	cerrar_boton.text = ""
 	cerrar_boton.icon = IconosHUD.icono("cruz")
 	cerrar_boton.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(cerrar_boton)

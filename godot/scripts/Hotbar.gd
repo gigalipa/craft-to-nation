@@ -148,12 +148,6 @@ func _piezas_de_icono(tipo: String) -> Array:
 		var cubo := BoxMesh.new()
 		cubo.size = Vector3.ONE
 		piezas.append([cubo, Vector3.ZERO, MATERIAL_VENTANA])
-		# Marco contrastado alrededor del vidrio
-		var marco_mat := StandardMaterial3D.new()
-		marco_mat.albedo_color = Color(0.2, 0.25, 0.3, 0.8)
-		var marco := BoxMesh.new()
-		marco.size = Vector3(1.02, 1.02, 0.1)
-		piezas.append([marco, Vector3.ZERO, marco_mat])
 		return piezas
 	if tipo == "puerta":
 		var piezas: Array = []

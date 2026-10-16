@@ -59,10 +59,8 @@ const ORDEN_DESAHUCIO := ["desempleado", "ciudadano", "obrero", "tecnico", "espe
 ## bajas y nunca se recuperaría.
 const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico", "especialista", "investigador", "desempleado", "ciudadano"]
 
-## Colonos que llegan por hora de juego (placeholder sin balance real). Llega
-## un "desempleado" cada vez que el acumulador llega a 1, si hay vivienda
-## libre y el tick no tuvo hambruna.
-const TASA_MIGRACION := 0.5
+## Horas de simulación correspondientes a un mes de juego (30 días de 24h)
+const HORAS_POR_MES := 720.0
 
 ## Costo de activación por nivel (GDD Sección 7).
 const COSTOS_INVESTIGACION := {
@@ -494,6 +492,30 @@ static func calcular_multiplicador_productividad(p_moral: float) -> float:
 	return 0.5 * pow(2.0, clampf(p_moral, 0.0, 100.0) / 50.0)
 
 
+## Tasa de migración neta mensual (ciudadanos/mes) según tramos escalonados de moral.
+## <=20: Éxodo (-5 a -1/mes). 20..50: Inmigración con camas (1 a 3/mes). >50: Inmigración masiva (3 a 5/mes).
+static func calcular_tasa_migracion_mensual(p_moral: float) -> float:
+	var m: float = clampf(p_moral, 0.0, 100.0)
+	if m <= 5.0:
+		return -5.0
+	elif m <= 10.0:
+		return -3.0
+	elif m <= 15.0:
+		return -2.0
+	elif m <= 20.0:
+		return -1.0
+	elif m <= 25.0:
+		return 1.0
+	elif m <= 35.0:
+		return 2.0
+	elif m <= 50.0:
+		return 3.0
+	elif m <= 75.0:
+		return 3.0
+	else:
+		return 5.0
+
+
 ## Mantiene la cola de desempleados con la demografía real
 func sincronizar_desempleados() -> void:
 	var cant_real: int = demografia.get("desempleado", 0)
@@ -851,15 +873,19 @@ func recurso_critico() -> String:
 ## ponytail: sin cola de migrantes; si el diseño pide una "bolsa" de
 ## migrantes en espera, sustituir el tope de 1 por un contador real.
 ## Acumula movimiento migratorio y modula la población según la moral (umbral 20).
-## Si moral >= 20.0: Inmigración positiva hacia viviendas o "sin techo" (si hay núcleo urbano).
-## Si moral < 20.0: Éxodo poblacional con fuga de cerebros (investigador > especialista > ... > obrero).
+## Si moral <= 20.0: Éxodo poblacional escalonado con fuga de cerebros (investigador > especialista > ... > obrero).
+## Si moral > 20.0 y <= 50.0: Inmigración solo si hay camas disponibles (no genera sin techo).
+## Si moral > 50.0: Inmigración masiva que desborda a sin techo si hay núcleo urbano.
 func _migrar(hambruna: bool) -> int:
 	if not migracion_activa:
 		return 0
 
-	# 1. Éxodo por desesperanza (Moral < 20.0)
-	if moral < 20.0:
-		_migrantes_acumulados -= 0.5
+	var tasa_mensual: float = calcular_tasa_migracion_mensual(moral)
+	var tasa_horaria: float = tasa_mensual / HORAS_POR_MES
+
+	# 1. Éxodo por desesperanza (Moral <= 20.0, tasa_horaria < 0)
+	if tasa_horaria < 0.0:
+		_migrantes_acumulados += tasa_horaria
 		var salidos := 0
 		while _migrantes_acumulados <= -1.0:
 			var expulsado := false
@@ -883,10 +909,11 @@ func _migrar(hambruna: bool) -> int:
 		sincronizar_desempleados()
 		return -salidos
 
-	# 2. Inmigración positiva (Moral >= 20.0)
-	_migrantes_acumulados += TASA_MIGRACION
+	# 2. Inmigración (Moral > 20.0, tasa_horaria > 0)
+	_migrantes_acumulados += tasa_horaria
 	var llegados := 0
 	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
+	var solo_con_camas: bool = moral <= 50.0
 	while _migrantes_acumulados >= 1.0:
 		if hambruna:
 			_migrantes_acumulados = 1.0
@@ -896,12 +923,13 @@ func _migrar(hambruna: bool) -> int:
 			cola_desempleo.append(0)
 			llegados += 1
 			_migrantes_acumulados -= 1.0
-		elif id_nucleo != -1:
-			# Una vez fundado el núcleo urbano, la inmigración desborda a sin techo
+		elif not solo_con_camas and id_nucleo != -1:
+			# Inmigración masiva (moral > 50): desborda a sin techo si hay núcleo urbano
 			sin_techo += 1
 			llegados += 1
 			_migrantes_acumulados -= 1.0
 		else:
+			# Con moral <= 50 o sin núcleo, no entra sin cama disponible
 			_migrantes_acumulados = 1.0
 			break
 	sincronizar_desempleados()
@@ -1042,7 +1070,7 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	var delta_peligro: float = -impacto_peligrosidad_7d()
 
 	tasa_cambio_moral = delta_inercia + delta_abundancia + delta_escasez + delta_dieta + delta_sin_techo + delta_peligro
-	moral = clampf(moral + tasa_cambio_moral, 0.0, 100.0)
+	moral = clampf(moral + tasa_cambio_moral / 24.0, 0.0, 100.0)
 
 	var migrantes: int = _migrar(not exito_comida)
 

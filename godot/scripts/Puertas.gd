@@ -26,6 +26,11 @@ const DESPLAZAMIENTO_ABIERTA := 0.5 - LAMINA.z / 2.0
 const RADIO_APERTURA := 2  # celdas (Chebyshev en XZ): abre antes de que el colono llegue
 const INTERVALO := 0.25  # segundos entre chequeos de proximidad
 
+const PICAPORTE_TAMANO := Vector3(0.08, 0.12, 0.16)
+const COLOR_PICAPORTE := Color(0.85, 0.7, 0.2)
+const BISAGRA_TAMANO := Vector3(0.04, 0.15, 0.14)
+const COLOR_BISAGRA := Color(0.15, 0.15, 0.15)
+
 var voxel_world: Node
 
 ## Quién aporta el diccionario "colonos" (id -> {"celda": Vector3i}); null =
@@ -38,6 +43,10 @@ var _puertas: Dictionary = {}  # Vector3i (celda inferior) -> Dictionary
 var _forma := BoxShape3D.new()
 var _malla := BoxMesh.new()
 var _material := StandardMaterial3D.new()
+var _malla_picaporte := BoxMesh.new()
+var _mat_picaporte := StandardMaterial3D.new()
+var _malla_bisagra := BoxMesh.new()
+var _mat_bisagra := StandardMaterial3D.new()
 
 
 func _init() -> void:
@@ -45,6 +54,14 @@ func _init() -> void:
 	_malla.size = LAMINA
 	_material.albedo_color = COLOR_LAMINA
 	_malla.material = _material
+
+	_malla_picaporte.size = PICAPORTE_TAMANO
+	_mat_picaporte.albedo_color = COLOR_PICAPORTE
+	_malla_picaporte.material = _mat_picaporte
+
+	_malla_bisagra.size = BISAGRA_TAMANO
+	_mat_bisagra.albedo_color = COLOR_BISAGRA
+	_malla_bisagra.material = _mat_bisagra
 
 
 func _process(delta: float) -> void:
@@ -158,9 +175,26 @@ func _crear(base: Vector3i) -> void:
 	var malla := MeshInstance3D.new()
 	malla.mesh = _malla
 	cuerpo.add_child(malla)
+
 	var forma := CollisionShape3D.new()
 	forma.shape = _forma
 	cuerpo.add_child(forma)
+
+	var pica := MeshInstance3D.new()
+	pica.mesh = _malla_picaporte
+	pica.position = Vector3(0.3, 0.0, 0.0)
+	cuerpo.add_child(pica)
+
+	var bis1 := MeshInstance3D.new()
+	bis1.mesh = _malla_bisagra
+	bis1.position = Vector3(-0.38, 0.5, 0.0)
+	cuerpo.add_child(bis1)
+
+	var bis2 := MeshInstance3D.new()
+	bis2.mesh = _malla_bisagra
+	bis2.position = Vector3(-0.38, -0.5, 0.0)
+	cuerpo.add_child(bis2)
+
 	add_child(cuerpo)
 	_puertas[base] = {"abierta": false, "manual": false, "cuerpo": cuerpo}
 	actualizar(base)

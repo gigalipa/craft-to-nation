@@ -242,23 +242,27 @@ func actualizar() -> void:
 
 	var color_tasa := Color(0.85, 0.95, 0.6) if tasa_m >= 0.0 else TemaHUD.INVALIDO
 	_rect_tendencia.texture = IconosHUD.icono(IconosHUD.icono_tasa(tasa_m))
-	_lbl_tendencia.text = "Tendencia: %+.2f / hora" % tasa_m
+	_lbl_tendencia.text = "Tendencia: %+.2f / día" % tasa_m
 	_lbl_tendencia.add_theme_color_override("font_color", color_tasa)
 
 	var mult_prod: float = Ciudad.calcular_multiplicador_productividad(m) if Ciudad.has_method("calcular_multiplicador_productividad") else 1.0
 	_lbl_productividad.text = "Productividad laboral: %.2fx" % mult_prod
 
-	_rect_migracion.texture = IconosHUD.icono("ciudadano" if m >= 20.0 else "investigador")
-	if m >= 20.0:
-		_lbl_migracion.text = "Migración: Inmigración activa"
+	var tasa_mig: float = Ciudad.calcular_tasa_migracion_mensual(m) if Ciudad.has_method("calcular_tasa_migracion_mensual") else 1.0
+	_rect_migracion.texture = IconosHUD.icono("ciudadano" if m > 20.0 else "investigador")
+	if m <= 20.0:
+		_lbl_migracion.text = "Migración: ⚠ Éxodo de cerebros (%d/mes)" % int(abs(tasa_mig))
+		_lbl_migracion.add_theme_color_override("font_color", TemaHUD.INVALIDO)
+	elif m <= 50.0:
+		_lbl_migracion.text = "Migración: Inmigración con camas (%d/mes)" % int(tasa_mig)
 		_lbl_migracion.add_theme_color_override("font_color", Color(0.85, 0.95, 0.6))
 	else:
-		_lbl_migracion.text = "Migración: ⚠ Éxodo de cerebros (<20)"
-		_lbl_migracion.add_theme_color_override("font_color", TemaHUD.INVALIDO)
+		_lbl_migracion.text = "Migración: Inmigración masiva (%d/mes)" % int(tasa_mig)
+		_lbl_migracion.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6))
 
 	# Desglose de factores
 	var inercia: float = (Ciudad.MORAL_NEUTRAL - m) * Ciudad.INERCIA_MORAL if ("MORAL_NEUTRAL" in Ciudad) else (50.0 - m) * 0.02
-	_lbl_factor_inercia.text = "• Tendencia natural al equilibrio (50%%): %+.2f/h" % inercia
+	_lbl_factor_inercia.text = "• Tendencia natural al equilibrio (50%%): %+.2f/día" % inercia
 
 	var activas_dieta := 0
 	if "fuentes_comida_activas" in Ciudad:
@@ -266,24 +270,24 @@ func actualizar() -> void:
 			if v > 0:
 				activas_dieta += 1
 	var tasa_dieta: float = (float(activas_dieta) / 6.0) * 0.5
-	_lbl_factor_dieta.text = "• Variedad de alimentos (%d/6 grupos): %+.2f/h" % [activas_dieta, tasa_dieta]
+	_lbl_factor_dieta.text = "• Variedad de alimentos (%d/6 grupos): %+.2f/día" % [activas_dieta, tasa_dieta]
 
 	var detalle_recursos := "Estable"
 	var com_rec = Ciudad.almacen.get("comida") if ("almacen" in Ciudad) else null
 	if com_rec != null and com_rec.cantidad <= 0.0:
-		detalle_recursos = "Hambruna crítica (-3.0/h)"
+		detalle_recursos = "Hambruna crítica (-3.0/día)"
 	elif com_rec != null and com_rec.tasa_neta_promedio < 0.0:
-		detalle_recursos = "Déficit de comida (-0.6/h)"
+		detalle_recursos = "Déficit de comida (-0.6/día)"
 	_rect_factor_recursos.texture = IconosHUD.icono("cornucopia_vacia" if (com_rec != null and com_rec.cantidad <= 0.0) else "cornucopia_llena")
 	_lbl_factor_recursos.text = "• Abundancia y reservas: %s" % detalle_recursos
 
 	var sin_techo_cant: int = Ciudad.sin_techo if ("sin_techo" in Ciudad) else 0
 	var tasa_st: float = -0.05 * float(sin_techo_cant)
-	_lbl_factor_sin_techo.text = "• Ciudadanos sin techo (%d en la calle): %+.2f/h" % [sin_techo_cant, tasa_st]
+	_lbl_factor_sin_techo.text = "• Ciudadanos sin techo (%d en la calle): %+.2f/día" % [sin_techo_cant, tasa_st]
 	if sin_techo_cant > 0:
 		_lbl_factor_sin_techo.add_theme_color_override("font_color", Color(1.0, 0.65, 0.2))
 	else:
 		_lbl_factor_sin_techo.add_theme_color_override("font_color", TemaHUD.TEXTO)
 
 	var imp_peligro: float = Ciudad.impacto_peligrosidad_7d() if Ciudad.has_method("impacto_peligrosidad_7d") else 0.0
-	_lbl_factor_seguridad.text = "• Peligrosidad 7 días (bajas/robos): %+.2f/h" % -imp_peligro
+	_lbl_factor_seguridad.text = "• Peligrosidad 7 días (bajas/robos): %+.2f/día" % -imp_peligro

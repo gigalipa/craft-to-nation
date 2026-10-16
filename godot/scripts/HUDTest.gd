@@ -602,7 +602,7 @@ func probar_ventana_moral() -> void:
 	ventana.actualizar()
 	assert("85.0%" in ventana._lbl_moral_val.text and ventana._rect_moral.texture != null)
 	assert("+0.50" in ventana._lbl_tendencia.text)
-	assert("Inmigración activa" in ventana._lbl_migracion.text)
+	assert("Inmigración" in ventana._lbl_migracion.text)
 
 	# Moral crítica
 	Ciudad.moral = 15.0
@@ -1065,7 +1065,8 @@ func probar_panel_niveles() -> void:
 	var panel: PanelContainer = PanelPuestoScript.new()
 	add_child(panel)
 	panel.abrir(esquina8)
-	assert(panel._titulo.text == "Puesto maderero, nivel 1", "nivel en el título: %s" % panel._titulo.text)
+	assert(panel._titulo.text == "Puesto maderero", "título sin nivel en texto: %s" % panel._titulo.text)
+	assert(panel._icono_nivel.visible and panel._icono_nivel.texture != null, "nivel solo por ícono romano")
 	assert(panel._filas["recolector"]["fila"].visible and panel._filas["tecnico"]["fila"].visible and panel._filas["acarreador"]["fila"].visible)
 	assert(not panel._filas["aprendiz"]["fila"].visible)
 	assert(panel._filas["especialista"]["fila"].visible, "la fila de especialistas siempre aparece en puestos con niveles")
@@ -1073,7 +1074,8 @@ func probar_panel_niveles() -> void:
 	assert(panel._filas["recolector"]["libres"].text == "(%d libres)" % Ciudad.demografia["desempleado"])
 	Economia.asignar(esquina8, "tecnico", 99999)
 	panel._actualizar()
-	assert(panel._titulo.text == "Puesto maderero, nivel 2", "con un técnico sube a nivel 2: %s" % panel._titulo.text)
+	assert(panel._titulo.text == "Puesto maderero", "título permanece sin texto de nivel: %s" % panel._titulo.text)
+	assert(Economia.nivel_de(esquina8) == 2 and panel._icono_nivel.visible)
 	assert(panel._filas["recolector"]["mas"].disabled, "un puesto de nivel 2 no admite obreros")
 	assert(panel._filas["tecnico"]["cantidad"].text == "1" and panel._filas["recolector"]["cantidad"].text == "0")
 	assert(not panel._filas["tecnico"]["menos"].disabled and panel._filas["recolector"]["menos"].disabled)

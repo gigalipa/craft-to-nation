@@ -41,13 +41,17 @@ var esquina := Recoleccion.SIN_PUESTO
 class ContenedorPuertos extends VBoxContainer:
 	var text: String = ""
 
+class ContenedorProduccion extends HBoxContainer:
+	var text: String = ""
+
 var _icono_puesto := TextureRect.new()
 var _icono_nivel := TextureRect.new()
 var _titulo := TemaHUD.etiqueta()
 var _trabajadores := TemaHUD.etiqueta()
 var _libres := TemaHUD.etiqueta()
 var _almacen := TemaHUD.etiqueta()
-var _produccion := TemaHUD.etiqueta()
+var _produccion := ContenedorProduccion.new()
+var _caja_items_prod := HBoxContainer.new()
 var _energia := TemaHUD.etiqueta()
 var _crudo_restante := TemaHUD.etiqueta()
 var _selector_combustible := HBoxContainer.new()
@@ -134,7 +138,7 @@ func _ready() -> void:
 		_botones_combustible[id_c] = btn
 	caja.add_child(_selector_combustible)
 
-	for etiqueta in [_trabajadores, _libres, _crudo_restante, _almacen, _produccion, _energia, _distancia]:
+	for etiqueta in [_trabajadores, _libres, _crudo_restante, _almacen, _energia, _distancia]:
 		# Las líneas largas (varios recursos) parten en vez de ensanchar el panel.
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		etiqueta.custom_minimum_size.x = 340.0
@@ -143,6 +147,14 @@ func _ready() -> void:
 	caja.add_child(_libres)
 	caja.add_child(_crudo_restante)
 	caja.add_child(_almacen)
+
+	_produccion.add_theme_constant_override("separation", 6)
+	_produccion.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lbl_prod_pref := TemaHUD.etiqueta("Producción:")
+	_produccion.add_child(lbl_prod_pref)
+	_caja_items_prod.add_theme_constant_override("separation", 6)
+	_caja_items_prod.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_produccion.add_child(_caja_items_prod)
 	caja.add_child(_produccion)
 
 	_fila_reserva.add_theme_constant_override("separation", 6)
@@ -309,8 +321,11 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	var nombre := TemaHUD.etiqueta(NOMBRES_ROL[rol])
 	nombre.custom_minimum_size.x = 90.0
 	var menos := Button.new()
-	menos.text = "-"
 	menos.icon = IconosHUD.icono("btn_menos")
+	if menos.icon == null:
+		menos.text = "-"
+	menos.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menos.expand_icon = true
 	menos.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(menos)
 	menos.pressed.connect(func() -> void: Colonos.despedir(esquina, rol))
@@ -318,8 +333,11 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	cantidad.custom_minimum_size.x = 24.0
 	cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var mas := Button.new()
-	mas.text = "+"
 	mas.icon = IconosHUD.icono("btn_mas")
+	if mas.icon == null:
+		mas.text = "+"
+	mas.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mas.expand_icon = true
 	mas.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(mas)
 	mas.pressed.connect(func() -> void: Colonos.contratar(esquina, rol))
@@ -366,8 +384,7 @@ func _actualizar() -> void:
 		estado = " (inactivo)"
 	elif puesto["agotado"]:
 		estado = " (agotado)"
-	var nivel := ", nivel %d" % Economia.nivel_de(esquina) if con_niveles else ""
-	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + nivel + estado
+	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + estado
 	_icono_puesto.texture = IconosHUD.icono(puesto["tipo"])
 	_icono_nivel.texture = IconosHUD.icono(IconosHUD.icono_nivel_romano(Economia.nivel_de(esquina))) if con_niveles else null
 	_icono_nivel.visible = con_niveles
@@ -421,7 +438,7 @@ func _actualizar() -> void:
 	_almacen.visible = not es_escuela and not es_universidad
 	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica" and puesto["tipo"] != "almacen"
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
-	_produccion.text = "Producción: " + _texto_recursos(Economia.produccion_por_hora(esquina), "ninguna", "/h")
+	_actualizar_produccion(Economia.produccion_por_hora(esquina))
 
 	if Economia.es_refineria(esquina) or puesto["tipo"] == "central_termoelectrica":
 		_fila_reserva.visible = true
@@ -681,6 +698,27 @@ func _confirmar_demoler() -> void:
 	if motivo != "":
 		aviso.emit(motivo)
 	_actualizar()
+
+
+func _actualizar_produccion(recursos: Dictionary) -> void:
+	for hijo in _caja_items_prod.get_children():
+		hijo.queue_free()
+	_produccion.text = "Producción: " + _texto_recursos(recursos, "ninguna", "/h")
+	if recursos.is_empty():
+		var lbl := TemaHUD.etiqueta("ninguna")
+		_caja_items_prod.add_child(lbl)
+		return
+	for rec in recursos:
+		var item := HBoxContainer.new()
+		item.add_theme_constant_override("separation", 4)
+		item.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var icono := IconosHUD.crear_rect(rec, 16)
+		item.add_child(icono)
+		var nombre_rec: String = HUDScript.NOMBRES_RECURSO.get(rec, rec).capitalize()
+		var cant: float = recursos[rec]
+		var lbl := TemaHUD.etiqueta("%.1f %s/h" % [cant, nombre_rec])
+		item.add_child(lbl)
+		_caja_items_prod.add_child(item)
 
 
 static func _texto_recursos(recursos: Dictionary, vacio: String, sufijo: String = "") -> String:

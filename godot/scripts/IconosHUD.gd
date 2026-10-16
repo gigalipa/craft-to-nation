@@ -180,7 +180,7 @@ static func bbcode(clave: String, tamano: int = 16) -> String:
 
 
 ## Crea un TextureRect configurado listo para añadir a la UI.
-static func crear_rect(clave: String, tamano: Variant = 16) -> TextureRect:
+static func crear_rect(clave_o_tex: Variant, tamano: Variant = 16) -> TextureRect:
 	var tam: Vector2
 	if tamano is Vector2:
 		tam = tamano
@@ -189,7 +189,10 @@ static func crear_rect(clave: String, tamano: Variant = 16) -> TextureRect:
 	else:
 		tam = Vector2(16, 16)
 	var tr := TextureRect.new()
-	tr.texture = icono(clave)
+	if clave_o_tex is Texture2D:
+		tr.texture = clave_o_tex
+	elif clave_o_tex is String:
+		tr.texture = icono(clave_o_tex)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tr.custom_minimum_size = tam

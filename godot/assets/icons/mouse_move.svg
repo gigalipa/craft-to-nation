@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <!-- Silueta de ratón -->
+  <rect x="5" y="3" width="6" height="10" rx="3" fill="#F2EBD1" stroke="#2B2D31" stroke-width="1"/>
+  <line x1="8" y1="3" x2="8" y2="7" stroke="#2B2D31" stroke-width="1"/>
+  <!-- Flechas laterales -->
+  <polygon points="2,8 4,6 4,10" fill="#C79E40"/>
+  <polygon points="14,8 12,6 12,10" fill="#C79E40"/>
+
+</svg>

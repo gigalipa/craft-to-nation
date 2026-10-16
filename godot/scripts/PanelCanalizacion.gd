@@ -11,6 +11,7 @@ signal aviso(texto: String)
 
 var id_red: int = -1
 
+var _icono_titulo := TextureRect.new()
 var _titulo := TemaHUD.etiqueta()
 var _tipo := TemaHUD.etiqueta()
 var _recurso := TemaHUD.etiqueta()
@@ -37,10 +38,15 @@ func _ready() -> void:
 	add_child(caja)
 
 	var fila_titulo := HBoxContainer.new()
+	fila_titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila_titulo.add_theme_constant_override("separation", 6)
+	_icono_titulo.custom_minimum_size = Vector2(20, 20)
+	_icono_titulo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	fila_titulo.add_child(_icono_titulo)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	_titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var boton_x := Button.new()
-	boton_x.text = "X"
+	boton_x.icon = IconosHUD.icono("cruz")
 	boton_x.custom_minimum_size = Vector2(24, 24)
 	TemaHUD.estilizar_boton(boton_x)
 	boton_x.pressed.connect(cerrar)
@@ -53,6 +59,8 @@ func _ready() -> void:
 		etiqueta.custom_minimum_size.x = 250.0
 		caja.add_child(etiqueta)
 
+	_demoler.icon = IconosHUD.icono("modo_demoler")
+	_demoler.expand_icon = true
 	TemaHUD.estilizar_boton(_demoler)
 	_demoler.text = "Demoler canalización"
 	_demoler.pressed.connect(_on_demoler)
@@ -88,6 +96,7 @@ func _actualizar() -> void:
 	var info: Dictionary = Canalizaciones.info_de_red(id_red)
 	var tipo_str: String = "Tubería" if info["tipo"] == "tuberia" else "Acueducto"
 	_titulo.text = "%s #%d" % [tipo_str, id_red]
+	_icono_titulo.texture = IconosHUD.icono(info["tipo"])
 	_tipo.text = "Tipo: %s" % ("Tubería industrial" if info["tipo"] == "tuberia" else "Acueducto elevado")
 
 	var rec: String = info["recurso"]

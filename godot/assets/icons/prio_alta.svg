@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <!-- Tres chevrones dorados ▲▲▲ -->
+  <polygon points="8,1 5,5 11,5" fill="#C79E40"/>
+  <polygon points="8,6 5,10 11,10" fill="#C79E40"/>
+  <polygon points="8,11 5,15 11,15" fill="#C79E40"/>
+
+</svg>

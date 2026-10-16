@@ -86,11 +86,18 @@ func _actualizar() -> void:
 	for clave in claves:
 		var recurso = Ciudad.almacen[clave]
 		var nombre: String = HUDScript.NOMBRES_RECURSO.get(clave, recurso.nombre)
+		var fila_cont := HBoxContainer.new()
+		fila_cont.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fila_cont.add_theme_constant_override("separation", 6)
+		var ic := IconosHUD.crear_rect(IconosHUD.icono_recurso(clave), 20)
+		fila_cont.add_child(ic)
 		var fila := "%s: %.0f/%.0f %s" % [nombre, recurso.cantidad, recurso.limite, BarraSuperiorScript.texto_tasa(recurso.tasa_neta_promedio)]
 		var etiqueta := TemaHUD.etiqueta(fila)
+		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if recurso.tasa_neta_promedio < 0.0:
 			etiqueta.add_theme_color_override("font_color", TemaHUD.INVALIDO)
-		_caja.add_child(etiqueta)
+		fila_cont.add_child(etiqueta)
+		_caja.add_child(fila_cont)
 
 
 func cerrar() -> void:
@@ -101,14 +108,21 @@ func cerrar() -> void:
 func _fila_titulo(texto: String) -> Control:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cont_tit := HBoxContainer.new()
+	cont_tit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cont_tit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ic := IconosHUD.crear_rect("almacen", 20)
+	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
 	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cont_tit.add_child(titulo)
+	fila.add_child(cont_tit)
+
 	var cerrar_boton := Button.new()
 	cerrar_boton.text = "X"
+	cerrar_boton.icon = IconosHUD.icono("cruz")
 	cerrar_boton.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(cerrar_boton)
 	cerrar_boton.pressed.connect(cerrar)
-	fila.add_child(titulo)
 	fila.add_child(cerrar_boton)
 	return fila

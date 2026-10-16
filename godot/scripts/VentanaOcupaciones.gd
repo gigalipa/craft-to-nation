@@ -9,6 +9,7 @@ extends PanelContainer
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
+const IconosHUD = preload("res://scripts/IconosHUD.gd")
 
 signal edificio_pedido(esquina: Vector2i)
 
@@ -176,6 +177,9 @@ func _reconstruir(por_cat: Dictionary) -> void:
 
 		var header := Button.new()
 		header.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var cat_icono: String = "cat_" + ("periferico" if cat == "recoleccion" else cat)
+		header.icon = IconosHUD.icono(cat_icono)
+		header.expand_icon = true
 		TemaHUD.estilizar_boton(header)
 		header.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 		caja_cat.add_child(header)
@@ -206,6 +210,9 @@ func _reconstruir(por_cat: Dictionary) -> void:
 		for esquina: Vector2i in lista:
 			var boton := Button.new()
 			boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			var tipo_p: String = String(Economia.puestos[esquina].get("tipo", ""))
+			boton.icon = IconosHUD.icono(tipo_p)
+			boton.expand_icon = true
 			TemaHUD.estilizar_boton(boton)
 			boton.pressed.connect(func() -> void: edificio_pedido.emit(esquina))
 			caja_filas.add_child(boton)
@@ -232,14 +239,21 @@ func _texto_fila(esquina: Vector2i) -> String:
 func _fila_titulo(texto: String) -> Control:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cont_tit := HBoxContainer.new()
+	cont_tit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cont_tit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ic := IconosHUD.crear_rect("edificio_engranaje", 20)
+	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
 	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cont_tit.add_child(titulo)
+	fila.add_child(cont_tit)
+
 	var cerrar_boton := Button.new()
 	cerrar_boton.text = "X"
+	cerrar_boton.icon = IconosHUD.icono("cruz")
 	cerrar_boton.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(cerrar_boton)
 	cerrar_boton.pressed.connect(cerrar)
-	fila.add_child(titulo)
 	fila.add_child(cerrar_boton)
 	return fila

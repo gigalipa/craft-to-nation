@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" shape-rendering="crispEdges">
+
+  <!-- Bloque de roca principal -->
+  <rect x="4" y="7" width="11" height="9" fill="#5A5D64"/>
+  <rect x="6" y="5" width="8" height="12" fill="#5A5D64"/>
+  <rect x="5" y="6" width="10" height="10" fill="#5A5D64"/>
+  <!-- Facetas iluminadas (arriba/izquierda) -->
+  <rect x="6" y="6" width="5" height="4" fill="#9E9E9E"/>
+  <rect x="7" y="5" width="4" height="2" fill="#9E9E9E"/>
+  <!-- Sombras (abajo/derecha) -->
+  <rect x="11" y="12" width="4" height="4" fill="#2B2D31"/>
+  <rect x="7" y="15" width="6" height="2" fill="#2B2D31"/>
+  <!-- Fragmento suelto -->
+  <rect x="16" y="14" width="2" height="2" fill="#5A5D64"/>
+  <rect x="2" y="15" width="2" height="2" fill="#2B2D31"/>
+
+</svg>

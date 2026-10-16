@@ -219,6 +219,10 @@ func probar_ventanas_datos() -> void:
 	for hijo in ventana_poblacion._caja.get_children():
 		if hijo is Label and (hijo as Label).text.begins_with("Ciudadanos:"):
 			texto_ciudadanos = (hijo as Label).text
+		elif hijo is Container:
+			for nieto in hijo.get_children():
+				if nieto is Label and (nieto as Label).text.begins_with("Ciudadanos:"):
+					texto_ciudadanos = (nieto as Label).text
 	assert(texto_ciudadanos == "Ciudadanos: %d" % Ciudad.demografia["ciudadano"], "salió '%s'" % texto_ciudadanos)
 	Ciudad.demografia["ciudadano"] -= 1
 	# Arrastre: mousedown, arrastrar, mouseup.
@@ -251,6 +255,11 @@ func probar_ventanas_datos() -> void:
 	for hijo in ventana_almacen._caja.get_children():
 		if hijo is Label:
 			nombres_recursos.append((hijo as Label).text.split(":")[0])
+		elif hijo is Container:
+			for nieto in hijo.get_children():
+				if nieto is Label:
+					nombres_recursos.append((nieto as Label).text.split(":")[0])
+					break
 	var nombres_ordenados := nombres_recursos.duplicate()
 	nombres_ordenados.sort_custom(func(a: String, b: String) -> bool: return a.nocasecmp_to(b) < 0)
 	assert(nombres_recursos == nombres_ordenados, "almacen debe estar ordenado alfabeticamente: %s vs %s" % [nombres_recursos, nombres_ordenados])
@@ -307,6 +316,10 @@ func _textos(caja: Node) -> Array:
 	for hijo in caja.get_children():
 		if hijo is Label:
 			textos.append((hijo as Label).text)
+		elif hijo is Container:
+			for nieto in hijo.get_children():
+				if nieto is Label:
+					textos.append((nieto as Label).text)
 	return textos
 
 

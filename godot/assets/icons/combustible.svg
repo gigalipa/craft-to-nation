@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" shape-rendering="crispEdges">
+
+  <!-- Bidón jerrycan -->
+  <rect x="4" y="5" width="11" height="12" fill="#D32F2F"/>
+  <rect x="5" y="3" width="3" height="2" fill="#B71C1C"/>
+  <rect x="9" y="3" width="4" height="2" fill="#B71C1C"/>
+  <!-- Asa -->
+  <rect x="7" y="3" width="3" height="1" fill="#B71C1C"/>
+  <!-- Llama amarilla en el centro -->
+  <rect x="9" y="8" width="2" height="4" fill="#FFA633"/>
+  <rect x="8" y="10" width="4" height="3" fill="#FFA633"/>
+  <rect x="9" y="11" width="2" height="2" fill="#FFE082"/>
+
+</svg>

@@ -76,10 +76,14 @@ static func estilizar_dialogo(dialogo: AcceptDialog) -> void:
 	var ok := dialogo.get_ok_button()
 	if ok != null:
 		estilizar_boton(ok)
+		ok.icon = IconosHUD.icono("check")
+		ok.expand_icon = true
 	if dialogo is ConfirmationDialog:
 		var cancel := (dialogo as ConfirmationDialog).get_cancel_button()
 		if cancel != null:
 			estilizar_boton(cancel)
+			cancel.icon = IconosHUD.icono("cruz")
+			cancel.expand_icon = true
 
 
 ## Ancla "etiqueta" a la esquina inferior izquierda (o derecha) de su padre, que debe ser un Control

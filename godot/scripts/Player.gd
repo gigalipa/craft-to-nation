@@ -403,7 +403,7 @@ func _procesar_minado(delta: float) -> void:
 			_temporizador_accion = 0.0
 			_deconstruir()
 		if _ticks_listo_para_remocion > 0:
-			hud.mostrar_progreso(1.0 - float(_ticks_listo_para_remocion) / TICKS_REMOCION_FINAL, true)
+			hud.mostrar_progreso(1.0 - float(_ticks_listo_para_remocion) / TICKS_REMOCION_FINAL, true, "herr_mazo")
 		else:
 			_mostrar_progreso_de_obra(true)
 		return
@@ -419,13 +419,15 @@ func _procesar_minado(delta: float) -> void:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return
-	var duracion: float = Recoleccion.tiempo_minado_de(mundo.material_real(mundo.obtener_tipo(celda)))
+	var tipo_b: String = mundo.material_real(mundo.obtener_tipo(celda))
+	var duracion: float = Recoleccion.tiempo_minado_de(tipo_b)
 	if _progreso_accion.avanzar("celda:%s" % celda, duracion, delta):
 		_guardar_en_inventario(mundo.extraer_por_avatar(celda))
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 	else:
-		hud.mostrar_progreso(_progreso_accion.fraccion(), false)
+		var herr := IconosHUD.icono_herramienta_minado(tipo_b)
+		hud.mostrar_progreso(_progreso_accion.fraccion(), false, herr)
 
 
 ## Talar: cada TIEMPO_TALA_POR_SALUD segundos sostenidos resta 1 de salud al árbol
@@ -444,7 +446,7 @@ func _procesar_tala(celda: Vector3i, delta: float) -> void:
 			_progreso_accion.soltar()
 			hud.ocultar_progreso()
 			return
-	hud.mostrar_progreso(float(mundo.arboles.salud_de(id)) / mundo.arboles.salud_maxima_de(id), true)
+	hud.mostrar_progreso(float(mundo.arboles.salud_de(id)) / mundo.arboles.salud_maxima_de(id), true, "herr_hacha")
 
 
 ## Pulsar E (no mantener) sobre el objeto apuntado: alterna puertas o, sobre
@@ -499,7 +501,7 @@ func _procesar_frutos(delta: float) -> void:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 	else:
-		hud.mostrar_progreso(_progreso_accion.fraccion(), false)
+		hud.mostrar_progreso(_progreso_accion.fraccion(), false, "herr_cesta")
 
 
 func _physics_process(delta: float) -> void:

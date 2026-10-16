@@ -79,6 +79,8 @@ func _ready() -> void:
 	var fila_botones := HBoxContainer.new()
 	var extraer := Button.new()
 	extraer.text = "Extraer todo"
+	extraer.icon = IconosHUD.icono("extraer_todo")
+	extraer.expand_icon = true
 	extraer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	TemaHUD.estilizar_boton(extraer)
 	extraer.pressed.connect(func() -> void:
@@ -151,28 +153,27 @@ func _actualizar() -> void:
 		f["mas"].disabled = lleno or Ciudad.almacen[recurso].cantidad <= 0.0
 
 
-## Icono opcional por recurso: placeholder oculto hasta que exista el arte
-## real (ver Pendientes, punto 1 — "iconos, hoy son texto"). El sufijo del
-## nombre del recurso en "name" facilita ubicarlo/asignarle textura después.
 func _crear_fila_recurso(recurso: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var icono := TextureRect.new()
 	icono.name = "Icono_%s" % recurso
 	icono.custom_minimum_size = Vector2(20, 20)
-	icono.visible = false
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.texture = IconosHUD.icono(IconosHUD.icono_recurso(recurso))
+	icono.visible = true
 	fila.add_child(icono)
 	var etiqueta := TemaHUD.etiqueta()
 	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fila.add_child(etiqueta)
 	var menos := Button.new()
-	menos.text = "-"
+	menos.icon = IconosHUD.icono("btn_menos")
 	menos.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(menos)
 	menos.pressed.connect(func() -> void:
 		Economia.retirar_uno(esquina, recurso, _incremento()))
 	var mas := Button.new()
-	mas.text = "+"
+	mas.icon = IconosHUD.icono("btn_mas")
 	mas.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(mas)
 	mas.pressed.connect(func() -> void:
@@ -190,11 +191,13 @@ func _crear_fila_recurso(recurso: String) -> HBoxContainer:
 func _fila_titulo() -> Control:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var ic := IconosHUD.crear_rect("baul", 20)
+	fila.add_child(ic)
 	var titulo := TemaHUD.etiqueta("BAÚL")
 	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var cerrar_boton := Button.new()
-	cerrar_boton.text = "X"
+	cerrar_boton.icon = IconosHUD.icono("cruz")
 	cerrar_boton.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(cerrar_boton)
 	cerrar_boton.pressed.connect(cerrar)

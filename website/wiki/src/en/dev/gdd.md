@@ -1,4 +1,4 @@
-# Game Design Document (GDD v3.56)
+# Game Design Document (GDD v3.57)
 
 **Slogan:** *From first block to living nation.*  
 **Campaign Motto:** *Survive. Craft. Automate. Lead.*  

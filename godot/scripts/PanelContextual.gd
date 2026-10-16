@@ -10,8 +10,9 @@ const HotbarScript = preload("res://scripts/Hotbar.gd")
 const ICONO_CLIC_DERECHO := "res://assets/icons/click_der.svg"
 const ICONO_CLIC_IZQUIERDO := "res://assets/icons/click_izq.svg"
 const ICONO_SCROLL := "res://assets/icons/scroll.svg"
-const ANCHO_PANEL := 420.0
-const ANCHO_TEXTO := 320.0
+const ICONO_MOUSE_MOVE := "res://assets/icons/mouse_move.svg"
+const ANCHO_PANEL := 440.0
+const ANCHO_TEXTO := 340.0
 
 var titulo := TemaHUD.etiqueta()
 ## Índice del bloque en la hotbar ("1"-"9"), en dorado junto al título. Solo
@@ -58,10 +59,13 @@ static func texto_costo(costo_dic: Dictionary, bloques_dic: Dictionary = {}) -> 
 	return " · ".join(partes)
 
 
+## Formatea teclas en estilo visual "keycap" dorado/crema
+static func _formatear_keycap(tecla: String) -> String:
+	return "[color=#FFE082][b][%s][/b][/color]" % tecla
+
+
 ## Texto BBCode de "lista_acciones" para el RichTextLabel "acciones": cambia
-## las marcas de texto "(clic der.)"/"(clic izq.)"/"(scroll)" por el ícono del
-## ratón o la rueda de desplazamiento (más compacto y consistente con el diseño
-## del HUD que la palabra suelta; el de clic izquierdo es el mismo ícono reflejado).
+## las marcas de texto por los íconos del ratón y formato keycap.
 static func texto_acciones(lista_acciones: Array) -> String:
 	var partes: Array = []
 	for accion in lista_acciones:
@@ -89,14 +93,20 @@ static func texto_acciones(lista_acciones: Array) -> String:
 			parte = parte.replace("(clic)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 			parte = parte.replace("(click)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 
-			parte = parte.replace("[Ctrl+rueda]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-			parte = parte.replace("[Ctrl+scroll]", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-			parte = parte.replace("(Ctrl+rueda)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-			parte = parte.replace("(Ctrl+scroll)", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-			parte = parte.replace("Ctrl+rueda", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
-			parte = parte.replace("Ctrl+scroll", "[Ctrl] [img=12x17]%s[/img]" % ICONO_SCROLL)
+			parte = parte.replace("(mover)", "[img=16x16]%s[/img]" % ICONO_MOUSE_MOVE)
+
+			parte = parte.replace("[Ctrl+rueda]", "%s [img=12x17]%s[/img]" % [_formatear_keycap("Ctrl"), ICONO_SCROLL])
+			parte = parte.replace("[Ctrl+scroll]", "%s [img=12x17]%s[/img]" % [_formatear_keycap("Ctrl"), ICONO_SCROLL])
+			parte = parte.replace("(Ctrl+rueda)", "%s [img=12x17]%s[/img]" % [_formatear_keycap("Ctrl"), ICONO_SCROLL])
+			parte = parte.replace("(Ctrl+scroll)", "%s [img=12x17]%s[/img]" % [_formatear_keycap("Ctrl"), ICONO_SCROLL])
+			parte = parte.replace("Ctrl+rueda", "%s [img=12x17]%s[/img]" % [_formatear_keycap("Ctrl"), ICONO_SCROLL])
+			parte = parte.replace("Ctrl+scroll", "%s [img=12x17]%s[/img]" % [_formatear_keycap("Ctrl"), ICONO_SCROLL])
 			parte = parte.replace("(scroll)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
 			parte = parte.replace("(rueda)", "[img=12x17]%s[/img]" % ICONO_SCROLL)
+
+			# Estilo keycap para teclas de control
+			for k in ["Esc", "E", "G", "V", "B", "Z", "X", "Ctrl", "Shift"]:
+				parte = parte.replace("[%s]" % k, _formatear_keycap(k))
 
 			partes.append(parte)
 	return "\n".join(partes)
@@ -130,6 +140,10 @@ func _ready() -> void:
 	descripcion.custom_minimum_size.x = ANCHO_TEXTO
 	descripcion.visible = false
 
+	costo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	costo.custom_minimum_size.x = ANCHO_TEXTO
+	costo.visible = false
+
 	# RichTextLabel (no Label): "(clic der.)"/"(clic izq.)" se reemplazan por
 	# el ícono del ratón (ver texto_acciones()) en vez de quedar como texto
 	# plano. Ancho explícito: sin él, fit_content mide su alto ANTES de que
@@ -149,6 +163,8 @@ func _ready() -> void:
 
 	extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	extra.custom_minimum_size.x = ANCHO_TEXTO
+
+	validez.custom_minimum_size.x = ANCHO_TEXTO
 
 	var caja := VBoxContainer.new()
 	caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -190,11 +206,8 @@ func _ready() -> void:
 
 
 ## "valido": true/false muestra "Ubicación válida"/"no válida"; cualquier otro
-## valor (p. ej. null) oculta esa fila. "texto_extra" vacío oculta su línea.
-## Oculta también los campos exclusivos de mostrar_bloque_temporal()
-## (número, ícono, descripción, disponibilidad): este panel es compartido.
-## "bloques_dic" (opcional) ver texto_costo().
-func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valido: Variant = null, texto_extra: String = "", bloques_dic: Dictionary = {}) -> void:
+## valor (p. ej. null) oculta esa fila. "motivo_invalido" explica el motivo exacto si es falso.
+func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valido: Variant = null, texto_extra: String = "", bloques_dic: Dictionary = {}, motivo_invalido: String = "") -> void:
 	numero.visible = false
 	icono.visible = false
 	descripcion.visible = false
@@ -206,8 +219,15 @@ func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valid
 	acciones.visible = not lista_acciones.is_empty()
 	validez.visible = typeof(valido) == TYPE_BOOL
 	if validez.visible:
-		validez.text = "Ubicación válida" if valido else "Ubicación no válida"
-		validez.add_theme_color_override("font_color", TemaHUD.VALIDO if valido else TemaHUD.INVALIDO)
+		var es_valido: bool = bool(valido)
+		if es_valido:
+			validez.text = "Ubicación válida"
+			validez.add_theme_color_override("font_color", TemaHUD.VALIDO)
+		else:
+			var desc_motivo := motivo_invalido.replace("Colocación rechazada: ", "").strip_edges()
+			var motivo_str := (": " + desc_motivo) if desc_motivo != "" else ""
+			validez.text = "Ubicación no válida%s" % motivo_str
+			validez.add_theme_color_override("font_color", TemaHUD.INVALIDO)
 	extra.text = texto_extra
 	extra.visible = texto_extra != ""
 	_dejar_fijo()

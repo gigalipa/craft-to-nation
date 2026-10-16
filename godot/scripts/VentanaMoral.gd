@@ -27,6 +27,13 @@ var _lbl_factor_sin_techo := TemaHUD.etiqueta()
 var _lbl_factor_seguridad := TemaHUD.etiqueta()
 
 
+var _rect_moral := TextureRect.new()
+var _rect_tendencia := TextureRect.new()
+var _rect_productividad := TextureRect.new()
+var _rect_migracion := TextureRect.new()
+var _rect_factor_recursos := TextureRect.new()
+
+
 func _ready() -> void:
 	visible = false
 	TemaHUD.aplicar_panel(self)
@@ -65,9 +72,16 @@ func _ready() -> void:
 	vbox_estado.add_theme_constant_override("separation", 6)
 
 	var hbox_superior := HBoxContainer.new()
-	hbox_superior.add_theme_constant_override("separation", 16)
+	hbox_superior.add_theme_constant_override("separation", 12)
+	_rect_moral.custom_minimum_size = Vector2(32, 32)
+	_rect_moral.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	hbox_superior.add_child(_rect_moral)
 	_lbl_moral_val.add_theme_font_size_override("font_size", 18)
 	hbox_superior.add_child(_lbl_moral_val)
+
+	_rect_tendencia.custom_minimum_size = Vector2(16, 16)
+	_rect_tendencia.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	hbox_superior.add_child(_rect_tendencia)
 	hbox_superior.add_child(_lbl_tendencia)
 	vbox_estado.add_child(hbox_superior)
 
@@ -79,8 +93,25 @@ func _ready() -> void:
 	grid_indicadores.add_theme_constant_override("h_separation", 20)
 	grid_indicadores.add_theme_constant_override("v_separation", 4)
 
-	grid_indicadores.add_child(_lbl_productividad)
-	grid_indicadores.add_child(_lbl_migracion)
+	var item_prod := HBoxContainer.new()
+	item_prod.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_prod.add_theme_constant_override("separation", 6)
+	_rect_productividad.custom_minimum_size = Vector2(16, 16)
+	_rect_productividad.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_rect_productividad.texture = IconosHUD.icono("productividad")
+	item_prod.add_child(_rect_productividad)
+	item_prod.add_child(_lbl_productividad)
+	grid_indicadores.add_child(item_prod)
+
+	var item_migr := HBoxContainer.new()
+	item_migr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_migr.add_theme_constant_override("separation", 6)
+	_rect_migracion.custom_minimum_size = Vector2(16, 16)
+	_rect_migracion.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	item_migr.add_child(_rect_migracion)
+	item_migr.add_child(_lbl_migracion)
+	grid_indicadores.add_child(item_migr)
+
 	vbox_estado.add_child(grid_indicadores)
 
 	panel_estado.add_child(vbox_estado)
@@ -106,16 +137,49 @@ func _ready() -> void:
 	vbox_factores.add_theme_constant_override("separation", 6)
 	scroll.add_child(vbox_factores)
 
-	vbox_factores.add_child(_lbl_factor_inercia)
-	vbox_factores.add_child(_lbl_factor_dieta)
-	vbox_factores.add_child(_lbl_factor_recursos)
-	vbox_factores.add_child(_lbl_factor_sin_techo)
-	vbox_factores.add_child(_lbl_factor_seguridad)
+	var item_inercia := HBoxContainer.new()
+	item_inercia.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_inercia.add_theme_constant_override("separation", 6)
+	item_inercia.add_child(IconosHUD.crear_rect("balanza", 16))
+	item_inercia.add_child(_lbl_factor_inercia)
+	vbox_factores.add_child(item_inercia)
+
+	var item_dieta := HBoxContainer.new()
+	item_dieta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_dieta.add_theme_constant_override("separation", 6)
+	item_dieta.add_child(IconosHUD.crear_rect("comida", 16))
+	item_dieta.add_child(_lbl_factor_dieta)
+	vbox_factores.add_child(item_dieta)
+
+	var item_rec := HBoxContainer.new()
+	item_rec.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_rec.add_theme_constant_override("separation", 6)
+	_rect_factor_recursos.custom_minimum_size = Vector2(16, 16)
+	_rect_factor_recursos.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	item_rec.add_child(_rect_factor_recursos)
+	item_rec.add_child(_lbl_factor_recursos)
+	vbox_factores.add_child(item_rec)
+
+	var item_st := HBoxContainer.new()
+	item_st.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_st.add_theme_constant_override("separation", 6)
+	item_st.add_child(IconosHUD.crear_rect("sin_techo", 16))
+	item_st.add_child(_lbl_factor_sin_techo)
+	vbox_factores.add_child(item_st)
+
+	var item_seg := HBoxContainer.new()
+	item_seg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_seg.add_theme_constant_override("separation", 6)
+	item_seg.add_child(IconosHUD.crear_rect("escudo_agrietado", 16))
+	item_seg.add_child(_lbl_factor_seguridad)
+	vbox_factores.add_child(item_seg)
 
 
 func _fila_titulo(texto: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
 	fila.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ic := IconosHUD.crear_rect("corazon_civico", 20)
+	fila.add_child(ic)
 
 	var lbl := TemaHUD.etiqueta(texto)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -124,7 +188,7 @@ func _fila_titulo(texto: String) -> HBoxContainer:
 	fila.add_child(lbl)
 
 	var btn_cerrar := Button.new()
-	btn_cerrar.text = "X"
+	btn_cerrar.icon = IconosHUD.icono("cruz")
 	TemaHUD.estilizar_boton(btn_cerrar)
 	btn_cerrar.custom_minimum_size = Vector2(28, 24)
 	btn_cerrar.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -176,16 +240,19 @@ func actualizar() -> void:
 		emoji = "😐"
 		color_moral = TemaHUD.TEXTO
 
+	_rect_moral.texture = IconosHUD.icono(IconosHUD.icono_moral(m))
 	_lbl_moral_val.text = "%s Moral: %.1f%%" % [emoji, m]
 	_lbl_moral_val.add_theme_color_override("font_color", color_moral)
 
 	var color_tasa := Color(0.85, 0.95, 0.6) if tasa_m >= 0.0 else TemaHUD.INVALIDO
+	_rect_tendencia.texture = IconosHUD.icono(IconosHUD.icono_tasa(tasa_m))
 	_lbl_tendencia.text = "Tendencia: %+.2f / hora" % tasa_m
 	_lbl_tendencia.add_theme_color_override("font_color", color_tasa)
 
 	var mult_prod: float = Ciudad.calcular_multiplicador_productividad(m) if Ciudad.has_method("calcular_multiplicador_productividad") else 1.0
 	_lbl_productividad.text = "Productividad laboral: %.2fx" % mult_prod
 
+	_rect_migracion.texture = IconosHUD.icono("ciudadano" if m >= 20.0 else "investigador")
 	if m >= 20.0:
 		_lbl_migracion.text = "Migración: Inmigración activa"
 		_lbl_migracion.add_theme_color_override("font_color", Color(0.85, 0.95, 0.6))
@@ -211,6 +278,7 @@ func actualizar() -> void:
 		detalle_recursos = "Hambruna crítica (-3.0/h)"
 	elif com_rec != null and com_rec.tasa_neta_promedio < 0.0:
 		detalle_recursos = "Déficit de comida (-0.6/h)"
+	_rect_factor_recursos.texture = IconosHUD.icono("cornucopia_vacia" if (com_rec != null and com_rec.cantidad <= 0.0) else "cornucopia_llena")
 	_lbl_factor_recursos.text = "• Abundancia y reservas: %s" % detalle_recursos
 
 	var sin_techo_cant: int = Ciudad.sin_techo if ("sin_techo" in Ciudad) else 0

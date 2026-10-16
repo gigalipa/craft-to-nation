@@ -57,6 +57,8 @@ func _ready() -> void:
 	_caja_raiz.add_child(_caja)
 	# Fuera de _caja: lo de dentro se destruye cada fotograma (ver arriba).
 	_boton_ocupaciones.text = "Ocupaciones"
+	_boton_ocupaciones.icon = IconosHUD.icono("edificio_engranaje")
+	_boton_ocupaciones.expand_icon = true
 	TemaHUD.estilizar_boton(_boton_ocupaciones)
 	_boton_ocupaciones.pressed.connect(func() -> void: ocupaciones_pedidas.emit())
 	_caja_raiz.add_child(_boton_ocupaciones)
@@ -98,13 +100,24 @@ func _formato_empleo(nombre: String, total: int, con_puesto: int, sin_puesto: in
 	return "%s: %d · %s · %s" % [nombre, total, texto_emp, texto_des]
 
 
+func _crear_fila_resumen(icono_clave: String, texto: String) -> HBoxContainer:
+	var fila := HBoxContainer.new()
+	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila.add_theme_constant_override("separation", 6)
+	var ic := IconosHUD.crear_rect(icono_clave, 16)
+	fila.add_child(ic)
+	var lbl := TemaHUD.etiqueta(texto)
+	fila.add_child(lbl)
+	return fila
+
+
 func _actualizar() -> void:
 	for hijo in _caja.get_children():
 		hijo.free()
-	_caja.add_child(TemaHUD.etiqueta("Población total: %d" % Ciudad.censo_total))
-	_caja.add_child(TemaHUD.etiqueta("Camas construidas: %d" % Ciudad.capacidad_camas_construida))
+	_caja.add_child(_crear_fila_resumen("censo", "Población total: %d" % Ciudad.censo_total))
+	_caja.add_child(_crear_fila_resumen("cama", "Camas construidas: %d" % Ciudad.capacidad_camas_construida))
 	if Ciudad.sin_techo > 0:
-		_caja.add_child(TemaHUD.etiqueta("Sin techo: %d" % Ciudad.sin_techo))
+		_caja.add_child(_crear_fila_resumen("sin_techo", "Sin techo: %d" % Ciudad.sin_techo))
 	_caja.add_child(TemaHUD.etiqueta(""))
 	var empleados := _empleados_por_tipo()
 	for tipo in NOMBRES_TIPO:
@@ -115,12 +128,13 @@ func _actualizar() -> void:
 			cantidad += Ciudad.demografia.get("desempleado", 0)
 		if cantidad <= 0:
 			continue
+		var icono_clave: String = IconosHUD.icono_demografia(tipo)
 		if tipo == "ciudadano":  # sin puesto posible: solo el total
-			_caja.add_child(TemaHUD.etiqueta("%s: %d" % [NOMBRES_TIPO[tipo], cantidad]))
+			_caja.add_child(_crear_fila_resumen(icono_clave, "%s: %d" % [NOMBRES_TIPO[tipo], cantidad]))
 		else:
 			var con_puesto: int = empleados.get(tipo, 0)
 			var sin_puesto: int = maxi(cantidad - con_puesto, 0)
-			_caja.add_child(TemaHUD.etiqueta(_formato_empleo(NOMBRES_TIPO[tipo], cantidad, con_puesto, sin_puesto)))
+			_caja.add_child(_crear_fila_resumen(icono_clave, _formato_empleo(NOMBRES_TIPO[tipo], cantidad, con_puesto, sin_puesto)))
 
 
 
@@ -142,14 +156,21 @@ func cerrar() -> void:
 func _fila_titulo(texto: String) -> Control:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cont_tit := HBoxContainer.new()
+	cont_tit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cont_tit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ic := IconosHUD.crear_rect("censo", 20)
+	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
 	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cont_tit.add_child(titulo)
+	fila.add_child(cont_tit)
+
 	var cerrar_boton := Button.new()
 	cerrar_boton.text = "X"
+	cerrar_boton.icon = IconosHUD.icono("cruz")
 	cerrar_boton.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(cerrar_boton)
 	cerrar_boton.pressed.connect(cerrar)
-	fila.add_child(titulo)
 	fila.add_child(cerrar_boton)
 	return fila

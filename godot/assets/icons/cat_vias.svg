@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" shape-rendering="crispEdges">
+
+  <rect x="2" y="2" width="20" height="20" fill="#5D4037"/>
+  <!-- Carretera diagonal o central -->
+  <polygon points="8,2 16,2 16,22 8,22" fill="#5A5D64"/>
+  <line x1="12" y1="4" x2="12" y2="20" stroke="#F2EBD1" stroke-width="1" stroke-dasharray="2,2"/>
+
+</svg>

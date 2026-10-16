@@ -40,25 +40,22 @@ const DIRECCION_CAMARA_MINIATURA := Vector3(1, 1, -1)
 const TAMANO_MINIATURA := 40.0
 const ZONA_RESIDENCIAL := "residencial_investigacion"
 
-## [id, nombre, tecla, ícono opcional (null: sin arte todavía)]
+## [id, nombre, tecla, ícono opcional]
 const MODOS := [
-	["ver", "Ver", "Esc", null],
-	["construir", "Construir", "1", null],
-	["zonificar", "Zonificar", "2", null],
-	["demoler", "Demoler", "3", null],
+	["ver", "Ver", "Esc", "modo_ver"],
+	["construir", "Construir", "1", "modo_construir"],
+	["zonificar", "Zonificar", "2", "modo_zonificar"],
+	["demoler", "Demoler", "3", "modo_demoler"],
 ]
 
-## Categorías del menú Construir (GDD: Núcleo A = Residencial/Investigación,
-## Núcleo B = Industrial; Periférico son los puestos de recolección fuera de
-## la ciudad). Industrial tiene la siderúrgica e Investigación la escuela técnica
-## (ver CONSTRUCCIONES_POR_CATEGORIA).
+## Categorías del menú Construir
 const CATEGORIAS := [
-	["residencial", "Residencial", "1"],
-	["periferico", "Periférico", "2"],
-	["industrial", "Industrial", "3"],
-	["investigacion", "Investigación", "4"],
-	["vias", "Vías", "5"],
-	["ductos", "Ductos", "6"],
+	["residencial", "Residencial", "1", "cat_residencial"],
+	["periferico", "Periférico", "2", "cat_periferico"],
+	["industrial", "Industrial", "3", "cat_industrial"],
+	["investigacion", "Investigación", "4", "cat_investigacion"],
+	["vias", "Vías", "5", "cat_vias"],
+	["ductos", "Ductos", "6", "cat_ductos"],
 ]
 
 ## categoría -> [tipo, nombre, tecla] de sus edificios, en el orden en que
@@ -105,16 +102,53 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 	],
 }
 
-## Tipos con miniatura 3D real (mina/caza/madera/pesca + el blueprint
-## residencial); "vias" no tiene malla que previsualizar, es un botón de texto.
-const TIPOS_CON_MINIATURA := ["residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen"]
-
-## [tipo de zona, nombre, tecla, ícono opcional (null: sin arte todavía)]
-var ZONAS := [
-	[Zonificacion.ZONAS_PINTABLES[0], "Zona Residencial", "1", null],
-	[Zonificacion.ZONAS_PINTABLES[1], "Zona Industrial", "2", null],
-	[Zonificacion.MARCADOR_BORRAR, "Borrar", "3", null],
+## Tipos con miniatura 3D real (incluyendo vías, acueducto y tubería)
+const TIPOS_CON_MINIATURA := [
+	"residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar",
+	"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera",
+	"refineria_petrolera", "productor_combustible", "central_termoelectrica",
+	"escuela_tecnica", "escuela_especialistas", "universidad",
+	"estacion_bombeo", "centro_extraccion", "almacen",
+	"vias", "acueducto", "tuberia"
 ]
+
+## [tipo de zona, nombre, tecla, ícono opcional]
+var ZONAS := [
+	[Zonificacion.ZONAS_PINTABLES[0], "Zona Residencial", "1", "zona_residencial"],
+	[Zonificacion.ZONAS_PINTABLES[1], "Zona Industrial", "2", "zona_industrial"],
+	[Zonificacion.MARCADOR_BORRAR, "Borrar", "3", "zona_borrar"],
+]
+
+## Metadatos visuales de las 3 esquinas para botones de construcción:
+## [recursos_requeridos, requiere_energia, recurso_o_funcion_producida]
+const METADATOS_CONSTRUCCION := {
+	"residencial": [["madera"], false, "cama"],
+	"residencial_1": [["madera"], false, "cama"],
+	"residencial_2": [["madera"], false, "cama"],
+	"residencial_3": [["madera"], false, "cama"],
+	"residencial_4": [["madera"], false, "cama"],
+	"caza_recoleccion": [["madera"], false, "comida"],
+	"maderero": [["madera"], false, "madera"],
+	"mina": [["tierra"], false, "piedra"],
+	"pesca_frutos_mar": [["madera"], false, "comida"],
+	"estacion_bombeo": [["madera"], true, "agua"],
+	"centro_extraccion": [["hierro"], true, "crudo"],
+	"siderurgica": [["piedra"], false, "hierro"],
+	"refineria_tierras_raras": [["hierro"], true, "tierras_raras"],
+	"aserradero": [["madera"], false, "tablas"],
+	"fabrica_bloques": [["piedra"], false, "bloques_piedra"],
+	"carbonera": [["tierra"], false, "carbon"],
+	"refineria_petrolera": [["hierro"], true, "combustible"],
+	"productor_combustible": [["piedra"], true, "combustible"],
+	"central_termoelectrica": [["piedra"], false, "energia_dorado"],
+	"almacen": [["piedra"], false, "almacen"],
+	"escuela_tecnica": [["tierra"], false, "tecnico"],
+	"escuela_especialistas": [["piedra"], false, "especialista"],
+	"universidad": [["piedra"], true, "investigador"],
+	"vias": [["tierra"], false, "cat_vias"],
+	"acueducto": [["bloques_piedra", "tablas"], false, "agua"],
+	"tuberia": [["acero", "hierro"], false, "cat_ductos"],
+}
 
 const ITEMS_POR_PAGINA := 10
 
@@ -266,12 +300,19 @@ func _nueva_columna(panel: PanelContainer) -> VBoxContainer:
 ## exactamente igual que siempre (texto directo en el Button). Con él,
 ## antepone un TextureRect de 24x24 y mueve el texto a un Label hijo — deja
 ## el mecanismo listo para cuando exista el ícono real de cada modo/zona.
-func _crear_boton(texto: String, tamano: Vector2, icono: Texture2D = null, tecla: String = "") -> Button:
+func _crear_boton(texto: String, tamano: Vector2, icono_nombre: Variant = null, tecla: String = "") -> Button:
 	var boton := Button.new()
 	boton.toggle_mode = true
 	boton.custom_minimum_size = tamano
 	TemaHUD.estilizar_boton(boton)
-	if icono == null:
+
+	var tex: Texture2D = null
+	if icono_nombre is Texture2D:
+		tex = icono_nombre
+	elif icono_nombre is String and icono_nombre != "":
+		tex = IconosHUD.icono(icono_nombre)
+
+	if tex == null:
 		boton.text = texto
 		_poner_tecla(boton, tecla, boton.get_theme_font("font").get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, boton.get_theme_font_size("font_size")).x)
 		return boton
@@ -284,7 +325,7 @@ func _crear_boton(texto: String, tamano: Vector2, icono: Texture2D = null, tecla
 
 	var imagen := TextureRect.new()
 	imagen.custom_minimum_size = Vector2(24, 24)
-	imagen.texture = icono
+	imagen.texture = tex
 	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	imagen.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -331,11 +372,11 @@ func _actualizar_tecla_boton(boton: Button, nueva_tecla: String) -> void:
 
 
 ## Botón del submenú Construir: miniatura 3D (espacio fijo TAMANO_MINIATURA x
-## TAMANO_MINIATURA, ver _actualizar_miniaturas(); solo los tipos de
-## TIPOS_CON_MINIATURA) arriba y el nombre abajo; el ancho se adapta al nombre.
-## La tecla de acceso directo va en la esquina inferior izquierda, en dorado,
-## como en la hotbar de 1ª persona (ver Hotbar.gd). Los hijos llevan
-## MOUSE_FILTER_IGNORE para que el clic siga llegando al Button de abajo.
+## TAMANO_MINIATURA) arriba y el nombre abajo; tamaño ampliado a ~104x76 px.
+## Insignias en 3 esquinas:
+## - Esquina superior izquierda: lista vertical de íconos 14x14 px de recursos necesarios.
+## - Centro superior: ícono de energía 14x14 px si requiere electricidad.
+## - Esquina superior derecha: ícono 18x18 px del recurso o función principal.
 func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> Button:
 	var boton := Button.new()
 	boton.toggle_mode = true
@@ -364,7 +405,50 @@ func _crear_boton_construccion(tipo: String, nombre: String, tecla: String) -> B
 	columna.add_child(etiqueta)
 	boton.add_child(columna)
 
-	boton.custom_minimum_size = Vector2(88, 64)
+	# Capa de insignias (Overlay de esquinas)
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boton.add_child(overlay)
+
+	var meta: Array = METADATOS_CONSTRUCCION.get(tipo, [[], false, ""])
+	if not meta.is_empty():
+		# 1. Esquina superior izquierda: lista vertical de recursos requeridos (14x14 px)
+		var lista_rec: Array = meta[0]
+		if not lista_rec.is_empty():
+			var vbox_rec := VBoxContainer.new()
+			vbox_rec.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			vbox_rec.offset_left = 4
+			vbox_rec.offset_top = 4
+			vbox_rec.add_theme_constant_override("separation", 1)
+			for rec_id in lista_rec:
+				var tr_rec := IconosHUD.crear_rect(rec_id, Vector2(14, 14))
+				vbox_rec.add_child(tr_rec)
+			overlay.add_child(vbox_rec)
+
+		# 2. Centro superior: ícono de energía si requiere electricidad (14x14 px)
+		var req_energia: bool = meta[1]
+		if req_energia:
+			var tr_ene := IconosHUD.crear_rect("energia_dorado", Vector2(14, 14))
+			tr_ene.set_anchors_preset(Control.PRESET_CENTER_TOP)
+			tr_ene.offset_left = -7
+			tr_ene.offset_right = 7
+			tr_ene.offset_top = 3
+			tr_ene.offset_bottom = 17
+			overlay.add_child(tr_ene)
+
+		# 3. Esquina superior derecha: ícono 18x18 px del recurso o función producida
+		var prod_id: String = meta[2]
+		if prod_id != "":
+			var tr_prod := IconosHUD.crear_rect(prod_id, Vector2(18, 18))
+			tr_prod.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+			tr_prod.offset_left = -22
+			tr_prod.offset_right = -4
+			tr_prod.offset_top = 4
+			tr_prod.offset_bottom = 22
+			overlay.add_child(tr_prod)
+
+	boton.custom_minimum_size = Vector2(104, 76)
 	_poner_tecla(boton, tecla, etiqueta.get_minimum_size().x)
 	return boton
 
@@ -421,19 +505,28 @@ func _renderizar_miniatura(tipo: String) -> Texture2D:
 		(_viewports_construccion[tipo] as SubViewport).queue_free()
 		_viewports_construccion.erase(tipo)
 
-	var celdas: Dictionary = _celdas_residencial_giradas() if tipo == "residencial" else PlantillasPuestoScript.celdas(tipo, _giros_menu)
-	if celdas.is_empty():
-		return null
 	if _biblioteca_construccion == null:
 		_biblioteca_construccion = MiniaturaRendererScript.cargar_biblioteca()
+
 	var piezas: Array = []
-	for celda in celdas:
-		var tipo_bloque: String = celdas[celda]
-		if TIPOS_SIN_MALLA_MINIATURA.has(tipo_bloque):
-			continue
-		var malla: Mesh = MiniaturaRendererScript.malla_de_item(_biblioteca_construccion, tipo_bloque)
-		if malla != null:
-			piezas.append([malla, Vector3(celda.x, celda.y, celda.z), null])
+	if tipo == "vias":
+		piezas = MiniaturaRendererScript.piezas_via(_biblioteca_construccion)
+	elif tipo == "acueducto":
+		piezas = MiniaturaRendererScript.piezas_acueducto(_biblioteca_construccion)
+	elif tipo == "tuberia":
+		piezas = MiniaturaRendererScript.piezas_tuberia(_biblioteca_construccion)
+	else:
+		var celdas: Dictionary = _celdas_residencial_giradas() if tipo == "residencial" else PlantillasPuestoScript.celdas(tipo, _giros_menu)
+		if celdas.is_empty():
+			return null
+		for celda in celdas:
+			var tipo_bloque: String = celdas[celda]
+			if TIPOS_SIN_MALLA_MINIATURA.has(tipo_bloque):
+				continue
+			var malla: Mesh = MiniaturaRendererScript.malla_de_item(_biblioteca_construccion, tipo_bloque)
+			if malla != null:
+				piezas.append([malla, Vector3(celda.x, celda.y, celda.z), null])
+
 	if piezas.is_empty():
 		return null
 	var viewport: SubViewport = MiniaturaRendererScript.renderizar_viewport(piezas, DIRECCION_CAMARA_MINIATURA, self)

@@ -19,6 +19,7 @@ var obras: Object = null
 var colonos: Object = null
 var ciudad: Object = null
 
+var _icono_titulo := TextureRect.new()
 var _titulo := TemaHUD.etiqueta()
 var _tipo := TemaHUD.etiqueta()
 var _camas := TemaHUD.etiqueta()
@@ -60,13 +61,24 @@ func _ready() -> void:
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	var caja := VBoxContainer.new()
 	add_child(caja)
+
+	var fila_tit := HBoxContainer.new()
+	fila_tit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila_tit.add_theme_constant_override("separation", 6)
+	_icono_titulo.custom_minimum_size = Vector2(20, 20)
+	_icono_titulo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	fila_tit.add_child(_icono_titulo)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	caja.add_child(_titulo)
+	_titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila_tit.add_child(_titulo)
+	caja.add_child(fila_tit)
+
 	for etiqueta in [_tipo, _camas, _baules, _residentes, _colonizable, _estado, _salud, _obreros, _materiales]:
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		etiqueta.custom_minimum_size.x = 250.0
 		caja.add_child(etiqueta)
 	for boton in [_toggle_colonizable, _remodelar, _pausar, _prioridad, _demoler, _asignar_nucleo]:
+		boton.expand_icon = true
 		TemaHUD.estilizar_boton(boton)
 		caja.add_child(boton)
 	_toggle_colonizable.pressed.connect(func() -> void:
@@ -278,12 +290,15 @@ func _actualizar() -> void:
 	var es_residencial: bool = es_nucleo or r["tipo"].to_lower().contains("residencial")
 
 	if es_nucleo:
+		_icono_titulo.texture = IconosHUD.icono("ayuntamiento")
 		_titulo.text = "Núcleo urbano"
 		_tipo.text = "Tipo: Núcleo urbano"
 	elif es_residencial:
+		_icono_titulo.texture = IconosHUD.icono("cat_residencial")
 		_titulo.text = "Edificio residencial"
 		_tipo.text = "Tipo: %s" % r["tipo"]
 	else:
+		_icono_titulo.texture = IconosHUD.icono("modo_construir")
 		_titulo.text = r["nombre"]
 		_tipo.text = "Tipo: %s" % r["tipo"]
 
@@ -317,12 +332,15 @@ func _actualizar() -> void:
 		if col:
 			_colonizable.text = "Colonizable: SÍ (inmigración activa)"
 			_toggle_colonizable.text = "Pausar colonización"
+			_toggle_colonizable.icon = IconosHUD.icono("puerta_candado")
 		else:
 			var h_rest: int = ciudad.horas_colonizacion_restantes(id) if ciudad != null and ciudad.has_method("horas_colonizacion_restantes") else 0
 			if h_rest > 0:
 				_colonizable.text = "Colonizable: NO (apertura en %d h)" % h_rest
+				_toggle_colonizable.icon = IconosHUD.icono("puerta_reloj")
 			else:
 				_colonizable.text = "Colonizable: NO (buffer protegido)"
+				_toggle_colonizable.icon = IconosHUD.icono("puerta_abierta")
 			_toggle_colonizable.text = "Permitir colonización"
 		_toggle_colonizable.visible = (estado == "completo")
 	else:
@@ -346,6 +364,7 @@ func _actualizar() -> void:
 		_materiales.text = "Faltan: " + ", ".join(partes)
 	_pausar.visible = en_obra
 	_pausar.text = "Reanudar" if r["pausada"] else ("Pausar demolición" if estado == "demolicion" else "Pausar construcción")
+	_pausar.icon = IconosHUD.icono("btn_play" if r["pausada"] else "btn_pausa")
 
 	var p_actual: int = obras.prioridad_de(id) if obras != null and obras.has_method("prioridad_de") else 1
 	var nom_p: String = "Normal"
@@ -355,9 +374,11 @@ func _actualizar() -> void:
 		nom_p = "Baja"
 	_prioridad.visible = (estado == "construccion")
 	_prioridad.text = "Prioridad: %s" % nom_p
+	_prioridad.icon = IconosHUD.icono("prio_alta" if p_actual == 2 else ("prio_baja" if p_actual == 0 else "prio_normal"))
 
 	_remodelar.visible = (es_residencial or es_nucleo) and (estado == "completo")
 	_remodelar.text = "Iniciar remodelación"
+	_remodelar.icon = IconosHUD.icono("remodelar")
 
 	if es_nucleo:
 		_demoler.visible = false
@@ -365,8 +386,10 @@ func _actualizar() -> void:
 	else:
 		_demoler.visible = true
 		_demoler.text = "Cancelar demolición" if (estado == "demolicion" or estado == "demolicion_programada") else "Demoler"
+		_demoler.icon = IconosHUD.icono("modo_demoler")
 		_asignar_nucleo.visible = es_residencial and estado == "completo"
 		if _asignar_nucleo.visible:
+			_asignar_nucleo.icon = IconosHUD.icono("asignar_nucleo")
 			if ciudad != null and ciudad.has_method("esta_traslado_programado") and ciudad.esta_traslado_programado(id):
 				_asignar_nucleo.text = "Cancelar traslado (%d h)" % ciudad.horas_traslado_programado()
 			else:

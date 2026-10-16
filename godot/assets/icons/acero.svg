@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" shape-rendering="crispEdges">
+
+  <!-- Lingote inferior -->
+  <rect x="3" y="11" width="13" height="6" fill="#78909C"/>
+  <rect x="4" y="12" width="11" height="2" fill="#B0BEC5"/>
+  <rect x="4" y="12" width="2" height="2" fill="#FFFFFF"/>
+  <rect x="3" y="15" width="13" height="2" fill="#455A64"/>
+  <!-- Lingote superior -->
+  <rect x="5" y="5" width="12" height="5" fill="#78909C"/>
+  <rect x="6" y="6" width="10" height="2" fill="#B0BEC5"/>
+  <rect x="7" y="6" width="3" height="1" fill="#FFFFFF"/>
+  <rect x="5" y="8" width="12" height="2" fill="#455A64"/>
+
+</svg>

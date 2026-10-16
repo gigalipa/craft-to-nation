@@ -1,6 +1,6 @@
-# Pilares de Diseño y GDD (v3.56)
+# Pilares de Diseño y GDD (v3.57)
 
-El **Documento de Diseño de Juego (GDD)** de *Craft to Nation* establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.56**.
+El **Documento de Diseño de Juego (GDD)** de *Craft to Nation* establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.57**.
 
 ---
 

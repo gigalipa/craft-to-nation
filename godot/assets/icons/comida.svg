@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" shape-rendering="crispEdges">
+
+  <!-- Espiga de trigo (dorada, vertical/inclinada a la derecha) -->
+  <rect x="13" y="3" width="2" height="3" fill="#FFE082"/>
+  <rect x="11" y="5" width="2" height="3" fill="#C79E40"/>
+  <rect x="15" y="5" width="2" height="3" fill="#C79E40"/>
+  <rect x="12" y="8" width="2" height="3" fill="#FFE082"/>
+  <rect x="10" y="9" width="2" height="3" fill="#C79E40"/>
+  <rect x="14" y="9" width="2" height="3" fill="#C79E40"/>
+  <rect x="12" y="11" width="2" height="7" fill="#8D6E1E"/>
+
+  <!-- Muslo de carne (marrón cálido / hueso blanco a la izquierda) -->
+  <rect x="2" y="14" width="2" height="2" fill="#FFFFFF"/>
+  <rect x="3" y="15" width="2" height="2" fill="#FFFFFF"/>
+  <rect x="4" y="13" width="3" height="3" fill="#FFFFFF"/>
+  <!-- Carne asada -->
+  <rect x="6" y="9" width="5" height="6" fill="#A04020"/>
+  <rect x="5" y="10" width="7" height="4" fill="#C05030"/>
+  <rect x="7" y="10" width="4" height="3" fill="#D2691E"/>
+  <rect x="7" y="8" width="3" height="2" fill="#8B2500"/>
+
+</svg>

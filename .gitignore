@@ -48,3 +48,6 @@ website/
 
 # Local Netlify folder
 .netlify
+
+# Video edition media (grabaciones crudas y entregables de video/audio de gran tamano)
+video_edition/media/

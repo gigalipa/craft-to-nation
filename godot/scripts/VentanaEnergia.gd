@@ -72,10 +72,34 @@ func _ready() -> void:
 	grid.add_theme_constant_override("h_separation", 24)
 	grid.add_theme_constant_override("v_separation", 4)
 
-	grid.add_child(_lbl_capacidad)
-	grid.add_child(_lbl_balance)
-	grid.add_child(_lbl_demanda)
-	grid.add_child(_lbl_cobertura)
+	var item_cap := HBoxContainer.new()
+	item_cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_cap.add_theme_constant_override("separation", 6)
+	item_cap.add_child(IconosHUD.crear_rect("central_termoelectrica", 16))
+	item_cap.add_child(_lbl_capacidad)
+	grid.add_child(item_cap)
+
+	var item_bal := HBoxContainer.new()
+	item_bal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_bal.add_theme_constant_override("separation", 6)
+	item_bal.add_child(IconosHUD.crear_rect("balanza", 16))
+	item_bal.add_child(_lbl_balance)
+	grid.add_child(item_bal)
+
+	var item_dem := HBoxContainer.new()
+	item_dem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_dem.add_theme_constant_override("separation", 6)
+	item_dem.add_child(IconosHUD.crear_rect("modo_construir", 16))
+	item_dem.add_child(_lbl_demanda)
+	grid.add_child(item_dem)
+
+	var item_cob := HBoxContainer.new()
+	item_cob.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_cob.add_theme_constant_override("separation", 6)
+	item_cob.add_child(IconosHUD.crear_rect("check", 16))
+	item_cob.add_child(_lbl_cobertura)
+	grid.add_child(item_cob)
+
 	caja_balance.add_child(grid)
 	_caja_raiz.add_child(caja_balance)
 
@@ -192,6 +216,8 @@ func _reconstruir_generadores(gens: Array, res: Dictionary) -> void:
 	for esq: Vector2i in gens:
 		var btn := Button.new()
 		btn.text = _texto_generador(esq, res)
+		btn.icon = IconosHUD.icono("central_termoelectrica")
+		btn.expand_icon = true
 		TemaHUD.estilizar_boton(btn)
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -250,6 +276,8 @@ func _actualizar_boton_consumidor(btn: Button, esquina: Vector2i, res: Dictionar
 	var conectado: bool = conectados.get(esquina, false)
 	var estado: String = "Conectado" if conectado else "Sin conexión"
 	btn.text = "%s · Demanda: %.0f kW · %s" % [nom, dem, estado]
+	btn.icon = IconosHUD.icono(tipo)
+	btn.expand_icon = true
 	btn.add_theme_color_override("font_color", TemaHUD.TEXTO if conectado else TemaHUD.INVALIDO)
 
 
@@ -306,14 +334,21 @@ static func _demanda_consumidor(p: Dictionary) -> float:
 func _fila_titulo(texto: String) -> Control:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cont_tit := HBoxContainer.new()
+	cont_tit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cont_tit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var ic := IconosHUD.crear_rect("energia_dorado", 20)
+	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
 	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cont_tit.add_child(titulo)
+	fila.add_child(cont_tit)
+
 	var cerrar_boton := Button.new()
 	cerrar_boton.text = "X"
+	cerrar_boton.icon = IconosHUD.icono("cruz")
 	cerrar_boton.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(cerrar_boton)
 	cerrar_boton.pressed.connect(cerrar)
-	fila.add_child(titulo)
 	fila.add_child(cerrar_boton)
 	return fila

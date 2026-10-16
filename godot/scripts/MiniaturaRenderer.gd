@@ -97,6 +97,52 @@ static func renderizar_viewport(piezas: Array, direccion_camara: Vector3, padre:
 	return viewport
 
 
+## Genera las piezas 3D para la miniatura de "Trazar vía": terreno 4x4 con camino de tierra pisada central
+static func piezas_via(biblioteca: MeshLibrary) -> Array:
+	var piezas: Array = []
+	var malla_tierra: Mesh = malla_de_item(biblioteca, "tierra")
+	var mat_via: Material = preload("res://assets/mat_tierra_pisada.tres") if ResourceLoader.exists("res://assets/mat_tierra_pisada.tres") else null
+	for x in range(4):
+		for z in range(4):
+			if malla_tierra != null:
+				var es_camino := (x == 1 or x == 2)
+				var mat: Material = mat_via if es_camino else null
+				piezas.append([malla_tierra, Vector3(x, 0, z), mat])
+	return piezas
+
+
+## Genera las piezas 3D para el bloque de acueducto
+static func piezas_acueducto(biblioteca: MeshLibrary) -> Array:
+	var malla_ducto: Mesh = malla_de_item(biblioteca, "bloque_piedra")
+	var malla_canal: Mesh = malla_de_item(biblioteca, "bloque_madera")
+	if malla_ducto == null and malla_canal == null:
+		var cubo := BoxMesh.new()
+		cubo.size = Vector3.ONE
+		return [[cubo, Vector3.ZERO, null]]
+	var piezas: Array = []
+	if malla_ducto != null:
+		piezas.append([malla_ducto, Vector3.ZERO, null])
+	if malla_canal != null:
+		piezas.append([malla_canal, Vector3(0, 0.5, 0), null])
+	return piezas
+
+
+## Genera las piezas 3D para el bloque de tubería
+static func piezas_tuberia(biblioteca: MeshLibrary) -> Array:
+	var malla_pilar: Mesh = malla_de_item(biblioteca, "estructura_hierro")
+	var malla_tubo: Mesh = malla_de_item(biblioteca, "bloque_acero")
+	if malla_pilar == null and malla_tubo == null:
+		var cubo := BoxMesh.new()
+		cubo.size = Vector3.ONE
+		return [[cubo, Vector3.ZERO, null]]
+	var piezas: Array = []
+	if malla_pilar != null:
+		piezas.append([malla_pilar, Vector3.ZERO, null])
+	if malla_tubo != null:
+		piezas.append([malla_tubo, Vector3(0, 0.4, 0), null])
+	return piezas
+
+
 ## Atajo de renderizar_viewport() para quien no necesita la referencia al
 ## SubViewport (p. ej. Hotbar.gd, que cachea el ícono para siempre y nunca
 ## lo re-renderiza, así que no hay nada que liberar).

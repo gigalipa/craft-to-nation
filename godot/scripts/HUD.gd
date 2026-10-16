@@ -152,9 +152,15 @@ func _init() -> void:
 	_panel_oxigeno = PanelContainer.new()
 	TemaHUD.aplicar_panel(_panel_oxigeno)
 	_panel_oxigeno.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fila_oxi := HBoxContainer.new()
+	fila_oxi.add_theme_constant_override("separation", 6)
+	fila_oxi.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var icono_oxi := IconosHUD.crear_rect("oxigeno", Vector2(16, 16))
+	fila_oxi.add_child(icono_oxi)
 	_oxigeno_texto = TemaHUD.etiqueta()
 	_oxigeno_texto.add_theme_font_size_override("font_size", 12)
-	_panel_oxigeno.add_child(_oxigeno_texto)
+	fila_oxi.add_child(_oxigeno_texto)
+	_panel_oxigeno.add_child(fila_oxi)
 	_panel_oxigeno.visible = false
 	_contenedor_indicadores.add_child(_panel_oxigeno)
 
@@ -167,16 +173,29 @@ func _ready() -> void:
 		oxigeno_label.visible = false
 	set_vista(true)  # la partida empieza en 1ª persona
 
-	# Barra de progreso de minar/talar/recolectar/deconstruir, bajo la mira.
+	# Contenedor centrado para barra de progreso e ícono de herramienta contextual bajo la mira.
+	var cont_progreso := HBoxContainer.new()
+	cont_progreso.name = "ContenedorProgreso"
+	cont_progreso.add_theme_constant_override("separation", 6)
+	cont_progreso.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cont_progreso.set_anchors_preset(Control.PRESET_CENTER)
+	cont_progreso.offset_left = -105
+	cont_progreso.offset_right = 105
+	cont_progreso.offset_top = 40
+	cont_progreso.offset_bottom = 60
+	cont_progreso.visible = false
+
+	var icono_herr := IconosHUD.crear_rect("herr_pico", Vector2(20, 20))
+	icono_herr.name = "IconoHerramienta"
+	cont_progreso.add_child(icono_herr)
+
 	_barra_progreso = ProgressBar.new()
 	_barra_progreso.show_percentage = false
-	_barra_progreso.set_anchors_preset(Control.PRESET_CENTER)
-	_barra_progreso.offset_left = -90
-	_barra_progreso.offset_right = 90
-	_barra_progreso.offset_top = 40
-	_barra_progreso.offset_bottom = 54
-	_barra_progreso.visible = false
-	add_child(_barra_progreso)
+	_barra_progreso.custom_minimum_size = Vector2(180, 14)
+	_barra_progreso.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	cont_progreso.add_child(_barra_progreso)
+
+	add_child(cont_progreso)
 
 
 ## true = 1ª persona (hotbar), false = cenital (barra de modos). Cambiar de
@@ -274,8 +293,8 @@ func pagina_siguiente(cat: String = "") -> bool:
 	return false
 
 
-func mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "") -> void:
-	_contexto.mostrar(nombre, costo, acciones, valido, extra)
+func mostrar_contexto(nombre: String, costo: Dictionary, acciones: Array, valido: Variant = null, extra: String = "", bloques: Dictionary = {}, motivo_invalido: String = "") -> void:
+	_contexto.mostrar(nombre, costo, acciones, valido, extra, bloques, motivo_invalido)
 
 
 ## Panel que aparece con fade-in deslizante, se desvanece solo y no muestra
@@ -301,18 +320,16 @@ func set_extra_contexto(texto: String) -> void:
 		_contexto.set_extra(texto)
 
 
-## Panel contextual de un puesto de recolección: costo real (ver
-## CamaraCenital._resumen_materiales_puesto() — antes de esta rama era un
-## placeholder fijo, "10 tierra · 10 madera · 5 piedra" para los 4 tipos por
-## igual, reporte del usuario 2026-09-30), personal, almacenamiento y, en
-## vivo, la recolección prevista por ciudadano según la posición del cursor.
-func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}, tasas_por_nivel: Array = [], extra_datos: Dictionary = {}) -> void:
+## Panel contextual de un puesto de recolección: costo real, personal, almacenamiento,
+## recolección prevista y motivo si la ubicación no es válida.
+func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, costo: Dictionary = {}, bloques: Dictionary = {}, tasas_por_nivel: Array = [], extra_datos: Dictionary = {}, motivo_invalido: String = "", distancia_nucleo: String = "") -> void:
 	var almacenamiento := "" if Recoleccion.ESCUELAS.has(tipo) else " · Almacenamiento: %d" % Recoleccion.capacidad_almacen_de(tipo)
 	var prevision: String = texto_tasas_mina_por_nivel(tasas_por_nivel) if tipo == "mina" and not tasas_por_nivel.is_empty() else texto_tasas(tipo, tasas)
 	if tipo == "centro_extraccion" and extra_datos.has("profundidad"):
 		prevision += "\nProfundidad del pozo: %d bloques" % extra_datos["profundidad"]
-	var extra := "Personal máximo: %d%s\n%s" % [Recoleccion.cupo_de(tipo), almacenamiento, prevision]
-	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra, bloques)
+	var dist_linea := (distancia_nucleo + "\n") if distancia_nucleo != "" else ""
+	var extra := "%sPersonal máximo: %d%s\n%s" % [dist_linea, Recoleccion.cupo_de(tipo), almacenamiento, prevision]
+	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra, bloques, motivo_invalido)
 
 
 ## Recolección prevista de una mina por nivel: la franja de cada nivel por separado (sin sumar los anteriores),
@@ -514,15 +531,25 @@ func ventana_baul_abierta() -> bool:
 	return _ventana_baul != null and _ventana_baul.visible
 
 
-## Muestra la barra de progreso bajo la mira. "retrocede" (tala, deconstrucción)
-## la pinta en naranja: indica lo que le queda a lo que se está desmontando.
-func mostrar_progreso(fraccion: float, retrocede: bool = false) -> void:
+## Muestra la barra de progreso bajo la mira con su ícono contextual.
+## "retrocede" (tala, deconstrucción) la pinta en naranja: indica lo que le queda a lo que se está desmontando.
+func mostrar_progreso(fraccion: float, retrocede: bool = false, clave_herramienta: String = "") -> void:
 	_barra_progreso.value = clampf(fraccion, 0.0, 1.0) * 100.0
 	_barra_progreso.modulate = Color(1.0, 0.6, 0.2) if retrocede else Color(0.4, 1.0, 0.4)
-	_barra_progreso.visible = true
+	var cont := get_node_or_null("ContenedorProgreso") as Control
+	if cont != null:
+		cont.visible = true
+		var icono := cont.get_node_or_null("IconoHerramienta") as TextureRect
+		if icono != null and clave_herramienta != "":
+			icono.texture = IconosHUD.icono(clave_herramienta)
+	else:
+		_barra_progreso.visible = true
 
 
 func ocultar_progreso() -> void:
+	var cont := get_node_or_null("ContenedorProgreso") as Control
+	if cont != null:
+		cont.visible = false
 	_barra_progreso.visible = false
 
 

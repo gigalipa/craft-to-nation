@@ -144,15 +144,38 @@ func icono_de(tipo: String) -> Texture2D:
 ## real (medidas y color de Puertas.gd) para puerta.
 func _piezas_de_icono(tipo: String) -> Array:
 	if tipo == "vidrio":
+		var piezas: Array = []
 		var cubo := BoxMesh.new()
 		cubo.size = Vector3.ONE
-		return [[cubo, Vector3.ZERO, MATERIAL_VENTANA]]
+		piezas.append([cubo, Vector3.ZERO, MATERIAL_VENTANA])
+		# Marco contrastado alrededor del vidrio
+		var marco_mat := StandardMaterial3D.new()
+		marco_mat.albedo_color = Color(0.2, 0.25, 0.3, 0.8)
+		var marco := BoxMesh.new()
+		marco.size = Vector3(1.02, 1.02, 0.1)
+		piezas.append([marco, Vector3.ZERO, marco_mat])
+		return piezas
 	if tipo == "puerta":
+		var piezas: Array = []
 		var lamina := BoxMesh.new()
 		lamina.size = PuertasScript.LAMINA
 		var material_lamina := StandardMaterial3D.new()
 		material_lamina.albedo_color = PuertasScript.COLOR_LAMINA
-		return [[lamina, Vector3.ZERO, material_lamina]]
+		piezas.append([lamina, Vector3.ZERO, material_lamina])
+		# Picaporte dorado
+		var picaporte := BoxMesh.new()
+		picaporte.size = Vector3(0.08, 0.12, 0.16)
+		var mat_pica := StandardMaterial3D.new()
+		mat_pica.albedo_color = Color(0.85, 0.7, 0.2)
+		piezas.append([picaporte, Vector3(0.3, 0.0, 0.0), mat_pica])
+		# Bisagras oscuras
+		var bisagra := BoxMesh.new()
+		bisagra.size = Vector3(0.04, 0.15, 0.14)
+		var mat_bis := StandardMaterial3D.new()
+		mat_bis.albedo_color = Color(0.15, 0.15, 0.15)
+		piezas.append([bisagra, Vector3(-0.38, 0.5, 0.0), mat_bis])
+		piezas.append([bisagra, Vector3(-0.38, -0.5, 0.0), mat_bis])
+		return piezas
 	if ITEM_ICONO_COMPUESTO.has(tipo):
 		var piezas: Array = []
 		for par in ITEM_ICONO_COMPUESTO[tipo]:

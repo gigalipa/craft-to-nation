@@ -41,6 +41,8 @@ var esquina := Recoleccion.SIN_PUESTO
 class ContenedorPuertos extends VBoxContainer:
 	var text: String = ""
 
+var _icono_puesto := TextureRect.new()
+var _icono_nivel := TextureRect.new()
 var _titulo := TemaHUD.etiqueta()
 var _trabajadores := TemaHUD.etiqueta()
 var _libres := TemaHUD.etiqueta()
@@ -97,8 +99,21 @@ func _ready() -> void:
 	grow_vertical = Control.GROW_DIRECTION_BEGIN  # y hacia arriba
 	var caja := VBoxContainer.new()
 	add_child(caja)
+
+	var fila_tit := HBoxContainer.new()
+	fila_tit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fila_tit.add_theme_constant_override("separation", 6)
+	_icono_puesto.custom_minimum_size = Vector2(20, 20)
+	_icono_puesto.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	fila_tit.add_child(_icono_puesto)
 	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	caja.add_child(_titulo)
+	_titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila_tit.add_child(_titulo)
+	_icono_nivel.custom_minimum_size = Vector2(16, 16)
+	_icono_nivel.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	fila_tit.add_child(_icono_nivel)
+	caja.add_child(fila_tit)
+
 	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "investigador", "acarreador"]:
 		caja.add_child(_crear_fila(rol))
 	# Selector de combustible para central termoeléctrica
@@ -107,6 +122,8 @@ func _ready() -> void:
 	for id_c in ["carbon", "combustible", "crudo"]:
 		var btn := Button.new()
 		btn.text = HUDScript.NOMBRES_RECURSO.get(id_c, id_c).capitalize()
+		btn.icon = IconosHUD.icono(id_c)
+		btn.expand_icon = true
 		TemaHUD.estilizar_boton(btn)
 		btn.pressed.connect(func() -> void:
 			if Economia.tiene_puesto(esquina):
@@ -159,6 +176,8 @@ func _ready() -> void:
 		var btn := Button.new()
 		TemaHUD.estilizar_boton(btn)
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn.icon = IconosHUD.icono("tec_metalurgia" if id_tech == 2 else "tec_automatizacion")
+		btn.expand_icon = true
 		btn.pressed.connect(func() -> void: _abrir_dialogo_investigar(id_tech))
 		_caja_botones_tech.add_child(btn)
 		_botones_tech[id_tech] = btn
@@ -169,12 +188,16 @@ func _ready() -> void:
 
 	_btn_pausar_inv = Button.new()
 	_btn_pausar_inv.text = "Pausar"
+	_btn_pausar_inv.icon = IconosHUD.icono("btn_pausa")
+	_btn_pausar_inv.expand_icon = true
 	TemaHUD.estilizar_boton(_btn_pausar_inv)
 	_btn_pausar_inv.pressed.connect(_on_pausar_investigacion)
 	_caja_controles_inv.add_child(_btn_pausar_inv)
 
 	_btn_cancelar_inv = Button.new()
 	_btn_cancelar_inv.text = "Cancelar"
+	_btn_cancelar_inv.icon = IconosHUD.icono("cruz")
+	_btn_cancelar_inv.expand_icon = true
 	TemaHUD.estilizar_boton(_btn_cancelar_inv)
 	_btn_cancelar_inv.pressed.connect(func() -> void: _dialogo_cancelar_inv.popup_centered())
 	_caja_controles_inv.add_child(_btn_cancelar_inv)
@@ -199,6 +222,8 @@ func _ready() -> void:
 
 	caja.add_child(_distancia)
 
+	_demoler.icon = IconosHUD.icono("modo_demoler")
+	_demoler.expand_icon = true
 	TemaHUD.estilizar_boton(_demoler)
 	_demoler.pressed.connect(_on_demoler)
 	caja.add_child(_demoler)
@@ -279,10 +304,13 @@ func _construir_widgets_puertos() -> void:
 
 func _crear_fila(rol: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
+	var ic := IconosHUD.crear_rect(IconosHUD.icono_demografia(rol), 16)
+	fila.add_child(ic)
 	var nombre := TemaHUD.etiqueta(NOMBRES_ROL[rol])
-	nombre.custom_minimum_size.x = 96.0
+	nombre.custom_minimum_size.x = 90.0
 	var menos := Button.new()
 	menos.text = "-"
+	menos.icon = IconosHUD.icono("btn_menos")
 	menos.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(menos)
 	menos.pressed.connect(func() -> void: Colonos.despedir(esquina, rol))
@@ -291,6 +319,7 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var mas := Button.new()
 	mas.text = "+"
+	mas.icon = IconosHUD.icono("btn_mas")
 	mas.custom_minimum_size = Vector2(28, 28)
 	TemaHUD.estilizar_boton(mas)
 	mas.pressed.connect(func() -> void: Colonos.contratar(esquina, rol))
@@ -339,6 +368,9 @@ func _actualizar() -> void:
 		estado = " (agotado)"
 	var nivel := ", nivel %d" % Economia.nivel_de(esquina) if con_niveles else ""
 	_titulo.text = NOMBRES_PUESTO.get(puesto["tipo"], puesto["tipo"]) + nivel + estado
+	_icono_puesto.texture = IconosHUD.icono(puesto["tipo"])
+	_icono_nivel.texture = IconosHUD.icono(IconosHUD.icono_nivel_romano(Economia.nivel_de(esquina))) if con_niveles else null
+	_icono_nivel.visible = con_niveles
 	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0
 	var origen_escuela: String = Recoleccion.ESCUELAS[puesto["tipo"]]["origen"] if es_escuela else ""
 	var nombre_aprendiz: String = "Técnicos en formación" if origen_escuela == "tecnico" else "Aprendices"

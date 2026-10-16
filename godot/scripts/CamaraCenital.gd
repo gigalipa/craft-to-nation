@@ -1053,8 +1053,23 @@ func _actualizar_previsualizacion_puesto() -> void:
 		var promedio_arbol: float = Recoleccion.detectar_arbol(mundo.generador, centro)
 		tasas = Recoleccion.tasa_maderero(promedio_arbol)
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_MADERERO)
+	var motivo: String = _mensaje_rechazo_puesto(ev)
 	var resumen: Dictionary = _resumen_materiales_puesto(esquina, ev) if valida else {"neto": {}, "bloques": {}}
-	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, resumen["neto"], resumen["bloques"], tasas_por_nivel, ev.get("datos_perforacion", {}))
+	var centro_pos := Vector2(esquina) + Vector2(_ancho_puesto_activo, _alto_puesto_activo) / 2.0
+	var dist_texto := _texto_distancia_al_nucleo(centro_pos)
+	hud.mostrar_contexto_puesto(_tipo_puesto_activo, valida, tasas, resumen["neto"], resumen["bloques"], tasas_por_nivel, ev.get("datos_perforacion", {}), motivo, dist_texto)
+
+
+func _texto_distancia_al_nucleo(pos_centro: Vector2) -> String:
+	var nucleo: Array = Zonificacion.huella_del_nucleo() if Zonificacion != null else []
+	if nucleo.is_empty():
+		return ""
+	var suma := Vector2.ZERO
+	for celda: Vector2i in nucleo:
+		suma += Vector2(celda)
+	var centro_nucleo: Vector2 = suma / float(nucleo.size())
+	var dist: int = roundi(centro_nucleo.distance_to(pos_centro))
+	return "🧭 Distancia al núcleo: %d celdas" % dist
 
 
 ## Altura real (en bloques) de un blueprint: máximo "rel.y" entre las claves
@@ -1377,7 +1392,13 @@ func _actualizar_previsualizacion_blueprint() -> void:
 	var titulo_bp: String = _blueprint_activo.get("nombre", "Edificio residencial")
 	if titulo_bp == "" or titulo_bp == "Estructura_Detectada":
 		titulo_bp = "Edificio residencial"
-	hud.mostrar_contexto(titulo_bp, {}, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, _resumen_blueprint_texto)
+	var motivo_bp: String = _mensaje_rechazo_blueprint(ev)
+	var centro_pos := Vector2(esquina) + Vector2(ancho, alto) / 2.0
+	var dist_texto := _texto_distancia_al_nucleo(centro_pos)
+	var extra_bp: String = _resumen_blueprint_texto
+	if dist_texto != "":
+		extra_bp = dist_texto + ("\n" + extra_bp if extra_bp != "" else "")
+	hud.mostrar_contexto(titulo_bp, {}, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra_bp, {}, motivo_bp)
 	_actualizar_overlays(esquina, ev)
 
 

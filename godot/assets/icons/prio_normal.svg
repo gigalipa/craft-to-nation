@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <!-- Dos chevrones verdes ▲▲ -->
+  <polygon points="8,2 4,7 12,7" fill="#73E673"/>
+  <polygon points="8,8 4,13 12,13" fill="#73E673"/>
+
+</svg>

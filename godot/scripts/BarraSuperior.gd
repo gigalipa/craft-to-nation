@@ -28,6 +28,17 @@ var nivel := TemaHUD.etiqueta()
 
 var _barra_moral := ProgressBar.new()
 
+# Nodos visuales de íconos para BarraSuperior
+var _icono_poblacion: TextureRect
+var _icono_moral: TextureRect
+var _icono_comida: TextureRect
+var _icono_comida_tasa: TextureRect
+var _icono_energia: TextureRect
+var _icono_critico: TextureRect
+var _icono_critico_recurso: TextureRect
+var _icono_era: TextureRect
+var _icono_nivel: TextureRect
+
 
 static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String:
 	return "Población: %d/%d (%d)" % [censo, camas, desempleados]
@@ -117,9 +128,12 @@ func _ready() -> void:
 
 	# Grupo izquierdo: Población | Moral
 	var grupo_izq := HBoxContainer.new()
-	grupo_izq.add_theme_constant_override("separation", 8)
+	grupo_izq.add_theme_constant_override("separation", 6)
 	grupo_izq.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	grupo_izq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	_icono_poblacion = IconosHUD.crear_rect("censo", Vector2(18, 16))
+	grupo_izq.add_child(_icono_poblacion)
 
 	poblacion.mouse_filter = Control.MOUSE_FILTER_STOP
 	poblacion.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -133,6 +147,10 @@ func _ready() -> void:
 	moral.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	moral.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	moral.pressed.connect(func() -> void: dato_pedido.emit("moral"))
+	
+	_icono_moral = IconosHUD.crear_rect("moral_alta", Vector2(16, 16))
+	moral.icon = _icono_moral.texture
+	moral.expand_icon = true
 	grupo_izq.add_child(moral)
 
 	_barra_moral.show_percentage = false
@@ -157,24 +175,47 @@ func _ready() -> void:
 
 	almacen_total.text = "Almacén"
 	TemaHUD.estilizar_boton(almacen_total)
-	almacen_total.custom_minimum_size = Vector2(72, 28)
+	almacen_total.custom_minimum_size = Vector2(88, 28)
 	almacen_total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	almacen_total.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	almacen_total.icon = IconosHUD.icono("almacen")
+	almacen_total.expand_icon = true
 	almacen_total.pressed.connect(func() -> void: dato_pedido.emit("almacen"))
 	grupo_cen.add_child(almacen_total)
 
-	grupo_cen.add_child(comida)
+	var cont_comida := HBoxContainer.new()
+	cont_comida.add_theme_constant_override("separation", 4)
+	cont_comida.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_icono_comida = IconosHUD.crear_rect("comida", Vector2(18, 18))
+	cont_comida.add_child(_icono_comida)
+	cont_comida.add_child(comida)
+	_icono_comida_tasa = IconosHUD.crear_rect("tasa_neutra", Vector2(12, 12))
+	cont_comida.add_child(_icono_comida_tasa)
+	grupo_cen.add_child(cont_comida)
+
 	grupo_cen.add_child(_separador())
 
 	TemaHUD.estilizar_boton(energia)
 	energia.custom_minimum_size = Vector2(0, 28)
 	energia.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	energia.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	energia.icon = IconosHUD.icono("energia_dorado")
+	energia.expand_icon = true
 	energia.pressed.connect(func() -> void: dato_pedido.emit("energia"))
 	grupo_cen.add_child(energia)
 
 	grupo_cen.add_child(_separador())
-	grupo_cen.add_child(critico)
+
+	var cont_critico := HBoxContainer.new()
+	cont_critico.add_theme_constant_override("separation", 4)
+	cont_critico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_icono_critico = IconosHUD.crear_rect("alerta", Vector2(16, 16))
+	cont_critico.add_child(_icono_critico)
+	_icono_critico_recurso = IconosHUD.crear_rect("", Vector2(16, 16))
+	_icono_critico_recurso.visible = false
+	cont_critico.add_child(_icono_critico_recurso)
+	cont_critico.add_child(critico)
+	grupo_cen.add_child(cont_critico)
 
 	fila.add_child(grupo_cen)
 
@@ -185,12 +226,17 @@ func _ready() -> void:
 
 	# Grupo derecho: Era | Nivel
 	var grupo_der := HBoxContainer.new()
-	grupo_der.add_theme_constant_override("separation", 8)
+	grupo_der.add_theme_constant_override("separation", 6)
 	grupo_der.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	grupo_der.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
+	_icono_era = IconosHUD.crear_rect("era", Vector2(16, 16))
+	grupo_der.add_child(_icono_era)
 	grupo_der.add_child(era)
 	grupo_der.add_child(_separador())
+
+	_icono_nivel = IconosHUD.crear_rect("romano_1", Vector2(16, 16))
+	grupo_der.add_child(_icono_nivel)
 	grupo_der.add_child(nivel)
 
 	fila.add_child(grupo_der)
@@ -209,11 +255,14 @@ func _on_clic(evento: InputEvent, cual: String) -> void:
 
 func actualizar() -> void:
 	var desempleados: int = Ciudad.demografia.get("desempleado", 0)
-	poblacion.text = texto_poblacion(Ciudad.censo_total, Ciudad.capacidad_camas_construida, desempleados)
+	poblacion.text = "%d/%d (%d)" % [Ciudad.censo_total, Ciudad.capacidad_camas_construida, desempleados]
 	var excede: bool = Ciudad.vivienda_ocupada > Ciudad.capacidad_camas_construida
 	poblacion.add_theme_color_override("font_color", TemaHUD.INVALIDO if excede else TemaHUD.TEXTO)
+
 	var m: float = Ciudad.moral if ("moral" in Ciudad) else 75.0
-	moral.text = texto_moral(m)
+	moral.text = "%.0f%%" % m
+	var clave_moral := IconosHUD.icono_moral(m)
+	moral.icon = IconosHUD.icono(clave_moral)
 	_barra_moral.value = clampf(m / 100.0, 0.0, 1.0)
 	if m < 20.0:
 		moral.add_theme_color_override("font_color", TemaHUD.INVALIDO)
@@ -233,6 +282,8 @@ func actualizar() -> void:
 		tasa_comida = Ciudad.almacen["comida"].tasa_neta_promedio
 	comida.text = texto_comida(cantidad_comida, limite_comida, tasa_comida)
 	_colorear_por_tasa(comida, tasa_comida)
+	if _icono_comida_tasa != null:
+		_icono_comida_tasa.texture = IconosHUD.icono(IconosHUD.icono_tasa(tasa_comida))
 
 	almacen_total.text = "Almacén"
 
@@ -242,19 +293,36 @@ func actualizar() -> void:
 	var capacidad_e: float = res_e.get("capacidad", 0.0)
 	var tasa_e: float = capacidad_e - demanda_e
 	var deficit_e: bool = res_e.get("deficit", false)
-	energia.text = texto_energia(entregada_e, demanda_e, tasa_e)
-	energia.add_theme_color_override("font_color", TemaHUD.INVALIDO if (deficit_e or tasa_e < 0.0) else TemaHUD.TEXTO)
+	energia.text = "%.0f/%.0f" % [entregada_e, demanda_e]
+	if deficit_e or (demanda_e > 0.0 and entregada_e < demanda_e):
+		energia.icon = IconosHUD.icono("energia_rojo")
+		energia.add_theme_color_override("font_color", TemaHUD.INVALIDO)
+	elif entregada_e <= 0.0 and demanda_e <= 0.0:
+		energia.icon = IconosHUD.icono("energia_gris")
+		energia.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	else:
+		energia.icon = IconosHUD.icono("energia_dorado")
+		energia.add_theme_color_override("font_color", TemaHUD.TEXTO)
 
 	var clave := clave_critica(Ciudad.almacen)
 	if clave == "":
 		critico.text = "Crítico —"
+		_icono_critico.visible = false
+		if _icono_critico_recurso != null:
+			_icono_critico_recurso.visible = false
 		_colorear_por_tasa(critico, 0.0)
 	else:
 		var recurso = Ciudad.almacen[clave]
-		critico.text = "Crítico: %s %s" % [recurso.nombre, texto_tasa(recurso.tasa_neta_promedio)]
+		critico.text = "Crítico: %s %s" % [clave.capitalize(), texto_tasa(recurso.tasa_neta_promedio)]
+		_icono_critico.visible = true
+		if _icono_critico_recurso != null:
+			_icono_critico_recurso.texture = IconosHUD.icono(clave)
+			_icono_critico_recurso.visible = true
 		_colorear_por_tasa(critico, recurso.tasa_neta_promedio)
 
 	nivel.text = "Nivel %d" % Ciudad.nivel
+	if _icono_nivel != null:
+		_icono_nivel.texture = IconosHUD.icono(IconosHUD.icono_nivel_romano(Ciudad.nivel))
 
 
 func _colorear_por_tasa(etiqueta: Label, tasa: float) -> void:

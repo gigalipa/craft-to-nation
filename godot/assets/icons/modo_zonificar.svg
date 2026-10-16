@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" shape-rendering="crispEdges">
+
+  <rect x="3" y="3" width="8" height="8" fill="#42A5F5"/>
+  <rect x="13" y="3" width="8" height="8" fill="#73E673"/>
+  <rect x="3" y="13" width="8" height="8" fill="#FFA633"/>
+  <rect x="13" y="13" width="8" height="8" fill="#C79E40"/>
+  <!-- Líneas de cuadrícula -->
+  <rect x="11" y="2" width="2" height="20" fill="#2B2D31"/>
+  <rect x="2" y="11" width="20" height="2" fill="#2B2D31"/>
+
+</svg>

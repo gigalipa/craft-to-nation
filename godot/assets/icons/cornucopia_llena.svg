@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <path d="M2 13 Q7 13 10 9 Q14 4 15 2" stroke="#8D6E63" stroke-width="3" fill="none"/>
+  <!-- Frutas rebosantes -->
+  <circle cx="3" cy="11" r="2.5" fill="#FF5959"/>
+  <circle cx="6" cy="10" r="2.5" fill="#FFA633"/>
+  <circle cx="5" cy="13" r="2" fill="#73E673"/>
+
+</svg>

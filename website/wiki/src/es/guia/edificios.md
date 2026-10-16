@@ -60,7 +60,7 @@ El flujo de materiales se divide en dos niveles de almacenamiento:
 Es el inventario consolidado accesible por la administración de la ciudad y el avatar:
 - **Límite Base General:** 500 unidades por cada tipo de recurso mineral o manufacturado.
 - **Límite Base de Alimentos:** 5,000 unidades (la partida inicia con el stock de comida lleno).
-- **Factor de Núcleo Urbano ($\times 2$):** Al oficializar el primer edificio hermético como núcleo urbano, la capacidad base de todos los recursos se duplica inmediatamente.
+- **Factor de Núcleo Urbano (×2):** Al oficializar el primer edificio hermético como núcleo urbano, la capacidad base de todos los recursos se duplica inmediatamente.
 - **Expansión por Baúles Residenciales:** Por cada baúl colocado en viviendas habitables validadas, la capacidad global del almacén central se incrementa en **+100 unidades** para recursos generales y **+400 unidades** adicionales para comida.
 
 ### El Almacén Local de Puestos e Industrias (1,000 Unidades)
@@ -77,4 +77,4 @@ Para que una estructura manual sea reconocida como un edificio válido por el mo
 1. **Hermeticidad y Volumen Interior:** Todas las paredes perimetrales y techos deben estar cerrados sin fugas de aire o huecos en las esquinas.
 2. **Acceso a Nivel de Suelo:** La puerta principal debe estar colocada a la misma cota del terreno o carretera exterior para permitir el paso de los colonos.
 3. **Flexibilidad en Plantas Superiores:** Solo el primer piso requiere puerta exterior obligatoria; los pisos superiores pueden conectarse internamente mediante escaleras o rampas sin exigir puertas exteriores adicionales.
-4. **Despeje de Camas y Aberturas:** Las camas requieren un espacio libre contiguo para que los colonos puedan acostarse y levantarse. Las puertas y ventanas deben contar con un área de despeje despejada que no invada estructuras colindantes.
+4. **Despeje de Camas y Aberturas:** Las camas requieren un espacio libre contiguo para que los colonos puedan acostarse y levantarse. Las puertas y ventanas deben contar con un área de despeje libre que no invada estructuras colindantes.

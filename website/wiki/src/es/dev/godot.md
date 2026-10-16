@@ -20,8 +20,8 @@ El juego divide su ejecución en dos capas temporales:
 ```
 
 ### El Sistema de Ticks (`Ciudad.gd` y `Economia.gd`)
-- **Duración del Tick (`SEGUNDOS_POR_TICK`):** $2.0$ segundos de tiempo real equivalen exactamente a $1$ hora de tiempo simulado dentro del juego.
-- **Relación con el Ciclo Estándar:** $1$ ciclo de balance estándar ($60$ segundos reales) equivale a $30$ ticks de simulación ($30$ horas de juego).
+- **Duración del Tick (`SEGUNDOS_POR_TICK`):** **2.0** segundos de tiempo real equivalen exactamente a **1** hora de tiempo simulado dentro del juego.
+- **Relación con el Ciclo Estándar:** **1** ciclo de balance estándar (**60** segundos reales) equivale a **30** ticks de simulación (**30** horas de juego).
 - **Consumo y Producción Atómica:** Cada 2 segundos, el despachador central evalúa el gasto de alimentos, los insumos de combustible y la recolección horaria de cada puesto activo, actualizando los registros de almacenamiento en memoria sin bloquear el hilo principal de renderizado.
 
 ---

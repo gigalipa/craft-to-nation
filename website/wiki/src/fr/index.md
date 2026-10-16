@@ -12,6 +12,10 @@ hero:
     - theme: alt
       text: Guide en Espagnol (ES)
       link: /es/guia/inicio
+    - theme: alt
+      text: Site Principal
+      link: https://crafttonation.netlify.app/
+      target: _self
 
 features:
   - title: Survie & Construction Voxel

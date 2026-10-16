@@ -8,25 +8,25 @@ In *Craft to Nation*, raw materials dictate your settlement's technological expa
 
 The colony relies on four foundational primary resources:
 
-### Water (Agua)
+### <ResourceBadge name="Water" category="Essential" />
 - **Primary Source:** Surface Pumping Stations (`estacion_bombeo`) on rivers, lakes, and oceans; or deep aquifer wells.
 - **Base Rate:** **2.0 fluid units/hour** continuous pumping rate per station.
 - **Role:** Direct colonist hydration, industrial coolant for power plants, and primary catalyst in chemical fuel production.
 
-### Food (Comida)
+### <ResourceBadge name="Food" category="Essential" />
 - **Primary Sources:** Hunting & Foraging Posts on land; Fishing Docks over connected water bodies.
 - **Base Rate:** 
   - **Hunting & Foraging:** 17.0/h (game fauna) + 10.0/h (berries/fruit), averaging **~12.2 food/h** per active gatherer in temperate zones.
   - **Fishing & Sea Harvesting:** 17.0/h (fish) + 3.0/h (algae), averaging **~8.6 food/h** per fisherman.
 - **Role:** Metabolic fuel for colonists. Caloric consumption varies heavily based on assigned profession (1.0 to 5.0 food/h).
 
-### Wood (Madera)
+### <ResourceBadge name="Wood" category="Construction" />
 - **Primary Source:** Lumberjack Outpost (`puesto_maderero`).
 - **Base Rate:** **5.0 units/worker/hour** base extraction rate.
-- **Dynamic Formula:** $\text{Hourly Rate} = 5.0 \times \text{Forest Density} \times \text{Level Multiplier}$. Depletion threshold triggers when yield drops below $0.5\text{ wood/h}$.
+- **Dynamic Formula:** `Hourly Rate = 5.0 × Forest Density × Level Multiplier`. Depletion threshold triggers when yield drops below `0.5 wood/h`.
 - **Role:** Fundamental structural framing, starter tool shafts, charcoal production, and processed timber planks.
 
-### Stone (Piedra)
+### <ResourceBadge name="Stone" category="Construction" />
 - **Primary Source:** Surface & Subsurface Stone Mines (`mina_piedra`).
 - **Base Rate:** **5.0 units/worker/hour** base extraction rate.
 - **Role:** Heavy masonry, paved roads, defensive ramparts, and advanced machinery housing.
@@ -39,12 +39,12 @@ As your industrial sector matures, secondary raw materials become mandatory:
 
 | Mineral / Resource | Base Rate (units/worker/h) | Mining Depth | Primary Applications |
 | :--- | :--- | :--- | :--- |
-| **Earth (Tierra)** | 1.0 | Surface ($Y \ge 0$) | Terrain leveling, glass manufacturing, soil embankments. |
-| **Iron (Hierro)** | 5.0 | Mid depth ($Y -8$ to $-16$) | Iron structural beams, steel alloying, tools, heavy armaments. |
-| **Copper (Cobre)** | 5.0 | Mid depth ($Y -8$ to $-16$) | Electrical wiring, power distribution grids, mechanical switches. |
-| **Coal (Carbón)** | 5.0 | Shallow & deep seams | Thermal power plant fuel, metallurgical coke for blast furnaces. |
-| **Rare Earths (Tierras Raras)**| 5.0 | Deep strata ($Y \le -16$) | High-tier electronics, telecommunication relays, computing cores. |
-| **Crude Oil (Crudo)** | 2.0 fluid/h | Deep subsurface wells | Chemical refining, liquid hydrocarbon fuel, industrial plastics. |
+| <ResourceBadge name="Earth" category="Basic" /> | 1.0 | Surface (`Y >= 0`) | Terrain leveling, glass manufacturing, soil embankments. |
+| <ResourceBadge name="Iron" category="Mineral" /> | 5.0 | Mid depth (`Y -8` to `-16`) | Iron structural beams, steel alloying, tools, heavy armaments. |
+| <ResourceBadge name="Copper" category="Mineral" /> | 5.0 | Mid depth (`Y -8` to `-16`) | Electrical wiring, power distribution grids, mechanical switches. |
+| <ResourceBadge name="Coal" category="Energy" /> | 5.0 | Shallow & deep seams | Thermal power plant fuel, metallurgical coke for blast furnaces. |
+| <ResourceBadge name="Rare Earths" category="Advanced" /> | 5.0 | Deep strata (`Y <= -16`) | High-tier electronics, telecommunication relays, computing cores. |
+| <ResourceBadge name="Crude Oil" category="Fluid" /> | 2.0 fluid/h | Deep subsurface wells | Chemical refining, liquid hydrocarbon fuel, industrial plastics. |
 
 ---
 
@@ -76,11 +76,11 @@ Raw inputs extracted at peripheral outposts must be processed within **Zone B (I
 ```
 
 ### Key Refinery Specifications:
-- **Sawmill (Aserradero):** Consumes 1 Wood $\rightarrow$ Produces 3 Planks. Rate: 0.5 batches/worker/h. Max crew: 4.
-- **Block Factory (Fábrica de Bloques):** Consumes 1 Stone $\rightarrow$ Produces 3 Stone Blocks. Rate: 0.5 batches/worker/h. Max crew: 4.
-- **Steel Mill (Siderúrgica):** Consumes 3 Iron + 4 Coal $\rightarrow$ Produces 2 Steel. Rate: 2.0 batches/worker/h. Max crew: 4.
-- **Charcoal Kiln (Carbonera):** Consumes 3 Wood $\rightarrow$ Produces 1 Coal. Rate: 2.0 batches/worker/h. Max crew: 4.
-- **Petroleum Refinery:** Consumes 2 Crude Oil $\rightarrow$ Produces 1 Fuel. Rate: 1.0 batch/worker/h. Energy cost: 1 unit/batch.
+- **Sawmill (Aserradero):** Consumes 1 Wood → Produces 3 Planks. Rate: 0.5 batches/worker/h. Max crew: 4.
+- **Block Factory (Fábrica de Bloques):** Consumes 1 Stone → Produces 3 Stone Blocks. Rate: 0.5 batches/worker/h. Max crew: 4.
+- **Steel Mill (Siderúrgica):** Consumes 3 Iron + 4 Coal → Produces 2 Steel. Rate: 2.0 batches/worker/h. Max crew: 4.
+- **Charcoal Kiln (Carbonera):** Consumes 3 Wood → Produces 1 Coal. Rate: 2.0 batches/worker/h. Max crew: 4.
+- **Petroleum Refinery:** Consumes 2 Crude Oil → Produces 1 Fuel. Rate: 1.0 batch/worker/h. Energy cost: 1 unit/batch.
 
 ---
 

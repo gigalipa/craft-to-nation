@@ -33,9 +33,9 @@ La evolución técnica de *Craft to Nation* sigue un plan de desarrollo iterativ
 
 ### Fase 3: Puestos Periféricos, Fluidos y Moral Dinámica (GDD v3.56)
 - Edificios de recolección de bloques físicos reales: madereros, minas de subsuelo, caza y pesca sobre agua.
-- Red de carreteras de tierra pisada con trazador cenital (<kbd>V</kbd>), rampas suaves y bono de velocidad del $+35\%$.
+- Red de carreteras de tierra pisada con trazador cenital (<kbd>V</kbd>), rampas suaves y bono de velocidad del **+35%**.
 - Cadenas de refinamiento: siderúrgicas (acero), aserraderos (tablas), carboneras y refinerías petroleras.
-- Red aérea modular de canalizaciones y tuberías con galibo libre en $Y+5$ y dinámica de derrames viscosos.
+- Red aérea modular de canalizaciones y tuberías con galibo libre en `Y + 5` y dinámica de derrames viscosos.
 - Sistema de Moral Dinámica [0–100], productividad continua por curva exponencial y 28 escenas de prueba al 100% en verde.
 
 ---

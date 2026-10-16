@@ -64,7 +64,7 @@ Manufactura en serie de pertrechos militares, reclutamiento en cuarteles, asedio
 
 La actualización **v3.56** consolida mecánicas cívicas clave antes del despliegue de la Fase 4:
 
-- **Sistema de Moral Dinámica Continua [0 a 100]:** La moral parte en 75.0 (optimismo pionero) y converge hacia 50.0 con inercia horaria ($0.02$). Se modula por superávit (+0.4/h), diversidad de dieta (+0.5/h), hambruna (-3.0/h) y hacinamiento (-0.05/h por sin techo).
-- **Ley de Productividad Continua:** Curva exponencial $X = 0.5 \times 2^{(Y/50)}$ donde la moral ajusta directamente las tasas de extracción y refinamiento entre $0.5\times$ y $2.0\times$.
+- **Sistema de Moral Dinámica Continua [0 a 100]:** La moral parte en 75.0 (optimismo pionero) y converge hacia 50.0 con inercia horaria (`0.02`). Se modula por superávit (+0.4/h), diversidad de dieta (+0.5/h), hambruna (-3.0/h) y hacinamiento (-0.05/h por sin techo).
+- **Ley de Productividad Continua:** Curva exponencial `X = 0.5 × 2^(Y / 50)` donde la moral ajusta directamente las tasas de extracción y refinamiento entre **0.5×** y **2.0×**.
 - **Ventana de Tolerancia Cívica:** Ampliación a 72 horas (3 días) antes de que un colono sin techo abandone la ciudad al exilio. Los desempleados disponen de 10 días (240 horas) para encontrar oficio.
 - **Estado Técnico de Verificación:** Cobertura de pruebas automatizadas al **100% en verde en 28 escenas de prueba independientes**.

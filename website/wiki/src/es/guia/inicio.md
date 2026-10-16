@@ -59,7 +59,7 @@ Edifica una estructura hermética que cuente con paredes perimetrales completas,
 ### Paso 2: Declaración del Núcleo Urbano
 Coloca el marcador cívico o declara el volumen interior apuntando a la puerta con <kbd>E</kbd>. Al declarar el núcleo:
 - Se crea el **Área de Influencia Territorial**, dentro de la cual podrás delimitar distritos formales.
-- El almacén central municipal activa su factor multiplicador ($\times 2$), duplicando la capacidad de almacenamiento de recursos.
+- El almacén central municipal activa su factor multiplicador (**×2**), duplicando la capacidad de almacenamiento de recursos.
 - El stock inicial de 5,000 unidades de comida se convierte en la reserva alimentaria de la futura colonia.
 
 > [!TIP] Ubicación Estratégica

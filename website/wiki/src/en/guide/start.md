@@ -28,7 +28,7 @@ Before founding your settlement, you must erect an enclosed shelter that satisfi
 
 - **Structural Materials Only:** Walls must be built using structural blocks (`stone_block`, `wood_block`, or standard structural masonry). Natural unrefined ground (e.g. `dirt`) does **not** qualify as a structural wall.
 - **Airtight Enclosure:** The room must be completely sealed on all four sides with a complete roof slab.
-- **Valid Ground-Level Access:** The primary entrance door must be placed on the ground floor ($Y_{ground}$) with an unblocked 2-cell clearance facing outwards. Upper floors do not require exterior doors.
+- **Valid Ground-Level Access:** The primary entrance door must be placed on the ground floor (`Y_ground`) with an unblocked 2-cell clearance facing outwards. Upper floors do not require exterior doors.
 - **Interior Height & Bed Clearance:** Ensure interior ceilings are at least 3 blocks high. Each bed placed inside must maintain clear vertical and lateral access cells.
 
 ---

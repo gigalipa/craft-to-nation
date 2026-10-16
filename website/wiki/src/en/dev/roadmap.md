@@ -38,8 +38,8 @@ This roadmap outlines the past, current, and upcoming development milestones for
 - [x] **Solid Land Haulage:** Carrier haulers (150 capacity, 2.5 cells/s speed), weighted road pathfinding (cost 8 wilderness vs cost 3 packed dirt), and single-cell priority yield rules.
 - [x] **Industrial Refining Chains:** Sawmills, block factories, charcoal kilns, steel blast furnaces, and petroleum refineries.
 - [x] **Vocational Education & Demographics:** Technical School, Specialist Academy, and University vocational promotions.
-- [x] **Pressurized Fluid Distribution:** Modular 4-piece elevated pipeline system at $Y+6$ ($Y+5$ ground clearance), viscosity physics, and pumping stations.
-- [x] **Dynamic Morale System (GDD v3.56):** 0–100 psychological morale score modulating productivity ($X = 0.5 \times 2^{Y/50}$), starvation casualties, and brain drain exodus.
+- [x] **Pressurized Fluid Distribution:** Modular 4-piece elevated pipeline system at `Y + 6` (`Y + 5` ground clearance), viscosity physics, and pumping stations.
+- [x] **Dynamic Morale System (GDD v3.56):** 0–100 psychological morale score modulating productivity (`X = 0.5 × 2^(Y / 50)`), starvation casualties, and brain drain exodus.
 - [x] **Automated Test Coverage:** 28 complete test scenes running 100% in green (>560 test assertions).
 - [ ] *In Progress:* Automated road laying by colonist road crews.
 - [ ] *In Progress:* Universal Era 3 electrical grid connections for civil residences.
@@ -62,6 +62,6 @@ This roadmap outlines the past, current, and upcoming development milestones for
 | **v3.49** | Outpost workforce levels 1–3, technical schools | Released | 26 scenes / 523 tests |
 | **v3.50** | Fluid pipelines, thermal power plants, traffic priorities | Released | 26 scenes / 554 tests |
 | **v3.52** | Non-destructive remodeling (`Shift+B`), homeless status | Released | 26 scenes / 562 tests |
-| **v3.54** | Elevated pipeline modularity ($Y+6$), oil viscosity | Released | 28 scenes / 100% green |
+| **v3.54** | Elevated pipeline modularity (`Y + 6`), oil viscosity | Released | 28 scenes / 100% green |
 | **v3.56** | Dynamic Morale System, productivity curve, brain drain | **Current Baseline** | 28 scenes / 100% green |
 | **v4.00** | Full Military Logistics & First Multiplayer Alpha | In Development | Target: Q4 2026 |

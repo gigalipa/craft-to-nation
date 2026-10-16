@@ -37,13 +37,13 @@ Because natural ground costs nearly triple that of a packed dirt path, carriers 
 ### Single-Cell Corridor Traffic Priority Hierarchy:
 When two carriers meet head-to-head on a narrow 1-cell mountain pass or bridge, deadlock is averted by an automated yield hierarchy:
 
-$$\begin{aligned}
-\text{Food} &\gt \text{Fuel} \gt \text{Crude Oil} \gt \text{Steel} \gt \text{Refined Minerals} \gt \text{Iron} \\
-&\gt \text{Copper} \gt \text{Coal} \gt \text{Rare Earths} \gt \text{Planks} \gt \text{Wood} \gt \text{Stone} \gt \text{Dirt} \gt \text{Water}
-\end{aligned}$$
+```text
+Food > Fuel > Crude Oil > Steel > Refined Minerals > Iron
+     > Copper > Coal > Rare Earths > Planks > Wood > Stone > Dirt > Water
+```
 
 - **Tiebreakers:** If carrying identical goods, the carrier with the greater payload has right-of-way; if still tied, carrier ID is used.
-- **Status Hierarchy:** Loaded Carriers $\gt$ Empty Returning Carriers $\gt$ Employed Workers $\gt$ Idle Colonists.
+- **Status Hierarchy:** `Loaded Carriers > Empty Returning Carriers > Employed Workers > Idle Colonists`.
 - **Lateral Evasion:** The yielding agent temporarily steps sideways into an adjacent open cell to allow the higher-priority courier to pass unimpeded.
 
 ---
@@ -55,7 +55,7 @@ Fluids (fresh water, crude oil, and refined hydrocarbon fuel) cannot be efficien
 ### Modular 4-Piece Pipe Assembly:
 Elevated pipelines are constructed using four modular components:
 1. **Vertical Structural Columns:** Ground-anchored support pylons that elevate pipelines to the standard clearance height.
-2. **Linear & Corner Headers:** Directional conduit junctions supporting $90^\circ$ turns, T-junctions, and multi-inlet convergence.
+2. **Linear & Corner Headers:** Directional conduit junctions supporting 90° turns, T-junctions, and multi-inlet convergence.
 3. **Inclinable Continuous Spans:** Dynamic variable-length pipe spans with central pivots to traverse gentle slopes and terrain depressions.
 4. **Terminal Port Couplers:** Flanged interface blocks that dock directly onto pumping stations, storage tanks, and refinery intake manifolds.
 
@@ -68,8 +68,8 @@ Elevated pipelines are constructed using four modular components:
 ```
 
 ### Grade-Separated Crossings:
-- **Standard Pipeline Elevation:** Elevated conduits run at ground level **$Y + 6$**.
-- **Unimpeded Ground Clearance:** Provides a clear **$Y + 5$** clearance underneath, allowing pedestrian colonists, heavy cargo wagons, and future military vehicles to navigate freely beneath the pipe infrastructure without obstruction.
+- **Standard Pipeline Elevation:** Elevated conduits run at ground level **`Y + 6`**.
+- **Unimpeded Ground Clearance:** Provides a clear **`Y + 5`** clearance underneath, allowing pedestrian colonists, heavy cargo wagons, and future military vehicles to navigate freely beneath the pipe infrastructure without obstruction.
 
 ### Pumping Rates & Fluid Dynamics:
 - **Base Extraction Throughput:** **2.0 fluid units / hour** continuous pumping rate for both surface water stations and deep subterranean oil rigs.

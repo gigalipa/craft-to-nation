@@ -51,15 +51,17 @@ Colony productivity is not constant—it is scaled continuously by the settlemen
 ```
 
 ### The Productivity Curve Formula:
-$$\text{Productivity Multiplier } (X) = 0.5 \times 2^{\left(\frac{Y}{50}\right)}$$
-*Where $Y$ is the current settlement morale.*
+```text
+Productivity Multiplier (X) = 0.5 × 2^(Y / 50)
+```
+*Where `Y` is the current settlement morale.*
 
-### Hourly Morale Modifiers ($\Delta M$):
-- **Resource Surplus:** $+0.4\text{ / hour}$ when basic supplies exceed 50% storage capacity.
-- **Diet Diversity:** Up to $+0.5\text{ / hour}$ when providing multiple food groups (game meat, berries, fish, algae, bread).
-- **Supply Shortages:** $-0.6\text{ / hour}$ for food deficits; up to $-1.5\text{ / hour}$ for continuous energy grid blackouts.
-- **Active Famine:** Severe penalty of $-3.0\text{ / hour}$ whenever food reserves reach zero.
-- **Homelessness:** $-0.05\text{ / hour}$ per homeless colonist on the streets.
+### Hourly Morale Modifiers (ΔM):
+- **Resource Surplus:** `+0.4 / hour` when basic supplies exceed 50% storage capacity.
+- **Diet Diversity:** Up to `+0.5 / hour` when providing multiple food groups (game meat, berries, fish, algae, bread).
+- **Supply Shortages:** `-0.6 / hour` for food deficits; up to `-1.5 / hour` for continuous energy grid blackouts.
+- **Active Famine:** Severe penalty of `-3.0 / hour` whenever food reserves reach zero.
+- **Homelessness:** `-0.05 / hour` per homeless colonist on the streets.
 - **Danger Memory Buffer:** Rolling 168-hour (7 in-game days) memory buffer tracking bandit raids and casualties.
 
 ---
@@ -70,16 +72,20 @@ When governance falters, the colony suffers cascading demographic penalties:
 
 ### Starvation Casualties (`bajas_inanicion`)
 If the central food stock is exhausted:
-1. The engine calculates starvation casualties: $\text{Casualties} = \max\left(1, \lfloor \text{Total Population} \times 0.25 \rfloor\right)$.
+1. The engine calculates starvation casualties: `Casualties = max(1, floor(Total Population × 0.25))`.
 2. Up to **25% of the total colony census** can perish in a single simulation tick.
 3. Casualties occur in strict demographic order:
-   $$\text{Military} \longrightarrow \text{Worker} \longrightarrow \text{Technician} \longrightarrow \text{Specialist} \longrightarrow \text{Researcher} \longrightarrow \text{Unemployed} \longrightarrow \text{Citizen}$$
+   ```text
+   Military → Worker → Technician → Specialist → Researcher → Unemployed → Citizen
+   ```
 
 ### Homelessness & Brain Drain
 - **72-Hour Homeless Grace Period:** Colonists without beds enter the homeless state. If new residential beds are not validated within 72 in-game hours, homeless settlers emigrate into exile, inflicting a permanent **-10 civic morale penalty**.
 - **Long-term Unemployment:** Unemployed settlers wait up to 10 days (240 game hours). If no workplace or construction site is assigned, they abandon the colony.
 - **Brain Drain Exodus (Morale < 20):** If settlement morale falls below 20.0, an intellectual exodus begins. The most educated colonists abandon the city first:
-  $$\text{Researchers} \longrightarrow \text{Specialists} \longrightarrow \text{Technicians} \longrightarrow \text{Military} \longrightarrow \text{Workers}$$
+  ```text
+  Researchers → Specialists → Technicians → Military → Workers
+  ```
 
 ---
 

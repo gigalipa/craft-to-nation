@@ -11,7 +11,7 @@ Residential housing fulfills two critical societal functions: it houses your pop
 ### Structural Requirements for Valid Habitability:
 1. **Structural Walls & Enclosure:** The building perimeter must be built from recognized structural materials (`stone_block`, `wood_block`, masonry). Natural terrain (such as loose earth) does not satisfy the structural engine check.
 2. **Solid Roof:** Every interior room volume must be fully sealed with roof slabs.
-3. **Ground-Level Exterior Door:** The main entry door must be placed on the first floor ($Y_{ground}$) and maintain an unobstructed 2-cell front clearance (`despeje frontal`). Multi-story residential buildings do not require upper-floor exterior doors.
+3. **Ground-Level Exterior Door:** The main entry door must be placed on the first floor (`Y_ground`) and maintain an unobstructed 2-cell front clearance (`despeje frontal`). Multi-story residential buildings do not require upper-floor exterior doors.
 4. **Bed Clearances:** Each placed bed must have unhindered lateral and ceiling headroom. Beds cannot be blocked by walls or adjacent chests.
 
 ### Population Density per Bed ("x Bed" Capacity)

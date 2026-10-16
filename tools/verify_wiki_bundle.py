@@ -62,11 +62,34 @@ def verify_bundle():
         print(f"FAIL: Faltan bundles en assets (JS: {len(js_files)}, CSS: {len(css_files)})")
         return False
 
-    # Verificar contenido de la página principal
+    # Verificar contenido de la página principal y enlaces al Sitio Principal en los 3 idiomas
     index_content = (dist_dir / "index.html").read_text(encoding="utf-8")
+    en_content = (dist_dir / "en/index.html").read_text(encoding="utf-8")
+    fr_content = (dist_dir / "fr/index.html").read_text(encoding="utf-8")
+
     if "Craft to Nation" not in index_content:
         print("FAIL: El archivo index.html no contiene el título esperado de Craft to Nation.")
         return False
+
+    if "Sitio Principal" not in index_content or "https://crafttonation.netlify.app/" not in index_content:
+        print("FAIL: El menú en español no contiene 'Sitio Principal' apuntando a la landing page.")
+        return False
+
+    if "Main Site" not in en_content or "https://crafttonation.netlify.app/" not in en_content:
+        print("FAIL: El menú en inglés no contiene 'Main Site' apuntando a la landing page.")
+        return False
+
+    if "Site Principal" not in fr_content or "https://crafttonation.netlify.app/" not in fr_content:
+        print("FAIL: El menú en francés no contiene 'Site Principal' apuntando a la landing page.")
+        return False
+
+    # Verificar que no existan fórmulas LaTeX crudas ($...$, \times, \text, \rightarrow) en src/
+    src_dir = Path("website/wiki/src")
+    for md_file in src_dir.rglob("*.md"):
+        text = md_file.read_text(encoding="utf-8")
+        if "$" in text or "\\times" in text or "\\text{" in text or "\\rightarrow" in text:
+            print(f"FAIL: Se detectó sintaxis LaTeX sin procesar en {md_file}")
+            return False
 
     print("PASS: Verificación del bundle de la wiki aprobada exitosamente.")
     print(f"  Total páginas validadas: {len(required_files)}")

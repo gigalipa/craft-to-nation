@@ -9,16 +9,35 @@ export default defineConfig({
   cleanUrls: true,
   checkDeadLinks: true,
 
+  themeConfig: {
+    i18nRouting: false,
+    search: {
+      provider: 'local'
+    }
+  },
+
   locales: {
     root: {
       label: 'Español',
       lang: 'es-ES',
       themeConfig: {
         nav: [
-          { text: 'Guía del Jugador', link: '/es/guia/inicio' },
-          { text: 'Desarrollo & GDD', link: '/es/dev/gdd' },
-          { text: 'Juego Principal', link: '/' }
+          { text: 'Guía del Jugador', link: '/es/guia/inicio', activeMatch: '/es/guia/' },
+          { text: 'Desarrollo & GDD', link: '/es/dev/gdd', activeMatch: '/es/dev/' },
+          { text: 'Sitio Principal', link: 'https://crafttonation.netlify.app/', target: '_self', noIcon: true }
         ],
+        sidebarMenuLabel: 'Menú',
+        returnToTopLabel: 'Volver arriba',
+        darkModeSwitchLabel: 'Apariencia',
+        lightModeSwitchTitle: 'Cambiar a modo claro',
+        darkModeSwitchTitle: 'Cambiar a modo oscuro',
+        outline: {
+          label: 'En esta página'
+        },
+        docFooter: {
+          prev: 'Página anterior',
+          next: 'Página siguiente'
+        },
         sidebar: {
           '/es/guia/': [
             {
@@ -51,9 +70,9 @@ export default defineConfig({
       link: '/en/',
       themeConfig: {
         nav: [
-          { text: 'Player Guide', link: '/en/guide/start' },
-          { text: 'GDD & Development', link: '/en/dev/gdd' },
-          { text: 'Main Website', link: '/' }
+          { text: 'Player Guide', link: '/en/guide/start', activeMatch: '/en/guide/' },
+          { text: 'GDD & Development', link: '/en/dev/gdd', activeMatch: '/en/dev/' },
+          { text: 'Main Site', link: 'https://crafttonation.netlify.app/', target: '_self', noIcon: true }
         ],
         sidebar: {
           '/en/guide/': [
@@ -87,8 +106,21 @@ export default defineConfig({
       link: '/fr/',
       themeConfig: {
         nav: [
-          { text: 'Accueil Wiki', link: '/fr/' }
-        ]
+          { text: 'Accueil Wiki', link: '/fr/' },
+          { text: 'Guide (EN)', link: '/en/guide/start' },
+          { text: 'GDD & Dev (EN)', link: '/en/dev/gdd' },
+          { text: 'Site Principal', link: 'https://crafttonation.netlify.app/', target: '_self', noIcon: true }
+        ],
+        sidebarMenuLabel: 'Menu',
+        returnToTopLabel: 'Retour en haut',
+        darkModeSwitchLabel: 'Apparence',
+        outline: {
+          label: 'Sur cette page'
+        },
+        docFooter: {
+          prev: 'Page précédente',
+          next: 'Page suivante'
+        }
       }
     }
   }

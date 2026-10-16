@@ -23,7 +23,22 @@ const defaultStyles: Record<string, { bg: string; text: string; border: string; 
   energía: { bg: 'rgba(245, 158, 11, 0.15)', text: '#d97706', border: '#f59e0b', icon: '⚡' },
   energia: { bg: 'rgba(245, 158, 11, 0.15)', text: '#d97706', border: '#f59e0b', icon: '⚡' },
   tierra: { bg: 'rgba(161, 98, 7, 0.15)', text: '#854d0e', border: '#a16207', icon: '🌱' },
-  'tierras raras': { bg: 'rgba(168, 85, 247, 0.15)', text: '#7e22ce', border: '#a855f7', icon: '💎' }
+  'tierras raras': { bg: 'rgba(168, 85, 247, 0.15)', text: '#7e22ce', border: '#a855f7', icon: '💎' },
+  water: { bg: 'rgba(56, 189, 248, 0.15)', text: '#0284c7', border: '#38bdf8', icon: '💧' },
+  food: { bg: 'rgba(234, 179, 8, 0.15)', text: '#ca8a04', border: '#eab308', icon: '🍖' },
+  wood: { bg: 'rgba(180, 83, 9, 0.15)', text: '#b45309', border: '#d97706', icon: '🪵' },
+  stone: { bg: 'rgba(100, 116, 139, 0.15)', text: '#475569', border: '#94a3b8', icon: '🪨' },
+  iron: { bg: 'rgba(148, 163, 184, 0.2)', text: '#334155', border: '#64748b', icon: '⛏️' },
+  copper: { bg: 'rgba(249, 115, 22, 0.15)', text: '#c2410c', border: '#f97316', icon: '🥉' },
+  coal: { bg: 'rgba(75, 85, 99, 0.2)', text: '#374151', border: '#4b5563', icon: '⬛' },
+  'crude oil': { bg: 'rgba(30, 41, 59, 0.25)', text: '#0f172a', border: '#334155', icon: '🛢️' },
+  oil: { bg: 'rgba(30, 41, 59, 0.25)', text: '#0f172a', border: '#334155', icon: '🛢️' },
+  fuel: { bg: 'rgba(239, 68, 68, 0.15)', text: '#dc2626', border: '#ef4444', icon: '⛽' },
+  steel: { bg: 'rgba(99, 102, 241, 0.15)', text: '#4f46e5', border: '#6366f1', icon: '🛡️' },
+  energy: { bg: 'rgba(245, 158, 11, 0.15)', text: '#d97706', border: '#f59e0b', icon: '⚡' },
+  earth: { bg: 'rgba(161, 98, 7, 0.15)', text: '#854d0e', border: '#a16207', icon: '🌱' },
+  dirt: { bg: 'rgba(161, 98, 7, 0.15)', text: '#854d0e', border: '#a16207', icon: '🌱' },
+  'rare earths': { bg: 'rgba(168, 85, 247, 0.15)', text: '#7e22ce', border: '#a855f7', icon: '💎' }
 }
 
 const key = computed(() => (props.name || '').trim().toLowerCase())

@@ -5,3 +5,8 @@
 [build]
   publish = "."
   ignore = "exit 0"
+
+[[redirects]]
+  from = "/wiki/*"
+  to = "/wiki/dist/:splat"
+  status = 200

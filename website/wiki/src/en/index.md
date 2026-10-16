@@ -12,6 +12,10 @@ hero:
     - theme: alt
       text: GDD & Technical Design
       link: /en/dev/gdd
+    - theme: alt
+      text: Main Site
+      link: https://crafttonation.netlify.app/
+      target: _self
 
 features:
   - title: Survival & Settlement

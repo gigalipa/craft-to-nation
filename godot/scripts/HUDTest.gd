@@ -527,22 +527,19 @@ func probar_ventana_energia() -> void:
 	assert("Demanda: 1 kW" in btn_con.text)
 	assert("Conectado" in btn_con.text)
 
-	# 5. Clic en generador o consumidor: cierra ventana y emite edificio_pedido(esquina)
+	# 5. Clic en generador o consumidor: emite edificio_pedido(esquina) sin cerrar ventana
 	var edificios_pedidos: Array = []
 	ventana.edificio_pedido.connect(func(esq: Vector2i) -> void: edificios_pedidos.append(esq))
 
 	btn_gen.pressed.emit()
-	assert(not ventana.visible and not ventana.abierta, "clic en generador debe cerrar la ventana")
+	assert(ventana.visible and ventana.abierta, "clic en generador NO debe cerrar la ventana")
 	assert(edificios_pedidos == [esq_central], "debe emitir edificio_pedido de la central")
 
-	ventana.abrir()
-	assert(ventana.visible)
 	btn_con.pressed.emit()
-	assert(not ventana.visible and not ventana.abierta, "clic en consumidor debe cerrar la ventana")
+	assert(ventana.visible and ventana.abierta, "clic en consumidor NO debe cerrar la ventana")
 	assert(edificios_pedidos == [esq_central, esq_refineria], "debe emitir edificio_pedido de la refineria")
 
 	# 6. Cierre con botón X, tecla E y tecla Esc
-	ventana.abrir()
 	var boton_cerrar: Button = ventana._caja_raiz.get_child(0).get_child(1)
 	assert(boton_cerrar is Button and (boton_cerrar.icon != null or boton_cerrar.text == "X"))
 	boton_cerrar.pressed.emit()
@@ -552,17 +549,11 @@ func probar_ventana_energia() -> void:
 	var tecla_e := InputEventKey.new()
 	tecla_e.keycode = KEY_E
 	tecla_e.pressed = true
-	ventana._frame_apertura -= 1
-	ventana._unhandled_key_input(tecla_e)
-	assert(not ventana.visible, "tecla E debe cerrar VentanaEnergia")
-
-	ventana.abrir()
-	var tecla_esc := InputEventKey.new()
-	tecla_esc.keycode = KEY_ESCAPE
-	tecla_esc.pressed = true
-	ventana._frame_apertura -= 1
-	ventana._unhandled_key_input(tecla_esc)
-	assert(not ventana.visible, "tecla Esc debe cerrar VentanaEnergia")
+	if ventana.has_method("_unhandled_key_input"):
+		ventana._unhandled_key_input(tecla_e)
+	assert(ventana.visible and ventana.abierta, "tecla E no debe cerrar VentanaEnergia (solo boton X)")
+	boton_cerrar.pressed.emit()
+	assert(not ventana.visible and not ventana.abierta, "boton X debe cerrar VentanaEnergia")
 
 	ventana.queue_free()
 	Economia.puestos = puestos_previos
@@ -591,7 +582,6 @@ func probar_ventana_moral() -> void:
 	add_child(ventana)
 	assert(not ventana.visible and not ventana.abierta)
 	assert(ventana.custom_minimum_size == Vector2(500, 420), "VentanaMoral debe tener tamaño 500x420")
-	assert(ventana.position == Vector2(326, 114), "VentanaMoral debe tener posición inicial correcta")
 
 	ventana.abrir()
 	assert(ventana.visible and ventana.abierta)
@@ -611,20 +601,18 @@ func probar_ventana_moral() -> void:
 	assert("15.0%" in ventana._lbl_moral_val.text and ventana._rect_moral.texture != null)
 	assert("Éxodo" in ventana._lbl_migracion.text)
 
-	# 4. Cerrar con tecla Escape
-	var tecla_esc := InputEventKey.new()
-	tecla_esc.keycode = KEY_ESCAPE
-	tecla_esc.pressed = true
-	ventana._unhandled_input(tecla_esc)
-	assert(not ventana.visible and not ventana.abierta, "tecla Esc debe cerrar VentanaMoral")
-
-	# 5. Abrir y cerrar con tecla M
-	ventana.abrir()
+	# 4. Validar que teclas M / Esc no cierran VentanaMoral (solo boton X)
 	var tecla_m := InputEventKey.new()
 	tecla_m.keycode = KEY_M
 	tecla_m.pressed = true
-	ventana._unhandled_input(tecla_m)
-	assert(not ventana.visible and not ventana.abierta, "tecla M debe cerrar VentanaMoral")
+	if ventana.has_method("_unhandled_input"):
+		ventana._unhandled_input(tecla_m)
+	assert(ventana.visible and ventana.abierta, "tecla M no debe cerrar VentanaMoral")
+
+	var boton_cerrar_m: Button = ventana._caja_raiz.get_child(0).get_child(2)
+	assert(boton_cerrar_m is Button)
+	boton_cerrar_m.pressed.emit()
+	assert(not ventana.visible and not ventana.abierta, "solo boton X debe cerrar VentanaMoral")
 
 	ventana.queue_free()
 

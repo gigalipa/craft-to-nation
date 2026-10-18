@@ -290,6 +290,8 @@ var _resumen_blueprint_vigente: Vector2i = SIN_RESUMEN
 ## esquina vigente — quien llama debe pasarlo como texto_extra de
 ## hud.mostrar_contexto() en CADA frame (ver el comentario de esa función).
 var _resumen_blueprint_texto: String = ""
+var _resumen_blueprint_neto: Dictionary = {}
+var _resumen_blueprint_bloques: Dictionary = {}
 ## Última esquina para la que se dibujaron los overlays de nivelación (mismo
 ## criterio que _resumen_blueprint_vigente).
 var _overlay_vigente: Vector2i = SIN_RESUMEN
@@ -1313,6 +1315,8 @@ func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: b
 	var baules: int = BlueprintValidator.contar_baules(_blueprint_activo)
 	if not valida:
 		_resumen_blueprint_texto = HUDScript.texto_materiales({}, camas, baules)
+		_resumen_blueprint_neto = {}
+		_resumen_blueprint_bloques = {}
 		return
 	var plan: Dictionary = _plan_nivelacion(esquina, ev["columnas"], ev["resultado_base"]["base_y"], ev["fachada"])
 	var total_relleno := 0
@@ -1321,6 +1325,8 @@ func _actualizar_resumen_materiales(esquina: Vector2i, ev: Dictionary, valida: b
 	var recogido: Dictionary = _material_excavado(plan["excavacion"])
 	var neto: Dictionary = nivelador_puesto.resumen_materiales(_blueprint_activo["celdas_3d"], total_relleno, recogido)
 	var bloques: Dictionary = nivelador_puesto.contar_bloques(_blueprint_activo["celdas_3d"], total_relleno)
+	_resumen_blueprint_neto = neto
+	_resumen_blueprint_bloques = bloques
 	_resumen_blueprint_texto = HUDScript.texto_materiales(neto, camas, baules, bloques)
 
 
@@ -1389,6 +1395,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 		var tipo_celda: String = _blueprint_activo["celdas_3d"][rel]
 		material.albedo_color = mundo.COLOR_DESTACADO.get(tipo_celda, color) if valida else color
 		caja.position = Vector3(x + DESF, y + DESF, z + DESF)
+	_actualizar_resumen_materiales(esquina, ev, valida)
 	var titulo_bp: String = _blueprint_activo.get("nombre", "Edificio residencial")
 	if titulo_bp == "" or titulo_bp == "Estructura_Detectada":
 		titulo_bp = "Edificio residencial"
@@ -1398,7 +1405,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 	var extra_bp: String = _resumen_blueprint_texto
 	if dist_texto != "":
 		extra_bp = dist_texto + ("\n" + extra_bp if extra_bp != "" else "")
-	hud.mostrar_contexto(titulo_bp, {}, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra_bp, {}, motivo_bp)
+	hud.mostrar_contexto(titulo_bp, _resumen_blueprint_neto, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra_bp, _resumen_blueprint_bloques, motivo_bp)
 	_actualizar_overlays(esquina, ev)
 
 

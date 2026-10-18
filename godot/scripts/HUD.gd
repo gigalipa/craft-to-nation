@@ -217,11 +217,13 @@ func set_vista(primera_persona: bool) -> void:
 		_ventana_ocupaciones.ocultar_temporalmente()
 		_ventana_almacen.ocultar_temporalmente()
 		_ventana_energia.ocultar_temporalmente()
+		_ventana_moral.ocultar_temporalmente()
 	else:
 		_ventana_poblacion.restaurar()
 		_ventana_ocupaciones.restaurar()
 		_ventana_almacen.restaurar()
 		_ventana_energia.restaurar()
+		_ventana_moral.restaurar()
 	# La ventana del baúl solo tiene sentido junto al baúl que la abrió: al
 	# cambiar de vista se cierra del todo (no se restaura, a diferencia de
 	# Población/Almacén).
@@ -537,6 +539,11 @@ func ventana_baul_abierta() -> bool:
 
 ## Muestra la barra de progreso bajo la mira con su ícono contextual.
 ## "retrocede" (tala, deconstrucción) la pinta en naranja: indica lo que le queda a lo que se está desmontando.
+func solicitar_remodelacion_edificio(id: int) -> void:
+	if _panel_edificio != null and _panel_edificio.has_method("solicitar_remodelacion"):
+		_panel_edificio.solicitar_remodelacion(id)
+
+
 func mostrar_progreso(fraccion: float, retrocede: bool = false, clave_herramienta: String = "") -> void:
 	_barra_progreso.value = clampf(fraccion, 0.0, 1.0) * 100.0
 	_barra_progreso.modulate = Color(1.0, 0.6, 0.2) if retrocede else Color(0.4, 1.0, 0.4)
@@ -548,6 +555,8 @@ func mostrar_progreso(fraccion: float, retrocede: bool = false, clave_herramient
 		if icono != null:
 			if clave_herramienta != "":
 				icono.texture = IconosHUD.icono(clave_herramienta)
+			else:
+				icono.texture = null
 			icono.visible = (icono.texture != null)
 
 

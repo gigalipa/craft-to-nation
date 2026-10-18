@@ -199,6 +199,9 @@ func _fila_titulo(texto: String) -> HBoxContainer:
 
 
 func abrir() -> void:
+	var vp_size := get_viewport_rect().size
+	if vp_size != Vector2.ZERO:
+		position = ((vp_size - size) / 2.0).round()
 	visible = true
 	abierta = true
 	_frame_apertura = Engine.get_process_frames()
@@ -210,13 +213,12 @@ func cerrar() -> void:
 	abierta = false
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not visible:
-		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE or event.keycode == KEY_M:
-			get_viewport().set_input_as_handled()
-			cerrar()
+func ocultar_temporalmente() -> void:
+	visible = false
+
+
+func restaurar() -> void:
+	visible = abierta
 
 
 func _process(_delta: float) -> void:

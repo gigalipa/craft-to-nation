@@ -163,11 +163,33 @@ func reconciliar() -> void:
 	if _buscador == null:
 		return  # todavía no se asignó el mundo (p. ej. una escena de pruebas sin Main)
 	var demografia: Dictionary = ciudad.demografia
+
+	# Primero: reasignar colonos existentes de roles con excedente hacia roles deficitarios
+	# (evita destruir colonos desahuciados y respawnearlos desde el borde del mapa como si fueran nuevos).
+	var metas: Dictionary = {}
+	for tipo in demografia:
+		metas[tipo] = demografia[tipo]
+	if ciudad.get("sin_techo") != null:
+		metas["desempleado"] = metas.get("desempleado", 0) + ciudad.sin_techo
+
+	for tipo in metas:
+		var existentes: Array[int] = _ids_de_tipo(tipo)
+		while existentes.size() > metas[tipo]:
+			var reasignado := false
+			for otro_tipo in metas:
+				if _ids_de_tipo(otro_tipo).size() < metas[otro_tipo]:
+					var id_a_mover: int = existentes.pop_back()
+					colonos[id_a_mover]["tipo"] = otro_tipo
+					if colonos[id_a_mover].get("hogar", -1) != -1 and not ciudad.edificios_residenciales.has(colonos[id_a_mover]["hogar"]):
+						colonos[id_a_mover]["hogar"] = -1
+					reasignado = true
+					break
+			if not reasignado:
+				break
+
 	for tipo in demografia:
 		var existentes: Array[int] = _ids_de_tipo(tipo)
-		var meta: int = demografia[tipo]
-		if tipo == "desempleado" and ciudad.get("sin_techo") != null:
-			meta += ciudad.sin_techo
+		var meta: int = metas.get(tipo, demografia[tipo])
 		while existentes.size() > meta:
 			_retirar(existentes.pop_back())
 		while existentes.size() < meta:

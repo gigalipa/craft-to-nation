@@ -108,6 +108,7 @@ func actualizar(estado: Dictionary) -> void:
 		var pct: int = int(estado.get("bateria_pct", 100))
 		var horas: int = int(estado.get("bateria_horas", 72))
 		_barra_bateria.value = float(pct)
+		_barra_bateria.modulate = color_bateria(float(pct))
 		var signo := "+" if recargando else ("-" if descarga else "")
 		_lbl_horas_electrica.text = "%s%d h" % [signo, horas]
 		_detalle.text = texto_detalle_electrica(recargando, descarga, pct, horas)
@@ -150,3 +151,14 @@ static func texto_detalle_electrica(recargando: bool, descarga: bool, pct: int, 
 
 static func texto_detalle_termica(horas_restantes: int, cantidad: int, nombre_recurso: String) -> String:
 	return "Tiempo restante: %d h | %d %s" % [horas_restantes, cantidad, nombre_recurso]
+
+
+static func color_bateria(pct: float) -> Color:
+	if pct > 50.0:
+		return Color(0.2, 0.9, 0.2)
+	elif pct > 25.0:
+		return Color(0.9, 0.85, 0.2)
+	elif pct > 10.0:
+		return Color(1.0, 0.55, 0.1)
+	else:
+		return Color(0.95, 0.2, 0.2)

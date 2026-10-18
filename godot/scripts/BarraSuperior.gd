@@ -388,9 +388,10 @@ func actualizar() -> void:
 	almacen_total.text = "Almacén"
 
 	var res_e: Dictionary = Economia.balance_energia if Economia != null else {}
+	var capacidad_e: float = res_e.get("capacidad", 0.0)
 	var entregada_e: float = res_e.get("entregada", 0.0)
 	var demanda_e: float = res_e.get("demanda", 0.0)
-	var balance_neto: float = entregada_e - demanda_e
+	var balance_neto: float = capacidad_e - demanda_e
 	var deficit_e: bool = res_e.get("deficit", false)
 	var texto_neto: String = formatear_energia_neta(balance_neto)
 
@@ -400,7 +401,7 @@ func actualizar() -> void:
 	if deficit_e or (demanda_e > 0.0 and entregada_e < demanda_e):
 		ic_e = "energia_rojo"
 		color_e = TemaHUD.INVALIDO
-	elif entregada_e <= 0.0 and demanda_e <= 0.0:
+	elif capacidad_e <= 0.0 and demanda_e <= 0.0:
 		ic_e = "energia_gris"
 		color_e = Color(0.7, 0.7, 0.7)
 

@@ -4,5 +4,5 @@
 
 [resource]
 transparency = 1
-cull_mode = 2
+cull_mode = 0
 albedo_texture = ExtResource("1_ventana")

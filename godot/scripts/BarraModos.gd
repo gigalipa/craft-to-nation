@@ -144,7 +144,7 @@ const METADATOS_CONSTRUCCION := {
 	"almacen": [["piedra"], false, "almacen"],
 	"escuela_tecnica": [["tierra"], false, "tecnico"],
 	"escuela_especialistas": [["piedra"], false, "especialista"],
-	"universidad": [["piedra"], true, "investigador"],
+	"universidad": [["piedra"], false, "investigador"],
 	"vias": [["tierra"], false, "cat_vias"],
 	"acueducto": [["bloques_piedra", "tablas"], false, "agua"],
 	"tuberia": [["acero", "hierro"], false, "cat_ductos"],

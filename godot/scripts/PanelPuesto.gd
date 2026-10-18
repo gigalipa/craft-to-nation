@@ -51,7 +51,8 @@ var _trabajadores := TemaHUD.etiqueta()
 var _libres := TemaHUD.etiqueta()
 var _almacen := TemaHUD.etiqueta()
 var _produccion := ContenedorProduccion.new()
-var _caja_items_prod := HBoxContainer.new()
+var _caja_items_prod := VBoxContainer.new()
+var _scroll_prod := ScrollContainer.new()
 var _energia := TemaHUD.etiqueta()
 var _crudo_restante := TemaHUD.etiqueta()
 var _selector_combustible := HBoxContainer.new()
@@ -79,12 +80,14 @@ var _btn_reserva := Button.new()
 
 var _caja_investigacion: VBoxContainer
 var _lbl_inv_estado: Label
+var _barra_inv: ProgressBar
 var _caja_botones_tech: VBoxContainer
 var _botones_tech: Dictionary = {}  # id_tech -> Button
 var _caja_controles_inv: HBoxContainer
 var _btn_pausar_inv: Button
 var _btn_cancelar_inv: Button
 var _dialogo_investigar := ConfirmationDialog.new()
+var _contenido_dialogo_inv: VBoxContainer
 var _dialogo_cancelar_inv := ConfirmationDialog.new()
 var _id_tech_seleccionada: int = 0
 
@@ -152,9 +155,12 @@ func _ready() -> void:
 	_produccion.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var lbl_prod_pref := TemaHUD.etiqueta("Producción:")
 	_produccion.add_child(lbl_prod_pref)
-	_caja_items_prod.add_theme_constant_override("separation", 6)
+	_scroll_prod.custom_minimum_size = Vector2(250, 72)
+	_scroll_prod.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_caja_items_prod.add_theme_constant_override("separation", 4)
 	_caja_items_prod.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_produccion.add_child(_caja_items_prod)
+	_scroll_prod.add_child(_caja_items_prod)
+	_produccion.add_child(_scroll_prod)
 	caja.add_child(_produccion)
 
 	_fila_reserva.add_theme_constant_override("separation", 6)
@@ -179,6 +185,17 @@ func _ready() -> void:
 	_lbl_inv_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_inv_estado.custom_minimum_size.x = 340.0
 	_caja_investigacion.add_child(_lbl_inv_estado)
+
+	_barra_inv = ProgressBar.new()
+	_barra_inv.show_percentage = true
+	_barra_inv.custom_minimum_size = Vector2(340, 18)
+	var sb_bg_inv := TemaHUD.caja_boton(Color(0.04, 0.08, 0.06, 0.9), TemaHUD.DORADO)
+	var sb_fg_inv := StyleBoxFlat.new()
+	sb_fg_inv.bg_color = Color(0.2, 0.7, 0.3)
+	sb_fg_inv.set_corner_radius_all(3)
+	_barra_inv.add_theme_stylebox_override("background", sb_bg_inv)
+	_barra_inv.add_theme_stylebox_override("fill", sb_fg_inv)
+	_caja_investigacion.add_child(_barra_inv)
 
 	_caja_botones_tech = VBoxContainer.new()
 	_caja_botones_tech.add_theme_constant_override("separation", 4)
@@ -219,6 +236,9 @@ func _ready() -> void:
 	_dialogo_investigar.cancel_button_text = "Cancelar"
 	_dialogo_investigar.confirmed.connect(_confirmar_investigacion)
 	TemaHUD.estilizar_dialogo(_dialogo_investigar)
+	_contenido_dialogo_inv = VBoxContainer.new()
+	_contenido_dialogo_inv.add_theme_constant_override("separation", 6)
+	_dialogo_investigar.add_child(_contenido_dialogo_inv)
 	add_child(_dialogo_investigar)
 
 	_dialogo_cancelar_inv.title = "Confirmar cancelación"
@@ -327,7 +347,7 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	menos.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menos.expand_icon = true
 	menos.custom_minimum_size = Vector2(28, 28)
-	TemaHUD.estilizar_boton(menos)
+	TemaHUD.estilizar_boton_icono(menos)
 	menos.pressed.connect(func() -> void: Colonos.despedir(esquina, rol))
 	var cantidad := TemaHUD.etiqueta()
 	cantidad.custom_minimum_size.x = 24.0
@@ -339,7 +359,7 @@ func _crear_fila(rol: String) -> HBoxContainer:
 	mas.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mas.expand_icon = true
 	mas.custom_minimum_size = Vector2(28, 28)
-	TemaHUD.estilizar_boton(mas)
+	TemaHUD.estilizar_boton_icono(mas)
 	mas.pressed.connect(func() -> void: Colonos.contratar(esquina, rol))
 	var libres := TemaHUD.etiqueta()
 	libres.custom_minimum_size.x = 70.0
@@ -470,22 +490,25 @@ func _actualizar() -> void:
 				break
 		_energia.text = "Capacidad: %.0f E/h\nGeneración usada: %.1f E/h\nCombustible actual: %s" % [cap_esta, uso, comb_actual]
 	elif puesto["tipo"] == "refineria_petrolera" or puesto["tipo"] == "productor_combustible" or es_universidad:
-		_selector_combustible.visible = false
-		_energia.visible = true
-		var res: Dictionary = Economia.balance_energia
-		var conectados: Dictionary = res.get("conectados", {})
-		var conectado: bool = conectados.get(esquina, false)
 		var demanda: float = 0.0
 		if puesto["tipo"] == "refineria_petrolera" or puesto["tipo"] == "productor_combustible":
 			demanda = float(t["presentes"]) * 1.0
 		elif es_universidad:
 			var id_act_e: int = puesto.get("investigacion_activa", 0)
-			if id_act_e == 3 or (id_act_e == 0 and Ciudad.nivel_investigado + 1 == 3):
+			if id_act_e == 3:
 				demanda = float(t["presentes"]) * 2.0
-		var factor: float = Economia.factor_energia_de(esquina)
-		var cap_red: float = res.get("capacidad", 0.0)
-		var estado_e: String = texto_estado_energia(conectado, demanda, factor, cap_red)
-		_energia.text = "Energía: %s" % estado_e
+		_selector_combustible.visible = false
+		if es_universidad and demanda <= 0.0:
+			_energia.visible = false
+		else:
+			_energia.visible = true
+			var res: Dictionary = Economia.balance_energia
+			var conectados: Dictionary = res.get("conectados", {})
+			var conectado: bool = conectados.get(esquina, false)
+			var factor: float = Economia.factor_energia_de(esquina)
+			var cap_red: float = res.get("capacidad", 0.0)
+			var estado_e: String = texto_estado_energia(conectado, demanda, factor, cap_red)
+			_energia.text = "Energía: %s" % estado_e
 	else:
 		_selector_combustible.visible = false
 		_energia.visible = false
@@ -512,12 +535,19 @@ func _actualizar() -> void:
 				str_tiempo += " (Pausado)"
 			_lbl_inv_estado.text = "Investigación en curso: %s\nProgreso: %d%% | %s" % [nom_tech, pct, str_tiempo]
 			_lbl_inv_estado.visible = true
+			if _barra_inv != null:
+				_barra_inv.visible = true
+				_barra_inv.value = pct
 			_caja_botones_tech.visible = false
 			_caja_controles_inv.visible = true
 			_btn_pausar_inv.disabled = false
 			_btn_pausar_inv.text = "Reanudar" if pausada else "Pausar"
+			_btn_pausar_inv.icon = IconosHUD.icono("btn_play" if pausada else "btn_pausa")
 			_btn_cancelar_inv.disabled = false
+			_btn_cancelar_inv.icon = IconosHUD.icono("cruz")
 		else:
+			if _barra_inv != null:
+				_barra_inv.visible = false
 			_caja_controles_inv.visible = false
 			_btn_pausar_inv.disabled = true
 			_btn_cancelar_inv.disabled = true
@@ -829,7 +859,34 @@ func _abrir_dialogo_investigar(id_tech: int) -> void:
 		tiempo_str = "Sin investigadores asignados (se requiere al menos 1 para comenzar)"
 
 	_dialogo_investigar.title = "Investigar: %s" % info["nombre"]
-	_dialogo_investigar.dialog_text = "Costo: %d hierro, %d madera\nTiempo estimado: %s" % [info["hierro"], info["madera"], tiempo_str]
+	_dialogo_investigar.dialog_text = ""
+	for h in _contenido_dialogo_inv.get_children():
+		h.queue_free()
+
+	var fila_costo := HBoxContainer.new()
+	fila_costo.add_theme_constant_override("separation", 6)
+	var lbl_costo := TemaHUD.etiqueta("Costo:")
+	fila_costo.add_child(lbl_costo)
+
+	var ic_hierro := IconosHUD.crear_rect("hierro", 18)
+	fila_costo.add_child(ic_hierro)
+	var lbl_hierro := TemaHUD.etiqueta("%d hierro" % info["hierro"])
+	fila_costo.add_child(lbl_hierro)
+
+	var ic_madera := IconosHUD.crear_rect("madera", 18)
+	fila_costo.add_child(ic_madera)
+	var lbl_madera := TemaHUD.etiqueta("%d madera" % info["madera"])
+	fila_costo.add_child(lbl_madera)
+	_contenido_dialogo_inv.add_child(fila_costo)
+
+	var fila_tiempo := HBoxContainer.new()
+	fila_tiempo.add_theme_constant_override("separation", 6)
+	var ic_tiempo := IconosHUD.crear_rect("reloj_arena", 18)
+	fila_tiempo.add_child(ic_tiempo)
+	var lbl_tiempo := TemaHUD.etiqueta("Tiempo estimado: %s" % tiempo_str)
+	fila_tiempo.add_child(lbl_tiempo)
+	_contenido_dialogo_inv.add_child(fila_tiempo)
+
 	var btn_ok: Button = _dialogo_investigar.get_ok_button()
 	if btn_ok != null:
 		btn_ok.disabled = (cant_inv <= 0)

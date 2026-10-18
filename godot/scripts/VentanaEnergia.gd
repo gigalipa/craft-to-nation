@@ -128,14 +128,7 @@ func _ready() -> void:
 	caja_listas.add_child(_caja_consumidores)
 
 
-func _unhandled_key_input(event: InputEvent) -> void:
-	if visible and event is InputEventKey:
-		if Engine.get_process_frames() == _frame_apertura:
-			return
-		var tecla := event as InputEventKey
-		if tecla.pressed and not tecla.echo and (tecla.keycode == KEY_E or tecla.keycode == KEY_ESCAPE):
-			cerrar()
-			get_viewport().set_input_as_handled()
+
 
 
 func _process(_delta: float) -> void:
@@ -144,6 +137,9 @@ func _process(_delta: float) -> void:
 
 
 func abrir() -> void:
+	var vp_size := get_viewport_rect().size
+	if vp_size != Vector2.ZERO:
+		position = ((vp_size - size) / 2.0).round()
 	abierta = true
 	visible = true
 	_frame_apertura = Engine.get_process_frames()
@@ -273,7 +269,6 @@ func _actualizar_boton_consumidor(btn: Button, esquina: Vector2i, res: Dictionar
 
 
 func _on_edificio_pulsado(esquina: Vector2i) -> void:
-	cerrar()
 	edificio_pedido.emit(esquina)
 
 

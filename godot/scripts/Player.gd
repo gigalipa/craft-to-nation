@@ -382,7 +382,7 @@ func _mostrar_progreso_de_obra(retrocede: bool) -> void:
 	if fraccion < 0.0 or (not retrocede and fraccion >= 1.0) or (retrocede and fraccion <= 0.0):
 		hud.ocultar_progreso()
 	else:
-		hud.mostrar_progreso(fraccion, retrocede)
+		hud.mostrar_progreso(fraccion, retrocede, "modo_construir" if not retrocede else "modo_demoler")
 
 
 ## Guarda en el inventario (= almacén central) lo que rindió una extracción del
@@ -1386,6 +1386,11 @@ func _iniciar_remodelacion() -> void:
 	var resumen: Dictionary = Obras.resumen_de(id_edificio)
 	if not resumen.is_empty() and resumen.get("estado", "") != "completo":
 		_notificar_rechazo("Remodelar edificio: solo se pueden remodelar edificios terminados.")
+		return
+	var sin_techo: int = Ciudad.calcular_sin_techo_al_remodelar(id_edificio)
+	if sin_techo > 0 and hud != null:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		hud.solicitar_remodelacion_edificio(id_edificio)
 		return
 	var resultado: Dictionary = FinalizacionObras.iniciar_remodelacion(mundo, id_edificio)
 	if resultado.get("exito", false):

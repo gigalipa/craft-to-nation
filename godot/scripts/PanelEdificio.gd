@@ -22,7 +22,11 @@ var ciudad: Object = null
 var _icono_titulo := TextureRect.new()
 var _titulo := TemaHUD.etiqueta()
 var _tipo := TemaHUD.etiqueta()
+var _fila_camas := HBoxContainer.new()
+var _icono_camas := TextureRect.new()
 var _camas := TemaHUD.etiqueta()
+var _fila_baules := HBoxContainer.new()
+var _icono_baules := TextureRect.new()
 var _baules := TemaHUD.etiqueta()
 var _residentes := TemaHUD.etiqueta()
 var _colonizable := TemaHUD.etiqueta()
@@ -30,6 +34,8 @@ var _estado := TemaHUD.etiqueta()
 var _salud := TemaHUD.etiqueta()
 var _obreros := TemaHUD.etiqueta()
 var _materiales := TemaHUD.etiqueta()
+var _caja_faltantes := VBoxContainer.new()
+var _btn_boost_inmigracion := Button.new()
 var _toggle_colonizable := Button.new()
 var _remodelar := Button.new()
 var _pausar := Button.new()
@@ -73,10 +79,41 @@ func _ready() -> void:
 	fila_tit.add_child(_titulo)
 	caja.add_child(fila_tit)
 
-	for etiqueta in [_tipo, _camas, _baules, _residentes, _colonizable, _estado, _salud, _obreros, _materiales]:
+	caja.add_child(_tipo)
+
+	_fila_camas.add_theme_constant_override("separation", 6)
+	_fila_camas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_icono_camas.custom_minimum_size = Vector2(16, 16)
+	_icono_camas.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_icono_camas.texture = IconosHUD.icono("cama")
+	_fila_camas.add_child(_icono_camas)
+	_fila_camas.add_child(_camas)
+	caja.add_child(_fila_camas)
+
+	_fila_baules.add_theme_constant_override("separation", 6)
+	_fila_baules.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_icono_baules.custom_minimum_size = Vector2(16, 16)
+	_icono_baules.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_icono_baules.texture = IconosHUD.icono("baul")
+	_fila_baules.add_child(_icono_baules)
+	_fila_baules.add_child(_baules)
+	caja.add_child(_fila_baules)
+
+	for etiqueta in [_residentes, _colonizable, _estado, _salud, _obreros, _materiales]:
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		etiqueta.custom_minimum_size.x = 250.0
 		caja.add_child(etiqueta)
+
+	_caja_faltantes.add_theme_constant_override("separation", 4)
+	_caja_faltantes.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	caja.add_child(_caja_faltantes)
+
+	_btn_boost_inmigracion.icon = IconosHUD.icono("censo")
+	_btn_boost_inmigracion.expand_icon = true
+	_btn_boost_inmigracion.text = "Impulso inmigración (+250%)"
+	TemaHUD.estilizar_boton(_btn_boost_inmigracion)
+	_btn_boost_inmigracion.pressed.connect(_on_boost_inmigracion)
+	caja.add_child(_btn_boost_inmigracion)
 	for boton in [_toggle_colonizable, _remodelar, _pausar, _prioridad, _demoler, _asignar_nucleo]:
 		boton.expand_icon = true
 		TemaHUD.estilizar_boton(boton)
@@ -111,6 +148,7 @@ func _ready() -> void:
 	_dialogo_remodelar.ok_button_text = "Confirmar"
 	_dialogo_remodelar.cancel_button_text = "Cancelar"
 	_dialogo_remodelar.confirmed.connect(_confirmar_remodelar)
+	_dialogo_remodelar.canceled.connect(_cancelar_remodelar)
 	TemaHUD.estilizar_dialogo(_dialogo_remodelar)
 	add_child(_dialogo_remodelar)
 
@@ -260,6 +298,28 @@ func _on_remodelar() -> void:
 	_dialogo_remodelar.popup_centered()
 
 
+
+func solicitar_remodelacion(nuevo_id: int) -> void:
+	id = nuevo_id
+	_on_remodelar()
+
+
+func _cancelar_remodelar() -> void:
+	_restaurar_cursor_si_jugador()
+
+
+func _restaurar_cursor_si_jugador() -> void:
+	var player = get_node_or_null("/root/Main/Player")
+	if player != null and player.get("camara") != null and player.camara.current:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+func _on_boost_inmigracion() -> void:
+	if ciudad != null and ciudad.has_method("activar_boost_inmigracion"):
+		if ciudad.activar_boost_inmigracion():
+			aviso.emit("¡Impulso de inmigración activado en el núcleo urbano por 30 días!")
+			_actualizar()
+
 func _confirmar_remodelar() -> void:
 	var mundo = null
 	if obras != null and obras.get("mundo") != null:
@@ -274,6 +334,7 @@ func _confirmar_remodelar() -> void:
 		cerrar()
 	else:
 		aviso.emit("No se pudo iniciar remodelación: %s" % resultado.get("motivo", ""))
+	_restaurar_cursor_si_jugador()
 
 
 func _actualizar() -> void:
@@ -303,6 +364,8 @@ func _actualizar() -> void:
 		_tipo.text = "Tipo: %s" % r["tipo"]
 
 	if es_residencial:
+		_fila_camas.visible = true
+		_fila_baules.visible = true
 		_camas.visible = true
 		_baules.visible = true
 		_residentes.visible = true
@@ -322,6 +385,8 @@ func _actualizar() -> void:
 		else:
 			_residentes.text = "Residentes: " + ", ".join(partes_res)
 	else:
+		_fila_camas.visible = false
+		_fila_baules.visible = false
 		_camas.visible = false
 		_baules.visible = false
 		_residentes.visible = false
@@ -357,11 +422,35 @@ func _actualizar() -> void:
 	_obreros.text = "Obreros: %d" % (colonos.obreros_en(id) if colonos != null and colonos.has_method("obreros_en") else 0)
 	var faltan: bool = estado == "construccion" and not r["faltantes"].is_empty()
 	_materiales.visible = faltan
+	_caja_faltantes.visible = faltan
+	for h in _caja_faltantes.get_children():
+		h.queue_free()
 	if faltan:
 		var partes: Array = []
 		for recurso in r["faltantes"]:
-			partes.append("%d %s (hay %d)" % [r["faltantes"][recurso], HUDScript.NOMBRES_RECURSO.get(recurso, recurso), int(_en_almacen(recurso))])
+			var nom_r: String = HUDScript.NOMBRES_RECURSO.get(recurso, recurso).capitalize()
+			partes.append("%d %s (hay %d)" % [r["faltantes"][recurso], nom_r, int(_en_almacen(recurso))])
+			var fila_mat := HBoxContainer.new()
+			fila_mat.add_theme_constant_override("separation", 6)
+			fila_mat.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var ic_rec := IconosHUD.crear_rect(recurso, 16)
+			fila_mat.add_child(ic_rec)
+			var lbl_mat := TemaHUD.etiqueta("%d %s (hay %d)" % [r["faltantes"][recurso], nom_r, int(_en_almacen(recurso))])
+			fila_mat.add_child(lbl_mat)
+			_caja_faltantes.add_child(fila_mat)
 		_materiales.text = "Faltan: " + ", ".join(partes)
+	if es_nucleo and estado == "completo":
+		_btn_boost_inmigracion.visible = true
+		if ciudad != null and ciudad.get("horas_boost_inmigracion") != null and ciudad.horas_boost_inmigracion > 0:
+			var d_rest: int = ciudad.dias_boost_inmigracion_restantes()
+			_btn_boost_inmigracion.text = "Impulso activo (%d d)" % d_rest
+			_btn_boost_inmigracion.disabled = true
+		else:
+			_btn_boost_inmigracion.text = "Impulso inmigración (+250%)"
+			_btn_boost_inmigracion.disabled = false
+	else:
+		_btn_boost_inmigracion.visible = false
+
 	_pausar.visible = en_obra
 	_pausar.text = "Reanudar" if r["pausada"] else ("Pausar demolición" if estado == "demolicion" else "Pausar construcción")
 	_pausar.icon = IconosHUD.icono("btn_play" if r["pausada"] else "btn_pausa")

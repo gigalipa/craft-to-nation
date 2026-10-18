@@ -227,6 +227,7 @@ var horas_juego := 0
 ## que fijan la demografía a mano).
 var migracion_activa := true
 var _migrantes_acumulados := 0.0
+var horas_boost_inmigracion := 0
 ## Cantidad de cada recurso al cierre del último simular_tick(); base de
 ## Recurso.tasa_neta (ver simular_tick()).
 var _cantidad_al_cierre: Dictionary = {}
@@ -557,12 +558,39 @@ func _recalcular_peligrosidad_7d() -> void:
 		robos_7d += entrada.get("robos", 0.0)
 
 
+
+func activar_boost_inmigracion() -> bool:
+	if horas_boost_inmigracion > 0:
+		return false
+	horas_boost_inmigracion = int(HORAS_POR_MES)
+	return true
+
+
+func dias_boost_inmigracion_restantes() -> int:
+	return int(ceil(float(horas_boost_inmigracion) / 24.0))
+
+
+func actualizar_fuentes_comida_desde_economia() -> void:
+	for cat in CATEGORIAS_COMIDA:
+		if not fuentes_comida_activas.has(cat):
+			fuentes_comida_activas[cat] = 0.0
+	if Economia != null and "puestos" in Economia:
+		for p in Economia.puestos.values():
+			if not p.get("activo", false):
+				continue
+			var tipo: String = p.get("tipo", "")
+			if tipo == "caza_recoleccion":
+				fuentes_comida_activas["recoleccion_caza"] = maxf(fuentes_comida_activas.get("recoleccion_caza", 0.0), 1.0)
+			elif tipo == "pesca_frutos_mar":
+				fuentes_comida_activas["pesca"] = maxf(fuentes_comida_activas.get("pesca", 0.0), 1.0)
+
 func impacto_peligrosidad_7d() -> float:
 	return 0.5 * float(bajas_7d) + 0.1 * float(heridos_7d) + 0.005 * robos_7d
 
 
 ## Desplaza el bono de moral gradualmente hacia el objetivo de diversidad activa.
 func actualizar_bono_variedad() -> void:
+	actualizar_fuentes_comida_desde_economia()
 	var activas := 0
 	for valor in fuentes_comida_activas.values():
 		if valor > 0:
@@ -910,10 +938,11 @@ func _migrar(hambruna: bool) -> int:
 		return -salidos
 
 	# 2. Inmigración (Moral > 20.0, tasa_horaria > 0)
-	_migrantes_acumulados += tasa_horaria
+	var mult_boost: float = 2.5 if horas_boost_inmigracion > 0 else 1.0
+	_migrantes_acumulados += tasa_horaria * mult_boost
 	var llegados := 0
 	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
-	var solo_con_camas: bool = moral <= 50.0
+	var solo_con_camas: bool = (moral <= 50.0) and (horas_boost_inmigracion <= 0)
 	while _migrantes_acumulados >= 1.0:
 		if hambruna:
 			_migrantes_acumulados = 1.0
@@ -1061,15 +1090,25 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	if hay_consumo_activo and todos_positivos:
 		delta_abundancia = 0.4
 
+	if horas_boost_inmigracion > 0:
+		horas_boost_inmigracion -= 1
+	actualizar_fuentes_comida_desde_economia()
 	var activas_dieta := 0
 	for v in fuentes_comida_activas.values():
 		if v > 0:
 			activas_dieta += 1
-	var delta_dieta: float = (float(activas_dieta) / float(CATEGORIAS_COMIDA.size())) * 0.5
+	var delta_dieta: float = (float(activas_dieta) / float(CATEGORIAS_COMIDA.size())) * 1.0
 	var delta_sin_techo: float = -0.05 * float(sin_techo)
 	var delta_peligro: float = -impacto_peligrosidad_7d()
 
-	tasa_cambio_moral = delta_inercia + delta_abundancia + delta_escasez + delta_dieta + delta_sin_techo + delta_peligro
+	var total_ciu: int = censo_total
+	var delta_empleo := 0.0
+	if total_ciu > 0:
+		var ocupados: int = total_ciu - demografia.get("desempleado", 0) - sin_techo
+		var tasa_empleo: float = float(ocupados) / float(total_ciu)
+		delta_empleo = (tasa_empleo - 0.5) * 0.3
+
+	tasa_cambio_moral = delta_inercia + delta_abundancia + delta_escasez + delta_dieta + delta_sin_techo + delta_peligro + delta_empleo
 	moral = clampf(moral + tasa_cambio_moral / 24.0, 0.0, 100.0)
 
 	var migrantes: int = _migrar(not exito_comida)

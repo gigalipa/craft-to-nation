@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" shape-rendering="crispEdges">
+
+  <rect x="2" y="2" width="16" height="16" fill="#42A5F5" opacity="0.4"/>
+  <rect x="2" y="2" width="16" height="16" fill="none" stroke="#42A5F5" stroke-width="2"/>
+  <!-- Mini casita -->
+  <polygon points="10,5 5,9 15,9" fill="#F2EBD1"/>
+  <rect x="6" y="9" width="8" height="6" fill="#F2EBD1"/>
+
+</svg>

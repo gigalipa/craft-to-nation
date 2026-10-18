@@ -8,8 +8,12 @@ export default defineConfig({
   outDir: './dist',
   cleanUrls: true,
   checkDeadLinks: true,
+  head: [
+    ['link', { rel: 'icon', type: 'image/png', href: '/wiki/assets/favicon-32.png' }]
+  ],
 
   themeConfig: {
+    logo: '/assets/craft-to-nation-mark.png',
     i18nRouting: false,
     search: {
       provider: 'local'

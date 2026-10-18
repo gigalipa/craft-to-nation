@@ -28,57 +28,79 @@ La demografía de la colonia se organiza en una jerarquía de oficios. Los colon
 | **Investigador** | 1 | 0 | 2 | 1 | Generación de puntos de ciencia y patentes en la Universidad. |
 | **Militar** | 4 | 2 | 0 | 3 | Defensa de guarnición, patrullaje de fronteras y asedio en Fase 4. |
 
-### Cadenas de Promoción y Capacitación
-1. **Inmigrantes / Ciudadanos Libres:** Llegan atraídos por la disponibilidad de viviendas y camas libres en la Zona A.
-2. **Escuela Técnica:** Capacita a obreros con experiencia para transformarlos en **Técnicos**, habilitando el funcionamiento de industrias Tipo 2.
-3. **Escuela de Especialistas:** Instruye a técnicos en procesos petroquímicos complejos y manejo de fluidos industriales.
-4. **Universidad:** Centro de investigación superior donde los **Investigadores** desbloquean tecnologías del árbol científico (Metalurgia Aplicada, Automatización Industrial).
+### Cadenas de Promoción y Capacitación (`Ciudad.gd` / `Recoleccion.gd`)
+1. **Inmigrantes / Ciudadanos Libres:** Llegan atraídos por la moral de la ciudad y la disponibilidad de camas libres en la Zona A.
+2. **Escuela Técnica (`escuela_tecnica`):** Entrena una cohorte de **4 Obreros** (1 cama) durante **24 horas de juego** para graduar **3 Técnicos** (1 cama), habilitando la operación de industrias Tipo 2 y mejoras de puestos a Nivel II.
+3. **Escuela de Especialistas (`escuela_especialistas`):** Entrena una cohorte de **3 Técnicos** (1 cama) durante **48 horas de juego** para graduar **2 Especialistas** (1 cama), habilitando industrias Tipo 3, centrales termoeléctricas y puestos de Nivel III.
+4. **Universidad (`universidad`):** Emplea hasta **3 Investigadores** (`1,0 hora_investigador/h` cada uno) para investigar **Metalurgia Aplicada** (`20 h_inv`, `300 Hierro`, `200 Madera`) y **Automatización Industrial** (`50 h_inv`, `800 Hierro`, `100 Madera`).
 
 ---
 
-## 3. Sistema de Moral Dinámica (GDD v3.56)
+## 3. Sistema de Moral Dinámica (GDD v3.57)
 
-El estado anímico colectivo de la colonia se cuantifica en una escala continua de **0 a 100 puntos**:
-- **Inicio de Partida:** La colonia inicia con una moral de **75.0** (bono pionero de optimismo).
-- **Inercia Natural:** La moral converge progresivamente hacia el punto neutro de **50.0** con un factor de inercia de **0.02**.
+El estado anímico colectivo de la colonia se cuantifica en una escala continua de **0 a 100 puntos** (consultable en la barra superior o presionando <kbd>M</kbd> para abrir `VentanaMoral.gd`):
+- **Inicio de Partida:** La colonia inicia con una moral de **75,0** (bono pionero de optimismo).
+- **Inercia Natural:** La moral converge progresivamente hacia el punto neutro de **50,0** con un factor de inercia de **0,02**.
+- **Aplicación Diaria (`tasa_cambio_moral / 24.0`):** En `Ciudad.gd`, la suma neta de modificadores conforma la **tasa de cambio diaria** (`ΔM / día`), que se aplica en fracciones de `ΔM / 24,0` en cada tick horario (`2,0 s` reales).
 
-### Factores de Modificación Horaria (ΔM)
-- **Superávit de Bienes y Alimentos:** `+0.4` puntos / hora.
-- **Diversidad de Dieta:** Hasta `+0.5` puntos / hora al combinar caza, pesca, frutos silvestres y productos procesados.
-- **Escasez Alimentaria:** `-0.6` puntos / hora.
-- **Hambruna Crítica:** `-3.0` puntos / hora cuando el almacén de comida se vacía por completo.
-- **Déficit Energético:** Hasta `-1.5` puntos / hora si los generadores eléctricos no cubren la demanda.
-- **Colonos Sin Techo:** `-0.05` puntos / hora por cada colono que pernocte a la intemperie.
+### Factores de Modificación Diaria (`tasa_cambio_moral`)
+- **Superávit de Bienes y Alimentos:** `+0,4` puntos / día (cuando los recursos superan el 50 % de capacidad).
+- **Diversidad de Dieta:** Hasta `+0,5` puntos / día según variedad de fuentes alimentarias.
+- **Escasez Alimentaria:** `-0,6` puntos / día cuando el stock cae por debajo del umbral de seguridad (`< 20 %`).
+- **Hambruna Crítica:** `-3,0` puntos / día cuando el almacén de comida se vacía por completo (`0 u`).
+- **Déficit Energético:** Hasta `-1,5` puntos / día proporcional al déficit de la red eléctrica.
+- **Colonos Sin Techo:** `-0,05` puntos / día por cada colono que pernocte a la intemperie.
+- **Memoria de Peligro:** Buffer rodante de `168 horas` (`7 días` de juego) que penaliza muertes e incursiones recientes.
 
 ---
 
-## 4. Productividad Continua y Ley de Rendimiento
+## 4. Productividad Continua y Tabla de Migración Mensual Escalonada
 
-A diferencia de modelos escalonados rígidos, en *Craft to Nation* la moral modula la productividad laboral según una curva matemática exponencial continua:
+La moral modula la productividad laboral según la curva exponencial continua (`Ciudad.calcular_multiplicador_productividad()`):
 
 ```text
 Productividad = 0.5 × 2^(Moral / 50)
 ```
+- **Moral = 0:** Rendimiento mínimo al **0,5×** (`😡` Crítica).
+- **Moral = 50 (Neutro):** Rendimiento estándar al **1,0×** (`😐` Neutra).
+- **Moral = 100 (Euforia):** Rendimiento duplicado al **2,0×** (`🙂` Alta).
 
-- Con **Moral = 0**: Los trabajadores rinden a un **0.5×** (la mitad de su tasa base).
-- Con **Moral = 50** (Neutro): Rendimiento normal al **1.0×**.
-- Con **Moral = 100** (Euforia cívica): Rendimiento duplicado al **2.0×**.
+### Tramos Escalonados de Migración Mensual (`Ciudad.calcular_tasa_migracion_mensual()`)
+Un mes de simulación equivale a `720 horas` de juego (`30 días × 24 h`). El acumulador migratorio suma o resta fracciones horarias según el tramo de moral actual:
+
+| Tramo de Moral | Tasa Mensual (`colonos / mes`) | Régimen Migratorio en `Ciudad.gd` |
+| :--- | :--- | :--- |
+| **`0,0 – 5,0`** | **-5,0 / mes** | **Éxodo severo** (fuga jerárquica de cerebros) |
+| **`5,0 – 10,0`** | **-3,0 / mes** | **Éxodo alto** |
+| **`10,0 – 15,0`** | **-2,0 / mes** | **Éxodo moderado** |
+| **`15,0 – 20,0`** | **-1,0 / mes** | **Éxodo leve** |
+| **`20,0 – 25,0`** | **+1,0 / mes** | **Inmigración prudente** (*solo ingresa si existen camas colonizables libres*) |
+| **`25,0 – 35,0`** | **+2,0 / mes** | **Inmigración moderada** (*solo ingresa si existen camas colonizables libres*) |
+| **`35,0 – 50,0`** | **+3,0 / mes** | **Inmigración sostenida** (*solo ingresa si existen camas colonizables libres; no genera sin techo*) |
+| **`50,0 – 75,0`** | **+3,0 / mes** | **Inmigración masiva** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
+| **`75,0 – 100,0`** | **+5,0 / mes** | **Auge migratorio** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
 
 ---
 
 ## 5. Inanición, Colonos Sin Techo y Éxodo Poblacional
 
-El descuido en la planificación urbana desencadena consecuencias severas:
+### Colonos Sin Techo (`sin_techo`)
+Cuando la moral supera `50,0` y la inmigración rebalsa las camas disponibles (o si un edificio es demolido), los colonos sin cama entran al estado **Sin Techo**. Consumen `3,0 comida/h`, no pueden ocupar puestos especializados y disponen de una **tolerancia máxima de 72 horas de juego (3 días)** antes de emigrar definitivamente, aplicando una penalización directa de **-10 puntos de moral**.
 
-### Colonos Sin Techo
-Cuando la inmigración supera la cantidad de camas construidas, los recién llegados adquieren el estado "Sin Techo". Consumen alimento al ritmo de un desempleado, no pueden asumir puestos laborales fijos y disponen de una **tolerancia máxima de 72 horas de juego (3 días)** antes de marcharse al exilio, penalizando la moral de la ciudad en **-10** puntos.
+### Desempleo Prolongado (`240 h`)
+Los colonos en estado **Desempleado** (`desempleado`) esperan hasta **240 horas de juego (10 días)**. Si no consiguen empleo ni son asignados a obras o escuelas en ese plazo, emigran de la ciudad.
 
 ### Crisis de Inanición
-Si el stock municipal de comida se agota, ocurre una mortandad por hambre de hasta el **25% de la población total por cada tick de simulación (2 segundos)**. La pérdida de vidas sigue una jerarquía estricta de mayor a menor vulnerabilidad física:
+Si el stock municipal de comida llega a `0`, ocurre una mortandad por hambre de hasta el **25 % de la población total por cada tick de simulación (`2,0 s`)**, siguiendo la jerarquía de vulnerabilidad física:
 
 ```text
 Militar → Obrero → Técnico → Especialista → Investigador → Desempleado → Ciudadano
 ```
 
-### Éxodo y Fuga de Cerebros
-Si la moral desciende por debajo del umbral crítico de **20 puntos**, se desata una fuga de cerebros jerárquica: los investigadores y especialistas serán los primeros en abandonar la ciudad, seguidos por técnicos y obreros cualificados.
+### Éxodo y Fuga de Cerebros (`Moral <= 20`)
+Cuando la moral cae a `20,0` o menos, el acumulador migratorio se vuelve negativo y los colonos más cualificados abandonan primero la ciudad:
+
+```text
+Investigador → Especialista → Técnico → Militar → Obrero → Desempleado → Ciudadano
+```
+

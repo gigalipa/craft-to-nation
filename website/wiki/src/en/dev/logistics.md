@@ -1,81 +1,54 @@
-# Logistics, Land Haulage & Pipeline Networks
+# Logistics, Road Networks & Fluid Pipelines
 
-Logistical balance is the cornerstone of *Craft to Nation*. Unlike abstracted resource pools in conventional city builders, every unit of ore, timber, and liquid must physically travel across the game world. Logistical networks are separated into two distinct physical tiers: **Solid Land Haulage** and **Pressurized Fluid Distribution**.
+![Strategic view of the industrial city connected by roads and conduits](/assets/citycraft-world.webp)
+
+In **Craft to Nation**, every unit of timber, ore, or liquid physically traverses the `200×200` voxel world. The logistics architecture is divided into two complementary layers: **Road Networks & Solid Land Haulage** (`ConstructorVias.gd`, `BuscadorRutas.gd`, `Colonos.gd`) and **Elevated Pressurized Fluid Pipelines** (`Canalizaciones.gd`, `Fluidos.gd`).
 
 ---
 
-## 1. Land Haulage & Colonist Navigation Specs
-
-Bulk solids (stone, lumber, iron, coal, grains) are transported between peripheral outposts, industrial smelters, and civic storage by human haulers and freight convoys.
+## 1. Road Laying Crews, Weighted Pathfinding & Land Haulage
 
 ```
-       [ Extraction Outpost ]
-                 │
-                 ▼  (Front Service Cell)
-         [ Loaded Hauler ]
-                 │
-                 │  Speed: 2.5 cells/sec | Capacity: 150 units
-                 │  Road Cost: 3 vs Wilderness Cost: 8
-                 ▼
-         [ Urban Core / Storage ]
+[Peripheral Outpost / Mine] ──(Local Buffer: 1,000 u)──> [Hauler (150 u)] ──> [Central Stockpile / Refinery]
 ```
 
-### Physical Carrier Specifications:
-- **Colonist Ambulation Speed:** **2.5 cells / second** real time (equivalent to 5.0 cells per in-game simulation hour).
-- **Hauler Load Capacity:** **150 units** per carrier trip.
-- **Minimum Batch Threshold:** **10 units**. Haulers will not initiate a logistics run to a refinery or warehouse until at least 10 units of an input material have accumulated, preventing inefficient single-item trips.
-- **Exterior Service Cell Interaction:** Carriers pick up goods exclusively from the exterior service tile directly in front of an outpost's front door. Carriers never enter the structure's interior, ensuring working gatherers are never trapped or obstructed.
+### Road Construction & Guided Demolition (`ConstructorVias.gd` / `Obras.gd`)
+- **Overhead Road Tool (<kbd>V</kbd>):** Trace straight or L-shaped packed dirt road segments with automatic ramp generation across gentle slopes and live 3D thumbnail previews in `BarraModos.gd`.
+- **Colonist Road Crews & Priorities:** Traced road segments register as construction worksites where available laborers build them according to their assigned priority (**High `▲▲▲`**, **Normal `▲▲`**, **Low `▲`**). You can also manually build or demolish road cells in first-person mode by aiming at the ground and pressing <kbd>V</kbd>, or use guided road network demolition in overhead Demolish mode (<kbd>3</kbd> + <kbd>V</kbd>).
 
-### Weighted Pathfinding & Road Efficiency:
-The navigation engine uses weighted A* grid pathfinding where traversal costs reflect road surface quality:
-- **Rough Wilderness / Natural Ground:** Traversal cost = **8**.
-- **Packed Dirt Road:** Traversal cost = **3**.
-- **Paved Cobblestone / Asphalt Highway:** Traversal cost = **1 to 2** (up to +60% movement speed bonus).
+### Physical Carrier Specs & Weighted A* Navigation (`BuscadorRutas.gd`)
+- **Base Ambulation Speed:** **2.5 cells / second** (`5.0 cells/h` in-game time).
+- **Road Speed Bonus:** Packed dirt roads grant a **+35% movement speed bonus** to both NPC colonists and the player avatar.
+- **Payload Capacity:** **150 units** per trip (with a **10-unit minimum batch threshold** and strict enforcement of `[0, 50, 100, 250, 500] u` raw material reserve quotas).
+- **Weighted A* Traversal Cost:** Packed dirt roads have a step cost of **3** compared to **8** on natural terrain, ensuring haulers naturally follow established road arteries.
 
-Because natural ground costs nearly triple that of a packed dirt path, carriers and pedestrians automatically seek out and adhere to designated road networks even if the detour is slightly longer.
+---
 
-### Single-Cell Corridor Traffic Priority Hierarchy:
-When two carriers meet head-to-head on a narrow 1-cell mountain pass or bridge, deadlock is averted by an automated yield hierarchy:
+## 2. Single-Cell Corridor Traffic Priority Hierarchy
+
+When two colonists meet head-to-head in a narrow 1-cell pass, deadlocks are prevented by an automated yield hierarchy based on cargo criticality:
 
 ```text
-Food > Fuel > Crude Oil > Steel > Refined Minerals > Iron
-     > Copper > Coal > Rare Earths > Planks > Wood > Stone > Dirt > Water
+Food > Fuel > Crude Oil > Steel > Refined Minerals
+     > Iron > Copper > Coal > Rare Earths
+     > Planks > Wood > Stone > Earth > Water
 ```
 
-- **Tiebreakers:** If carrying identical goods, the carrier with the greater payload has right-of-way; if still tied, carrier ID is used.
-- **Status Hierarchy:** `Loaded Carriers > Empty Returning Carriers > Employed Workers > Idle Colonists`.
-- **Lateral Evasion:** The yielding agent temporarily steps sideways into an adjacent open cell to allow the higher-priority courier to pass unimpeded.
+- **Tiebreakers:** If carrying identical resources, right-of-way goes to the larger payload, then task status (`Loaded Hauler > Returning Empty Hauler > Commuting Worker > Idle Colonist`), then lowest entity ID. The yielding colonist steps laterally into an adjacent cell to clear the corridor.
+- **Exterior Service Cells:** Haulers pick up and deliver goods strictly from the exterior tile facing the entrance (`e`) or exit (`s`) door without entering building interiors.
 
 ---
 
-## 2. Pressurized Fluid Distribution Pipelines
+## 3. Elevated Fluid Distribution Pipelines (`Canalizaciones.gd`)
 
-Fluids (fresh water, crude oil, and refined hydrocarbon fuel) cannot be efficiently moved in bags or hand barrows. Instead, they require elevated pipe ducting (`Canalizaciones.gd`).
+To transport **Water**, **Crude Oil**, and **Fuel** continuously without manual haulers, the colony uses a modular 4-piece conduit system (vertical support columns, straight/corner headers, inclinable spans, and terminal port couplers):
 
-### Modular 4-Piece Pipe Assembly:
-Elevated pipelines are constructed using four modular components:
-1. **Vertical Structural Columns:** Ground-anchored support pylons that elevate pipelines to the standard clearance height.
-2. **Linear & Corner Headers:** Directional conduit junctions supporting 90° turns, T-junctions, and multi-inlet convergence.
-3. **Inclinable Continuous Spans:** Dynamic variable-length pipe spans with central pivots to traverse gentle slopes and terrain depressions.
-4. **Terminal Port Couplers:** Flanged interface blocks that dock directly onto pumping stations, storage tanks, and refinery intake manifolds.
+| Conduit Type | Permitted Fluids | Construction Cost per Cell |
+| :--- | :--- | :--- |
+| **Aqueduct** | <ResourceBadge name="Water" /> <ResourceBadge name="Fuel" /> | `1 Stone Block` + `1 Wood Block` |
+| **Industrial Pipeline** | <ResourceBadge name="Water" /> <ResourceBadge name="Crude Oil" /> <ResourceBadge name="Fuel" /> | `1 Steel Block` + `1 Iron Frame` |
 
-```
-                  [ Linear Header ] ═════════ [ Spanning Conduit ]
-                          ║                              ║
-                  [ Support Column ]             [ Support Column ]
-             ═════════════╩══════════════════════════════╩═════════════
-             ▲ Ground Level (Y)                  Clearance: Y+5 to Y+6
-```
-
-### Grade-Separated Crossings:
-- **Standard Pipeline Elevation:** Elevated conduits run at ground level **`Y + 6`**.
-- **Unimpeded Ground Clearance:** Provides a clear **`Y + 5`** clearance underneath, allowing pedestrian colonists, heavy cargo wagons, and future military vehicles to navigate freely beneath the pipe infrastructure without obstruction.
-
-### Pumping Rates & Fluid Dynamics:
-- **Base Extraction Throughput:** **2.0 fluid units / hour** continuous pumping rate for both surface water stations and deep subterranean oil rigs.
-- **Topological Integrity:** Multi-inlet to single-outlet topology ensures steady downstream line pressure.
-- **Fluid Viscosity & Physical Properties:**
-  - **Fresh Water:** Viscosity 1.0, horizontal spread radius = 7 cells.
-  - **Refined Fuel:** Viscosity 1.2, horizontal spread radius = 5 cells.
-  - **Crude Oil:** Dense viscosity factor = 0.20 (dampened velocity and jump suppression), horizontal spread radius = 3 cells.
-- **Dynamic Spill Containment:** Ruptured or uncoupled pipe segments generate active fluid spills onto terrain. Successfully connecting terminal couplers instantly seals the line and stops leakage.
+### Grade-Separated Crossings (`Y + 6`) & HUD Flow Diagnostics
+- **Elevation & Clearance:** Conduits dock with **layer-4 fluid ports** on buildings and rise to **`Y_ground + 6`** over road crossings, preserving an unobstructed **`Y + 5` vertical clearance** underneath with support pylons every **5 cells** (`INTERVALO_COLUMNAS = 5`).
+- **Throughput & Viscosity Spills:** Each active line conducts **2.0 fluid units/h**. Uncoupled open pipe ends emit `derrame_detectado`, spilling liquid across the terrain according to physical viscosity (`Water`: spread 7; `Fuel`: spread 5; `Crude Oil`: spread 3 with `0.20` viscosity).
+- **Pipeline Diagnostic Panel (`PanelCanalizacion.gd`):** Clicking any conduit segment in overhead view displays a visual flow badge **`[Inlet Status] -⇥ [Resource Icon] -⇥ [Outlet Status]`** to immediately verify port coupling and active flow.

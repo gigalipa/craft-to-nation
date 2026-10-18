@@ -1,72 +1,58 @@
-# Arquitectura Técnica en Godot 4 & PoCs
+# Arquitectura Técnica en Godot 4.6 & PoCs
 
-El desarrollo de *Craft to Nation* se construye sobre **Godot 4**, aprovechando su sistema de nodos por composición, el motor de sombreado moderno y un bucle de simulación por ticks discretos desacoplado de la tasa de cuadros por segundo (*framerate*).
+![Interfaz de construcción en primera persona y mundo vóxel](/assets/hud-primera-persona-construccion.png)
+
+El desarrollo de **Craft to Nation** está construido en **Godot 4.6** (`GDScript`), empleando una arquitectura desacoplada donde la lógica pura de simulación (`RefCounted` y `Autoloads` sin `class_name` global para evitar colisiones de caché) avanza en ticks deterministas independientes de los cuadros por segundo (*framerate*).
 
 ---
 
-## 1. Arquitectura del Motor y Bucle de Simulación
+## 1. Arquitectura Temporal y Bucle de Simulación
 
-El juego divide su ejecución en dos capas temporales:
+El motor divide su ejecución en dos capas temporales simultáneas:
 
 ```
-[Render & Físicas del Avatar]  ──>  60 / 120 FPS continuos (_process / _physics_process)
-                                            │
-[Bucle Macro de Simulación]   ──>  Tick discreto: 2.0 segundos reales = 1 hora de juego
-                                    • Consumo metabólico de colonos
-                                    • Extracción de puestos periféricos
-                                    • Refinamiento en industrias
-                                    • Flujo de fluidos en ductos
-                                    • Cálculo de moral y productividad
+[Render, Físicas del Avatar y Agentes NPC] ──> 60 / 120 FPS continuos (_process / _physics_process)
+                                                        │
+[Bucle Macro de Simulación (Ciudad/Economia)] ──> Tick discreto: 2,0 segundos reales = 1 hora de juego
+                                                  • Consumo metabólico de colonos y avatar
+                                                  • Extracción física de bloques en puestos
+                                                  • Procesamiento de lotes en refinerías y energía
+                                                  • Conducción de fluidos y nivelación por gravedad
+                                                  • Cálculo de moral diaria (/24.0) y migración mensual
 ```
 
 ### El Sistema de Ticks (`Ciudad.gd` y `Economia.gd`)
-- **Duración del Tick (`SEGUNDOS_POR_TICK`):** **2.0** segundos de tiempo real equivalen exactamente a **1** hora de tiempo simulado dentro del juego.
-- **Relación con el Ciclo Estándar:** **1** ciclo de balance estándar (**60** segundos reales) equivale a **30** ticks de simulación (**30** horas de juego).
-- **Consumo y Producción Atómica:** Cada 2 segundos, el despachador central evalúa el gasto de alimentos, los insumos de combustible y la recolección horaria de cada puesto activo, actualizando los registros de almacenamiento en memoria sin bloquear el hilo principal de renderizado.
+- **Duración del Tick (`SEGUNDOS_POR_TICK`):** **2,0 segundos** de tiempo real equivalen exactamente a **1 hora** de tiempo simulado dentro del juego (`24 ticks = 1 día = 48 s reales`; `720 ticks = 1 mes = 24 min reales`).
+- **Relación con el Ciclo Estándar de Balance:** **1 ciclo estándar (`60 s` reales)** equivale a **30 horas de juego**.
+- **Mundo Vóxel Finito (`200×200` celdas):** Generado por `GeneradorMundo.gd` sobre un `GridMap` tridimensional con altura máxima `y = 130`, **24 capas de subsuelo** hasta la roca madre (`bedrock`) indestructible, 2 picos montañosos, 6 minerales, yacimientos profundos de crudo, ríos con corriente y cascadas, lagos y mares.
 
 ---
 
-## 2. Mapa de Escenas y Scripts Principales
+## 2. Mapa de Scripts y Autoloads Reales (`godot/scripts/`)
 
-El proyecto se estructura en módulos desacoplados bajo `godot/`:
+### Autoloads de Estado y Simulación
+- **`Ciudad.gd`:** Censo demográfico (`TIPOS_POBLACION`), almacén central (`Ciudad.almacen`), niveles urbanos `1–3` (`NIVELES_VIVIENDA`), investigación universitaria, curva continua de productividad y migración mensual escalonada (`calcular_tasa_migracion_mensual`).
+- **`Economia.gd`:** Orquestador del tick económico horario, reservas de materia prima (`[0, 50, 100, 250, 500] u`), despacho de acarreadores, balance eléctrico en `kW / MW` y ciclos de formación en escuelas.
+- **`Recoleccion.gd`:** Registro espacial de puestos periféricos, cálculo de tasas ambientales cada `6 h`, niveles de puesto `I–III`, regresión de nivel y agotamiento físico de bloques/árboles.
+- **`CadenaMinerales.gd`:** Catálogo de las 7 recetas de refinado industrial (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
+- **`Canalizaciones.gd` y `Fluidos.gd`:** Topología de redes de acueductos y tuberías en `Y + 6`, puertos de conexión en capa 4, detección de derrames y propagación de líquidos por gravedad y viscosidad.
+- **`Zonificacion.gd`:** Delimitación de los polígonos de **Zona A** y **Zona B** dentro del radio de influencia (`30` celdas) del Núcleo Urbano.
 
-### Escenas Principales (`godot/scenes/`)
-- `Main.tscn`: Escena maestra que ensambla el mundo procedural (`VoxelWorld`), el avatar del jugador (`Player`), la cámara cenital (`CamaraCenital`), el gestor de simulación (`Ciudad`) y la interfaz (`HUD`).
-- `Player.tscn`: Controlador de avatar en primera persona con mecánicas de salto, agachado, natación con barra de oxígeno, linterna de minero (`L`) y colisiones físicas continuas.
-- `CamaraCenitalModosTest.tscn`: Cámara táctica ortogonal/perspectiva para planificación urbana, trazado de carreteras y previsualización de blueprints.
-- `Test.tscn`: Suite central de integración automatizada.
-
-### Scripts y Autoloads Centrales (`godot/scripts/`)
-- `Ciudad.gd`: Núcleo cívico, censo demográfico, almacenamiento municipal (`Ciudad.almacen`), factor de núcleo e inmigración.
-- `Economia.gd`: Gestión de balances económicos, reservas de materias primas y jerarquía logística.
-- `Recoleccion.gd`: Lógica de puestos periféricos, tasas de extracción ambiental y agotamiento de recursos.
-- `CadenaMinerales.gd`: Recetas industriales para aserraderos, siderúrgicas, carboneras y refinerías.
-- `Canalizaciones.gd`: Topología de acueductos y tuberías, redes de fluidos, puertos de conexión y detección de derrames.
-- `Colonos.gd`: Pathfinding cívico, asignación de camas, oficios, acarreo terrestre y estados de ánimo.
-- `BlueprintValidator.gd`: Validación volumétrica de edificios herméticos, despeje de camas y orientación de puertas.
+### Subsistemas Espaciales, Agentes e Interfaz HUD (v3.57)
+- **`VoxelWorld.gd` y `GeneradorMundo.gd`:** Gestión del `GridMap` 3D, colocación/extracción de bloques, iluminación diurna/nocturna (`CicloDiaNoche.gd`) y agua estilo *Minecraft*.
+- **`ValidadorEdificios.gd` y `PlantillasPuesto.gd`:** Reconocimiento volumétrico por *flood-fill* de edificios herméticos, validación de despeje de puertas/camas y plantillas predefinidas con rotación de `90°`.
+- **`Obras.gd`, `ConstructorVias.gd` y `NiveladorTerreno.gd`:** Gestión de obras de construcción/demolición con hasta `4` obreros por obra, prioridades (`Alta`, `Normal`, `Baja`) y tendido de carreteras con rampas.
+- **`Colonos.gd` y `BuscadorRutas.gd`:** Máquina de estados finitos (FSM) de los agentes NPC y *pathfinding* A* ponderado (costo `3` en vía vs. `8` en terreno natural) con jerarquía de cesión de paso lateral.
+- **`IconosHUD.gd` y `MiniaturaRenderer.gd`:** Catálogo centralizado de **más de 90 iconos SVG pixel-art** (`godot/assets/icons/*.svg`) y generador de miniaturas 3D en vivo para `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px`), `VentanaMoral.gd`, `VentanaEnergia.gd`, `VentanaAlmacen.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd` y `PanelCanalizacion.gd`.
 
 ---
 
-## 3. Estado de las Pruebas de Concepto (PoC)
+## 3. Activos 3D y Suite de 28 Escenas de Prueba (`godot/scenes/*Test.tscn`)
 
-El desarrollo técnico se valida de forma incremental mediante **Pruebas de Concepto (PoC)** ejecutables:
+El proyecto integra paquetes de modelos 3D *low-poly* bajo licencia **CC0**:
+- **KayKit Block Bits & Medieval Hexagon Pack:** Bloques de terreno, recursos y estructuras.
+- **Quaternius Modular Men:** Modelos articulados de colonos y trabajadores.
+- **Poly Haven:** Texturas ambientales y materiales.
 
-| PoC / Fase | Título y Enfoque | Componentes Clave | Estado Actual |
-| :--- | :--- | :--- | :--- |
-| **PoC 1** | **Mundo Vóxel y Generación Procedural** | `VoxelWorld.gd`, `GeneradorMundo.gd` | ✅ Completado |
-| **PoC 2** | **Avatar 1ra Persona, Físicas y Subsuelo** | `Player.gd`, natación, linterna | ✅ Completado |
-| **PoC 3** | **Validación Volumétrica de Blueprints** | `BlueprintValidator.gd`, habitaciones | ✅ Completado |
-| **PoC 4** | **Cámara Cenital y Zonificación A/B** | `CamaraCenital.gd`, `Zonificacion.gd` | ✅ Completado |
-| **PoC 5** | **Puestos de Extracción, Nivelación y Acarreo**| `Recoleccion.gd`, `PlantillasPuesto.gd` | ✅ Completado |
-| **PoC 6** | **Fluidos, Subsuelo Profundo y Canalizaciones**| `Canalizaciones.gd`, pozos de crudo | ✅ Completado |
-| **PoC 7** | **Cámara Dual y Selección de Tropas** | Controlador táctico RTS de escuadrones | 🟡 En diseño |
-| **PoC 8-10**| **Carretas Terrestres, Puentes y Redes Férreas**| Vehículos con ruedas y vías avanzadas | 🟡 Planificado |
-
----
-
-## 4. Garantía de Calidad y Suite de Pruebas
-
-El repositorio mantiene una estricta política de estabilidad donde cada modificación al balance o a los sistemas de simulación se verifica mediante pruebas automatizadas:
-
-> [!IMPORTANT] Cobertura de Pruebas
-> El proyecto cuenta con **28 escenas de prueba independientes al 100% en verde**, abarcando desde la mecánica de fluidos y pathfinding ponderado en carreteras hasta la formación de técnicos y la curva continua de moral cívica.
+> [!IMPORTANT] Verificación Automatizada (28 Escenas al 100 % en Verde)
+> Cada sistema cuenta con su propia escena de prueba ejecutable en modo *headless* (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `UI Mejoras Visuales (IconosHUD)`, entre otras), sumando **28 suites completas en verde**.

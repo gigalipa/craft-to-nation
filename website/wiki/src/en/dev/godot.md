@@ -1,81 +1,55 @@
-# Godot 4 Technical Architecture & Simulation Engine
+# Godot 4.6 Technical Architecture & Simulation Engine
 
-*Craft to Nation* is engineered in **Godot 4.x**, leveraging custom GDScript simulation managers, deterministic tick systems, and a hybrid voxel-tile environment to achieve high performance under hundreds of active autonomous agents.
+![First-person construction HUD and voxel environment](/assets/hud-primera-persona-construccion.png)
 
----
-
-## 1. Discrete Time & Simulation Ticks
-
-The simulation operates on a deterministic tick frequency decoupled from the rendering framerate:
-
-```
-  ┌─────────────────────────────────────────────────────────────┐
-  │                    TIME ARCHITECTURE                        │
-  ├─────────────────────────────────────────────────────────────┤
-  │ • Real Time per Tick:     2.0 seconds (SEGUNDOS_POR_TICK)   │
-  │ • In-Game Time per Tick:  1.0 in-game hour                  │
-  │ • Macro-Cycle (Wiki):     60 seconds real time              │
-  │ • Equivalence:            1 Macro-Cycle = 30 Game Hours     │
-  └─────────────────────────────────────────────────────────────┘
-```
-
-- **Hourly State Updates:** Every 2.0 real seconds, `Ciudad.gd` triggers an hourly simulation tick across the colony. Metabolic hunger is consumed, production batches advance, outposts accumulate raw goods, and dynamic morale is recalculated.
-- **Micro-Steps:** Agent movement, pathfinding interpolation, and voxel particle physics update on the standard `_physics_process(delta)` loop, ensuring fluid first-person gameplay and smooth NPC ambulation.
+**Craft to Nation** is engineered in **Godot 4.6** (`GDScript`), combining pure simulation state managers (`RefCounted` modules and `Autoloads` without global `class_name` pollution) with a deterministic discrete tick loop decoupled from the rendering framerate.
 
 ---
 
-## 2. Core Architecture & Primary Simulation Scripts
+## 1. Discrete Time & Simulation Architecture
 
-The game's simulation logic is organized into specialized domain managers:
+```
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                         TIME ARCHITECTURE                           │
+  ├─────────────────────────────────────────────────────────────────────┤
+  │ • Real Time per Tick:     2.0 seconds (SEGUNDOS_POR_TICK)           │
+  │ • In-Game Time per Tick:  1.0 in-game hour (24 ticks = 1 day = 48s) │
+  │ • Simulation Month:       720 ticks = 30 days = 24 real minutes     │
+  │ • Standard Wiki Cycle:    60 real seconds = 30 in-game hours        │
+  │ • Voxel World Dimensions: 200×200 cells, max height Y=130, 24 depth │
+  └─────────────────────────────────────────────────────────────────────┘
+```
 
-### `Ciudad.gd` (Central Settlement & Civic Registry)
-- Maintains the master state of the colony: total census, active careers, housing registries, and civic influence borders.
-- Manages the **Central Stockpile** (`Ciudad.almacen`):
-  - Base capacity: 500 per resource, 5,000 for food (`LIMITE_BASE`, `LIMITE_BASE_COMIDA`).
-  - Core declaration multiplier (`FACTOR_NUCLEO = 2.0`).
-  - Residential chest capacity expansion (`BONO_BAUL = 100`).
-- Executes hourly starvation checks and demographic mortality routines.
-
-### `Colonos.gd` & `AgenteColono.gd` (Agent FSM & Navigation)
-- Implements a multi-state finite state machine (FSM) for each NPC: `IDLE`, `WALKING_TO_WORK`, `GATHERING`, `HAULING`, `SLEEPING`, `HOMELESS`.
-- Governs individual career ranks (Citizen, Unemployed, Worker, Technician, Specialist, Researcher, Military) and educational promotion.
-- Executes A* navigation across weighted voxel surfaces (dirt roads vs. rough wilderness).
-
-### `Recoleccion.gd` (Peripheral Outposts & Depletion)
-- Handles harvest yields for lumber camps, mines, foraging lodges, and fishing docks.
-- Performs an environmental scan every 6 in-game hours, dynamically adjusting outpost extraction rates based on remaining trees, ore blocks, or connected water surface area.
-
-### `CadenaMinerales.gd` & `Economia.gd` (Refining & Logistics)
-- Coordinates industrial recipe batching in sawmills, block factories, steel mills, and petroleum refineries.
-- Regulates hauler dispatching, minimum delivery batching (10 units), and warehouse distribution quotas.
-
-### `Canalizaciones.gd` (Fluid Physics & Modular Pipelines)
-- Simulates elevated pressurized fluid conduits for fresh water, crude oil, and refined fuel.
-- Manages hydrostatic spreading, spill calculations, and port-to-port connections.
-
-### `VoxelWorld.gd` (Voxel Grid & Structural Validation)
-- Handles 3D voxel chunk loading, block modification, terrain leveling, and raycasting.
-- Executes flood-fill room detection, ceiling clearance validation, and structural integrity verification.
+- **Hourly State Updates (`2.0s`):** Every 2.0 real seconds, `Ciudad.gd` and `Economia.gd` execute an atomic hourly tick: metabolic food consumption, physical block extraction in outposts, refinery batch processing, fluid conduction, power grid `kW / MW` balance, daily morale fraction (`tasa_cambio_moral / 24.0`), and stepped monthly migration.
+- **Continuous Physics (`_physics_process`):** First-person avatar movement, river current drift, underwater swimming (`10s` oxygen bar), and NPC A* navigation run smoothly at full framerate.
 
 ---
 
-## 3. Proof of Concept (PoC) Progression & Verification
+## 2. Core Scripts & Autoloads (`godot/scripts/`)
 
-The codebase has evolved through rigorous, test-driven developmental phases:
+### Simulation State Autoloads
+- **`Ciudad.gd`:** Master colony state: demographic census (`TIPOS_POBLACION`), Central Stockpile (`Ciudad.almacen`), Urban Levels `1–3` (`NIVELES_VIVIENDA`), university tech tree, continuous productivity curve, and the 9-tier stepped monthly migration table (`calcular_tasa_migracion_mensual`).
+- **`Economia.gd`:** Hourly economic dispatcher, raw material reserve quotas (`[0, 50, 100, 250, 500] u`), hauler task scheduling, electrical grid balance (`kW / MW`), and school training cohorts.
+- **`Recoleccion.gd`:** Spatial registry of peripheral outposts, 6-hour environmental yield scans, outpost levels `I–III`, automatic level regression, and physical block/tree depletion.
+- **`CadenaMinerales.gd`:** Defines all 7 industrial refinement recipes (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
+- **`Canalizaciones.gd` & `Fluidos.gd`:** Elevated `Y + 6` modular fluid pipelines, layer-4 fluid ports, rupture spill detection, and gravity/viscosity liquid spreading.
+- **`Zonificacion.gd`:** Manages **Zone A** and **Zone B** polygons inside the Urban Core's `30-cell` Area of Influence.
 
-```
-  PoC 1 ──► PoC 2 ──► PoC 3 ──► PoC 4 ──► PoC 5 ──► PoC 6 (Current)
- (Voxel    (Shelter   (Civic     (Blueprints (Outposts  (Fluids, Power,
-  Basics)   Enclosure) Core)      & Jobsites) & Hauling) Dynamic Morale)
-```
+### Voxel World, Agents & HUD Iconography (v3.57)
+- **`VoxelWorld.gd` & `GeneradorMundo.gd`:** Manages the **200×200** 3D `GridMap` (`y = 130` max height, 24 subsurface layers down to unmineable `bedrock`, 2 mountain peaks, 6 minerals, deep oil reservoirs, rivers with waterfalls, lakes, and seas) plus day/night lighting (`CicloDiaNoche.gd`).
+- **`ValidadorEdificios.gd` & `PlantillasPuesto.gd`:** Flood-fill airtight room detection, doorway/bed clearance audits, and rotatable (`90°`) facility templates.
+- **`Obras.gd`, `ConstructorVias.gd` & `NiveladorTerreno.gd`:** Construction and demolition jobsite management (up to `4` builders per site, `2 blocks/s` speed), work priorities (`High`, `Normal`, `Low`), and road laying with automatic ramps.
+- **`Colonos.gd` & `BuscadorRutas.gd`:** NPC agent finite state machine (FSM) and weighted A* pathfinding (cost `3` on packed dirt roads vs. cost `8` on natural terrain) with lateral yield priorities.
+- **`IconosHUD.gd` & `MiniaturaRenderer.gd`:** Centralized catalog of **90+ crisp pixel-art SVG icons** (`godot/assets/icons/*.svg`) and live 3D thumbnail renderer powering `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px` build buttons), `VentanaMoral.gd`, `VentanaEnergia.gd`, `VentanaAlmacen.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd`, and `PanelCanalizacion.gd`.
 
-- **PoC 1 — Voxel Substrate & First-Person Survival:** Basic block mining, tool durability, player inventory, and natural terrain generation.
-- **PoC 2 — Structural Enclosure & Habitability:** Raycast flood-fill room recognition, airtight perimeter testing, and bed clearances.
-- **PoC 3 — The Urban Core & Influence Radius:** Core declaration, camera switching, immigration spawning, and early demography.
-- **PoC 4 — Parameterized Blueprints & Construction Crews:** Blueprint capture, ghost placement preview, and auto-assigned construction crews.
-- **PoC 5 — Peripheral Outposts & Land Hauling:** Lumber camps, mines, fishing docks, local outpost storage buffers, and dedicated carrier haulers.
-- **PoC 6 — Industrial Chains, Fluid Pipelines & Dynamic Morale:** Multi-tier refining, elevated pipelines, electricity distribution grids, and psychological morale modulation (v3.56).
+---
 
-### Test Suite Status:
-- **28 automated test scenes** passing **100% in green**.
-- Over **560 discrete unit and integration test blocks** verified before every milestone commit.
+## 3. CC0 3D Asset Packs & 28 Automated Test Scenes (`godot/scenes/*Test.tscn`)
+
+The project integrates CC0 low-poly 3D asset packs:
+- **KayKit Block Bits & Medieval Hexagon Pack:** Voxel terrain blocks, props, and structural elements.
+- **Quaternius Modular Men:** Articulated colonist and worker character meshes.
+- **Poly Haven:** Environmental materials and textures.
+
+> [!IMPORTANT] 28 Automated Test Scenes (100% Green)
+> Every subsystem is verified by dedicated headless test scenes (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, etc.), maintaining **28 complete test suites passing 100% in green**.

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <circle cx="8" cy="8" r="7" fill="#C79E40" stroke="#2B2D31" stroke-width="1"/>
+  <circle cx="8" cy="8" r="5" fill="#F2EBD1"/>
+  <!-- Aguja norte (roja) / sur (azul) -->
+  <polygon points="8,3 6,8 8,7 10,8" fill="#FF5959"/>
+  <polygon points="8,13 6,8 8,9 10,8" fill="#42A5F5"/>
+
+</svg>

@@ -1,67 +1,61 @@
-# Development Roadmap & Milestone Progress
+# Development Roadmap & Milestone Progress (GDD v3.57)
 
-This roadmap outlines the past, current, and upcoming development milestones for **Craft to Nation**, tracing its evolution from foundational proof-of-concept sandboxes to a full-featured strategy and simulation experience.
+![Tactical aerial view of city defense and expansion](/assets/comparison-aerial.webp)
+
+This roadmap tracks the past, current, and upcoming development milestones for **Craft to Nation** across the 7 official phases defined in **Section 11 of GDD v3.57**, backed by **28 automated test scenes running 100% in green**.
 
 ---
 
-## 1. Milestone Status Overview
+## 1. Seven-Phase Project Overview
 
 ```
-  Phase 1: Genesis & Survival            [████████████████████] 100% (Completed)
-  Phase 2: Settlement & Urban Core       [████████████████████] 100% (Completed)
-  Phase 3: Zoning, Logistics & Industry  [██████████████████░░]  92% (Active Finalization)
-  Phase 4: Warfare & Multiplayer         [████░░░░░░░░░░░░░░░░]  20% (Architectural Design)
+  Phase 0: Pure Simulation Logic (PoC 1 & 2)         [████████████████████] 100% (Completed)
+  Phase 1: 1st-Person Voxel & Volume Audit (PoC 3)   [████████████████████] 100% (Verified)
+  Phase 2: City, Demography, Zoning & NPCs (PoC 4/8) [████████████████████] 100% (Completed)
+  Phase 3: 200×200 World, Industry, Fluids, HUD v3.57[███████████████████░]  98% (Final Polish)
+  Phase 4: Dual Combat Camera & Squad RTS (PoC 7)    [████░░░░░░░░░░░░░░░░]  Planned
+  Phase 5: Advanced Logistics & Bridges (PoC 8–10)   [██░░░░░░░░░░░░░░░░░░]  Planned
+  Phase 6: Warfare, Sieges, AI & Avatar Succession   [██░░░░░░░░░░░░░░░░░░]  Planned
+  Phase 7: LAN Multiplayer & Portable Urban Cores    [█░░░░░░░░░░░░░░░░░░░]  Future Horizon
 ```
 
 ---
 
-## 2. Detailed Phase Breakdown
+## 2. Completed Milestones (Phases 0 to 3 — GDD v3.57)
 
-### Phase 1: Genesis & Survival (Completed)
-- [x] Voxel world generation with procedural biomes, heightmaps, and natural foliage.
-- [x] First-person pioneer avatar controls, camera raycasting, and block interaction.
-- [x] Manual resource extraction (mining stone/ores, chopping trees, foraging berries).
-- [x] Primitive tool crafting system (durability, harvest speed modifiers).
-- [x] Basic survival HUD (hunger bar, health, stamina, quick-inventory belt).
+### Phase 0 & Phase 1: Voxel Substrate, First-Person Avatar & Volumetric Validation
+- [x] Finite procedural **200×200 voxel world** (`GeneradorMundo.gd`) with max height `y = 130`, **24 subsurface layers** down to unmineable `bedrock`, 2 mountain peaks, rivers with water currents and waterfalls, lakes, and seas.
+- [x] First-person pioneer avatar (`Player.gd`) with progressive crack block mining, non-destructive fruit foraging (`60 u` in `2.0s`), swimming with `10.0s` oxygen bar, and miner headlamp (<kbd>L</kbd>).
+- [x] Flood-fill airtight room recognition (`ValidadorEdificios.gd`), building declaration (<kbd>B</kbd>), and non-destructive remodeling (<kbd>Shift</kbd> + <kbd>B</kbd>).
 
-### Phase 2: Settlement & Urban Foundation (Completed)
-- [x] Structural volume evaluation algorithm for airtight rooms and ceiling heights.
-- [x] Urban Core (`Núcleo Urbano`) declaration mechanics via entrance doors (`Shift + B`).
-- [x] Projection of the civic **Area of Influence** radius around the Core.
-- [x] Seamless perspective toggle to overhead tactical City Builder camera (`C` key).
-- [x] Bed allocation system and basic civilian immigration waves.
-- [x] Parameterized blueprint capture, ghost preview, and auto-assigned construction crews.
+### Phase 2: Urban Foundation, Overhead Camera & Demographics
+- [x] Tactical overhead camera (`CamaraCenital.gd`) with smooth `0.6s` animated camera flight (<kbd>C</kbd>), `90°` template rotation (`Ctrl + Wheel`), and up to 5 persistent blueprints.
+- [x] Tripartite **Zone A** and **Zone B** district painting inside the Urban Core's `30-cell` Area of Influence (`Zonificacion.gd`).
+- [x] Urban Levels `1–3` (`2×2`, `4×4`, and `8×4` floors/beds), `24h` colonizability buffers, cohort training schools (`escuela_tecnica`, `escuela_especialistas`), and `universidad`.
 
-### Phase 3: Zoning, Logistics & Industrialization (Current Phase — 92% Complete)
-- [x] **Tripartite District Zoning:** Strict separation between Zone A (Civic/Research), Zone B (Industrial/Military), and the Periphery.
-- [x] **Peripheral Extraction Outposts:** Lumberjack camps, stone/mineral mines, hunting lodges, and fishing docks with dynamic resource depletion.
-- [x] **Solid Land Haulage:** Carrier haulers (150 capacity, 2.5 cells/s speed), weighted road pathfinding (cost 8 wilderness vs cost 3 packed dirt), and single-cell priority yield rules.
-- [x] **Industrial Refining Chains:** Sawmills, block factories, charcoal kilns, steel blast furnaces, and petroleum refineries.
-- [x] **Vocational Education & Demographics:** Technical School, Specialist Academy, and University vocational promotions.
-- [x] **Pressurized Fluid Distribution:** Modular 4-piece elevated pipeline system at `Y + 6` (`Y + 5` ground clearance), viscosity physics, and pumping stations.
-- [x] **Dynamic Morale System (GDD v3.56):** 0–100 psychological morale score modulating productivity (`X = 0.5 × 2^(Y / 50)`), starvation casualties, and brain drain exodus.
-- [x] **Automated Test Coverage:** 28 complete test scenes running 100% in green (>560 test assertions).
-- [ ] *In Progress:* Automated road laying by colonist road crews.
-- [ ] *In Progress:* Universal Era 3 electrical grid connections for civil residences.
-
-### Phase 4: Military Expansion & Competitive Multiplayer (Upcoming)
-- [ ] **Defensive Fortifications:** Modular stone ramparts, crenelated battlements, arrow slits, and automated ballista turrets.
-- [ ] **Military Divisions & Barracks:** Training militia infantry, crossbowmen, cavalry scouts, and siege sappers.
-- [ ] **Siege Mechanics:** Trebuchets, battering rams, dynamic structural collapse physics under explosive impact.
-- [ ] **Bandit Camps & AI Raids:** Wandering brigands and AI warlord strongholds threatening peripheral outposts.
-- [ ] **Portable Sovereign Cores:** Serialization pipeline allowing players to export their Urban Core and blueprints into procedural competitive multiplayer servers.
-- [ ] **Multiplayer Matchmaking & Territorial Warfare:** Real-time cooperative settlement building and competitive nation-versus-nation skirmishes.
+### Phase 3: Industries, Fluids, Dynamic Morale & HUD Iconography (v3.56 – v3.57)
+- [x] **Peripheral Outposts with Levels `I–III` & Physical Depletion:** `maderero`, `mina` (depths 8/16/24), `caza_recoleccion`, `pesca_frutos_mar`, `estacion_bombeo`, and `centro_extraccion` with automatic level regression.
+- [x] **Colonist Road-Laying Crews (`ConstructorVias.gd`):** Packed dirt roads (`+35%` speed bonus, A* step cost `3` vs `8`), built by colonist work crews with configurable priorities (**High `▲▲▲`**, **Normal `▲▲`**, **Low `▲`**) and guided road network demolition.
+- [x] **All 8 Industrial & Power Facilities:** `aserradero`, `fabrica_bloques`, `carbonera`, `siderurgica`, `refineria_tierras_raras`, `refineria_petrolera` (400/600 split cap), `productor_combustible`, and `central_termoelectrica` (`20 E/h`, `500 Coal` strategic reserve).
+- [x] **Raw Material Reserve Quotas (`[0, 50, 100, 250, 500] u`):** Configurable raw wood and stone reserve thresholds in `VentanaAlmacen.gd` and factories.
+- [x] **Elevated Modular Fluid Pipelines (`Y + 6`):** Aqueducts and industrial pipelines with `Y + 5` ground clearance, viscosity spill physics, and `PanelCanalizacion.gd` flow diagnostics.
+- [x] **Dynamic Morale & Stepped Monthly Migration (`Ciudad.gd`):** Continuous productivity curve (`0.5 × 2^(Morale / 50)`), daily morale rate applied hourly (`/ 24.0`), and the 9-tier stepped monthly migration table (`-5` to `+5 colonists/month`).
+- [x] **Vector HUD Iconography & Live 3D Thumbnails (v3.57):** **90+ crisp pixel-art SVG icons** (`IconosHUD.gd`), live 3D thumbnails (`MiniaturaRenderer.gd`), `104×76 px` build buttons (`BarraModos.gd`), and `kW / MW` tri-color power indicator (`BarraSuperior.gd`).
 
 ---
 
-## 3. Version History & Milestone Tracking
+## 3. Remaining Tasks for Phase 3 Sign-Off
 
-| Version | Milestone Focus | Status | Test Scene Suite |
-| :--- | :--- | :--- | :--- |
-| **v3.47** | Bed clearance validation and notification decoupling | Released | 25 scenes / 463 tests |
-| **v3.49** | Outpost workforce levels 1–3, technical schools | Released | 26 scenes / 523 tests |
-| **v3.50** | Fluid pipelines, thermal power plants, traffic priorities | Released | 26 scenes / 554 tests |
-| **v3.52** | Non-destructive remodeling (`Shift+B`), homeless status | Released | 26 scenes / 562 tests |
-| **v3.54** | Elevated pipeline modularity (`Y + 6`), oil viscosity | Released | 28 scenes / 100% green |
-| **v3.56** | Dynamic Morale System, productivity curve, brain drain | **Current Baseline** | 28 scenes / 100% green |
-| **v4.00** | Full Military Logistics & First Multiplayer Alpha | In Development | Target: Q4 2026 |
+1. **Long-Session Live Balance Pass:** Extended playtesting of Urban Level 1 → 2 → 3 progression pacing under the stepped monthly migration table.
+2. **Universal Era 3 Civil Power Consumption:** Extending electrical grid demand to advanced civil buildings upon reaching Era 3.
+
+---
+
+## 4. Upcoming Phases (Phases 4 to 7)
+
+| Phase / Version | Milestone Focus | Key Systems |
+| :--- | :--- | :--- |
+| **Phase 4 (PoC 7)** | **Dual Camera & Squad RTS Selection** | Box-selection and tactical squad orders (`militar`) from overhead view seamlessly paired with 1st-person combat. |
+| **Phase 5 (PoC 8–10)** | **Advanced Logistics & Bridge Engineering** | High-capacity land wagons, modular bridges over rivers/canyons, and freight railway networks. |
+| **Phase 6** | **Warfare, Sieges, AI & Avatar Succession** | Procedural AI bandit camps, outpost raids, defensive walls/turrets, and avatar succession upon death (`K` test hook active). |
+| **Phase 7** | **LAN Multiplayer & Portable Urban Cores** | Exporting the validated Urban Core and blueprints into competitive and cooperative LAN/dedicated multiplayer worlds. |

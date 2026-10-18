@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <rect x="2" y="8" width="12" height="5" fill="#8D6E63"/>
+  <rect x="4" y="7" width="9" height="3" fill="#42A5F5"/>
+  <!-- Almohada -->
+  <rect x="2" y="7" width="3" height="3" fill="#FFFFFF"/>
+  <!-- Patas -->
+  <rect x="2" y="13" width="2" height="2" fill="#4E342E"/>
+  <rect x="12" y="13" width="2" height="2" fill="#4E342E"/>
+
+</svg>

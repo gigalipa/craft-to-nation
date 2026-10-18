@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+
+  <!-- Cabeza -->
+  <rect x="6" y="2" width="4" height="4" fill="#F2EBD1"/>
+  <rect x="5" y="3" width="6" height="2" fill="#F2EBD1"/>
+  <!-- Cuello y hombros -->
+  <rect x="7" y="6" width="2" height="2" fill="#F2EBD1"/>
+  <rect x="4" y="8" width="8" height="2" fill="#F2EBD1"/>
+  <!-- Torso -->
+  <rect x="3" y="10" width="10" height="5" fill="#F2EBD1"/>
+
+  <!-- Libro abierto -->
+  <rect x="4" y="12" width="5" height="3" fill="#FFFFFF"/>
+  <!-- Flecha verde ascendente -->
+  <rect x="11" y="9" width="3" height="1" fill="#73E673"/>
+  <rect x="12" y="8" width="1" height="5" fill="#73E673"/>
+
+</svg>

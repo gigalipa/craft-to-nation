@@ -1,17 +1,27 @@
 # Pilares de Diseño y GDD (v3.57)
 
-El **Documento de Diseño de Juego (GDD)** de *Craft to Nation* establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.57**.
+El **Documento de Diseño de Juego (GDD)** de **Craft to Nation** establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el marco evolutivo de eras tecnológicas, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.57**.
 
 ---
 
-## 1. Visión y Eslogan
+## 1. Visión, Eslogan y Marco de Eras Tecnológicas
 
 > **Eslogan Oficial:** *From first block to living nation.* / *Del primer bloque a una nación viva.*  
 > **Frase de Campaña:** *Survive. Craft. Automate. Lead.*  
 > **Género Híbrido:** City Builder, Supervivencia en Primera Persona, Estrategia en Tiempo Real (RTS), Gestión y Logística de Fábricas.  
 > **Inspiraciones Clave:** *SimCity, Age of Empires, Minecraft, Mindustry.*
 
-*Craft to Nation* fusiona la inmersión íntima y visceral de la supervivencia en primera persona con la visión estratégica de un simulador urbano a escala continental. El jugador evoluciona desde un avatar solitario que recolecta madera y bayas a mano hasta el líder de un imperio industrial automatizado y fortificado.
+![Evolución a través de las eras tecnológicas en Craft to Nation](/assets/concept-era-evolution.webp)
+
+### Las Cinco Eras Tecnológicas y su Ramificación Ideológica
+La civilización progresa desde la supervivencia primitiva hasta un horizonte tecnológico bifurcado según las decisiones industriales y energéticas del jugador:
+1. **Era 1 — Prehistoria (Génesis):** Supervivencia manual, recolección de frutos, tierra compactada, adobe y madera en bruto.
+2. **Era 2 — Edad Antigua (Fundación Urbana):** Mampostería en piedra, acueductos, caminos de tierra pisada, aserraderos y carboneras.
+3. **Era 3 — Revolución Industrial y Steampunk:** Siderurgia de acero, estructuras de hierro, perforación petrolífera, redes de tuberías presurizadas y generación termoeléctrica (`kW / MW`).
+4. **Eras 4 y 5 — Bifurcación Tecnológica (Horizonte Futuro):**
+   - **Rama Dieselpunk:** Hegemonía de hidrocarburos pesados, blindados de asedio y fortificaciones de acero masivo.
+   - **Rama Cyberpunk:** Explotación intensiva de tierras raras, minerales refinados, automatización cibernética y redes de alta densidad.
+   - **Rama Solarpunk:** Integración ecológica, energías limpias de alta eficiencia y armonía entre bioma y metrópolis.
 
 ---
 
@@ -31,40 +41,19 @@ El **Documento de Diseño de Juego (GDD)** de *Craft to Nation* establece las di
 └──────────────────────────────────────┴────────────────────────────────┘
 ```
 
-1. **Dualidad de Perspectiva (Micro vs. Macro):** Capacidad de alternar fluidamente y en tiempo real entre la acción visceral en primera persona (intervención manual, minería, combate codo a codo) y la vista aérea táctica (planificación urbana, emisión de órdenes colectivas, tendido de carreteras).
-2. **Modularidad y Automatización por Plantillas (Blueprints):** Superación del desgaste repetitivo de la colocación bloque a bloque. El jugador diseña sus propios edificios libremente; el motor valida su hermeticidad y accesos, permitiendo guardarlos como plantillas reutilizables que los colonos construyen autónomamente.
-3. **Zonificación Estratégica y Logística Integral:** Estructuración del territorio en zonas residenciales/científicas (Zona A), polígonos industriales/militares (Zona B) y puestos remotos periféricos conectados mediante vías de tierra pisada, canalizaciones aéreas y tuberías de subsuelo.
-4. **Economía Orgánica y Demográfica:** La población civil no es un número abstracto: cada colono consume nutrientes según la exigencia física de su rol, vive en una residencia real y modula su productividad de acuerdo con su moral.
-5. **Soberanía Portátil y Núcleos Balanceados en Multijugador:** Los jugadores pueden transportar su núcleo urbano central y catálogo de blueprints a mundos procedurales multijugador competitivos, donde los trofeos ganados en combate potencian la moral ciudadana en su mundo de origen.
+1. **Dualidad de Perspectiva (Micro vs. Macro):** Alternancia en tiempo real (tecla <kbd>C</kbd>, vuelo de `0,6 s`) entre la acción visceral en primera persona (minería, construcción manual, defensa directa) y la vista aérea táctica (planificación urbana, asignación de cuadrillas, trazado de vías).
+2. **Modularidad y Automatización por Plantillas (*Blueprints*):** El jugador diseña libremente sus edificios; `ValidadorEdificios.gd` verifica su hermeticidad y accesos (<kbd>B</kbd> para declarar, <kbd>Shift</kbd> + <kbd>B</kbd> para remodelar sin demoler), permitiendo guardar hasta 5 diseños persistentes construibles por cuadrillas de colonos.
+3. **Zonificación Estratégica y Logística Integral:** Separación estricta entre **Zona A** (residencial, cívica y académica), **Zona B** (industrial y energética) y **Periferia** (extracción y bombeo) conectadas por caminos de tierra pisada y canalizaciones aéreas en `Y + 6`.
+4. **Economía Orgánica y Demográfica:** Cada colono consume nutrientes según la exigencia de su rol (`1` a `5 comida/h`), ocupa camas reales según su estrato (`x_cama`), asciende en escuelas de cohorte y responde a la moral cívica (`0` a `100`).
+5. **Soberanía Portátil y Núcleos Balanceados en Multijugador:** Exportación del Núcleo Urbano y catálogo de *blueprints* hacia mundos multijugador competitivos.
+
+![Red planetaria y soberanía portátil de núcleos urbanos](/assets/concept-planet-network.webp)
 
 ---
 
-## 3. Fases de Progresión y Game Loop
+## 3. Novedades Consolidadas en GDD v3.56 – v3.57
 
-El progreso de la civilización avanza a través de cuatro fases orgánicas interconectadas:
-
-### Fase 1: Génesis y Supervivencia (1ra Persona)
-El avatar aparece en un bioma procedural virgen. Debe recolectar alimentos silvestres para saciar su gasto calórico basal (5 u/h), talar madera, picar piedra superficial y construir su primer refugio hermético. Al formalizar este edificio como **Núcleo Urbano**, se activa el radio de influencia cívica y se duplica la capacidad del inventario central.
-
-### Fase 2: Asentamiento y Fundación Urbana
-Se habilita la cámara cenital libre (*Modo City Builder*). Al construir el primer edificio residencial con camas habitables, comienzan a llegar los primeros colonos inmigrantes. El jugador asigna oficios primarios y organiza los primeros servicios cívicos.
-
-### Fase 3: Zonificación, Logística e Industrialización
-Delimitación de distritos especializados dentro del área de influencia:
-- **Zona A:** Residencias, escuelas técnicas y universidades.
-- **Zona B:** Siderúrgicas, fábricas de bloques, refinerías de crudo y centrales termoeléctricas.
-- **Periferia:** Puestos remotos de extracción conectadas por acarreadores terrestres y redes de acueductos y tuberías.
-
-### Fase 4: Expansión Bélica y Multijugador
-Manufactura en serie de pertrechos militares, reclutamiento en cuarteles, asedio a fortalezas enemigas de la IA y batallas multijugador.
-
----
-
-## 4. Innovaciones Sistémicas de la Versión v3.56
-
-La actualización **v3.56** consolida mecánicas cívicas clave antes del despliegue de la Fase 4:
-
-- **Sistema de Moral Dinámica Continua [0 a 100]:** La moral parte en 75.0 (optimismo pionero) y converge hacia 50.0 con inercia horaria (`0.02`). Se modula por superávit (+0.4/h), diversidad de dieta (+0.5/h), hambruna (-3.0/h) y hacinamiento (-0.05/h por sin techo).
-- **Ley de Productividad Continua:** Curva exponencial `X = 0.5 × 2^(Y / 50)` donde la moral ajusta directamente las tasas de extracción y refinamiento entre **0.5×** y **2.0×**.
-- **Ventana de Tolerancia Cívica:** Ampliación a 72 horas (3 días) antes de que un colono sin techo abandone la ciudad al exilio. Los desempleados disponen de 10 días (240 horas) para encontrar oficio.
-- **Estado Técnico de Verificación:** Cobertura de pruebas automatizadas al **100% en verde en 28 escenas de prueba independientes**.
+- **Iconografía Vectorial HUD (`IconosHUD.gd`) y Miniaturas 3D (`MiniaturaRenderer.gd`):** Catálogo centralizado de **más de 90 iconos SVG pixel-art** (`shape-rendering="crispEdges"`), botones de construcción ampliados a `104×76 px` con insignias en 3 esquinas (insumos a la izquierda, rayo eléctrico al centro, producto a la derecha) y miniaturas 3D renderizadas en vivo.
+- **Red Eléctrica en kW / MW (`BarraSuperior.gd`, `VentanaEnergia.gd`):** Indicador interactivo de rayo tricolor (dorado = superávit, gris = sin demanda, rojo = déficit) con desglose detallado de generación y consumo por instalación.
+- **Moral Diaria y Migración Mensual Escalonada (`Ciudad.gd`):** Tasa de cambio diaria aplicada por fracción horaria (`tasa_cambio_moral / 24,0`) y tabla escalonada de migración mensual de **9 tramos** (`-5` a `+5 colonos/mes`), donde la inmigración entre `Moral 20` y `50` exige camas libres y por encima de `50` rebalsa hacia `sin_techo`.
+- **Cobertura de Verificación Continua:** **28 escenas de prueba automatizadas** pasando al **100 % en verde**.

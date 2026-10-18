@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="16" viewBox="0 0 20 16" shape-rendering="crispEdges">
+
+  <!-- Persona izquierda (fondo) -->
+  <g opacity="0.6">
+    <rect x="2" y="3" width="3" height="3" fill="#F2EBD1"/>
+    <rect x="1" y="6" width="5" height="7" fill="#F2EBD1"/>
+  </g>
+  <!-- Persona derecha (fondo) -->
+  <g opacity="0.6">
+    <rect x="14" y="3" width="3" height="3" fill="#F2EBD1"/>
+    <rect x="13" y="6" width="5" height="7" fill="#F2EBD1"/>
+  </g>
+  <!-- Persona central (frente) -->
+  <rect x="7" y="1" width="4" height="4" fill="#C79E40"/>
+  <rect x="5" y="5" width="8" height="9" fill="#C79E40"/>
+
+</svg>

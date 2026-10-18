@@ -5,15 +5,26 @@
 **Genre:** Hybrid City Builder, First-Person Survival, Real-Time Strategy (RTS), Factory Management & Logistics.  
 **Key Inspirations:** *SimCity*, *Age of Empires*, *Minecraft*, *Mindustry*.
 
+![Evolution across technological eras in Craft to Nation](/assets/concept-era-evolution.webp)
+
 ---
 
-## 1. Executive Summary & Core Design Pillars
+## 1. Executive Summary & Technological Era Framework
 
-*Craft to Nation* is an ambitious hybrid simulation and strategy game that bridges the visceral immersion of first-person survival sandboxes with the macroscopic vision of classic urban city builders and real-time strategy games. 
+**Craft to Nation** bridges the visceral immersion of first-person voxel survival sandboxes with the macroscopic vision of urban city builders and real-time strategy games inside a finite, procedurally generated **200×200 voxel world**.
 
-The player begins as an isolated pioneer in a procedurally generated, voxel-based wilderness. Through manual harvesting, architectural design, territorial district zoning, and the orchestration of complex logistical networks, the player elevates a fragile survival camp into an automated industrial metropolis capable of waging territorial campaigns.
+### The Five Technological Eras & Ideological Branching
+1. **Era 1 — Prehistoric (Genesis):** Manual foraging, timber felling, compacted earth, adobe, and raw wood shelters.
+2. **Era 2 — Ancient Age (Urban Foundation):** Cut stone masonry, aqueducts, packed dirt roads, sawmills, and charcoal kilns.
+3. **Era 3 — Industrial Revolution & Steampunk:** Steel metallurgy, iron framing, deep oil drilling, pressurized fluid pipelines, and thermoelectric power grids (`kW / MW`).
+4. **Eras 4 & 5 — Ideological Tech Branching (Future Horizon):**
+   - **Dieselpunk Branch:** Heavy hydrocarbon supremacy, mechanized siege armor, and massive steel fortifications.
+   - **Cyberpunk Branch:** Intensive rare-earth refining, high-density vertical arcologies, and automated cybernetic grids.
+   - **Solarpunk Branch:** Ecological synthesis, high-efficiency clean power, and symbiotic urban-biome architecture.
 
-### The Five Foundational Pillars:
+---
+
+## 2. The Five Core Design Pillars
 
 ```
   ┌────────────────────────────────────────────────────────┐
@@ -36,57 +47,19 @@ The player begins as an isolated pioneer in a procedurally generated, voxel-base
   └────────────────────────┴───────────────────────────────┘
 ```
 
-1. **Perspective Duality (Micro vs. Macro):** Players can seamlessly transition at any moment between first-person manual intervention (building walls, swinging picks, leading defenses) and the overhead tactical camera (allocating workforce, tracing highways, inspecting production metrics).
-2. **Modular Blueprints & Automated Construction:** Players bypass repetitive block-by-block grinding by capturing custom-built houses, factories, and fortifications as parameterized blueprints that can be placed instantly and built by NPC work crews.
-3. **Strategic Zoning & Tripartite Logistics:** Strict functional separation ensures natural city aesthetics and tactical vulnerabilities. Civic residences, heavy smelters, and wilderness extraction outposts require robust transport networks.
-4. **Organic Economy & Demographics:** Population is not an abstract percentage. Each citizen is a physically simulated agent with caloric demands, vocational qualifications, housing dependencies, and psychological morale.
-5. **Portable Sovereignty in Competitive Multiplayer:** The central Urban Core and validated blueprints can be packaged and deployed into procedural multiplayer worlds, ensuring rigorous balance without unearned late-game advantages.
+1. **Perspective Duality (Micro vs. Macro):** Switch at any time (key <kbd>C</kbd>, `0.6s` animated camera flight) between first-person manual action and the overhead tactical camera.
+2. **Modular Blueprints & Automated Construction:** Capture custom-built houses and warehouses (<kbd>B</kbd> to declare, <kbd>Shift</kbd> + <kbd>B</kbd> for non-destructive remodeling) as up to 5 persistent blueprints erected automatically by NPC work crews.
+3. **Strategic Zoning & Tripartite Logistics:** Strict separation between **Zone A (Civic/Academic)**, **Zone B (Industrial/Power)**, and the **Periphery (Extraction/Pumping)** connected by packed dirt roads and elevated `Y + 6` fluid pipelines.
+4. **Organic Economy & Demographics:** Every citizen consumes food according to their profession (`1.0` to `5.0 food/h`), occupies real beds (`x_cama`), advances through cohort schools, and responds to dynamic civic morale (`0` to `100`).
+5. **Portable Sovereignty in Competitive Multiplayer:** Export your validated Urban Core and blueprint catalog into procedural multiplayer worlds.
+
+![Planetary network and portable urban sovereignty](/assets/concept-planet-network.webp)
 
 ---
 
-## 2. The Four Gameplay Loop Phases
+## 3. Key Innovations Consolidated in GDD v3.56 – v3.57
 
-Gameplay unfolds across four interconnected technological and societal phases:
-
-### Phase 1: Genesis & Survival (First-Person Immersion)
-- The pioneer avatar spawns in a raw wilderness biome.
-- Basic survival mechanics: gathering wild flora, hunting small game, chopping timber, mining stone outcroppings.
-- Structural construction of the first airtight shelter and fabrication of starter tools.
-
-### Phase 2: Settlement & Urban Foundation
-- Enclosure and validation of the shelter as the **Urban Core**.
-- Projection of the **Area of Influence** and activation of the overhead City Builder camera.
-- Construction of dedicated residential barracks to trigger the first immigration waves.
-
-### Phase 3: Zoning, Logistics & Industrialization
-- Delimitation of **Zone A (Civic/Research)** and **Zone B (Industrial/Military)**.
-- Establishing remote extraction outposts across the wilderness for coal, iron, copper, rare earths, and crude oil.
-- Constructing transport arteries: packed dirt roads, paved stone highways, freight railways, and elevated modular fluid pipelines.
-- Establishing advanced multi-stage refining chains (blast furnaces, chemical synthesizers, thermal power generation).
-
-### Phase 4: Military Expansion & Sovereign Multiplayer
-- Mass production of mechanized arms, artillery, and ammunition.
-- Training specialized combat divisions and constructing defensive bastions.
-- Leading sieges against rival factions and competing in persistent multiplayer arenas.
-
----
-
-## 3. Tripartite Territorial Districts
-
-To balance urban growth and prevent sprawling monolithic bases, the game enforces three strict territorial zones:
-
-| District / Zone | Spatial Boundary | Permitted Structures | Restrictions & Strategic Philosophy |
-| :--- | :--- | :--- | :--- |
-| **Zone A: Civic & Research** | Contiguous civic perimeter around the Urban Core. | Residences, community halls, public squares, academies, universities, research laboratories. | **Zero heavy industry allowed.** Concentrates civil population, guarantees physical security, and streamlines food rationing. |
-| **Zone B: Industrial & Military** | Contiguous industrial zone adjacent to Zone A or fortified as an annex. | Blast furnaces, steel mills, petroleum refineries, assembly plants, barracks, arsenals, armories. | **Zero residential dwellings permitted.** Focuses pollution, noise, heavy power draw, and logistics infrastructure. |
-| **The Periphery (Extraction)** | Outside the civic Area of Influence, atop raw resource deposits. | Open-cast mines, logging camps, hunting lodges, fishing docks, oil pumps, forward watchtowers. | **No permanent houses or manufacturing plants.** Requires dedicated freight haulers, roadways, or pipelines to deliver goods to the city. |
-
----
-
-## 4. Architectural Structural Recognition
-
-A unique strength of *Craft to Nation*'s engine is dynamic building validation:
-
-- **Structural vs. Terrain Materials:** Only blocks classified as structural (`wood_block`, `stone_block`, reinforced concrete, structural glass) register as valid building envelopes. Plain dirt or natural clay cannot be exploited as cheap structural walls.
-- **Raycast Volume & Pathfinding Audits:** The engine floods the internal air volume to confirm airtight seal, measures ceiling clearances, and performs an A* pathfinding trace from the exterior entrance to every interior bed and workbench.
-- **Non-Destructive Remodeling:** Players can modify existing buildings without bulldozing them. Aiming at the primary entrance and pressing `Shift + B` allows manual editing while temporarily suspending resident allocation.
+- **Vector HUD Iconography (`IconosHUD.gd`) & Live 3D Thumbnails (`MiniaturaRenderer.gd`):** Centralized catalog of **90+ crisp pixel-art SVG icons** (`shape-rendering="crispEdges"`), enlarged `104×76 px` build buttons with 3-corner overlays (input stack top-left, electric bolt top-center, output badge top-right), and real-time 3D thumbnails.
+- **Electrical Grid in kW / MW (`BarraSuperior.gd`, `VentanaEnergia.gd`):** Interactive tri-color lightning bolt indicator (gold = surplus, gray = zero demand, red = deficit) with a per-building power breakdown window.
+- **Daily Morale Rate & Stepped Monthly Migration (`Ciudad.gd`):** Daily morale rate applied in hourly fractions (`tasa_cambio_moral / 24.0`) and a **9-tier stepped monthly migration table** (`-5` to `+5 colonists/month`), restricting immigration to open beds when `Morale <= 50` and overflowing into `sin_techo` when `Morale > 50`.
+- **Automated Verification Suite:** **28 independent test scenes** running **100% in green**.

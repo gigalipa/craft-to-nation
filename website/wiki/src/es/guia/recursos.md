@@ -1,75 +1,92 @@
-# Recursos y Materias Primas
+# Recursos, Industrias y Energía
 
-La economía de *Craft to Nation* se fundamenta en un ecosistema orgánico de recursos naturales, insumos energéticos y bienes manufacturados. Cada recurso cuenta con características físicas particulares, requerimientos logísticos de transporte y tasas de extracción auditadas en el motor de simulación.
+![Complejo industrial y procesamiento de recursos en primera persona](/assets/fp-industry.webp)
+
+La economía de **Craft to Nation** se fundamenta en un ecosistema físico de recursos naturales, fluidos dinámicos, insumos energéticos y bienes manufacturados. Cada recurso cuenta con iconos vectoriales pixel-art propios en el HUD (`IconosHUD.gd`), peso logístico, reservas estratégicas y tasas de extracción auditadas en el motor de simulación.
 
 ---
 
-## 1. Catálogo de Recursos Primarios
+## 1. Catálogo de Recursos Primarios y Manufacturados
 
-A continuación se detallan los recursos fundamentales de extracción natural, clasificados por categoría:
-
-| Recurso | Categoría | Fuente Principal | Método de Extracción |
+| Recurso | Categoría | Fuente Principal | Método de Obtención |
 | :--- | :--- | :--- | :--- |
-| <ResourceBadge name="Agua" category="Vital" /> | Vital / Industrial | Lagos y ríos superficiales | Estación de bombeo y acueductos |
-| <ResourceBadge name="Comida" category="Vital" /> | Vital / Metabólico | Fauna silvestre, bayas y cardúmenes | Puestos de caza, recolección y pesca |
-| <ResourceBadge name="Madera" category="Básico" /> | Construcción / Combustible | Bosques de coníferas y frondosas | Puesto maderero (tala en superficie) |
-| <ResourceBadge name="Piedra" category="Básico" /> | Construcción / Estructuras | Afloramientos y canteras rocosas | Mina de superficie y subsuelo |
-| <ResourceBadge name="Hierro" category="Mineral" /> | Metalurgia / Maquinaria | Vetas subterráneas (prof. 8–24 m) | Mina especializada con pozos |
-| <ResourceBadge name="Cobre" category="Mineral" /> | Conducción / Tecnología | Vetas subterráneas intermedias | Mina especializada |
-| <ResourceBadge name="Carbón" category="Energético" /> | Combustible / Siderurgia | Depósitos sedimentarios profundos | Mina de carbón o carboneras |
-| <ResourceBadge name="Crudo" category="Energético" /> | Petroquímica / Fluidos | Pozos petrolíferos del subsuelo | Centro de extracción y tuberías |
-| <ResourceBadge name="Tierras Raras" category="Avanzado" /> | Electrónica / Aleaciones | Yacimientos tectónicos profundos | Mina profunda de alta tecnología |
-| <ResourceBadge name="Tierra" category="Básico" /> | Terraformación / Nivelado | Capa superficial del bioma | Palas manuales y nivelación de suelo |
+| <ResourceBadge name="Agua" category="Vital" /> | Vital / Fluido | Ríos, lagos, mares y acuíferos | Estación de bombeo (`estacion_bombeo`), centro de extracción y acueductos |
+| <ResourceBadge name="Comida" category="Vital" /> | Vital / Metabólico | Fauna silvestre, árboles frutales y cardúmenes | Recolección manual (`60 u`), puesto de caza/recolección y muelle de pesca |
+| <ResourceBadge name="Madera" category="Básico" /> | Construcción / Insumo | Bosques del mundo procedural | Tala manual (`10 u/celda`) o Puesto Maderero (`puesto_maderero`) |
+| <ResourceBadge name="Tablas" category="Procesado" /> | Construcción Eficiente | Aserradero (`aserradero`) | `1 Madera` → `3 Tablas` (rinde ×3 al construir muros de madera) |
+| <ResourceBadge name="Piedra" category="Básico" /> | Construcción / Insumo | Afloramientos y subsuelo | Minado manual (`10 u/bloque`) o Mina (`mina`) |
+| <ResourceBadge name="Bloques de Piedra" category="Procesado" /> | Mampostería Eficiente | Fábrica de Bloques (`fabrica_bloques`) | `1 Piedra` → `3 Bloques de Piedra` (rinde ×3 al construir mampostería) |
+| <ResourceBadge name="Tierra" category="Básico" /> | Nivelación / Adobe / Vidrio | Capa superficial (`GROSOR_TIERRA`) | Minado manual (`1 u/bloque`) o Mina |
+| <ResourceBadge name="Hierro" category="Mineral" /> | Metalurgia / Estructuras | Vetas medias (`prof. 8–16`) | Mina Nivel II+ (`10 u/bloque`) |
+| <ResourceBadge name="Cobre" category="Mineral" /> | Conducción / Tecnología | Vetas medias (`prof. 8–16`) | Mina Nivel II+ (`10 u/bloque`) |
+| <ResourceBadge name="Carbón" category="Energético" /> | Siderurgia / Termoeléctrica | Vetas subterráneas o Carbonera | Mina (`10 u/bloque`) o Carbonera (`3 Madera` → `1 Carbón`) |
+| <ResourceBadge name="Tierras Raras" category="Avanzado" /> | Alta Tecnología | Estratos profundos (`prof. 16–24`) | Mina Nivel III (`10 u/bloque`) |
+| <ResourceBadge name="Mineral Refinado" category="Avanzado" /> | Componentes Avanzados | Refinería de Tierras Raras | `3 Tierras Raras` → `1 Mineral Refinado` |
+| <ResourceBadge name="Acero" category="Aleación" /> | Rascacielos / Defensa | Siderúrgica (`siderurgica`) | `3 Hierro + 4 Carbón` → `2 Acero` |
+| <ResourceBadge name="Crudo" category="Fluido" /> | Petroquímica / Energía | Yacimientos profundos (3 capas sobre roca madre) | Centro de Extracción (`centro_extraccion`) y tuberías |
+| <ResourceBadge name="Combustible" category="Fluido" /> | Combustible Líquido | Refinería Petrolera / Productor Sintético | `2 Crudo` → `1 Combustible` o `3 Carbón + 1 Agua` → `2 Combustible` |
+| <ResourceBadge name="Energía" category="Red Eléctrica" /> | Alimentación Industrial | Central Termoeléctrica | Generación continua en red (`kW` / `MW`), hasta `20 E/h` por planta |
 
 ---
 
 ## 2. Tasas Base de Extracción en Puestos Periféricos
 
-Las tasas de extracción representan el rendimiento horario por trabajador asignado bajo condiciones normales de moral neutra (Moral = 50.0). Las tasas se recalculan dinámicamente cada 6 horas de juego según la densidad de recursos en el radio de operación:
+Las tasas representan el rendimiento horario por trabajador en condiciones de moral neutra (`Moral = 50`, multiplicador `1,0×`) y se recalculan cada `6 horas` de juego según los bloques reales presentes en el área:
 
-| Puesto de Recolección | Recurso Obtenido | Tasa Base (unid/trabajador/h) | Personal Máx. | Radio de Cobertura |
-| :--- | :--- | :--- | :--- | :--- |
-| **Puesto Maderero** | <ResourceBadge name="Madera" /> | **5.0** (Troncos) | 5 leñadores | 3×4 huella / Radio 12 celdas |
-| **Mina de Cantera** | <ResourceBadge name="Piedra" /> | **5.0** (Piedra) | 5 mineros | 5×5 huella / Prof. 8–24 celdas |
-| **Mina de Hierro** | <ResourceBadge name="Hierro" /> | **5.0** (Hierro) | 5 mineros | 5×5 huella / Subsuelo |
-| **Mina de Carbón** | <ResourceBadge name="Carbón" /> | **5.0** (Carbón) | 5 mineros | 5×5 huella / Subsuelo |
-| **Caza y Recolección** | <ResourceBadge name="Comida" /> | **17.0** (Caza) + **10.0** (Frutos) | 7 recolectores | 4×4 huella / Radio 12 celdas |
-| **Pesca y Frutos del Mar** | <ResourceBadge name="Comida" /> | **17.0** (Pesca) + **3.0** (Algas) | 7 pescadores | 4×6 huella / Radio 25 celdas |
-| **Estación de Bombeo** | <ResourceBadge name="Agua" /> | **2.0** (Flujo continuo) | 3 operarios | Red de acueductos |
-| **Centro de Extracción** | <ResourceBadge name="Crudo" /> | **2.0** (Bombeo profundo) | 3 operarios | Red de tuberías |
+| Puesto Periférico | Recurso Obtenido | Tasa Base (u/trabajador/h) | Cupo Máx. | Almacén Local | Huella y Alcance |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Puesto Maderero** (`maderero`) | <ResourceBadge name="Madera" /> | **5,0** × densidad × nivel | 5 obreros | 1.000 u | `3×4` celdas / Radio 12 |
+| **Mina** (`mina`) | <ResourceBadge name="Piedra" /> <ResourceBadge name="Hierro" /> <ResourceBadge name="Cobre" /> <ResourceBadge name="Carbón" /> <ResourceBadge name="Tierras Raras" /> <ResourceBadge name="Tierra" /> | **5,0** minerales / **1,0** tierra (× fracción de veta) | 5 obreros | 1.000 u | `5×5` celdas / Radio 6 / Prof. **8 / 16 / 24** (Niveles I–III) |
+| **Caza y Recolección** (`caza_recoleccion`) | <ResourceBadge name="Comida" /> | **17,0** caza + **10,0** frutos (`~12,2 u/h` media) | 7 obreros | 1.000 u | `4×4` celdas / Radio 12 |
+| **Pesca y Frutos del Mar** (`pesca_frutos_mar`) | <ResourceBadge name="Comida" /> | **17,0** pesca + **3,0** algas (`~8,6 u/h` media) | 7 obreros | 1.000 u | `4×6` celdas (muelle en agua) / Radio 25 |
+| **Estación de Bombeo** (`estacion_bombeo`) | <ResourceBadge name="Agua" /> | **2,0** u/h por operario | 3 técnicos | 500 u | `4×6` celdas (muelle en agua + puerto capa 4) |
+| **Centro de Extracción** (`centro_extraccion`) | <ResourceBadge name="Crudo" /> / <ResourceBadge name="Agua" /> | **2,0** u/h por operario | 3 técnicos | 500 u | `5×5` celdas (perforación bajo el centro `(2,2)`) |
 
-> [!NOTE] Fórmulas de Rendimiento Ambiental
-> - **Madera:** La tasa horaria efectiva es `5.0 × densidad_forestal × multiplicador_nivel`. Si la densidad cae por debajo de 0.5 madera/h, el puesto se considera temporalmente agotado.
-> - **Caza y Frutos:** Promedio en bioma virgen: `~12.2 comida/h por recolector`.
-> - **Pesca:** El rendimiento escala con la profundidad del agua (0.5 en aguas someras hasta 1.5 en fosas marinas) y el tamaño del lago o mar (`celdas / 450`, rango `[0.4, 1.5]`), promediando `~8.6 comida/h`.
+> [!NOTE] Multiplicadores de Nivel de Puesto (I, II y III) y Agotamiento Físico
+> - En **Puesto Maderero**, **Caza y Recolección** y **Pesca**, los niveles aplican un multiplicador directo de velocidad: **Nivel I = `1,0×`**, **Nivel II = `1,5×`**, **Nivel III = `2,0×`**. Si un puesto maderero cae por debajo de `0,5 madera/h` por recolector, se marca como **Agotado**.
+> - En las **Minas**, subir de nivel amplía la **profundidad vertical de excavación**: **Nivel I = `8` capas** (piedra y carbón somero), **Nivel II = `16` capas** (alcanza vetas de hierro y cobre), **Nivel III = `24` capas** (alcanza tierras raras). Cada bloque sólido extraído rinde **10 unidades** (`1 u` para tierra) y desaparece físicamente del subsuelo respetando las `2` capas bajo la superficie natural para no hundir el suelo.
+> - **Física de Fluidos Subterráneos:** Al extraer bloques de agua o crudo, el fluido remanente se nivela por gravedad hacia las celdas vacías inferiores y laterales (alcance de propagación `7` en ríos, `5` en lagos y `3` en crudo con viscosidad `0,20`).
 
 ---
 
-## 3. Bloques Naturales vs Bloques Estructurales
+## 3. Bloques Naturales vs. Costos de Construcción y Reservas
 
-Cuando minas o extraes material directamente del terreno procedural, obtienes unidades crudas para el inventario. Para edificar construcciones permanentes, se consumen recursos del almacén central según los siguientes costes:
+Al colocar bloques manualmente o construir plantillas, el sistema (`Ciudad.consumir_costo()`) prioriza automáticamente los materiales procesados (**Tablas** y **Bloques de Piedra**) antes de gastar materia prima en bruto:
 
-| Material | Rendimiento al Extraer (Bloque Natural) | Bloque Estructural Colocable | Coste de Colocación en Almacén |
+| Bloque Colocable | Material en Almacén | Costo por Bloque | Equivalencia con Material Procesado |
 | :--- | :--- | :--- | :--- |
-| **Tierra Natural** | 1 unidad <ResourceBadge name="Tierra" /> | `tierra_compactada` | 1 Tierra |
-| **Roca de Piedra** | 10 unidades <ResourceBadge name="Piedra" /> | `bloque_piedra` | 5 Piedra (o 1 bloque procesado) |
-| **Veta de Hierro** | 10 unidades <ResourceBadge name="Hierro" /> | `estructura_hierro` | 5 Hierro |
-| **Tronco de Árbol** | 10 unidades <ResourceBadge name="Madera" /> por celda | `bloque_madera` | 5 Madera (o 1 tabla procesada) |
-| **Arena de Sílice** | 1 unidad Arena | `vidrio` | 1 Arena / Tierra tratada |
-| **Lingote de Acero** | *No se extrae en la naturaleza* | `bloque_acero` | 3 Acero refinado |
+| **`tierra`** | <ResourceBadge name="Tierra" /> | `1 Tierra` | — |
+| **`adobe`** | <ResourceBadge name="Tierra" /> | `5 Tierra` | — |
+| **`vidrio`** | <ResourceBadge name="Tierra" /> | `1 Tierra` | — |
+| **`bloque_madera`** | <ResourceBadge name="Tablas" /> o <ResourceBadge name="Madera" /> | `1 Tabla` (o `5 Madera`) | **1 Madera → 3 Tablas** (multiplica ×15 la eficiencia constructiva) |
+| **`puerta` / `cama` / `baul`** | <ResourceBadge name="Tablas" /> o <ResourceBadge name="Madera" /> | `1 Tabla` (o `5 Madera`) por celda | Puerta = 2 celdas verticales; Cama = 2 horizontales; Baúl = 1 celda |
+| **`bloque_piedra`** | <ResourceBadge name="Bloques de Piedra" /> o <ResourceBadge name="Piedra" /> | `1 Bloque de Piedra` (o `5 Piedra`) | **1 Piedra → 3 Bloques** (multiplica ×15 la eficiencia constructiva) |
+| **`estructura_hierro`** | <ResourceBadge name="Hierro" /> | `5 Hierro` | — |
+| **`bloque_acero`** | <ResourceBadge name="Acero" /> | `3 Acero` | — |
+
+### Cuotas de Reserva de Materia Prima (`[0, 50, 100, 250, 500] u`)
+Para evitar que el **Aserradero**, la **Carbonera** o la **Fábrica de Bloques** consuman toda tu madera o piedra en bruto dejándote sin stock para obras directas, puedes configurar en la **Ventana de Almacén** (`VentanaAlmacen`) o en la ficha de la fábrica un **umbral mínimo de reserva** (`0`, `50`, `100`, `250` o `500 u`). Los acarreadores solo retirarán el excedente por encima de esa reserva.
 
 ---
 
-## 4. Cadenas de Procesamiento Secundario
+## 4. Las 8 Instalaciones Industriales y Energéticas (Zona B)
 
-Las materias primas crudas se transportan hacia la **Zona B (Industrial)** para manufacturar materiales avanzados:
+Todas las refinerías comparten una capacidad de almacén local de **1.000 unidades** (`300 u` en la Central Termoeléctrica) y un cupo máximo de **4 trabajadores** (**Técnicos** en plantas Tipo 2; **Especialistas** en plantas Tipo 3):
 
-```
-[Madera Cruda] --------> (Aserradero) -----------> [3 Tablas de Madera]
-[Madera Cruda] --------> (Carbonera) ------------> [1 Carbón Vegetal]
-[Hierro] + [Carbón] ---> (Siderúrgica) ----------> [2 Lingotes de Acero]
-[Piedra Cruda] --------> (Fábrica de Bloques) ---> [3 Bloques de Sillería]
-[Crudo Subterráneo] ---> (Refinería Petrolera) --> [1 Combustible Sintético]
-```
+| Instalación Industrial | Tipo / Personal | Huella | Receta por Lote (Entradas → Salida) | Lotes/h por Trabajador | Consumo / Generación Eléctrica |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Aserradero** (`aserradero`) | Tipo 2 (4 Técnicos) | `5×6` | `1 Madera` → `3 Tablas` | `0,5 lotes/h` (`1,5 tablas/h`) | `0 E` |
+| **Fábrica de Bloques** (`fabrica_bloques`) | Tipo 2 (4 Técnicos) | `5×6` | `1 Piedra` → `3 Bloques de Piedra` | `0,5 lotes/h` (`1,5 bloques/h`) | `0 E` |
+| **Carbonera** (`carbonera`) | Tipo 2 (4 Técnicos) | `5×5` | `3 Madera` → `1 Carbón` | `2,0 lotes/h` (`2,0 carbón/h`) | `0 E` |
+| **Siderúrgica** (`siderurgica`) | Tipo 2 (4 Técnicos) | `5×5` | `3 Hierro + 4 Carbón` → `2 Acero` | `2,0 lotes/h` (`4,0 acero/h`) | `0 E` |
+| **Refinería de Tierras Raras** (`refineria_tierras_raras`) | Tipo 3 (4 Especialistas) | `5×5` | `3 Tierras Raras` → `1 Mineral Refinado` | `0,5 lotes/h` (`0,5 ref/h`) | `0 E` |
+| **Refinería Petrolera** (`refineria_petrolera`) | Tipo 3 (4 Especialistas) | `5×5` | `2 Crudo` → `1 Combustible` | `1,0 lote/h` (`1,0 comb/h`) | Consume **1 E/lote** (Tope local: `400 Crudo / 600 Combustible`) |
+| **Productor de Combustible** (`productor_combustible`) | Tipo 3 (4 Especialistas) | `5×5` | `3 Carbón + 1 Agua` → `2 Combustible` | `1,0 lote/h` (`2,0 comb/h`) | Consume **1 E/lote** |
+| **Central Termoeléctrica** (`central_termoelectrica`) | Tipo 3 (4 Especialistas) | `5×5` | Quema `Combustible` (`1:1`), `Crudo` (`1,5:1`) o `Carbón` (`2:1`) | Hasta `5,0 E/h` por especialista | Genera hasta **20 E/h** (protege reserva de `500 Carbón` en almacén central) |
 
-Estas transformaciones son vitales para alimentar la red de investigación tecnológica, abastecer la central termoeléctrica y construir infraestructuras de transporte ferroviario y defensivo.
+> [!IMPORTANT] Red Eléctrica en kW / MW e Indicador Tricolor en HUD
+> La barra superior (`BarraSuperior.gd`) muestra el balance eléctrico en tiempo real formateado en **kW / MW** con un icono de rayo interactivo:
+> - **Dorado:** Superávit o equilibrio con generación activa (`factor_energia = 1,0`).
+> - **Gris:** Sin demanda ni generación eléctrica activa.
+> - **Rojo:** Déficit energético (`factor_energia = generada / demandada`), lo que reduce proporcionalmente la velocidad de todas las plantas que requieren electricidad. Al hacer clic en el rayo se abre la **Ventana de Energía** (`VentanaEnergia`) con el desglose por edificio.
+

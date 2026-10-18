@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <!-- Reloj de arena estilizado -->
+  <rect x="4" y="2" width="8" height="2" fill="#C79E40"/>
+  <rect x="4" y="12" width="8" height="2" fill="#C79E40"/>
+  <polygon points="5,4 11,4 8,8" fill="#FFE082"/>
+  <polygon points="5,12 11,12 8,8" fill="#8D6E1E"/>
+
+</svg>

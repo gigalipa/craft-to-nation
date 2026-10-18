@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <path d="M3 2 L13 2 L13 8 Q13 13 8 15 Q3 13 3 8 Z" fill="#546E7A"/>
+  <!-- Grieta central -->
+  <path d="M8 3 L7 7 L9 10 L8 14" stroke="#FF5959" stroke-width="1.5" fill="none"/>
+
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" shape-rendering="crispEdges">
+
+  <!-- Tronco inferior izquierdo -->
+  <rect x="2" y="11" width="7" height="7" fill="#4E342E"/>
+  <rect x="3" y="12" width="5" height="5" fill="#8D6E63"/>
+  <rect x="5" y="14" width="1" height="1" fill="#4E342E"/>
+  <!-- Tronco inferior derecho -->
+  <rect x="10" y="11" width="7" height="7" fill="#4E342E"/>
+  <rect x="11" y="12" width="5" height="5" fill="#8D6E63"/>
+  <rect x="13" y="14" width="1" height="1" fill="#4E342E"/>
+  <!-- Tronco superior central -->
+  <rect x="6" y="4" width="7" height="7" fill="#4E342E"/>
+  <rect x="7" y="5" width="5" height="5" fill="#8D6E63"/>
+  <rect x="9" y="7" width="1" height="1" fill="#4E342E"/>
+
+</svg>

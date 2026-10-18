@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+
+  <!-- Brazo robótico -->
+  <rect x="2" y="12" width="6" height="3" fill="#546E7A"/>
+  <line x1="5" y1="12" x2="10" y2="7" stroke="#B0BEC5" stroke-width="2"/>
+  <circle cx="10" cy="7" r="2" fill="#C79E40"/>
+  <line x1="10" y1="7" x2="14" y2="4" stroke="#B0BEC5" stroke-width="1.5"/>
+  <rect x="13" y="3" width="2" height="2" fill="#FF5959"/>
+
+</svg>

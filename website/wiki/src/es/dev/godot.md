@@ -35,15 +35,15 @@ El motor divide su ejecución en dos capas temporales simultáneas:
 - **`Economia.gd`:** Orquestador del tick económico horario, reservas de materia prima (`[0, 50, 100, 250, 500] u`), despacho de acarreadores, balance eléctrico en `kW / MW` y ciclos de formación en escuelas.
 - **`Recoleccion.gd`:** Registro espacial de puestos periféricos, cálculo de tasas ambientales cada `6 h`, niveles de puesto `I–III`, regresión de nivel y agotamiento físico de bloques/árboles.
 - **`CadenaMinerales.gd`:** Catálogo de las 7 recetas de refinado industrial (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
-- **`Canalizaciones.gd` y `Fluidos.gd`:** Topología de redes de acueductos y tuberías en `Y + 6`, puertos de conexión en capa 4, detección de derrames y propagación de líquidos por gravedad y viscosidad.
+- **`Canalizaciones.gd` y `Fluidos.gd`:** Topología de redes de acueductos y tuberías aéreas en **`Y + 4`** (con cruces elevados en **`Y + 6`**), puertos de conexión en capa 4, detección de derrames y propagación de líquidos por gravedad y viscosidad (drenables al colocar un bloque sólido encima).
 - **`Zonificacion.gd`:** Delimitación de los polígonos de **Zona A** y **Zona B** dentro del radio de influencia (`30` celdas) del Núcleo Urbano.
 
 ### Subsistemas Espaciales, Agentes e Interfaz HUD (v3.57)
 - **`VoxelWorld.gd` y `GeneradorMundo.gd`:** Gestión del `GridMap` 3D, colocación/extracción de bloques, iluminación diurna/nocturna (`CicloDiaNoche.gd`) y agua estilo *Minecraft*.
 - **`ValidadorEdificios.gd` y `PlantillasPuesto.gd`:** Reconocimiento volumétrico por *flood-fill* de edificios herméticos, validación de despeje de puertas/camas y plantillas predefinidas con rotación de `90°`.
-- **`Obras.gd`, `ConstructorVias.gd` y `NiveladorTerreno.gd`:** Gestión de obras de construcción/demolición con hasta `4` obreros por obra, prioridades (`Alta`, `Normal`, `Baja`) y tendido de carreteras con rampas.
+- **`Obras.gd`, `ConstructorVias.gd` y `NiveladorTerreno.gd`:** Gestión de obras de construcción/demolición con hasta `4` obreros por obra, prioridades (`Alta`, `Normal`, `Baja`) con jerarquía de despacho en 5 niveles y tendido de carreteras con rampas.
 - **`Colonos.gd` y `BuscadorRutas.gd`:** Máquina de estados finitos (FSM) de los agentes NPC y *pathfinding* A* ponderado (costo `3` en vía vs. `8` en terreno natural) con jerarquía de cesión de paso lateral.
-- **`IconosHUD.gd` y `MiniaturaRenderer.gd`:** Catálogo centralizado de **más de 90 iconos SVG pixel-art** (`godot/assets/icons/*.svg`) y generador de miniaturas 3D en vivo para `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px`), `VentanaMoral.gd`, `VentanaEnergia.gd`, `VentanaAlmacen.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd` y `PanelCanalizacion.gd`.
+- **`IconosHUD.gd` y `MiniaturaRenderer.gd`:** Catálogo centralizado de **más de 90 iconos SVG pixel-art** (`godot/assets/icons/*.svg`) y generador de miniaturas 3D en vivo para `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px`), `VentanaMoral.gd`, `VentanaEnergia.gd` (con salto de cámara a generadores/consumidores), `VentanaAlmacen.gd`, `VentanaBaul.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd` y `PanelCanalizacion.gd`.
 
 ---
 

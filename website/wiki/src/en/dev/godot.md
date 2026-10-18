@@ -32,15 +32,15 @@
 - **`Economia.gd`:** Hourly economic dispatcher, raw material reserve quotas (`[0, 50, 100, 250, 500] u`), hauler task scheduling, electrical grid balance (`kW / MW`), and school training cohorts.
 - **`Recoleccion.gd`:** Spatial registry of peripheral outposts, 6-hour environmental yield scans, outpost levels `I–III`, automatic level regression, and physical block/tree depletion.
 - **`CadenaMinerales.gd`:** Defines all 7 industrial refinement recipes (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
-- **`Canalizaciones.gd` & `Fluidos.gd`:** Elevated `Y + 6` modular fluid pipelines, layer-4 fluid ports, rupture spill detection, and gravity/viscosity liquid spreading.
+- **`Canalizaciones.gd` & `Fluidos.gd`:** Elevated **`Y + 4`** modular fluid pipelines (with **`Y + 6`** conduit-over-conduit crossings), layer-4 fluid ports, rupture spill detection, and gravity/viscosity liquid spreading (drainable by placing a solid block over the liquid cell).
 - **`Zonificacion.gd`:** Manages **Zone A** and **Zone B** polygons inside the Urban Core's `30-cell` Area of Influence.
 
 ### Voxel World, Agents & HUD Iconography (v3.57)
 - **`VoxelWorld.gd` & `GeneradorMundo.gd`:** Manages the **200×200** 3D `GridMap` (`y = 130` max height, 24 subsurface layers down to unmineable `bedrock`, 2 mountain peaks, 6 minerals, deep oil reservoirs, rivers with waterfalls, lakes, and seas) plus day/night lighting (`CicloDiaNoche.gd`).
 - **`ValidadorEdificios.gd` & `PlantillasPuesto.gd`:** Flood-fill airtight room detection, doorway/bed clearance audits, and rotatable (`90°`) facility templates.
-- **`Obras.gd`, `ConstructorVias.gd` & `NiveladorTerreno.gd`:** Construction and demolition jobsite management (up to `4` builders per site, `2 blocks/s` speed), work priorities (`High`, `Normal`, `Low`), and road laying with automatic ramps.
+- **`Obras.gd`, `ConstructorVias.gd` & `NiveladorTerreno.gd`:** Construction and demolition jobsite management (up to `4` builders per site, `2 blocks/s` speed), work priorities (`High`, `Normal`, `Low`) with a 5-tier work dispatch hierarchy, and road laying with automatic ramps.
 - **`Colonos.gd` & `BuscadorRutas.gd`:** NPC agent finite state machine (FSM) and weighted A* pathfinding (cost `3` on packed dirt roads vs. cost `8` on natural terrain) with lateral yield priorities.
-- **`IconosHUD.gd` & `MiniaturaRenderer.gd`:** Centralized catalog of **90+ crisp pixel-art SVG icons** (`godot/assets/icons/*.svg`) and live 3D thumbnail renderer powering `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px` build buttons), `VentanaMoral.gd`, `VentanaEnergia.gd`, `VentanaAlmacen.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd`, and `PanelCanalizacion.gd`.
+- **`IconosHUD.gd` & `MiniaturaRenderer.gd`:** Centralized catalog of **90+ crisp pixel-art SVG icons** (`godot/assets/icons/*.svg`) and live 3D thumbnail renderer powering `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px` build buttons), `VentanaMoral.gd`, `VentanaEnergia.gd` (with one-click camera jump to generators/consumers), `VentanaAlmacen.gd`, `VentanaBaul.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd`, and `PanelCanalizacion.gd`.
 
 ---
 

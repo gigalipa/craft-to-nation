@@ -23,16 +23,19 @@ La demografía de la colonia se organiza en una jerarquía de oficios. Los colon
 | **Ciudadano** | 2 | 0 | 0 | 5 | Población civil base, dinamiza la vida comunitaria y actividades comerciales. |
 | **Desempleado** | 3 | 0 | 0 | 4 | Reserva de mano de obra. Asiste en acarreo ligero y obras de construcción. |
 | **Obrero** | 5 | 0 | 0 | 4 | Trabajo físico pesado en puestos de tala, canteras y minería básica. |
-| **Técnico** | 3 | 0 | 0 | 3 | Operador de refinerías intermedias (siderúrgicas, aserraderos mecánicos). |
-| **Especialista** | 2 | 0 | 1 | 2 | Manejo de petroquímica, reactores térmicos y circuitos avanzados. |
-| **Investigador** | 1 | 0 | 2 | 1 | Generación de puntos de ciencia y patentes en la Universidad. |
+| **Técnico** | 3 | 0 | 0 | 3 | Operador de industrias de Zona B (`1 → 3`), estaciones de bombeo, centros de extracción y puestos de Nivel II. |
+| **Especialista** | 2 | 0 | 1 | 2 | Requisito para elevar puestos periféricos a Nivel III y dotar de Investigadores a la Universidad. |
+| **Investigador** | 1 | 0 | 2 | 1 | Generación de puntos de ciencia y patentes en la Universidad (`1,0 h_inv/h`). |
 | **Militar** | 4 | 2 | 0 | 3 | Defensa de guarnición, patrullaje de fronteras y asedio en Fase 4. |
 
-### Cadenas de Promoción y Capacitación (`Ciudad.gd` / `Recoleccion.gd`)
+### Cadenas de Promoción, Orden de Desbloqueo y Gestión (`Ciudad.gd` / `VentanaPoblacion.gd` / `VentanaOcupaciones.gd`)
 1. **Inmigrantes / Ciudadanos Libres:** Llegan atraídos por la moral de la ciudad y la disponibilidad de camas libres en la Zona A.
-2. **Escuela Técnica (`escuela_tecnica`):** Entrena una cohorte de **4 Obreros** (1 cama) durante **24 horas de juego** para graduar **3 Técnicos** (1 cama), habilitando la operación de industrias Tipo 2 y mejoras de puestos a Nivel II.
-3. **Escuela de Especialistas (`escuela_especialistas`):** Entrena una cohorte de **3 Técnicos** (1 cama) durante **48 horas de juego** para graduar **2 Especialistas** (1 cama), habilitando industrias Tipo 3, centrales termoeléctricas y puestos de Nivel III.
-4. **Universidad (`universidad`):** Emplea hasta **3 Investigadores** (`1,0 hora_investigador/h` cada uno) para investigar **Metalurgia Aplicada** (`20 h_inv`, `300 Hierro`, `200 Madera`) y **Automatización Industrial** (`50 h_inv`, `800 Hierro`, `100 Madera`).
+2. **Orden Estricto de Desbloqueo Académico (`1 → 4`):** Las instituciones de investigación se habilitan secuencialmente: construir la **Escuela Técnica** desbloquea la **Escuela de Especialistas**, y completar esta última desbloquea la **Universidad**.
+3. **Escuela Técnica (`escuela_tecnica`):** Entrena una cohorte de **4 Obreros** (1 cama) durante **24 horas de juego** para graduar **3 Técnicos** (1 cama), habilitando la operación de industrias de Zona B, estaciones de bombeo/extracción y mejoras de puestos a Nivel II.
+4. **Escuela de Especialistas (`escuela_especialistas`):** Entrena una cohorte de **3 Técnicos** (1 cama) durante **48 horas de juego** para graduar **2 Especialistas** (1 cama), habilitando puestos periféricos de Nivel III y la dotación académica de la Universidad.
+5. **Cancelación de Cursos con Reembolso del 100 %:** En el panel contextual de las escuelas (<kbd>E</kbd> en 1.ª persona o clic izquierdo en vista cenital), puedes cancelar un curso en marcha antes de su graduación, reembolsando el **100 % de los recursos y alumnos** al almacén y censo municipal.
+6. **Universidad (`universidad`):** Emplea hasta **3 Investigadores** (`1,0 hora_investigador/h` cada uno) para investigar **Metalurgia Aplicada** (`20 h_inv`, `300 Hierro`, `200 Madera`) y **Automatización Industrial** (`50 h_inv`, `800 Hierro`, `100 Madera`).
+7. **Ventanas de Población (<kbd>P</kbd>) y Ocupaciones (<kbd>O</kbd>):** Permiten asignar o retirar trabajadores con controles `[-]` / `[+]` organizados en categorías desplegables (`▼ Recolección`, `▼ Industria`, `▼ Investigación`, `▼ Energía`).
 
 ---
 
@@ -61,12 +64,13 @@ La moral modula la productividad laboral según la curva exponencial continua (`
 ```text
 Productividad = 0.5 × 2^(Moral / 50)
 ```
-- **Moral = 0:** Rendimiento mínimo al **0,5×** (`😡` Crítica).
-- **Moral = 50 (Neutro):** Rendimiento estándar al **1,0×** (`😐` Neutra).
-- **Moral = 100 (Euforia):** Rendimiento duplicado al **2,0×** (`🙂` Alta).
+- **Moral = 0:** Rendimiento mínimo al **0,5×** (`😡` Crítica, `< 20 %`).
+- **Moral = 20 – 35:** Rendimiento reducido (`🙁` Baja, `20 % – 35 %`).
+- **Moral = 50 (Neutro):** Rendimiento estándar al **1,0×** (`😐` Neutra, `35 % – 65 %`).
+- **Moral = 100 (Euforia):** Rendimiento duplicado al **2,0×** (`🙂` Alta, `>= 65 %`).
 
-### Tramos Escalonados de Migración Mensual (`Ciudad.calcular_tasa_migracion_mensual()`)
-Un mes de simulación equivale a `720 horas` de juego (`30 días × 24 h`). El acumulador migratorio suma o resta fracciones horarias según el tramo de moral actual:
+### Regímenes y Tramos Escalonados de Migración Mensual (`Ciudad.calcular_tasa_migracion_mensual()`)
+Un mes de simulación equivale a `720 horas` de juego (`30 días × 24 h`). En `VentanaMoral.gd` (<kbd>M</kbd>) se sintetizan tres regímenes migratorios principales (**`<= 20 %` `⚠ Éxodo de cerebros`**, **`20 % – 50 %` `Inmigración con camas`** y **`> 50 %` `Inmigración masiva`**), desglosados internamente en 9 tramos escalonados:
 
 | Tramo de Moral | Tasa Mensual (`colonos / mes`) | Régimen Migratorio en `Ciudad.gd` |
 | :--- | :--- | :--- |

@@ -49,7 +49,7 @@
 
 1. **Perspective Duality (Micro vs. Macro):** Switch at any time (key <kbd>C</kbd>, `0.6s` animated camera flight) between first-person manual action and the overhead tactical camera.
 2. **Modular Blueprints & Automated Construction:** Capture custom-built houses and warehouses (<kbd>B</kbd> to declare, <kbd>Shift</kbd> + <kbd>B</kbd> for non-destructive remodeling) as up to 5 persistent blueprints erected automatically by NPC work crews.
-3. **Strategic Zoning & Tripartite Logistics:** Strict separation between **Zone A (Civic/Academic)**, **Zone B (Industrial/Power)**, and the **Periphery (Extraction/Pumping)** connected by packed dirt roads and elevated `Y + 6` fluid pipelines.
+3. **Strategic Zoning & Tripartite Logistics:** Strict separation between **Zone A (Civic/Academic)**, **Zone B (Industrial/Storage/Power)**, and the **Periphery (Extraction/Pumping)** connected by packed dirt roads and elevated **`Y + 4`** fluid pipelines (rising to **`Y + 6`** for conduit-over-conduit crossings).
 4. **Organic Economy & Demographics:** Every citizen consumes food according to their profession (`1.0` to `5.0 food/h`), occupies real beds (`x_cama`), advances through cohort schools, and responds to dynamic civic morale (`0` to `100`).
 5. **Portable Sovereignty in Competitive Multiplayer:** Export your validated Urban Core and blueprint catalog into procedural multiplayer worlds.
 

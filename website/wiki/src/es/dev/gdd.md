@@ -43,7 +43,7 @@ La civilización progresa desde la supervivencia primitiva hasta un horizonte te
 
 1. **Dualidad de Perspectiva (Micro vs. Macro):** Alternancia en tiempo real (tecla <kbd>C</kbd>, vuelo de `0,6 s`) entre la acción visceral en primera persona (minería, construcción manual, defensa directa) y la vista aérea táctica (planificación urbana, asignación de cuadrillas, trazado de vías).
 2. **Modularidad y Automatización por Plantillas (*Blueprints*):** El jugador diseña libremente sus edificios; `ValidadorEdificios.gd` verifica su hermeticidad y accesos (<kbd>B</kbd> para declarar, <kbd>Shift</kbd> + <kbd>B</kbd> para remodelar sin demoler), permitiendo guardar hasta 5 diseños persistentes construibles por cuadrillas de colonos.
-3. **Zonificación Estratégica y Logística Integral:** Separación estricta entre **Zona A** (residencial, cívica y académica), **Zona B** (industrial y energética) y **Periferia** (extracción y bombeo) conectadas por caminos de tierra pisada y canalizaciones aéreas en `Y + 6`.
+3. **Zonificación Estratégica y Logística Integral:** Separación estricta entre **Zona A** (residencial, cívica y académica), **Zona B** (industrial, logística y energética) y **Periferia** (extracción y bombeo) conectadas por caminos de tierra pisada y canalizaciones aéreas en **`Y + 4`** (con pasos elevados en **`Y + 6`** al cruzar otro conducto).
 4. **Economía Orgánica y Demográfica:** Cada colono consume nutrientes según la exigencia de su rol (`1` a `5 comida/h`), ocupa camas reales según su estrato (`x_cama`), asciende en escuelas de cohorte y responde a la moral cívica (`0` a `100`).
 5. **Soberanía Portátil y Núcleos Balanceados en Multijugador:** Exportación del Núcleo Urbano y catálogo de *blueprints* hacia mundos multijugador competitivos.
 

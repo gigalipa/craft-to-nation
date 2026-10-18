@@ -15,13 +15,13 @@ Every colonist consumes sustenance each simulation tick. In Godot 4.6, the simul
 | **Citizen (`ciudadano`)** | 2.0 | 0.0 | 0.0 | 5 / bed | Base gatherer and civic hauler |
 | **Unemployed (`desempleado`)** | 3.0 | 0.0 | 0.0 | 4 / bed | Reserve labor pool, construction worksites, hauling |
 | **Worker (`obrero`)** | 5.0 | 0.0 | 0.0 | 4 / bed | Heavy mining, logging, hunting, fishing, and construction |
-| **Technician (`tecnico`)** | 3.0 | 0.0 | 0.0 | 3 / bed | Type-2 refineries, pumping stations, Level II outposts |
-| **Specialist (`especialista`)**| 2.0 | 0.0 | 1.0 | 2 / bed | Type-3 refineries, thermoelectric plants, Level III outposts |
+| **Technician (`tecnico`)** | 3.0 | 0.0 | 0.0 | 3 / bed | Zone B industrial facilities (`1 → 3`), pumping/extraction stations, Level II outposts |
+| **Specialist (`especialista`)**| 2.0 | 0.0 | 1.0 | 2 / bed | Required to upgrade peripheral outposts to Level III and staff the University |
 | **Researcher (`investigador`)**| 1.0 | 0.0 | 2.0 | 1 / bed | University science (`1.0 researcher_hour/h`), tech tree unlocks |
 | **Military (`militar`)** | 4.0 | 2.0 | 0.0 | 3 / bed | Garrison patrol, combat defense, expeditionary sieges |
 
 > [!NOTE]
-> Physical workers consume more calories (`5.0 food/h`) due to heavy manual labor, whereas intellectual researchers consume fewer calories (`1.0 food/h`) but require electrified quarters (`2.0 energy/h`).
+> Physical workers consume more calories (`5.0 food/h`) due to heavy manual labor, whereas intellectual researchers consume fewer calories (`1.0 food/h`) but require electrified quarters (`2.0 energy/h`). Use the **Population Window (<kbd>P</kbd>)** and **Occupations Window (<kbd>O</kbd>)** to assign or recall workers (`[-]` / `[+]`) across collapsible categories (`▼ Gathering`, `▼ Industry`, `▼ Research`, `▼ Energy`).
 
 ---
 
@@ -40,13 +40,13 @@ Estimate your colony's hourly and cyclic food and water requirements based on yo
 Colony productivity and migration are driven by the settlement's **Dynamic Morale** score (`0.0` to `100.0`, accessible from the top bar or by pressing <kbd>M</kbd> to open `VentanaMoral.gd`):
 
 ```
-    Morale Score       Productivity Multiplier        Colony Psychological State
-   ───────────────────────────────────────────────────────────────────────────────
-       100.0                     2.0×               🙂 Euphoric / Peak Productivity
-        75.0                     1.41×              🙂 Pioneer Optimism (Starter Baseline)
-        50.0                     1.0×               😐 Neutral Equilibrium
-        25.0                     0.71×              🙁 Depressed / Slow Operations
-         0.0                     0.5×               😡 Mutinous / Severe Brain Drain
+    Morale Score       Productivity Multiplier        Colony Psychological State (VentanaMoral.gd)
+   ───────────────────────────────────────────────────────────────────────────────────────────────
+       100.0                     2.0×               🙂 High Morale (>= 65%) / Peak Productivity
+        75.0                     1.41×              🙂 Pioneer Optimism (Starter Baseline, >= 65%)
+        50.0                     1.0×               😐 Neutral Equilibrium (35% – 65%)
+        25.0                     0.71×              🙁 Low Morale (20% – 35%) / Slow Operations
+         0.0                     0.5×               😡 Critical Morale (< 20%) / Brain Drain
 ```
 
 ### The Productivity Curve Formula (`Ciudad.calcular_multiplicador_productividad()`):
@@ -65,7 +65,7 @@ In `Ciudad.gd`, active modifiers sum into a **daily morale change rate** (`ΔM /
 - **Danger Memory Buffer:** Rolling `168-hour` (`7 in-game days`) memory buffer tracking casualties and raids.
 
 ### Stepped Monthly Migration Table (`Ciudad.calcular_tasa_migracion_mensual()`)
-One simulation month equals `720 in-game hours` (`30 days × 24h`). The migration accumulator adds or subtracts hourly fractions according to the current morale bracket:
+One simulation month equals `720 in-game hours` (`30 days × 24h`). `VentanaMoral.gd` (<kbd>M</kbd>) displays three primary migration regime statuses (**`<= 20%` `⚠ Brain Drain Exodus`**, **`20% – 50%` `Bed-Gated Immigration`**, and **`> 50%` `Mass Immigration`**), backed by 9 stepped brackets:
 
 | Morale Bracket | Monthly Rate (`colonists / month`) | Migration Behavior in `Ciudad.gd` |
 | :--- | :--- | :--- |
@@ -102,8 +102,10 @@ If the central food stock hits `0`:
 
 ---
 
-## 5. Cohort Education & University Research (`Zone A`)
+## 5. Cohort Education, Strict Unlock Order & University Research (`Zone A`)
 
-1. **Technical School (`escuela_tecnica`, `5×5` adobe):** Trains a cohort of **4 Workers** (1 shared bed) for **24 in-game hours** and graduates **3 Technicians** (occupying 1 technician bed; the 4th member departs to preserve housing equilibrium).
-2. **Specialist School (`escuela_especialistas`, `5×5` stone):** Trains a cohort of **3 Technicians** (1 bed) for **48 in-game hours** and graduates **2 Specialists** (1 bed).
-3. **University (`universidad`, `5×5` stone):** Employs up to **3 Researchers** (`1.0 researcher_hour/h` each) to unlock **Applied Metallurgy** (`20 res_h`, `300 Iron`, `200 Wood`) and **Industrial Automation** (`50 res_h`, `800 Iron`, `100 Wood`).
+1. **Strict Academic Unlock Order (`1 → 4`):** Research institutions unlock sequentially: constructing the **Technical School** unlocks the **Specialist School**, and completing the Specialist School unlocks the **University**.
+2. **Technical School (`escuela_tecnica`, `5×5` adobe):** Trains a cohort of **4 Workers** (1 shared bed) for **24 in-game hours** and graduates **3 Technicians** (occupying 1 technician bed; the 4th member departs to preserve housing equilibrium).
+3. **Specialist School (`escuela_especialistas`, `5×5` stone):** Trains a cohort of **3 Technicians** (1 bed) for **48 in-game hours** and graduates **2 Specialists** (1 bed).
+4. **Course Cancellation with 100% Refund:** Inside any school's context panel (<kbd>E</kbd> in 1st person or Left Click in overhead view), an active training cohort can be cancelled prior to graduation with a **100% refund of resources and trainees**.
+5. **University (`universidad`, `5×5` stone):** Employs up to **3 Researchers** (`1.0 researcher_hour/h` each) to unlock **Applied Metallurgy** (`20 res_h`, `300 Iron`, `200 Wood`) and **Industrial Automation** (`50 res_h`, `800 Iron`, `100 Wood`).

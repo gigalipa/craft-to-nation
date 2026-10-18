@@ -2,7 +2,7 @@
 
 ![Vista táctica de defensa y expansión urbana](/assets/comparison-aerial.webp)
 
-La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido en la **Sección 11 del GDD v3.57**, sustentado en **28 escenas de prueba automatizadas al 100 % en verde** y validación directa en partida.
+La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido en la **Sección 11 del GDD v3.57** y el protocolo de verificación en vivo ([`docs/Live_Verifications.md`](https://github.com/dperaza/craft-to-nation)), sustentado en **28 escenas de prueba automatizadas al 100 % en verde**.
 
 ---
 
@@ -25,42 +25,29 @@ La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido 
 
 ### Fase 0 y Fase 1: Motor Vóxel, Avatar en Primera Persona y Validación Volumétrica
 - [x] Mundo procedural finito de **200×200 celdas** (`GeneradorMundo.gd`) con altura máxima `y = 130`, **24 capas de subsuelo** hasta la roca madre (`bedrock`), 2 picos montañosos, ríos con corriente y cascadas, lagos y mares.
-- [x] Avatar en primera persona (`Player.gd`) con minado por grietas progresivas, recolección de frutos (`60 u` en `2,0 s`), natación con barra de oxígeno (`10,0 s`) y linterna frontal de minero (<kbd>L</kbd>).
-- [x] Reconocimiento volumétrico de edificios herméticos (`ValidadorEdificios.gd`), declaración (<kbd>B</kbd>) y remodelación no destructiva (<kbd>Shift</kbd> + <kbd>B</kbd>).
+- [x] Avatar en primera persona (`Player.gd`) con minado por barra de progreso e icono contextual (`herr_pala`, `herr_pico`, `herr_hacha`), recolección de frutos silvestres manteniendo <kbd>E</kbd> (`60 u` en `2,0 s`), natación en líquidos profundos (`>= 2` bloques) con barra de oxígeno (`10,0 s`), drenaje de líquidos con bloques sólidos (<kbd>Clic Derecho</kbd>), modo de deconstrucción a pie (<kbd>G</kbd>) y lámpara omnidireccional (<kbd>L</kbd>) en modo **Térmico** (`Combustible 10h`, `Carbón 6h`, `Madera 5h`) y **Eléctrico** (`Batería 72h` con recarga `+7,2 h/tick`).
+- [x] Reconocimiento volumétrico de edificios herméticos (`ValidadorEdificios.gd`), puertas 3D con pomo de bronce y bisagras, declaración (<kbd>B</kbd>) y remodelación no destructiva (<kbd>Shift</kbd> + <kbd>B</kbd>).
 
 ### Fase 2: Fundación Cívica, Cámara Cenital y Demografía
-- [x] Cámara cenital táctica (`CamaraCenital.gd`) con vuelo suave de transición (`0,6 s` con <kbd>C</kbd>), rotación de plantillas (`Ctrl + Rueda`) y catálogo de hasta 5 *blueprints* persistentes.
-- [x] Delimitación de **Zona A** y **Zona B** dentro del radio de influencia (`30` celdas) del Núcleo Urbano (`Zonificacion.gd`).
-- [x] Niveles Urbanos `1–3` (`2×2`, `4×4` y `8×4` pisos/camas), buffers de colonizabilidad de `24 h`, escuelas de cohorte (`escuela_tecnica`, `escuela_especialistas`) y `universidad`.
+- [x] Cámara cenital táctica (`CamaraCenital.gd`) con vuelo suave de transición (`0,6 s` con <kbd>C</kbd>), menú numérico jerárquico (`1` Construir, `2` Zonificar, `3` Demoler) con navegación y paginación <kbd>Z</kbd> / <kbd>X</kbd>, rotación `Ctrl + Rueda` y hasta 5 *blueprints* residenciales.
+- [x] Ciclo residencial completo: 1er edificio funda el **Núcleo Urbano**, 1ra Residencia nace con `Colonizable: SÍ`, 2da Residencia en adelante nace como buffer `Colonizable: NO (24 h)`, casas adosadas pared con pared y reubicación del Núcleo Urbano (`5 h`).
+- [x] Cadena académica estricta en Zona Residencial (`1 -> 4 -> 1..3`): `Escuela técnica` (`24 h` → 3 Técnicos) → `Escuela de especialistas` (`48 h` → 2 Especialistas) → `Universidad` interactiva con inicio manual, pausa y cancelación con reembolso del 100 %.
 
 ### Fase 3: Industrias, Fluidos, Moral Dinámica e Iconografía HUD (v3.56 – v3.57)
-- [x] **Puestos Periféricos con Niveles `I–III` y Agotamiento Físico:** `maderero`, `mina` (profundidades 8/16/24), `caza_recoleccion`, `pesca_frutos_mar`, `estacion_bombeo` y `centro_extraccion` con regresión automática de nivel.
-- [x] **Trazado y Construcción de Vías por Colonos (`ConstructorVias.gd`):** Carreteras de tierra pisada (`+35 %` velocidad, coste A* `3` vs `8`), construidas por cuadrillas de colonos con selector de prioridades (**Alta `▲▲▲`**, **Normal `▲▲`**, **Baja `▲`**) y demolición guiada.
-- [x] **Las 8 Instalaciones Industriales y Energéticas:** `aserradero`, `fabrica_bloques`, `carbonera`, `siderurgica`, `refineria_tierras_raras`, `refineria_petrolera` (tope 400/600), `productor_combustible` y `central_termoelectrica` (`20 E/h`, reserva de `500 Carbón`).
-- [x] **Cuotas de Reserva de Materia Prima (`[0, 50, 100, 250, 500] u`):** Protección de stock de madera y piedra en bruto en `VentanaAlmacen.gd` y fábricas.
-- [x] **Canalizaciones Aéreas Modulares (`Y + 6`):** Acueductos y tuberías con gálibo libre `Y + 5`, física de derrames por viscosidad y diagnóstico visual en `PanelCanalizacion.gd`.
-- [x] **Moral Dinámica y Migración Mensual Escalonada (`Ciudad.gd`):** Curva continua de productividad (`0,5 × 2^(Moral / 50)`), tasa diaria aplicada por hora (`/ 24,0`) y 9 tramos escalonados de migración mensual (`-5` a `+5 colonos/mes`).
-- [x] **Iconografía Vectorial HUD y Miniaturas 3D (v3.57):** Más de **90 iconos SVG pixel-art** (`IconosHUD.gd`), miniaturas 3D en vivo (`MiniaturaRenderer.gd`), botones de `104×76 px` en `BarraModos.gd` y balance eléctrico en `kW / MW` (`BarraSuperior.gd`).
+- [x] **Puestos Periféricos (`1 -> 2 -> 1..6`):** Caza, Maderero, Mina (prof. 8/16/24), Pesca, Estación de Bombeo (`>= 2` bloques de agua) y Centro de Extracción (columna física de perforación) con insignias romanas `I–III`, regla del rango mínimo de trabajadores y ventana `VentanaBaul` (<kbd>E</kbd>).
+- [x] **Red Vial (`1 -> 5 -> 1`), Modo a Pie (<kbd>V</kbd>) y Demolición Guiada (<kbd>3</kbd>):** Construcción progresiva por colonos (`ViaObraOverlay`), intervención a pie en secciones `2×2` (<kbd>V</kbd>), demolición guiada en naranja alrededor de esquinas de 90° mediante Dijkstra (<kbd>3</kbd>) y jerarquía global de 5 niveles de prioridad de obra.
+- [x] **Instalaciones Industriales y Energéticas (`1 -> 3 -> 1..9`):** Siderúrgica, Tierras Raras, Aserradero, Fábrica de Bloques, Carbonera, Refinería Petrolera (`400/600`), Productor de Combustible, Central Termoeléctrica (selector `[Carbón]`/`[Combustible]`/`[Crudo]`) y Almacén Industrial (`6` puertos de fluidos en `Y = 4`), con selector de **`Reserva central:`** (`0 / 50 / 100 / 250 / 500 u`).
+- [x] **Canalizaciones Elevadas (`1 -> 6 -> 1..2`):** Acueductos y tuberías en `Y + 4` (pilares cada 5 bloques), cruces a desnivel entre dos conductos en **`Y + 6`** (`1` bloque de aire libre en `Y + 5`), derrames físicos (`🔴 Derrame`) con viscosidad `0,20` y reconexión desde columna.
+- [x] **Moral Dinámica y `VentanaEnergia` con Teletransporte de Cámara:** Tasa diaria (`/día`), 3 regímenes migratorios escalonados (`<= 20%` éxodo, `20–50%` con camas, `> 50%` masiva) y vuelo suave (`Tween`) al hacer clic sobre edificios en `VentanaEnergia`.
+- [x] **Iconografía Vectorial HUD y Miniaturas 3D (v3.57):** Más de **90 iconos SVG pixel-art** (`IconosHUD.gd`), miniaturas 3D en vivo (`MiniaturaRenderer.gd`) y botones de `104×76 px` con insignias en 3 esquinas.
 
 ---
 
-## 3. Pendientes Inmediatos para el Cierre de Fase 3
+## 3. Próximas Fases (Fases 4 a 7)
 
-1. **Ajuste Fino de Balance en Sesión Larga:** Validación en partida prolongada de los tiempos de transición de Nivel Urbano 1 → 2 → 3 con la nueva tabla de migración mensual escalonada.
-2. **Consumo Universal de Energía de Era 3:** Extensión opcional del consumo eléctrico a edificios civiles avanzados al alcanzar la Era 3.
-
----
-
-## 4. Próximas Fases (Fases 4 a 7)
-
-### Fase 4: Cámara Dual de Combate y Selección de Tropas (PoC 7)
-- Selección por recuadro (*box-select*) y comando táctico de escuadras militares (`militar`) desde la cámara cenital, alternando en tiempo real con el combate directo en primera persona.
-
-### Fase 5: Logística Avanzada y Sistema de Puentes (PoC 8–10)
-- Carretas de carga terrestre, puentes modulares sobre ríos/cañones y líneas ferroviarias para transporte masivo a larga distancia.
-
-### Fase 6: Combate, Asedios, IA y Sucesión de Avatar
-- Campamentos enemigos procedurales, incursiones a puestos periféricos, murallas y torretas defensivas, y sistema de sucesión del avatar tras baja en combate (tecla de prueba `K` ya integrada en base).
-
-### Fase 7: Multijugador LAN y Núcleos Portátiles
-- Exportación del Núcleo Urbano y catálogo de *blueprints* hacia partidas multijugador competitivas y cooperativas en red local (LAN) y servidores dedicados.
+| Fase | Enfoque del Hito | Sistemas Clave |
+| :--- | :--- | :--- |
+| **Fase 4 (PoC 7)** | **Cámara Dual de Combate y Selección de Tropas** | Selección por recuadro y órdenes tácticas de escuadras militares (`militar`) desde la vista cenital combinadas con combate en 1ra persona. |
+| **Fase 5 (PoC 8–10)** | **Logística Avanzada y Sistema de Puentes** | Carretas de carga terrestre, puentes modulares sobre ríos/cañones y líneas ferroviarias. |
+| **Fase 6** | **Combate, Asedios, IA y Sucesión de Avatar** | Campamentos enemigos procedurales, incursiones a puestos periféricos, murallas y sucesión del avatar tras baja (`K` o ahogamiento). |
+| **Fase 7** | **Multijugador LAN y Núcleos Portátiles** | Exportación del Núcleo Urbano y catálogo de *blueprints* hacia partidas multijugador competitivas y cooperativas. |

@@ -17,6 +17,8 @@
 [ext_resource type="Script" path="res://scripts/ViaObraOverlay.gd" id="15"]
 [ext_resource type="Script" path="res://scripts/ViaDemolicionOverlay.gd" id="16"]
 
+[sub_resource type="ArrayMesh" id="ArrayMesh_obra"]
+
 
 [node name="Main" type="Node3D" unique_id=1572763968]
 script = ExtResource("3")
@@ -58,6 +60,7 @@ script = ExtResource("7")
 script = ExtResource("12")
 
 [node name="ViaObraOverlay" type="MeshInstance3D" parent="." unique_id=1547375539]
+mesh = SubResource("ArrayMesh_obra")
 script = ExtResource("15")
 
 [node name="ViaDemolicionOverlay" type="Node3D" parent="." unique_id=1547375540]

@@ -427,4 +427,3 @@ func actualizar() -> void:
 
 func _colorear_por_tasa(etiqueta: Label, tasa: float) -> void:
 	etiqueta.add_theme_color_override("font_color", TemaHUD.INVALIDO if tasa < 0.0 else TemaHUD.TEXTO)
-

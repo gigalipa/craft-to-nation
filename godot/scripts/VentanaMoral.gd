@@ -7,6 +7,7 @@ extends PanelContainer
 ## de factores (inercia, dieta, recursos, sin techo y peligrosidad de 7 días).
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
+const CiudadScript = preload("res://scripts/Ciudad.gd")
 
 const ANCHO_VENTANA := 500.0
 const ALTURA_VENTANA := 420.0
@@ -247,10 +248,10 @@ func actualizar() -> void:
 	_lbl_tendencia.text = "Tendencia: %+.2f / día" % tasa_m
 	_lbl_tendencia.add_theme_color_override("font_color", color_tasa)
 
-	var mult_prod: float = Ciudad.calcular_multiplicador_productividad(m) if Ciudad.has_method("calcular_multiplicador_productividad") else 1.0
+	var mult_prod: float = CiudadScript.calcular_multiplicador_productividad(m)
 	_lbl_productividad.text = "Productividad laboral: %.2fx" % mult_prod
 
-	var tasa_mig: float = Ciudad.calcular_tasa_migracion_mensual(m) if Ciudad.has_method("calcular_tasa_migracion_mensual") else 1.0
+	var tasa_mig: float = CiudadScript.calcular_tasa_migracion_mensual(m)
 	_rect_migracion.texture = IconosHUD.icono("ciudadano" if m > 20.0 else "investigador")
 	if m <= 20.0:
 		_lbl_migracion.text = "Migración: ⚠ Éxodo de cerebros (%d/mes)" % int(abs(tasa_mig))

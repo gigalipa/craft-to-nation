@@ -9,7 +9,6 @@ extends PanelContainer
 
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
-const IconosHUD = preload("res://scripts/IconosHUD.gd")
 
 signal edificio_pedido(esquina: Vector2i)
 

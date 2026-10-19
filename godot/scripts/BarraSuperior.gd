@@ -40,13 +40,8 @@ var _lbl_pob_par2: Label
 
 # Nodos visuales de íconos para BarraSuperior
 var _icono_poblacion: TextureRect
-var _icono_moral: TextureRect
 var _icono_comida: TextureRect
 var _icono_comida_tasa: TextureRect
-var _icono_almacen: TextureRect
-var _lbl_almacen: Label
-var _icono_energia: TextureRect
-var _lbl_energia: Label
 var _icono_critico: TextureRect
 var _icono_critico_recurso: TextureRect
 var _icono_era: TextureRect

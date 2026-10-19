@@ -188,16 +188,16 @@ static func crear_rect(clave_o_tex: Variant, tamano: Variant = 16) -> TextureRec
 		tam = Vector2(float(tamano), float(tamano))
 	else:
 		tam = Vector2(16, 16)
-	var tr := TextureRect.new()
+	var rect := TextureRect.new()
 	if clave_o_tex is Texture2D:
-		tr.texture = clave_o_tex
+		rect.texture = clave_o_tex
 	elif clave_o_tex is String:
-		tr.texture = icono(clave_o_tex)
-	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	tr.custom_minimum_size = tam
-	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return tr
+		rect.texture = icono(clave_o_tex)
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.custom_minimum_size = tam
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rect
 
 
 static func icono_recurso(recurso: String) -> String:

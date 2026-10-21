@@ -1,6 +1,8 @@
 extends CharacterBody3D
 class_name Player
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
 const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
@@ -11,28 +13,28 @@ const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
 
-const VELOCIDAD := 5.0
+static var VELOCIDAD: float = Ajustes.PLAYER_VELOCIDAD
 ## Gravedad y salto calibrados juntos: VELOCIDAD_SALTO = sqrt(2 * GRAVEDAD *
 ## ALTURA_SALTO_OBJETIVO) para un salto de ~1.2m (sube un bloque sin pasarse
 ## por mucho) con una caída con más peso que la gravedad original (9.8).
-const GRAVEDAD := 19.6
-const VELOCIDAD_SALTO := 6.86
-const SENSIBILIDAD_MOUSE := 0.003
-const ALCANCE_RAYCAST := 5.0
-const DANO_TALA := 1
+static var GRAVEDAD: float = Ajustes.PLAYER_GRAVEDAD
+static var VELOCIDAD_SALTO: float = Ajustes.PLAYER_VELOCIDAD_SALTO
+static var SENSIBILIDAD_MOUSE: float = Ajustes.PLAYER_SENSIBILIDAD_MOUSE
+static var ALCANCE_RAYCAST: float = Ajustes.PLAYER_ALCANCE_RAYCAST
+static var DANO_TALA: int = Ajustes.PLAYER_DANO_TALA
 
 ## Velocidad vertical al nadar hacia arriba/abajo (Espacio/Ctrl) una vez que
 ## los pies llegan al 2do bloque de agua o más profundo — ver
 ## _profundidad_agua_en_pies(). Un solo bloque de agua no alcanza para nadar:
 ## el jugador lo atraviesa cayendo con gravedad normal, como si no hubiera
 ## nada (ver _physics_process()).
-const VELOCIDAD_NATACION := 3.0
+static var VELOCIDAD_NATACION: float = Ajustes.PLAYER_VELOCIDAD_NATACION
 ## Hundimiento lento por defecto al nadar sin tocar Espacio/Ctrl — más lento
 ## que VELOCIDAD_NATACION, para que "dejarse caer" en el agua no se sienta
 ## como estar de pie sobre ella.
-const VELOCIDAD_HUNDIMIENTO := 1.0
+static var VELOCIDAD_HUNDIMIENTO: float = Ajustes.PLAYER_VELOCIDAD_HUNDIMIENTO
 ## Factor de resistencia viscosa en crudo (movimiento horizontal, nado y gravedad amortiguada).
-const FACTOR_VISCOSIDAD_CRUDO := 0.20
+static var FACTOR_VISCOSIDAD_CRUDO: float = Ajustes.PLAYER_FACTOR_VISCOSIDAD_CRUDO
 
 ## Corriente de río/cascada (diseño 2026-09-17, a partir de una captura real
 ## de un río en pendiente de montaña): a mayor pendiente del cauce (ver
@@ -42,43 +44,43 @@ const FACTOR_VISCOSIDAD_CRUDO := 0.20
 ## (GeneradorMundo.UMBRAL_CASCADA); más allá de eso el tramo ya es
 ## prácticamente vertical y el empuje horizontal relevante es el de
 ## EMPUJE_CASCADA_BASE_* al pie de la caída, no este. Ver _empuje_rio().
-const EMPUJE_RIO_MINIMO := 0.4
-const EMPUJE_RIO_POR_CAIDA := 0.7
+static var EMPUJE_RIO_MINIMO: float = Ajustes.PLAYER_EMPUJE_RIO_MINIMO
+static var EMPUJE_RIO_POR_CAIDA: float = Ajustes.PLAYER_EMPUJE_RIO_POR_CAIDA
 
 ## Empuje horizontal EXTRA (sumado al de _empuje_rio()) al pie de una
 ## cascada, interpolado según qué tan grande sea el salto (caida): un salto
 ## justo en el umbral empuja poco (EMPUJE_CASCADA_BASE_MINIMO), uno grande
 ## (CAIDA_EMPUJE_SATURA bloques o más) empuja fuerte (EMPUJE_CASCADA_BASE_
 ## MAXIMO) — ver _empuje_base_cascada().
-const EMPUJE_CASCADA_BASE_MINIMO := 0.5
-const EMPUJE_CASCADA_BASE_MAXIMO := 9.0
-const CAIDA_EMPUJE_SATURA := 12
+static var EMPUJE_CASCADA_BASE_MINIMO: float = Ajustes.PLAYER_EMPUJE_CASCADA_BASE_MINIMO
+static var EMPUJE_CASCADA_BASE_MAXIMO: float = Ajustes.PLAYER_EMPUJE_CASCADA_BASE_MAXIMO
+static var CAIDA_EMPUJE_SATURA: int = Ajustes.PLAYER_CAIDA_EMPUJE_SATURA
 
 ## Margen vertical (celdas) desde el fondo tallado de una cascada
 ## (VoxelWorld.columna_cascada_en()["y_base"]) dentro del cual se considera
 ## que el jugador está "al pie" de la caída — ver _procesar_corriente().
-const MARGEN_PIE_CASCADA := 2
+static var MARGEN_PIE_CASCADA: int = Ajustes.PLAYER_MARGEN_PIE_CASCADA
 
 ## Efecto visual de flotación (solo cosmético, no afecta velocity/colisión):
 ## mece la cámara con un seno mientras el jugador nada con la cabeza fuera
 ## del agua, para que se note que está en el agua y no caminando sobre ella
 ## (ver _procesar_flotacion()).
-const AMPLITUD_FLOTACION := 0.08
-const FRECUENCIA_FLOTACION := 1.0
+static var AMPLITUD_FLOTACION: float = Ajustes.PLAYER_AMPLITUD_FLOTACION
+static var FRECUENCIA_FLOTACION: float = Ajustes.PLAYER_FRECUENCIA_FLOTACION
 
 ## Segundos de aire disponibles con la cabeza sumergida (ver
 ## _cabeza_sumergida()) antes de ahogarse. Sin sistema de salud todavía (ver
 ## _morir_jugador()/_ejecutar_sucesion()): llegar a 0 reusa la misma
 ## sucesión del avatar que la tecla K de prueba.
-const OXIGENO_MAXIMO := 10.0
-const TASA_CONSUMO_OXIGENO := 1.0
-const TASA_RECUPERACION_OXIGENO := 2.0
+static var OXIGENO_MAXIMO: float = Ajustes.PLAYER_OXIGENO_MAXIMO
+static var TASA_CONSUMO_OXIGENO: float = Ajustes.PLAYER_TASA_CONSUMO_OXIGENO
+static var TASA_RECUPERACION_OXIGENO: float = Ajustes.PLAYER_TASA_RECUPERACION_OXIGENO
 
 ## Intervalo entre repeticiones de colocar (y de deconstruir, con su contador de
 ## "sostener") mientras se mantiene el click presionado. Minar, talar y recolectar
 ## frutos ya no repiten: avanzan por tiempo con ProgresoAccion (ver Recoleccion.
 ## tiempo_minado_de()).
-const INTERVALO_ACCION_REPETIDA := FinalizacionObras.INTERVALO_PASO
+static var INTERVALO_ACCION_REPETIDA: float = FinalizacionObras.INTERVALO_PASO
 const ProgresoAccionScript = preload("res://scripts/ProgresoAccion.gd")
 const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 
@@ -113,7 +115,7 @@ var _cara_apuntada: MeshInstance3D = CaraApuntadaScript.new()
 
 var modo_deconstruccion := false
 var modo_vias := false
-const INTERVALO_AVISO_DECONSTRUCCION_MS := 2000
+static var INTERVALO_AVISO_DECONSTRUCCION_MS: int = Ajustes.PLAYER_INTERVALO_AVISO_DECONSTRUCCION_MS
 
 var _ultimo_aviso_deconstruccion_ms := -INTERVALO_AVISO_DECONSTRUCCION_MS
 var _id_listo_para_remocion := -1
@@ -142,41 +144,41 @@ var _tiempo_flotacion := 0.0
 ## seguidos apuntando al MISMO edificio ya reducido a fantasma vacío hacen
 ## falta para eliminarlo del todo — demora deliberada (~1s) para evitar
 ## borrados accidentales al mantener el click presionado.
-const TICKS_REMOCION_FINAL := 5
+static var TICKS_REMOCION_FINAL: int = Ajustes.PLAYER_TICKS_REMOCION_FINAL
 
 ## Lámpara del jugador: activación con tecla L, iluminación difusa OmniLight3D
 ## y consumo/recarga de energía o combustibles.
-const BATERIA_LAMPARA_MAX := 72.0
-const RECARGA_BATERIA_POR_HORA := 7.2
+static var BATERIA_LAMPARA_MAX: float = Ajustes.PLAYER_BATERIA_LAMPARA_MAX
+static var RECARGA_BATERIA_POR_HORA: float = Ajustes.PLAYER_RECARGA_BATERIA_POR_HORA
 
-const DATOS_LUZ_LAMPARA := {
+static var DATOS_LUZ_LAMPARA: Dictionary = {
 	"electrica": {
-		"color": Color(1.0, 0.98, 0.95),
+		"color": Ajustes.COLOR_LUZ_LAMPARA_ELECTRICA,
 		"rango": 18.0,
 		"energia": 1.3,
 		"horas_por_unidad": 0.0,
-		"nombre": "Eléctrica",
+		"nombre": Strings.LAMPARA_NOMBRES_MODO["electrica"],
 	},
 	"combustible": {
-		"color": Color(1.0, 0.9, 0.7),
+		"color": Ajustes.COLOR_LUZ_LAMPARA_COMBUSTIBLE,
 		"rango": 14.0,
 		"energia": 1.0,
 		"horas_por_unidad": 10.0,
-		"nombre": "Combustible",
+		"nombre": Strings.LAMPARA_NOMBRES_MODO["combustible"],
 	},
 	"carbon": {
-		"color": Color(1.0, 0.8, 0.5),
+		"color": Ajustes.COLOR_LUZ_LAMPARA_CARBON,
 		"rango": 10.0,
 		"energia": 0.75,
 		"horas_por_unidad": 6.0,
-		"nombre": "Carbón",
+		"nombre": Strings.LAMPARA_NOMBRES_MODO["carbon"],
 	},
 	"madera": {
-		"color": Color(1.0, 0.65, 0.35),
+		"color": Ajustes.COLOR_LUZ_LAMPARA_MADERA,
 		"rango": 7.0,
 		"energia": 0.5,
 		"horas_por_unidad": 5.0,
-		"nombre": "Madera",
+		"nombre": Strings.LAMPARA_NOMBRES_MODO["madera"],
 	},
 }
 
@@ -208,11 +210,11 @@ func _ready() -> void:
 	# Inventario inicial para pruebas: 1000 de cada recurso y 5000 de comida
 	if Ciudad != null and Ciudad.almacen != null:
 		for r in Ciudad.almacen:
-			Ciudad.almacen[r].limite = maxf(Ciudad.almacen[r].limite, 2000.0)
-			Ciudad.almacen[r].cantidad = 1000.0
+			Ciudad.almacen[r].limite = maxf(Ciudad.almacen[r].limite, Ajustes.PLAYER_LIMITE_INICIAL_DEBUG)
+			Ciudad.almacen[r].cantidad = Ajustes.PLAYER_STOCK_INICIAL_DEBUG
 		if Ciudad.almacen.has("comida"):
-			Ciudad.almacen["comida"].limite = maxf(Ciudad.almacen["comida"].limite, 5000.0)
-			Ciudad.almacen["comida"].cantidad = 5000.0
+			Ciudad.almacen["comida"].limite = maxf(Ciudad.almacen["comida"].limite, Ajustes.PLAYER_COMIDA_INICIAL_DEBUG)
+			Ciudad.almacen["comida"].cantidad = Ajustes.PLAYER_COMIDA_INICIAL_DEBUG
 
 	# Inicializar luz difusa de la lámpara
 	_luz_lampara = OmniLight3D.new()
@@ -473,7 +475,7 @@ func _interactuar() -> void:
 		_e_consumida = true
 		get_viewport().set_input_as_handled()
 	elif mundo.obtener_tipo(celda) == "baul":
-		hud.notificar("Este baúl no pertenece a un puesto de trabajo con depósito activo.")
+		hud.notificar(Strings.PLAYER_NOTIF_BAUL_NO_PUESTO)
 
 
 ## Frutos: mantener E sobre un árbol con frutos. No consume el árbol (ver
@@ -493,7 +495,7 @@ func _procesar_frutos(delta: float) -> void:
 		hud.ocultar_progreso()
 		if not _aviso_sin_frutos_dado and mundo.arboles.obtener_arbol_de(celda) != -1:
 			_aviso_sin_frutos_dado = true
-			hud.notificar("Este árbol no tiene frutos disponibles todavía.")
+			hud.notificar(Strings.PLAYER_NOTIF_ARBOL_SIN_FRUTOS)
 		return
 	var id: int = mundo.arboles.obtener_arbol_de(celda)
 	if _progreso_accion.avanzar("frutos:%d" % id, Recoleccion.TIEMPO_RECOLECCION_FRUTOS, delta):
@@ -575,13 +577,13 @@ func _physics_process(delta: float) -> void:
 ## volver de la cenital, cuyo set_vista() descarta el panel.
 func mostrar_contexto_deconstruccion() -> void:
 	if hud != null:
-		hud.mostrar_contexto("Deconstruir", {}, ["(clic izq.) DECONSTRUIR\n(clic der.) MARCAR PARA DEMOLICIÓN\n[G] Salir del modo deconstrucción"])  # un solo elemento: cada instrucción en su línea
+		hud.mostrar_contexto(Strings.PLAYER_MODO_DECONSTRUIR_TITULO, {}, [Strings.PLAYER_MODO_DECONSTRUIR_INSTRUCCIONES])  # un solo elemento: cada instrucción en su línea
 
 
 ## Panel fijo mientras el modo de vías (V) está activo.
 func mostrar_contexto_vias() -> void:
 	if hud != null:
-		hud.mostrar_contexto("Vías", {}, ["(clic izq.) CONSTRUIR VÍA\n(clic der.) DEMOLER VÍA\n[V] Salir del modo vías"])
+		hud.mostrar_contexto(Strings.PLAYER_MODO_VIAS_TITULO, {}, [Strings.PLAYER_MODO_VIAS_INSTRUCCIONES])
 
 
 
@@ -878,7 +880,7 @@ func _trabajar_via_manual() -> void:
 		if id_arriba != 0:
 			id_via = id_arriba
 		else:
-			hud.notificar("No hay ninguna obra de vía pendiente en esa celda.")
+			hud.notificar(Strings.PLAYER_NOTIF_SIN_OBRA_VIA)
 			return
 
 	if not Obras.obras_vias.has(id_via):
@@ -925,7 +927,7 @@ func _trabajar_via_manual() -> void:
 			completada = true
 
 	if completada:
-		hud.notificar("Vía completada.")
+		hud.notificar(Strings.PLAYER_NOTIF_VIA_COMPLETADA)
 
 
 func _demoler_via_manual() -> void:
@@ -941,7 +943,7 @@ func _demoler_via_manual() -> void:
 		elif Vias.es_via(celda_abajo):
 			col = Vector2i(celda_abajo.x, celda_abajo.z)
 		else:
-			hud.notificar("No hay ninguna vía construida en esa celda.")
+			hud.notificar(Strings.PLAYER_NOTIF_SIN_VIA_CONSTRUIDA)
 			return
 
 	var celdas_seccion: Array[Vector3i] = Vias.celdas_de_seccion(col)
@@ -951,7 +953,7 @@ func _demoler_via_manual() -> void:
 			celdas_seccion = [c_unica]
 
 	if celdas_seccion.is_empty():
-		hud.notificar("No hay ninguna vía construida en esa celda.")
+		hud.notificar(Strings.PLAYER_NOTIF_SIN_VIA_CONSTRUIDA)
 		return
 
 	var id_dem := 0
@@ -983,15 +985,15 @@ func _marcar_demolicion() -> void:
 
 func _marcar_demolicion_de(id: int) -> void:
 	if id == -1:
-		hud.notificar("No hay ningún edificio ahí para marcar.")
+		hud.notificar(Strings.PLAYER_NOTIF_SIN_EDIFICIO_PARA_MARCAR)
 		return
 	var motivo: String = Obras.alternar_marca(id)
 	if motivo != "":
 		hud.notificar(motivo)
 	elif Obras.esta_marcado(id):
-		hud.notificar("Edificio marcado para demolición.")
+		hud.notificar(Strings.PLAYER_NOTIF_EDIFICIO_MARCADO_DEMOLICION)
 	else:
-		hud.notificar("Marca de demolición quitada.")
+		hud.notificar(Strings.PLAYER_NOTIF_MARCA_DEMOLICION_QUITADA)
 
 
 ## Notificación de que la acción no está disponible con el modo deconstrucción
@@ -1001,7 +1003,7 @@ func _avisar_modo_deconstruccion(accion: String) -> void:
 	if ahora - _ultimo_aviso_deconstruccion_ms < INTERVALO_AVISO_DECONSTRUCCION_MS:
 		return
 	_ultimo_aviso_deconstruccion_ms = ahora
-	hud.notificar("Modo Deconstrucción activo: no se puede %s. Pulsa G para salir." % accion)
+	hud.notificar(Strings.PLAYER_NOTIF_MODO_DECONSTRUCCION_BLOQUEA % accion)
 
 
 ## Un intento de deconstrucción sobre el bloque bajo la mira (modo G). Minar y
@@ -1028,7 +1030,7 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 
 	var resultado: Dictionary = mundo.procesar_deconstruccion(celda)
 	if resultado.is_empty():
-		_avisar_modo_deconstruccion("minar ni talar")
+		_avisar_modo_deconstruccion(Strings.PLAYER_ACCION_MINAR_NI_TALAR)
 		_id_listo_para_remocion = -1
 		_ticks_listo_para_remocion = 0
 		return
@@ -1095,9 +1097,9 @@ func _colocar() -> void:
 	if not resultado.is_empty():
 		Obras.reclamar(mundo.id_de_edificio(celda))  # el jugador tiene preferencia sobre los colonos
 		if resultado.get("bloqueada", false):
-			_avisar_colocacion_rechazada("Hay alguien dentro del sitio de la obra %d: deben salir antes de iniciarla." % resultado["id"])
+			_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_OBRA_OCUPADA % resultado["id"])
 		elif resultado.get("insuficiente", false):
-			_avisar_colocacion_rechazada("No hay suficiente %s para continuar la obra." % _nombre_recurso(resultado["recurso"]))
+			_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_FALTA_MATERIAL_OBRA % _nombre_recurso(resultado["recurso"]))
 		elif resultado.get("completa", false):
 			_completar_construccion(resultado["metadata"])
 			# La construcción se completó con este mismo clic sostenido: no
@@ -1114,7 +1116,7 @@ func _colocar() -> void:
 	elif tipo == "cama":
 		segunda_celda = celda_destino + _direccion_cardinal()
 	if _celda_ocupada_por_jugador(celda_destino) or _celda_ocupada_por_jugador(segunda_celda):
-		_avisar_colocacion_rechazada("No se puede colocar un bloque donde está parado el jugador.")
+		_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_COLOCAR_SOBRE_JUGADOR)
 		return
 	if not _cobrar_colocacion(tipo):
 		return
@@ -1127,7 +1129,7 @@ func _colocar() -> void:
 		colocado = mundo.colocar_bloque(celda_destino, tipo, true)
 	if not colocado:
 		_reembolsar_colocacion(tipo)
-		_avisar_colocacion_rechazada("No hay espacio suficiente para colocar: %s" % _nombre_bloque(tipo))
+		_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_SIN_ESPACIO_COLOCAR % _nombre_bloque(tipo))
 		return
 	# Marca como REALMENTE pagadas las celdas que se acaban de cobrar (ver
 	# VoxelWorld.celdas_pagadas) para que, y solo entonces, volver a minarlas
@@ -1154,7 +1156,7 @@ func _cobrar_colocacion(tipo: String) -> bool:
 			for r in _ultimo_cobro_colocacion:
 				Ciudad.almacen[r].agregar(_ultimo_cobro_colocacion[r])
 			_ultimo_cobro_colocacion = {}
-			_avisar_colocacion_rechazada("No hay suficiente %s para colocar: %s" % [_nombre_recurso(recurso), _nombre_bloque(tipo)])
+			_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_FALTA_MATERIAL_COLOCAR % [_nombre_recurso(recurso), _nombre_bloque(tipo)])
 			return false
 		for r in detalle:
 			_ultimo_cobro_colocacion[r] = _ultimo_cobro_colocacion.get(r, 0.0) + detalle[r]
@@ -1275,7 +1277,7 @@ static func _celdas_objetivo_muebles(celdas: Dictionary) -> Array[Vector3i]:
 static func _verificar_acceso_pathfinding(p_mundo: Node, celdas: Dictionary) -> String:
 	var origenes: Array[Vector3i] = _celdas_externas_puerta(celdas)
 	if origenes.is_empty():
-		return "ninguna puerta externa tiene un vestíbulo libre para entrar."
+		return Strings.PLAYER_ERR_SIN_VESTIBULO_EXTERNO
 	var buscador := BuscadorRutas.new(p_mundo)
 	for pos: Vector3i in celdas.keys():
 		var tipo: String = celdas[pos]
@@ -1283,8 +1285,8 @@ static func _verificar_acceso_pathfinding(p_mundo: Node, celdas: Dictionary) -> 
 			continue
 		var objetivo := pos + Vector3i(0, 1, 0)
 		if buscador.buscar_ruta_a_alguna(objetivo, origenes).is_empty():
-			var mueble: String = "Una cama" if tipo == "cama_cabecera" else "Un baúl"
-			return "%s no tiene un camino transitable hasta ninguna puerta externa." % mueble
+			var mueble: String = Strings.PLAYER_OBJETO_UNA_CAMA if tipo == "cama_cabecera" else Strings.PLAYER_OBJETO_UN_BAUL
+			return Strings.PLAYER_ERR_SIN_CAMINO_A_PUERTA % mueble
 	return ""
 
 
@@ -1298,14 +1300,14 @@ func _declarar_edificio() -> void:
 	var celda := _celda_impactada()
 	var tipo_apuntado: String = mundo.obtener_tipo(celda)
 	if tipo_apuntado != "puerta_inferior" and tipo_apuntado != "puerta_superior":
-		_notificar_rechazo("Declarar edificio: apunta a la puerta principal de la estructura.")
+		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_APUNTA_PUERTA)
 		return
 	if mundo.id_de_edificio(celda) != -1:
-		_notificar_rechazo("Declarar edificio: ese edificio ya fue declarado.")
+		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_YA_DECLARADO)
 		return
 	var celdas: Dictionary = mundo.detectar_estructura(celda)
 	if celdas.is_empty():
-		_notificar_rechazo("Declarar edificio: esa puerta no fue colocada por el jugador.")
+		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_PUERTA_NO_JUGADOR)
 		return
 	var blueprint := BlueprintValidator.estructura_a_blueprint(celdas)
 
@@ -1340,15 +1342,15 @@ func _declarar_edificio() -> void:
 		# Solo el primer error: unirlos todos mezclaba restricciones distintas
 		# en una sola notificación (reportado jugando en vivo, 2026-09-27) — el
 		# resto queda en la consola (print de arriba) para quien lo necesite.
-		_notificar_rechazo("Declarar edificio: %s" % resultado["errores"][0])
+		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_FORMATO % resultado["errores"][0])
 		return
 	var motivo_despeje: String = mundo.motivo_despeje_invalido(celdas)
 	if motivo_despeje != "":
-		_notificar_rechazo("Declarar edificio: %s" % motivo_despeje)
+		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_FORMATO % motivo_despeje)
 		return
 	var motivo_pathfinding: String = _verificar_acceso_pathfinding(mundo, celdas)
 	if motivo_pathfinding != "":
-		_notificar_rechazo("Declarar edificio: %s" % motivo_pathfinding)
+		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_FORMATO % motivo_pathfinding)
 		return
 
 	Blueprints.guardar(blueprint)
@@ -1377,15 +1379,15 @@ func _iniciar_remodelacion() -> void:
 	var celda := _celda_impactada()
 	var tipo_apuntado: String = mundo.obtener_tipo(celda)
 	if tipo_apuntado != "puerta_inferior" and tipo_apuntado != "puerta_superior":
-		_notificar_rechazo("Remodelar edificio: apunta a la puerta principal de la estructura.")
+		_notificar_rechazo(Strings.PLAYER_NOTIF_REMODELAR_APUNTA_PUERTA)
 		return
 	var id_edificio: int = mundo.id_de_edificio(celda)
 	if id_edificio == -1:
-		_notificar_rechazo("Remodelar edificio: esa estructura no es un edificio declarado.")
+		_notificar_rechazo(Strings.PLAYER_NOTIF_REMODELAR_NO_DECLARADO)
 		return
 	var resumen: Dictionary = Obras.resumen_de(id_edificio)
 	if not resumen.is_empty() and resumen.get("estado", "") != "completo":
-		_notificar_rechazo("Remodelar edificio: solo se pueden remodelar edificios terminados.")
+		_notificar_rechazo(Strings.PLAYER_NOTIF_REMODELAR_NO_TERMINADO)
 		return
 	var sin_techo: int = Ciudad.calcular_sin_techo_al_remodelar(id_edificio)
 	if sin_techo > 0 and hud != null:
@@ -1395,9 +1397,9 @@ func _iniciar_remodelacion() -> void:
 	var resultado: Dictionary = FinalizacionObras.iniciar_remodelacion(mundo, id_edificio)
 	if resultado.get("exito", false):
 		if hud != null:
-			hud.notificar(resultado.get("mensaje", "Remodelación iniciada."))
+			hud.notificar(resultado.get("mensaje", Strings.PLAYER_NOTIF_REMODELACION_INICIADA))
 	else:
-		_notificar_rechazo("Remodelar edificio: %s" % resultado.get("motivo", "no se pudo remodelar."))
+		_notificar_rechazo(Strings.PLAYER_NOTIF_REMODELAR_FORMATO % resultado.get("motivo", Strings.PLAYER_ERR_NO_SE_PUDO_REMODELAR))
 
 
 ## Tecla de prueba (K): simula la muerte del jugador para poder probar la
@@ -1482,7 +1484,7 @@ func encender_lampara() -> void:
 	var fuente := evaluar_fuente_lampara()
 	if fuente == "":
 		if hud != null and hud.has_method("notificar"):
-			hud.notificar("Sin energía ni combustible para la lámpara")
+			hud.notificar(Strings.PLAYER_NOTIF_SIN_ENERGIA_LAMPARA)
 		return
 	lampara_encendida = true
 	fuente_lampara_actual = fuente

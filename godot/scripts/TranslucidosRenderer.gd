@@ -11,11 +11,12 @@ extends Node3D
 ## los ítems "agua"/"vidrio" de la MeshLibrary tienen una malla vacía
 ## (ver BlockLibrarySource.tscn), así que este nodo es todo lo que se ve.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const MATERIAL_AGUA := preload("res://assets/mat_agua.tres")
 const MATERIAL_VENTANA := preload("res://assets/mat_ventana.tres")
 
-const CHUNK_SIZE := 16
+static var CHUNK_SIZE: int = Ajustes.TRANSLUCIDOS_CHUNK_SIZE
 
 ## Mismo desfase que CamaraCenital.gd/ZonaOverlay.gd: una celda "celda"
 ## ocupa el rango [celda, celda+1] en cada eje, así que su CENTRO real está
@@ -120,7 +121,7 @@ static func _esquinas_cara(centro: Vector3, direccion: Vector3i) -> Array[Vector
 
 static func _crear_material_crudo() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.06, 0.05, 0.04, 0.94)
+	mat.albedo_color = Ajustes.COLOR_TRANSLUCIDO_CRUDO
 	mat.roughness = 0.1
 	mat.metallic = 0.1
 	mat.metallic_specular = 0.8
@@ -132,7 +133,7 @@ static func _crear_material_crudo() -> StandardMaterial3D:
 
 static func _crear_material_combustible() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(1.0, 0.55, 0.1, 0.75)
+	mat.albedo_color = Ajustes.COLOR_TRANSLUCIDO_COMBUSTIBLE
 	mat.roughness = 0.15
 	mat.metallic = 0.0
 	mat.metallic_specular = 0.6

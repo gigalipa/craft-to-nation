@@ -11,6 +11,8 @@ extends PanelContainer
 ## "poblacion", "almacen" o "energia"; solo lo escucha CamaraCenital (HUD.dato_pedido).
 signal dato_pedido(cual: String)
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
 ## Fija hasta que exista Ciudad.era: las Eras son "visión a futuro, sin
@@ -81,7 +83,7 @@ static func color_nivel_moral(m: float) -> Color:
 		return Color(1.0, 0.65, 0.2)
 	elif m <= 65.0:
 		return TemaHUD.TEXTO
-	return Color(0.45, 0.90, 0.45)
+	return TemaHUD.VALIDO
 
 
 static func formatear_energia_neta(neto: float) -> String:
@@ -101,7 +103,7 @@ static func formatear_energia_neta(neto: float) -> String:
 
 ## Fracción 0-1 del bono de moral respecto al máximo (acotada).
 static func fraccion_moral(bono: float) -> float:
-	return clampf(bono / Ciudad.BONO_MORAL_MAXIMO, 0.0, 1.0)
+	return clampf(bono / Ajustes.CIUDAD_BONO_MORAL_MAXIMO, 0.0, 1.0)
 
 
 static func texto_tasa(tasa: float) -> String:
@@ -245,7 +247,7 @@ func _ready() -> void:
 	grupo_cen.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	grupo_cen.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-	almacen_total.text = "Almacén"
+	almacen_total.text = Strings.VENTANA_ALMACEN_TITULO
 	TemaHUD.estilizar_boton(almacen_total)
 	almacen_total.custom_minimum_size = Vector2(106, 28)
 	almacen_total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -357,7 +359,7 @@ func actualizar() -> void:
 	if _lbl_pob_par2 != null:
 		_lbl_pob_par2.add_theme_color_override("font_color", color_pob)
 
-	var m: float = Ciudad.moral if ("moral" in Ciudad) else 75.0
+	var m: float = Ciudad.moral if ("moral" in Ciudad) else Ajustes.CIUDAD_MORAL_INICIAL
 	moral.text = ""
 	moral.tooltip_text = "Moral: %.0f%%" % m
 	var clave_moral := IconosHUD.icono_moral(m)
@@ -380,7 +382,7 @@ func actualizar() -> void:
 	if _icono_comida_tasa != null:
 		_icono_comida_tasa.texture = IconosHUD.icono(IconosHUD.icono_tasa(tasa_comida))
 
-	almacen_total.text = "Almacén"
+	almacen_total.text = Strings.VENTANA_ALMACEN_TITULO
 
 	var res_e: Dictionary = Economia.balance_energia if Economia != null else {}
 	var capacidad_e: float = res_e.get("capacidad", 0.0)

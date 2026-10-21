@@ -7,6 +7,7 @@ extends PanelContainer
 ## Las filas solo se reconstruyen si cambia el conjunto de puestos: un botón recreado
 ## cada fotograma perdería el clic entre el press y el release (ver VentanaPoblacion).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 
@@ -180,7 +181,7 @@ func _reconstruir(por_cat: Dictionary) -> void:
 		header.icon = IconosHUD.icono(cat_icono)
 		header.expand_icon = true
 		TemaHUD.estilizar_boton(header)
-		header.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+		header.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 		caja_cat.add_child(header)
 		_headers_categoria[cat] = header
 
@@ -244,7 +245,7 @@ func _fila_titulo(texto: String) -> Control:
 	var ic := IconosHUD.crear_rect("edificio_engranaje", 20)
 	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
-	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	cont_tit.add_child(titulo)
 	fila.add_child(cont_tit)
 

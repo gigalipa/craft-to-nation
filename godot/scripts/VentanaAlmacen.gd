@@ -9,6 +9,8 @@ extends PanelContainer
 ## partida, incluida al salir y volver a entrar a la cenital (HUD.set_vista()
 ## la oculta/restaura sin tocarlas).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
@@ -39,7 +41,7 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(320, 0)
 	_caja_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_caja_raiz)
-	_caja_raiz.add_child(_fila_titulo("Almacén"))
+	_caja_raiz.add_child(_fila_titulo(Strings.VENTANA_ALMACEN_TITULO))
 	_caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_caja_raiz.add_child(_caja)
 
@@ -75,7 +77,7 @@ func _actualizar() -> void:
 	for hijo in _caja.get_children():
 		hijo.free()
 	if Ciudad.almacen.is_empty():
-		_caja.add_child(TemaHUD.etiqueta("Vacío"))
+		_caja.add_child(TemaHUD.etiqueta(Strings.PANEL_PUESTO_ALMACEN_VACIO))
 		return
 	var claves: Array = Ciudad.almacen.keys()
 	claves.sort_custom(func(a: String, b: String) -> bool:
@@ -114,7 +116,7 @@ func _fila_titulo(texto: String) -> Control:
 	var ic := IconosHUD.crear_rect("almacen", 20)
 	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
-	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	cont_tit.add_child(titulo)
 	fila.add_child(cont_tit)
 

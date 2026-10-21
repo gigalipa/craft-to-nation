@@ -4,9 +4,11 @@ extends Node3D
 ## por celda del edificio, reconstruida entera cada vez que cambia una marca (hay pocos edificios
 ## marcados). Mismo patrón que ZonaOverlay.gd y NivelacionOverlay.gd; no toca el mundo.
 
-const COLOR := Color(1.0, 0.15, 0.15, 0.35)
-const COLOR_DEMOLICION := Color(1.0, 0.15, 0.15, 0.35)
-const COLOR_PROGRAMADA := Color(1.0, 0.6, 0.1, 0.35)
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var COLOR: Color = Ajustes.COLOR_MARCA_DEMOLICION
+static var COLOR_DEMOLICION: Color = Ajustes.COLOR_MARCA_DEMOLICION
+static var COLOR_PROGRAMADA: Color = Ajustes.COLOR_MARCA_PROGRAMADA
 const DESF := 0.5  # una celda ocupa [celda, celda+1]: su centro está en celda + DESF
 const PRIORIDAD := 3
 
@@ -26,7 +28,7 @@ var _material_programada: StandardMaterial3D
 
 func _init() -> void:
 	_malla = BoxMesh.new()
-	_malla.size = Vector3.ONE * 1.02  # un pelo más grande: evita el z-fighting con las caras del edificio
+	_malla.size = Vector3.ONE * Ajustes.MARCAS_DEMOLICION_TAMANO_CAJA  # un pelo más grande: evita el z-fighting con las caras del edificio
 	_material_demolicion = StandardMaterial3D.new()
 	_material_demolicion.albedo_color = COLOR_DEMOLICION
 	_material_demolicion.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

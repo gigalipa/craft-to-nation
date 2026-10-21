@@ -16,7 +16,9 @@ extends RefCounted
 ## Las pruebas (NiveladorTerrenoTest.gd) le pasan generadores falsos con
 ## pendientes exactas y controladas, ya que GeneradorMundo real usa ruido.
 
-const LIMITE_PENDIENTE := 2
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var LIMITE_PENDIENTE: int = Ajustes.NIVELADOR_TERRENO_LIMITE_PENDIENTE
 
 ## "Sin puerta guía": todas las puertas inferiores deciden el nivel (ver calcular_base_y()).
 const SIN_PUERTA_GUIA := Vector3i(-99999, -99999, -99999)
@@ -31,23 +33,7 @@ const DIRECCIONES_XZ := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector
 ## la vez, ver VoxelWorld.colocar_puerta()/colocar_cama()); "puerta_inferior"/
 ## "puerta_superior"/"cama_cabecera"/"cama_pies" son el costo POR CELDA,
 ## usado al reembolsar o al escanear una estructura ya construida.
-const COSTO_POR_CELDA := {
-	"tierra": {"tierra": 1},
-	"adobe": {"tierra": 1},
-	"bloque_madera": {"madera": 5},
-	"bloque_piedra": {"piedra": 5},
-	"estructura_hierro": {"hierro": 5},
-	"bloque_acero": {"acero": 3},
-	"vidrio": {"tierra": 1},
-	"puerta_inferior": {"madera": 1},
-	"puerta_superior": {"madera": 1},
-	"puerta": {"madera": 2},
-	"cama_cabecera": {"madera": 1},
-	"cama_pies": {"madera": 1},
-	"cama": {"madera": 2},
-	"baul": {"madera": 1},
-	"mesa_estudio": {"madera": 1},  # igual que un baúl (decisión del usuario, 2026-10-01)
-}
+static var COSTO_POR_CELDA: Dictionary = Ajustes.NIVELADOR_TERRENO_COSTO_POR_CELDA
 
 ## Sin tipo estático: puede ser un RefCounted (GeneradorMundo, los
 ## generadores falsos de las pruebas) o un Node (VoxelWorld real, que

@@ -5,6 +5,8 @@ extends PanelContainer
 ## (CamaraCenital, Player) lo empuja vía HUD.mostrar_contexto(); este panel
 ## no lee ningún estado del juego.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const ICONO_CLIC_DERECHO := "res://assets/icons/click_der.svg"
@@ -191,7 +193,7 @@ static func _formatear_con_iconos_extra(texto: String) -> String:
 	return "\n".join(resultado)
 
 
-const DORADO_TEXTO := Color(1.0, 0.85, 0.4)
+static var DORADO_TEXTO: Color = Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE
 
 
 func _ready() -> void:
@@ -335,7 +337,7 @@ func mostrar(nombre: String, costo_dic: Dictionary, lista_acciones: Array, valid
 			validez.text = "Ubicación válida"
 			validez.add_theme_color_override("font_color", TemaHUD.VALIDO)
 		else:
-			var desc_motivo := motivo_invalido.replace("Colocación rechazada: ", "").strip_edges()
+			var desc_motivo := motivo_invalido.replace(Strings.CAMARA_RECHAZO_PREFIJO, "").strip_edges()
 			var motivo_str := (": " + desc_motivo) if desc_motivo != "" else ""
 			validez.text = "Ubicación no válida%s" % motivo_str
 			validez.add_theme_color_override("font_color", TemaHUD.INVALIDO)

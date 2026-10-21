@@ -9,14 +9,16 @@ extends Node3D
 ## Sin assets: la textura es un degradado radial (bola difusa). Para un humo mejor basta cambiar
 ## _crear_textura() por una textura cargada (p. ej. un paquete CC0 de humo); el resto no cambia.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 const INTERVALO := 0.5  # segundos entre chequeos de las refinerías
-const CANTIDAD := 28
-const VIDA := 4.0
+static var CANTIDAD: int = Ajustes.HUMO_REFINERIAS_PARTICULAS
+static var VIDA: float = Ajustes.HUMO_REFINERIAS_TIEMPO_VIDA
 
 ## tipo de refinería -> {"color": tono base, "alfa": opacidad máxima, "escala": tamaño final de la
 ## partícula, "vida": segundos}; los que faltan usan ESTILO_BASE (el gris de la siderúrgica).
-const ESTILO_BASE := {"color": Color(0.3, 0.3, 0.3), "alfa": 0.55, "escala": 2.6, "vida": VIDA}
-const ESTILOS := {
+static var ESTILO_BASE: Dictionary = {"color": Ajustes.COLOR_HUMO_REFINERIA, "alfa": 0.55, "escala": 2.6, "vida": VIDA}
+static var ESTILOS: Dictionary = {
 	"refineria_tierras_raras": {"color": Color(0.55, 0.35, 0.8), "alfa": 0.6, "escala": 2.6, "vida": VIDA},
 	"carbonera": {"color": Color(0.06, 0.06, 0.06), "alfa": 0.85, "escala": 3.2, "vida": VIDA},
 	"aserradero": {"color": Color(0.85, 0.68, 0.4), "alfa": 0.75, "escala": 1.0, "vida": 2.2},

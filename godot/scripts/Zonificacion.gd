@@ -11,9 +11,11 @@ extends Node
 ## tiene componente .z, así que la coordenada mundial Z vive en el campo .y
 ## (misma convención que BlueprintValidator._parsear_celda).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 ## Margen del núcleo urbano — sin cambios, sigue siendo especial (no tiene
 ## "categoria", es el único ancla fija de la zona de influencia).
-const MARGEN_ZONA_INFLUENCIA := 15
+static var MARGEN_ZONA_INFLUENCIA: int = Ajustes.ZONIFICACION_MARGEN_ZONA_INFLUENCIA
 
 ## Margen de ampliación de la zona de influencia por categoría de edificio
 ## (ver BlueprintValidator.estructura_a_blueprint(), campo "categoria") —
@@ -22,16 +24,11 @@ const MARGEN_ZONA_INFLUENCIA := 15
 ## declarables en esta PoC (investigacion/industrial/militar: no existe
 ## ningún blueprint de esos tipos, "categoria" siempre vale "residencial"
 ## por ahora) quedan definidas igual, listas para cuando existan.
-const MARGEN_POR_CATEGORIA := {
-	"residencial": 6,
-	"investigacion": 10,
-	"industrial": 10,
-	"militar": 12,
-}
+static var MARGEN_POR_CATEGORIA: Dictionary = Ajustes.ZONIFICACION_MARGEN_POR_CATEGORIA
 ## Margen de respaldo si "categoria" no coincide con ninguna clave conocida
 ## — nunca debería ocurrir con blueprints reales (estructura_a_blueprint()
 ## siempre asigna una categoría válida), defensivo por si acaso.
-const MARGEN_CATEGORIA_DEFECTO := 6
+static var MARGEN_CATEGORIA_DEFECTO: int = Ajustes.ZONIFICACION_MARGEN_CATEGORIA_DEFECTO
 
 const ZONAS_PINTABLES := ["residencial_investigacion", "fabricacion_militar"]
 

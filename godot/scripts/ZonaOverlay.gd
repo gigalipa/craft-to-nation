@@ -6,22 +6,21 @@ extends Node3D
 ## cientos de celdas), así que reconstruir todo es más simple que llevar un
 ## registro incremental de qué celdas ya tienen su plano.
 
-const COLOR_POR_ZONA := {
-	"residencial_investigacion": Color(0.2, 0.4, 1.0, 0.15),
-	"fabricacion_militar": Color(1.0, 0.5, 0.1, 0.15),
-}
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var COLOR_POR_ZONA: Dictionary = Ajustes.COLOR_POR_ZONA
 
 ## Overlay visual pinta TODA la zona de influencia real (la unión de la
 ## caja de cada edificio — ver Zonificacion.dentro_de_influencia(), no
 ## necesariamente el rectángulo Zonificacion.influencia_min..max completo)
 ## en blanco, muy baja opacidad, sin importar si cada celda ya tiene una
 ## zona específica pintada encima.
-const COLOR_ZONA_INFLUENCIA := Color(1.0, 1.0, 1.0, 0.02)
+static var COLOR_ZONA_INFLUENCIA: Color = Ajustes.COLOR_ZONA_INFLUENCIA
 
 ## Color de la previsualización cuando se está por BORRAR una zona (ver
 ## Zonificacion.MARCADOR_BORRAR) — gris translúcido, distinto de cualquier
 ## color real de zona, para que quede claro que esto quita, no pinta.
-const COLOR_BORRAR := Color(0.5, 0.5, 0.5, 0.3)
+static var COLOR_BORRAR: Color = Ajustes.COLOR_ZONA_BORRAR
 
 const ALTURA_SOBRE_SUPERFICIE := 1.01
 const DESF := 0.5

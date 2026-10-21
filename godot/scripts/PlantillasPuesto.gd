@@ -17,6 +17,8 @@ extends RefCounted
 ## SketchUp, así que el arte reemplaza estas plantillas provisionales sin
 ## tocar código.
 
+const Strings = preload("res://scripts/strings.gd")
+
 ## Carácter -> bloque fijo (no depende del puesto). "." (y cualquier otro
 ## carácter) es vacío. "#" es especial: se resuelve con el material propio
 ## de cada plantilla (ver MATERIAL más abajo), no con un tipo fijo.
@@ -409,13 +411,13 @@ static func fachada(tipo: String, giros: int) -> Array[Vector2i]:
 	return resultado
 
 
-const INFO_PUERTOS_BLOQUE := {
-	"1": {"recurso": "agua", "direccion": "Entrada", "nombre": "Entrada agua"},
-	"2": {"recurso": "agua", "direccion": "Salida", "nombre": "Salida agua"},
-	"3": {"recurso": "crudo", "direccion": "Entrada", "nombre": "Entrada crudo"},
-	"4": {"recurso": "crudo", "direccion": "Salida", "nombre": "Salida crudo"},
-	"5": {"recurso": "combustible", "direccion": "Entrada", "nombre": "Entrada combustible"},
-	"6": {"recurso": "combustible", "direccion": "Salida", "nombre": "Salida combustible"},
+static var INFO_PUERTOS_BLOQUE: Dictionary = {
+	"1": {"recurso": "agua", "direccion": Strings.INFO_PUERTOS_BLOQUE["puerto_in"], "nombre": Strings.INFO_PUERTOS_BLOQUE["puerto_agua_in"]},
+	"2": {"recurso": "agua", "direccion": Strings.INFO_PUERTOS_BLOQUE["puerto_out"], "nombre": Strings.INFO_PUERTOS_BLOQUE["puerto_agua_out"]},
+	"3": {"recurso": "crudo", "direccion": Strings.INFO_PUERTOS_BLOQUE["puerto_in"], "nombre": Strings.INFO_PUERTOS_BLOQUE["puerto_crudo_in"]},
+	"4": {"recurso": "crudo", "direccion": Strings.INFO_PUERTOS_BLOQUE["puerto_out"], "nombre": Strings.INFO_PUERTOS_BLOQUE["puerto_crudo_out"]},
+	"5": {"recurso": "combustible", "direccion": Strings.INFO_PUERTOS_BLOQUE["puerto_in"], "nombre": Strings.INFO_PUERTOS_BLOQUE["puerto_combustible_in"]},
+	"6": {"recurso": "combustible", "direccion": Strings.INFO_PUERTOS_BLOQUE["puerto_out"], "nombre": Strings.INFO_PUERTOS_BLOQUE["puerto_combustible_out"]},
 }
 
 

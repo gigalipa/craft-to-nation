@@ -10,12 +10,13 @@ extends RefCounted
 ## altura_en(x, z), obtener_tipo(celda: Vector3i) e
 ## id_de_edificio(celda: Vector3i) -> int.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const NiveladorVia = preload("res://scripts/NiveladorVia.gd")
 
 ## Tope de nodos expandidos por consulta — mismo motivo que
 ## BuscadorRutas.MAX_NODOS_EXPANDIDOS, ajustado a un mapa más chico (esto
 ## es una previsualización interactiva, no pathfinding de NPCs).
-const MAX_NODOS_EXPANDIDOS := 5000
+static var MAX_NODOS_EXPANDIDOS: int = Ajustes.TRAZADOR_VIAS_MAX_NODOS_EXPANDIDOS
 
 const DIRECCIONES: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),

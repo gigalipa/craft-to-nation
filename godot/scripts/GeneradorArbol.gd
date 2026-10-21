@@ -7,10 +7,12 @@ extends RefCounted
 ## evitar el bug de caché de clases globales de Godot) — se usa vía
 ## preload().new().
 
-const ALTURA_TRONCO_MIN := 3
-const ALTURA_TRONCO_MAX := 8
-const LADO_TRONCO_MIN := 1
-const LADO_TRONCO_MAX := 2
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var ALTURA_TRONCO_MIN: int = Ajustes.ARBOL_ALTURA_TRONCO_MIN
+static var ALTURA_TRONCO_MAX: int = Ajustes.ARBOL_ALTURA_TRONCO_MAX
+static var LADO_TRONCO_MIN: int = Ajustes.ARBOL_LADO_TRONCO_MIN
+static var LADO_TRONCO_MAX: int = Ajustes.ARBOL_LADO_TRONCO_MAX
 
 var _siguiente_id := 0
 var _arboles: Dictionary = {}  # int -> {"celdas": Array, "salud": int, "salud_max": int, "xz": Vector2i}

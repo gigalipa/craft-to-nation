@@ -6,8 +6,10 @@ extends Node3D
 ## efímero: nunca escribe en Vias.gd, solo se usa mientras el jugador
 ## traza.
 
-const COLOR_VALIDO := Color(1.0, 0.85, 0.0, 0.4)
-const COLOR_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var COLOR_VALIDO: Color = Ajustes.COLOR_VIA_PREVIEW_VALIDO
+static var COLOR_INVALIDO: Color = Ajustes.COLOR_VIA_PREVIEW_INVALIDO
 ## 1.02, no 1.01 como ZonaOverlay.gd: con el mismo margen, ambos overlays
 ## quedaban coplanares en la vista cenital (mismo z-fighting que
 ## ViasRenderer.gd, ver su comentario en EPSILON_Y).

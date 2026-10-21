@@ -12,24 +12,26 @@ extends Node3D
 ## Hijo de VoxelWorld (en el origen, celdas de 1x1x1): coordenadas locales =
 ## coordenadas del mundo. Clave de cada puerta: su celda INFERIOR.
 
-const LAMINA := Vector3(1, 2, 0.1)
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var LAMINA: Vector3 = Vector3(1, 2, Ajustes.PUERTAS_GROSOR)
 ## También la usa Hotbar.gd para el ícono de "puerta": la lámina real, no el
 ## bloque viejo de 2 celdas de BlockLibrary (reporte del usuario 2026-09-30).
-const COLOR_LAMINA := Color(0.82, 0.42, 0.0)
+static var COLOR_LAMINA: Color = Ajustes.COLOR_PUERTA_LAMINA
 const CAPA_CERRADA := 1  # capa 1: mundo (bloquea al avatar)
 const CAPA_ABIERTA := 8  # capa 4: solo el raycast del jugador
 const META_CELDA := "celda_puerta"
 ## Abierta, la lámina queda de canto pegada a una jamba del hueco (dentro de la
 ## celda, no en su centro): se desplaza sobre el eje de la pared hasta que su
 ## grosor toca el borde de la celda.
-const DESPLAZAMIENTO_ABIERTA := 0.5 - LAMINA.z / 2.0
+static var DESPLAZAMIENTO_ABIERTA: float = 0.5 - LAMINA.z / 2.0
 const RADIO_APERTURA := 2  # celdas (Chebyshev en XZ): abre antes de que el colono llegue
-const INTERVALO := 0.25  # segundos entre chequeos de proximidad
+static var INTERVALO: float = Ajustes.PUERTAS_DURACION_GIRO  # segundos entre chequeos de proximidad
 
 const PICAPORTE_TAMANO := Vector3(0.08, 0.12, 0.16)
-const COLOR_PICAPORTE := Color(0.85, 0.7, 0.2)
+static var COLOR_PICAPORTE: Color = Ajustes.COLOR_HUD_DORADO
 const BISAGRA_TAMANO := Vector3(0.04, 0.15, 0.14)
-const COLOR_BISAGRA := Color(0.15, 0.15, 0.15)
+static var COLOR_BISAGRA: Color = Ajustes.COLOR_PANTALON_COLONO
 
 var voxel_world: Node
 

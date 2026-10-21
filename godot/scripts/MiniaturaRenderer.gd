@@ -9,8 +9,10 @@ extends RefCounted
 ## construcciones-cenital-design.md, Sección 2. Sin class_name (mismo motivo
 ## que PlantillasPuesto.gd/Blueprints.gd: se carga con preload()).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 const RUTA_BIBLIOTECA := "res://assets/BlockLibrary.res"
-const RESOLUCION_ICONO := 128
+static var RESOLUCION_ICONO: int = Ajustes.MINIATURA_TAMANO
 
 ## Nombre de tipo de juego -> nombre real del ítem en BlockLibrary.res,
 ## cuando difieren (hoy solo "adobe": el bloque se llama "tierra_compactada"

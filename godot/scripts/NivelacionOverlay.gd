@@ -11,6 +11,8 @@ extends Node3D
 ## Solo visual: CamaraCenital.gd calcula los datos y llama a mostrar()/
 ## ocultar(); este nodo no conoce el mundo.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 ## Mismo desfase que CamaraCenital.gd: una celda "celda" ocupa
 ## [celda, celda+1] en cada eje, así que su centro real está en celda + DESF.
 const DESF := 0.5
@@ -23,13 +25,9 @@ const ALTURA_PLANO := 1.02
 ## terreno que la rodea.
 const TAMANO_CAJA := 0.96
 
-const COLOR_RESERVADA := Color(0.2, 0.9, 1.0, 0.35)
-const COLOR_BLOQUEADA := Color(1.0, 0.2, 0.2, 0.5)
-const COLOR_REGION := {
-	"cavar": Color(1.0, 0.5, 0.1, 0.35),
-	"rellenar": Color(0.2, 0.5, 1.0, 0.35),
-	"nivel": Color(0.3, 1.0, 0.4, 0.25),
-}
+static var COLOR_RESERVADA: Color = Ajustes.COLOR_NIVELACION_RESERVADA
+static var COLOR_BLOQUEADA: Color = Ajustes.COLOR_NIVELACION_BLOQUEADA
+static var COLOR_REGION: Dictionary = Ajustes.COLOR_NIVELACION_REGION
 
 var _nodos: Array[MeshInstance3D] = []
 var _malla_caja := BoxMesh.new()

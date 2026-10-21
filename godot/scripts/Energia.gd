@@ -3,9 +3,11 @@ extends RefCounted
 ## Helper puro para cálculo de red de transmisión y balance energético.
 ## Sin estado ni autoload. Ver docs/superpowers/specs/2026-10-04-formacion-investigacion-energia-design.md.
 
-const CONSUMO_COMBUSTIBLE_POR_LOTE := 1.0
-const ENERGIA_POR_LOTE_CENTRAL := 20.0
-const ORDEN_COMBUSTIBLES := ["combustible", "crudo", "carbon"]
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var CONSUMO_COMBUSTIBLE_POR_LOTE: float = Ajustes.ENERGIA_CONSUMO_COMBUSTIBLE_POR_LOTE
+static var ENERGIA_POR_LOTE_CENTRAL: float = Ajustes.ENERGIA_POR_LOTE_CENTRAL
+static var ORDEN_COMBUSTIBLES: Array = Ajustes.ENERGIA_ORDEN_COMBUSTIBLES
 
 
 ## Determina qué columnas de vía y edificios están conectados a la red urbana,

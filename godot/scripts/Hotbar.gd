@@ -16,6 +16,8 @@ extends PanelContainer
 ## editor: en una build headless/exportada siempre da null (comprobado en
 ## pruebas 2026-09-30) — de ahí las casillas sin ícono reportadas.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 const MiniaturaRendererScript = preload("res://scripts/MiniaturaRenderer.gd")
@@ -40,18 +42,7 @@ const NOMBRES := {
 ## 2026-09-30: la casilla usa una palabra corta aunque no sea el nombre real
 ## del bloque, p. ej. "bloque_madera" se ve "Madera" — el nombre completo
 ## sigue en la tarjeta emergente, vía NOMBRES/nombre_de()).
-const NOMBRES_HOTBAR := {
-	"tierra": "Tierra",
-	"adobe": "Adobe",
-	"bloque_madera": "Madera",
-	"bloque_piedra": "Piedra",
-	"estructura_hierro": "Estructura",
-	"bloque_acero": "Acero",
-	"vidrio": "Vidrio",
-	"puerta": "Puerta",
-	"cama": "Cama",
-	"baul": "Baúl",
-}
+static var NOMBRES_HOTBAR: Dictionary = Strings.HOTBAR_NOMBRES
 
 ## Tipos cuyo bloque es un objeto interactuable ya colocado (ver
 ## Player._interactuar()): su tarjeta emergente suma una pista de "E" a las
@@ -96,7 +87,7 @@ const MATERIAL_VENTANA := preload("res://assets/mat_ventana.tres")
 ## Puertas.gd — ver Puertas.LAMINA/COLOR_LAMINA.
 const PuertasScript = preload("res://scripts/Puertas.gd")
 
-const TAMANO_ICONO := 64.0
+static var TAMANO_ICONO: float = float(Ajustes.MINIATURA_TAMANO)
 
 var _fila := HBoxContainer.new()
 var _casillas: Array = []  # de {"contenedor", "caja", "nombre", "cantidad", "valor": int}
@@ -334,7 +325,7 @@ const GRIS_OSCURO := Color(0.42, 0.42, 0.42)
 func _resaltar() -> void:
 	for i in range(_casillas.size()):
 		var seleccionada := i == _seleccionada
-		var estilo := TemaHUD.caja(TemaHUD.VERDE_CLARO, Color(1.0, 0.8, 0.3)) if seleccionada else TemaHUD.caja()
+		var estilo := TemaHUD.caja(TemaHUD.VERDE_CLARO, Ajustes.COLOR_HUD_HOTBAR_SELECCION_BORDE) if seleccionada else TemaHUD.caja()
 		_casillas[i]["caja"].add_theme_stylebox_override("panel", estilo)
-		_casillas[i]["nombre"].add_theme_color_override("font_color", Color(1.0, 0.85, 0.4) if seleccionada else TemaHUD.TEXTO)
+		_casillas[i]["nombre"].add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE if seleccionada else TemaHUD.TEXTO)
 		_casillas[i]["cantidad"].add_theme_color_override("font_color", GRIS_CLARO if seleccionada else GRIS_OSCURO)

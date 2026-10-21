@@ -8,7 +8,10 @@ extends Node
 ## Convención: Vector2i(x, z) para columnas en planta — la coordenada
 ## mundial Z vive en el campo .y (misma convención que Zonificacion.gd).
 
-const COSTE_TERRENO_NATURAL := 8
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+
+static var COSTE_TERRENO_NATURAL: int = Ajustes.VIAS_COSTE_TERRENO_NATURAL
 
 ## Catálogo por datos. Único tipo implementado: "tierra_pisada". Tipos
 ## futuros (calzada, vía férrea, cintas, tuberías, calzada peatonal — ver
@@ -16,14 +19,14 @@ const COSTE_TERRENO_NATURAL := 8
 ## implementen, nunca antes.
 var TIPOS: Dictionary = {
 	"tierra_pisada": {
-		"nombre": "Vía de tierra pisada",
+		"nombre": Strings.VIAS_NOMBRE_TIERRA_PISADA,
 		"ancho": 2,
 		"sentido": "doble",
-		"bono_velocidad": 1.35,
-		"coste_ruta": 3,
+		"bono_velocidad": Ajustes.VIAS_BONO_VELOCIDAD_TIERRA_PISADA,
+		"coste_ruta": Ajustes.VIAS_COSTE_RUTA_TIERRA_PISADA,
 		"costo": {},
 		"energia": false,
-		"transito": "No",
+		"transito": Strings.VIAS_TEXTO_NO,
 		"material": preload("res://assets/mat_tierra_pisada.tres"),
 	},
 }
@@ -39,7 +42,7 @@ func ficha_tecnica(tipo: String, cantidad_celdas: int = 0) -> String:
 	var nombre: String = datos.get("nombre", tipo.capitalize())
 	var costo_dic: Dictionary = datos.get("costo", {})
 
-	var recursos_str := "N/A"
+	var recursos_str := Strings.VIAS_TEXTO_NA
 	if not costo_dic.is_empty():
 		var partes: Array = []
 		if cantidad_celdas > 0:
@@ -49,16 +52,16 @@ func ficha_tecnica(tipo: String, cantidad_celdas: int = 0) -> String:
 		else:
 			for recurso in costo_dic:
 				partes.append("%d %s" % [costo_dic[recurso], recurso])
-			recursos_str = "%s/celda" % " + ".join(partes)
+			recursos_str = Strings.VIAS_COSTO_POR_CELDA_FORMATO % " + ".join(partes)
 
 	var bono: float = datos.get("bono_velocidad", 1.0)
 	var pct: int = roundi((bono - 1.0) * 100)
 	var vel_str: String = ("+%d%%" % pct) if pct >= 0 else ("%d%%" % pct)
 
-	var energia_str: String = "Sí" if datos.get("energia", false) else "No"
-	var transito_str: String = datos.get("transito", "No")
+	var energia_str: String = Strings.VIAS_TEXTO_SI if datos.get("energia", false) else Strings.VIAS_TEXTO_NO
+	var transito_str: String = datos.get("transito", Strings.VIAS_TEXTO_NO)
 
-	return "%s\nRecursos: %s\nVelocidad: %s\nTransmisión de energía: %s\nTránsito vehicular: %s" % [
+	return Strings.VIAS_FICHA_TECNICA_FORMATO % [
 		nombre,
 		recursos_str,
 		vel_str,

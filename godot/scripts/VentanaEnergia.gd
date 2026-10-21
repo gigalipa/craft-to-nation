@@ -8,6 +8,8 @@ extends PanelContainer
 
 signal edificio_pedido(esquina: Vector2i)
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
@@ -53,7 +55,7 @@ func _ready() -> void:
 	_caja_raiz.add_theme_constant_override("separation", 8)
 	add_child(_caja_raiz)
 
-	_caja_raiz.add_child(_fila_titulo("Red Eléctrica"))
+	_caja_raiz.add_child(_fila_titulo(Strings.VENTANA_ENERGIA_TITULO))
 
 	# Encabezado balance global
 	var caja_balance := VBoxContainer.new()
@@ -111,7 +113,7 @@ func _ready() -> void:
 	scroll.add_child(caja_listas)
 
 	var titulo_gen := TemaHUD.etiqueta("GENERADORES")
-	titulo_gen.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	titulo_gen.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	caja_listas.add_child(titulo_gen)
 	_caja_generadores.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caja_generadores.add_theme_constant_override("separation", 4)
@@ -121,7 +123,7 @@ func _ready() -> void:
 	caja_listas.add_child(sep_listas)
 
 	var titulo_con := TemaHUD.etiqueta("CONSUMIDORES")
-	titulo_con.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	titulo_con.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	caja_listas.add_child(titulo_con)
 	_caja_consumidores.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_caja_consumidores.add_theme_constant_override("separation", 4)
@@ -215,7 +217,7 @@ func _reconstruir_generadores(gens: Array, res: Dictionary) -> void:
 
 func _texto_generador(esquina: Vector2i, res: Dictionary) -> String:
 	if Economia == null or not Economia.puestos.has(esquina):
-		return "Central termoeléctrica"
+		return Strings.NOMBRES_PUESTO.get("central_termoelectrica", "Central termoeléctrica")
 	var p: Dictionary = Economia.puestos[esquina]
 	var comb_act: String = p.get("combustible_activo", "carbon")
 	var alm: Dictionary = p.get("almacen", {})
@@ -224,13 +226,13 @@ func _texto_generador(esquina: Vector2i, res: Dictionary) -> String:
 
 	var t_pres: int = p["presentes"].size() if p.has("presentes") else 0
 	var stock_comb: float = alm.get("combustible", 0.0) + alm.get("crudo", 0.0) + alm.get("carbon", 0.0)
-	var cap_esta: float = minf(float(t_pres), stock_comb) * 20.0
+	var cap_esta: float = minf(float(t_pres), stock_comb) * Ajustes.ENERGIA_POR_LOTE_CENTRAL
 	var cap_total: float = res.get("capacidad", 0.0)
 	var entregada_total: float = res.get("entregada", 0.0)
 	var uso: float = 0.0
 	if cap_total > 1e-9:
 		uso = entregada_total * (cap_esta / cap_total)
-	return "Central termoeléctrica · %s (reserva: %.0f) · Gen: %.0f kW" % [nom_comb, stock_local, uso]
+	return "%s · %s (reserva: %.0f) · Gen: %.0f kW" % [Strings.NOMBRES_PUESTO.get("central_termoelectrica", "Central termoeléctrica"), nom_comb, stock_local, uso]
 
 
 func _reconstruir_consumidores(cons: Array, res: Dictionary) -> void:
@@ -261,7 +263,7 @@ func _actualizar_boton_consumidor(btn: Button, esquina: Vector2i, res: Dictionar
 	var dem: float = _demanda_consumidor(p)
 	var conectados: Dictionary = res.get("conectados", {})
 	var conectado: bool = conectados.get(esquina, false)
-	var estado: String = "Conectado" if conectado else "Sin conexión"
+	var estado: String = Strings.PANEL_PUESTO_PUERTO_ESTADO_CONECTADO if conectado else "Sin conexión"
 	btn.text = "%s · Demanda: %.0f kW · %s" % [nom, dem, estado]
 	btn.icon = IconosHUD.icono(tipo)
 	btn.expand_icon = true
@@ -334,7 +336,7 @@ func _fila_titulo(texto: String) -> Control:
 	var ic := IconosHUD.crear_rect("energia_dorado", 20)
 	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
-	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	cont_tit.add_child(titulo)
 	fila.add_child(cont_tit)
 

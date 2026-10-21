@@ -8,17 +8,11 @@ extends PanelContainer
 ## persisten solas mientras dura la partida — incluida al salir y volver a
 ## entrar a la cenital (HUD.set_vista() la oculta/restaura sin tocarlas).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
-const NOMBRES_TIPO := {
-	"ciudadano": "Ciudadanos",
-	"desempleado": "Desempleados",
-	"obrero": "Obreros",
-	"tecnico": "Técnicos",
-	"especialista": "Especialistas",
-	"investigador": "Investigadores",
-	"militar": "Militares",
-}
+static var NOMBRES_TIPO: Dictionary = Strings.NOMBRES_ROL_EDIFICIO
 
 ## El botón "Ocupaciones" (HUD abre VentanaOcupaciones).
 signal ocupaciones_pedidas
@@ -52,7 +46,7 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(320, 0)
 	_caja_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_caja_raiz)
-	_caja_raiz.add_child(_fila_titulo("Población"))
+	_caja_raiz.add_child(_fila_titulo(Strings.VENTANA_POBLACION_TITULO))
 	_caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_caja_raiz.add_child(_caja)
 	# Fuera de _caja: lo de dentro se destruye cada fotograma (ver arriba).
@@ -162,7 +156,7 @@ func _fila_titulo(texto: String) -> Control:
 	var ic := IconosHUD.crear_rect("censo", 20)
 	cont_tit.add_child(ic)
 	var titulo := TemaHUD.etiqueta(texto.to_upper())
-	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	cont_tit.add_child(titulo)
 	fila.add_child(cont_tit)
 

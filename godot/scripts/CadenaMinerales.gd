@@ -6,21 +6,13 @@ extends Node
 ## que transforman un mineral en otro recurso. Sin class_name (mismo
 ## motivo que Recoleccion.gd/Zonificacion.gd/Ciudad.gd).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 ## tipo_entrada -> {"entradas": {recurso: cantidad por lote}, "tipo_salida": String,
 ## "cantidad_salida": int (por lote), "tasa_base": float (lotes por hora por trabajador)}.
 ## Cada refinería tiene una única receta fija (ningún edificio soporta más de una, GDD Sección 4) —
 ## por eso el catálogo se indexa por tipo_entrada (el insumo principal), no por nombre de edificio.
-const RECETAS: Dictionary = {
-	"hierro": {"entradas": {"hierro": 3, "carbon": 4}, "tipo_salida": "acero", "cantidad_salida": 2, "tasa_base": 2.0, "energia_por_lote": 0},
-	"tierras_raras": {"entradas": {"tierras_raras": 3}, "tipo_salida": "mineral_refinado", "cantidad_salida": 1, "tasa_base": 0.5, "energia_por_lote": 0},
-	# Las tablas cuentan como madera al pagar construcciones (ver Ciudad.consumir_costo()), pero son un
-	# recurso aparte: si la salida fuera "madera", el acarreador se llevaría también la madera sin aserrar.
-	"aserradero": {"entradas": {"madera": 1}, "tipo_salida": "tablas", "cantidad_salida": 3, "tasa_base": 0.5, "energia_por_lote": 0},
-	"fabrica_bloques": {"entradas": {"piedra": 1}, "tipo_salida": "bloques_piedra", "cantidad_salida": 3, "tasa_base": 0.5, "energia_por_lote": 0},
-	"carbonera": {"entradas": {"madera": 3}, "tipo_salida": "carbon", "cantidad_salida": 1, "tasa_base": 2.0, "energia_por_lote": 0},
-	"petroleo": {"entradas": {"crudo": 2}, "tipo_salida": "combustible", "cantidad_salida": 1, "tasa_base": 1.0, "energia_por_lote": 1},
-	"combustible_sintetico": {"entradas": {"carbon": 3, "agua": 1}, "tipo_salida": "combustible", "cantidad_salida": 2, "tasa_base": 1.0, "energia_por_lote": 1},
-}
+static var RECETAS: Dictionary = Ajustes.CADENA_MINERALES_RECETAS
 
 ## Tipo de edificio -> tipo_entrada de su receta (clave de RECETAS). Una refinería es un
 ## puesto de Economia con tipo en este diccionario (ver Economia.es_refineria()).
@@ -36,10 +28,10 @@ const REFINERIAS := {
 
 # Todas las refinerías comparten personal y almacén local (el costo REAL de construirlas es el de
 # los bloques de su plantilla, ver PlantillasPuesto).
-const PERSONAL_MAXIMO_REFINERIA := 4
-const CAPACIDAD_ALMACENAMIENTO_REFINERIA := 1000  # insumo y producto lo comparten
-const LIMITE_CRUDO_REFINERIA := 400.0  # máximo 40% de crudo para refinería petrolera
-const RESERVA_COMBUSTIBLE_REFINERIA := 600.0  # reserva de 60% para combustible
+static var PERSONAL_MAXIMO_REFINERIA: int = Ajustes.CADENA_MINERALES_PERSONAL_MAXIMO_REFINERIA
+static var CAPACIDAD_ALMACENAMIENTO_REFINERIA: int = Ajustes.CADENA_MINERALES_CAPACIDAD_ALMACENAMIENTO_REFINERIA  # insumo y producto lo comparten
+static var LIMITE_CRUDO_REFINERIA: float = Ajustes.CADENA_MINERALES_LIMITE_CRUDO_REFINERIA  # máximo 40% de crudo para refinería petrolera
+static var RESERVA_COMBUSTIBLE_REFINERIA: float = Ajustes.CADENA_MINERALES_RESERVA_COMBUSTIBLE_REFINERIA  # reserva de 60% para combustible
 
 
 func admite_crudo(almacen: Dictionary, cantidad: float = 0.0) -> bool:

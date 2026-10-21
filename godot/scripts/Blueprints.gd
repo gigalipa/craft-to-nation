@@ -13,7 +13,9 @@ extends Node
 ## armado a mano sin esta clave falla con "Invalid access to key" al
 ## intentar colocar una copia.
 
-const MAX_RESIDENCIALES := 5
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var MAX_RESIDENCIALES: int = Ajustes.BLUEPRINTS_MAX_RESIDENCIALES
 
 var _por_zona: Dictionary = {}  # String (zona_permitida) -> Dictionary (blueprint)
 var _residenciales: Array[Dictionary] = []

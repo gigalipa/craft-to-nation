@@ -4,6 +4,7 @@ extends PanelContainer
 ## Muestra el modo (eléctrica/térmica), estado (encendida/apagada),
 ## batería/tiempo restante y recurso en consumo.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
 var _titulo: Label
@@ -106,7 +107,7 @@ func actualizar(estado: Dictionary) -> void:
 		var recargando: bool = estado.get("recargando", false)
 		var descarga: bool = estado.get("descarga", false)
 		var pct: int = int(estado.get("bateria_pct", 100))
-		var horas: int = int(estado.get("bateria_horas", 72))
+		var horas: int = int(estado.get("bateria_horas", int(Ajustes.PLAYER_BATERIA_LAMPARA_MAX)))
 		_barra_bateria.value = float(pct)
 		_barra_bateria.modulate = color_bateria(float(pct))
 		var signo := "+" if recargando else ("-" if descarga else "")

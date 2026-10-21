@@ -13,6 +13,9 @@ class_name BlueprintValidator
 ## automáticamente qué bloques colocados forman un edificio — esa detección
 ## (flood-fill / reconocimiento de habitaciones) queda fuera de esta PoC.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+
 const ZONAS_VALIDAS := ["residencial_investigacion", "fabricacion_militar", "periferia"]
 ## Vocabulario ABSTRACTO del Blueprint (formato JSON heredado de PoC 2 y
 ## resultado de estructura_a_blueprint()): "pared"/"puerta"/"ventana", fijo
@@ -57,13 +60,13 @@ const VECINOS_3D := [
 ## "Piso N", ver HUD.notificar() — decisión del usuario, 2026-09-27). Más
 ## allá de ORDINALES.size() (poco probable: el tope de pisos por casa es 8,
 ## ver Ciudad.NIVELES_VIVIENDA) se cae a "piso N" (1-indexado).
-const ORDINALES := ["primer", "segundo", "tercer", "cuarto", "quinto", "sexto", "séptimo", "octavo", "noveno", "décimo"]
+static var ORDINALES: Array = Strings.BLUEPRINT_ORDINALES
 
 
 static func _texto_piso(nivel: int) -> String:
 	if nivel < ORDINALES.size():
-		return "%s piso" % ORDINALES[nivel]
-	return "piso %d" % (nivel + 1)
+		return Strings.BLUEPRINT_PISO_ORDINAL_FORMATO % ORDINALES[nivel]
+	return Strings.BLUEPRINT_PISO_NUMERO_FORMATO % (nivel + 1)
 
 
 ## "2 camas"/"1 cama" — singular si cantidad es 1.
@@ -74,8 +77,8 @@ static func _plural(cantidad: int, singular: String, plural: String) -> String:
 ## "falta un baúl"/"faltan 3 baúles" — "un" en vez de "1" para que se lea natural.
 static func _texto_faltan(cantidad: int, singular: String, plural: String) -> String:
 	if cantidad == 1:
-		return "falta un %s" % singular
-	return "faltan %d %s" % [cantidad, plural]
+		return Strings.BLUEPRINT_FALTA_UN_FORMATO % singular
+	return Strings.BLUEPRINT_FALTAN_VARIOS_FORMATO % [cantidad, plural]
 
 
 static func _parsear_celda(clave: String) -> Vector2i:
@@ -107,7 +110,7 @@ static func validar_cerramiento(piso: Dictionary) -> Array:
 
 		if not TIPOS_CELDA_SOLIDA.has(tipo):
 			errores.append(
-				"El %s tiene un hueco en la pared cerca de (%d, %d): ahí hay '%s', que no cierra el perímetro."
+				Strings.BLUEPRINT_ERR_HUECO_PARED
 				% [_texto_piso(piso["nivel"]), pos.x, pos.y, tipo]
 			)
 			continue
@@ -118,7 +121,7 @@ static func validar_cerramiento(piso: Dictionary) -> Array:
 			var es_perpendicular: bool = d1 != -d2
 			if es_perpendicular and tipo != "pared":
 				errores.append(
-					"La esquina (%d, %d) del %s debe ser una pared, no '%s'."
+					Strings.BLUEPRINT_ERR_ESQUINA_NO_PARED
 					% [pos.x, pos.y, _texto_piso(piso["nivel"]), tipo]
 				)
 
@@ -137,9 +140,9 @@ static func validar_cerramiento(piso: Dictionary) -> Array:
 static func validar_techo_y_suelo(piso: Dictionary) -> Array:
 	var errores: Array = []
 	if not piso.get("suelo_completo", true):
-		errores.append("Al %s le falta un suelo sólido debajo." % _texto_piso(piso["nivel"]))
+		errores.append(Strings.BLUEPRINT_ERR_FALTA_SUELO % _texto_piso(piso["nivel"]))
 	if not piso.get("techo_completo", true):
-		errores.append("Al %s le falta un techo sólido encima." % _texto_piso(piso["nivel"]))
+		errores.append(Strings.BLUEPRINT_ERR_FALTA_TECHO % _texto_piso(piso["nivel"]))
 	return errores
 
 
@@ -149,14 +152,14 @@ static func validar_techo_y_suelo(piso: Dictionary) -> Array:
 ## y la cama (con 2 celdas libres exigidas encima) siempre quepan. Solo
 ## estructura_a_blueprint() marca "altura_capas"; un Blueprint hecho a mano
 ## (JSON, PoC 2) no lo trae y se asume válido (3 por defecto).
-const ALTURA_MINIMA_PISO := 3
+static var ALTURA_MINIMA_PISO: int = Ajustes.BLUEPRINT_ALTURA_MINIMA_PISO
 
 
 static func validar_altura_piso(piso: Dictionary) -> Array:
 	var altura: int = piso.get("altura_capas", ALTURA_MINIMA_PISO)
 	if altura < ALTURA_MINIMA_PISO:
 		return [
-			"El %s es muy bajo (%d bloque(s) de alto); necesita al menos %d."
+			Strings.BLUEPRINT_ERR_PISO_MUY_BAJO
 			% [_texto_piso(piso["nivel"]), altura, ALTURA_MINIMA_PISO]
 		]
 	return []
@@ -167,9 +170,9 @@ static func validar_aberturas(piso: Dictionary) -> Array:
 	var tipos_presentes: Array = piso["celdas"].values()
 	var nivel: int = piso.get("nivel", 0)
 	if nivel == 0 and not tipos_presentes.has("puerta"):
-		errores.append("Falta una puerta en el %s." % _texto_piso(nivel))
+		errores.append(Strings.BLUEPRINT_ERR_FALTA_PUERTA % _texto_piso(nivel))
 	if not tipos_presentes.has("ventana"):
-		errores.append("Falta una ventana en el %s." % _texto_piso(nivel))
+		errores.append(Strings.BLUEPRINT_ERR_FALTA_VENTANA % _texto_piso(nivel))
 	return errores
 
 
@@ -214,7 +217,7 @@ static func validar_vestibulos_puerta(piso: Dictionary) -> Array:
 			if not celdas.has(clave_vecino):
 				continue  # este lado no pertenece a la huella del piso: es "afuera"
 			errores.append(
-				"El %s tiene una puerta sin espacio libre justo detrás." % _texto_piso(piso["nivel"])
+				Strings.BLUEPRINT_ERR_PUERTA_SIN_ESPACIO_2D % _texto_piso(piso["nivel"])
 			)
 	return errores
 
@@ -236,14 +239,14 @@ static func validar_limites_vivienda(blueprint: Dictionary, limites: Dictionary)
 	var pisos: Array = blueprint["pisos"]
 	if pisos.size() > limites["pisos"]:
 		errores.append(
-			"Esta casa tiene %d piso(s), pero el nivel actual de la ciudad solo permite %d por casa."
+			Strings.BLUEPRINT_ERR_EXCEDE_PISOS
 			% [pisos.size(), limites["pisos"]]
 		)
 	for piso in pisos:
 		var camas: int = (piso.get("camas", []) as Array).size()
 		if camas > limites["camas_por_piso"]:
 			errores.append(
-				"El %s tiene %d cama(s), pero el nivel actual solo permite %d por piso."
+				Strings.BLUEPRINT_ERR_EXCEDE_CAMAS_POR_PISO
 				% [_texto_piso(piso["nivel"]), camas, limites["camas_por_piso"]]
 			)
 	return errores
@@ -283,10 +286,10 @@ static func validar_camas_y_almacenamiento(blueprint: Dictionary) -> Array:
 				total_baules += 1
 
 	if total_camas == 0:
-		return ["Este edificio no tiene ninguna cama."]
+		return [Strings.BLUEPRINT_ERR_SIN_CAMAS]
 	if total_baules < total_camas:
 		return [
-			"Hay %s y %s: %s."
+			Strings.BLUEPRINT_ERR_FALTAN_BAULES
 			% [
 				_plural(total_camas, "cama", "camas"),
 				_plural(total_baules, "baúl", "baúles"),
@@ -299,14 +302,14 @@ static func validar_camas_y_almacenamiento(blueprint: Dictionary) -> Array:
 static func validar_zona_permitida(blueprint: Dictionary) -> Array:
 	var zona: String = blueprint.get("zona_permitida", "")
 	if not ZONAS_VALIDAS.has(zona):
-		return ["zona_permitida inválida o ausente: '%s'" % zona]
+		return [Strings.BLUEPRINT_ERR_ZONA_PERMITIDA_INVALIDA % zona]
 	return []
 
 
 static func validar_colocacion(blueprint: Dictionary, zona_destino: String) -> Array:
 	if blueprint["zona_permitida"] != zona_destino:
 		return [
-			"'%s' es para la zona %s; no se puede colocar en %s."
+			Strings.BLUEPRINT_ERR_ZONA_DESTINO_INCORRECTA
 			% [blueprint["nombre"], blueprint["zona_permitida"], zona_destino]
 		]
 	return []
@@ -319,7 +322,7 @@ static func validar_evolucion(blueprint_nuevo: Dictionary, blueprint_anterior: D
 		for clave in _huella(piso):
 			if not huella_base_anterior.has(clave):
 				errores.append(
-					"Piso %d de la nueva versión excede la huella de la planta base original" % piso["nivel"]
+					Strings.BLUEPRINT_ERR_EVOLUCION_HUELLA % piso["nivel"]
 				)
 				break
 	return errores
@@ -332,9 +335,9 @@ static func validar_personalizacion_produccion(blueprint_modificado: Dictionary,
 	huella_mod.sort()
 	huella_orig.sort()
 	if huella_mod != huella_orig:
-		errores.append("La personalización modificó la huella del edificio de producción")
+		errores.append(Strings.BLUEPRINT_ERR_PERSONALIZACION_HUELLA)
 	if (blueprint_modificado.get("conexiones", []) as Array).size() != (blueprint_original.get("conexiones", []) as Array).size():
-		errores.append("La personalización modificó el número de conexiones (entradas/salidas)")
+		errores.append(Strings.BLUEPRINT_ERR_PERSONALIZACION_CONEXIONES)
 	return errores
 
 
@@ -758,7 +761,7 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 
 	var total_camas := contar_camas({"pisos": pisos})
 	var total_baules := contar_baules({"pisos": pisos})
-	var nombre_blueprint := "Residencia %dx%d" % [total_camas, total_baules]
+	var nombre_blueprint := Strings.BLUEPRINT_NOMBRE_RESIDENCIA_FORMATO % [total_camas, total_baules]
 
 	var resultado := {
 		"nombre": nombre_blueprint,
@@ -775,7 +778,7 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	}
 	if not volumen_sellado:
 		resultado["errores_volumen"] = [
-			"El edificio no tiene ningún volumen interior sellado: hay una fuga hacia afuera o no hay ningún espacio interior."
+			Strings.BLUEPRINT_ERR_VOLUMEN_NO_SELLADO
 		]
 	return resultado
 
@@ -880,7 +883,7 @@ static func _calcular_errores_vestibulos(
 			# ("falta vestíbulo" en vez de señalar la fuga real).
 			var libre: bool = not celdas_relevantes.has(vecino) and not celdas_relevantes.has(vecino + Vector3i(0, 1, 0))
 			if not libre:
-				errores.append("Al %s le falta espacio libre justo detrás de una puerta." % _texto_piso(nivel))
+				errores.append(Strings.BLUEPRINT_ERR_PUERTA_SIN_ESPACIO_3D % _texto_piso(nivel))
 	return errores
 
 

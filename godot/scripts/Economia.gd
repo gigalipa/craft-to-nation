@@ -26,6 +26,7 @@ signal cohorte_graduada(esquina: Vector2i, ids: Array)
 ## Una universidad completó una investigación tecnológica.
 signal investigacion_finalizada(nombre_tecnologia: String)
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const Energia = preload("res://scripts/Energia.gd")
 
 ## Valores «ninguno» de la celda de servicio (X, Z de la puerta) y del depósito
@@ -38,15 +39,15 @@ const SIN_SUELO := -1
 ## Unidades que un acarreador lleva por viaje (placeholder). Con ~20 celdas de ruta
 ## un acarreador mueve ~16 comida/h, es decir 1 acarreador por cada 2 recolectores;
 ## los puestos más lejanos rinden menos.
-const CAPACIDAD_CARGA := 150.0
+static var CAPACIDAD_CARGA: float = Ajustes.ECONOMIA_CAPACIDAD_CARGA
 
 ## Valores admisibles para la reserva de insumo en el almacén central (Esquema A)
-const VALORES_RESERVA_INSUMO: Array[float] = [0.0, 50.0, 100.0, 250.0, 500.0]
+static var VALORES_RESERVA_INSUMO: Array[float] = Ajustes.ECONOMIA_VALORES_RESERVA_INSUMO
 
 ## Mínimo de unidades que justifica un viaje del acarreador de una refinería (retirar insumo
 ## del stock central o recoger producto): evita viajes de 1 unidad. ponytail: un resto menor
 ## de este valor queda en el almacén local hasta acumular más.
-const CARGA_MINIMA := 10.0
+static var CARGA_MINIMA: float = Ajustes.ECONOMIA_CARGA_MINIMA
 
 ## "tecnico" opera la receta en las refinerías y, en los puestos de recolección, recolecta como técnico;
 ## "recolector" (un obrero) y "especialista" solo existen en los puestos de recolección; "aprendiz" solo en las
@@ -59,7 +60,7 @@ const RECURSOS_LIQUIDOS: Array[String] = ["agua", "crudo", "combustible"]
 const RANGO_DE_ROL := {"recolector": 1, "tecnico": 2, "especialista": 3}
 
 ## Horas de juego que estudia una cohorte antes de graduarse (placeholder sin balance real).
-const HORAS_FORMACION := 24
+static var HORAS_FORMACION: int = Ajustes.ECONOMIA_HORAS_FORMACION
 
 ## Tipos de puesto que consumen el mundo al producir; caza/recolección y pesca
 ## no consumen bloques (sus tasas dependen del entorno, ver recalcular_tasas()).
@@ -67,7 +68,7 @@ const TIPOS_QUE_CONSUMEN := ["mina", "maderero", "centro_extraccion"]
 
 ## Cada cuántas horas de juego se recalculan las tasas de todos los puestos
 ## según lo que queda en su entorno (árboles, bloques de mina, agua).
-const TICKS_RECALCULO := 6
+static var TICKS_RECALCULO: int = Ajustes.ECONOMIA_TICKS_RECALCULO
 
 ## Las tasas de un puesto usan las claves de Recoleccion.tasas_*(); estas cuatro
 ## son formas de obtener comida y se suman en el recurso "comida". El resto de

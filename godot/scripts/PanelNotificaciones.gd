@@ -7,11 +7,12 @@ extends Control
 ## agregan abajo) y cada una se desvanece de forma independiente, así que la
 ## de arriba (la más antigua) desaparece primero.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
-const DURACION_VISIBLE := 2.5
-const DURACION_FADE := 0.25
-const ANCHO := 320.0
+static var DURACION_VISIBLE: float = Ajustes.NOTIFICACIONES_DURACION_VISIBLE
+static var DURACION_FADE: float = Ajustes.NOTIFICACIONES_DURACION_FADE
+static var ANCHO: float = Ajustes.NOTIFICACIONES_ANCHO
 
 var _lista: VBoxContainer
 

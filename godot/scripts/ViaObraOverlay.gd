@@ -4,7 +4,9 @@ extends MeshInstance3D
 ## Dibuja únicamente los bordes de cada celda para diferenciarse de los overlays rellenos
 ## (zonificación, demolición, etc.).
 
-const COLOR_CONTORNO := Color(1.0, 0.85, 0.2, 0.9)
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var COLOR_CONTORNO: Color = Ajustes.COLOR_VIA_OBRA_CONTORNO
 const EPSILON_Y := 0.03
 const PRIORIDAD := 4
 

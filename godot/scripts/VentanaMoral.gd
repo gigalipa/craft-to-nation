@@ -6,6 +6,8 @@ extends PanelContainer
 ## el régimen migratorio (inmigración continua o éxodo por umbral 20) y el desglose analítico
 ## de factores (inercia, dieta, recursos, sin techo y peligrosidad de 7 días).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
 
@@ -183,7 +185,7 @@ func _fila_titulo(texto: String) -> HBoxContainer:
 
 	var lbl := TemaHUD.etiqueta(texto)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	lbl.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	lbl.add_theme_font_size_override("font_size", 16)
 	fila.add_child(lbl)
 
@@ -228,7 +230,7 @@ func _process(_delta: float) -> void:
 
 
 func actualizar() -> void:
-	var m: float = Ciudad.moral if ("moral" in Ciudad) else 75.0
+	var m: float = Ciudad.moral if ("moral" in Ciudad) else Ajustes.CIUDAD_MORAL_INICIAL
 	var tasa_m: float = Ciudad.tasa_cambio_moral if ("tasa_cambio_moral" in Ciudad) else 0.0
 
 	var color_moral := Color(0.85, 0.95, 0.6)
@@ -243,29 +245,29 @@ func actualizar() -> void:
 	_lbl_moral_val.text = "Moral: %.1f%%" % m
 	_lbl_moral_val.add_theme_color_override("font_color", color_moral)
 
-	var color_tasa := Color(0.85, 0.95, 0.6) if tasa_m >= 0.0 else TemaHUD.INVALIDO
+	var color_tasa := Ajustes.COLOR_HUD_TEXTO_VERDE_CLARO if tasa_m >= 0.0 else TemaHUD.INVALIDO
 	_rect_tendencia.texture = IconosHUD.icono(IconosHUD.icono_tasa(tasa_m))
-	_lbl_tendencia.text = "Tendencia: %+.2f / día" % tasa_m
+	_lbl_tendencia.text = Strings.VENTANA_MORAL_TENDENCIA_DIA % tasa_m
 	_lbl_tendencia.add_theme_color_override("font_color", color_tasa)
 
 	var mult_prod: float = CiudadScript.calcular_multiplicador_productividad(m)
-	_lbl_productividad.text = "Productividad laboral: %.2fx" % mult_prod
+	_lbl_productividad.text = Strings.VENTANA_MORAL_PRODUCTIVIDAD_X % mult_prod
 
 	var tasa_mig: float = CiudadScript.calcular_tasa_migracion_mensual(m)
-	_rect_migracion.texture = IconosHUD.icono("ciudadano" if m > 20.0 else "investigador")
-	if m <= 20.0:
-		_lbl_migracion.text = "Migración: ⚠ Éxodo de cerebros (%d/mes)" % int(abs(tasa_mig))
+	_rect_migracion.texture = IconosHUD.icono("ciudadano" if m > Ajustes.CIUDAD_UMBRAL_EXODO_MORAL else "investigador")
+	if m <= Ajustes.CIUDAD_UMBRAL_EXODO_MORAL:
+		_lbl_migracion.text = Strings.VENTANA_MORAL_MIGRACION_EXODO_CEREBROS % int(abs(tasa_mig))
 		_lbl_migracion.add_theme_color_override("font_color", TemaHUD.INVALIDO)
-	elif m <= 50.0:
-		_lbl_migracion.text = "Migración: Inmigración con camas (%d/mes)" % int(tasa_mig)
-		_lbl_migracion.add_theme_color_override("font_color", Color(0.85, 0.95, 0.6))
+	elif m <= Ajustes.CIUDAD_UMBRAL_INMIGRACION_MASIVA:
+		_lbl_migracion.text = Strings.VENTANA_MORAL_MIGRACION_CON_CAMAS % int(tasa_mig)
+		_lbl_migracion.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_VERDE_CLARO)
 	else:
-		_lbl_migracion.text = "Migración: Inmigración masiva (%d/mes)" % int(tasa_mig)
-		_lbl_migracion.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6))
+		_lbl_migracion.text = Strings.VENTANA_MORAL_MIGRACION_MASIVA % int(tasa_mig)
+		_lbl_migracion.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_VERDE)
 
 	# Desglose de factores
-	var inercia: float = (Ciudad.MORAL_NEUTRAL - m) * Ciudad.INERCIA_MORAL if ("MORAL_NEUTRAL" in Ciudad) else (50.0 - m) * 0.02
-	_lbl_factor_inercia.text = "• Tendencia natural al equilibrio (50%%): %+.2f/día" % inercia
+	var inercia: float = (Ciudad.MORAL_NEUTRAL - m) * Ciudad.INERCIA_MORAL if ("MORAL_NEUTRAL" in Ciudad) else (Ajustes.CIUDAD_MORAL_NEUTRAL - m) * Ajustes.CIUDAD_INERCIA_MORAL
+	_lbl_factor_inercia.text = Strings.VENTANA_MORAL_FACTOR_INERCIA_FORMATO % inercia
 
 	var activas_dieta := 0
 	if "fuentes_comida_activas" in Ciudad:

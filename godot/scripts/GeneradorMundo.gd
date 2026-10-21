@@ -6,9 +6,11 @@ extends RefCounted
 ## de hierro). Sin class_name (mismo motivo que Zonificacion.gd/Ciudad.gd:
 ## evitar el bug de caché de clases globales de Godot) — se usa vía preload().new().
 
-const ALTURA_MINIMA := 0
-const ALTURA_MAXIMA := 130
-const GROSOR_TIERRA := 4
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var ALTURA_MINIMA: int = Ajustes.MUNDO_ALTURA_MINIMA
+static var ALTURA_MAXIMA: int = Ajustes.MUNDO_ALTURA_MAXIMA
+static var GROSOR_TIERRA: int = Ajustes.MUNDO_GROSOR_TIERRA
 
 ## Umbral de get_noise_3d() (rango [-1, 1]) por encima del cual una celda de
 ## piedra se convierte en hierro — ver tipo_en_profundidad(). El rango teórico
@@ -17,7 +19,7 @@ const GROSOR_TIERRA := 4
 ## umbral de 0.55 (o incluso 0.4) nunca se alcanza y nunca produciría hierro.
 ## Recalibrado empíricamente a 0.2, que sigue dejando al hierro como clara
 ## minoría frente a la piedra en la capa profunda.
-const UMBRAL_HIERRO := 0.2
+static var UMBRAL_HIERRO: float = Ajustes.MUNDO_UMBRAL_HIERRO
 
 ## Profundidad mínima bajo superficie (profundidad_bajo_superficie) y umbral
 ## de _ruido_mineral.get_noise_3d() para carbón, cobre y tierras raras — ver
@@ -31,28 +33,28 @@ const UMBRAL_HIERRO := 0.2
 ## la veta de hierro y nunca llegue a tierras raras, nivel 2 (alcance 16)
 ## cubra bien hierro y roce tierras raras, y nivel 3 (alcance 24) cubra bien
 ## tierras raras.
-const PROFUNDIDAD_CARBON := GROSOR_TIERRA
-const UMBRAL_CARBON := -0.1
-const PROFUNDIDAD_COBRE := 6
+static var PROFUNDIDAD_CARBON: int = Ajustes.MUNDO_PROFUNDIDAD_CARBON
+static var UMBRAL_CARBON: float = Ajustes.MUNDO_UMBRAL_CARBON
+static var PROFUNDIDAD_COBRE: int = Ajustes.MUNDO_PROFUNDIDAD_COBRE
 ## Subido de 0.0 a 0.12 (2026-09-17): con 0.0 el cobre salía visiblemente en
 ## exceso jugando en vivo — sigue estrictamente entre UMBRAL_CARBON (-0.1) y
 ## UMBRAL_HIERRO (0.2), conservando el orden de rareza carbón > cobre > hierro
 ## > tierras_raras pedido por el usuario, solo que más cerca de hierro.
-const UMBRAL_COBRE := 0.12
+static var UMBRAL_COBRE: float = Ajustes.MUNDO_UMBRAL_COBRE
 ## Profundidad mínima de hierro — antes el hierro no tenía piso propio (solo
 ## GROSOR_TIERRA), pero para que una mina nivel 1 (alcance 8) apenas roce el
 ## borde de la veta necesita empezar justo en ese alcance, no en la
 ## superficie del subsuelo.
-const PROFUNDIDAD_HIERRO := 8
-const PROFUNDIDAD_TIERRAS_RARAS := 16
-const UMBRAL_TIERRAS_RARAS := 0.3
+static var PROFUNDIDAD_HIERRO: int = Ajustes.MUNDO_PROFUNDIDAD_HIERRO
+static var PROFUNDIDAD_TIERRAS_RARAS: int = Ajustes.MUNDO_PROFUNDIDAD_TIERRAS_RARAS
+static var UMBRAL_TIERRAS_RARAS: float = Ajustes.MUNDO_UMBRAL_TIERRAS_RARAS
 
 ## Profundidad mínima bajo superficie y umbral para pozos subterráneos de agua y crudo.
 ## Nunca aparecen en la capa de tierra superficial ni cerca del suelo inmediato (profundidad >= 4).
 ## MARGEN_POZO_BUFFER garantiza que ningún pozo de agua linde con uno de crudo.
-const PROFUNDIDAD_POZOS := 4
-const UMBRAL_POZO := 0.35
-const MARGEN_POZO_BUFFER := 0.20
+static var PROFUNDIDAD_POZOS: int = Ajustes.MUNDO_PROFUNDIDAD_POZOS
+static var UMBRAL_POZO: float = Ajustes.MUNDO_UMBRAL_POZO
+static var MARGEN_POZO_BUFFER: float = Ajustes.MUNDO_MARGEN_POZO_BUFFER
 
 ## Umbral de _ruido_bosque.get_noise_2d() (rango [-1, 1]) por encima del cual
 ## una columna cae dentro de una zona de bosque real — ver densidad_arbol_en().
@@ -60,7 +62,7 @@ const MARGEN_POZO_BUFFER := 0.20
 ## dejando que UMBRAL_ARBOL (VoxelWorld.gd) recorte más adentro de cada zona
 ## — calibrado empíricamente junto con la frecuencia de _ruido_bosque, mismo
 ## patrón que las demás constantes de este archivo.
-const UMBRAL_ZONA_BOSQUE := 0.0
+static var UMBRAL_ZONA_BOSQUE: float = Ajustes.MUNDO_UMBRAL_ZONA_BOSQUE
 
 ## Exponente de la redistribución por curva de potencia aplicada a la altura
 ## (ver altura_en() y _redistribuir()) para producir picos y cuencas más
@@ -78,7 +80,7 @@ const UMBRAL_ZONA_BOSQUE := 0.0
 ## dio la distribución de alturas más pareja de las probadas — ajustar aquí
 ## si al probar en el editor el relieve resulta demasiado suave o demasiado
 ## abrupto, siempre con un valor <1.
-const EXPONENTE_RELIEVE := 0.5
+static var EXPONENTE_RELIEVE: float = Ajustes.MUNDO_EXPONENTE_RELIEVE
 
 ## Cuántas unidades de altura de ruido de detalle (alta frecuencia,
 ## _ruido_detalle) se suman cerca de los picos/cuencas — bug real, encontrado
@@ -91,7 +93,7 @@ const EXPONENTE_RELIEVE := 0.5
 ## calibrado empíricamente, mismo patrón que las demás constantes de este
 ## archivo — ajustar si los picos resultan demasiado ruidosos o siguen
 ## pareciendo mesetas.
-const AMPLITUD_DETALLE_RELIEVE := 3.0
+static var AMPLITUD_DETALLE_RELIEVE: float = Ajustes.MUNDO_AMPLITUD_DETALLE_RELIEVE
 
 ## Cuántas unidades de altura aporta _ruido_medio (frecuencia intermedia,
 ## ver _init()) — a diferencia de AMPLITUD_DETALLE_RELIEVE, esta se suma en
@@ -102,37 +104,37 @@ const AMPLITUD_DETALLE_RELIEVE := 3.0
 ## (ver PoC_6 3.17-3.18), así que esta capa ahora es solo la textura suave
 ## de la llanura — la altura "dramática" viene de _altura_montana() (picos
 ## explícitos), no de esto. Bajada de 30 a 10 en consecuencia.
-const AMPLITUD_MEDIA_RELIEVE := 10.0
+static var AMPLITUD_MEDIA_RELIEVE: float = Ajustes.MUNDO_AMPLITUD_MEDIA_RELIEVE
 
 ## Techo de altura del terreno "base" (llanura/colinas suaves, sin contar
 ## montañas) — ver _altura_flotante()/_altura_montana(). El resto de la
 ## altura hasta ALTURA_MAXIMA solo lo alcanzan las MONTANAS_PICOS. Valor
 ## inicial calibrado empíricamente (2026-09-17, PoC_6 3.18): bajo frente a
 ## ALTURA_MAXIMA a propósito, para que el mapa se sienta mayormente llano.
-const ALTURA_BASE_MAXIMA := 30.0
+static var ALTURA_BASE_MAXIMA: float = Ajustes.MUNDO_ALTURA_BASE_MAXIMA
 
 ## Cuántos picos de montaña explícitos genera el mundo — ver
 ## _generar_picos_montana()/_altura_montana(). El usuario pidió "una o dos
 ## montañas altas" en vez de relieve accidentado por todo el mapa (2026-09-17,
 ## PoC_6 3.18, con captura real de un mundo demasiado "ocupado" de picos).
-const NUM_MONTANAS := 2
+static var NUM_MONTANAS: int = Ajustes.MUNDO_NUM_MONTANAS
 
 ## Radio (en celdas) dentro del cual un pico de montaña influye en la altura
 ## — fuera de este radio, la altura vuelve a depender solo del terreno base
 ## (llanura/colinas). Sorteado por pico entre estos dos valores, para que no
 ## todas las montañas tengan exactamente el mismo tamaño.
-const RADIO_MONTANA_MIN := 45.0
-const RADIO_MONTANA_MAX := 70.0
+static var RADIO_MONTANA_MIN: float = Ajustes.MUNDO_RADIO_MONTANA_MIN
+static var RADIO_MONTANA_MAX: float = Ajustes.MUNDO_RADIO_MONTANA_MAX
 
 ## Distancia mínima al borde del mundo para el centro de un pico de montaña
 ## — evita montañas cortadas a la mitad por el borde del mapa.
-const MARGEN_BORDE_MONTANA := 35
+static var MARGEN_BORDE_MONTANA: int = Ajustes.MUNDO_MARGEN_BORDE_MONTANA
 
 ## Percentil (sobre la distribución real de altura_en() en todo el grid) que
 ## define nivel_mar — ver _calcular_nivel_mar(). Fijo por ahora; en un
 ## desarrollo futuro dependerá del "tipo de mundo" elegido (archipiélago,
 ## continental, etc.) — ver spec docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md.
-const PERCENTIL_NIVEL_MAR := 0.15
+static var PERCENTIL_NIVEL_MAR: float = Ajustes.MUNDO_PERCENTIL_NIVEL_MAR
 
 ## Cuántas unidades de altura por encima de nivel_mar sigue habiendo bioma
 ## (vegetación/fauna) antes de volverse tierra estéril — ver es_bioma_en().
@@ -144,7 +146,7 @@ const PERCENTIL_NIVEL_MAR := 0.15
 ## rango de 130 dejaba el bioma como una franja angosta pegada a la costa
 ## (18% del mapa, confirmado jugando en vivo con captura real), obligando de
 ## facto a construir cerca del mar.
-const BANDA_BIOMA := 34
+static var BANDA_BIOMA: int = Ajustes.MUNDO_BANDA_BIOMA
 
 ## Altura por debajo de la cual una columna se considera inundada (ver
 ## es_agua_en()). Calculada una vez en _init() a partir de
@@ -616,7 +618,7 @@ func densidad_algas_en(x: int, z: int) -> float:
 
 ## Cuántas nacientes de río se generan por mundo (Sección 1 del spec) —
 ## constante ajustable como UMBRAL_HIERRO/EXPONENTE_RELIEVE.
-const NUM_RIOS := 6
+static var NUM_RIOS: int = Ajustes.MUNDO_NUM_RIOS
 
 ## Banda de altura [margen_inferior, margen_superior] dentro de la cual una
 ## columna es candidata a naciente de río, medida como distancia por debajo
@@ -632,7 +634,7 @@ const NUM_RIOS := 6
 ## ahí de inmediato (cauce de 1 sola celda, descartado). El margen superior
 ## excluye esa franja más alta y caótica, dejando nacer los ríos desde el
 ## "hombro" más estable de la montaña, un poco por debajo de la cumbre.
-const MARGEN_NACIENTE_RIO: Array[int] = [35, 17]
+static var MARGEN_NACIENTE_RIO: Array[int] = Ajustes.MUNDO_MARGEN_NACIENTE_RIO
 
 ## Distancia mínima en línea recta (celdas) entre dos nacientes elegidas —
 ## evita que varios de los NUM_RIOS ríos nazcan todos de la misma montaña
@@ -642,22 +644,22 @@ const MARGEN_NACIENTE_RIO: Array[int] = [35, 17]
 ## sorteo. Si el terreno alto está muy concentrado, esto puede dejar menos
 ## de NUM_RIOS nacientes disponibles — _generar_rios() simplemente genera
 ## los que alcancen, no es un error.
-const MIN_DISTANCIA_NACIENTES := 10
+static var MIN_DISTANCIA_NACIENTES: int = Ajustes.MUNDO_MIN_DISTANCIA_NACIENTES
 
-const ANCHO_MINIMO_RIO := 2
+static var ANCHO_MINIMO_RIO: int = Ajustes.MUNDO_ANCHO_MINIMO_RIO
 ## Subido de 6 a 8 (2026-09-17, PoC_6 3.18) — pedido explícito del usuario
 ## junto con NUM_MONTANAS: los ríos que nacen más alto (más cerca de una
 ## cumbre real) ahora tallan cauces más anchos, ver _ancho_por_altura().
-const ANCHO_MAXIMO_RIO := 8
+static var ANCHO_MAXIMO_RIO: int = Ajustes.MUNDO_ANCHO_MAXIMO_RIO
 
 ## Profundidad máxima tallada en el centro de un río, sin importar cuánto
 ## crezca el ancho (Sección 3) — un río de ancho 6 no talla más hondo que
 ## uno de ancho 5, según la fórmula de _profundidad_en_franja().
-const PROFUNDIDAD_MAXIMA_RIO := 3
+static var PROFUNDIDAD_MAXIMA_RIO: int = Ajustes.MUNDO_PROFUNDIDAD_MAXIMA_RIO
 
 ## Caída de altura mínima entre dos celdas consecutivas del cauce para
 ## marcar ese paso como cascada (Sección 5, es_cascada_en()).
-const UMBRAL_CASCADA := 3
+static var UMBRAL_CASCADA: int = Ajustes.MUNDO_UMBRAL_CASCADA
 
 ## (x,z) -> profundidad tallada (1..PROFUNDIDAD_MAXIMA_RIO). Solo contiene
 ## celdas que son parte de la franja de algún río — ver es_rio_en().
@@ -770,7 +772,7 @@ const DIRECCIONES_CARDINALES: Array[Vector2i] = [
 ## solo observado (ver notas del commit). Mirar más lejos encuentra la
 ## bajada real aunque esté a varias celdas, sin necesitar que el cauce
 ## "suba" para escapar.
-const RADIO_VISTA_RIO := 5
+static var RADIO_VISTA_RIO: int = Ajustes.MUNDO_RADIO_VISTA_RIO
 
 ## Traza el cauce crudo desde "origen" (Sección 2 del spec, reescrito
 ## 2026-09-17 — pedido explícito del usuario, PoC_6 3.18): en cada paso,

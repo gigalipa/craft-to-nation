@@ -17,6 +17,8 @@ signal categoria_pedida(categoria: String)
 signal construccion_pedida(tipo: String)
 signal zona_pedida(tipo: String)
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const MiniaturaRendererScript = preload("res://scripts/MiniaturaRenderer.gd")
 const BlueprintValidatorScript = preload("res://scripts/BlueprintValidator.gd")
@@ -114,9 +116,9 @@ const TIPOS_CON_MINIATURA := [
 
 ## [tipo de zona, nombre, tecla, ícono opcional]
 var ZONAS := [
-	[Zonificacion.ZONAS_PINTABLES[0], "Zona Residencial", "1", "zona_residencial"],
-	[Zonificacion.ZONAS_PINTABLES[1], "Zona Industrial", "2", "zona_industrial"],
-	[Zonificacion.MARCADOR_BORRAR, "Borrar", "3", "zona_borrar"],
+	[Zonificacion.ZONAS_PINTABLES[0], Strings.CAMARA_ZONA_RESIDENCIAL, "1", "zona_residencial"],
+	[Zonificacion.ZONAS_PINTABLES[1], Strings.CAMARA_ZONA_INDUSTRIAL, "2", "zona_industrial"],
+	[Zonificacion.MARCADOR_BORRAR, Strings.CAMARA_ZONA_BORRAR, "3", "zona_borrar"],
 ]
 
 ## Metadatos visuales de las 3 esquinas para botones de construcción:
@@ -693,7 +695,7 @@ func _refrescar() -> void:
 		_botones_construccion[tipo].set_pressed_no_signal(_modo == "construir" and tipo == _puesto)
 
 	var cant_res := Blueprints.cantidad_residenciales()
-	for i in range(5):
+	for i in range(Ajustes.BLUEPRINTS_MAX_RESIDENCIALES):
 		var id_res := "residencial" if i == 0 else "residencial_%d" % i
 		if _botones_construccion.has(id_res):
 			var btn: Button = _botones_construccion[id_res]
@@ -713,11 +715,11 @@ func _refrescar() -> void:
 						var camas: int = BlueprintValidatorScript.contar_camas(bp)
 						var baules: int = BlueprintValidatorScript.contar_baules(bp)
 						if camas > 0 or baules > 0:
-							nom = "Residencia %dx%d" % [camas, baules]
+							nom = Strings.BLUEPRINT_NOMBRE_RESIDENCIA_FORMATO % [camas, baules]
 						else:
 							nom = "Residencial" if i == 0 else "Residencial %d" % (i + 1)
 					_cambiar_texto_boton_construccion(btn, nom)
-					btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
+					btn.modulate = Ajustes.COLOR_HUD_MODAL_ACTIVO
 				else:
 					btn.visible = false
 

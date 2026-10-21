@@ -11,6 +11,8 @@ extends Node3D
 ## Mismo patrón que TranslucidosRenderer:
 ## VoxelWorld._ready() asigna "voxel_world" y conecta la señal.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 ## Mismo desfase que CamaraCenital.gd/TranslucidosRenderer.gd: una celda
 ## "celda" ocupa [celda, celda+1] en cada eje, así que su centro real está
 ## en celda + DESF.
@@ -18,12 +20,12 @@ const DESF := 0.5
 
 ## Un poco más grande que la celda para no competir (z-fighting) con las
 ## caras del bloque "fantasma" que hay debajo.
-const TAMANO_MARCADOR := 1.02
+static var TAMANO_MARCADOR: float = Ajustes.FANTASMAS_DESTACADOS_TAMANO_CAJA
 
 ## Mismo azul translúcido del bloque "fantasma" (Mat_fantasma en
 ## BlockLibrarySource.tscn): el marcador hace que una celda ocupada por agua o
 ## follaje se lea como un fantasma más del edificio.
-const COLOR_FANTASMA_OCUPADO := Color(0.6, 0.7, 1.0, 0.35)
+static var COLOR_FANTASMA_OCUPADO: Color = Ajustes.COLOR_TRANSLUCIDO_FANTASMA
 
 ## Asignado por VoxelWorld._ready() antes de conectar la señal. Nunca null
 ## en uso real.

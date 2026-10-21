@@ -6,9 +6,11 @@ extends MeshInstance3D
 ## no. Es un quad de 1x1: sobre piezas que no son un cubo entero (puerta,
 ## ventana) no ajusta perfecto.
 
-const COLOR := Color(0.3, 1.0, 0.45, 0.38)
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var COLOR: Color = Ajustes.COLOR_CARA_APUNTADA
 ## Separación respecto a la cara, para evitar el parpadeo por profundidad.
-const DESFASE := 0.01
+static var DESFASE: float = Ajustes.CARA_APUNTADA_DESFASE
 const VELOCIDAD_PULSO := 4.0
 
 var _material := StandardMaterial3D.new()

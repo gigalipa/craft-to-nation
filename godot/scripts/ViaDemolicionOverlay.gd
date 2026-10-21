@@ -4,8 +4,10 @@ extends Node3D
 ## (tecla 3 en CamaraCenital al apuntar a una vía construida) y overlay con outline naranja
 ## persistente para vías con orden de demolición confirmada.
 
-const COLOR_DEMOLICION_VIA := Color(1.0, 0.5, 0.0, 0.45)
-const COLOR_OUTLINE_DEMOLICION := Color(1.0, 0.5, 0.0, 0.95)
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var COLOR_DEMOLICION_VIA: Color = Ajustes.COLOR_DEMOLICION_VIA
+static var COLOR_OUTLINE_DEMOLICION: Color = Ajustes.COLOR_OUTLINE_DEMOLICION_VIA
 const ALTURA_SOBRE_SUPERFICIE := 1.03
 const EPSILON_Y_OUTLINE := 0.035
 const DESF := 0.5

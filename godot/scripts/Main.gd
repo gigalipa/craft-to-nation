@@ -1,5 +1,8 @@
 extends Node3D
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+
 @onready var mundo := $VoxelWorld
 @onready var jugador: Player = $Player
 @onready var camara_cenital: Camera3D = $CamaraCenital
@@ -10,7 +13,7 @@ extends Node3D
 var cenital_activa := false
 
 ## Duración de la animación de cambio de cámara (segundos).
-const DURACION_TRANSICION := 0.6
+static var DURACION_TRANSICION: float = Ajustes.MAIN_DURACION_TRANSICION_CAMARA
 
 ## Cámara "libre" que hace el vuelo de una vista a otra: durante la
 ## transición es la única cámara `current`, ninguna de las dos vistas
@@ -38,8 +41,8 @@ func _ready() -> void:
 
 	Economia.mundo = mundo
 	mundo.obra_a_fantasma.connect(jugador._on_obra_a_fantasma)
-	Colonos.colono_creado.connect(func(_id: int) -> void: hud.notificar("Nuevo colono en la ciudad."))
-	Colonos.tecnicos_formados.connect(func(cantidad: int) -> void: hud.notificar("Se formaron %d técnicos." % cantidad))
+	Colonos.colono_creado.connect(func(_id: int) -> void: hud.notificar(Strings.NOTIF_NUEVO_COLONO))
+	Colonos.tecnicos_formados.connect(func(cantidad: int) -> void: hud.notificar(Strings.NOTIF_TECNICOS_FORMADOS % cantidad))
 	var centro_x: int = mundo.ANCHO_MUNDO / 2
 	var centro_z: int = mundo.LARGO_MUNDO / 2
 	var altura_spawn: int = mundo.altura_en(centro_x, centro_z)

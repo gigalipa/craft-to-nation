@@ -4,6 +4,8 @@ extends PanelContainer
 ## Muestra el tipo de ducto, recurso transportado, edificios conectados en sus
 ## extremos y estado de la red (activo, derrame, abierto).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
@@ -43,7 +45,7 @@ func _ready() -> void:
 	_icono_titulo.custom_minimum_size = Vector2(20, 20)
 	_icono_titulo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	fila_titulo.add_child(_icono_titulo)
-	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	_titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	_titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var boton_x := Button.new()
 	boton_x.icon = IconosHUD.icono("cruz")
@@ -68,8 +70,8 @@ func _ready() -> void:
 
 	_dialogo_demoler.title = "Confirmar demolición"
 	_dialogo_demoler.dialog_text = "¿Demoler esta canalización y recuperar los materiales?"
-	_dialogo_demoler.ok_button_text = "Confirmar"
-	_dialogo_demoler.cancel_button_text = "Cancelar"
+	_dialogo_demoler.ok_button_text = Strings.PANEL_EDIFICIO_BTN_CONFIRMAR
+	_dialogo_demoler.cancel_button_text = Strings.PANEL_EDIFICIO_BTN_CANCELAR
 	_dialogo_demoler.confirmed.connect(_confirmar_demoler)
 	TemaHUD.estilizar_dialogo(_dialogo_demoler)
 	add_child(_dialogo_demoler)
@@ -94,7 +96,7 @@ func _actualizar() -> void:
 		return
 
 	var info: Dictionary = Canalizaciones.info_de_red(id_red)
-	var tipo_str: String = "Tubería" if info["tipo"] == "tuberia" else "Acueducto"
+	var tipo_str: String = Strings.CANALIZACIONES_NOMBRE_TUBERIA if info["tipo"] == "tuberia" else Strings.CANALIZACIONES_NOMBRE_ACUEDUCTO
 	_titulo.text = "%s #%d" % [tipo_str, id_red]
 	_icono_titulo.texture = IconosHUD.icono(info["tipo"])
 	_tipo.text = "Tipo: %s" % ("Tubería industrial" if info["tipo"] == "tuberia" else "Acueducto elevado")

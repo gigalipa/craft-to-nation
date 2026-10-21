@@ -7,9 +7,10 @@ extends Node3D
 ## TranslucidosRenderer.gd — reconstruye solo el chunk sucio; reutiliza su
 ## geometría de cara (_agregar_cara()) en vez de reimplementarla.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const TranslucidosRenderer = preload("res://scripts/TranslucidosRenderer.gd")
 
-const CHUNK_SIZE := 16
+static var CHUNK_SIZE: int = Ajustes.VIAS_RENDERER_CHUNK_SIZE
 const DESF := 0.5
 const ARRIBA := Vector3i(0, 1, 0)
 ## Margen contra z-fighting (ver I3 de la revisión final) — 0.02, no 0.01
@@ -17,7 +18,7 @@ const ARRIBA := Vector3i(0, 1, 0)
 ## overlay de zonas, ambos quedaban exactamente coplanares y competían
 ## por encima en la vista cenital (reportado jugando en vivo). El overlay
 ## de vía debe verse SIEMPRE por encima del de zona.
-const EPSILON_Y := 0.02
+static var EPSILON_Y: float = Ajustes.VIAS_RENDERER_ALTURA_SOBRE_SOPORTE - 1.0
 
 ## Tipos de cuña cuya propia superficie ya es la cara visible — no llevan
 ## overlay plano encima (ver spec Sección 3 y el sistema de rampa

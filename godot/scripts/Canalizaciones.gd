@@ -4,16 +4,19 @@ extends Node
 ## de la red de acueductos y tuberías (Etapa 9.3).
 ## Sin class_name (colisionaría con el nombre del autoload).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+
 signal canalizaciones_cambiadas
 signal derrame_detectado(celda: Vector3i, recurso: String)
 
-const ALTURA_DESPEJE := 3
-const ALTURA_DUCTO_RELATIVA := 4
-const INTERVALO_COLUMNAS := 5
+static var ALTURA_DESPEJE: int = Ajustes.CANALIZACIONES_ALTURA_DESPEJE
+static var ALTURA_DUCTO_RELATIVA: int = Ajustes.CANALIZACIONES_ALTURA_DUCTO_RELATIVA
+static var INTERVALO_COLUMNAS: int = Ajustes.CANALIZACIONES_INTERVALO_COLUMNAS
 
 var TIPOS: Dictionary = {
 	"acueducto": {
-		"nombre": "Acueducto",
+		"nombre": Strings.CANALIZACIONES_NOMBRE_ACUEDUCTO,
 		"bloque_ducto": "acueducto_lineal",
 		"bloque_ducto_lineal": "acueducto_lineal",
 		"bloque_ducto_quiebre": "acueducto_quiebre",
@@ -23,7 +26,7 @@ var TIPOS: Dictionary = {
 		"costo_columna": {"bloque_piedra": 1},
 	},
 	"tuberia": {
-		"nombre": "Tubería",
+		"nombre": Strings.CANALIZACIONES_NOMBRE_TUBERIA,
 		"bloque_ducto": "tuberia_lineal",
 		"bloque_ducto_lineal": "tuberia_lineal",
 		"bloque_ducto_quiebre": "tuberia_quiebre",
@@ -390,13 +393,13 @@ func info_de_red(id_red: int) -> Dictionary:
 	for p: Vector3i in puertos_conectados:
 		if puertos_conectados[p] == id_red:
 			var tipo_p: String = tipo_por_puerto.get(p, "")
-			var dir_p: String = "Entrada" if tipo_p.ends_with("_in") else "Salida"
+			var dir_p: String = Strings.PANEL_PUESTO_PUERTO_DIRECCION_ENTRADA if tipo_p.ends_with("_in") else Strings.PANEL_PUESTO_PUERTO_DIRECCION_SALIDA
 			var rec_p: String = ""
 			if tipo_p.begins_with("puerto_agua"): rec_p = "agua"
 			elif tipo_p.begins_with("puerto_crudo"): rec_p = "crudo"
 			elif tipo_p.begins_with("puerto_combustible"): rec_p = "combustible"
 
-			var nombre_edificio := "Edificio"
+			var nombre_edificio := Strings.PANEL_EDIFICIO_TITULO_DEFECTO
 			var esq_puesto: Vector2i = Vector2i(-99999, -99999)
 			if Economia != null and Economia.has_method("buscar_puesto_por_puerto"):
 				esq_puesto = Economia.buscar_puesto_por_puerto(p)
@@ -404,7 +407,7 @@ func info_de_red(id_red: int) -> Dictionary:
 					var p_info: Dictionary = Economia.puestos.get(esq_puesto, {})
 					var tipo_edif: String = p_info.get("tipo", "")
 					if tipo_edif == "almacen":
-						nombre_edificio = "Almacén"
+						nombre_edificio = Strings.NOMBRES_PUESTO["almacen"]
 					elif tipo_edif != "":
 						var PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 						nombre_edificio = PanelPuestoScript.NOMBRES_PUESTO.get(tipo_edif, tipo_edif.capitalize())
@@ -431,13 +434,7 @@ func info_de_red(id_red: int) -> Dictionary:
 
 
 static func nombre_recurso_legible(clave: String) -> String:
-	var nombres := {
-		"bloque_acero": "Bloque de acero",
-		"estructura_hierro": "Estructura de hierro",
-		"bloque_piedra": "Bloque de piedra",
-		"bloque_madera": "Bloque de madera",
-	}
-	return nombres.get(clave, clave.replace("_", " ").capitalize())
+	return Strings.NOMBRES_RECURSO_LEGIBLE_DUCTO.get(clave, clave.replace("_", " ").capitalize())
 
 
 func ficha_tecnica(tipo: String, celdas_ducto: int = 0, celdas_columna: int = 0) -> String:
@@ -462,8 +459,8 @@ func ficha_tecnica(tipo: String, celdas_ducto: int = 0, celdas_columna: int = 0)
 		for rec in costo_d:
 			partes_costo.append("%d %s/m" % [costo_d[rec], nombre_recurso_legible(rec)])
 
-	var costo_str: String = " + ".join(partes_costo) if not partes_costo.is_empty() else "N/A"
-	return "%s\nFluidos: %s\nMateriales: %s\nDespeje: 3 bloques\nColumnas: cada 5 bloques" % [
+	var costo_str: String = " + ".join(partes_costo) if not partes_costo.is_empty() else Strings.VIAS_TEXTO_NA
+	return Strings.CANALIZACIONES_FICHA_TECNICA_FORMATO % [
 		nombre,
 		fluidos_str,
 		costo_str
@@ -516,7 +513,7 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 
 	if puntos_2d.is_empty():
 		resultado.valido = false
-		resultado.motivo = "Tramo vacío."
+		resultado.motivo = Strings.CANALIZACIONES_ERR_TRAMO_VACIO
 		return resultado
 
 	var n := puntos_2d.size()
@@ -761,7 +758,7 @@ func calcular_geometria_tramo(tipo: String, puntos_2d: Array[Vector2i], mundo: O
 
 					if rec_puerto != "" and (rec_ducto == "" or rec_puerto != rec_ducto):
 						resultado.valido = false
-						resultado.motivo = "Trazado inválido: la tubería invade el espacio reservado del puerto de %s." % rec_puerto
+						resultado.motivo = Strings.CANALIZACIONES_ERR_INVADE_PUERTO % rec_puerto
 						return resultado
 
 		celdas_ducto.append(celda_tentativa)
@@ -886,9 +883,9 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object, id_existente
 
 		var mat := StandardMaterial3D.new()
 		if tipo == "acueducto":
-			mat.albedo_color = Color(0.7, 0.65, 0.55)
+			mat.albedo_color = Ajustes.COLOR_DUCTO_ACUEDUCTO
 		else:
-			mat.albedo_color = Color(0.35, 0.38, 0.42)
+			mat.albedo_color = Ajustes.COLOR_DUCTO_TUBERIA
 		mat.roughness = 0.9
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 		st.set_material(mat)

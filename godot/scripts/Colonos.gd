@@ -10,6 +10,7 @@ extends Node
 ## tick_simulado. Las dependencias (mundo, ciudad, zona) son inyectables para
 ## poder probar todo sin escena (ColonosTest.gd).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
 
 signal colono_creado(id: int)
@@ -40,21 +41,21 @@ const ORDEN_PRIORIDAD_RECURSOS := [
 ]
 
 ## Placeholders sin balance real.
-const VELOCIDAD_COLONO := 2.5  # celdas por segundo
-const ESPERA_ENTRE_DESTINOS_MIN := 1.0
-const ESPERA_ENTRE_DESTINOS_MAX := 3.0
-const ESPERA_BLOQUEO := 0.5  # segundos esperando antes de esquivar
-const INTENTOS_DESTINO := 8
-const INTENTOS_APARICION := 200
-const PROBABILIDAD_CASA := 0.5  # de deambular hacia su hogar en vez de por la ciudad
-const ESPERA_TRABAJO := 1.0  # segundos que espera un recolector/acarreador antes de volver a decidir
+static var VELOCIDAD_COLONO: float = Ajustes.COLONOS_VELOCIDAD_COLONO  # celdas por segundo
+static var ESPERA_ENTRE_DESTINOS_MIN: float = Ajustes.COLONOS_ESPERA_ENTRE_DESTINOS_MIN
+static var ESPERA_ENTRE_DESTINOS_MAX: float = Ajustes.COLONOS_ESPERA_ENTRE_DESTINOS_MAX
+static var ESPERA_BLOQUEO: float = Ajustes.COLONOS_ESPERA_BLOQUEO  # segundos esperando antes de esquivar
+static var INTENTOS_DESTINO: int = Ajustes.COLONOS_INTENTOS_DESTINO
+static var INTENTOS_APARICION: int = Ajustes.COLONOS_INTENTOS_APARICION
+static var PROBABILIDAD_CASA: float = Ajustes.COLONOS_PROBABILIDAD_CASA  # de deambular hacia su hogar en vez de por la ciudad
+static var ESPERA_TRABAJO: float = Ajustes.COLONOS_ESPERA_TRABAJO  # segundos que espera un recolector/acarreador antes de volver a decidir
 ## Nodos de búsqueda de rutas que se reparten entre TODOS los colonos en cada llamada a
 ## avanzar() (~10 ms). La ruta a un puesto se busca por partes: una búsqueda larga o
 ## inalcanzable agota el tope de nodos (~0,5 s de golpe) y, con varios colonos
 ## reintentando, congelaba el juego.
-const NODOS_POR_FRAME := 300
-const FALLOS_PARA_VETAR := 3  # búsquedas fallidas seguidas hacia una obra antes de dejarla (a ese colono) un rato
-const RADIO_SERVICIO := 2  # celdas (Chebyshev) alrededor de la celda de servicio de un puesto con puerta
+static var NODOS_POR_FRAME: int = Ajustes.COLONOS_NODOS_POR_FRAME
+static var FALLOS_PARA_VETAR: int = Ajustes.COLONOS_FALLOS_PARA_VETAR  # búsquedas fallidas seguidas hacia una obra antes de dejarla (a ese colono) un rato
+static var RADIO_SERVICIO: int = Ajustes.COLONOS_RADIO_SERVICIO  # celdas (Chebyshev) alrededor de la celda de servicio de un puesto con puerta
 
 ## El mundo (VoxelWorld en el juego). Asignarlo crea el buscador de rutas.
 var mundo: Object = null:
@@ -743,7 +744,7 @@ func _recuperar_si_atrapado(c: Dictionary) -> bool:
 ## búsqueda que falla (destino inalcanzable, o una puerta de 1 celda atascada por
 ## otros colonos) recorre todo el mundo y cuesta ~0,5 s cada vez, y con varios
 ## colonos a la vez se sentía como un freeze cada pocos segundos.
-const TOPE_NODOS_DESTINO := 2500
+static var TOPE_NODOS_DESTINO: int = Ajustes.COLONOS_TOPE_NODOS_DESTINO
 
 ## Elige el siguiente destino: la mitad de las veces su casa (si tiene), el
 ## resto un punto de la zona de influencia. Prueba INTENTOS_DESTINO veces hasta

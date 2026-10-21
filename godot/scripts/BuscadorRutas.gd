@@ -13,13 +13,15 @@ extends RefCounted
 ## solo si se usa ignorar_fantasmas, id_de_edificio(celda: Vector3i) -> int.
 ## Clase pura (RefCounted), sin nodos: se prueba con un mundo falso.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 ## Tope de nodos expandidos por consulta: suficiente para cruzar el mapa de
 ## 200x200. ponytail: búsqueda síncrona con tope fijo; pasar a búsqueda
 ## asíncrona o jerárquica si el número de NPC lo exige.
-const MAX_NODOS_EXPANDIDOS := 30000
+static var MAX_NODOS_EXPANDIDOS: int = Ajustes.BUSCADOR_RUTAS_MAX_NODOS_EXPANDIDOS
 
 ## Un NPC sube 1 bloque y cae hasta 3 (como salta y cae el jugador).
-const CAIDA_MAXIMA := 3
+static var CAIDA_MAXIMA: int = Ajustes.BUSCADOR_RUTAS_CAIDA_MAXIMA
 
 const ARRIBA := Vector3i(0, 1, 0)
 

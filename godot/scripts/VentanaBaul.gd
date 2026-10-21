@@ -13,6 +13,8 @@ extends PanelContainer
 ## la vez, Main._terminar_transicion() fija el modo definitivo después, así
 ## que no hay conflicto).
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 
@@ -131,7 +133,7 @@ func _process(_delta: float) -> void:
 
 ## Cuánto mueven los botones -/+ de golpe: 10 con Shift, 1 sin ella.
 static func _incremento() -> float:
-	return 10.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0
+	return Ajustes.VENTANA_BAUL_PASO_UNIDAD if Input.is_key_pressed(KEY_SHIFT) else 1.0
 
 
 func _actualizar() -> void:
@@ -193,8 +195,8 @@ func _fila_titulo() -> Control:
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var ic := IconosHUD.crear_rect("baul", 20)
 	fila.add_child(ic)
-	var titulo := TemaHUD.etiqueta("BAÚL")
-	titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	var titulo := TemaHUD.etiqueta(Strings.VENTANA_BAUL_TITULO_DEFECTO.to_upper())
+	titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var cerrar_boton := Button.new()
 	cerrar_boton.icon = IconosHUD.icono("cruz")

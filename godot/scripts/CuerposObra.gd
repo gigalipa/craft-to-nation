@@ -14,9 +14,15 @@ extends Node3D
 ## en c + (0.5, 0.5, 0.5). Capa de colisión 1, la del mundo, para que el
 ## raycast del jugador y el picking de CamaraCenital los siga detectando.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 var _caja := BoxShape3D.new()  # 1x1x1 por defecto; se comparte entre todas las formas
 var _cuerpos: Dictionary = {}  # int (id de obra) -> StaticBody3D
 var _formas: Dictionary = {}  # int -> Dictionary (Vector3i -> CollisionShape3D)
+
+
+func _init() -> void:
+	_caja.size = Vector3.ONE * Ajustes.TAMANO_CELDA
 
 
 ## Deja el cuerpo de la obra "id" con una caja por cada celda distinta de

@@ -10,12 +10,13 @@ extends RefCounted
 ## duck typing sobre lo que se le pase en _init() — mismo contrato que
 ## NiveladorTerreno.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 
 ## Desnivel máximo entre dos bloques de vía consecutivos que esta pieza
 ## resuelve con relleno + cuña; por encima, el trazador (TrazadorVias)
 ## rechaza el paso — queda para el sistema de puentes futuro.
-const LIMITE_DESNIVEL_VIA := 3
+static var LIMITE_DESNIVEL_VIA: int = Ajustes.NIVELADOR_VIA_LIMITE_DESNIVEL_VIA
 
 ## Las 4 columnas del bloque de soporte de un vértice, relativas a la
 ## esquina (mínimo x, mínimo z) de ese bloque — ver bloque_de_vertice().

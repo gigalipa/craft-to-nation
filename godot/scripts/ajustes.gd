@@ -415,7 +415,7 @@ static var CIUDAD_TRAMOS_MIGRACION: Array = [
 	{"umbral_moral": 25.0, "tasa_mensual": 1.0},
 	{"umbral_moral": 35.0, "tasa_mensual": 2.0},
 	{"umbral_moral": 50.0, "tasa_mensual": 3.0},
-	{"umbral_moral": 75.0, "tasa_mensual": 3.0},
+	{"umbral_moral": 75.0, "tasa_mensual": 4.0},
 	{"umbral_moral": 100.0, "tasa_mensual": 5.0},
 ]
 

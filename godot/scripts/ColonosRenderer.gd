@@ -7,18 +7,12 @@ extends Node3D
 ## ponytail: un MeshInstance3D + AnimatableBody3D por colono; pasar a
 ## MultiMesh si la población llega a miles.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 const ALTURA_COLONO := 1.8
 const RADIO_COLONO := 0.3
 
-const COLORES_TIPO := {
-	"ciudadano": Color(0.85, 0.85, 0.85),
-	"desempleado": Color(0.75, 0.6, 0.4),
-	"obrero": Color(0.9, 0.6, 0.2),
-	"tecnico": Color(0.3, 0.6, 0.9),
-	"especialista": Color(0.6, 0.4, 0.9),
-	"investigador": Color(0.95, 0.95, 0.95),
-	"militar": Color(0.8, 0.25, 0.25),
-}
+static var COLORES_TIPO: Dictionary = Ajustes.COLORES_COLONOS
 
 var _cuerpos: Dictionary = {}  # int (id de colono) -> AnimatableBody3D
 

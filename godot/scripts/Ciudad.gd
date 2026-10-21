@@ -10,13 +10,16 @@ extends Node
 ## (CiudadTest.gd) llaman a simular_tick() directamente en bucle, sin esperar
 ## al Timer, igual que PoC_1 llama a simular_tick() en un bucle de Python.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+
 ## Emitida al final de cada simular_tick(); Colonos.gd (Plan 2) la escucha
 ## para reconciliar los colonos visibles con demografia.
 signal tick_simulado
 signal nucleo_reasignado(nuevo_id: int, id_viejo: int)
 signal traslado_nucleo_programado_cambiado(activo: bool)
 
-const SEGUNDOS_POR_TICK := 2.0
+static var SEGUNDOS_POR_TICK: float = Ajustes.CIUDAD_SEGUNDOS_POR_TICK
 
 ## Tipos de población (fuente: docs/Recursos.xlsx, hoja "Relacion"; el Excel
 ## reemplaza la tabla de roles del GDD Sección 6). "x_cama" es cuántos
@@ -27,83 +30,70 @@ const SEGUNDOS_POR_TICK := 2.0
 ## economía (consumo con eficiencia proporcional). "ciudadano" no tiene
 ## ninguna fuente todavía (no hay nacimientos ni envejecimiento): los
 ## colonos llegan como "desempleado".
-const TIPOS_POBLACION := {
-	"ciudadano": {"comida": 2, "combustible": 0, "energia": 0, "x_cama": 5},
-	"desempleado": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 4},
-	"obrero": {"comida": 5, "combustible": 0, "energia": 0, "x_cama": 4},
-	"tecnico": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 3},
-	"especialista": {"comida": 2, "combustible": 0, "energia": 1, "x_cama": 2},
-	"investigador": {"comida": 1, "combustible": 0, "energia": 2, "x_cama": 1},
-	"militar": {"comida": 4, "combustible": 2, "energia": 0, "x_cama": 3},
-}
+static var TIPOS_POBLACION: Dictionary = Ajustes.CIUDAD_TIPOS_POBLACION
 
 ## Límites de vivienda por nivel EFECTIVO de ciudad (decisión del usuario,
 ## 2026-09-20): cuántas camas por piso y cuántos pisos puede tener una casa.
 ## La población máxima es la vivienda real construida, no un tope por nivel.
 ## Los 12 pisos quedan reservados para el nivel máximo de desarrollo, que
 ## todavía no existe.
-const NIVELES_VIVIENDA := {
-	1: {"camas_por_piso": 2, "pisos": 2},
-	2: {"camas_por_piso": 4, "pisos": 4},
-	3: {"camas_por_piso": 4, "pisos": 8},
-}
+static var NIVELES_VIVIENDA: Dictionary = Ajustes.CIUDAD_NIVELES_VIVIENDA
 
 ## A quién se desahucia primero cuando la vivienda ocupada excede la
 ## capacidad: primero quien no produce. Los últimos tres solo garantizan que
 ## el bucle de regular_densidad_vertical() siempre termina.
-const ORDEN_DESAHUCIO := ["desempleado", "ciudadano", "obrero", "tecnico", "especialista", "investigador", "militar"]
+static var ORDEN_DESAHUCIO: Array = Ajustes.CIUDAD_ORDEN_DESAHUCIO
 
 ## A quién quita primero la hambruna: militar, obrero y técnico como antes de
 ## la taxonomía nueva; desempleado y ciudadano al final, porque la migración
 ## solo produce desempleados y sin ellos una ciudad hambrienta no sufriría
 ## bajas y nunca se recuperaría.
-const ORDEN_BAJAS_HAMBRUNA := ["militar", "obrero", "tecnico", "especialista", "investigador", "desempleado", "ciudadano"]
+static var ORDEN_BAJAS_HAMBRUNA: Array = Ajustes.CIUDAD_ORDEN_BAJAS_HAMBRUNA
 
 ## Horas de simulación correspondientes a un mes de juego (30 días de 24h)
-const HORAS_POR_MES := 720.0
+static var HORAS_POR_MES: float = Ajustes.CIUDAD_HORAS_POR_MES
 
 ## Costo de activación por nivel (GDD Sección 7).
-const COSTOS_INVESTIGACION := {
-	2: {"nombre": "Metalurgia Aplicada", "hierro": 300, "madera": 200, "horas_investigador": 20},
-	3: {"nombre": "Automatización Industrial", "hierro": 800, "madera": 100, "horas_investigador": 50},
-}
+static var COSTOS_INVESTIGACION: Dictionary = Ajustes.CIUDAD_COSTOS_INVESTIGACION
 
 ## Sofisticación física: tipo de puesto -> nivel de instalación (2 o 3).
-const TIPO_INSTALACION := {
-	"siderurgica": 2, "refineria_tierras_raras": 2, "aserradero": 2, "carbonera": 2,
-	"refineria_petrolera": 3, "productor_combustible": 3, "central_termoelectrica": 3,
-}
+static var TIPO_INSTALACION: Dictionary = Ajustes.CIUDAD_TIPO_INSTALACION
 
-const CATEGORIAS_COMIDA := [
-	"sembradios", "granjas_animales", "recoleccion_caza",
-	"hidroponia", "pesca", "sintetico",
-]
+static var CATEGORIAS_COMIDA: Array = Ajustes.CIUDAD_CATEGORIAS_COMIDA
 ## Horas (ticks) que abarca Recurso.tasa_neta_promedio: un acarreador tarda
 ## ~8-10 h por viaje de ida y vuelta, así que menos de 10 seguiría oscilando.
-const VENTANA_TASA_PROMEDIO := 10
-const BONO_MORAL_MAXIMO := 15.0
-const VELOCIDAD_SUAVIZADO_MORAL := 0.15
+static var VENTANA_TASA_PROMEDIO: int = Ajustes.CIUDAD_VENTANA_TASA_PROMEDIO
+static var BONO_MORAL_MAXIMO: float = Ajustes.CIUDAD_BONO_MORAL_MAXIMO
+static var VELOCIDAD_SUAVIZADO_MORAL: float = Ajustes.CIUDAD_VELOCIDAD_SUAVIZADO_MORAL
 
 ## Sistema de Moral Dinámica y Población (GDD v3.56)
-const MORAL_INICIAL := 75.0
-const MORAL_NEUTRAL := 50.0
-const INERCIA_MORAL := 0.02
-const TOLERANCIA_SIN_TECHO_HORAS := 72
-const TOLERANCIA_DESEMPLEO_HORAS := 240
-const VENTANA_PELIGRO_HORAS := 168
-const ORDEN_EXODO_MORAL := ["investigador", "especialista", "tecnico", "militar", "obrero", "desempleado", "ciudadano"]
+static var MORAL_INICIAL: float = Ajustes.CIUDAD_MORAL_INICIAL
+static var MORAL_NEUTRAL: float = Ajustes.CIUDAD_MORAL_NEUTRAL
+static var INERCIA_MORAL: float = Ajustes.CIUDAD_INERCIA_MORAL
+static var TOLERANCIA_SIN_TECHO_HORAS: int = Ajustes.CIUDAD_TOLERANCIA_SIN_TECHO_HORAS
+static var TOLERANCIA_DESEMPLEO_HORAS: int = Ajustes.CIUDAD_TOLERANCIA_DESEMPLEO_HORAS
+static var VENTANA_PELIGRO_HORAS: int = Ajustes.CIUDAD_VENTANA_PELIGRO_HORAS
+static var ORDEN_EXODO_MORAL: Array = Ajustes.CIUDAD_ORDEN_EXODO_MORAL
+static var TRAMOS_MIGRACION: Array = Ajustes.CIUDAD_TRAMOS_MIGRACION
+static var UMBRAL_EXODO_MORAL: float = Ajustes.CIUDAD_UMBRAL_EXODO_MORAL
+static var UMBRAL_INMIGRACION_MASIVA: float = Ajustes.CIUDAD_UMBRAL_INMIGRACION_MASIVA
+static var MULTIPLICADOR_BOOST_INMIGRACION: float = Ajustes.CIUDAD_MULTIPLICADOR_BOOST_INMIGRACION
+static var PRODUCTIVIDAD_BASE: float = Ajustes.CIUDAD_PRODUCTIVIDAD_BASE
+static var PRODUCTIVIDAD_EXPONENCIAL_BASE: float = Ajustes.CIUDAD_PRODUCTIVIDAD_EXPONENCIAL_BASE
+static var PRODUCTIVIDAD_DIVISOR_MORAL: float = Ajustes.CIUDAD_PRODUCTIVIDAD_DIVISOR_MORAL
 
 ## Inventario del avatar = almacén central (ver docs/superpowers/specs/
 ## 2026-09-24-extraccion-fisica-agotamiento-design.md, Sección 6). Al empezar
 ## la partida los topes son bajos; declarar el núcleo los duplica y cada baúl
 ## de un edificio residencial posterior suma un bono. Placeholders de balance.
-const LIMITE_BASE := 500.0
-const LIMITE_BASE_COMIDA := 5000.0
-const FACTOR_NUCLEO := 2.0
-const BONO_BAUL := 100.0
-const BONO_BAUL_COMIDA := 400.0
+static var LIMITE_BASE: float = Ajustes.CIUDAD_LIMITE_BASE
+static var LIMITE_BASE_COMIDA: float = Ajustes.CIUDAD_LIMITE_BASE_COMIDA
+static var FACTOR_NUCLEO: float = Ajustes.CIUDAD_FACTOR_NUCLEO
+static var BONO_BAUL: float = Ajustes.CIUDAD_BONO_BAUL
+static var BONO_BAUL_COMIDA: float = Ajustes.CIUDAD_BONO_BAUL_COMIDA
 ## Comida con la que empieza la partida: el tope base (el inventario inicia lleno).
-const COMIDA_INICIAL := 5000.0
+static var COMIDA_INICIAL: float = Ajustes.CIUDAD_COMIDA_INICIAL
+static var MADERA_INICIAL: float = Ajustes.CIUDAD_MADERA_INICIAL
 
 
 class Recurso:
@@ -130,7 +120,7 @@ class Recurso:
 	func registrar_tasa(tasa: float) -> void:
 		tasa_neta = tasa
 		_historial_tasa.append(tasa)
-		if _historial_tasa.size() > VENTANA_TASA_PROMEDIO:
+		if _historial_tasa.size() > Ajustes.CIUDAD_VENTANA_TASA_PROMEDIO:
 			_historial_tasa.pop_front()
 		var suma := 0.0
 		for t in _historial_tasa:
@@ -352,9 +342,9 @@ var indice_sofisticacion: float:
 var nivel_potencial: int:
 	get:
 		var idx: float = indice_sofisticacion
-		if idx >= 2.5 and instalaciones["tipo_3"] >= 3:
+		if idx >= Ajustes.CIUDAD_INDICE_SOFISTICACION_NIVEL_3 and instalaciones["tipo_3"] >= Ajustes.CIUDAD_MINIMO_INSTALACIONES_NIVEL:
 			return 3
-		elif idx >= 1.7 and instalaciones["tipo_2"] >= 3:
+		elif idx >= Ajustes.CIUDAD_INDICE_SOFISTICACION_NIVEL_2 and instalaciones["tipo_2"] >= Ajustes.CIUDAD_MINIMO_INSTALACIONES_NIVEL:
 			return 2
 		return 1
 
@@ -488,33 +478,20 @@ func actualizar_investigacion(horas: float) -> bool:
 
 
 ## Calcula el multiplicador continuo de productividad laboral según la moral (0 a 100)
-## X = 0.5 * 2^(moral / 50). A 0 da 0.5x, a 50 da 1.0x, a 100 da 2.0x.
+## X = PRODUCTIVIDAD_BASE * PRODUCTIVIDAD_EXPONENCIAL_BASE^(moral / PRODUCTIVIDAD_DIVISOR_MORAL).
+## Con valores base: a 0 da 0.5x, a 50 da 1.0x, a 100 da 2.0x.
 static func calcular_multiplicador_productividad(p_moral: float) -> float:
-	return 0.5 * pow(2.0, clampf(p_moral, 0.0, 100.0) / 50.0)
+	return PRODUCTIVIDAD_BASE * pow(PRODUCTIVIDAD_EXPONENCIAL_BASE, clampf(p_moral, 0.0, 100.0) / PRODUCTIVIDAD_DIVISOR_MORAL)
 
 
 ## Tasa de migración neta mensual (ciudadanos/mes) según tramos escalonados de moral.
 ## <=20: Éxodo (-5 a -1/mes). 20..50: Inmigración con camas (1 a 3/mes). >50: Inmigración masiva (3 a 5/mes).
 static func calcular_tasa_migracion_mensual(p_moral: float) -> float:
 	var m: float = clampf(p_moral, 0.0, 100.0)
-	if m <= 5.0:
-		return -5.0
-	elif m <= 10.0:
-		return -3.0
-	elif m <= 15.0:
-		return -2.0
-	elif m <= 20.0:
-		return -1.0
-	elif m <= 25.0:
-		return 1.0
-	elif m <= 35.0:
-		return 2.0
-	elif m <= 50.0:
-		return 3.0
-	elif m <= 75.0:
-		return 3.0
-	else:
-		return 5.0
+	for tramo in TRAMOS_MIGRACION:
+		if m <= tramo["umbral_moral"]:
+			return tramo["tasa_mensual"]
+	return 5.0
 
 
 ## Mantiene la cola de desempleados con la demografía real
@@ -732,7 +709,7 @@ func iniciar_remodelacion_residencial(id: int) -> Dictionary:
 		baules_nucleo = 0
 		return {"exito": true, "es_nucleo": true, "sin_techo_generados": 0}
 	if not edificios_residenciales.has(id):
-		return {"exito": false, "motivo": "El edificio no es residencial ni núcleo."}
+		return {"exito": false, "motivo": Strings.CIUDAD_ERR_NO_RESIDENCIAL_NI_NUCLEO}
 
 	var limites: Dictionary = NIVELES_VIVIENDA[nivel]
 	var camas_perdidas := 0
@@ -801,7 +778,7 @@ func baules_de(id: int) -> int:
 	return baules_por_edificio.get(id, 0)
 
 
-func programar_traslado_nucleo(nuevo_id: int, horas: int = 5) -> void:
+func programar_traslado_nucleo(nuevo_id: int, horas: int = Ajustes.CIUDAD_HORAS_TRASLADO_NUCLEO) -> void:
 	traslado_nucleo = {"id": nuevo_id, "horas": horas}
 	traslado_nucleo_programado_cambiado.emit(true)
 
@@ -937,12 +914,12 @@ func _migrar(hambruna: bool) -> int:
 		sincronizar_desempleados()
 		return -salidos
 
-	# 2. Inmigración (Moral > 20.0, tasa_horaria > 0)
-	var mult_boost: float = 2.5 if horas_boost_inmigracion > 0 else 1.0
+	# 2. Inmigración (Moral > UMBRAL_EXODO_MORAL, tasa_horaria > 0)
+	var mult_boost: float = MULTIPLICADOR_BOOST_INMIGRACION if horas_boost_inmigracion > 0 else 1.0
 	_migrantes_acumulados += tasa_horaria * mult_boost
 	var llegados := 0
 	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
-	var solo_con_camas: bool = (moral <= 50.0) and (horas_boost_inmigracion <= 0)
+	var solo_con_camas: bool = (moral <= UMBRAL_INMIGRACION_MASIVA) and (horas_boost_inmigracion <= 0)
 	while _migrantes_acumulados >= 1.0:
 		if hambruna:
 			_migrantes_acumulados = 1.0
@@ -953,12 +930,12 @@ func _migrar(hambruna: bool) -> int:
 			llegados += 1
 			_migrantes_acumulados -= 1.0
 		elif not solo_con_camas and id_nucleo != -1:
-			# Inmigración masiva (moral > 50): desborda a sin techo si hay núcleo urbano
+			# Inmigración masiva (moral > UMBRAL_INMIGRACION_MASIVA): desborda a sin techo si hay núcleo urbano
 			sin_techo += 1
 			llegados += 1
 			_migrantes_acumulados -= 1.0
 		else:
-			# Con moral <= 50 o sin núcleo, no entra sin cama disponible
+			# Con moral <= UMBRAL_INMIGRACION_MASIVA o sin núcleo, no entra sin cama disponible
 			_migrantes_acumulados = 1.0
 			break
 	sincronizar_desempleados()

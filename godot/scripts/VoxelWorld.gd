@@ -5,7 +5,10 @@ extends GridMap
 ## de celdas por código (MeshInstance3D/StaticBody3D manuales) ahora que el
 ## editor de Godot está disponible para exportar la MeshLibrary.
 
-const TAMANO_CELDA := 1.0
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+
+static var TAMANO_CELDA: float = Ajustes.TAMANO_CELDA
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const GeneradorArbol = preload("res://scripts/GeneradorArbol.gd")
@@ -13,8 +16,8 @@ const CuerposObra = preload("res://scripts/CuerposObra.gd")
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const MATERIAL_AGUA := preload("res://assets/mat_agua.tres")
 
-const ANCHO_MUNDO := 200
-const LARGO_MUNDO := 200
+static var ANCHO_MUNDO: int = Ajustes.ANCHO_MUNDO
+static var LARGO_MUNDO: int = Ajustes.LARGO_MUNDO
 
 ## Cuántas celdas de subsuelo cava cada columna bajo SU PROPIA superficie
 ## (relativo, no un piso absoluto — ver 2026-09-16, PoC_6 3.15): un piso
@@ -29,16 +32,16 @@ const LARGO_MUNDO := 200
 ## celdas, aquí 1 millón) — y como el relieve ya es suave (ver
 ## GeneradorMundo._ruido.frequency), el fondo resultante también sale
 ## razonablemente uniforme, sin ser un piso perfectamente plano.
-const PROFUNDIDAD_SUBSUELO := 24
+static var PROFUNDIDAD_SUBSUELO: int = Ajustes.PROFUNDIDAD_SUBSUELO
 
-const SEMILLA_MUNDO := 12345
+static var SEMILLA_MUNDO: int = Ajustes.SEMILLA_MUNDO
 
 ## Umbral de densidad_arbol_en() (rango [0,1]) por encima del cual una
 ## columna de bioma recibe un árbol real — ver _generar_arboles(). Valor
 ## inicial calibrado empíricamente, mismo patrón que UMBRAL_HIERRO/
 ## EXPONENTE_RELIEVE: ajustar aquí si el bosque real resulta demasiado
 ## denso o demasiado escaso.
-const UMBRAL_ARBOL := 0.5
+static var UMBRAL_ARBOL: float = Ajustes.UMBRAL_ARBOL
 
 ## Celdas vacías mínimas que deben quedar entre los cuadrados de tronco de
 ## dos árboles distintos — ver _generar_arboles()/_demasiado_cerca_de_otro_
@@ -46,7 +49,7 @@ const UMBRAL_ARBOL := 0.5
 ## jugador y los NPCs puedan caminar entre los árboles del bosque. Valor
 ## inicial calibrado empíricamente (feedback jugando en el editor real):
 ## ajustar aquí si el pasillo entre troncos resulta demasiado angosto.
-const GAP_MINIMO_TRONCOS := 2
+static var GAP_MINIMO_TRONCOS: int = Ajustes.GAP_MINIMO_TRONCOS
 
 ## Cuántas celdas pueden solaparse como máximo las copas de follaje de dos
 ## árboles distintos — ver _demasiado_cerca_de_otro_arbol(). A diferencia
@@ -54,15 +57,15 @@ const GAP_MINIMO_TRONCOS := 2
 ## esto es puramente estético y a futuro dependerá del tipo de bioma (una
 ## selva húmeda tolera copas más solapadas que una sabana). Valor inicial
 ## calibrado empíricamente.
-const SOLAPE_MAXIMO_COPAS := 1
+static var SOLAPE_MAXIMO_COPAS: int = Ajustes.SOLAPE_MAXIMO_COPAS
 
 ## Rango de búsqueda vertical de altura_en() (ver más abajo) — generoso para
 ## cubrir cualquier construcción del jugador por encima del relieve máximo
 ## (GeneradorMundo.ALTURA_MAXIMA = 130) y el subsuelo generado por debajo
 ## (PROFUNDIDAD_SUBSUELO = 24, relativo a cada columna — con ALTURA_MINIMA =
 ## 0 el punto más bajo posible del subsuelo es y = -24).
-const ALTURA_BUSQUEDA_MAX := 165
-const ALTURA_BUSQUEDA_MIN := -34
+static var ALTURA_BUSQUEDA_MAX: int = Ajustes.ALTURA_BUSQUEDA_MAX
+static var ALTURA_BUSQUEDA_MIN: int = Ajustes.ALTURA_BUSQUEDA_MIN
 
 var generador: RefCounted
 var arboles: RefCounted
@@ -139,17 +142,7 @@ const MATERIAL_REAL := {
 ## los fantasmas ya emplazados (FantasmasDestacados.gd), así se leen como lo
 ## mismo. Distintos a propósito del dorado de la previsualización
 ## (CamaraCenital.COLOR_PUESTO_VALIDO) y del azul del bloque "fantasma".
-const COLOR_DESTACADO := {
-	"puerta_inferior": Color(1.0, 0.2, 0.8, 0.6),
-	"puerta_superior": Color(1.0, 0.2, 0.8, 0.6),
-	"vidrio": Color(0.5, 1.0, 0.2, 0.6),
-	"puerto_agua_in": Color(0.2, 0.6, 0.9, 0.8),
-	"puerto_agua_out": Color(0.1, 0.3, 0.7, 0.8),
-	"puerto_crudo_in": Color(0.4, 0.3, 0.1, 0.9),
-	"puerto_crudo_out": Color(0.25, 0.18, 0.05, 0.9),
-	"puerto_combustible_in": Color(0.9, 0.5, 0.1, 0.8),
-	"puerto_combustible_out": Color(0.8, 0.2, 0.1, 0.8),
-}
+static var COLOR_DESTACADO: Dictionary = Ajustes.COLOR_DESTACADO
 
 
 ## Traduce "tipo" (el tipo de bloque real, tal como lo devuelve
@@ -201,14 +194,7 @@ const TIPOS_PUERTO: Array[String] = [
 	"puerto_combustible_in", "puerto_combustible_out"
 ]
 
-const COLORES_PUERTO := {
-	"puerto_agua_in": Color(0.2, 0.6, 0.9),
-	"puerto_agua_out": Color(0.1, 0.3, 0.7),
-	"puerto_crudo_in": Color(0.4, 0.3, 0.1),
-	"puerto_crudo_out": Color(0.25, 0.18, 0.05),
-	"puerto_combustible_in": Color(0.9, 0.5, 0.1),
-	"puerto_combustible_out": Color(0.8, 0.2, 0.1),
-}
+static var COLORES_PUERTO: Dictionary = Ajustes.COLORES_PUERTO
 
 static func es_puerto(tipo: String) -> bool:
 	return TIPOS_PUERTO.has(tipo)
@@ -532,16 +518,16 @@ func verificar_despejes(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary 
 func motivo_despeje_invalido(celdas_mundo: Dictionary, terreno_a_nivelar: Dictionary = {}) -> String:
 	for celda: Vector3i in celdas_mundo:
 		if celda_a_despeje.has(celda):
-			return "Un bloque de muro, puerta o vidrio nuevo cae dentro del espacio reservado de un edificio vecino."
+			return Strings.MUNDO_DESPEJE_MURO_EN_VECINO
 	var despeje: Dictionary = calcular_despeje(celdas_mundo)
 	for celda_despeje: Vector3i in despeje:
 		var tipo_origen: String = despeje[celda_despeje]
 		if despeje_bloqueado(celda_despeje, terreno_a_nivelar, tipo_origen):
 			if tipo_origen == "vidrio":
-				return "Un vidrio no tiene el espacio libre exigido hacia afuera."
+				return Strings.MUNDO_DESPEJE_VIDRIO_INVALIDO
 			elif es_puerto(tipo_origen):
-				return "Un puerto de tubería no tiene el espacio libre exigido hacia afuera."
-			return "Una puerta no tiene el espacio libre exigido hacia afuera."
+				return Strings.MUNDO_DESPEJE_PUERTO_INVALIDO
+			return Strings.MUNDO_DESPEJE_PUERTA_INVALIDO
 	return despeje_camas_invalido(celdas_mundo, terreno_a_nivelar)
 
 
@@ -585,11 +571,11 @@ func despeje_camas_invalido(celdas_mundo: Dictionary, terreno_a_nivelar: Diction
 				lado_libre = true
 				break
 		if not lado_libre:
-			return "Una cama no tiene un lado despejado para levantarse (debe ser el mismo lado junto a la cabecera y junto a los pies)."
+			return Strings.MUNDO_DESPEJE_CAMA_LADO_INVALIDO
 		for extremo in [celda, pies]:
-			if not _celda_libre_junto_a_cama(extremo + Vector3i(0, 1, 0), celdas_mundo, huella_xz, terreno_a_nivelar) \
-			or not _celda_libre_junto_a_cama(extremo + Vector3i(0, 2, 0), celdas_mundo, huella_xz, terreno_a_nivelar):
-				return "Una cama no tiene las 2 celdas libres exigidas por encima de uno de sus extremos."
+			for dh in range(1, Ajustes.MUNDO_DESPEJE_ALTURA_CAMA + 1):
+				if not _celda_libre_junto_a_cama(extremo + Vector3i(0, dh, 0), celdas_mundo, huella_xz, terreno_a_nivelar):
+					return Strings.MUNDO_DESPEJE_CAMA_ALTURA_INVALIDA
 	return ""
 
 
@@ -721,12 +707,12 @@ func _indexar_biblioteca() -> void:
 
 	# Bloques de canalización ("acueducto", "tuberia") y sus variantes lineal/quiebre
 	var canalizaciones_meta := {
-		"acueducto": Color(0.7, 0.65, 0.55),
-		"acueducto_lineal": Color(0.7, 0.65, 0.55),
-		"acueducto_quiebre": Color(0.7, 0.65, 0.55),
-		"tuberia": Color(0.35, 0.38, 0.42),
-		"tuberia_lineal": Color(0.35, 0.38, 0.42),
-		"tuberia_quiebre": Color(0.35, 0.38, 0.42),
+		"acueducto": Ajustes.COLOR_DUCTO_ACUEDUCTO,
+		"acueducto_lineal": Ajustes.COLOR_DUCTO_ACUEDUCTO,
+		"acueducto_quiebre": Ajustes.COLOR_DUCTO_ACUEDUCTO,
+		"tuberia": Ajustes.COLOR_DUCTO_TUBERIA,
+		"tuberia_lineal": Ajustes.COLOR_DUCTO_TUBERIA,
+		"tuberia_quiebre": Ajustes.COLOR_DUCTO_TUBERIA,
 	}
 	for tipo_c in canalizaciones_meta:
 		if not _id_por_tipo.has(tipo_c):
@@ -1135,7 +1121,7 @@ func _celda_libre(celda: Vector3i) -> bool:
 ## algún día hace falta escurrir más allá de esto, la vía de escape es
 ## repartirlo en más frames (ya diferido, ver FRENTES_ESCURRIMIENTO_POR_FRAME),
 ## no subir este número.
-const LIMITE_ESCURRIMIENTO := 150
+static var LIMITE_ESCURRIMIENTO: int = Ajustes.LIMITE_ESCURRIMIENTO
 
 ## Cuántos "frentes" de la cola de escurrimiento se expanden por frame (ver
 ## _process()) — controla qué tan rápido se ve "fluir" el agua nueva en vez
@@ -1146,7 +1132,7 @@ const LIMITE_ESCURRIMIENTO := 150
 ## colocada cuyos 4 vecinos horizontales todavía no se exploraron — cada uno
 ## puede colocar hasta 4 celdas nuevas (más su propia caída, sin tope), así
 ## que el avance real por frame es mayor que este número, no igual a él.
-const FRENTES_ESCURRIMIENTO_POR_FRAME := 2
+static var FRENTES_ESCURRIMIENTO_POR_FRAME: int = Ajustes.FRENTES_ESCURRIMIENTO_POR_FRAME
 
 ## Niveles del agua de flujo (diseño 2026-09-20, pedido del usuario: "a medida
 ## que el agua se aleja del bloque fuente, que se vea menos lleno; y que cada
@@ -1157,11 +1143,11 @@ const FRENTES_ESCURRIMIENTO_POR_FRAME := 2
 ## Minecraft) o 1..NIVEL_MAXIMO_FLUJO para el agua que corre en plano (cada
 ## nivel más bajo que el anterior, ver altura_agua_en()). Una caída reinicia
 ## el nivel: al aterrizar, el agua vuelve a esparcirse con alcance completo.
-const NIVEL_CAIDA := 0
-const NIVEL_MAXIMO_FLUJO := 7
-const ALCANCE_FLUJO_AGUA := 7
-const ALCANCE_FLUJO_COMBUSTIBLE := 5
-const ALCANCE_FLUJO_CRUDO := 3
+static var NIVEL_CAIDA: int = Ajustes.NIVEL_CAIDA
+static var NIVEL_MAXIMO_FLUJO: int = Ajustes.NIVEL_MAXIMO_FLUJO
+static var ALCANCE_FLUJO_AGUA: int = Ajustes.ALCANCE_FLUJO_AGUA
+static var ALCANCE_FLUJO_COMBUSTIBLE: int = Ajustes.ALCANCE_FLUJO_COMBUSTIBLE
+static var ALCANCE_FLUJO_CRUDO: int = Ajustes.ALCANCE_FLUJO_CRUDO
 
 
 static func alcance_flujo_por_tipo(tipo: String) -> int:
@@ -1176,7 +1162,7 @@ static func alcance_flujo_por_tipo(tipo: String) -> int:
 ## Cuántas celdas de la cola de secado se revisan por frame (ver
 ## _procesar_secado()) — mismo motivo que FRENTES_ESCURRIMIENTO_POR_FRAME: que
 ## el agua se vea secarse gradualmente en vez de desaparecer de golpe.
-const FRENTES_SECADO_POR_FRAME := 3
+static var FRENTES_SECADO_POR_FRAME: int = Ajustes.FRENTES_SECADO_POR_FRAME
 
 ## Ver LIMITE_ESCURRIMIENTO — variable en vez de constante para que las
 ## pruebas puedan forzar un tope pequeño en su propia instancia de

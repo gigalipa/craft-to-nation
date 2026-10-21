@@ -9,6 +9,8 @@ extends Node
 ## y los vetos temporales por colono. No mueve colonos: Colonos.gd pide
 ## siguiente_tarea() y llama a trabajar().
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
 const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
@@ -30,13 +32,13 @@ signal demolicion_via_paso(id_demolicion: int, celda: Vector3i)
 signal demolicion_via_completada(id_demolicion: int)
 
 
-const ESPERA_BLOQUEADA := 1.0  # s que espera un colono si hay alguien dentro de la obra
-const DURACION_VETO_MS := 30000  # una obra a la que un colono no pudo llegar se le oculta ese tiempo
-const DURACION_RECLAMO_MS := 3000  # tras actuar el jugador a mano sobre un edificio, los colonos se lo ceden ese tiempo
+static var ESPERA_BLOQUEADA: float = Ajustes.OBRAS_ESPERA_BLOQUEADA  # s que espera un colono si hay alguien dentro de la obra
+static var DURACION_VETO_MS: int = Ajustes.OBRAS_DURACION_VETO_MS  # una obra a la que un colono no pudo llegar se le oculta ese tiempo
+static var DURACION_RECLAMO_MS: int = Ajustes.OBRAS_DURACION_RECLAMO_MS  # tras actuar el jugador a mano sobre un edificio, los colonos se lo ceden ese tiempo
 
-const PRIORIDAD_ALTA := 2
-const PRIORIDAD_NORMAL := 1
-const PRIORIDAD_BAJA := 0
+static var PRIORIDAD_ALTA: int = Ajustes.OBRAS_PRIORIDAD_ALTA
+static var PRIORIDAD_NORMAL: int = Ajustes.OBRAS_PRIORIDAD_NORMAL
+static var PRIORIDAD_BAJA: int = Ajustes.OBRAS_PRIORIDAD_BAJA
 
 ## El mundo (VoxelWorld en el juego), asignado por Main.
 var mundo: Object = null
@@ -89,11 +91,11 @@ func horas_programadas(id: int) -> int:
 
 
 ## Programa la demolición para iniciar tras "horas" de simulación.
-func programar_demolicion(id: int, horas: int = 5) -> String:
+func programar_demolicion(id: int, horas: int = Ajustes.OBRAS_HORAS_PROGRAMADAS) -> String:
 	if mundo == null or not mundo.edificio_orden.has(id):
-		return "Eso no es un edificio."
+		return Strings.OBRAS_ERR_NO_ES_EDIFICIO
 	if _es_del_nucleo(id):
-		return "El núcleo urbano no se puede demoler."
+		return Strings.OBRAS_ERR_NUCLEO_NO_DEMOLIBLE
 	demolicion_programada[id] = horas
 	abandonadas.erase(id)
 	marca_cambiada.emit(id, true)
@@ -121,7 +123,7 @@ func simular_hora() -> void:
 		marcados[id] = true
 		abandonadas.erase(id)
 		marca_cambiada.emit(id, true)
-		aviso.emit("Demolición iniciada.")
+		aviso.emit(Strings.OBRAS_AVISO_DEMOLICION_INICIADA)
 
 
 ## Marca o desmarca un edificio para demolición inmediata. Devuelve "" si lo hizo, o el
@@ -136,9 +138,9 @@ func alternar_marca(id: int) -> String:
 		marca_cambiada.emit(id, false)
 		return ""
 	if mundo == null or not mundo.edificio_orden.has(id):
-		return "Eso no es un edificio."
+		return Strings.OBRAS_ERR_NO_ES_EDIFICIO
 	if _es_del_nucleo(id):
-		return "El núcleo urbano no se puede demoler."
+		return Strings.OBRAS_ERR_NUCLEO_NO_DEMOLIBLE
 	marcados[id] = true
 	abandonadas.erase(id)
 	marca_cambiada.emit(id, true)
@@ -239,7 +241,7 @@ func _cedida(id: int) -> bool:
 ## Una obra sin material se pausa; el aviso sale solo la primera vez que falta ese recurso.
 func pausar(id: int, recurso: String, necesita: float = 0.0) -> void:
 	if pausadas.get(id, "") != recurso:
-		aviso.emit("Obra detenida: falta %s." % recurso)
+		aviso.emit(Strings.OBRAS_AVISO_FALTA_MATERIAL % recurso)
 	pausadas[id] = recurso
 	_necesidades[id] = necesita
 
@@ -412,12 +414,12 @@ func resumen_de(id: int) -> Dictionary:
 	elif progreso < orden.size():
 		estado = "construccion"
 	var meta: Dictionary = mundo.edificio_metadata.get(id, {})
-	var nombre := "Edificio %d" % id
-	var tipo := "Edificio"
+	var nombre := Strings.OBRAS_NOMBRE_EDIFICIO_FORMATO % id
+	var tipo := Strings.OBRAS_TIPO_EDIFICIO
 	if meta.has("puesto_nuevo") or meta.has("puesto"):
 		var tipo_puesto: String = meta["puesto_nuevo"]["tipo"] if meta.has("puesto_nuevo") else Economia.puestos.get(meta["puesto"], {}).get("tipo", "")
 		nombre = PanelPuestoScript.NOMBRES_PUESTO.get(tipo_puesto, nombre)
-		tipo = "Puesto"
+		tipo = Strings.OBRAS_TIPO_PUESTO
 	elif meta.has("blueprint"):
 		nombre = str(meta["blueprint"].get("nombre", nombre))
 		tipo = str(meta["blueprint"].get("categoria", tipo)).capitalize()
@@ -504,7 +506,7 @@ func _demoler_un_paso(id: int, celda: Vector3i) -> Dictionary:
 	if r["lista_para_remocion"]:
 		al_retirar.call(mundo, id)
 		olvidar(id)
-		aviso.emit("Edificio demolido.")
+		aviso.emit(Strings.OBRAS_AVISO_EDIFICIO_DEMOLIDO)
 		return {"estado": "completa", "espera": 0.0}
 	return {"estado": "avanzo", "espera": FinalizacionObras.INTERVALO_PASO}
 
@@ -592,7 +594,7 @@ func trabajar_via(id_via: int, celda_apuntada: Vector3i = Vector3i.ZERO) -> Dict
 	if obra["pasos"].is_empty():
 		obras_vias.erase(id_via)
 		obra_via_completada.emit(id_via)
-		aviso.emit("Vía completada.")
+		aviso.emit(Strings.OBRAS_AVISO_VIA_COMPLETADA)
 		return {"estado": "completa", "espera": 0.0}
 	return {"estado": "avanzo", "espera": FinalizacionObras.INTERVALO_PASO}
 
@@ -723,7 +725,7 @@ func trabajar_demoler_via(id_dem: int, celda_apuntada: Vector3i = Vector3i.ZERO)
 		obras_demolicion_vias.erase(id_dem)
 		demolicion_via_completada.emit(id_dem)
 		if not esta_reclamada(id_dem):
-			aviso.emit("Tramo de vía demolido.")
+			aviso.emit(Strings.OBRAS_AVISO_TRAMO_VIA_DEMOLIDO)
 		return {"estado": "completa", "espera": 0.0}
 	return {"estado": "avanzo", "espera": FinalizacionObras.INTERVALO_PASO}
 

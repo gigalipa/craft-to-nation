@@ -5,6 +5,8 @@ extends PanelContainer
 ## materiales que faltan, y tiene los botones «Pausar/Reanudar» y «Demoler/Cancelar demolición».
 ## Las reglas viven en Obras/Colonos; esto solo las muestra y les pasa los clics.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
@@ -74,7 +76,7 @@ func _ready() -> void:
 	_icono_titulo.custom_minimum_size = Vector2(20, 20)
 	_icono_titulo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	fila_tit.add_child(_icono_titulo)
-	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	_titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	_titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fila_tit.add_child(_titulo)
 	caja.add_child(fila_tit)
@@ -110,7 +112,7 @@ func _ready() -> void:
 
 	_btn_boost_inmigracion.icon = IconosHUD.icono("censo")
 	_btn_boost_inmigracion.expand_icon = true
-	_btn_boost_inmigracion.text = "Impulso inmigración (+250%)"
+	_btn_boost_inmigracion.text = Strings.VENTANA_MORAL_BTN_BOOST_ACTIVAR
 	TemaHUD.estilizar_boton(_btn_boost_inmigracion)
 	_btn_boost_inmigracion.pressed.connect(_on_boost_inmigracion)
 	caja.add_child(_btn_boost_inmigracion)
@@ -128,25 +130,25 @@ func _ready() -> void:
 		_actualizar())
 	_prioridad.pressed.connect(_ciclar_prioridad)
 	_demoler.pressed.connect(_on_demoler)
-	_dialogo_demoler.title = "Confirmar demolición"
-	_dialogo_demoler.dialog_text = "¿Demoler este edificio? Comenzará en 5 horas de juego."
-	_dialogo_demoler.ok_button_text = "Confirmar"
-	_dialogo_demoler.cancel_button_text = "Cancelar"
+	_dialogo_demoler.title = Strings.PANEL_EDIFICIO_MODAL_TITULO_DEMOLER
+	_dialogo_demoler.dialog_text = Strings.PANEL_EDIFICIO_MODAL_TEXTO_DEMOLER
+	_dialogo_demoler.ok_button_text = Strings.PANEL_EDIFICIO_BTN_CONFIRMAR
+	_dialogo_demoler.cancel_button_text = Strings.PANEL_EDIFICIO_BTN_CANCELAR
 	_dialogo_demoler.confirmed.connect(_confirmar_demoler)
 	TemaHUD.estilizar_dialogo(_dialogo_demoler)
 	add_child(_dialogo_demoler)
 
 	_asignar_nucleo.pressed.connect(_on_asignar_nucleo)
 	_dialogo_traslado.title = "Confirmar traslado de núcleo"
-	_dialogo_traslado.ok_button_text = "Confirmar"
-	_dialogo_traslado.cancel_button_text = "Cancelar"
+	_dialogo_traslado.ok_button_text = Strings.PANEL_EDIFICIO_BTN_CONFIRMAR
+	_dialogo_traslado.cancel_button_text = Strings.PANEL_EDIFICIO_BTN_CANCELAR
 	_dialogo_traslado.confirmed.connect(_confirmar_traslado)
 	TemaHUD.estilizar_dialogo(_dialogo_traslado)
 	add_child(_dialogo_traslado)
 
-	_dialogo_remodelar.title = "Confirmar remodelación"
-	_dialogo_remodelar.ok_button_text = "Confirmar"
-	_dialogo_remodelar.cancel_button_text = "Cancelar"
+	_dialogo_remodelar.title = Strings.PANEL_EDIFICIO_MODAL_TITULO_REMODELAR
+	_dialogo_remodelar.ok_button_text = Strings.PANEL_EDIFICIO_BTN_CONFIRMAR
+	_dialogo_remodelar.cancel_button_text = Strings.PANEL_EDIFICIO_BTN_CANCELAR
 	_dialogo_remodelar.confirmed.connect(_confirmar_remodelar)
 	_dialogo_remodelar.canceled.connect(_cancelar_remodelar)
 	TemaHUD.estilizar_dialogo(_dialogo_remodelar)
@@ -206,22 +208,22 @@ func _on_demoler() -> void:
 			sin_techo = ciudad.calcular_sin_techo_al_remodelar(id)
 		var reubicados: int = max(0, total_res - sin_techo)
 
-		var texto := "¿Demoler este edificio? Comenzará en 5 horas de juego."
+		var texto: String = Strings.PANEL_EDIFICIO_MODAL_TEXTO_DEMOLER
 		if total_res > 0:
 			texto += "\n\nResidentes actuales (%s): %d" % [", ".join(desgloses), total_res]
 			texto += "\n• Reubicados en camas libres: %d" % reubicados
 			if sin_techo > 0:
-				texto += "\n• Advertencia: %d colono(s) quedarán sin techo (24 h para reubicarse)." % sin_techo
+				texto += "\n• Advertencia: %d colono(s) quedarán sin techo (%d h para reubicarse)." % [sin_techo, Ajustes.CIUDAD_TOLERANCIA_SIN_TECHO_HORAS]
 		_dialogo_demoler.dialog_text = texto
 	else:
-		_dialogo_demoler.dialog_text = "¿Demoler este edificio? Comenzará en 5 horas de juego."
+		_dialogo_demoler.dialog_text = Strings.PANEL_EDIFICIO_MODAL_TEXTO_DEMOLER
 	_dialogo_demoler.popup_centered()
 
 
 func _confirmar_demoler() -> void:
 	var motivo: String = ""
 	if obras.has_method("programar_demolicion"):
-		motivo = obras.programar_demolicion(id, 5)
+		motivo = obras.programar_demolicion(id, Ajustes.OBRAS_HORAS_PROGRAMADAS)
 	else:
 		motivo = obras.alternar_marca(id)
 	if motivo != "":
@@ -238,15 +240,15 @@ func _on_asignar_nucleo() -> void:
 	if ciudad != null and ciudad.has_method("calcular_deficit_traslado"):
 		deficit = ciudad.calcular_deficit_traslado(id)
 	if deficit > 0.0:
-		_dialogo_traslado.dialog_text = "Advertencia: El nuevo núcleo no tiene suficientes camas.\nSe desahuciarán colonos (déficit equivalente a %.1f camas).\n¿Confirmar traslado en 5 horas?" % deficit
+		_dialogo_traslado.dialog_text = Strings.PANEL_EDIFICIO_MODAL_TEXTO_TRASLADO_DEFICIT % int(ceil(deficit))
 	else:
-		_dialogo_traslado.dialog_text = "¿Asignar este edificio como núcleo urbano?\nEl traslado comenzará en 5 horas de juego."
+		_dialogo_traslado.dialog_text = Strings.PANEL_EDIFICIO_MODAL_TEXTO_TRASLADO_OK
 	_dialogo_traslado.popup_centered()
 
 
 func _confirmar_traslado() -> void:
 	if ciudad != null and ciudad.has_method("programar_traslado_nucleo"):
-		ciudad.programar_traslado_nucleo(id, 5)
+		ciudad.programar_traslado_nucleo(id, Ajustes.CIUDAD_HORAS_TRASLADO_NUCLEO)
 	_actualizar()
 
 
@@ -330,10 +332,10 @@ func _confirmar_remodelar() -> void:
 		return
 	var resultado: Dictionary = FinalizacionObras.iniciar_remodelacion(mundo, id)
 	if resultado.get("exito", false):
-		aviso.emit(resultado.get("mensaje", "Remodelación iniciada."))
+		aviso.emit(resultado.get("mensaje", Strings.PANEL_EDIFICIO_NOTIF_REMODELACION_INICIADA))
 		cerrar()
 	else:
-		aviso.emit("No se pudo iniciar remodelación: %s" % resultado.get("motivo", ""))
+		aviso.emit(Strings.PANEL_EDIFICIO_ERR_REMODELACION % resultado.get("motivo", ""))
 	_restaurar_cursor_si_jugador()
 
 
@@ -356,7 +358,7 @@ func _actualizar() -> void:
 		_tipo.text = "Tipo: Núcleo urbano"
 	elif es_residencial:
 		_icono_titulo.texture = IconosHUD.icono("cat_residencial")
-		_titulo.text = "Edificio residencial"
+		_titulo.text = Strings.FINALIZACION_NOMBRE_EDIFICIO_RESIDENCIAL
 		_tipo.text = "Tipo: %s" % r["tipo"]
 	else:
 		_icono_titulo.texture = IconosHUD.icono("modo_construir")
@@ -413,7 +415,7 @@ func _actualizar() -> void:
 		_toggle_colonizable.visible = false
 
 	if estado == "demolicion_programada":
-		_estado.text = "Estado: Demolición programada (inicia en %d h)" % r.get("horas_demolicion", 5)
+		_estado.text = Strings.PANEL_EDIFICIO_ESTADO_DEMOLICION_PROG % r.get("horas_demolicion", 5)
 	else:
 		_estado.text = "Estado: " + NOMBRES_ESTADO.get(estado, estado) + (" (pausada)" if r["pausada"] and estado != "completo" else "")
 	_salud.text = "Salud: %d %%" % roundi(r["salud"] * 100.0)
@@ -443,27 +445,23 @@ func _actualizar() -> void:
 		_btn_boost_inmigracion.visible = true
 		if ciudad != null and ciudad.get("horas_boost_inmigracion") != null and ciudad.horas_boost_inmigracion > 0:
 			var d_rest: int = ciudad.dias_boost_inmigracion_restantes()
-			_btn_boost_inmigracion.text = "Impulso activo (%d d)" % d_rest
+			_btn_boost_inmigracion.text = Strings.VENTANA_MORAL_BTN_BOOST_ACTIVO % d_rest
 			_btn_boost_inmigracion.disabled = true
 		else:
-			_btn_boost_inmigracion.text = "Impulso inmigración (+250%)"
+			_btn_boost_inmigracion.text = Strings.VENTANA_MORAL_BTN_BOOST_ACTIVAR
 			_btn_boost_inmigracion.disabled = false
 	else:
 		_btn_boost_inmigracion.visible = false
 
 	_pausar.visible = en_obra
-	_pausar.text = "Reanudar" if r["pausada"] else ("Pausar demolición" if estado == "demolicion" else "Pausar construcción")
+	_pausar.text = Strings.PANEL_PUESTO_BTN_REANUDAR if r["pausada"] else ("Pausar demolición" if estado == "demolicion" else "Pausar construcción")
 	_pausar.icon = IconosHUD.icono("btn_play" if r["pausada"] else "btn_pausa")
 
-	var p_actual: int = obras.prioridad_de(id) if obras != null and obras.has_method("prioridad_de") else 1
-	var nom_p: String = "Normal"
-	if p_actual == 2:
-		nom_p = "Alta"
-	elif p_actual == 0:
-		nom_p = "Baja"
+	var p_actual: int = obras.prioridad_de(id) if obras != null and obras.has_method("prioridad_de") else Ajustes.OBRAS_PRIORIDAD_NORMAL
+	var nom_p: String = Strings.NOMBRES_PRIORIDAD.get(p_actual, Strings.NOMBRES_PRIORIDAD.get(1, "Normal"))
 	_prioridad.visible = (estado == "construccion")
 	_prioridad.text = "Prioridad: %s" % nom_p
-	_prioridad.icon = IconosHUD.icono("prio_alta" if p_actual == 2 else ("prio_baja" if p_actual == 0 else "prio_normal"))
+	_prioridad.icon = IconosHUD.icono("prio_alta" if p_actual == Ajustes.OBRAS_PRIORIDAD_ALTA else ("prio_baja" if p_actual == Ajustes.OBRAS_PRIORIDAD_BAJA else "prio_normal"))
 
 	_remodelar.visible = (es_residencial or es_nucleo) and (estado == "completo")
 	_remodelar.text = "Iniciar remodelación"
@@ -474,7 +472,7 @@ func _actualizar() -> void:
 		_asignar_nucleo.visible = false
 	else:
 		_demoler.visible = true
-		_demoler.text = "Cancelar demolición" if (estado == "demolicion" or estado == "demolicion_programada") else "Demoler"
+		_demoler.text = Strings.PANEL_EDIFICIO_BTN_CANCELAR_DEMOLICION if (estado == "demolicion" or estado == "demolicion_programada") else "Demoler"
 		_demoler.icon = IconosHUD.icono("modo_demoler")
 		_asignar_nucleo.visible = es_residencial and estado == "completo"
 		if _asignar_nucleo.visible:

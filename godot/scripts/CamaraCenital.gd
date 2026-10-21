@@ -1,5 +1,7 @@
 extends Camera3D
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const NivelacionOverlay = preload("res://scripts/NivelacionOverlay.gd")
@@ -78,65 +80,65 @@ class _AlturaSinAgua:
 ##   la antigua nivelación standalone — sin selección de tropas por
 ##   arrastre todavía, eso sigue siendo PoC 7/Fase 4.
 
-const DISTANCIA_INICIAL := 25.0
-const DISTANCIA_MIN := 8.0
-const DISTANCIA_MAX := 60.0
-const VELOCIDAD_ZOOM := 2.5  # celdas por "tick" de rueda del ratón
+static var DISTANCIA_INICIAL: float = Ajustes.CAMARA_CENITAL_DISTANCIA_INICIAL
+static var DISTANCIA_MIN: float = Ajustes.CAMARA_CENITAL_DISTANCIA_MIN
+static var DISTANCIA_MAX: float = Ajustes.CAMARA_CENITAL_DISTANCIA_MAX
+static var VELOCIDAD_ZOOM: float = Ajustes.CAMARA_CENITAL_VELOCIDAD_ZOOM  # celdas por "tick" de rueda del ratón
 
 ## Margen que se resta a la distancia de impacto en _evitar_colision_en_activacion()
 ## para que la cámara quede justo delante de la pared, no pegada a su plano
 ## de corte (near clipping visible).
-const MARGEN_COLISION_ACTIVACION := 1.0
+static var MARGEN_COLISION_ACTIVACION: float = Ajustes.CAMARA_CENITAL_MARGEN_COLISION_ACTIVACION
 
 ## Incremento de angulo_inclinacion por paso al "trepar" una montaña que
 ## bloquea la vista en _evitar_colision_en_activacion() — ver su comentario.
-const PASO_INCLINACION_ESCALADA := deg_to_rad(2.0)
+static var PASO_INCLINACION_ESCALADA: float = Ajustes.CAMARA_CENITAL_PASO_INCLINACION_ESCALADA
 
 ## Margen extra de inclinación sobre el primer ángulo que despeja el raycast:
 ## con pendientes muy inclinadas, ese primer ángulo libre roza la ladera tan
 ## de cerca que la cámara (que no es un punto) queda igual dentro del sólido.
-const MARGEN_INCLINACION_ACTIVACION := deg_to_rad(4.0)
+static var MARGEN_INCLINACION_ACTIVACION: float = Ajustes.CAMARA_CENITAL_MARGEN_INCLINACION_ACTIVACION
 
-const ANGULO_INCLINACION_INICIAL := deg_to_rad(55.0)
-const ANGULO_INCLINACION_MIN := deg_to_rad(10.0)  # casi al ras del horizonte
-const ANGULO_INCLINACION_MAX := deg_to_rad(89.9)  # cenital recta
-const VELOCIDAD_INCLINACION := deg_to_rad(60.0)  # radianes/segundo
+static var ANGULO_INCLINACION_INICIAL: float = Ajustes.CAMARA_CENITAL_ANGULO_INCLINACION_INICIAL
+static var ANGULO_INCLINACION_MIN: float = Ajustes.CAMARA_CENITAL_ANGULO_INCLINACION_MIN  # casi al ras del horizonte
+static var ANGULO_INCLINACION_MAX: float = Ajustes.CAMARA_CENITAL_ANGULO_INCLINACION_MAX  # cenital recta
+static var VELOCIDAD_INCLINACION: float = Ajustes.CAMARA_CENITAL_VELOCIDAD_INCLINACION  # radianes/segundo
 
-const VELOCIDAD_PANEO := 20.0  # celdas/segundo
-const VELOCIDAD_ORBITA := deg_to_rad(90.0)  # radianes/segundo
+static var VELOCIDAD_PANEO: float = Ajustes.CAMARA_CENITAL_VELOCIDAD_PANEO  # celdas/segundo
+static var VELOCIDAD_ORBITA: float = Ajustes.CAMARA_CENITAL_VELOCIDAD_ORBITA  # radianes/segundo
 
 ## Shift+W/S: tope superior de altura y velocidad de subida/bajada variable
 ## — cuadrática según la altura ACTUAL de la cámara (global_position.y, no
 ## foco.y), para que cambiar de altura sea lento cerca del piso y rápido en
 ## las alturas máximas (ver _velocidad_altura()).
-const ALTURA_MAXIMA_CAMARA := 300.0
-const VELOCIDAD_ALTURA_MIN := 15.0  # celdas/segundo, a nivel del piso
-const VELOCIDAD_ALTURA_MAX := 300.0  # celdas/segundo, a ALTURA_MAXIMA_CAMARA
+static var ALTURA_MAXIMA_CAMARA: float = Ajustes.CAMARA_CENITAL_ALTURA_MAXIMA
+static var VELOCIDAD_ALTURA_MIN: float = Ajustes.CAMARA_CENITAL_VELOCIDAD_ALTURA_MIN  # celdas/segundo, a nivel del piso
+static var VELOCIDAD_ALTURA_MAX: float = Ajustes.CAMARA_CENITAL_VELOCIDAD_ALTURA_MAX  # celdas/segundo, a ALTURA_MAXIMA_CAMARA
 
-const COLOR_PUESTO_VALIDO := Color(1.0, 0.85, 0.0, 0.4)
-const COLOR_PUESTO_INVALIDO := Color(1.0, 0.2, 0.2, 0.4)
+static var COLOR_PUESTO_VALIDO: Color = Ajustes.COLOR_PUESTO_VALIDO
+static var COLOR_PUESTO_INVALIDO: Color = Ajustes.COLOR_PUESTO_INVALIDO
 
 ## Color fijo (no codifica validez, eso ya lo hace la huella) del círculo
 ## informativo de área de acción — ver _crear_area_accion().
-const COLOR_AREA_ACCION := Color(0.3, 0.7, 1.0, 0.15)
+static var COLOR_AREA_ACCION: Color = Ajustes.COLOR_AREA_ACCION
 
 ## El mayor radio de área de acción entre los tipos de puesto existentes
 ## (Recoleccion.RADIO_AREA_MINA = 6, RADIO_AREA_CAZA_RECOLECCION = 12,
 ## RADIO_AREA_PESCA_FRUTOS_MAR = 25 — este último es el que fija el valor
 ## actual) — tamaño del pool de planos del círculo informativo, reutilizado
 ## por cualquier tipo (ver _crear_area_accion()).
-const RADIO_AREA_ACCION_MAX := 25
-const ALCANCE_RAYCAST := 200.0  # cubre cámara + relieve + margen de sobra
+static var RADIO_AREA_ACCION_MAX: int = Ajustes.CAMARA_CENITAL_RADIO_AREA_ACCION_MAX
+static var ALCANCE_RAYCAST: float = Ajustes.CAMARA_CENITAL_ALCANCE_RAYCAST  # cubre cámara + relieve + margen de sobra
 ## Las consultas físicas de la cámara (picking del terreno, altura mínima,
 ## colisión de la propia cámara) solo deben ver el mundo (capa 1), no los
 ## cuerpos de los colonos (capa 2, ver ColonosRenderer.gd).
-const MASCARA_MUNDO := 1
+static var MASCARA_MUNDO: int = Ajustes.CAMARA_CENITAL_MASCARA_MUNDO
 
 ## Raycast vertical bajo la propia cámara (ver _altura_bajo_camara()), para
 ## la altura mínima al bajar con Shift+S — origen bien por encima de
 ## cualquier relieve/edificio posible, alcance generoso hacia abajo.
-const ORIGEN_RAYCAST_VERTICAL_Y := 100.0
-const ALCANCE_RAYCAST_VERTICAL := 150.0
+static var ORIGEN_RAYCAST_VERTICAL_Y: float = Ajustes.CAMARA_CENITAL_ORIGEN_RAYCAST_VERTICAL_Y
+static var ALCANCE_RAYCAST_VERTICAL: float = Ajustes.CAMARA_CENITAL_ALCANCE_RAYCAST_VERTICAL
 
 ## Mismo desfase que ZonaOverlay.gd: GridMap.map_to_local() ubica el origen
 ## de cada celda en su esquina (no en su centro), así que una celda con
@@ -144,8 +146,8 @@ const ALCANCE_RAYCAST_VERTICAL := 150.0
 ## superior real está en Y+1, no en Y. DESF recentra X/Z (la esquina de
 ## menor X/Z -> el centro de la celda); ALTURA_SOBRE_SUPERFICIE deja el
 ## plano justo sobre la cara superior real (Y+1), con un pequeño margen.
-const DESF := 0.5
-const ALTURA_SOBRE_SUPERFICIE := 1.01
+static var DESF: float = Ajustes.CAMARA_CENITAL_DESF
+static var ALTURA_SOBRE_SUPERFICIE: float = Ajustes.CAMARA_CENITAL_ALTURA_SOBRE_SUPERFICIE
 
 ## Margen menor que ALTURA_SOBRE_SUPERFICIE a propósito: el círculo de área
 ## de acción y la huella comparten celdas cerca del centro (el área siempre
@@ -153,7 +155,7 @@ const ALTURA_SOBRE_SUPERFICIE := 1.01
 ## normal (no_depth_test = false) el plano más alto ocluye al más bajo —
 ## así la huella (más alta) queda visible sobre el círculo en las celdas
 ## donde se solapan, y el círculo solo se ve como un halo alrededor.
-const ALTURA_SOBRE_SUPERFICIE_AREA_ACCION := 1.001
+static var ALTURA_SOBRE_SUPERFICIE_AREA_ACCION: float = Ajustes.CAMARA_CENITAL_ALTURA_SOBRE_SUPERFICIE_AREA_ACCION
 
 @onready var mundo: Node = get_node("../VoxelWorld")
 @onready var overlay: Node3D = get_node("../ZonaOverlay")
@@ -173,7 +175,7 @@ var _demolicion_via_celdas_preview: Array[Vector3i] = []
 var _ultimo_destino_demolicion_via := Vector3i.ZERO
 var _ultimo_clic_demoler_tiempo_ms := 0
 var _ultima_celda_clic_demoler := Vector3i.ZERO
-const TIEMPO_DOBLE_CLIC_MS := 400
+static var TIEMPO_DOBLE_CLIC_MS: int = Ajustes.CAMARA_CENITAL_TIEMPO_DOBLE_CLIC_MS
 
 
 ## Modo zonificación (menú principal, tecla `2`): mientras está activo, el
@@ -217,7 +219,7 @@ var _ultimo_vertice_preview := SIN_VERTICE_PREVIO
 ## un tope más bajo, "sin ruta" se confirma más rápido mientras se traza;
 ## el clic real (una sola vez, no cada fotograma) sigue con el tope
 ## completo para no perder alcance real de trazado.
-const MAX_NODOS_PREVIEW_VIA := 600
+static var MAX_NODOS_PREVIEW_VIA: int = Ajustes.CAMARA_CENITAL_MAX_NODOS_PREVIEW_VIA
 
 var nivelador_puesto: RefCounted
 
@@ -297,15 +299,11 @@ var _resumen_blueprint_bloques: Dictionary = {}
 var _overlay_vigente: Vector2i = SIN_RESUMEN
 var _overlay_nivelacion: NivelacionOverlay
 
-const MENSAJES_BASE_Y := {
-	"pendiente": "Colocación rechazada: el desnivel entre una puerta y el suelo frente a ella supera el límite permitido.",
-	"puertas": "Colocación rechazada: las puertas de este edificio quedarían a niveles distintos (el suelo frente a cada una tiene otra altura).",
-	"frente": "Colocación rechazada: el suelo frente a una puerta es agua o queda fuera del mundo.",
-}
+static var MENSAJES_BASE_Y: Dictionary = Strings.CAMARA_MENSAJES_BASE_Y
 
 ## Altura en bloques del despeje de una puerta: hasta dónde se revisa que el
 ## frente (la fachada) esté libre de árboles y estructuras.
-const ALTURA_PUERTA := 2
+static var ALTURA_PUERTA: int = Ajustes.CAMARA_CENITAL_ALTURA_PUERTA
 
 var _huella_blueprint: Array[MeshInstance3D] = []
 var _offsets_huella_blueprint: Array[Vector3i] = []
@@ -330,13 +328,13 @@ var distancia_camara := DISTANCIA_INICIAL
 ## continúa, sin importar qué otro movimiento (paneo) ocurra a la vez.
 var _gesto_orbital_activo := false
 
-const DURACION_CENTRADO := 0.4
+static var DURACION_CENTRADO: float = Ajustes.CAMARA_CENITAL_DURACION_CENTRADO
 var _tween_centrado: Tween
 
 
 func _ready() -> void:
 	projection = PROJECTION_PERSPECTIVE
-	fov = 60.0
+	fov = Ajustes.CAMARA_CENITAL_FOV
 	# Se le pasa VoxelWorld (mundo), no mundo.generador: NiveladorTerreno solo
 	# llama a .altura_en(x,z) por duck typing, y necesitamos la altura REAL
 	# del mundo (que sí refleja minado/construcción/nivelaciones previas), no
@@ -1274,23 +1272,23 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 ## considera válida exactamente lo que el clic aceptaría.
 func _mensaje_rechazo_blueprint(ev: Dictionary) -> String:
 	if not ev["zona_correcta"]:
-		return "Colocación rechazada: esta zona no acepta este blueprint."
+		return Strings.CAMARA_RECHAZO_BLUEPRINT_ZONA
 	if not ev["errores_vivienda"].is_empty():
-		return "Colocación rechazada: " + ev["errores_vivienda"][0]
+		return Strings.CAMARA_RECHAZO_PREFIJO + ev["errores_vivienda"][0]
 	if not ev["relieve_valido"]:
-		return "Colocación rechazada: la pendiente de esta huella (o del frente de sus puertas) supera el límite permitido."
+		return Strings.CAMARA_RECHAZO_BLUEPRINT_PENDIENTE
 	if not ev["resultado_huella"]["valida"]:
-		return "Colocación rechazada: la huella choca con un recurso de madera o una estructura existente."
+		return Strings.CAMARA_RECHAZO_BLUEPRINT_HUELLA_OCUPADA
 	if not ev["resultado_fachada"]["valida"]:
-		return "Colocación rechazada: el frente de una puerta choca con un recurso de madera o una estructura existente."
+		return Strings.CAMARA_RECHAZO_BLUEPRINT_FRENTE_OCUPADO
 	if ev["choca"]:
-		return "Colocación rechazada: la huella (o el frente de una puerta) choca con un puesto o construcción ya colocada."
+		return Strings.CAMARA_RECHAZO_BLUEPRINT_CHOCA_PUESTO
 	if not ev["en_tierra"]:
-		return "Colocación rechazada: la huella necesita al menos una columna sobre tierra firme."
+		return Strings.CAMARA_RECHAZO_BLUEPRINT_SIN_TIERRA
 	if not ev["resultado_base"]["valido"]:
 		return MENSAJES_BASE_Y[ev["resultado_base"]["motivo"]]
 	if ev["motivo_despeje"] != "":
-		return "Colocación rechazada: %s" % ev["motivo_despeje"]
+		return Strings.CAMARA_RECHAZO_FORMATO % ev["motivo_despeje"]
 	return ""
 
 
@@ -2865,7 +2863,7 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 		for rel_m in celdas_muelle:
 			var xm: int = esquina.x + rel_m.x
 			var zm: int = esquina.y + rel_m.y
-			if _profundidad_agua_en(xm, zm) < 2:
+			if _profundidad_agua_en(xm, zm) < Ajustes.RECOLECCION_PROFUNDIDAD_MINIMA_EXTRACCION:
 				profundidad_bombeo_valida = false
 				break
 
@@ -2972,44 +2970,44 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 ## exactamente lo que el clic aceptaría.
 func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 	if _tipo_puesto_activo == "escuela_especialistas" and Economia.contar_tipo("escuela_tecnica") < 1:
-		return "Colocación rechazada: requiere al menos 1 escuela técnica construida."
+		return Strings.CAMARA_RECHAZO_PUESTO_REQ_ESC_TECNICA
 	if _tipo_puesto_activo == "universidad" and Economia.contar_tipo("escuela_especialistas") < 1:
-		return "Colocación rechazada: requiere al menos 1 escuela de especialistas construida."
+		return Strings.CAMARA_RECHAZO_PUESTO_REQ_ESC_ESPEC
 	if _tipo_puesto_activo == "estacion_bombeo" and not ev.get("profundidad_bombeo_valida", true):
-		return "Colocación rechazada: la estación de bombeo requiere al menos 2 bloques de profundidad de agua bajo su muelle."
+		return Strings.CAMARA_RECHAZO_PUESTO_BOMBEO_AGUA
 	if _tipo_puesto_activo == "centro_extraccion" and not ev.get("pozo_detectado", false):
-		return "Colocación rechazada: no se detecta depósito subterráneo de agua o crudo."
+		return Strings.CAMARA_RECHAZO_PUESTO_SIN_POZO
 	if ev["en_influencia"]:
-		return "No se puede colocar un puesto dentro de la zona de influencia."
+		return Strings.CAMARA_RECHAZO_PUESTO_EN_INFLUENCIA
 	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
 	var es_universidad: bool = _tipo_puesto_activo == "universidad"
-	var nombre_rechazo: String = "una universidad" if es_universidad else ("una escuela" if es_escuela else ("un almacén" if _tipo_puesto_activo == "almacen" else ("una central termoeléctrica" if _tipo_puesto_activo == "central_termoelectrica" else "una refinería")))
+	var nombre_rechazo: String = Strings.CAMARA_NOMBRE_UNA_UNIVERSIDAD if es_universidad else (Strings.CAMARA_NOMBRE_UNA_ESCUELA if es_escuela else (Strings.CAMARA_NOMBRE_UN_ALMACEN if _tipo_puesto_activo == "almacen" else (Strings.CAMARA_NOMBRE_UNA_CENTRAL if _tipo_puesto_activo == "central_termoelectrica" else Strings.CAMARA_NOMBRE_UNA_REFINERIA)))
 	if ev["fuera_de_influencia"]:
-		return "Colocación rechazada: %s solo puede construirse dentro de la zona de influencia." % nombre_rechazo
+		return Strings.CAMARA_RECHAZO_PUESTO_SOLO_EN_INFLUENCIA % nombre_rechazo
 	if not ev["zona_correcta"]:
 		if es_escuela or es_universidad:
-			return "Colocación rechazada: %s solo puede construirse sobre una zona residencial." % nombre_rechazo
-		return "Colocación rechazada: una refinería, central o almacén solo puede construirse sobre una zona industrial."
+			return Strings.CAMARA_RECHAZO_PUESTO_SOLO_ZONA_RES % nombre_rechazo
+		return Strings.CAMARA_RECHAZO_PUESTO_SOLO_ZONA_IND
 	if not ev["relieve_valido"]:
-		return "Colocación rechazada: la pendiente de esta huella supera el límite permitido."
+		return Strings.CAMARA_RECHAZO_PUESTO_PENDIENTE_HUELLA
 	if not ev["resultado_huella"]["valida"]:
-		return "Colocación rechazada: la huella choca con un recurso de madera o una estructura existente."
+		return Strings.CAMARA_RECHAZO_PUESTO_HUELLA_RECURSO
 	if ev["choca"]:
-		return "Colocación rechazada: la huella choca con un puesto ya colocado."
+		return Strings.CAMARA_RECHAZO_PUESTO_CHOCA
 	if not ev["en_tierra"]:
 		if _tipo_puesto_activo == "pesca_frutos_mar":
-			return "Colocación rechazada: la huella necesita un extremo completo sobre agua (con su periferia despejada) y el opuesto completo sobre tierra firme."
-		return "Colocación rechazada: la huella necesita al menos una columna sobre tierra firme."
+			return Strings.CAMARA_RECHAZO_PUESTO_PESCA_EXTREMOS
+		return Strings.CAMARA_RECHAZO_PUESTO_SIN_TIERRA
 	if not ev["relieve_union_valido"]:
-		return "Colocación rechazada: la pendiente de la huella (o del frente de la puerta) supera el límite permitido."
+		return Strings.CAMARA_RECHAZO_PUESTO_PENDIENTE_PUERTA
 	if not ev["resultado_fachada"]["valida"]:
-		return "Colocación rechazada: el frente de la puerta choca con un recurso de madera o una estructura existente."
+		return Strings.CAMARA_RECHAZO_PUESTO_FRENTE_RECURSO
 	if ev["choca_fachada"]:
-		return "Colocación rechazada: el frente de la puerta choca con un puesto o construcción ya colocada."
+		return Strings.CAMARA_RECHAZO_PUESTO_FRENTE_PUESTO
 	if not ev["resultado_base"]["valido"]:
 		return MENSAJES_BASE_Y[ev["resultado_base"]["motivo"]]
 	if ev["motivo_despeje"] != "":
-		return "Colocación rechazada: %s" % ev["motivo_despeje"]
+		return Strings.CAMARA_RECHAZO_FORMATO % ev["motivo_despeje"]
 	return ""
 
 

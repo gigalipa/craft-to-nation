@@ -7,42 +7,38 @@ extends Node
 ## Sin class_name (mismo motivo que Zonificacion.gd/Ciudad.gd: evitar el bug
 ## de caché de clases globales de Godot).
 
-const RADIO_AREA_MINA := 6
-const PROFUNDIDAD_MINA_NIVEL_1 := 8
+const Ajustes = preload("res://scripts/ajustes.gd")
+
+static var RADIO_AREA_MINA: int = Ajustes.RECOLECCION_RADIO_AREA_MINA
+static var PROFUNDIDAD_MINA_NIVEL_1: int = Ajustes.RECOLECCION_PROFUNDIDAD_MINA_NIVEL_1
 ## Alcance hacia abajo de una mina mejorada (nivel 2) y avanzada (nivel 3) —
 ## ver detectar_recursos(). Coinciden con GeneradorMundo.PROFUNDIDAD_HIERRO/
 ## PROFUNDIDAD_TIERRAS_RARAS a propósito: nivel 2 recién empieza a cubrir bien
 ## la veta de hierro y nivel 3 recién empieza a cubrir bien tierras raras.
-const PROFUNDIDAD_MINA_NIVEL_2 := 16
-const PROFUNDIDAD_MINA_NIVEL_3 := 24
+static var PROFUNDIDAD_MINA_NIVEL_2: int = Ajustes.RECOLECCION_PROFUNDIDAD_MINA_NIVEL_2
+static var PROFUNDIDAD_MINA_NIVEL_3: int = Ajustes.RECOLECCION_PROFUNDIDAD_MINA_NIVEL_3
 ## Puestos de recolección con niveles 1-3 (ver docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md).
 const TIPOS_CON_NIVELES := ["mina", "maderero", "caza_recoleccion", "pesca_frutos_mar"]
 ## Velocidad del puesto por nivel. La mina no la usa (ver multiplicador_de_nivel()): su nivel amplía el volumen.
-const MULTIPLICADOR_NIVEL := {1: 1.0, 2: 1.5, 3: 2.0}
+static var MULTIPLICADOR_NIVEL: Dictionary = Ajustes.RECOLECCION_MULTIPLICADOR_NIVEL
 ## Unidades por trabajador y hora de cada mineral (docs/Recursos.xlsx). La tasa
 ## de un mineral en una mina es su fracción en el área × esta tasa base.
-const TASAS_BASE_MINERAL := {
-	"tierra": 1.0, "piedra": 5.0, "hierro": 5.0,
-	"cobre": 5.0, "carbon": 5.0, "tierras_raras": 5.0,
-}
+static var TASAS_BASE_MINERAL: Dictionary = Ajustes.RECOLECCION_TASAS_BASE_MINERAL
 
 ## Marca de "no hay puesto" para esquina_de_puesto_en().
 const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Los únicos tipos de puesto donde se asignan trabajadores (los edificios
 ## registrados con tipo "blueprint" comparten el registro pero no son puestos).
 ## Madera/h por recolector bajo la cual un maderero se da por agotado (decisión del usuario, 2026-10-02).
-const UMBRAL_AGOTADO_MADERERO := 0.5
+static var UMBRAL_AGOTADO_MADERERO: float = Ajustes.RECOLECCION_UMBRAL_AGOTADO_MADERERO
 
 const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen"]
 ## Escuelas: tipo de puesto -> {"origen", "destino", "horas"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
 ## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
 ## conserva (4 obreros = 3 técnicos, 3 técnicos = 2 especialistas) y quien sobra se va de la ciudad.
-const ESCUELAS := {
-	"escuela_tecnica": {"origen": "obrero", "destino": "tecnico", "horas": 24},
-	"escuela_especialistas": {"origen": "tecnico", "destino": "especialista", "horas": 48},
-}
-const ANCHO_HUELLA_MINA := 5
-const ALTO_HUELLA_MINA := 5
+static var ESCUELAS: Dictionary = Ajustes.RECOLECCION_ESCUELAS
+static var ANCHO_HUELLA_MINA: int = Ajustes.RECOLECCION_ANCHO_HUELLA_MINA
+static var ALTO_HUELLA_MINA: int = Ajustes.RECOLECCION_ALTO_HUELLA_MINA
 
 ## Catálogo de minerales que una mina puede detectar y recolectar (GDD,
 ## Sección 4: "Minas — catálogo de hasta 6 tipos"). Whitelist en vez de
@@ -62,34 +58,27 @@ const GeneradorMundoScript = preload("res://scripts/GeneradorMundo.gd")
 ## docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md).
 ## "madera" es por celda de tronco. Placeholders de balance; agua (2) y
 ## petróleo (2) quedan reservados para el sub-proyecto de fluidos.
-const RENDIMIENTO_POR_BLOQUE := {
-	"tierra": 1.0, "piedra": 10.0, "hierro": 10.0, "cobre": 10.0,
-	"carbon": 10.0, "tierras_raras": 10.0, "madera": 10.0,
-	"crudo": 10.0,
-}
+static var RENDIMIENTO_POR_BLOQUE: Dictionary = Ajustes.RECOLECCION_RENDIMIENTO_POR_BLOQUE
 
 ## Segundos que el avatar tarda en minar un bloque por tipo (material real,
 ## "hierba" cuenta como "tierra"), como en Minecraft. Los tipos sin entrada
 ## (construcciones del jugador) usan TIEMPO_MINADO_DEFECTO. Placeholders.
-const TIEMPO_MINADO := {
-	"tierra": 0.4, "piedra": 1.2, "carbon": 1.2,
-	"hierro": 1.6, "cobre": 1.6, "tierras_raras": 2.4,
-}
-const TIEMPO_MINADO_DEFECTO := 0.6
+static var TIEMPO_MINADO: Dictionary = Ajustes.RECOLECCION_TIEMPO_MINADO
+static var TIEMPO_MINADO_DEFECTO: float = Ajustes.RECOLECCION_TIEMPO_MINADO_DEFECTO
 ## Sin herramientas todavía: cuando existan, dividirá el tiempo de minado.
-const MULTIPLICADOR_HERRAMIENTA := 1.0
+static var MULTIPLICADOR_HERRAMIENTA: float = Ajustes.RECOLECCION_MULTIPLICADOR_HERRAMIENTA
 ## Segundos de golpes sostenidos por cada punto de salud (una celda de tronco) de un árbol.
-const TIEMPO_TALA_POR_SALUD := 1.0
+static var TIEMPO_TALA_POR_SALUD: float = Ajustes.RECOLECCION_TIEMPO_TALA_POR_SALUD
 ## Frutos que el avatar recolecta de un árbol (no lo consume): segundos, comida a
 ## densidad frutal 1.0 y horas de juego que el árbol tarda en volver a dar frutos.
-const TIEMPO_RECOLECCION_FRUTOS := 2.0
-const COMIDA_POR_RECOLECCION := 60.0
-const HORAS_REBROTE_FRUTOS := 24
+static var TIEMPO_RECOLECCION_FRUTOS: float = Ajustes.RECOLECCION_TIEMPO_RECOLECCION_FRUTOS
+static var COMIDA_POR_RECOLECCION: float = Ajustes.RECOLECCION_COMIDA_POR_RECOLECCION
+static var HORAS_REBROTE_FRUTOS: int = Ajustes.RECOLECCION_HORAS_REBROTE_FRUTOS
 
 ## Una mina solo extrae bloques al menos a esta profundidad bajo la superficie
 ## natural de su columna (GROSOR_TIERRA - 2), para que el terreno de arriba no
 ## quede flotando ni con un hueco en la superficie.
-const PROFUNDIDAD_MINIMA_EXTRACCION := GeneradorMundoScript.GROSOR_TIERRA - 2
+static var PROFUNDIDAD_MINIMA_EXTRACCION: int = Ajustes.RECOLECCION_PROFUNDIDAD_MINIMA_EXTRACCION
 
 ## Centinela: "no hay centro de agua" en entorno_de_puesto().
 const SIN_CENTRO := Vector2i(-99999, -99999)
@@ -97,46 +86,46 @@ const SIN_CENTRO := Vector2i(-99999, -99999)
 const SIN_BLOQUE := Vector3i(-99999, -99999, -99999)
 
 ## Cupos de trabajadores (decisión del usuario, 2026-09-21): mina 5, maderero 5, caza/recolección 7, pesca 7.
-const PERSONAL_MAXIMO := 5
-const CAPACIDAD_ALMACENAMIENTO := 1000
+static var PERSONAL_MAXIMO: int = Ajustes.RECOLECCION_PERSONAL_MAXIMO
+static var CAPACIDAD_ALMACENAMIENTO: int = Ajustes.RECOLECCION_CAPACIDAD_ALMACENAMIENTO
 
-const ANCHO_HUELLA_MADERERO := 3
-const ALTO_HUELLA_MADERERO := 4
+static var ANCHO_HUELLA_MADERERO: int = Ajustes.RECOLECCION_ANCHO_HUELLA_MADERERO
+static var ALTO_HUELLA_MADERERO: int = Ajustes.RECOLECCION_ALTO_HUELLA_MADERERO
 
-const RADIO_AREA_MADERERO := 12
-const PASO_MUESTREO_MADERERO := 2  # mismo patrón de muestreo que caza/recolección
-const TASA_BASE_MADERERO_POR_CIUDADANO := 5.0
+static var RADIO_AREA_MADERERO: int = Ajustes.RECOLECCION_RADIO_AREA_MADERERO
+static var PASO_MUESTREO_MADERERO: int = Ajustes.RECOLECCION_PASO_MUESTREO_MADERERO  # mismo patrón de muestreo que caza/recolección
+static var TASA_BASE_MADERERO_POR_CIUDADANO: float = Ajustes.RECOLECCION_TASA_BASE_MADERERO_POR_CIUDADANO
 
-const PERSONAL_MAXIMO_MADERERO := 5
-const CAPACIDAD_ALMACENAMIENTO_MADERERO := 1000
+static var PERSONAL_MAXIMO_MADERERO: int = Ajustes.RECOLECCION_PERSONAL_MAXIMO_MADERERO
+static var CAPACIDAD_ALMACENAMIENTO_MADERERO: int = Ajustes.RECOLECCION_CAPACIDAD_ALMACENAMIENTO_MADERERO
 
-const RADIO_AREA_CAZA_RECOLECCION := 12
-const PASO_MUESTREO_CAZA_RECOLECCION := 2  # cada 2 celdas, no las ~450 del área completa
-const TASA_BASE_CAZA_POR_CIUDADANO := 17.0  # decisión del usuario 2026-09-21: sube de 14 a 17 (antes 10 y luego 14) para que caza y recolección (~12,2 comida/h de media a las densidades medias fauna 0.45, frutal 0.46) sea la opción estable frente a la pesca (media ~8,6, hasta ~14 en costa grande y profunda) y no obligue a ciudades costeras
-const TASA_BASE_FRUTOS_POR_CIUDADANO := 10.0  # Excel: columna "Árbol (obj)" era 5 (se interpreta como frutos); decisión del usuario 2026-09-21: sube a 10, ver TASA_BASE_CAZA_POR_CIUDADANO
-const ANCHO_HUELLA_CAZA_RECOLECCION := 4
-const ALTO_HUELLA_CAZA_RECOLECCION := 4
+static var RADIO_AREA_CAZA_RECOLECCION: int = Ajustes.RECOLECCION_RADIO_AREA_CAZA_RECOLECCION
+static var PASO_MUESTREO_CAZA_RECOLECCION: int = Ajustes.RECOLECCION_PASO_MUESTREO_CAZA_RECOLECCION  # cada 2 celdas, no las ~450 del área completa
+static var TASA_BASE_CAZA_POR_CIUDADANO: float = Ajustes.RECOLECCION_TASA_BASE_CAZA_POR_CIUDADANO  # decisión del usuario 2026-09-21: sube de 14 a 17 (antes 10 y luego 14) para que caza y recolección (~12,2 comida/h de media a las densidades medias fauna 0.45, frutal 0.46) sea la opción estable frente a la pesca (media ~8,6, hasta ~14 en costa grande y profunda) y no obligue a ciudades costeras
+static var TASA_BASE_FRUTOS_POR_CIUDADANO: float = Ajustes.RECOLECCION_TASA_BASE_FRUTOS_POR_CIUDADANO  # Excel: columna "Árbol (obj)" era 5 (se interpreta como frutos); decisión del usuario 2026-09-21: sube a 10, ver TASA_BASE_CAZA_POR_CIUDADANO
+static var ANCHO_HUELLA_CAZA_RECOLECCION: int = Ajustes.RECOLECCION_ANCHO_HUELLA_CAZA_RECOLECCION
+static var ALTO_HUELLA_CAZA_RECOLECCION: int = Ajustes.RECOLECCION_ALTO_HUELLA_CAZA_RECOLECCION
 
-const PERSONAL_MAXIMO_CAZA_RECOLECCION := 7
-const CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION := 1000
+static var PERSONAL_MAXIMO_CAZA_RECOLECCION: int = Ajustes.RECOLECCION_PERSONAL_MAXIMO_CAZA_RECOLECCION
+static var CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION: int = Ajustes.RECOLECCION_CAPACIDAD_ALMACENAMIENTO_CAZA_RECOLECCION
 
-const ANCHO_HUELLA_PESCA_FRUTOS_MAR := 4
-const ALTO_HUELLA_PESCA_FRUTOS_MAR := 6
+static var ANCHO_HUELLA_PESCA_FRUTOS_MAR: int = Ajustes.RECOLECCION_ANCHO_HUELLA_PESCA_FRUTOS_MAR
+static var ALTO_HUELLA_PESCA_FRUTOS_MAR: int = Ajustes.RECOLECCION_ALTO_HUELLA_PESCA_FRUTOS_MAR
 
-const RADIO_AREA_PESCA_FRUTOS_MAR := 25
-const TASA_BASE_PESCA_POR_CIUDADANO := 17.0  # decisión del usuario 2026-09-21: sube de 12 a 17 para compensar el descuento por profundidad (peces ponderados ×0,5 a ×1,5) y que la media del mundo siga en ~8,6 comida/h
-const TASA_BASE_ALGAS_POR_CIUDADANO := 3.0  # balance decidido el 2026-09-21; la densidad de algas depende de la profundidad, así que el promedio es aproximado
+static var RADIO_AREA_PESCA_FRUTOS_MAR: int = Ajustes.RECOLECCION_RADIO_AREA_PESCA_FRUTOS_MAR
+static var TASA_BASE_PESCA_POR_CIUDADANO: float = Ajustes.RECOLECCION_TASA_BASE_PESCA_POR_CIUDADANO  # decisión del usuario 2026-09-21: sube de 12 a 17 para compensar el descuento por profundidad (peces ponderados ×0,5 a ×1,5) y que la media del mundo siga en ~8,6 comida/h
+static var TASA_BASE_ALGAS_POR_CIUDADANO: float = Ajustes.RECOLECCION_TASA_BASE_ALGAS_POR_CIUDADANO  # balance decidido el 2026-09-21; la densidad de algas depende de la profundidad, así que el promedio es aproximado
 ## Los peces rinden más en agua profunda: cada celda pesa PECES_FACTOR_SOMERO + profundidad relativa
 ## (×0,5 en el agua más somera hasta ×1,5 en la más profunda). Decisión 2026-09-21.
-const PECES_FACTOR_SOMERO := 0.5
+static var PECES_FACTOR_SOMERO: float = Ajustes.RECOLECCION_PECES_FACTOR_SOMERO
 ## Escala por tamaño del agua conectada (decisión 2026-09-21): celdas / AGUA_REFERENCIA, acotado entre
 ## ESCALA_AGUA_MIN y ESCALA_AGUA_MAX. 450 celdas es la mediana del mundo actual dentro del radio de 25.
-const AGUA_REFERENCIA := 450.0
-const ESCALA_AGUA_MIN := 0.4
-const ESCALA_AGUA_MAX := 1.5
+static var AGUA_REFERENCIA: float = Ajustes.RECOLECCION_AGUA_REFERENCIA
+static var ESCALA_AGUA_MIN: float = Ajustes.RECOLECCION_ESCALA_AGUA_MIN
+static var ESCALA_AGUA_MAX: float = Ajustes.RECOLECCION_ESCALA_AGUA_MAX
 
-const PERSONAL_MAXIMO_PESCA_FRUTOS_MAR := 7
-const CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR := 1000
+static var PERSONAL_MAXIMO_PESCA_FRUTOS_MAR: int = Ajustes.RECOLECCION_PERSONAL_MAXIMO_PESCA_FRUTOS_MAR
+static var CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR: int = Ajustes.RECOLECCION_CAPACIDAD_ALMACENAMIENTO_PESCA_FRUTOS_MAR
 
 ## Vector2i (esquina de la huella, celda de menor X/Z) -> {"tipo": String,
 ## "ancho": int, "alto": int, "nivel": int}. Antes solo guardaba minas
@@ -600,7 +589,7 @@ func factor_arboles(mundo: Object, entorno: Dictionary) -> float:
 ## escalan con factor_arboles(): talar el bosque reduce fauna, frutos y madera.
 func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary, nivel: int = 1) -> Dictionary:
 	if tipo == "estacion_bombeo":
-		return {"agua": 2.0}
+		return {"agua": Ajustes.RECOLECCION_TASA_BASE_ESTACION_BOMBEO_AGUA}
 	if tipo == "centro_extraccion":
 		var dp: Dictionary = entorno.get("datos_perforacion", {})
 		var tipo_p: String = dp.get("tipo_pozo", entorno.get("tipo_pozo", "agua"))
@@ -609,8 +598,8 @@ func tasas_de_entorno(tipo: String, mundo: Object, entorno: Dictionary, nivel: i
 				var restantes: int = contar_crudo_pozo(mundo, dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
 				if restantes <= 0:
 					return {"crudo": 0.0}
-			return {"crudo": 2.5}
-		return {"agua": 5.0}
+			return {"crudo": Ajustes.RECOLECCION_TASA_BASE_CENTRO_EXTRACCION_CRUDO}
+		return {"agua": Ajustes.RECOLECCION_TASA_BASE_CENTRO_EXTRACCION_AGUA}
 	var centro: Vector2i = entorno["centro"]
 	if tipo == "mina":
 		return tasas_recoleccion(detectar_recursos_extraibles(mundo, centro, entorno["altura"], profundidad_de_nivel(nivel)))

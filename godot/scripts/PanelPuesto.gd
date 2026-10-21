@@ -6,35 +6,25 @@ extends PanelContainer
 ## nivel del puesto; además almacén local, producción y distancia al núcleo. Las reglas viven en
 ## Economia/Colonos; esto solo las muestra y les pasa los clics.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
 const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 
-const NOMBRES_PUESTO := {
-	"mina": "Mina",
-	"caza_recoleccion": "Caza y recolección",
-	"maderero": "Puesto maderero",
-	"pesca_frutos_mar": "Pesca y frutos del mar",
-	"siderurgica": "Siderúrgica",
-	"refineria_tierras_raras": "Refinería de tierras raras",
-	"aserradero": "Aserradero",
-	"fabrica_bloques": "Fábrica de bloques",
-	"carbonera": "Carbonera",
-	"escuela_tecnica": "Escuela técnica",
-	"escuela_especialistas": "Escuela de especialistas",
-	"universidad": "Universidad",
-	"refineria_petrolera": "Refinería petrolera",
-	"productor_combustible": "Productor de combustible",
-	"central_termoelectrica": "Central termoeléctrica",
-	"estacion_bombeo": "Estación de bombeo",
-	"centro_extraccion": "Centro de extracción",
-	"almacen": "Almacén",
-}
+static var NOMBRES_PUESTO: Dictionary = Strings.NOMBRES_PUESTO
 ## Mensaje para el jugador (el HUD lo envía a las notificaciones).
 signal aviso(texto: String)
 
-const NOMBRES_ROL := {"recolector": "Obreros", "tecnico": "Técnicos", "especialista": "Especialistas", "aprendiz": "Aprendices", "investigador": "Investigadores", "acarreador": "Acarreadores"}
+static var NOMBRES_ROL: Dictionary = {
+	"recolector": Strings.PANEL_PUESTO_ROL_OBREROS,
+	"tecnico": Strings.PANEL_PUESTO_ROL_TECNICOS,
+	"especialista": Strings.PANEL_PUESTO_ROL_ESPECIALISTAS,
+	"aprendiz": Strings.PANEL_PUESTO_ROL_APRENDICES,
+	"investigador": Strings.PANEL_PUESTO_ROL_INVESTIGADORES,
+	"acarreador": Strings.PANEL_PUESTO_ROL_ACARREADORES,
+}
 
 var esquina := Recoleccion.SIN_PUESTO
 
@@ -113,7 +103,7 @@ func _ready() -> void:
 	_icono_puesto.custom_minimum_size = Vector2(20, 20)
 	_icono_puesto.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	fila_tit.add_child(_icono_puesto)
-	_titulo.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	_titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	_titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fila_tit.add_child(_titulo)
 	_icono_nivel.custom_minimum_size = Vector2(16, 16)
@@ -216,7 +206,7 @@ func _ready() -> void:
 	_caja_investigacion.add_child(_caja_controles_inv)
 
 	_btn_pausar_inv = Button.new()
-	_btn_pausar_inv.text = "Pausar"
+	_btn_pausar_inv.text = Strings.PANEL_PUESTO_BTN_PAUSAR
 	_btn_pausar_inv.icon = IconosHUD.icono("btn_pausa")
 	_btn_pausar_inv.expand_icon = true
 	TemaHUD.estilizar_boton(_btn_pausar_inv)
@@ -224,7 +214,7 @@ func _ready() -> void:
 	_caja_controles_inv.add_child(_btn_pausar_inv)
 
 	_btn_cancelar_inv = Button.new()
-	_btn_cancelar_inv.text = "Cancelar"
+	_btn_cancelar_inv.text = Strings.PANEL_PUESTO_BTN_CANCELAR
 	_btn_cancelar_inv.icon = IconosHUD.icono("cruz")
 	_btn_cancelar_inv.expand_icon = true
 	TemaHUD.estilizar_boton(_btn_cancelar_inv)
@@ -233,7 +223,7 @@ func _ready() -> void:
 
 	_dialogo_investigar.title = "Confirmar investigación"
 	_dialogo_investigar.ok_button_text = "Investigar"
-	_dialogo_investigar.cancel_button_text = "Cancelar"
+	_dialogo_investigar.cancel_button_text = Strings.PANEL_PUESTO_BTN_CANCELAR
 	_dialogo_investigar.confirmed.connect(_confirmar_investigacion)
 	TemaHUD.estilizar_dialogo(_dialogo_investigar)
 	_contenido_dialogo_inv = VBoxContainer.new()
@@ -243,8 +233,8 @@ func _ready() -> void:
 
 	_dialogo_cancelar_inv.title = "Confirmar cancelación"
 	_dialogo_cancelar_inv.dialog_text = "¿Cancelar la investigación en curso? Se reembolsará la totalidad de los recursos gastados."
-	_dialogo_cancelar_inv.ok_button_text = "Confirmar"
-	_dialogo_cancelar_inv.cancel_button_text = "Cancelar"
+	_dialogo_cancelar_inv.ok_button_text = Strings.PANEL_EDIFICIO_BTN_CONFIRMAR
+	_dialogo_cancelar_inv.cancel_button_text = Strings.PANEL_PUESTO_BTN_CANCELAR
 	_dialogo_cancelar_inv.confirmed.connect(_confirmar_cancelar_investigacion)
 	TemaHUD.estilizar_dialogo(_dialogo_cancelar_inv)
 	add_child(_dialogo_cancelar_inv)
@@ -261,8 +251,8 @@ func _ready() -> void:
 	caja.add_child(_demoler)
 	_dialogo_demoler.title = "Confirmar demolición"
 	_dialogo_demoler.dialog_text = "¿Demoler este puesto? Comenzará en 5 horas de juego."
-	_dialogo_demoler.ok_button_text = "Confirmar"
-	_dialogo_demoler.cancel_button_text = "Cancelar"
+	_dialogo_demoler.ok_button_text = Strings.PANEL_EDIFICIO_BTN_CONFIRMAR
+	_dialogo_demoler.cancel_button_text = Strings.PANEL_PUESTO_BTN_CANCELAR
 	_dialogo_demoler.confirmed.connect(_confirmar_demoler)
 	TemaHUD.estilizar_dialogo(_dialogo_demoler)
 	add_child(_dialogo_demoler)
@@ -275,7 +265,7 @@ func _construir_widgets_puertos() -> void:
 	_btn_conexiones = Button.new()
 	_btn_conexiones.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	TemaHUD.estilizar_boton(_btn_conexiones)
-	_btn_conexiones.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	_btn_conexiones.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	_btn_conexiones.pressed.connect(func() -> void:
 		_desplegado_conexiones = not _desplegado_conexiones
 		_actualizar()
@@ -410,7 +400,7 @@ func _actualizar() -> void:
 	_icono_nivel.visible = con_niveles
 	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0
 	var origen_escuela: String = Recoleccion.ESCUELAS[puesto["tipo"]]["origen"] if es_escuela else ""
-	var nombre_aprendiz: String = "Técnicos en formación" if origen_escuela == "tecnico" else "Aprendices"
+	var nombre_aprendiz: String = "Técnicos en formación" if origen_escuela == "tecnico" else Strings.PANEL_PUESTO_ROL_APRENDICES
 	_filas["aprendiz"]["nombre"].text = nombre_aprendiz
 	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "investigador"]:
 		var fila: Dictionary = _filas[rol]
@@ -476,7 +466,7 @@ func _actualizar() -> void:
 		var t_pres: int = t["presentes"]
 		var alm: Dictionary = puesto["almacen"]
 		var stock: float = alm.get("combustible", 0.0) + alm.get("crudo", 0.0) + alm.get("carbon", 0.0)
-		var cap_esta: float = minf(float(t_pres), stock) * 20.0
+		var cap_esta: float = minf(float(t_pres), stock) * Ajustes.ENERGIA_POR_LOTE_CENTRAL
 		var res: Dictionary = Economia.balance_energia
 		var cap_total: float = res.get("capacidad", 0.0)
 		var entregada_total: float = res.get("entregada", 0.0)
@@ -484,7 +474,7 @@ func _actualizar() -> void:
 		if cap_total > 1e-9:
 			uso = entregada_total * (cap_esta / cap_total)
 		var comb_actual := "ninguno"
-		for c in ["combustible", "crudo", "carbon"]:
+		for c in Ajustes.ENERGIA_ORDEN_COMBUSTIBLES:
 			if alm.get(c, 0.0) > 1e-9:
 				comb_actual = "%s (%.1f)" % [HUDScript.NOMBRES_RECURSO.get(c, c), alm[c]]
 				break
@@ -541,7 +531,7 @@ func _actualizar() -> void:
 			_caja_botones_tech.visible = false
 			_caja_controles_inv.visible = true
 			_btn_pausar_inv.disabled = false
-			_btn_pausar_inv.text = "Reanudar" if pausada else "Pausar"
+			_btn_pausar_inv.text = Strings.PANEL_PUESTO_BTN_REANUDAR if pausada else Strings.PANEL_PUESTO_BTN_PAUSAR
 			_btn_pausar_inv.icon = IconosHUD.icono("btn_play" if pausada else "btn_pausa")
 			_btn_cancelar_inv.disabled = false
 			_btn_cancelar_inv.icon = IconosHUD.icono("cruz")
@@ -566,13 +556,13 @@ func _actualizar() -> void:
 					var btn: Button = _botones_tech[id_tech]
 					var info_tech: Dictionary = Ciudad.COSTOS_INVESTIGACION[id_tech]
 					if Ciudad.nivel_investigado >= id_tech:
-						btn.text = "✓ %s (Completada)" % info_tech["nombre"]
+						btn.text = Strings.PANEL_PUESTO_TECH_COMPLETADA % info_tech["nombre"]
 						btn.disabled = true
 					elif id_tech > 2 and Ciudad.nivel_investigado < id_tech - 1:
 						btn.text = "🔒 %s (Requiere nivel %d)" % [info_tech["nombre"], id_tech - 1]
 						btn.disabled = true
 					elif Economia.investigacion_en_curso_en_otra_universidad(esquina, id_tech):
-						btn.text = "⏳ %s (En curso en otra universidad)" % info_tech["nombre"]
+						btn.text = "⏳ %s (%s)" % [info_tech["nombre"], Strings.PANEL_PUESTO_TECH_YA_EN_CURSO]
 						btn.disabled = true
 					else:
 						btn.text = "Investigar: %s" % info_tech["nombre"]
@@ -651,7 +641,7 @@ func _actualizar() -> void:
 	_distancia.text = "Distancia al núcleo: %s" % _distancia_al_nucleo()
 	var id_puesto: int = Obras.id_en_columna(esquina)
 	var en_demo: bool = Obras.esta_marcado(id_puesto) or Obras.esta_programada(id_puesto)
-	_demoler.text = "Cancelar demolición" if en_demo else "Demoler"
+	_demoler.text = Strings.PANEL_PUESTO_BTN_CANCELAR_DEMOLICION if en_demo else "Demoler"
 
 
 static func texto_estado_energia(conectado: bool, demanda: float, factor: float, capacidad_red: float) -> String:
@@ -675,9 +665,9 @@ static func _simbolo_estado(estado: String) -> String:
 
 static func _texto_estado(estado: String) -> String:
 	match estado:
-		"conectado": return "Conectado"
+		"conectado": return Strings.PANEL_PUESTO_PUERTO_ESTADO_CONECTADO
 		"derrame": return "Derrame"
-		_: return "Desconectado"
+		_: return Strings.PANEL_PUESTO_PUERTO_ESTADO_DESCONECTADO
 
 
 
@@ -784,7 +774,7 @@ func _puertos_del_puesto() -> Array[Dictionary]:
 	var ancho: int = puesto.get("ancho", 0)
 	var alto: int = puesto.get("alto", 0)
 	var suelo: int = puesto.get("suelo", 0)
-	var y_puerto: int = suelo + 4
+	var y_puerto: int = suelo + Ajustes.CANALIZACIONES_ALTURA_DUCTO_RELATIVA
 
 	var celdas_puerto_encontradas: Array[Dictionary] = []
 	if m != null and m.has_method("obtener_tipo"):

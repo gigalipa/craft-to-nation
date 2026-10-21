@@ -1,35 +1,37 @@
 extends RefCounted
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 ## Estilo común del HUD (verde oscuro con marco dorado, ver
 ## arte/conceptos-hud/). Solo estáticos: cada widget lo usa al construirse.
 
-const VERDE := Color(0.05, 0.13, 0.10, 0.92)
-const VERDE_CLARO := Color(0.13, 0.30, 0.21, 0.95)
-const DORADO := Color(0.78, 0.62, 0.25)
-const TEXTO := Color(0.95, 0.92, 0.82)
-const VALIDO := Color(0.45, 0.90, 0.45)
-const INVALIDO := Color(1.0, 0.35, 0.35)
+static var VERDE: Color = Ajustes.COLOR_HUD_VERDE
+static var VERDE_CLARO: Color = Ajustes.COLOR_HUD_VERDE_CLARO
+static var DORADO: Color = Ajustes.COLOR_HUD_DORADO
+static var TEXTO: Color = Ajustes.COLOR_HUD_TEXTO
+static var VALIDO: Color = Ajustes.COLOR_HUD_VALIDO
+static var INVALIDO: Color = Ajustes.COLOR_HUD_INVALIDO
 
 ## Margen (px) de los textos de esquina de un botón o casilla (acceso directo y disponibilidad, ver
 ## poner_en_esquina_inferior()): MARGEN_X va del borde lateral al primer/último carácter del texto,
 ## y MARGEN_Y, del borde inferior al pie del texto. Ajustar solo estos dos valores.
-const MARGEN_X := 5.0
-const MARGEN_Y := 2.0
+static var MARGEN_X: float = Ajustes.HUD_MARGEN_X
+static var MARGEN_Y: float = Ajustes.HUD_MARGEN_Y
 
 ## Margen interno del estilo de caja(): un PanelContainer lo reserva alrededor de sus hijos.
-const MARGEN_CONTENIDO := 8
+static var MARGEN_CONTENIDO: int = Ajustes.HUD_MARGEN_CONTENIDO
 
 
-const MARGEN_BOTON_LATERAL := 12
-const MARGEN_BOTON_VERTICAL := 4
+static var MARGEN_BOTON_LATERAL: int = Ajustes.HUD_MARGEN_BOTON_LATERAL
+static var MARGEN_BOTON_VERTICAL: int = Ajustes.HUD_MARGEN_BOTON_VERTICAL
 
 
 static func caja(fondo: Color = VERDE, borde: Color = DORADO) -> StyleBoxFlat:
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = fondo
 	estilo.border_color = borde
-	estilo.set_border_width_all(2)
-	estilo.set_corner_radius_all(4)
+	estilo.set_border_width_all(Ajustes.HUD_ANCHO_BORDE_PANEL)
+	estilo.set_corner_radius_all(Ajustes.HUD_RADIO_ESQUINA_BOTON)
 	estilo.set_content_margin_all(MARGEN_CONTENIDO)
 	return estilo
 
@@ -38,8 +40,8 @@ static func caja_boton(fondo: Color = VERDE, borde: Color = DORADO) -> StyleBoxF
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = fondo
 	estilo.border_color = borde
-	estilo.set_border_width_all(2)
-	estilo.set_corner_radius_all(4)
+	estilo.set_border_width_all(Ajustes.HUD_ANCHO_BORDE_PANEL)
+	estilo.set_corner_radius_all(Ajustes.HUD_RADIO_ESQUINA_BOTON)
 	estilo.content_margin_left = MARGEN_BOTON_LATERAL
 	estilo.content_margin_right = MARGEN_BOTON_LATERAL
 	estilo.content_margin_top = MARGEN_BOTON_VERTICAL
@@ -51,8 +53,8 @@ static func caja_boton_compacto(fondo: Color = VERDE, borde: Color = DORADO, mar
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = fondo
 	estilo.border_color = borde
-	estilo.set_border_width_all(2)
-	estilo.set_corner_radius_all(4)
+	estilo.set_border_width_all(Ajustes.HUD_ANCHO_BORDE_PANEL)
+	estilo.set_corner_radius_all(Ajustes.HUD_RADIO_ESQUINA_BOTON)
 	estilo.set_content_margin_all(margen)
 	return estilo
 
@@ -75,26 +77,26 @@ static func etiqueta(texto: String = "") -> Label:
 static func estilizar_boton(boton: Button) -> void:
 	boton.add_theme_stylebox_override("normal", caja_boton())
 	boton.add_theme_stylebox_override("hover", caja_boton(VERDE_CLARO))
-	boton.add_theme_stylebox_override("pressed", caja_boton(VERDE_CLARO, Color(1.0, 0.8, 0.3)))
+	boton.add_theme_stylebox_override("pressed", caja_boton(VERDE_CLARO, Ajustes.COLOR_HUD_HOTBAR_SELECCION_BORDE))
 	boton.add_theme_stylebox_override("disabled", caja_boton(Color(0.08, 0.12, 0.10, 0.6), Color(0.4, 0.35, 0.25, 0.5)))
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	boton.add_theme_color_override("font_color", TEXTO)
 	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.96, 0.88))
-	boton.add_theme_color_override("font_pressed_color", Color(1.0, 0.85, 0.4))
-	boton.add_theme_color_override("font_disabled_color", Color(0.6, 0.6, 0.6, 0.5))
+	boton.add_theme_color_override("font_pressed_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	boton.add_theme_color_override("font_disabled_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
 	boton.focus_mode = Control.FOCUS_NONE
 
 
 static func estilizar_boton_icono(boton: Button) -> void:
 	boton.add_theme_stylebox_override("normal", caja_boton_compacto())
 	boton.add_theme_stylebox_override("hover", caja_boton_compacto(VERDE_CLARO))
-	boton.add_theme_stylebox_override("pressed", caja_boton_compacto(VERDE_CLARO, Color(1.0, 0.8, 0.3)))
+	boton.add_theme_stylebox_override("pressed", caja_boton_compacto(VERDE_CLARO, Ajustes.COLOR_HUD_HOTBAR_SELECCION_BORDE))
 	boton.add_theme_stylebox_override("disabled", caja_boton_compacto(Color(0.08, 0.12, 0.10, 0.6), Color(0.4, 0.35, 0.25, 0.5)))
 	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	boton.add_theme_color_override("font_color", TEXTO)
 	boton.add_theme_color_override("font_hover_color", Color(1.0, 0.96, 0.88))
-	boton.add_theme_color_override("font_pressed_color", Color(1.0, 0.85, 0.4))
-	boton.add_theme_color_override("font_disabled_color", Color(0.6, 0.6, 0.6, 0.5))
+	boton.add_theme_color_override("font_pressed_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	boton.add_theme_color_override("font_disabled_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
 	boton.focus_mode = Control.FOCUS_NONE
 
 
@@ -108,9 +110,9 @@ static func estilizar_dialogo(dialogo: AcceptDialog) -> void:
 	estilo_borde.expand_margin_top = 30.0
 	dialogo.add_theme_stylebox_override("embedded_border", estilo_borde)
 	dialogo.add_theme_stylebox_override("embedded_unfocused_border", estilo_borde)
-	dialogo.add_theme_color_override("title_color", Color(1.0, 0.85, 0.4))
+	dialogo.add_theme_color_override("title_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 	dialogo.add_theme_color_override("close_color", DORADO)
-	dialogo.add_theme_color_override("close_pressed_color", Color(1.0, 0.85, 0.4))
+	dialogo.add_theme_color_override("close_pressed_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
 
 	var lbl := dialogo.get_label()
 	if lbl != null:

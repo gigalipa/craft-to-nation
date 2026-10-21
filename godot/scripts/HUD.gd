@@ -6,6 +6,12 @@ extends CanvasLayer
 ## expone la API que los empuja. Conserva la barra de progreso, el oxígeno, la
 ## ficha de materiales y el panel de puesto.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
+const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
+const PanelCanalizacionScript = preload("res://scripts/PanelCanalizacion.gd")
+
 ## Pedidos de la barra de modos (clic): CamaraCenital los traduce a sus
 ## funciones _alternar_modo_*.
 signal modo_pedido(modo: String)
@@ -19,13 +25,9 @@ signal dato_pedido(cual: String)
 signal edificio_pedido(esquina: Vector2i)
 
 const COLOR_POSITIVO := Color.WHITE
-const COLOR_NEGATIVO := Color(1.0, 0.3, 0.3)
+static var COLOR_NEGATIVO: Color = Ajustes.COLOR_HUD_INVALIDO
 ## Tasas por debajo de esta (unidades por trabajador y hora) no se listan en la tarjeta de la mina.
 const UMBRAL_TASA_TARJETA := 0.3
-
-const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
-const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
-const PanelCanalizacionScript = preload("res://scripts/PanelCanalizacion.gd")
 const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
 const PanelContextualScript = preload("res://scripts/PanelContextual.gd")
 const BarraModosScript = preload("res://scripts/BarraModos.gd")
@@ -41,23 +43,7 @@ const PanelLamparaScript = preload("res://scripts/PanelLampara.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
 ## Nombres de todos los recursos del almacén (los usa PanelPuesto).
-const NOMBRES_RECURSO := {
-	"comida": "Comida",
-	"madera": "Madera",
-	"hierro": "Hierro",
-	"tierra": "Tierra",
-	"piedra": "Piedra",
-	"cobre": "Cobre",
-	"carbon": "Carbón",
-	"tierras_raras": "Tierras raras",
-	"acero": "Acero",
-	"mineral_refinado": "Mineral refinado",
-	"tablas": "Tablas",
-	"bloques_piedra": "Bloques de piedra",
-	"agua": "Agua",
-	"crudo": "Crudo",
-	"combustible": "Combustible",
-}
+static var NOMBRES_RECURSO: Dictionary = Strings.NOMBRES_RECURSO_ALMACEN_INICIAL
 
 const NOMBRES_TASA := {
 	"caza": "caza",
@@ -332,7 +318,7 @@ func mostrar_contexto_puesto(tipo: String, valida: bool, tasas: Dictionary, cost
 		prevision += "\nProfundidad del pozo: %d bloques" % extra_datos["profundidad"]
 	var dist_linea := (distancia_nucleo + "\n") if distancia_nucleo != "" else ""
 	var extra := "%sPersonal máximo: %d%s\n%s" % [dist_linea, Recoleccion.cupo_de(tipo), almacenamiento, prevision]
-	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, ["[Ctrl+scroll] ROTAR", "(clic izq.) COLOCAR"], valida, extra, bloques, motivo_invalido)
+	_contexto.mostrar(PanelPuestoScript.NOMBRES_PUESTO.get(tipo, tipo), costo, [Strings.CAMARA_ATAJO_ROTAR, Strings.CAMARA_ATAJO_COLOCAR], valida, extra, bloques, motivo_invalido)
 
 
 ## Recolección prevista de una mina por nivel: la franja de cada nivel por separado (sin sumar los anteriores),
@@ -412,7 +398,7 @@ func actualizar_oxigeno(fraccion: float, sumergido: bool = true) -> void:
 	var txt := texto_oxigeno(pct, sumergido)
 	if _oxigeno_texto != null:
 		_oxigeno_texto.text = txt
-		_oxigeno_texto.add_theme_color_override("font_color", TemaHUD.INVALIDO if fraccion < 0.3 else TemaHUD.TEXTO)
+		_oxigeno_texto.add_theme_color_override("font_color", TemaHUD.INVALIDO if fraccion < Ajustes.HUD_UMBRAL_OXIGENO_BAJO else TemaHUD.TEXTO)
 	if _panel_oxigeno != null:
 		_panel_oxigeno.visible = true
 	if oxigeno_label != null:

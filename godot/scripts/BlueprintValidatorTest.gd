@@ -1,7 +1,6 @@
 extends Node
 
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
-const Player = preload("res://scripts/Player.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
 
 ## Equivalente GDScript de ejecutar_pruebas() en PoC_2 (tests 1-6), más

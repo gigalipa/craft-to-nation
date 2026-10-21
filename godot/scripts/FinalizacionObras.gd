@@ -1,12 +1,15 @@
 extends RefCounted
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
+
 ## Lógica de fin de obra y de demolición compartida por Player (jugador) y Obras
 ## (colonos): registrar lo construido, retirar lo demolido y medir cuánto dura un
 ## paso. Solo estáticos y sin estado; los mensajes se devuelven para que cada
 ## llamador los muestre a su manera (Player al HUD, Obras por su señal "aviso").
 
 ## Intervalo (s) entre pasos de colocar/surtir/deconstruir: el mismo para el jugador y los colonos.
-const INTERVALO_PASO := 0.20
+static var INTERVALO_PASO: float = Ajustes.FINALIZACION_OBRAS_INTERVALO_PASO
 
 
 ## Se llama cuando VoxelWorld.surtir_construccion() indica que una construcción
@@ -42,11 +45,11 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 		metadata.erase("puesto_nuevo")  # a partir de aquí, un reconstruir cae en la rama "puesto" (reactivar), no en esta (evita re-registrar y huérfanos en _puesto_de — revisión de código, 2026-09-29).
 		var PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 		var nombre_puesto: String = PanelPuestoScript.NOMBRES_PUESTO.get(info["tipo"], info["tipo"])
-		return "Edificio construido: %s." % nombre_puesto
+		return Strings.FINALIZACION_AVISO_EDIFICIO_CONSTRUIDO % nombre_puesto
 	if metadata.has("puesto"):
 		Economia.reactivar_puesto(metadata["puesto"])
 		print("Puesto reactivado en ", metadata["puesto"], ".")
-		return "Puesto reactivado."
+		return Strings.FINALIZACION_AVISO_PUESTO_REACTIVADO
 	var blueprint: Dictionary = metadata["blueprint"]
 
 	# El primer edificio declarado es el núcleo urbano: no es habitable, así que
@@ -68,7 +71,7 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 			Zonificacion.id_nucleo = id_edificio
 			print("Núcleo urbano remodelado y redeclarado. ID: ", id_edificio)
 		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
-		return "Núcleo urbano declarado."
+		return Strings.FINALIZACION_AVISO_NUCLEO_DECLARADO
 
 	var camas_por_piso: Array[int] = []
 	var total_camas := 0
@@ -84,8 +87,8 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 	print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
-	var nombre_edificio: String = str(blueprint.get("nombre", "Edificio residencial"))
-	return "Edificio construido: %s." % nombre_edificio
+	var nombre_edificio: String = str(blueprint.get("nombre", Strings.FINALIZACION_NOMBRE_EDIFICIO_RESIDENCIAL))
+	return Strings.FINALIZACION_AVISO_EDIFICIO_CONSTRUIDO % nombre_edificio
 
 
 ## Efectos de revertir una celda de un edificio ("resultado" es lo que devuelve
@@ -123,7 +126,7 @@ static func retirar_edificio(mundo: Object, id: int) -> void:
 ## libre, reubica residentes en Ciudad/Colonos, retira influencia y cancela obras.
 static func iniciar_remodelacion(mundo: Object, id: int) -> Dictionary:
 	if mundo == null or not mundo.edificio_a_celdas.has(id):
-		return {"exito": false, "motivo": "El edificio no existe."}
+		return {"exito": false, "motivo": Strings.FINALIZACION_ERR_EDIFICIO_NO_EXISTE}
 	var res_ciudad: Dictionary = Ciudad.iniciar_remodelacion_residencial(id)
 	if not res_ciudad.get("exito", false):
 		return res_ciudad
@@ -134,10 +137,10 @@ static func iniciar_remodelacion(mundo: Object, id: int) -> Dictionary:
 		Colonos.reubicar_por_remodelacion(id)
 	var es_nucleo: bool = res_ciudad.get("es_nucleo", false)
 	var sin_techo: int = res_ciudad.get("sin_techo_generados", 0)
-	var nombre: String = "el núcleo urbano" if es_nucleo else ("el edificio %d" % id)
-	var mensaje: String = "Remodelación iniciada para %s: ahora en edición libre." % nombre
+	var nombre: String = Strings.FINALIZACION_NOMBRE_EL_NUCLEO if es_nucleo else (Strings.FINALIZACION_NOMBRE_EL_EDIFICIO_ID % id)
+	var mensaje: String = Strings.FINALIZACION_AVISO_REMODELACION_INICIADA % nombre
 	if sin_techo > 0:
-		mensaje += " (%d colono(s) sin techo)." % sin_techo
+		mensaje += Strings.FINALIZACION_AVISO_REMODELACION_SIN_TECHO % sin_techo
 	return {
 		"exito": true,
 		"es_nucleo": es_nucleo,

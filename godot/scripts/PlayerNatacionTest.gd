@@ -8,7 +8,6 @@ extends Node
 ## las 9 pruebas y no debe lanzar ningún error de assert().
 
 const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
-const Player = preload("res://scripts/Player.gd")
 
 
 ## Mundo falso: mapea celdas de grilla a un tipo de bloque ("agua" por

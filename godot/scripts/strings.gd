@@ -339,7 +339,7 @@ static var PANEL_PUESTO_BTN_REANUDAR_OBRA: String = "Reanudar obra"
 static var PANEL_PUESTO_COMBUSTIBLE_CARBON: String = "Combustible: Carbón (Acarreo)"
 static var PANEL_PUESTO_COMBUSTIBLE_LIQUIDO: String = "Combustible: Crudo / Combustible (Tubería)"
 static var PANEL_PUESTO_BTN_COMBUSTIBLE_TOOLTIP: String = "Clic para alternar tipo de combustible de la central"
-static var PANEL_PUESTO_RESERVA_CENTRAL_FORMATO: String = "Reserva central: %d"
+static var PANEL_PUESTO_RESERVA_CENTRAL_FORMATO: String = "Reserva central: %s"
 static var PANEL_PUESTO_BTN_RESERVA_TOOLTIP: String = "Mínimo de insumo que los acarreadores dejan sin tocar en el almacén central (clic para cambiar)"
 static var PANEL_PUESTO_OBRA_CONSTRUCCION: String = "En construcción (%d%%) · Obreros: %d"
 static var PANEL_PUESTO_OBRA_DEMOLICION: String = "En demolición (%d%%) · Obreros: %d"
@@ -462,6 +462,9 @@ static var PANEL_EDIFICIO_BTN_COLONIZABLE_TOOLTIP: String = "Alterna si los nuev
 static var PANEL_EDIFICIO_SECCION_ESTADO_OBRA: String = "ESTADO Y OBRA"
 static var PANEL_EDIFICIO_PRIORIDAD_CONSTRUCCION: String = "Prioridad de construcción"
 static var PANEL_EDIFICIO_SECCION_GESTION_CIVICA: String = "GESTIÓN CÍVICA"
+static var PANEL_EDIFICIO_RACIONAMIENTO_INACTIVO: String = "Racionamiento: Inactivo"
+static var PANEL_EDIFICIO_RACIONAMIENTO_ACTIVO: String = "Racionamiento: Activo (-35% comida, moral máx. 35)"
+static var PANEL_EDIFICIO_RACIONAMIENTO_TOOLTIP: String = "Reduce el consumo de comida un 35% a costa de fijar el límite superior de moral en 35."
 static var PANEL_EDIFICIO_BTN_TRASLADAR_NUCLEO: String = "Convertir en nuevo Núcleo Urbano"
 static var PANEL_EDIFICIO_BTN_TRASLADAR_NUCLEO_TOOLTIP: String:
 	get:
@@ -621,9 +624,24 @@ static var VENTANA_MORAL_BTN_BOOST_ACTIVAR: String:
 			mult_boost,
 			int(Ajustes.CIUDAD_HORAS_POR_MES / 24.0)
 		]
+static var VENTANA_MORAL_BTN_BOOST_BLOQUEADO_EXODO: String = "Boost no disponible: Éxodo migratorio activo"
 static var VENTANA_MORAL_MIGRACION_EXODO_CEREBROS: String = "Migración: ⚠ Éxodo de cerebros (%d/mes)"
 static var VENTANA_MORAL_MIGRACION_CON_CAMAS: String = "Migración: Inmigración con camas (%d/mes)"
 static var VENTANA_MORAL_MIGRACION_MASIVA: String = "Migración: Inmigración masiva (%d/mes)"
+static var VENTANA_MORAL_MIGRACION_BOOST_FORMATO: String = "Migración: %s (+%s/mes · Base %s ×%s)"
+static var VENTANA_MORAL_BOOST_DETALLE_ACTIVO: String = "⚡ Boost activo: +%s/mes (Base %s ×%s) · %d d restantes"
+static var VENTANA_MORAL_BOOST_DETALLE_BLOQUEADO: String = "Boost bloqueado: la moral actual produce emigración"
+static var VENTANA_MORAL_BOOST_DETALLE_DISPONIBLE: String:
+	get:
+		var mult_boost: String = str(int(Ajustes.CIUDAD_MULTIPLICADOR_BOOST_INMIGRACION)) if is_equal_approx(Ajustes.CIUDAD_MULTIPLICADOR_BOOST_INMIGRACION, roundf(Ajustes.CIUDAD_MULTIPLICADOR_BOOST_INMIGRACION)) else str(Ajustes.CIUDAD_MULTIPLICADOR_BOOST_INMIGRACION)
+		return "Atractivo migratorio disponible (×%s por %d días)" % [
+			mult_boost,
+			int(Ajustes.CIUDAD_HORAS_POR_MES / 24.0)
+		]
+static func formatear_numero(valor: float) -> String:
+	if is_equal_approx(valor, roundf(valor)):
+		return str(int(valor))
+	return "%.1f" % valor
 static var VENTANA_MORAL_TENDENCIA_DIA: String = "Tendencia: %+.2f / día"
 static var VENTANA_MORAL_PRODUCTIVIDAD_X: String = "Productividad laboral: %.2fx"
 static var VENTANA_MORAL_FACTOR_INERCIA_FORMATO: String:
@@ -696,6 +714,7 @@ static var LAMPARA_NOMBRES_MODO: Dictionary = {
 
 static var NOTIF_NUEVO_COLONO: String = "Nuevo colono en la ciudad."
 static var NOTIF_TECNICOS_FORMADOS: String = "Se formaron %d técnicos."
+static var NOTIF_RECURSO_MENOS_5_PCT: String = "Queda menos del 5%% de %s."
 
 static var PLAYER_NOTIF_STOCK_DEBUG: String:
 	get:
@@ -704,6 +723,7 @@ static var PLAYER_NOTIF_MADERA_RECOGIDA: String = "+%d madera"
 static var PLAYER_NOTIF_MADERA_ALMACEN_LLENO: String = "+%d madera (almacén lleno, se perdió %d)"
 static var PLAYER_NOTIF_BAUL_NO_PUESTO: String = "Este baúl no pertenece a un puesto de trabajo con depósito activo."
 static var PLAYER_NOTIF_ARBOL_SIN_FRUTOS: String = "Este árbol no tiene frutos disponibles todavía."
+static var PLAYER_NOTIF_FRUTOS_RECOLECTADOS: String = "Has recolectado %s de comida."
 static var PLAYER_MODO_DECONSTRUIR_TITULO: String = "Deconstruir"
 static var PLAYER_MODO_DECONSTRUIR_INSTRUCCIONES: String = "(clic izq.) DECONSTRUIR\n(clic der.) MARCAR PARA DEMOLICIÓN\n[G] Salir del modo deconstrucción"
 static var PLAYER_MODO_VIAS_TITULO: String = "Vías"

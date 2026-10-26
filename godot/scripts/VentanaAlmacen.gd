@@ -98,6 +98,15 @@ func _actualizar() -> void:
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if recurso.tasa_neta_promedio < 0.0:
 			etiqueta.add_theme_color_override("font_color", TemaHUD.INVALIDO)
+		if clave == "comida" and "sub_almacen_comida" in Ciudad:
+			var partes_c: Array[String] = []
+			for sub_cat in Ajustes.CIUDAD_ORDEN_CONSUMO_COMIDA:
+				var cant_sc: float = Ciudad.sub_almacen_comida.get(sub_cat, 0.0)
+				if cant_sc > 0.0:
+					partes_c.append("%s: %.0f" % [sub_cat.capitalize(), cant_sc])
+			if not partes_c.is_empty():
+				etiqueta.mouse_filter = Control.MOUSE_FILTER_PASS
+				etiqueta.tooltip_text = "Reservas por fuente:\n  " + "\n  ".join(partes_c)
 		fila_cont.add_child(etiqueta)
 		_caja.add_child(fila_cont)
 

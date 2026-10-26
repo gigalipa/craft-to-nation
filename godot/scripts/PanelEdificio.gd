@@ -38,6 +38,7 @@ var _obreros := TemaHUD.etiqueta()
 var _materiales := TemaHUD.etiqueta()
 var _caja_faltantes := VBoxContainer.new()
 var _btn_boost_inmigracion := Button.new()
+var _btn_racionamiento := Button.new()
 var _toggle_colonizable := Button.new()
 var _remodelar := Button.new()
 var _pausar := Button.new()
@@ -116,6 +117,15 @@ func _ready() -> void:
 	TemaHUD.estilizar_boton(_btn_boost_inmigracion)
 	_btn_boost_inmigracion.pressed.connect(_on_boost_inmigracion)
 	caja.add_child(_btn_boost_inmigracion)
+
+	_btn_racionamiento.icon = IconosHUD.icono("comida")
+	_btn_racionamiento.expand_icon = true
+	TemaHUD.estilizar_boton(_btn_racionamiento)
+	_btn_racionamiento.pressed.connect(func() -> void:
+		if ciudad != null and ciudad.has_method("alternar_decreto_racionamiento"):
+			ciudad.alternar_decreto_racionamiento()
+			_actualizar())
+	caja.add_child(_btn_racionamiento)
 	for boton in [_toggle_colonizable, _remodelar, _pausar, _prioridad, _demoler, _asignar_nucleo]:
 		boton.expand_icon = true
 		TemaHUD.estilizar_boton(boton)
@@ -447,11 +457,22 @@ func _actualizar() -> void:
 			var d_rest: int = ciudad.dias_boost_inmigracion_restantes()
 			_btn_boost_inmigracion.text = Strings.VENTANA_MORAL_BTN_BOOST_ACTIVO % d_rest
 			_btn_boost_inmigracion.disabled = true
+		elif ciudad != null and not ciudad.puede_activar_boost_inmigracion():
+			_btn_boost_inmigracion.text = Strings.VENTANA_MORAL_BTN_BOOST_BLOQUEADO_EXODO
+			_btn_boost_inmigracion.disabled = true
 		else:
 			_btn_boost_inmigracion.text = Strings.VENTANA_MORAL_BTN_BOOST_ACTIVAR
 			_btn_boost_inmigracion.disabled = false
+
+		_btn_racionamiento.visible = true
+		if ciudad != null and ciudad.get("decreto_racionamiento_activo"):
+			_btn_racionamiento.text = Strings.PANEL_EDIFICIO_RACIONAMIENTO_ACTIVO
+		else:
+			_btn_racionamiento.text = Strings.PANEL_EDIFICIO_RACIONAMIENTO_INACTIVO
+		_btn_racionamiento.tooltip_text = Strings.PANEL_EDIFICIO_RACIONAMIENTO_TOOLTIP
 	else:
 		_btn_boost_inmigracion.visible = false
+		_btn_racionamiento.visible = false
 
 	_pausar.visible = en_obra
 	_pausar.text = Strings.PANEL_PUESTO_BTN_REANUDAR if r["pausada"] else ("Pausar demolición" if estado == "demolicion" else "Pausar construcción")

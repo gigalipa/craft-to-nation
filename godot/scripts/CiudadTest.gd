@@ -822,5 +822,22 @@ func ejecutar_pruebas() -> void:
 	var res_desplegado = ciu35.simular_tick(0.0)
 	assert(is_equal_approx(res_desplegado["gasto_comida"], 8.0))
 
+	print("\n=== TEST 36: Decreto Cívico de Racionamiento Estricto ===")
+	var ciu36: Node = CiudadScript.new()
+	ciu36.migracion_activa = false
+	ciu36.registrar_edificio_residencial(1, [2, 2])
+	ciu36.demografia["obrero"] = 10  # 10 * 4.0 = 40.0 comida base
+	ciu36.moral = 80.0
+	ciu36.almacen["comida"].cantidad = 5000.0
+
+	ciu36.alternar_decreto_racionamiento()
+	assert(ciu36.decreto_racionamiento_activo, "decreto debe estar activo")
+
+	var res36 = ciu36.simular_tick(0.0)
+	# Reducción del 35%: 40.0 * (1.0 - 0.35) = 26.0
+	assert(is_equal_approx(res36["gasto_comida"], 26.0), "consumo debe reducirse un 35%")
+	# Review Focus 4: Moral limitada estrictamente a 35.0 máximo
+	assert(ciu36.moral <= 35.0, "moral bajo racionamiento no puede exceder 35.0")
+
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

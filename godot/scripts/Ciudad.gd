@@ -230,6 +230,7 @@ var horas_juego := 0
 var migracion_activa := true
 var _migrantes_acumulados := 0.0
 var horas_boost_inmigracion := 0
+var decreto_racionamiento_activo: bool = false
 ## Cantidad de cada recurso al cierre del último simular_tick(); base de
 ## Recurso.tasa_neta (ver simular_tick()).
 var _cantidad_al_cierre: Dictionary = {}
@@ -602,6 +603,11 @@ func tasa_migracion_mensual_efectiva() -> float:
 	if base > 0.0 and horas_boost_inmigracion > 0:
 		return base * MULTIPLICADOR_BOOST_INMIGRACION
 	return base
+
+
+func alternar_decreto_racionamiento() -> bool:
+	decreto_racionamiento_activo = not decreto_racionamiento_activo
+	return decreto_racionamiento_activo
 
 
 func actualizar_fuentes_comida_desde_economia() -> void:
@@ -1109,6 +1115,9 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 		gasto_total *= 1.10
 		periodo_elecciones_restante -= 1
 
+	if decreto_racionamiento_activo:
+		gasto_total *= (1.0 - Ajustes.RACIONAMIENTO_REDUCCION_CONSUMO)
+
 	var exito_comida: bool = _descontar_comida_estratificada(gasto_total)
 
 	var bajas_inanicion := 0
@@ -1222,6 +1231,8 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 
 	tasa_cambio_moral = delta_inercia + delta_abundancia + delta_escasez + delta_dieta + delta_sin_techo + delta_peligro + delta_empleo
 	moral = clampf(moral + tasa_cambio_moral / 24.0, 0.0, 100.0)
+	if decreto_racionamiento_activo:
+		moral = minf(moral, Ajustes.RACIONAMIENTO_TECHO_MORAL)
 
 	var migrantes: int = _migrar(not exito_comida)
 

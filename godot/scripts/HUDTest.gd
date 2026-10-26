@@ -15,6 +15,7 @@ const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
+const Strings = preload("res://scripts/strings.gd")
 
 
 ## Recurso falso: BarraSuperior solo lee estos cuatro campos (duck typing).
@@ -121,7 +122,9 @@ func ejecutar_pruebas() -> void:
 	probar_panel_extractores_y_refinerias()
 	probar_panel_canalizacion()
 	probar_panel_edificio()
+	probar_panel_edificio_racionamiento()
 	probar_marcas_demolicion()
+	probar_zona_overlay_reactividad_terreno()
 
 
 func probar_barra_superior_calculos() -> void:
@@ -248,9 +251,11 @@ func probar_ventanas_datos() -> void:
 
 	var ventana_almacen: PanelContainer = VentanaAlmacenScript.new()
 	add_child(ventana_almacen)
+	Ciudad.sub_almacen_comida["sembradios"] = 150.0
 	ventana_almacen.abrir()
 	assert(ventana_almacen.visible and ventana_almacen.abierta)
 	assert(ventana_almacen._caja.get_child_count() > 0)
+	var etiqueta_comida: Label = null
 	var nombres_recursos: Array = []
 	for hijo in ventana_almacen._caja.get_children():
 		if hijo is Label:
@@ -259,7 +264,10 @@ func probar_ventanas_datos() -> void:
 			for nieto in hijo.get_children():
 				if nieto is Label:
 					nombres_recursos.append((nieto as Label).text.split(":")[0])
+					if (nieto as Label).text.begins_with("Comida:"):
+						etiqueta_comida = nieto as Label
 					break
+	assert(etiqueta_comida != null and etiqueta_comida.tooltip_text.contains("Sembradios: 150"), "tooltip de comida desglosado")
 	var nombres_ordenados := nombres_recursos.duplicate()
 	nombres_ordenados.sort_custom(func(a: String, b: String) -> bool: return a.nocasecmp_to(b) < 0)
 	assert(nombres_recursos == nombres_ordenados, "almacen debe estar ordenado alfabeticamente: %s vs %s" % [nombres_recursos, nombres_ordenados])
@@ -600,6 +608,21 @@ func probar_ventana_moral() -> void:
 	ventana.actualizar()
 	assert("15.0%" in ventana._lbl_moral_val.text and ventana._rect_moral.texture != null)
 	assert("Éxodo" in ventana._lbl_migracion.text)
+	assert(ventana._btn_boost.disabled, "Boton boost debe estar deshabilitado con éxodo")
+	assert("bloqueado" in ventana._lbl_boost_info.text.to_lower() or "negativa" in ventana._lbl_boost_info.text.to_lower())
+
+	# Boost disponible con moral positiva
+	Ciudad.moral = 60.0
+	Ciudad.horas_boost_inmigracion = 0
+	ventana.actualizar()
+	assert(not ventana._btn_boost.disabled, "Boton boost debe estar habilitado con moral positiva")
+	ventana._btn_boost.pressed.emit()
+	assert(Ciudad.horas_boost_inmigracion > 0, "Al presionar el boton se activa el boost")
+	ventana.actualizar()
+	assert(ventana._btn_boost.disabled, "Boton boost debe deshabilitarse tras activación")
+	assert("Base" in ventana._lbl_migracion.text, "Migración debe mostrar desglose con boost")
+	assert("activo" in ventana._lbl_boost_info.text.to_lower())
+	Ciudad.horas_boost_inmigracion = 0
 
 	# 4. Validar que teclas M / Esc no cierran VentanaMoral (solo boton X)
 	var tecla_m := InputEventKey.new()
@@ -1219,6 +1242,14 @@ func probar_panel_edificio() -> void:
 	assert(not panel._asignar_nucleo.visible, "núcleo sin botón asignar núcleo")
 	assert(panel._remodelar.visible, "núcleo permite remodelar")
 	assert(not panel._colonizable.visible, "núcleo no tiene colonizabilidad de camas")
+	assert(panel._btn_racionamiento.visible, "racionamiento visible en núcleo completo")
+	assert(panel._btn_racionamiento.text == Strings.PANEL_EDIFICIO_RACIONAMIENTO_INACTIVO)
+	panel._btn_racionamiento.pressed.emit()
+	assert(ciudad.decreto_racionamiento_activo, "alterna racionamiento a activo")
+	assert(panel._btn_racionamiento.text == Strings.PANEL_EDIFICIO_RACIONAMIENTO_ACTIVO)
+	panel._btn_racionamiento.pressed.emit()
+	assert(not ciudad.decreto_racionamiento_activo, "alterna racionamiento de vuelta a inactivo")
+	assert(panel._btn_racionamiento.text == Strings.PANEL_EDIFICIO_RACIONAMIENTO_INACTIVO)
 
 	obras.es_nucleo = false
 	obras.resumen = {}
@@ -1226,6 +1257,15 @@ func probar_panel_edificio() -> void:
 	assert(not panel.visible, "se cierra solo si el edificio desaparece")
 	panel.queue_free()
 	ciudad.free()
+
+
+func probar_panel_edificio_racionamiento() -> void:
+	print("\n=== TEST: Boton de Racionamiento en PanelEdificio del Núcleo ===")
+	var PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
+	var panel_ed := PanelEdificioScript.new()
+	add_child(panel_ed)
+	assert(panel_ed._btn_racionamiento != null)
+	panel_ed.queue_free()
 
 
 func probar_marcas_demolicion() -> void:
@@ -1288,3 +1328,64 @@ func probar_panel_canalizacion() -> void:
 	Economia.puestos.erase(esq_dest)
 	Canalizaciones.reiniciar()
 	print("OK: PanelCanalizacion verificado.")
+
+
+class MundoFalsoZonaOverlay extends Node:
+	signal terreno_modificado(celda: Vector3i)
+
+	var alturas: Dictionary = {}
+	var tipos: Dictionary = {}
+
+	func altura_en(x: int, z: int, _ignorar_agua: bool = false) -> int:
+		return alturas.get(Vector2i(x, z), 10)
+
+	func es_celda_estructural(_celda: Vector3i) -> bool:
+		return false
+
+	func obtener_tipo(celda: Vector3i) -> String:
+		return tipos.get(celda, "tierra")
+
+
+func probar_zona_overlay_reactividad_terreno() -> void:
+	print("=== TEST: ZonaOverlay se actualiza automáticamente al modificar terreno sin esperar herramienta de zonificación ===")
+	var ZonaOverlayScript = preload("res://scripts/ZonaOverlay.gd")
+	var mundo_falso := MundoFalsoZonaOverlay.new()
+	var overlay: Node3D = ZonaOverlayScript.new()
+	overlay.mundo = mundo_falso
+	add_child(overlay)
+
+	# Declarar núcleo urbano para inicializar la zona de influencia correctamente
+	Zonificacion.nucleo_declarado = false
+	Zonificacion.declarar_nucleo([Vector2i(5, 5)])
+	mundo_falso.alturas[Vector2i(5, 5)] = 10
+	overlay.visible = true
+	overlay.reconstruir()
+
+	assert(not overlay._sucio, "arranca limpio tras reconstruir")
+
+	# Cavar en (5, 5): la altura baja a 7
+	mundo_falso.alturas[Vector2i(5, 5)] = 7
+	mundo_falso.terreno_modificado.emit(Vector3i(5, 10, 5))
+
+	assert(overlay._sucio, "la señal terreno_modificado marca sucio el overlay")
+
+	# El siguiente frame procesa y reconstruye automáticamente
+	overlay._process(0.0)
+	assert(not overlay._sucio, "tras procesar vuelve a estar limpio")
+
+	# Comprobar que el plano de la celda (5, 5) ahora está a la nueva altura 7
+	var encontrado := false
+	for hijo in overlay.get_children():
+		if hijo is MeshInstance3D and is_equal_approx(hijo.position.x, 5.5) and is_equal_approx(hijo.position.z, 5.5):
+			assert(is_equal_approx(hijo.position.y, 7.0 + 1.01), "el plano se actualizó a la nueva altura del terreno cavado (7 + 1.01)")
+			encontrado = true
+			break
+	assert(encontrado, "se encontró el plano en la celda cavada con la altura actualizada")
+
+	overlay.queue_free()
+	mundo_falso.queue_free()
+	Zonificacion.nucleo_declarado = false
+	Zonificacion._huella_nucleo.clear()
+	Zonificacion._caja_nucleo.clear()
+	Zonificacion.zonas.clear()
+	print("OK: ZonaOverlay reacciona a terreno_modificado en tiempo real.")

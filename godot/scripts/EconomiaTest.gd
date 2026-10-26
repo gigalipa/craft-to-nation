@@ -1310,5 +1310,43 @@ func ejecutar_pruebas() -> void:
 	# 2 investigadores * 1.0 moral * 1.0 energia = 2.0 puntos acumulados
 	assert(is_equal_approx(c46.progreso_ciencia_teorica.get("metalurgia_hornos", 0.0), 2.0))
 
-	print("\n=== Las 46 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 47: Capa 2 - Aplicación Práctica y Reconversión Doctrinal ===")
+	var e47: Node = EconomiaScript.new()
+	var c47: Node = CiudadScript.new()
+	e47.ciudad = c47
+	# Asignar recursos suficientes para sufragar mejoras y reconversión
+	for r in ["acero", "combustible", "cristal", "tierras_raras", "hierro", "madera", "piedra", "tierra"]:
+		if not c47.almacen.has(r):
+			c47.almacen[r] = CiudadScript.Recurso.new(r.capitalize(), 1000.0, 5000.0)
+		else:
+			c47.almacen[r].cantidad = 1000.0
+
+	# Registrar central termoeléctrica
+	var esq_termo47 := Vector2i(10, 10)
+	e47.registrar_puesto(esq_termo47, "central_termoelectrica", 5, 5, {})
+	c47.ciencias_teoricas_descubiertas.append("quimica_hidrocarburos")
+	c47.ciencias_teoricas_descubiertas.append("biotecnologia_fototermia")
+
+	# Instalar mejora dieselpunk
+	assert(e47.iniciar_mejora_practica(esq_termo47, "caldera_diesel"))
+	assert(e47.puestos[esq_termo47]["proyecto_mejora"]["estado"] == "ESPERANDO_PERSONAL")
+	# Simular llegada y finalización
+	e47.completar_mejora_en_puesto(esq_termo47)
+	assert(e47.puestos[esq_termo47]["mejoras"].has("caldera_diesel"))
+	assert(c47.balanza_doctrinal["dieselpunk"] >= 15.0)
+
+	# Reconversión a Solarpunk
+	assert(e47.iniciar_reconversion_industrial(esq_termo47, "ciclo_solarpunk"))
+	assert(e47.puestos[esq_termo47]["estado_operativo"] == "RECONVERSION")
+	# Producción penalizada al 25% durante reconversión
+	assert(is_equal_approx(e47.multiplicador_operativo_puesto(esq_termo47), 0.25))
+
+	# Completar reconversión (Review Focus 4: Puntos dieselpunk eliminados, solarpunk sumados)
+	e47.completar_mejora_en_puesto(esq_termo47)
+	assert(not e47.puestos[esq_termo47]["mejoras"].has("caldera_diesel"))
+	assert(e47.puestos[esq_termo47]["mejoras"].has("ciclo_solarpunk"))
+	assert(c47.balanza_doctrinal["dieselpunk"] == 0.0)
+	assert(c47.balanza_doctrinal["solarpunk"] >= 15.0)
+
+	print("\n=== Las 47 pruebas de Economia pasaron correctamente ===")
 

@@ -80,11 +80,21 @@ const RECURSO_DE_TASA := {
 }
 
 var ciudad: Object = null  # Ciudad
+## Colonos, inyectable o resuelto vía singleton / escena
+var colonos: Object = null
 ## VoxelWorld, inyectable (Main.gd lo asigna). Sin él los puestos producen sin
 ## consumir el mundo.
 var mundo: Object = null
 var zonificacion: Object = null
 var vias: Object = null
+
+const COSTOS_BASE_EDIFICIO: Dictionary = {
+	"central_termoelectrica": {"hierro": 100, "piedra": 100},
+	"siderurgica": {"hierro": 80, "piedra": 80},
+	"sembradios": {"madera": 50, "tierra": 50},
+	"refineria_petrolera": {"hierro": 120, "piedra": 80},
+	"productor_combustible": {"hierro": 100, "acero": 50},
+}
 var _ultimo_resumen_energia: Dictionary = {
 	"demanda": 0.0,
 	"capacidad": 0.0,
@@ -184,6 +194,8 @@ var _contador_orden := 0
 func _ready() -> void:
 	if ciudad == null:
 		ciudad = Ciudad
+	if colonos == null and Engine.has_singleton("Colonos"):
+		colonos = Engine.get_singleton("Colonos")
 	ciudad.tick_simulado.connect(simular_hora)
 
 
@@ -240,6 +252,9 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"investigacion_activa": 0,
 		"investigacion_pausada": false,
 		"reserva_insumo": 0.0,
+		"mejoras": [],
+		"proyecto_mejora": {},
+		"estado_operativo": "normal",
 	}
 
 
@@ -250,8 +265,12 @@ func quitar_puesto(esquina: Vector2i) -> void:
 		return
 	if es_universidad(esquina):
 		cancelar_investigacion(esquina)
-	retirar_deposito(esquina)  # último intento (el stock pudo liberar espacio desde que empezó la deconstrucción)
 	var p: Dictionary = puestos[esquina]
+	if not p.get("proyecto_mejora", {}).is_empty():
+		if colonos != null and colonos.has_method("liberar_comision"):
+			var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
+			colonos.liberar_comision(id_proy)
+	retirar_deposito(esquina)  # último intento (el stock pudo liberar espacio desde que empezó la deconstrucción)
 	var dp: Dictionary = p.get("entorno", {}).get("datos_perforacion", {})
 	if not dp.is_empty() and mundo != null and dp.has("perforacion"):
 		mundo.retirar_tuberia_extraccion(dp["perforacion"], dp["y_superficie"], dp["y_fondo"])
@@ -447,6 +466,7 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 	var resultado: Dictionary = {}
 	if not puestos.has(esquina):
 		return resultado
+	var mult_operativo: float = multiplicador_operativo_puesto(esquina)
 	var factor_moral: float = 1.0
 	if ciudad != null and "moral" in ciudad:
 		factor_moral = ciudad.calcular_multiplicador_productividad(ciudad.moral)
@@ -454,7 +474,7 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 	if es_refineria(esquina):
 		var tasas_ref: Dictionary = CadenaMinerales.tasas_refinado({insumo_de(esquina): puestos[esquina]["presentes"].size()})
 		for entrada in tasas_ref:
-			resultado[tasas_ref[entrada]["tipo_salida"]] = tasas_ref[entrada]["produccion"] * factor_moral
+			resultado[tasas_ref[entrada]["tipo_salida"]] = tasas_ref[entrada]["produccion"] * factor_moral * mult_operativo
 		return resultado
 	var p: Dictionary = puestos[esquina]
 	var presentes: int = p["presentes"].size()
@@ -465,7 +485,7 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 		var factor_moral_recurso: float = 1.0
 		if ciudad != null and ciudad.has_method("calcular_multiplicador_productividad"):
 			factor_moral_recurso = ciudad.calcular_multiplicador_productividad(ciudad.moral, es_alimento)
-		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes * multiplicador * factor_moral_recurso
+		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes * multiplicador * factor_moral_recurso * mult_operativo
 	return resultado
 
 
@@ -516,6 +536,7 @@ func simular_hora() -> void:
 		var p: Dictionary = puestos[esquina]
 		if not p["activo"]:
 			continue
+		_tick_mejora_puesto(esquina)
 		_liberar_acarreadores_si_agotado(esquina)
 		if es_universidad(esquina):
 			_tick_universidad(esquina, factores_energia.get(esquina, 0.0))
@@ -1070,7 +1091,8 @@ func _refinar(esquina: Vector2i, factor_energia: float = 1.0) -> void:
 	var factor_moral: float = 1.0
 	if ciudad != null and "moral" in ciudad:
 		factor_moral = ciudad.calcular_multiplicador_productividad(ciudad.moral)
-	var resultado: Dictionary = CadenaMinerales.procesar_receta(insumo_de(esquina), presentes, 1.0, p["almacen"], factor_energia * factor_moral, float(p["capacidad"]))
+	var mult_op: float = multiplicador_operativo_puesto(esquina)
+	var resultado: Dictionary = CadenaMinerales.procesar_receta(insumo_de(esquina), presentes, 1.0, p["almacen"], factor_energia * factor_moral * mult_op, float(p["capacidad"]))
 	if _total(resultado) > p["capacidad"] + 1e-9:
 		return
 	for recurso in resultado.keys():
@@ -1456,3 +1478,226 @@ func _liberar_de(_esquina: Vector2i, ids: Array) -> void:
 	for id in ids:
 		liberar(id)
 	trabajadores_liberados.emit(ids)
+
+
+## Devuelve la celda Vector3i representativa del puesto (depósito, servicio o esquina en suelo).
+func _destino_de_puesto(esquina: Vector2i) -> Vector3i:
+	if not puestos.has(esquina):
+		return Vector3i.ZERO
+	var p: Dictionary = puestos[esquina]
+	var y_suelo: int = p.get("suelo", 0) if p.get("suelo", 0) >= 0 else 0
+	if p.get("deposito", SIN_DEPOSITO) != SIN_DEPOSITO:
+		return p["deposito"]
+	if p.get("servicio", SIN_SERVICIO) != SIN_SERVICIO:
+		return Vector3i(p["servicio"].x, y_suelo, p["servicio"].y)
+	return Vector3i(esquina.x, y_suelo, esquina.y)
+
+
+## Inicia la instalación in-situ de una mejora práctica en un puesto.
+func iniciar_mejora_practica(esquina: Vector2i, id_mejora: String) -> bool:
+	if not puestos.has(esquina):
+		return false
+	if not Ajustes.MEJORAS_PRACTICAS_CATALOGO.has(id_mejora):
+		return false
+	var p: Dictionary = puestos[esquina]
+	var info: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO[id_mejora]
+
+	if p.get("mejoras", []).has(id_mejora):
+		return false
+	if not p.get("proyecto_mejora", {}).is_empty():
+		return false
+
+	var req: String = str(info.get("req", info.get("prerrequisito", "")))
+	if req != "" and ciudad != null and ciudad.has_method("esta_ciencia_descubierta"):
+		if not ciudad.esta_ciencia_descubierta(req):
+			return false
+
+	for ex in info.get("excluye", []):
+		if p.get("mejoras", []).has(ex):
+			return false
+
+	var tipo_edif: String = str(info.get("edificio_tipo", ""))
+	if tipo_edif != "" and p.get("tipo", "") != tipo_edif:
+		return false
+
+	var costo: Dictionary = info.get("costo", {})
+	if ciudad != null and ciudad.has_method("consumir_costos"):
+		if not ciudad.consumir_costos(costo):
+			return false
+
+	if colonos != null and colonos.has_method("despachar_comision_cientifica"):
+		var dest: Vector3i = _destino_de_puesto(esquina)
+		var id_edificio: String = "puesto_%d_%d" % [esquina.x, esquina.y]
+		var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
+		var num_inv: int = int(info.get("investigadores", 1))
+		colonos.despachar_comision_cientifica(dest, id_edificio, num_inv, id_proy)
+
+	p["proyecto_mejora"] = {
+		"id": id_mejora,
+		"estado": "ESPERANDO_PERSONAL",
+		"progreso": 0.0,
+		"tiempo": float(info.get("tiempo", 1.0)),
+		"es_reconversion": false,
+		"id_anterior": ""
+	}
+	return true
+
+
+## Inicia la reconversión industrial doctrinal de un puesto sustituyendo una mejora previa sin demolerlo.
+func iniciar_reconversion_industrial(esquina: Vector2i, nueva_mejora: String) -> bool:
+	if not puestos.has(esquina):
+		return false
+	if not Ajustes.MEJORAS_PRACTICAS_CATALOGO.has(nueva_mejora):
+		return false
+	var p: Dictionary = puestos[esquina]
+	var info: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO[nueva_mejora]
+
+	if p.get("mejoras", []).has(nueva_mejora):
+		return false
+	if not p.get("proyecto_mejora", {}).is_empty():
+		return false
+
+	var req: String = str(info.get("req", info.get("prerrequisito", "")))
+	if req != "" and ciudad != null and ciudad.has_method("esta_ciencia_descubierta"):
+		if not ciudad.esta_ciencia_descubierta(req):
+			return false
+
+	var tipo_edif: String = str(info.get("edificio_tipo", ""))
+	if tipo_edif != "" and p.get("tipo", "") != tipo_edif:
+		return false
+
+	var mejora_anterior: String = ""
+	for m in p.get("mejoras", []):
+		if info.get("excluye", []).has(m):
+			mejora_anterior = m
+			break
+		var m_info: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(m, {})
+		if m_info.get("excluye", []).has(nueva_mejora):
+			mejora_anterior = m
+			break
+	if mejora_anterior == "" and not p.get("mejoras", []).is_empty():
+		mejora_anterior = p["mejoras"][0]
+	if mejora_anterior == "":
+		return false
+
+	var costo_reforma: Dictionary = {}
+	var factor_mat: float = Ajustes.RECONVERSION_FACTOR_MATERIALES_MEJORA
+	var costo_mat: Dictionary = info.get("costo", {})
+	for rec in costo_mat:
+		costo_reforma[rec] = float(costo_mat[rec]) * factor_mat
+
+	var factor_edif: float = Ajustes.RECONVERSION_FACTOR_COSTO_EDIFICIO
+	var costo_base: Dictionary = COSTOS_BASE_EDIFICIO.get(p.get("tipo", ""), {})
+	for rec in costo_base:
+		costo_reforma[rec] = costo_reforma.get(rec, 0.0) + float(costo_base[rec]) * factor_edif
+
+	if ciudad != null and ciudad.has_method("consumir_costos"):
+		if not ciudad.consumir_costos(costo_reforma):
+			return false
+
+	p["estado_operativo"] = "RECONVERSION"
+
+	if colonos != null and colonos.has_method("despachar_comision_cientifica"):
+		var dest: Vector3i = _destino_de_puesto(esquina)
+		var id_edificio: String = "puesto_%d_%d" % [esquina.x, esquina.y]
+		var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
+		var num_inv: int = int(info.get("investigadores", 1))
+		colonos.despachar_comision_cientifica(dest, id_edificio, num_inv, id_proy)
+
+	var tiempo_base: float = float(info.get("tiempo", 1.0))
+	var tiempo_reconv: float = tiempo_base * Ajustes.RECONVERSION_FACTOR_TIEMPO
+	p["proyecto_mejora"] = {
+		"id": nueva_mejora,
+		"estado": "ESPERANDO_PERSONAL",
+		"progreso": 0.0,
+		"tiempo": tiempo_reconv,
+		"es_reconversion": true,
+		"id_anterior": mejora_anterior
+	}
+	return true
+
+
+## Multiplicador de producción o refinado según el estado operativo del edificio.
+func multiplicador_operativo_puesto(esquina: Vector2i) -> float:
+	if not puestos.has(esquina):
+		return 1.0
+	if puestos[esquina].get("estado_operativo", "normal") == "RECONVERSION":
+		return Ajustes.RECONVERSION_PRODUCCION_PENALIZADA
+	return 1.0
+
+
+## Finaliza la mejora o reconversión activa en el puesto y actualiza doctrina e IDU.
+func completar_mejora_en_puesto(esquina: Vector2i) -> void:
+	if not puestos.has(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	var pm: Dictionary = p.get("proyecto_mejora", {})
+	if pm.is_empty():
+		return
+	var id_m: String = pm.get("id", "")
+	if not Ajustes.MEJORAS_PRACTICAS_CATALOGO.has(id_m):
+		p["proyecto_mejora"] = {}
+		p["estado_operativo"] = "normal"
+		return
+	var info: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO[id_m]
+
+	if pm.get("es_reconversion", false) and pm.get("id_anterior", "") != "":
+		var id_ant: String = pm["id_anterior"]
+		var info_ant: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(id_ant, {})
+		if ciudad != null and ciudad.has_method("agregar_puntos_doctrina"):
+			var doct_ant: String = str(info_ant.get("doctrina", ""))
+			var pts_ant: float = float(info_ant.get("puntos_doctrina", 0))
+			if doct_ant != "":
+				ciudad.agregar_puntos_doctrina(doct_ant, -pts_ant)
+		p["mejoras"].erase(id_ant)
+
+		if ciudad != null and "mejoras_practicas_instaladas" in ciudad:
+			var aun_instalada := false
+			for otra_esq in puestos:
+				if puestos[otra_esq].get("mejoras", []).has(id_ant):
+					aun_instalada = true
+					break
+			if not aun_instalada:
+				ciudad.mejoras_practicas_instaladas.erase(id_ant)
+
+	if not p["mejoras"].has(id_m):
+		p["mejoras"].append(id_m)
+
+	if ciudad != null:
+		if ciudad.has_method("agregar_puntos_doctrina"):
+			var doct: String = str(info.get("doctrina", ""))
+			var pts: float = float(info.get("puntos_doctrina", 0))
+			if doct != "":
+				ciudad.agregar_puntos_doctrina(doct, pts)
+		if "mejoras_practicas_instaladas" in ciudad:
+			if not ciudad.mejoras_practicas_instaladas.has(id_m):
+				ciudad.mejoras_practicas_instaladas.append(id_m)
+		if ciudad.has_method("actualizar_pacing_era"):
+			ciudad.actualizar_pacing_era()
+
+	p["estado_operativo"] = "normal"
+	p["proyecto_mejora"] = {}
+
+	if colonos != null and colonos.has_method("liberar_comision"):
+		var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
+		colonos.liberar_comision(id_proy)
+
+
+## Actualiza el avance de la obra in-situ de una mejora práctica o reconversión.
+func _tick_mejora_puesto(esquina: Vector2i) -> void:
+	if not puestos.has(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	var pm: Dictionary = p.get("proyecto_mejora", {})
+	if pm.is_empty():
+		return
+	var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
+	if pm.get("estado", "") == "ESPERANDO_PERSONAL":
+		if colonos != null and colonos.has_method("comision_esta_completa_en_destino"):
+			var dest: Vector3i = _destino_de_puesto(esquina)
+			if colonos.comision_esta_completa_en_destino(id_proy, dest):
+				pm["estado"] = "EN_EJECUCION"
+	if pm.get("estado", "") == "EN_EJECUCION":
+		pm["progreso"] = pm.get("progreso", 0.0) + 1.0
+		if pm["progreso"] >= float(pm.get("tiempo", 1.0)):
+			completar_mejora_en_puesto(esquina)

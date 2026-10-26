@@ -61,17 +61,20 @@ func ejecutar_pruebas() -> void:
 	print("Nivel Investigado: ", urbe.nivel_investigado, " | Nivel Efectivo: ", urbe.nivel)
 	assert(urbe.nivel_investigado >= 2)
 
-	print("\n=== TEST 4: Variedad de Fuentes Alimentarias y Bono de Moral Gradual ===")
+	print("\n=== TEST 4: Variedad de Fuentes Alimentarias y Bono de Moral de Dieta ===")
 	for categoria in urbe.CATEGORIAS_COMIDA:
-		urbe.fuentes_comida_activas[categoria] = 10.0  # las 6 categorías activas
-	for i in range(30):  # suficientes ticks para converger cerca del bono máximo
-		urbe.simular_tick(jugador.tasa_hambre)
-	var bono_con_variedad: float = urbe.bono_moral_variedad
-	print("Bono de moral tras activar las 6 categorías (30 ticks): ", bono_con_variedad)
-	urbe.fuentes_comida_activas["sintetico"] = 0.0  # se desactiva una categoría
+		urbe.sub_almacen_comida[categoria] = 1000.0  # las 6 categorías activas
+	urbe.almacen["comida"].cantidad = 6000.0
 	urbe.simular_tick(jugador.tasa_hambre)
-	print("Bono inmediatamente tras desactivar una categoría: ", urbe.bono_moral_variedad, " (debe decaer gradualmente, no a 0)")
-	assert(urbe.bono_moral_variedad > 0 and urbe.bono_moral_variedad < bono_con_variedad)
+	var bono_con_variedad: float = urbe.delta_dieta_actual()
+	print("Bono de moral tras activar las 6 categorías: ", bono_con_variedad)
+	assert(is_equal_approx(bono_con_variedad, 2.0), "6 categorías deben dar +2.0")
+	urbe.sub_almacen_comida["sintetico"] = 0.0  # se desactiva una categoría (quedan 5)
+	urbe.simular_tick(jugador.tasa_hambre)
+	var bono_5_fuentes: float = urbe.delta_dieta_actual()
+	print("Bono tras reducir a 5 categorías: ", bono_5_fuentes)
+	assert(is_equal_approx(bono_5_fuentes, 1.0), "5 categorías deben dar +1.0")
+	assert(bono_5_fuentes < bono_con_variedad)
 
 	print("\n=== TEST 5: Asedio Militar y Degradación por Destrucción ===")
 	print(">> El enemigo destruye todas las plantas Tipo 3...")
@@ -766,6 +769,37 @@ func ejecutar_pruebas() -> void:
 	assert(econ_test.categoria_comida_de_puesto(Vector2i(10, 10)) == "pesca")
 	econ_test.entregar({"comida": 25.0}, econ_test.categoria_comida_de_puesto(Vector2i(10, 10)))
 	assert(is_equal_approx(ciu32.sub_almacen_comida["pesca"], 25.0))
+
+	print("\n=== TEST 33: Gracia de Monocultivo (360h) y Escala de Dieta ===")
+	var ciu33: Node = CiudadScript.new()
+	ciu33.migracion_activa = false
+	ciu33.demografia["obrero"] = 1
+	ciu33.registrar_edificio_residencial(1, [2, 2])
+	ciu33.sub_almacen_comida = {"recoleccion_caza": 10000.0, "pesca": 0.0, "sembradios": 0.0, "granjas_animales": 0.0, "hidroponia": 0.0, "sintetico": 0.0}
+	ciu33.almacen["comida"].cantidad = 10000.0
+
+	# 360 horas de monocultivo dentro de la gracia
+	for h in range(360):
+		ciu33.simular_tick(0.0)
+	assert(ciu33.horas_monocultivo_continuo == 360, "debe acumular 360 horas de monocultivo")
+	assert(ciu33.delta_dieta_actual() == 0.0, "dentro de la gracia de 360h no hay penalización")
+
+	# Hora 361: se activa la penalización de monocultivo (-0.2/h)
+	ciu33.simular_tick(0.0)
+	assert(ciu33.horas_monocultivo_continuo == 361)
+	assert(is_equal_approx(ciu33.delta_dieta_actual(), -0.2), "a partir de 361h aplica penalización de -0.2")
+
+	# Review Focus 2: Agregar una 2da fuente resetea el contador y da bono de +0.3
+	ciu33.sub_almacen_comida["pesca"] = 50.0
+	ciu33.simular_tick(0.0)
+	assert(ciu33.horas_monocultivo_continuo == 0, "segunda fuente resetea contador de monocultivo")
+	assert(is_equal_approx(ciu33.delta_dieta_actual(), 0.3), "2 fuentes otorgan bono +0.3/h")
+	ciu33.sub_almacen_comida["sembradios"] = 50.0
+	ciu33.sub_almacen_comida["granjas_animales"] = 50.0
+	assert(is_equal_approx(ciu33.delta_dieta_actual(), 1.0), "4 fuentes otorgan bono +1.0/h")
+	ciu33.sub_almacen_comida["hidroponia"] = 50.0
+	ciu33.sub_almacen_comida["sintetico"] = 50.0
+	assert(is_equal_approx(ciu33.delta_dieta_actual(), 2.0), "6 fuentes otorgan bono +2.0/h")
 
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

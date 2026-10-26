@@ -187,6 +187,7 @@ var sub_almacen_comida: Dictionary = {
 	"sintetico": 0.0,
 }
 var bono_moral_variedad := 0.0
+var horas_monocultivo_continuo: int = 0
 ## Estado de Moral Dinámica
 var moral: float = MORAL_INICIAL
 var tasa_cambio_moral: float = 0.0
@@ -616,16 +617,36 @@ func impacto_peligrosidad_7d() -> float:
 	return 0.5 * float(bajas_7d) + 0.1 * float(heridos_7d) + 0.005 * robos_7d
 
 
-## Desplaza el bono de moral gradualmente hacia el objetivo de diversidad activa.
+func fuentes_comida_en_reserva() -> int:
+	var c := 0
+	for cat in sub_almacen_comida:
+		if sub_almacen_comida[cat] > 0.0:
+			c += 1
+	return c
+
+
+func delta_dieta_actual() -> float:
+	var activas: int = fuentes_comida_en_reserva()
+	if activas == 0:
+		return 0.0
+	if activas == 1:
+		if horas_monocultivo_continuo > Ajustes.CIUDAD_GRACIA_MONOCULTIVO_HORAS:
+			return Ajustes.CIUDAD_PENALIZACION_MONOCULTIVO_MORAL
+		return 0.0
+	if activas <= 3:
+		return Ajustes.CIUDAD_BONO_DIETA_2_3_FUENTES
+	if activas <= 5:
+		return Ajustes.CIUDAD_BONO_DIETA_4_5_FUENTES
+	return Ajustes.CIUDAD_BONO_DIETA_6_FUENTES
+
+
 func actualizar_bono_variedad() -> void:
-	actualizar_fuentes_comida_desde_economia()
-	var activas := 0
-	for valor in fuentes_comida_activas.values():
-		if valor > 0:
-			activas += 1
-	var objetivo: float = (float(activas) / float(CATEGORIAS_COMIDA.size())) * BONO_MORAL_MAXIMO
-	var diferencia: float = objetivo - bono_moral_variedad
-	bono_moral_variedad += diferencia * VELOCIDAD_SUAVIZADO_MORAL
+	var activas: int = fuentes_comida_en_reserva()
+	if activas == 1:
+		horas_monocultivo_continuo += 1
+	elif activas > 1:
+		horas_monocultivo_continuo = 0
+	bono_moral_variedad = delta_dieta_actual()
 
 
 ## Desahucia, de uno en uno y en ORDEN_DESAHUCIO, hasta que la vivienda
@@ -1158,12 +1179,8 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 
 	if horas_boost_inmigracion > 0:
 		horas_boost_inmigracion -= 1
-	actualizar_fuentes_comida_desde_economia()
-	var activas_dieta := 0
-	for v in fuentes_comida_activas.values():
-		if v > 0:
-			activas_dieta += 1
-	var delta_dieta: float = (float(activas_dieta) / float(CATEGORIAS_COMIDA.size())) * 1.0
+	var delta_dieta: float = delta_dieta_actual() if total_ciu > 0 else 0.0
+	bono_moral_variedad = delta_dieta
 	var delta_sin_techo: float = -0.05 * float(sin_techo)
 	var delta_peligro: float = -impacto_peligrosidad_7d()
 

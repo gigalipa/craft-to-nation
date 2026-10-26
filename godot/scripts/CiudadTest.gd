@@ -856,5 +856,29 @@ func ejecutar_pruebas() -> void:
 	assert(Strings.ERA_NOMBRES.has(1))
 	assert(Strings.DOCTRINA_NOMBRES.has("dieselpunk"))
 
+	print("\n=== TEST 38: Pacing Orgánico IDU y Balanza Doctrinal ===")
+	var ciu38: Node = CiudadScript.new()
+	# Review Focus 1: Censo y edificios vacíos deben dar IDU base 1.0 sin división por cero
+	assert(is_equal_approx(ciu38.calcular_cualificacion_laboral(), 1.0))
+	assert(is_equal_approx(ciu38.calcular_sofisticacion_edificios(), 1.0))
+	assert(ciu38.era_actual == 1)
+
+	# Simular condiciones de transición a Era 2: S=1.8, Q=1.6, K=1.2
+	# IDU = 0.40*1.8 + 0.35*1.6 + 0.25*1.2 = 0.72 + 0.56 + 0.30 = 1.58 (>= 1.50)
+	ciu38.establecer_metricas_idu_override(1.8, 1.6, 1.2)
+	assert(ciu38.calcular_idu() >= 1.50)
+	ciu38.actualizar_pacing_era()
+	assert(ciu38.era_actual == 2)
+	assert(ciu38.nivel_investigado >= 2)
+
+	# Balanza Doctrinal
+	ciu38.agregar_puntos_doctrina("dieselpunk", 60.0)
+	ciu38.agregar_puntos_doctrina("solarpunk", 20.0)
+	ciu38.agregar_puntos_doctrina("cyberpunk", 20.0)
+	var bal: Dictionary = ciu38.calcular_porcentajes_doctrinales()
+	assert(is_equal_approx(bal["dieselpunk"], 60.0))
+	assert(bal["dominante"] == "dieselpunk")
+	assert(bal["nivel"] == 2)
+
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

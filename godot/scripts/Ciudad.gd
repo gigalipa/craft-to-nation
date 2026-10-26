@@ -171,13 +171,24 @@ class Avatar:
 			salud = min(100.0, salud + 2.0)
 
 
-var instalaciones := {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0}
+var instalaciones := {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0, "tipo_4": 0}
 var instalaciones_edificio: Dictionary = {}  # id_edificio -> int (2 o 3)
 var demografia: Dictionary = {}
 var almacen: Dictionary = {}
 var desahuciados := 0
 var nivel_investigado := 1
 var progreso_investigacion := {2: 0.0, 3: 0.0}
+
+## Pacing Orgánico de Eras, IDU y Balanza Doctrinal
+var era_actual: int = 1
+var balanza_doctrinal: Dictionary = {"dieselpunk": 0.0, "cyberpunk": 0.0, "solarpunk": 0.0}
+var ciencias_teoricas_descubiertas: Array[String] = []
+var mejoras_practicas_instaladas: Array[String] = []
+
+## Overrides para pruebas unitarias de IDU (-1.0 = inactivo)
+var idu_override_s: float = -1.0
+var idu_override_q: float = -1.0
+var idu_override_k: float = -1.0
 var sub_almacen_comida: Dictionary = {
 	"pesca": 0.0,
 	"recoleccion_caza": 0.0,
@@ -370,9 +381,10 @@ var indice_sofisticacion: float:
 		if total == 0:
 			return 1.0
 		var puntos: int = (
-			instalaciones["tipo_1"] * 1
-			+ instalaciones["tipo_2"] * 2
-			+ instalaciones["tipo_3"] * 3
+			instalaciones.get("tipo_1", 0) * 1
+			+ instalaciones.get("tipo_2", 0) * 2
+			+ instalaciones.get("tipo_3", 0) * 3
+			+ instalaciones.get("tipo_4", 0) * 4
 		)
 		return float(puntos) / float(total)
 
@@ -447,7 +459,7 @@ func desregistrar_instalacion(id_edificio: int) -> void:
 
 
 func _recalcular_instalaciones() -> void:
-	var conteo := {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0}
+	var conteo := {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0, "tipo_4": 0}
 	for nivel_inst: int in instalaciones_edificio.values():
 		var clave: String = "tipo_%d" % nivel_inst
 		conteo[clave] = conteo.get(clave, 0) + 1
@@ -513,6 +525,150 @@ func actualizar_investigacion(horas: float) -> bool:
 			nivel_investigado = siguiente
 			return true
 	return false
+
+
+## Establece valores forzados para métricas IDU en pruebas unitarias (-1.0 desactiva el override).
+func establecer_metricas_idu_override(s: float, q: float, k: float) -> void:
+	idu_override_s = s
+	idu_override_q = q
+	idu_override_k = k
+
+
+## Evalúa la sofisticación del parque edilicio en escala [1.0, 4.0].
+func calcular_sofisticacion_edificios() -> float:
+	if idu_override_s >= 0.0:
+		return idu_override_s
+	var total: int = total_instalaciones
+	if total <= 0:
+		return 1.0
+	var puntos: float = (
+		float(instalaciones.get("tipo_1", 0)) * 1.0
+		+ float(instalaciones.get("tipo_2", 0)) * 2.0
+		+ float(instalaciones.get("tipo_3", 0)) * 3.0
+		+ float(instalaciones.get("tipo_4", 0)) * 4.0
+	)
+	return clampf(puntos / float(total), 1.0, 4.0)
+
+
+## Evalúa la cualificación media ponderada del censo en escala [1.0, 4.0].
+func calcular_cualificacion_laboral() -> float:
+	if idu_override_q >= 0.0:
+		return idu_override_q
+	var censo: int = censo_total
+	if censo <= 0:
+		return 1.0
+	var obreros: float = float(demografia.get("obrero", 0))
+	var tecnicos: float = float(demografia.get("tecnico", 0))
+	var especialistas: float = float(demografia.get("especialista", 0))
+	var investigadores: float = float(demografia.get("investigador", 0))
+	var puntos: float = (obreros * 1.0) + (tecnicos * 2.0) + (especialistas * 3.0) + (investigadores * 3.5)
+	return clampf(puntos / float(censo), 0.0, 4.0)
+
+
+## Evalúa la masa crítica de conocimiento acumulado en escala [1.0, 4.0].
+func calcular_masa_critica_ciencia() -> float:
+	if idu_override_k >= 0.0:
+		return idu_override_k
+	var total_disponibles: int = 0
+	var descubiertas: int = 0
+	for id_c in Ajustes.CIENCIAS_TEORICAS_CATALOGO:
+		var c: Dictionary = Ajustes.CIENCIAS_TEORICAS_CATALOGO[id_c]
+		if c.get("era", 1) == era_actual:
+			total_disponibles += 1
+			if ciencias_teoricas_descubiertas.has(id_c):
+				descubiertas += 1
+	for id_m in Ajustes.MEJORAS_PRACTICAS_CATALOGO:
+		var m: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO[id_m]
+		if m.get("era", 1) == era_actual:
+			total_disponibles += 1
+			if mejoras_practicas_instaladas.has(id_m):
+				descubiertas += 1
+	var ratio: float = 0.0
+	if total_disponibles > 0:
+		ratio = float(descubiertas) / float(total_disponibles)
+	var k: float = 1.0 + (3.0 * ratio)
+	return clampf(k, 1.0, 4.0)
+
+
+## Calcula el Índice de Desarrollo Urbano (IDU) combinando S, Q y K.
+func calcular_idu() -> float:
+	var s: float = calcular_sofisticacion_edificios()
+	var q: float = calcular_cualificacion_laboral()
+	var k: float = calcular_masa_critica_ciencia()
+	return (Ajustes.IDU_PESO_EDIFICIOS * s) + (Ajustes.IDU_PESO_LABORAL * q) + (Ajustes.IDU_PESO_CIENCIA * k)
+
+
+## Actualiza automáticamente la era de la ciudad según el IDU y sincroniza nivel_investigado.
+func actualizar_pacing_era() -> void:
+	var idu: float = calcular_idu()
+	var nueva_era: int = 1
+	if idu >= Ajustes.IDU_UMBRAL_ERA_4:
+		nueva_era = 4
+	elif idu >= Ajustes.IDU_UMBRAL_ERA_3:
+		nueva_era = 3
+	elif idu >= Ajustes.IDU_UMBRAL_ERA_2:
+		nueva_era = 2
+	else:
+		nueva_era = 1
+	era_actual = maxi(era_actual, nueva_era)
+	nivel_investigado = maxi(nivel_investigado, era_actual)
+
+
+## Modifica el vector de balance doctrinal (+ o - puntos). No permite saldos negativos.
+func agregar_puntos_doctrina(doctrina: String, puntos: float) -> void:
+	balanza_doctrinal[doctrina] = maxf(0.0, float(balanza_doctrinal.get(doctrina, 0.0)) + puntos)
+
+
+## Devuelve los porcentajes relativos de las doctrinas, doctrina dominante e inclinación/nivel.
+func calcular_porcentajes_doctrinales() -> Dictionary:
+	var d: float = maxf(0.0, float(balanza_doctrinal.get("dieselpunk", 0.0)))
+	var c: float = maxf(0.0, float(balanza_doctrinal.get("cyberpunk", 0.0)))
+	var s: float = maxf(0.0, float(balanza_doctrinal.get("solarpunk", 0.0)))
+	var total: float = d + c + s
+	if total <= 0.0:
+		return {
+			"dieselpunk": 33.3,
+			"cyberpunk": 33.3,
+			"solarpunk": 33.3,
+			"dominante": "ninguna",
+			"nivel": 0,
+		}
+	var pct_d: float = (d / total) * 100.0
+	var pct_c: float = (c / total) * 100.0
+	var pct_s: float = (s / total) * 100.0
+
+	var pcts: Dictionary = {
+		"dieselpunk": pct_d,
+		"cyberpunk": pct_c,
+		"solarpunk": pct_s,
+	}
+
+	var max_pct: float = -1.0
+	var max_doc: String = ""
+	for doc in ["dieselpunk", "cyberpunk", "solarpunk"]:
+		if pcts[doc] > max_pct:
+			max_pct = pcts[doc]
+			max_doc = doc
+
+	var dominante: String = "polivalente"
+	var nivel_doc: int = 0
+	if max_pct >= 60.0:
+		dominante = max_doc
+		nivel_doc = 2
+	elif max_pct >= 40.0:
+		dominante = max_doc
+		nivel_doc = 1
+	else:
+		dominante = "polivalente"
+		nivel_doc = 0
+
+	return {
+		"dieselpunk": pct_d,
+		"cyberpunk": pct_c,
+		"solarpunk": pct_s,
+		"dominante": dominante,
+		"nivel": nivel_doc,
+	}
 
 
 ## Calcula el multiplicador continuo de productividad laboral según la moral (0 a 100)
@@ -1218,6 +1374,8 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	moral = clampf(moral + tasa_cambio_moral / 24.0, 0.0, 100.0)
 	if decreto_racionamiento_activo:
 		moral = minf(moral, Ajustes.RACIONAMIENTO_TECHO_MORAL)
+
+	actualizar_pacing_era()
 
 	var migrantes: int = _migrar(not exito_comida)
 

@@ -112,6 +112,10 @@ var ocupadas: Dictionary = {}
 ## abandonan su destino si quedan bloqueados (ver _esquivar()).
 var celdas_avatar: Dictionary = {}
 
+## Comisiones científicas de investigadores itinerantes en curso.
+## id_proyecto -> {"destino": Vector3i, "requeridos": int, "edificio_id": String, "miembros": Array[int]}
+var comisiones_activas: Dictionary = {}
+
 var _siguiente_id := 1
 var _buscador: RefCounted = null
 var _nodos_libres := 0  # lo que queda del presupuesto NODOS_POR_FRAME en esta llamada a avanzar()
@@ -227,6 +231,14 @@ func _retirar(id: int) -> void:
 		economia.liberar(id)
 	if colono["evacuando"] != -1:
 		mundo.revocar_permiso_salida(colono["evacuando"], id)
+	# Si formaba parte de una comisión científica activa, retirarlo de la lista de miembros
+	for id_proyecto in comisiones_activas:
+		var info: Dictionary = comisiones_activas[id_proyecto]
+		var miembros: Array = info.get("miembros", [])
+		if miembros.has(id):
+			miembros.erase(id)
+	if _buscador != null and _buscador.has_method("terminar_en_curso"):
+		_buscador.terminar_en_curso(id)
 	ocupadas.erase(colono["celda"])
 	if colono["moviendo"] and not colono["ruta"].is_empty():
 		ocupadas.erase(colono["ruta"][0])
@@ -362,6 +374,12 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 	if not c.get("busqueda", {}).is_empty():
 		_avanzar_busqueda(c)  # sigue buscando el camino que empezó en un fotograma anterior
 		return
+	if c["tarea"].get("tipo") == "investigador_itinerante":
+		if c["celda"] == c["tarea"]["destino"]:
+			return
+		if c["ruta"].is_empty() and (_buscador == null or not _buscador.en_curso(c["id"])):
+			_iniciar_busqueda(c, c["tarea"]["destino"])
+			return
 	if c["ruta"].is_empty():
 		if c["trabajo"].is_empty():
 			_decidir_ocioso(c)
@@ -1472,6 +1490,8 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 					b["grupos"] = b["todos_grupos"].duplicate(true)
 					continue
 				c["busqueda"] = {}
+				if _buscador != null and _buscador.has_method("terminar_en_curso"):
+					_buscador.terminar_en_curso(c["id"])
 				if b.get("deambular", false):
 					c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
 				elif b.get("reintento", false):
@@ -1497,6 +1517,8 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 				if not b.get("deambular", false) and not b.get("reintento", false):
 					c["fallos_servicio"] = 0
 				c["busqueda"] = {}
+				if _buscador != null and _buscador.has_method("terminar_en_curso"):
+					_buscador.terminar_en_curso(c["id"])
 				return
 			b["actual"] = null
 
@@ -1521,4 +1543,117 @@ func contar_militares_desplegados(zonif: Object = null) -> int:
 			if not z.dentro_de_influencia(celda2d):
 				desplegados += 1
 	return desplegados
+
+
+func _iniciar_busqueda(c: Dictionary, destino: Vector3i) -> void:
+	if _buscador == null:
+		return
+	if c["celda"] == destino:
+		return
+	var grupos: Array = [[destino]]
+	c["busqueda"] = {
+		"grupos": grupos,
+		"todos_grupos": grupos.duplicate(true),
+		"actual": null,
+		"tope": TOPE_NODOS_DESTINO,
+	}
+	if _buscador.has_method("registrar_en_curso"):
+		_buscador.registrar_en_curso(c["id"])
+	_avanzar_busqueda(c)
+
+
+## Despacha una comisión científica hacia el edificio destino para ejecutar un proyecto tecnológico in-situ.
+## Asigna tarea 'investigador_itinerante' y gestiona la comisión activa.
+func despachar_comision_cientifica(destino: Vector3i, edificio_id: String, num_investigadores: int, id_proyecto: String) -> Array[int]:
+	var ids_seleccionados: Array[int] = []
+	var sin_puesto: Array[int] = _ids_sin_puesto("investigador")
+	for cid in sin_puesto:
+		if ids_seleccionados.size() >= num_investigadores:
+			break
+		if colonos[cid].get("tarea", {}).is_empty():
+			ids_seleccionados.append(cid)
+
+	if ids_seleccionados.size() < num_investigadores:
+		for cid in sin_puesto:
+			if ids_seleccionados.size() >= num_investigadores:
+				break
+			if not ids_seleccionados.has(cid):
+				ids_seleccionados.append(cid)
+
+	if ids_seleccionados.size() < num_investigadores:
+		for cid in _ids_de_tipo("investigador"):
+			if ids_seleccionados.size() >= num_investigadores:
+				break
+			if not ids_seleccionados.has(cid):
+				ids_seleccionados.append(cid)
+
+	while ids_seleccionados.size() < num_investigadores:
+		var celda_spawn := _celda_aparicion()
+		if celda_spawn == INVALIDA:
+			celda_spawn = Vector3i(0, 1, 0)
+			if _buscador != null and not _buscador.es_transitable(celda_spawn):
+				celda_spawn = destino
+		var nuevo_id: int = agregar_colono("investigador", celda_spawn)
+		ids_seleccionados.append(nuevo_id)
+
+	for cid in ids_seleccionados:
+		var c: Dictionary = colonos[cid]
+		c["tarea"] = {
+			"tipo": "investigador_itinerante",
+			"proyecto": id_proyecto,
+			"destino": destino,
+			"edificio_id": edificio_id,
+		}
+		var vacia: Array[Vector3i] = []
+		c["ruta"] = vacia
+		c["busqueda"] = {}
+		c["espera"] = 0.0
+		if _buscador != null and _buscador.has_method("terminar_en_curso"):
+			_buscador.terminar_en_curso(cid)
+		if c["celda"] != destino:
+			_iniciar_busqueda(c, destino)
+
+	comisiones_activas[id_proyecto] = {
+		"destino": destino,
+		"requeridos": num_investigadores,
+		"edificio_id": edificio_id,
+		"miembros": ids_seleccionados.duplicate(),
+	}
+	return ids_seleccionados
+
+
+## Verifica si todos los investigadores requeridos de una comisión han llegado a la celda de destino.
+func comision_esta_completa_en_destino(id_proyecto: String, destino: Vector3i) -> bool:
+	if not comisiones_activas.has(id_proyecto):
+		return false
+	var info: Dictionary = comisiones_activas[id_proyecto]
+	var miembros: Array = info.get("miembros", [])
+	var requeridos: int = info.get("requeridos", 0)
+	if miembros.size() < requeridos:
+		return false
+	for colono_id in miembros:
+		if not colonos.has(colono_id):
+			return false
+		if colonos[colono_id]["celda"] != destino:
+			return false
+	return true
+
+
+## Libera a los investigadores de una comisión científica tras completarse o cancelarse el proyecto.
+func liberar_comision(id_proyecto: String) -> void:
+	if not comisiones_activas.has(id_proyecto):
+		return
+	var info: Dictionary = comisiones_activas[id_proyecto]
+	var miembros: Array = info.get("miembros", [])
+	for cid in miembros:
+		if colonos.has(cid):
+			var c: Dictionary = colonos[cid]
+			c["tarea"] = {}
+			var vacia: Array[Vector3i] = []
+			c["ruta"] = vacia
+			c["busqueda"] = {}
+			c["espera"] = 0.0
+			if _buscador != null and _buscador.has_method("terminar_en_curso"):
+				_buscador.terminar_en_curso(cid)
+	comisiones_activas.erase(id_proyecto)
 

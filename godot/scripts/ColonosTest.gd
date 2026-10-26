@@ -1583,5 +1583,34 @@ func ejecutar_pruebas() -> void:
 	assert(col_m.contar_militares_desplegados(zonif_falsa) == 2, "sin nucleo todos estan desplegados")
 	zonif_falsa.free()
 
-	print("\n=== Las 56 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 26: Despacho de Comisiones Científicas e Investigador Itinerante ===")
+	var ciudad26: Node = CiudadScript.new()
+	var colonos_test: Node = _nuevo(_mundo_llano(), ciudad26)
+	var destino_obra := Vector3i(5, 1, 5)
+	colonos_test.agregar_colono("investigador", Vector3i(1, 1, 1))
+	colonos_test.agregar_colono("investigador", Vector3i(2, 1, 1))
+
+	# Verificar que una comisión de Era 3 pide exactamente 2 investigadores
+	var ids_comision: Array[int] = colonos_test.despachar_comision_cientifica(destino_obra, "refineria_1", 2, "proyecto_diesel")
+	assert(ids_comision.size() == 2)
+	assert(colonos_test.colonos[ids_comision[0]]["tarea"].get("tipo") == "investigador_itinerante")
+	assert(colonos_test.colonos[ids_comision[1]]["tarea"].get("tipo") == "investigador_itinerante")
+
+	# Review Focus 2: No debe considerarse completa hasta que ambos hayan llegado
+	colonos_test.colonos[ids_comision[0]]["celda"] = destino_obra
+	assert(not colonos_test.comision_esta_completa_en_destino("proyecto_diesel", destino_obra))
+	colonos_test.colonos[ids_comision[1]]["celda"] = destino_obra
+	assert(colonos_test.comision_esta_completa_en_destino("proyecto_diesel", destino_obra))
+
+	# Review Focus 3: Si un investigador es retirado / muere en camino, se remueve de miembros y la comisión no está completa
+	colonos_test._retirar(ids_comision[0])
+	assert(not colonos_test.comision_esta_completa_en_destino("proyecto_diesel", destino_obra))
+	assert(colonos_test.comisiones_activas["proyecto_diesel"]["miembros"].size() == 1)
+
+	# Liberar la comisión limpia las tareas y la entrada en comisiones_activas
+	colonos_test.liberar_comision("proyecto_diesel")
+	assert(not colonos_test.comisiones_activas.has("proyecto_diesel"))
+	assert(colonos_test.colonos[ids_comision[1]]["tarea"].is_empty())
+
+	print("\n=== Las 57 pruebas de Colonos pasaron correctamente ===")
 

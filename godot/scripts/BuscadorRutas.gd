@@ -35,6 +35,19 @@ const DIRECCIONES: Array[Vector3i] = [
 
 var mundo: Object
 var max_nodos: int = MAX_NODOS_EXPANDIDOS
+var _busquedas_activas: Dictionary = {}
+
+
+func en_curso(id: Variant) -> bool:
+	return _busquedas_activas.get(id, false)
+
+
+func registrar_en_curso(id: Variant) -> void:
+	_busquedas_activas[id] = true
+
+
+func terminar_en_curso(id: Variant) -> void:
+	_busquedas_activas.erase(id)
 
 
 func _init(p_mundo: Object) -> void:

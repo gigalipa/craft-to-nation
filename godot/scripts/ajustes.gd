@@ -362,14 +362,42 @@ static var CAMARA_CENITAL_FOV: float = 60.0
 # ==============================================================================
 static var CIUDAD_SEGUNDOS_POR_TICK: float = 2.0
 static var CIUDAD_TIPOS_POBLACION: Dictionary = {
-	"ciudadano": {"comida": 2, "combustible": 0, "energia": 0, "x_cama": 5},
-	"desempleado": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 4},
-	"obrero": {"comida": 5, "combustible": 0, "energia": 0, "x_cama": 4},
-	"tecnico": {"comida": 3, "combustible": 0, "energia": 0, "x_cama": 3},
-	"especialista": {"comida": 2, "combustible": 0, "energia": 1, "x_cama": 2},
-	"investigador": {"comida": 1, "combustible": 0, "energia": 2, "x_cama": 1},
-	"militar": {"comida": 4, "combustible": 2, "energia": 0, "x_cama": 3},
+	"ciudadano": {"comida": 2.0, "combustible": 0.0, "energia": 0.0, "x_cama": 4},
+	"desempleado": {"comida": 3.0, "combustible": 0.0, "energia": 0.0, "x_cama": 4},
+	"obrero": {"comida": 4.0, "combustible": 0.0, "energia": 0.0, "x_cama": 4},
+	"tecnico": {"comida": 3.0, "combustible": 0.0, "energia": 0.5, "x_cama": 3},
+	"especialista": {"comida": 2.0, "combustible": 1.0, "energia": 1.0, "x_cama": 2},
+	"investigador": {"comida": 2.0, "combustible": 0.0, "energia": 2.0, "x_cama": 1},
+	"militar": {"comida": 3.0, "combustible": 1.0, "energia": 0.0, "x_cama": 3},
 }
+
+## Gasto adicional para militares desplegados en el exterior
+static var MILITAR_CONSUMO_COMIDA_DESPLEGADO: float = 5.0
+static var MILITAR_CONSUMO_COMBUSTIBLE_DESPLEGADO: float = 2.0
+
+## Orden de consumo de sub-categorías de comida (fresco a no perecedero)
+static var CIUDAD_ORDEN_CONSUMO_COMIDA: Array = [
+	"pesca",
+	"recoleccion_caza",
+	"sembradios",
+	"granjas_animales",
+	"hidroponia",
+	"sintetico",
+]
+
+## Monocultivo y variedad dietética
+static var CIUDAD_GRACIA_MONOCULTIVO_HORAS: int = 360
+static var CIUDAD_PENALIZACION_MONOCULTIVO_MORAL: float = -0.2
+static var CIUDAD_BONO_DIETA_2_3_FUENTES: float = 0.3
+static var CIUDAD_BONO_DIETA_4_5_FUENTES: float = 1.0
+static var CIUDAD_BONO_DIETA_6_FUENTES: float = 2.0
+
+## Suelo mínimo de productividad para comida
+static var PRODUCTIVIDAD_SUELO_ALIMENTOS: float = 0.75
+
+## Decreto de Racionamiento Estricto
+static var RACIONAMIENTO_REDUCCION_CONSUMO: float = 0.35
+static var RACIONAMIENTO_TECHO_MORAL: float = 35.0
 static var CIUDAD_NIVELES_VIVIENDA: Dictionary = {
 	1: {"camas_por_piso": 2, "pisos": 2},
 	2: {"camas_por_piso": 4, "pisos": 4},
@@ -437,11 +465,21 @@ static var CIUDAD_BONO_BAUL_COMIDA: float = 400.0
 static var CIUDAD_COMIDA_INICIAL: float = 5000.0
 static var CIUDAD_MADERA_INICIAL: float = 200.0
 
+## Umbrales de comida y moral
+static var CIUDAD_UMBRAL_COMIDA_SUPERAVIT: float = 0.90
+static var CIUDAD_UMBRAL_COMIDA_ESTABLE: float = 0.80
+static var CIUDAD_HORAS_AUTONOMIA_ALARMA: float = 72.0
+static var CIUDAD_PESO_ESCASEZ_COMIDA: float = 3.0
+static var CIUDAD_BONO_SUPERAVIT_COMIDA: float = 0.4
+static var CIUDAD_UMBRAL_NOTIF_RECURSO_BAJO: float = 0.05
+static var CIUDAD_UMBRAL_REARME_RECURSO_BAJO: float = 0.15
+
 
 # ==============================================================================
 # ECONOMÍA, ENERGÍA, COLONOS Y RUTAS (Economia, Energia, Colonos, BuscadorRutas)
 # ==============================================================================
 static var ECONOMIA_CAPACIDAD_CARGA: float = 150.0
+static var ECONOMIA_PORCENTAJES_RESERVA_INSUMO: Array[float] = [0.0, 0.10, 0.20, 0.35, 0.50]
 static var ECONOMIA_VALORES_RESERVA_INSUMO: Array[float] = [0.0, 50.0, 100.0, 250.0, 500.0]
 static var ECONOMIA_CARGA_MINIMA: float = 10.0
 static var ECONOMIA_HORAS_FORMACION: int = 24

@@ -9,6 +9,7 @@ extends Node
 ## forma aislada y repetible.
 
 const CiudadScript = preload("res://scripts/Ciudad.gd")
+const Ajustes = preload("res://scripts/ajustes.gd")
 
 
 func _ready() -> void:
@@ -161,9 +162,9 @@ func ejecutar_pruebas() -> void:
 	orden_test.demografia["militar"] = 4  # 1.33..  -> total 6.13.., sobran 2.13..
 	orden_test.regular_densidad_vertical()
 	assert(orden_test.demografia["desempleado"] == 0, "los desempleados se desahucian primero")
-	assert(orden_test.demografia["ciudadano"] == 3, "luego los ciudadanos, solo los necesarios")
+	assert(orden_test.demografia["ciudadano"] == 2, "luego los ciudadanos con x_cama 4, solo los necesarios")
 	assert(orden_test.demografia["obrero"] == 4 and orden_test.demografia["tecnico"] == 3 and orden_test.demografia["militar"] == 4)
-	assert(orden_test.desahuciados == 9)
+	assert(orden_test.desahuciados == 10)
 
 	print("\n=== TEST 14: Migración de colonos ===")
 	# 14a: con vivienda y tasa mensual acumulada, llega cuando el acumulador cruza 1.0.
@@ -646,5 +647,88 @@ func ejecutar_pruebas() -> void:
 	assert(ciu31c.demografia["desempleado"] == 0, "a las 240h el desempleado emigra de la ciudad")
 	assert(ciu31c.desahuciados == desah_antes_31 + 1)
 
-	print("\n=== Las 31 pruebas de Ciudad pasaron correctamente ===")
+	# 4. Boost de inmigración: solo se puede activar con moral que produce inmigración positiva
+	var ciu_boost: Node = CiudadScript.new()
+	ciu_boost.moral = 15.0 # Éxodo
+	assert(not ciu_boost.puede_activar_boost_inmigracion(), "no se debe poder activar boost cuando hay éxodo")
+	assert(not ciu_boost.activar_boost_inmigracion(), "activar_boost_inmigracion debe retornar false durante éxodo")
+	assert(ciu_boost.horas_boost_inmigracion == 0)
+
+	ciu_boost.moral = 50.0 # Inmigración positiva (+3.0)
+	assert(ciu_boost.puede_activar_boost_inmigracion(), "se debe poder activar boost con moral positiva")
+	assert(ciu_boost.tasa_migracion_mensual_efectiva() == 3.0, "sin boost activo la tasa efectiva es igual a la base")
+	assert(ciu_boost.activar_boost_inmigracion(), "activar_boost_inmigracion debe retornar true")
+	assert(ciu_boost.horas_boost_inmigracion == int(CiudadScript.HORAS_POR_MES))
+	assert(not ciu_boost.puede_activar_boost_inmigracion(), "no se puede reactivar si ya está activo")
+	assert(ciu_boost.tasa_migracion_mensual_efectiva() == 3.0 * Ajustes.CIUDAD_MULTIPLICADOR_BOOST_INMIGRACION)
+	assert(ciu_boost.dias_boost_inmigracion_restantes() == 30)
+
+	print("\n=== TEST 32: Escasez de Comida Dinámica, Alertas con Histéresis y Autonomía ===")
+	var ciu32: Node = CiudadScript.new()
+	ciu32.migracion_activa = false
+	ciu32.demografia["obrero"] = 1
+	var com_32 = ciu32.almacen["comida"]
+	com_32.limite = 5000.0
+
+	# Caso 1: Superávit (>= 90%, 4600 / 5000 = 92%). Con tasa negativa, no hay penalización por escasez
+	com_32.cantidad = 4600.0
+	com_32.tasa_neta_promedio = -10.0
+	ciu32.moral = 50.0 # Moral neutral (inercia = 0)
+	ciu32.simular_tick(0.0)
+	assert(ciu32.tasa_cambio_moral >= 0.0, "en superávit (>=90%) no hay penalización por escasez aunque la tasa sea negativa")
+
+	# Caso 2: Estable (80% a 90%, 4200 / 5000 = 84%). Con tasa negativa, es neutro (0 penalización)
+	com_32.cantidad = 4200.0
+	com_32.tasa_neta_promedio = -10.0
+	ciu32.moral = 50.0
+	ciu32.simular_tick(0.0)
+	assert(ciu32.tasa_cambio_moral >= -0.05, "en estado estable (80-90%) no hay penalización por escasez")
+
+	# Caso 3: Escasez (< 80%, 2500 / 5000 = 50%) con tasa negativa (-50 u/h -> 50 h de autonomía < 72 h)
+	com_32.cantidad = 2500.0
+	com_32.tasa_neta_promedio = -50.0
+	var urg: Dictionary = ciu32.recurso_critico_urgente()
+	assert(urg["recurso"] == "comida", "debe identificar comida como recurso crítico")
+	assert(is_equal_approx(urg["horas"], 50.0), "autonomía calculada correctamente: 2500 / 50 = 50 h")
+	ciu32.moral = 50.0
+	ciu32.simular_tick(0.0)
+	assert(ciu32.tasa_cambio_moral < -0.5, "en escasez (<80%) con autonomía <72h hay penalización en la moral")
+
+	# Caso 5: Notificación < 5% con histéresis (> 15%)
+	var notificados: Array[String] = []
+	ciu32.recurso_escaso_notificado.connect(func(c: String) -> void: notificados.append(c))
+	ciu32.almacen["madera"].limite = 1000.0
+	ciu32.almacen["madera"].cantidad = 40.0 # 4% (< 5%)
+	ciu32.simular_tick(0.0)
+	assert(notificados.has("madera"), "emite alerta al caer por debajo del 5%")
+	notificados.clear()
+
+	# Segundo tick al 4%: NO debe volver a emitir (histéresis activa)
+	ciu32.simular_tick(0.0)
+	assert(notificados.is_empty(), "no emite de nuevo mientras siga por debajo de 15%")
+
+	# Recupera al 10% (aún <= 15%): no se rearma
+	ciu32.almacen["madera"].cantidad = 100.0
+	ciu32.simular_tick(0.0)
+	assert(ciu32.recursos_alertados_5pct.get("madera", false), "aún no se rearma al 10%")
+
+	# Recupera al 16% (> 15%): se rearma
+	ciu32.almacen["madera"].cantidad = 160.0
+	ciu32.simular_tick(0.0)
+	assert(not ciu32.recursos_alertados_5pct.get("madera", false), "se rearma al superar el 15%")
+
+	# Vuelve a caer al 3%: emite de nuevo
+	ciu32.almacen["madera"].cantidad = 30.0
+	ciu32.simular_tick(0.0)
+	assert(notificados.has("madera"), "vuelve a emitir alerta tras haberse rearmado")
+
+	print("\n=== TEST 31: Suelo biológico de consumo y balance metabólico ===")
+	assert(Ajustes.CIUDAD_TIPOS_POBLACION["investigador"]["comida"] == 2.0, "investigador debe consumir 2.0 comida/h")
+	assert(Ajustes.CIUDAD_TIPOS_POBLACION["ciudadano"]["x_cama"] == 4, "ciudadano x_cama debe ser 4")
+	assert(Ajustes.CIUDAD_TIPOS_POBLACION["obrero"]["comida"] == 4.0, "obrero debe consumir 4.0 comida/h")
+	assert(Ajustes.CIUDAD_TIPOS_POBLACION["tecnico"]["energia"] == 0.5, "tecnico debe consumir 0.5 energia/h")
+	assert(Ajustes.CIUDAD_TIPOS_POBLACION["especialista"]["combustible"] == 1.0, "especialista debe consumir 1.0 combustible/h")
+	assert(Ajustes.CIUDAD_TIPOS_POBLACION["militar"]["comida"] == 3.0, "militar base debe consumir 3.0 comida/h")
+
+	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

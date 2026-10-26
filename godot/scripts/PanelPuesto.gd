@@ -66,6 +66,9 @@ var _demoler := Button.new()
 var _dialogo_demoler := ConfirmationDialog.new()
 var _filas := {}  # rol -> {"fila": HBoxContainer, "cantidad": Label, "menos": Button, "mas": Button, "libres": Label}
 var _fila_reserva := HBoxContainer.new()
+var _lbl_reserva_val := TemaHUD.etiqueta()
+var _btn_reserva_subir := Button.new()
+var _btn_reserva_bajar := Button.new()
 var _btn_reserva := Button.new()
 
 var _caja_investigacion: VBoxContainer
@@ -80,6 +83,16 @@ var _dialogo_investigar := ConfirmationDialog.new()
 var _contenido_dialogo_inv: VBoxContainer
 var _dialogo_cancelar_inv := ConfirmationDialog.new()
 var _id_tech_seleccionada: int = 0
+
+var _caja_ciencias_teoricas: VBoxContainer = null
+var _lbl_teoricas_titulo: Label = null
+var _lista_ciencias_teoricas: VBoxContainer = null
+var _caja_mejoras_practicas: VBoxContainer = null
+var _lbl_mejoras_titulo: Label = null
+var _lista_mejoras_practicas: VBoxContainer = null
+var _btn_reconversion: Button = null
+var _dialogo_reconversion := ConfirmationDialog.new()
+var _id_mejora_reconversion: String = ""
 
 
 func _ready() -> void:
@@ -155,14 +168,37 @@ func _ready() -> void:
 
 	_fila_reserva.add_theme_constant_override("separation", 6)
 	var lbl_res := TemaHUD.etiqueta("Reserva central:")
+	lbl_res.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl_res.size_flags_vertical = Control.SIZE_FILL
 	_fila_reserva.add_child(lbl_res)
-	TemaHUD.estilizar_boton(_btn_reserva)
-	_btn_reserva.pressed.connect(func() -> void:
+	_lbl_reserva_val.custom_minimum_size.x = 135.0
+	_lbl_reserva_val.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lbl_reserva_val.size_flags_vertical = Control.SIZE_FILL
+	_fila_reserva.add_child(_lbl_reserva_val)
+	_btn_reserva_subir.icon = IconosHUD.icono("btn_subir")
+	_btn_reserva_subir.custom_minimum_size = Vector2(24, 24)
+	_btn_reserva_subir.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_btn_reserva_subir.expand_icon = true
+	_btn_reserva_subir.tooltip_text = "Aumentar reserva central"
+	TemaHUD.estilizar_boton_icono(_btn_reserva_subir)
+	_btn_reserva_subir.pressed.connect(func() -> void:
 		if Economia.tiene_puesto(esquina):
-			Economia.ciclar_reserva_insumo(esquina)
+			Economia.subir_reserva_insumo(esquina)
 			_actualizar()
 	)
-	_fila_reserva.add_child(_btn_reserva)
+	_fila_reserva.add_child(_btn_reserva_subir)
+	_btn_reserva_bajar.icon = IconosHUD.icono("btn_bajar")
+	_btn_reserva_bajar.custom_minimum_size = Vector2(24, 24)
+	_btn_reserva_bajar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_btn_reserva_bajar.expand_icon = true
+	_btn_reserva_bajar.tooltip_text = "Reducir reserva central"
+	TemaHUD.estilizar_boton_icono(_btn_reserva_bajar)
+	_btn_reserva_bajar.pressed.connect(func() -> void:
+		if Economia.tiene_puesto(esquina):
+			Economia.bajar_reserva_insumo(esquina)
+			_actualizar()
+	)
+	_fila_reserva.add_child(_btn_reserva_bajar)
 	caja.add_child(_fila_reserva)
 
 	caja.add_child(_energia)
@@ -238,6 +274,50 @@ func _ready() -> void:
 	_dialogo_cancelar_inv.confirmed.connect(_confirmar_cancelar_investigacion)
 	TemaHUD.estilizar_dialogo(_dialogo_cancelar_inv)
 	add_child(_dialogo_cancelar_inv)
+
+	_caja_ciencias_teoricas = VBoxContainer.new()
+	_caja_ciencias_teoricas.add_theme_constant_override("separation", 4)
+	caja.add_child(_caja_ciencias_teoricas)
+
+	_lbl_teoricas_titulo = TemaHUD.etiqueta("Ciencias Básicas Teóricas (Capa 1):")
+	_lbl_teoricas_titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_caja_ciencias_teoricas.add_child(_lbl_teoricas_titulo)
+
+	_lista_ciencias_teoricas = VBoxContainer.new()
+	_lista_ciencias_teoricas.add_theme_constant_override("separation", 4)
+	_caja_ciencias_teoricas.add_child(_lista_ciencias_teoricas)
+
+	_caja_mejoras_practicas = VBoxContainer.new()
+	_caja_mejoras_practicas.add_theme_constant_override("separation", 4)
+	caja.add_child(_caja_mejoras_practicas)
+
+	_lbl_mejoras_titulo = TemaHUD.etiqueta("Mejoras Prácticas (Capa 2):")
+	_lbl_mejoras_titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_caja_mejoras_practicas.add_child(_lbl_mejoras_titulo)
+
+	_lista_mejoras_practicas = VBoxContainer.new()
+	_lista_mejoras_practicas.add_theme_constant_override("separation", 4)
+	_caja_mejoras_practicas.add_child(_lista_mejoras_practicas)
+
+	_btn_reconversion = Button.new()
+	_btn_reconversion.text = Strings.RECONVERSION_BTN_INICIAR
+	_btn_reconversion.icon = IconosHUD.icono("modo_construir")
+	_btn_reconversion.expand_icon = true
+	_btn_reconversion.tooltip_text = Strings.RECONVERSION_TOOLTIP
+	TemaHUD.estilizar_boton(_btn_reconversion)
+	_btn_reconversion.pressed.connect(func() -> void:
+		if _id_mejora_reconversion != "":
+			_dialogo_reconversion.popup_centered()
+	)
+	_caja_mejoras_practicas.add_child(_btn_reconversion)
+
+	_dialogo_reconversion.title = Strings.RECONVERSION_BTN_INICIAR
+	_dialogo_reconversion.dialog_text = "¿Deseas iniciar la reconversión industrial doctrinal de este edificio?"
+	_dialogo_reconversion.ok_button_text = Strings.PANEL_EDIFICIO_BTN_CONFIRMAR
+	_dialogo_reconversion.cancel_button_text = Strings.PANEL_PUESTO_BTN_CANCELAR
+	_dialogo_reconversion.confirmed.connect(_confirmar_reconversion)
+	TemaHUD.estilizar_dialogo(_dialogo_reconversion)
+	add_child(_dialogo_reconversion)
 
 	_construir_widgets_puertos()
 	caja.add_child(_puertos)
@@ -326,35 +406,59 @@ func _construir_widgets_puertos() -> void:
 
 func _crear_fila(rol: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 6)
 	var ic := IconosHUD.crear_rect(IconosHUD.icono_demografia(rol), 16)
+	ic.custom_minimum_size = Vector2(16, 16)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	fila.add_child(ic)
 	var nombre := TemaHUD.etiqueta(NOMBRES_ROL[rol])
-	nombre.custom_minimum_size.x = 90.0
-	var menos := Button.new()
-	menos.icon = IconosHUD.icono("btn_menos")
-	if menos.icon == null:
-		menos.text = "-"
-	menos.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menos.expand_icon = true
-	menos.custom_minimum_size = Vector2(28, 28)
-	TemaHUD.estilizar_boton_icono(menos)
-	menos.pressed.connect(func() -> void: Colonos.despedir(esquina, rol))
+	nombre.custom_minimum_size.x = 135.0
+	nombre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nombre.size_flags_vertical = Control.SIZE_FILL
+	fila.add_child(nombre)
+	
+	var cont_cant := HBoxContainer.new()
+	cont_cant.custom_minimum_size.x = 95.0
+	cont_cant.add_theme_constant_override("separation", 4)
+	cont_cant.size_flags_vertical = Control.SIZE_FILL
 	var cantidad := TemaHUD.etiqueta()
-	cantidad.custom_minimum_size.x = 24.0
-	cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cantidad.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var libres := TemaHUD.etiqueta()
+	libres.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cont_cant.add_child(cantidad)
+	cont_cant.add_child(libres)
+	fila.add_child(cont_cant)
+	
+	var cont_acciones := HBoxContainer.new()
+	cont_acciones.add_theme_constant_override("separation", 4)
+	cont_acciones.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var mas := Button.new()
-	mas.icon = IconosHUD.icono("btn_mas")
+	mas.icon = IconosHUD.icono("btn_subir")
 	if mas.icon == null:
 		mas.text = "+"
 	mas.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mas.expand_icon = true
-	mas.custom_minimum_size = Vector2(28, 28)
+	mas.custom_minimum_size = Vector2(24, 24)
+	mas.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mas.tooltip_text = Strings.PANEL_PUESTO_BTN_CONTRATAR_TOOLTIP
 	TemaHUD.estilizar_boton_icono(mas)
 	mas.pressed.connect(func() -> void: Colonos.contratar(esquina, rol))
-	var libres := TemaHUD.etiqueta()
-	libres.custom_minimum_size.x = 70.0
-	for nodo in [nombre, menos, cantidad, mas, libres]:
-		fila.add_child(nodo)
+	
+	var menos := Button.new()
+	menos.icon = IconosHUD.icono("btn_bajar")
+	if menos.icon == null:
+		menos.text = "-"
+	menos.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menos.expand_icon = true
+	menos.custom_minimum_size = Vector2(24, 24)
+	menos.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	menos.tooltip_text = Strings.PANEL_PUESTO_BTN_DESPEDIR_TOOLTIP
+	TemaHUD.estilizar_boton_icono(menos)
+	menos.pressed.connect(func() -> void: Colonos.despedir(esquina, rol))
+	
+	cont_acciones.add_child(mas)
+	cont_acciones.add_child(menos)
+	fila.add_child(cont_acciones)
 	_filas[rol] = {"fila": fila, "nombre": nombre, "cantidad": cantidad, "menos": menos, "mas": mas, "libres": libres}
 	return fila
 
@@ -364,6 +468,8 @@ func abrir(nueva_esquina: Vector2i) -> void:
 		return
 	esquina = nueva_esquina
 	visible = true
+	if Economia.puestos[esquina].get("agotado", false):
+		Economia.recalcular_tasas(esquina)
 	_actualizar()
 
 
@@ -453,7 +559,26 @@ func _actualizar() -> void:
 	if Economia.es_refineria(esquina) or puesto["tipo"] == "central_termoelectrica":
 		_fila_reserva.visible = true
 		var val_res: float = Economia.obtener_reserva_insumo(esquina)
-		_btn_reserva.text = "%.0f u" % val_res if val_res > 0.0 else "Sin reserva (0 u)"
+		var recurso_insumo: String = "carbon" if puesto["tipo"] == "central_termoelectrica" else ""
+		if recurso_insumo == "":
+			var entradas: Dictionary = Economia.entradas_de(esquina)
+			for r in entradas:
+				if not Economia.RECURSOS_LIQUIDOS.has(r):
+					recurso_insumo = r
+					break
+		var unid_res: float = Economia.calcular_reserva_en_unidades(esquina, recurso_insumo)
+		if val_res <= 0.0:
+			_lbl_reserva_val.text = "Sin reserva (0% / 0 u)"
+			_btn_reserva.text = _lbl_reserva_val.text
+			_btn_reserva_bajar.disabled = true
+			_btn_reserva_subir.disabled = false
+		else:
+			var pct_int: int = int(round(val_res * 100.0))
+			_lbl_reserva_val.text = "%d%% (%.0f u)" % [pct_int, unid_res]
+			_btn_reserva.text = _lbl_reserva_val.text
+			_btn_reserva_bajar.disabled = false
+			var lista: Array = Economia.PORCENTAJES_RESERVA_INSUMO
+			_btn_reserva_subir.disabled = is_equal_approx(val_res, lista.back())
 	else:
 		_fila_reserva.visible = false
 
@@ -567,6 +692,190 @@ func _actualizar() -> void:
 					else:
 						btn.text = "Investigar: %s" % info_tech["nombre"]
 						btn.disabled = false
+
+	if _caja_ciencias_teoricas != null:
+		if es_universidad:
+			_caja_ciencias_teoricas.visible = true
+			for child in _lista_ciencias_teoricas.get_children():
+				child.queue_free()
+
+			var era_actual_ciudad: int = Ciudad.era_actual if ("era_actual" in Ciudad) else 1
+			for id_c in Ajustes.CIENCIAS_TEORICAS_CATALOGO:
+				var info_c: Dictionary = Ajustes.CIENCIAS_TEORICAS_CATALOGO[id_c]
+				var nom_c: String = info_c.get("nombre", id_c)
+				var era_c: int = int(info_c.get("era", 1))
+				var pts_c: int = int(info_c.get("costo_puntos", 100))
+				var prerreq_c: String = info_c.get("prerrequisito", "")
+				var descubierta: bool = Ciudad.esta_ciencia_descubierta(id_c) if Ciudad.has_method("esta_ciencia_descubierta") else false
+				var activa: bool = (Ciudad.ciencia_teorica_activa == id_c) if ("ciencia_teorica_activa" in Ciudad) else false
+
+				if descubierta:
+					var lbl_d := TemaHUD.etiqueta("✅ %s (Completada)" % nom_c)
+					lbl_d.add_theme_color_override("font_color", TemaHUD.VALIDO)
+					_lista_ciencias_teoricas.add_child(lbl_d)
+				elif activa:
+					var vbox_a := VBoxContainer.new()
+					vbox_a.add_theme_constant_override("separation", 2)
+					var prog: float = Ciudad.progreso_ciencia_teorica.get(id_c, 0.0) if ("progreso_ciencia_teorica" in Ciudad) else 0.0
+					var pct: int = int(clampf((prog / float(pts_c)) * 100.0, 0.0, 100.0))
+					var lbl_a := TemaHUD.etiqueta("🔬 %s: %d / %d pts (%d%%)" % [nom_c, int(prog), pts_c, pct])
+					lbl_a.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+					vbox_a.add_child(lbl_a)
+					var bar := ProgressBar.new()
+					bar.show_percentage = false
+					bar.max_value = float(pts_c)
+					bar.value = prog
+					bar.custom_minimum_size = Vector2(320, 12)
+					var sb_bg := TemaHUD.caja_boton(Color(0.04, 0.08, 0.06, 0.9), TemaHUD.DORADO)
+					var sb_fg := StyleBoxFlat.new()
+					sb_fg.bg_color = TemaHUD.color_doctrina(info_c.get("doctrina", "")) if info_c.has("doctrina") else Color(0.2, 0.7, 0.3)
+					sb_fg.set_corner_radius_all(2)
+					bar.add_theme_stylebox_override("background", sb_bg)
+					bar.add_theme_stylebox_override("fill", sb_fg)
+					vbox_a.add_child(bar)
+					_lista_ciencias_teoricas.add_child(vbox_a)
+				else:
+					var req_ok: bool = prerreq_c == "" or (Ciudad.has_method("esta_ciencia_descubierta") and Ciudad.esta_ciencia_descubierta(prerreq_c))
+					var era_ok: bool = era_c <= era_actual_ciudad
+					if not era_ok:
+						var lbl_l := TemaHUD.etiqueta("🔒 %s (Requiere Era %d)" % [nom_c, era_c])
+						lbl_l.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+						_lista_ciencias_teoricas.add_child(lbl_l)
+					elif not req_ok:
+						var nom_pre: String = Ajustes.CIENCIAS_TEORICAS_CATALOGO.get(prerreq_c, {}).get("nombre", prerreq_c)
+						var lbl_l := TemaHUD.etiqueta("🔒 %s (Requiere: %s)" % [nom_c, nom_pre])
+						lbl_l.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+						_lista_ciencias_teoricas.add_child(lbl_l)
+					else:
+						var btn_c := Button.new()
+						btn_c.text = "Investigar: %s (%d pts)" % [nom_c, pts_c]
+						TemaHUD.estilizar_boton(btn_c)
+						var id_cap: String = id_c
+						btn_c.pressed.connect(func() -> void:
+							if Ciudad.has_method("iniciar_ciencia_teorica"):
+								Ciudad.iniciar_ciencia_teorica(id_cap)
+								_actualizar()
+						)
+						_lista_ciencias_teoricas.add_child(btn_c)
+		else:
+			_caja_ciencias_teoricas.visible = false
+
+	if _caja_mejoras_practicas != null:
+		var tipo_puesto: String = puesto.get("tipo", "")
+		var posibles_mejoras: Array = []
+		for id_m in Ajustes.MEJORAS_PRACTICAS_CATALOGO:
+			var m_data: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO[id_m]
+			if m_data.get("edificio_tipo", "") == tipo_puesto:
+				posibles_mejoras.append(id_m)
+
+		if posibles_mejoras.is_empty():
+			_caja_mejoras_practicas.visible = false
+		else:
+			_caja_mejoras_practicas.visible = true
+			for child in _lista_mejoras_practicas.get_children():
+				child.queue_free()
+
+			var instaladas: Array = puesto.get("mejoras", [])
+			var pm: Dictionary = puesto.get("proyecto_mejora", {})
+			var era_actual_ciudad: int = Ciudad.era_actual if ("era_actual" in Ciudad) else 1
+
+			if not pm.is_empty():
+				var id_act_m: String = pm.get("id", "")
+				var info_pm: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(id_act_m, {})
+				var nom_pm: String = info_pm.get("nombre", id_act_m)
+				var estado_pm: String = pm.get("estado", "ESPERANDO_PERSONAL")
+				var es_rec: bool = pm.get("es_reconversion", false) or puesto.get("estado_operativo", "") == "RECONVERSION"
+				var req_inv: int = int(pm.get("investigadores_requeridos", 1))
+
+				var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
+				var presentes_inv: int = 0
+				if Colonos != null and "comisiones_activas" in Colonos and Colonos.comisiones_activas.has(id_proy):
+					var com_info: Dictionary = Colonos.comisiones_activas[id_proy]
+					var dest_proy: Vector3i = com_info.get("destino", Vector3i.ZERO)
+					for cid in com_info.get("miembros", []):
+						if Colonos.colonos.has(cid) and Colonos.colonos[cid].get("celda") == dest_proy:
+							presentes_inv += 1
+
+				var desc_est := "Esperando personal científico (%d/%d)" % [presentes_inv, req_inv]
+				if estado_pm == "EN_EJECUCION":
+					desc_est = "En ejecución (%d/%d)" % [presentes_inv, req_inv]
+				var prefijo := "Reconversión" if es_rec else "Mejora"
+				var lbl_proy := TemaHUD.etiqueta("⚙ %s: %s\nEstado: %s" % [prefijo, nom_pm, desc_est])
+				lbl_proy.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+				_lista_mejoras_practicas.add_child(lbl_proy)
+
+				var prog_m: float = float(pm.get("progreso", 0.0))
+				var t_total: float = float(pm.get("tiempo", 1.0))
+				var bar_m := ProgressBar.new()
+				bar_m.show_percentage = true
+				bar_m.max_value = t_total
+				bar_m.value = prog_m
+				bar_m.custom_minimum_size = Vector2(320, 14)
+				_lista_mejoras_practicas.add_child(bar_m)
+				_btn_reconversion.visible = false
+			else:
+				var incompatible_para_reconversion: String = ""
+				for id_m in posibles_mejoras:
+					var info_m: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO[id_m]
+					var nom_m: String = info_m.get("nombre", id_m)
+					var doc_m: String = info_m.get("doctrina", "")
+					var nom_doc: String = Strings.DOCTRINA_NOMBRES.get(doc_m, doc_m.capitalize())
+
+					if instaladas.has(id_m):
+						var lbl_inst := TemaHUD.etiqueta("✅ %s (%s)" % [nom_m, nom_doc])
+						lbl_inst.add_theme_color_override("font_color", TemaHUD.color_doctrina(doc_m))
+						_lista_mejoras_practicas.add_child(lbl_inst)
+					else:
+						var prerreq_m: String = info_m.get("prerrequisito", "")
+						var req_ok: bool = prerreq_m == "" or (Ciudad.has_method("esta_ciencia_descubierta") and Ciudad.esta_ciencia_descubierta(prerreq_m))
+						var era_ok: bool = int(info_m.get("era", 1)) <= era_actual_ciudad
+
+						var es_incompatible: bool = false
+						for ex in info_m.get("excluye", []):
+							if instaladas.has(ex):
+								es_incompatible = true
+								break
+						for m_inst in instaladas:
+							var inst_data: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(m_inst, {})
+							if inst_data.get("excluye", []).has(id_m):
+								es_incompatible = true
+								break
+							if inst_data.get("doctrina", "") != "" and doc_m != "" and inst_data.get("doctrina", "") != doc_m:
+								es_incompatible = true
+
+						if es_incompatible:
+							if req_ok and era_ok:
+								incompatible_para_reconversion = id_m
+							var lbl_inc := TemaHUD.etiqueta("⚠ %s (Incompatible con doctrina instalada)" % nom_m)
+							lbl_inc.add_theme_color_override("font_color", Color(0.9, 0.6, 0.3))
+							_lista_mejoras_practicas.add_child(lbl_inc)
+						elif not req_ok:
+							var nom_req: String = Ajustes.CIENCIAS_TEORICAS_CATALOGO.get(prerreq_m, {}).get("nombre", prerreq_m)
+							var lbl_lock := TemaHUD.etiqueta("🔒 %s (Requiere: %s)" % [nom_m, nom_req])
+							lbl_lock.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+							_lista_mejoras_practicas.add_child(lbl_lock)
+						elif not era_ok:
+							var lbl_lock := TemaHUD.etiqueta("🔒 %s (Requiere Era %d)" % [nom_m, int(info_m.get("era", 1))])
+							lbl_lock.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+							_lista_mejoras_practicas.add_child(lbl_lock)
+						else:
+							var btn_inst := Button.new()
+							btn_inst.text = "Instalar: %s (%s)" % [nom_m, nom_doc]
+							TemaHUD.estilizar_boton(btn_inst)
+							var id_capturado_m: String = id_m
+							btn_inst.pressed.connect(func() -> void:
+								if Economia != null and Economia.has_method("iniciar_mejora_practica"):
+									Economia.iniciar_mejora_practica(esquina, id_capturado_m)
+									_actualizar()
+							)
+							_lista_mejoras_practicas.add_child(btn_inst)
+
+				if incompatible_para_reconversion != "" and instaladas.size() > 0:
+					_btn_reconversion.visible = true
+					_id_mejora_reconversion = incompatible_para_reconversion
+					_btn_reconversion.text = "%s: %s" % [Strings.RECONVERSION_BTN_INICIAR, Ajustes.MEJORAS_PRACTICAS_CATALOGO[incompatible_para_reconversion]["nombre"]]
+				else:
+					_btn_reconversion.visible = false
 
 	if puesto["tipo"] == "centro_extraccion":
 		_crudo_restante.visible = true
@@ -918,5 +1227,13 @@ func _confirmar_cancelar_investigacion() -> void:
 	var nom: String = Ciudad.COSTOS_INVESTIGACION.get(id_act, {}).get("nombre", "")
 	Economia.cancelar_investigacion(esquina)
 	aviso.emit("Investigación cancelada: %s. Recursos reembolsados." % nom)
-	_actualizar()
+
+
+func _confirmar_reconversion() -> void:
+	if _id_mejora_reconversion != "" and Economia != null and Economia.has_method("iniciar_reconversion_industrial"):
+		var exito: bool = Economia.iniciar_reconversion_industrial(esquina, _id_mejora_reconversion)
+		if exito:
+			var nom_m: String = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(_id_mejora_reconversion, {}).get("nombre", _id_mejora_reconversion)
+			aviso.emit(Strings.RECONVERSION_AVISO_COMPLETADA % nom_m)
+		_actualizar()
 

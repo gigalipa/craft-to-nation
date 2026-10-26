@@ -125,6 +125,7 @@ func ejecutar_pruebas() -> void:
 	probar_panel_edificio_racionamiento()
 	probar_marcas_demolicion()
 	probar_zona_overlay_reactividad_terreno()
+	probar_investigacion_ui()
 
 
 func probar_barra_superior_calculos() -> void:
@@ -1389,3 +1390,35 @@ func probar_zona_overlay_reactividad_terreno() -> void:
 	Zonificacion._caja_nucleo.clear()
 	Zonificacion.zonas.clear()
 	print("OK: ZonaOverlay reacciona a terreno_modificado en tiempo real.")
+
+
+func probar_investigacion_ui() -> void:
+	print("\n=== TEST: Widget de Era e IDU en BarraSuperior ===")
+	var barra: PanelContainer = BarraSuperiorScript.new()
+	add_child(barra)
+	assert(barra._lbl_era != null, "_lbl_era no debe ser nulo")
+	assert(barra._lbl_idu != null, "_lbl_idu no debe ser nulo")
+	barra.actualizar()
+	assert(barra._lbl_era.text.contains("Era 1"), "debe mostrar Era 1 inicial: %s" % barra._lbl_era.text)
+	assert(barra._lbl_idu.text.begins_with("IDU:"), "debe mostrar IDU formateado: %s" % barra._lbl_idu.text)
+	assert(barra._lbl_idu.tooltip_text.contains("Sofisticación"), "tooltip debe contener desglose S")
+	assert(barra._lbl_idu.tooltip_text.contains("Cualificación"), "tooltip debe contener desglose Q")
+	assert(barra._lbl_idu.tooltip_text.contains("Ciencia"), "tooltip debe contener desglose K")
+	barra.queue_free()
+
+	print("\n=== TEST: Controles de Capa 1 en PanelPuesto (Universidad) ===")
+	var panel_p := PanelPuestoScript.new()
+	add_child(panel_p)
+	assert(panel_p._caja_ciencias_teoricas != null, "_caja_ciencias_teoricas debe existir en PanelPuesto")
+	assert(panel_p._caja_mejoras_practicas != null, "_caja_mejoras_practicas debe existir en PanelPuesto")
+	assert(panel_p._btn_reconversion != null, "_btn_reconversion debe existir en PanelPuesto")
+	panel_p.queue_free()
+
+	print("\n=== TEST: Controles de Mejoras y Reconversión en PanelEdificio ===")
+	var PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
+	var panel_e: PanelContainer = PanelEdificioScript.new()
+	add_child(panel_e)
+	assert(panel_e._caja_mejoras != null, "_caja_mejoras debe existir en PanelEdificio")
+	assert(panel_e._btn_reconversion != null, "_btn_reconversion debe existir en PanelEdificio")
+	panel_e.queue_free()
+

@@ -12,6 +12,11 @@ static var TEXTO: Color = Ajustes.COLOR_HUD_TEXTO
 static var VALIDO: Color = Ajustes.COLOR_HUD_VALIDO
 static var INVALIDO: Color = Ajustes.COLOR_HUD_INVALIDO
 
+static var COLOR_DIESELPUNK: Color = Color(0.9, 0.55, 0.25)
+static var COLOR_CYBERPUNK: Color = Color(0.25, 0.85, 0.95)
+static var COLOR_SOLARPUNK: Color = Color(0.4, 0.9, 0.35)
+static var COLOR_POLIVALENTE: Color = Color(0.85, 0.8, 0.55)
+
 ## Margen (px) de los textos de esquina de un botón o casilla (acceso directo y disponibilidad, ver
 ## poner_en_esquina_inferior()): MARGEN_X va del borde lateral al primer/último carácter del texto,
 ## y MARGEN_Y, del borde inferior al pie del texto. Ajustar solo estos dos valores.
@@ -72,6 +77,16 @@ static func etiqueta(texto: String = "") -> Label:
 	rotulo.add_theme_color_override("font_color", TEXTO)
 	rotulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return rotulo
+
+
+static func color_doctrina(doctrina: String) -> Color:
+	match doctrina:
+		"dieselpunk": return COLOR_DIESELPUNK
+		"cyberpunk": return COLOR_CYBERPUNK
+		"solarpunk": return COLOR_SOLARPUNK
+		"polivalente": return COLOR_POLIVALENTE
+		_: return TEXTO
+
 
 
 static func estilizar_boton(boton: Button) -> void:

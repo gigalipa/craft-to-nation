@@ -49,6 +49,9 @@ var _icono_critico_recurso: TextureRect
 var _icono_era: TextureRect
 var _icono_nivel: TextureRect
 
+var _lbl_era: Label = null
+var _lbl_idu: Label = null
+
 
 static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String:
 	return "Población: %d/%d (%d)" % [censo, camas, desempleados]
@@ -234,6 +237,28 @@ func _ready() -> void:
 
 	grupo_izq.add_child(_barra_moral)
 
+	grupo_izq.add_child(_separador())
+
+	var cont_era_idu := HBoxContainer.new()
+	cont_era_idu.add_theme_constant_override("separation", 6)
+	cont_era_idu.mouse_filter = Control.MOUSE_FILTER_PASS
+	cont_era_idu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	_lbl_era = TemaHUD.etiqueta("Era 1")
+	_lbl_era.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_lbl_era.mouse_filter = Control.MOUSE_FILTER_PASS
+	_lbl_era.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	cont_era_idu.add_child(_lbl_era)
+
+	cont_era_idu.add_child(_separador())
+
+	_lbl_idu = TemaHUD.etiqueta("IDU: 1.00")
+	_lbl_idu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_lbl_idu.mouse_filter = Control.MOUSE_FILTER_PASS
+	cont_era_idu.add_child(_lbl_idu)
+
+	grupo_izq.add_child(cont_era_idu)
+
 	fila.add_child(grupo_izq)
 
 	var espacio_izq := Control.new()
@@ -406,25 +431,63 @@ func actualizar() -> void:
 	for prop in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		energia.add_theme_color_override(prop, color_e)
 
-	var clave := clave_critica(Ciudad.almacen)
-	if clave == "":
-		critico.text = "Crítico —"
-		_icono_critico.visible = false
-		if _icono_critico_recurso != null:
-			_icono_critico_recurso.visible = false
-		_colorear_por_tasa(critico, 0.0)
-	else:
-		var recurso = Ciudad.almacen[clave]
-		critico.text = "Crítico: %s %s" % [clave.capitalize(), texto_tasa(recurso.tasa_neta_promedio)]
+	var urgente: Dictionary = Ciudad.recurso_critico_urgente() if ("almacen" in Ciudad and Ciudad.has_method("recurso_critico_urgente")) else {}
+	if not urgente.is_empty():
+		var clave_urg: String = urgente["recurso"]
+		var h_urg: int = maxi(1, int(ceil(urgente["horas"])))
+		critico.text = "¡Alerta!: %s (%d h)" % [clave_urg.capitalize(), h_urg]
 		_icono_critico.visible = true
 		if _icono_critico_recurso != null:
-			_icono_critico_recurso.texture = IconosHUD.icono(clave)
+			_icono_critico_recurso.texture = IconosHUD.icono(clave_urg)
 			_icono_critico_recurso.visible = true
-		_colorear_por_tasa(critico, recurso.tasa_neta_promedio)
+		_colorear_por_tasa(critico, -1.0)
+	else:
+		var clave := clave_critica(Ciudad.almacen)
+		if clave == "":
+			critico.text = "Crítico —"
+			_icono_critico.visible = false
+			if _icono_critico_recurso != null:
+				_icono_critico_recurso.visible = false
+			_colorear_por_tasa(critico, 0.0)
+		else:
+			var recurso = Ciudad.almacen[clave]
+			critico.text = "Crítico: %s %s" % [clave.capitalize(), texto_tasa(recurso.tasa_neta_promedio)]
+			_icono_critico.visible = true
+			if _icono_critico_recurso != null:
+				_icono_critico_recurso.texture = IconosHUD.icono(clave)
+				_icono_critico_recurso.visible = true
+			_colorear_por_tasa(critico, recurso.tasa_neta_promedio)
 
 	nivel.text = ""
 	if _icono_nivel != null:
 		_icono_nivel.texture = IconosHUD.icono(IconosHUD.icono_nivel_romano(Ciudad.nivel))
+
+	if Ciudad != null and _lbl_era != null and _lbl_idu != null:
+		var era_num: int = Ciudad.era_actual if "era_actual" in Ciudad else 1
+		var idu_val: float = Ciudad.calcular_idu() if Ciudad.has_method("calcular_idu") else 1.0
+		_lbl_era.text = Strings.ERA_NOMBRES.get(era_num, Strings.BARRA_SUPERIOR_ERA_FORMATO % era_num)
+		_lbl_idu.text = Strings.BARRA_SUPERIOR_IDU_FORMATO % idu_val
+
+		var s: float = Ciudad.calcular_sofisticacion_edificios() if Ciudad.has_method("calcular_sofisticacion_edificios") else 1.0
+		var q: float = Ciudad.calcular_cualificacion_laboral() if Ciudad.has_method("calcular_cualificacion_laboral") else 1.0
+		var k: float = Ciudad.calcular_masa_critica_ciencia() if Ciudad.has_method("calcular_masa_critica_ciencia") else 1.0
+		var tt: String = "IDU: %.2f\n  - Sofisticación (S): %.2f\n  - Cualificación (Q): %.2f\n  - Ciencia (K): %.2f" % [idu_val, s, q, k]
+		if Ciudad.has_method("calcular_porcentajes_doctrinales"):
+			var doc_info: Dictionary = Ciudad.calcular_porcentajes_doctrinales()
+			var dominante: String = doc_info.get("dominante", "ninguna")
+			if dominante != "" and dominante != "ninguna":
+				var nom_doc: String = Strings.DOCTRINA_NOMBRES.get(dominante, dominante.capitalize())
+				tt += "\nDoctrina: %s (D: %.0f%%, C: %.0f%%, S: %.0f%%)" % [
+					nom_doc,
+					doc_info.get("dieselpunk", 0.0),
+					doc_info.get("cyberpunk", 0.0),
+					doc_info.get("solarpunk", 0.0)
+				]
+				_lbl_idu.add_theme_color_override("font_color", TemaHUD.color_doctrina(dominante))
+			else:
+				_lbl_idu.add_theme_color_override("font_color", TemaHUD.TEXTO)
+		_lbl_idu.tooltip_text = tt
+		_lbl_era.tooltip_text = tt
 
 
 func _colorear_por_tasa(etiqueta: Label, tasa: float) -> void:

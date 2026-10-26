@@ -52,6 +52,10 @@ var _dialogo_remodelar := ConfirmationDialog.new()
 var _caja_mejoras: VBoxContainer = null
 var _lbl_mejoras_titulo: Label = null
 var _lista_mejoras: VBoxContainer = null
+var _cont_pm_activo: VBoxContainer = null
+var _lbl_pm_estado: Label = null
+var _barra_pm: ProgressBar = null
+var _items_mejoras: Dictionary = {}
 var _btn_reconversion: Button = null
 var _dialogo_reconversion := ConfirmationDialog.new()
 var _id_mejora_reconversion: String = ""
@@ -182,6 +186,46 @@ func _ready() -> void:
 	_lista_mejoras = VBoxContainer.new()
 	_lista_mejoras.add_theme_constant_override("separation", 4)
 	_caja_mejoras.add_child(_lista_mejoras)
+
+	_cont_pm_activo = VBoxContainer.new()
+	_cont_pm_activo.add_theme_constant_override("separation", 2)
+	_lbl_pm_estado = TemaHUD.etiqueta()
+	_lbl_pm_estado.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_cont_pm_activo.add_child(_lbl_pm_estado)
+	_barra_pm = ProgressBar.new()
+	_barra_pm.show_percentage = true
+	_barra_pm.custom_minimum_size = Vector2(250, 14)
+	_cont_pm_activo.add_child(_barra_pm)
+	_cont_pm_activo.visible = false
+	_lista_mejoras.add_child(_cont_pm_activo)
+
+	for id_m in Ajustes.MEJORAS_PRACTICAS_CATALOGO:
+		var m_box := VBoxContainer.new()
+		m_box.add_theme_constant_override("separation", 2)
+
+		var lbl_m := TemaHUD.etiqueta()
+		lbl_m.visible = false
+		m_box.add_child(lbl_m)
+
+		var btn_m := Button.new()
+		TemaHUD.estilizar_boton(btn_m)
+		var id_cap_m: String = id_m
+		btn_m.pressed.connect(func() -> void:
+			var esq: Vector2i = _esquina_de_puesto()
+			if esq != Vector2i(-1, -1) and Economia != null and Economia.has_method("iniciar_mejora_practica"):
+				Economia.iniciar_mejora_practica(esq, id_cap_m)
+				_actualizar()
+		)
+		btn_m.visible = false
+		m_box.add_child(btn_m)
+
+		m_box.visible = false
+		_lista_mejoras.add_child(m_box)
+		_items_mejoras[id_m] = {
+			"contenedor": m_box,
+			"lbl": lbl_m,
+			"btn": btn_m,
+		}
 
 	_btn_reconversion = Button.new()
 	_btn_reconversion.text = Strings.RECONVERSION_BTN_INICIAR
@@ -543,12 +587,7 @@ func _actualizar() -> void:
 				_asignar_nucleo.text = "Asignar como núcleo urbano"
 
 	if _caja_mejoras != null:
-		var esq: Vector2i = Vector2i(-1, -1)
-		if Economia != null and "puestos" in Economia:
-			for e in Economia.puestos:
-				if obras != null and obras.has_method("id_en_columna") and obras.id_en_columna(e) == id:
-					esq = e
-					break
+		var esq: Vector2i = _esquina_de_puesto()
 		if esq != Vector2i(-1, -1) and Economia.tiene_puesto(esq):
 			var puesto: Dictionary = Economia.puestos[esq]
 			var tipo_puesto: String = puesto.get("tipo", "")
@@ -562,14 +601,12 @@ func _actualizar() -> void:
 				_caja_mejoras.visible = false
 			else:
 				_caja_mejoras.visible = true
-				for child in _lista_mejoras.get_children():
-					child.queue_free()
-
 				var instaladas: Array = puesto.get("mejoras", [])
 				var pm: Dictionary = puesto.get("proyecto_mejora", {})
 				var era_actual_ciudad: int = ciudad.era_actual if (ciudad != null and "era_actual" in ciudad) else 1
 
 				if not pm.is_empty():
+					_cont_pm_activo.visible = true
 					var id_act_m: String = pm.get("id", "")
 					var info_pm: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(id_act_m, {})
 					var nom_pm: String = info_pm.get("nombre", id_act_m)
@@ -590,31 +627,36 @@ func _actualizar() -> void:
 					if estado_pm == "EN_EJECUCION":
 						desc_est = "En ejecución (%d/%d)" % [presentes_inv, req_inv]
 					var prefijo := "Reconversión" if es_rec else "Mejora"
-					var lbl_proy := TemaHUD.etiqueta("⚙ %s: %s\nEstado: %s" % [prefijo, nom_pm, desc_est])
-					lbl_proy.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
-					_lista_mejoras.add_child(lbl_proy)
+					_lbl_pm_estado.text = "⚙ %s: %s\nEstado: %s" % [prefijo, nom_pm, desc_est]
 
 					var prog_m: float = float(pm.get("progreso", 0.0))
 					var t_total: float = float(pm.get("tiempo", 1.0))
-					var bar_m := ProgressBar.new()
-					bar_m.show_percentage = true
-					bar_m.max_value = t_total
-					bar_m.value = prog_m
-					bar_m.custom_minimum_size = Vector2(250, 14)
-					_lista_mejoras.add_child(bar_m)
+					_barra_pm.max_value = t_total
+					_barra_pm.value = prog_m
+
+					for id_m in _items_mejoras:
+						_items_mejoras[id_m]["contenedor"].visible = false
 					_btn_reconversion.visible = false
 				else:
+					_cont_pm_activo.visible = false
 					var incompatible_para_reconversion: String = ""
-					for id_m in posibles_mejoras:
+					for id_m in _items_mejoras:
+						var item_m: Dictionary = _items_mejoras[id_m]
 						var info_m: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO[id_m]
+						if info_m.get("edificio_tipo", "") != tipo_puesto:
+							item_m["contenedor"].visible = false
+							continue
+
+						item_m["contenedor"].visible = true
 						var nom_m: String = info_m.get("nombre", id_m)
 						var doc_m: String = info_m.get("doctrina", "")
 						var nom_doc: String = Strings.DOCTRINA_NOMBRES.get(doc_m, doc_m.capitalize())
 
 						if instaladas.has(id_m):
-							var lbl_inst := TemaHUD.etiqueta("✅ %s (%s)" % [nom_m, nom_doc])
-							lbl_inst.add_theme_color_override("font_color", TemaHUD.color_doctrina(doc_m))
-							_lista_mejoras.add_child(lbl_inst)
+							item_m["lbl"].visible = true
+							item_m["lbl"].text = "✅ %s (%s)" % [nom_m, nom_doc]
+							item_m["lbl"].add_theme_color_override("font_color", TemaHUD.color_doctrina(doc_m))
+							item_m["btn"].visible = false
 						else:
 							var prerreq_m: String = info_m.get("prerrequisito", "")
 							var req_ok: bool = prerreq_m == "" or (ciudad != null and ciudad.has_method("esta_ciencia_descubierta") and ciudad.esta_ciencia_descubierta(prerreq_m))
@@ -636,29 +678,26 @@ func _actualizar() -> void:
 							if es_incompatible:
 								if req_ok and era_ok:
 									incompatible_para_reconversion = id_m
-								var lbl_inc := TemaHUD.etiqueta("⚠ %s (Incompatible)" % nom_m)
-								lbl_inc.add_theme_color_override("font_color", Color(0.9, 0.6, 0.3))
-								_lista_mejoras.add_child(lbl_inc)
+								item_m["lbl"].visible = true
+								item_m["lbl"].text = "⚠ %s (Incompatible)" % nom_m
+								item_m["lbl"].add_theme_color_override("font_color", Color(0.9, 0.6, 0.3))
+								item_m["btn"].visible = false
 							elif not req_ok:
 								var nom_req: String = Ajustes.CIENCIAS_TEORICAS_CATALOGO.get(prerreq_m, {}).get("nombre", prerreq_m)
-								var lbl_lock := TemaHUD.etiqueta("🔒 %s (Requiere: %s)" % [nom_m, nom_req])
-								lbl_lock.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
-								_lista_mejoras.add_child(lbl_lock)
+								item_m["lbl"].visible = true
+								item_m["lbl"].text = "🔒 %s (Requiere: %s)" % [nom_m, nom_req]
+								item_m["lbl"].add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+								item_m["btn"].visible = false
 							elif not era_ok:
-								var lbl_lock := TemaHUD.etiqueta("🔒 %s (Requiere Era %d)" % [nom_m, int(info_m.get("era", 1))])
-								lbl_lock.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
-								_lista_mejoras.add_child(lbl_lock)
+								item_m["lbl"].visible = true
+								item_m["lbl"].text = "🔒 %s (Requiere Era %d)" % [nom_m, int(info_m.get("era", 1))]
+								item_m["lbl"].add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+								item_m["btn"].visible = false
 							else:
-								var btn_inst := Button.new()
-								btn_inst.text = "Instalar: %s (%s)" % [nom_m, nom_doc]
-								TemaHUD.estilizar_boton(btn_inst)
-								var id_capturado_m: String = id_m
-								btn_inst.pressed.connect(func() -> void:
-									if Economia != null and Economia.has_method("iniciar_mejora_practica"):
-										Economia.iniciar_mejora_practica(esq, id_capturado_m)
-										_actualizar()
-								)
-								_lista_mejoras.add_child(btn_inst)
+								item_m["lbl"].visible = false
+								item_m["btn"].visible = true
+								item_m["btn"].text = "Instalar: %s (%s)" % [nom_m, nom_doc]
+								item_m["btn"].disabled = false
 
 					if incompatible_para_reconversion != "" and instaladas.size() > 0:
 						_btn_reconversion.visible = true
@@ -670,20 +709,24 @@ func _actualizar() -> void:
 			_caja_mejoras.visible = false
 
 
+func _esquina_de_puesto() -> Vector2i:
+	if Economia != null and "puestos" in Economia:
+		for e in Economia.puestos:
+			if obras != null and obras.has_method("id_en_columna") and obras.id_en_columna(e) == id:
+				return e
+	return Vector2i(-1, -1)
+
+
 func _confirmar_reconversion() -> void:
 	if _id_mejora_reconversion != "" and Economia != null and Economia.has_method("iniciar_reconversion_industrial"):
-		var esq: Vector2i = Vector2i(-1, -1)
-		if "puestos" in Economia:
-			for e in Economia.puestos:
-				if obras != null and obras.has_method("id_en_columna") and obras.id_en_columna(e) == id:
-					esq = e
-					break
+		var esq: Vector2i = _esquina_de_puesto()
 		if esq != Vector2i(-1, -1):
 			var exito: bool = Economia.iniciar_reconversion_industrial(esq, _id_mejora_reconversion)
 			if exito:
 				var nom_m: String = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(_id_mejora_reconversion, {}).get("nombre", _id_mejora_reconversion)
 				aviso.emit(Strings.RECONVERSION_AVISO_COMPLETADA % nom_m)
 		_actualizar()
+
 
 
 

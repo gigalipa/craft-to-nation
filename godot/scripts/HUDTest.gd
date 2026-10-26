@@ -1407,12 +1407,65 @@ func probar_investigacion_ui() -> void:
 	barra.queue_free()
 
 	print("\n=== TEST: Controles de Capa 1 en PanelPuesto (Universidad) ===")
+	var esq_uni := Vector2i(2000, 2000)
+	Economia.registrar_puesto(esq_uni, "universidad", 5, 5, {})
 	var panel_p := PanelPuestoScript.new()
 	add_child(panel_p)
+	panel_p.abrir(esq_uni)
 	assert(panel_p._caja_ciencias_teoricas != null, "_caja_ciencias_teoricas debe existir en PanelPuesto")
-	assert(panel_p._caja_mejoras_practicas != null, "_caja_mejoras_practicas debe existir en PanelPuesto")
-	assert(panel_p._btn_reconversion != null, "_btn_reconversion debe existir en PanelPuesto")
+	assert(panel_p._caja_ciencias_teoricas.visible, "universidad debe mostrar caja de ciencias teoricas")
+
+	# Verificar persistencia de botones de ciencias teóricas a través de múltiples frames sin recreación
+	var btn_primera_tech: Button = null
+	for id_c in panel_p._items_ciencias_teoricas:
+		var btn = panel_p._items_ciencias_teoricas[id_c]["btn"]
+		if btn != null:
+			btn_primera_tech = btn
+			break
+	assert(btn_primera_tech != null, "debe existir al menos un boton de ciencia teorica")
+
+	for i in range(5):
+		panel_p._process(0.0)
+
+	var btn_despues: Button = null
+	for id_c in panel_p._items_ciencias_teoricas:
+		var btn = panel_p._items_ciencias_teoricas[id_c]["btn"]
+		if btn != null:
+			btn_despues = btn
+			break
+	assert(btn_primera_tech == btn_despues, "los botones no deben ser recreados en cada frame")
+
+	# Probar puesto industrial con mejoras prácticas (central termoeléctrica)
+	var esq_central := Vector2i(2010, 2010)
+	Economia.registrar_puesto(esq_central, "central_termoelectrica", 5, 5, {})
+	panel_p.abrir(esq_central)
+	assert(panel_p._caja_mejoras_practicas != null, "_caja_mejoras_practicas debe existir")
+	assert(panel_p._caja_mejoras_practicas.visible, "central termoelectrica debe mostrar caja de mejoras")
+	assert(panel_p._btn_reconversion != null, "_btn_reconversion debe existir")
+
+	var btn_mejora_ref: Button = null
+	for id_m in panel_p._items_mejoras_practicas:
+		var btn = panel_p._items_mejoras_practicas[id_m]["btn"]
+		if btn != null:
+			btn_mejora_ref = btn
+			break
+	assert(btn_mejora_ref != null, "debe existir boton de mejora practica en central")
+
+	for i in range(5):
+		panel_p._process(0.0)
+
+	var btn_mejora_despues: Button = null
+	for id_m in panel_p._items_mejoras_practicas:
+		var btn = panel_p._items_mejoras_practicas[id_m]["btn"]
+		if btn != null:
+			btn_mejora_despues = btn
+			break
+	assert(btn_mejora_ref == btn_mejora_despues, "los botones de mejoras no deben ser recreados en cada frame")
+
+	panel_p.cerrar()
 	panel_p.queue_free()
+	Economia.puestos.erase(esq_uni)
+	Economia.puestos.erase(esq_central)
 
 	print("\n=== TEST: Controles de Mejoras y Reconversión en PanelEdificio ===")
 	var PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
@@ -1420,5 +1473,10 @@ func probar_investigacion_ui() -> void:
 	add_child(panel_e)
 	assert(panel_e._caja_mejoras != null, "_caja_mejoras debe existir en PanelEdificio")
 	assert(panel_e._btn_reconversion != null, "_btn_reconversion debe existir en PanelEdificio")
+
+	var btn_rec_ref = panel_e._btn_reconversion
+	for i in range(5):
+		panel_e._process(0.0)
+	assert(panel_e._btn_reconversion == btn_rec_ref, "el boton de reconversion no debe ser recreado en cada frame")
 	panel_e.queue_free()
 

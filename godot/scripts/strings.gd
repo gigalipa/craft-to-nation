@@ -921,6 +921,40 @@ static var CANALIZACIONES_ERR_INVADE_PUERTO: String = "Trazado inválido: la tub
 
 
 # ==============================================================================
+# INVESTIGACIÓN DESCENTRALIZADA, PACING DE ERAS (IDU) Y DOCTRINAS
+# ==============================================================================
+static var ERA_NOMBRES: Dictionary = {
+	1: "Era 1: Asentamiento Pionero",
+	2: "Era 2: Manufactura Temprana",
+	3: "Era 3: Industrialización Plena",
+	4: "Era 4: Doctrina Cúspide",
+}
+
+static var DOCTRINA_NOMBRES: Dictionary = {
+	"dieselpunk": "Dieselpunk",
+	"cyberpunk": "Cyberpunk",
+	"solarpunk": "Solarpunk",
+	"polivalente": "Polivalente",
+}
+
+static var PROYECTO_BTN_INSTALAR: String = "Instalar Mejora"
+static var PROYECTO_ESTADO_ESPERANDO_PERSONAL: String = "Esperando personal científico"
+static var PROYECTO_ESTADO_EN_EJECUCION: String = "Investigación aplicada en curso"
+static var PROYECTO_AVISO_INSTALADO: String = "Mejora instalada: %s."
+
+static var RECONVERSION_BTN_INICIAR: String = "Iniciar Reconversión Industrial"
+static var RECONVERSION_ESTADO_EN_CURSO: String = "Reconversión industrial en curso"
+static var RECONVERSION_AVISO_COMPLETADA: String = "Reconversión completada: %s."
+static var RECONVERSION_ERR_MISMA_DOCTRINA: String = "El edificio ya cuenta con esa doctrina."
+static var RECONVERSION_TOOLTIP: String = "Sustituye la especialización doctrinal del edificio con una tasa de reforma del 50% de materiales de mejora y 25% del costo base."
+
+static var BARRA_SUPERIOR_ERA_FORMATO: String = "Era %d"
+static var BARRA_SUPERIOR_IDU_FORMATO: String = "IDU: %.2f"
+static var BARRA_SUPERIOR_IDU_TOOLTIP_FORMATO: String = "Índice de Desarrollo Urbano: %.2f\nSofisticación Infraestructura (S): %.2f\nCualificación Laboral (Q): %.2f\nMasa Crítica Ciencia (K): %.2f"
+
+
+
+# ==============================================================================
 # DICCIONARIO MULTI-IDIOMA Y RESOLUCIÓN DINÁMICA POR `Ajustes.idioma`
 # ==============================================================================
 static var TRADUCCIONES: Dictionary = {

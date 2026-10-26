@@ -655,3 +655,171 @@ static var PUERTAS_DURACION_GIRO: float = 0.2
 static var PUERTAS_GROSOR: float = 0.1
 static var HUMO_REFINERIAS_PARTICULAS: int = 16
 static var HUMO_REFINERIAS_TIEMPO_VIDA: float = 2.6
+
+
+# ==============================================================================
+# INVESTIGACIÓN DESCENTRALIZADA, PACING DE ERAS (IDU) Y DOCTRINAS
+# ==============================================================================
+static var IDU_PESO_EDIFICIOS: float = 0.40
+static var IDU_PESO_LABORAL: float = 0.35
+static var IDU_PESO_CIENCIA: float = 0.25
+
+static var IDU_UMBRAL_ERA_2: float = 1.50
+static var IDU_UMBRAL_ERA_3: float = 2.50
+static var IDU_UMBRAL_ERA_4: float = 3.50
+
+static var CIENCIAS_TEORICAS_CATALOGO: Dictionary = {
+	"metalurgia_hornos": {
+		"nombre": "Metalurgia de Hornos",
+		"era": 2,
+		"costo_puntos": 100,
+		"prerrequisito": "",
+		"costo_recursos": {"hierro": 50, "madera": 50},
+	},
+	"hidraulica_canales": {
+		"nombre": "Hidráulica de Canales",
+		"era": 2,
+		"costo_puntos": 120,
+		"prerrequisito": "",
+		"costo_recursos": {"piedra": 50, "madera": 50},
+	},
+	"traccion_animal_engranajes": {
+		"nombre": "Tracción Animal y Engranajes",
+		"era": 2,
+		"costo_puntos": 150,
+		"prerrequisito": "",
+		"costo_recursos": {"madera": 100, "hierro": 30},
+	},
+	"termodinamica_vapor": {
+		"nombre": "Termodinámica y Vapor",
+		"era": 3,
+		"costo_puntos": 300,
+		"prerrequisito": "metalurgia_hornos",
+		"costo_recursos": {"acero": 50, "carbon": 50},
+	},
+	"redes_electricas_bobinado": {
+		"nombre": "Redes Eléctricas y Bobinado",
+		"era": 3,
+		"costo_puntos": 350,
+		"prerrequisito": "hidraulica_canales",
+		"costo_recursos": {"cobre": 50, "hierro": 50},
+	},
+	"quimica_hidrocarburos": {
+		"nombre": "Química de Hidrocarburos",
+		"era": 3,
+		"costo_puntos": 400,
+		"prerrequisito": "termodinamica_vapor",
+		"costo_recursos": {"crudo": 50, "carbon": 50},
+	},
+	"automatizacion_cibernetica": {
+		"nombre": "Automatización y Cibernética",
+		"era": 4,
+		"costo_puntos": 800,
+		"prerrequisito": "redes_electricas_bobinado",
+		"costo_recursos": {"tierras_raras": 50, "cobre": 50},
+		"doctrina": "cyberpunk",
+	},
+	"combustion_pesada_blindajes": {
+		"nombre": "Combustión Pesada y Blindajes",
+		"era": 4,
+		"costo_puntos": 800,
+		"prerrequisito": "quimica_hidrocarburos",
+		"costo_recursos": {"acero": 100, "combustible": 50},
+		"doctrina": "dieselpunk",
+	},
+	"biotecnologia_fototermia": {
+		"nombre": "Biotecnología y Fototermia",
+		"era": 4,
+		"costo_puntos": 800,
+		"prerrequisito": "quimica_hidrocarburos",
+		"costo_recursos": {"tierras_raras": 30, "piedra": 50},
+		"doctrina": "solarpunk",
+	},
+}
+
+static var MEJORAS_PRACTICAS_CATALOGO: Dictionary = {
+	"inyeccion_forzada": {
+		"nombre": "Inyección Forzada",
+		"edificio_tipo": "siderurgica",
+		"req": "metalurgia_hornos",
+		"prerrequisito": "metalurgia_hornos",
+		"era": 2,
+		"investigadores": 1,
+		"doctrina": "dieselpunk",
+		"puntos_doctrina": 10,
+		"costo": {"hierro": 100, "madera": 50},
+		"tiempo": 20.0,
+		"excluye": [],
+	},
+	"caldera_diesel": {
+		"nombre": "Caldera Diésel de Alta Presión",
+		"edificio_tipo": "central_termoelectrica",
+		"req": "quimica_hidrocarburos",
+		"prerrequisito": "quimica_hidrocarburos",
+		"era": 3,
+		"investigadores": 2,
+		"doctrina": "dieselpunk",
+		"puntos_doctrina": 15,
+		"excluye": ["ciclo_solarpunk"],
+		"costo": {"acero": 100, "combustible": 50},
+		"tiempo": 30.0,
+	},
+	"ciclo_solarpunk": {
+		"nombre": "Ciclo Geotérmico / Biocombustión Solarpunk",
+		"edificio_tipo": "central_termoelectrica",
+		"req": "biotecnologia_fototermia",
+		"prerrequisito": "biotecnologia_fototermia",
+		"era": 4,
+		"investigadores": 3,
+		"doctrina": "solarpunk",
+		"puntos_doctrina": 15,
+		"excluye": ["caldera_diesel"],
+		"costo": {"cristal": 100, "tierras_raras": 30},
+		"tiempo": 40.0,
+	},
+	"control_cibernetico": {
+		"nombre": "Control Cibernético de Procesos",
+		"edificio_tipo": "central_termoelectrica",
+		"req": "automatizacion_cibernetica",
+		"prerrequisito": "automatizacion_cibernetica",
+		"era": 4,
+		"investigadores": 3,
+		"doctrina": "cyberpunk",
+		"puntos_doctrina": 15,
+		"costo": {"tierras_raras": 50, "acero": 100},
+		"tiempo": 40.0,
+		"excluye": [],
+	},
+	"riego_acueducto": {
+		"nombre": "Riego por Acueducto",
+		"edificio_tipo": "sembradios",
+		"req": "hidraulica_canales",
+		"prerrequisito": "hidraulica_canales",
+		"era": 2,
+		"investigadores": 1,
+		"doctrina": "solarpunk",
+		"puntos_doctrina": 10,
+		"costo": {"piedra": 100, "madera": 50},
+		"tiempo": 20.0,
+		"excluye": [],
+	},
+	"micorrizas_agricolas": {
+		"nombre": "Micorrizas Agrícolas Modificadas",
+		"edificio_tipo": "sembradios",
+		"req": "biotecnologia_fototermia",
+		"prerrequisito": "biotecnologia_fototermia",
+		"era": 4,
+		"investigadores": 3,
+		"doctrina": "solarpunk",
+		"puntos_doctrina": 20,
+		"costo": {"cristal": 50, "tierras_raras": 20},
+		"tiempo": 35.0,
+		"excluye": [],
+	},
+}
+
+static var RECONVERSION_FACTOR_MATERIALES_MEJORA: float = 0.50
+static var RECONVERSION_FACTOR_COSTO_EDIFICIO: float = 0.25
+static var RECONVERSION_FACTOR_TIEMPO: float = 1.5
+static var RECONVERSION_PRODUCCION_PENALIZADA: float = 0.25
+

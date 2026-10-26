@@ -10,6 +10,7 @@ extends Node
 
 const CiudadScript = preload("res://scripts/Ciudad.gd")
 const Ajustes = preload("res://scripts/ajustes.gd")
+const Strings = preload("res://scripts/strings.gd")
 
 
 func _ready() -> void:
@@ -838,6 +839,22 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(res36["gasto_comida"], 26.0), "consumo debe reducirse un 35%")
 	# Review Focus 4: Moral limitada estrictamente a 35.0 máximo
 	assert(ciu36.moral <= 35.0, "moral bajo racionamiento no puede exceder 35.0")
+
+	print("\n=== TEST 37: Constantes de Pacing de Eras y Catálogos Doctrinales ===")
+	assert(Ajustes.IDU_UMBRAL_ERA_2 == 1.50)
+	assert(Ajustes.IDU_UMBRAL_ERA_3 == 2.50)
+	assert(Ajustes.IDU_UMBRAL_ERA_4 == 3.50)
+	assert(Ajustes.CIENCIAS_TEORICAS_CATALOGO.has("metalurgia_hornos"))
+	assert(Ajustes.CIENCIAS_TEORICAS_CATALOGO["metalurgia_hornos"]["costo_puntos"] == 100)
+	assert(Ajustes.CIENCIAS_TEORICAS_CATALOGO["automatizacion_cibernetica"]["doctrina"] == "cyberpunk")
+	assert(Ajustes.MEJORAS_PRACTICAS_CATALOGO.has("inyeccion_forzada"))
+	assert(Ajustes.MEJORAS_PRACTICAS_CATALOGO["inyeccion_forzada"]["investigadores"] == 1)
+	assert(Ajustes.MEJORAS_PRACTICAS_CATALOGO["caldera_diesel"]["investigadores"] == 2)
+	assert(Ajustes.MEJORAS_PRACTICAS_CATALOGO["ciclo_solarpunk"]["investigadores"] == 3)
+	assert(Ajustes.RECONVERSION_FACTOR_MATERIALES_MEJORA == 0.50)
+	assert(Ajustes.RECONVERSION_PRODUCCION_PENALIZADA == 0.25)
+	assert(Strings.ERA_NOMBRES.has(1))
+	assert(Strings.DOCTRINA_NOMBRES.has("dieselpunk"))
 
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

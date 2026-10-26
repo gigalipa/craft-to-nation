@@ -1019,6 +1019,28 @@ func _migrar(hambruna: bool) -> int:
 	return llegados
 
 
+## Conteo de militares actualmente desplegados fuera del área de influencia.
+## Si militares_desplegados_override >= 0, usa ese valor (para pruebas unitarias).
+## En caso contrario, consulta al autoload Colonos.
+var militares_desplegados_override: int = -1
+
+func conteo_militares_desplegados() -> int:
+	if militares_desplegados_override >= 0:
+		return min(militares_desplegados_override, demografia.get("militar", 0))
+	if demografia.get("militar", 0) <= 0:
+		return 0
+	var col = null
+	if is_inside_tree():
+		col = get_node_or_null("/root/Colonos")
+	else:
+		var tree = Engine.get_main_loop() as SceneTree
+		if tree != null and tree.root != null:
+			col = tree.root.get_node_or_null("Colonos")
+	if col != null and col.has_method("contar_militares_desplegados"):
+		return min(col.contar_militares_desplegados(), demografia.get("militar", 0))
+	return 0
+
+
 ## Ejecuta un ciclo horario verificando alimentación, habitabilidad, desempleo e investigación.
 func simular_tick(avatar_consumo: float) -> Dictionary:
 	# tasa_neta se mide entre cierres de tick consecutivos, no dentro de un
@@ -1078,6 +1100,9 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	for tipo in demografia:
 		gasto_poblacion += demografia[tipo] * TIPOS_POBLACION[tipo]["comida"]
 	gasto_poblacion += sin_techo * TIPOS_POBLACION["desempleado"]["comida"]
+	var des: int = conteo_militares_desplegados()
+	if des > 0:
+		gasto_poblacion += des * (Ajustes.MILITAR_CONSUMO_COMIDA_DESPLEGADO - TIPOS_POBLACION["militar"]["comida"])
 	var gasto_total: float = gasto_poblacion + avatar_consumo
 
 	if periodo_elecciones_restante > 0:

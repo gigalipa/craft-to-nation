@@ -1567,5 +1567,21 @@ func ejecutar_pruebas() -> void:
 	assert(obras55.trabajos.size() >= 2, "ambos colonos ejecutaron pasos de trabajo en la obra vial")
 	assert(obras55.trabajos[0] == [-1, "via_construir"])
 
-	print("\n=== Las 55 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 25: Conteo de Militares Desplegados fuera de Influencia ===")
+	var col_m := ColonosScript.new()
+	col_m.colonos[1] = {"id": 1, "tipo": "militar", "celda": Vector3i(10, 1, 10)}
+	col_m.colonos[2] = {"id": 2, "tipo": "militar", "celda": Vector3i(200, 1, 200)}
+	col_m.colonos[3] = {"id": 3, "tipo": "obrero", "celda": Vector3i(300, 1, 300)}
+	var zonif_falsa = Node.new()
+	zonif_falsa.set_script(load("res://scripts/Zonificacion.gd"))
+	zonif_falsa.nucleo_declarado = true
+	zonif_falsa._caja_nucleo = {"min": Vector2i(0, 0), "max": Vector2i(20, 20)}
+	assert(col_m.contar_militares_desplegados(zonif_falsa) == 1, "colono 2 esta fuera de influencia")
+
+	# Review Focus 5: Si no hay nucleo declarado, todos los militares cuentan como desplegados
+	zonif_falsa.nucleo_declarado = false
+	assert(col_m.contar_militares_desplegados(zonif_falsa) == 2, "sin nucleo todos estan desplegados")
+	zonif_falsa.free()
+
+	print("\n=== Las 56 pruebas de Colonos pasaron correctamente ===")
 

@@ -68,6 +68,9 @@ var mundo: Object = null:
 			valor.obra_a_fantasma.connect(_on_obra_a_fantasma)
 var ciudad: Object = null  # Ciudad
 var zona: Object = null  # Zonificacion
+var zonificacion: Object:
+	get: return zona
+	set(valor): zona = valor
 var economia: Object = null:  # Economia
 	set(valor):
 		if economia != null:
@@ -1496,3 +1499,26 @@ func _avanzar_busqueda(c: Dictionary) -> void:
 				c["busqueda"] = {}
 				return
 			b["actual"] = null
+
+
+## Cuenta los colonos de tipo "militar" fuera del área de influencia de la ciudad.
+## Si no hay núcleo declarado, todos los militares cuentan como desplegados.
+func contar_militares_desplegados(zonif: Object = null) -> int:
+	var z: Object = zonif if zonif != null else (zonificacion if zonificacion != null else null)
+	if z == null:
+		if is_inside_tree():
+			z = get_node_or_null("/root/Zonificacion")
+		else:
+			var tree = Engine.get_main_loop() as SceneTree
+			if tree != null and tree.root != null:
+				z = tree.root.get_node_or_null("Zonificacion")
+	if z == null:
+		return 0
+	var desplegados := 0
+	for c in colonos.values():
+		if c.get("tipo", "") == "militar":
+			var celda2d := Vector2i(c["celda"].x, c["celda"].z)
+			if not z.dentro_de_influencia(celda2d):
+				desplegados += 1
+	return desplegados
+

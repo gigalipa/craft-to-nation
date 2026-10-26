@@ -807,5 +807,20 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(50.0, true), 1.0), "moral 50 alimento rinde 1.0")
 	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(100.0, true), 2.0), "moral 100 alimento rinde 2.0")
 
+	print("\n=== TEST 35: Gasto de Comida de Militares en Guarnición vs Desplegados ===")
+	var ciu35: Node = CiudadScript.new()
+	ciu35.migracion_activa = false
+	ciu35.registrar_edificio_residencial(1, [2, 2])
+	ciu35.demografia["militar"] = 2
+	ciu35.almacen["comida"].cantidad = 5000.0
+	# Sin militares desplegados: 2 militares * 3.0 = 6.0
+	ciu35.militares_desplegados_override = 0
+	var res_guarnicion = ciu35.simular_tick(0.0)
+	assert(is_equal_approx(res_guarnicion["gasto_comida"], 6.0))
+	# Con 1 militar desplegado: 1 * 3.0 (guarnición) + 1 * 5.0 (desplegado) = 8.0
+	ciu35.militares_desplegados_override = 1
+	var res_desplegado = ciu35.simular_tick(0.0)
+	assert(is_equal_approx(res_desplegado["gasto_comida"], 8.0))
+
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

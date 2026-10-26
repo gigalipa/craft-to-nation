@@ -813,9 +813,9 @@ func recoger(esquina: Vector2i, capacidad: float) -> Dictionary:
 func entregar(carga: Dictionary, origen_categoria: String = "") -> void:
 	for recurso in carga:
 		if ciudad != null and ciudad.almacen.has(recurso):
-			ciudad.almacen[recurso].agregar(carga[recurso])
+			var ingreso_real: float = ciudad.almacen[recurso].agregar(carga[recurso])
 			if recurso == "comida" and ciudad.has_method("ingresar_comida_estratificada"):
-				ciudad.ingresar_comida_estratificada(carga[recurso], origen_categoria)
+				ciudad.ingresar_comida_estratificada(ingreso_real, origen_categoria)
 
 
 func categoria_comida_de_puesto(esquina: Vector2i) -> String:

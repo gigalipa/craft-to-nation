@@ -178,7 +178,6 @@ var almacen: Dictionary = {}
 var desahuciados := 0
 var nivel_investigado := 1
 var progreso_investigacion := {2: 0.0, 3: 0.0}
-var fuentes_comida_activas: Dictionary = {}
 var sub_almacen_comida: Dictionary = {
 	"pesca": 0.0,
 	"recoleccion_caza": 0.0,
@@ -261,8 +260,6 @@ func _init() -> void:
 		"crudo": Recurso.new("Crudo", 0, LIMITE_BASE),
 		"combustible": Recurso.new("Combustible", 0, LIMITE_BASE),
 	}
-	for categoria in CATEGORIAS_COMIDA:
-		fuentes_comida_activas[categoria] = 0.0
 	sub_almacen_comida["recoleccion_caza"] = COMIDA_INICIAL * 0.5
 	sub_almacen_comida["pesca"] = COMIDA_INICIAL * 0.5
 
@@ -607,22 +604,10 @@ func tasa_migracion_mensual_efectiva() -> float:
 
 func alternar_decreto_racionamiento() -> bool:
 	decreto_racionamiento_activo = not decreto_racionamiento_activo
+	if decreto_racionamiento_activo:
+		moral = minf(moral, Ajustes.RACIONAMIENTO_TECHO_MORAL)
 	return decreto_racionamiento_activo
 
-
-func actualizar_fuentes_comida_desde_economia() -> void:
-	for cat in CATEGORIAS_COMIDA:
-		if not fuentes_comida_activas.has(cat):
-			fuentes_comida_activas[cat] = 0.0
-	if Economia != null and "puestos" in Economia:
-		for p in Economia.puestos.values():
-			if not p.get("activo", false):
-				continue
-			var tipo: String = p.get("tipo", "")
-			if tipo == "caza_recoleccion":
-				fuentes_comida_activas["recoleccion_caza"] = maxf(fuentes_comida_activas.get("recoleccion_caza", 0.0), 1.0)
-			elif tipo == "pesca_frutos_mar":
-				fuentes_comida_activas["pesca"] = maxf(fuentes_comida_activas.get("pesca", 0.0), 1.0)
 
 func impacto_peligrosidad_7d() -> float:
 	return 0.5 * float(bajas_7d) + 0.1 * float(heridos_7d) + 0.005 * robos_7d

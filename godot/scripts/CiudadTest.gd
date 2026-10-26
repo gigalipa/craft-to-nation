@@ -730,5 +730,42 @@ func ejecutar_pruebas() -> void:
 	assert(Ajustes.CIUDAD_TIPOS_POBLACION["especialista"]["combustible"] == 1.0, "especialista debe consumir 1.0 combustible/h")
 	assert(Ajustes.CIUDAD_TIPOS_POBLACION["militar"]["comida"] == 3.0, "militar base debe consumir 3.0 comida/h")
 
+	print("\n=== TEST 32: Cascada de Consumo Estratificada de Comida ===")
+	ciu32 = CiudadScript.new()
+	ciu32.sub_almacen_comida = {
+		"pesca": 20.0,
+		"recoleccion_caza": 30.0,
+		"sembradios": 50.0,
+		"granjas_animales": 0.0,
+		"hidroponia": 0.0,
+		"sintetico": 0.0,
+	}
+	ciu32.almacen["comida"].cantidad = 100.0
+	# Consumir 35 unidades: agota pesca (20), toma 15 de recoleccion_caza (quedan 15), sembradios intacto (50)
+	var exito_32: bool = ciu32._descontar_comida_estratificada(35.0)
+	assert(exito_32, "consumo estratificado debe ser exitoso")
+	assert(is_equal_approx(ciu32.sub_almacen_comida["pesca"], 0.0), "pesca debe agotarse primero")
+	assert(is_equal_approx(ciu32.sub_almacen_comida["recoleccion_caza"], 15.0), "recoleccion_caza debe quedar en 15.0")
+	assert(is_equal_approx(ciu32.sub_almacen_comida["sembradios"], 50.0), "sembradios no debe tocarse")
+	assert(is_equal_approx(ciu32.almacen["comida"].cantidad, 65.0), "stock unificado debe reflejar 65.0")
+
+	# Review Focus 1: Si hay hambruna total, sub_almacen_comida se resetea a cero
+	ciu32._descontar_comida_estratificada(100.0) # excede 65.0
+	for cat in ciu32.sub_almacen_comida:
+		assert(ciu32.sub_almacen_comida[cat] == 0.0, "hambruna debe limpiar sub_almacen_comida")
+
+	# Review Focus 3: Ingreso sin categoría o categoría desconocida va a recoleccion_caza
+	ciu32.ingresar_comida_estratificada(10.0, "desconocida")
+	assert(is_equal_approx(ciu32.sub_almacen_comida["recoleccion_caza"], 10.0))
+
+	# Entrega estratificada desde Economía
+	var econ_test: Node = preload("res://scripts/Economia.gd").new()
+	econ_test.ciudad = ciu32
+	assert(econ_test.categoria_comida_de_puesto(Vector2i(-999, -999)) == "recoleccion_caza")
+	econ_test.puestos[Vector2i(10, 10)] = {"tipo": "pesca_frutos_mar"}
+	assert(econ_test.categoria_comida_de_puesto(Vector2i(10, 10)) == "pesca")
+	econ_test.entregar({"comida": 25.0}, econ_test.categoria_comida_de_puesto(Vector2i(10, 10)))
+	assert(is_equal_approx(ciu32.sub_almacen_comida["pesca"], 25.0))
+
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

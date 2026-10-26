@@ -41,8 +41,9 @@ const SIN_SUELO := -1
 ## los puestos más lejanos rinden menos.
 static var CAPACIDAD_CARGA: float = Ajustes.ECONOMIA_CAPACIDAD_CARGA
 
-## Valores admisibles para la reserva de insumo en el almacén central (Esquema A)
-static var VALORES_RESERVA_INSUMO: Array[float] = Ajustes.ECONOMIA_VALORES_RESERVA_INSUMO
+## Valores admisibles para la reserva de insumo en el almacén central en porcentajes (0% a 50%)
+static var PORCENTAJES_RESERVA_INSUMO: Array[float] = Ajustes.ECONOMIA_PORCENTAJES_RESERVA_INSUMO
+static var VALORES_RESERVA_INSUMO: Array[float] = PORCENTAJES_RESERVA_INSUMO
 
 ## Mínimo de unidades que justifica un viaje del acarreador de una refinería (retirar insumo
 ## del stock central o recoger producto): evita viajes de 1 unidad. ponytail: un resto menor
@@ -805,10 +806,26 @@ func recoger(esquina: Vector2i, capacidad: float) -> Dictionary:
 
 ## Un acarreador llegó al núcleo urbano: suma su carga al stock central. Lo
 ## que no cabe (stock lleno) se pierde.
-func entregar(carga: Dictionary) -> void:
+func entregar(carga: Dictionary, origen_categoria: String = "") -> void:
 	for recurso in carga:
-		if ciudad.almacen.has(recurso):
+		if ciudad != null and ciudad.almacen.has(recurso):
 			ciudad.almacen[recurso].agregar(carga[recurso])
+			if recurso == "comida" and ciudad.has_method("ingresar_comida_estratificada"):
+				ciudad.ingresar_comida_estratificada(carga[recurso], origen_categoria)
+
+
+func categoria_comida_de_puesto(esquina: Vector2i) -> String:
+	if not puestos.has(esquina):
+		return "recoleccion_caza"
+	var t: String = puestos[esquina].get("tipo", "")
+	match t:
+		"pesca_frutos_mar": return "pesca"
+		"caza_recoleccion": return "recoleccion_caza"
+		"sembradios": return "sembradios"
+		"granjas_animales": return "granjas_animales"
+		"hidroponia": return "hidroponia"
+		"sintetico": return "sintetico"
+		_: return "recoleccion_caza"
 
 
 ## Celda (X, Z) de servicio del puesto (frente a su puerta) o SIN_SERVICIO.
@@ -1045,6 +1062,38 @@ func establecer_reserva_insumo(esquina: Vector2i, valor: float) -> void:
 	puestos[esquina]["reserva_insumo"] = valor
 
 
+func subir_reserva_insumo(esquina: Vector2i) -> float:
+	if not puestos.has(esquina):
+		return 0.0
+	var actual: float = obtener_reserva_insumo(esquina)
+	var lista: Array[float] = PORCENTAJES_RESERVA_INSUMO
+	var idx: int = -1
+	for i in range(lista.size()):
+		if is_equal_approx(lista[i], actual):
+			idx = i
+			break
+	var nuevo_idx: int = mini(lista.size() - 1, (idx + 1) if idx != -1 else 0)
+	var siguiente: float = lista[nuevo_idx]
+	establecer_reserva_insumo(esquina, siguiente)
+	return siguiente
+
+
+func bajar_reserva_insumo(esquina: Vector2i) -> float:
+	if not puestos.has(esquina):
+		return 0.0
+	var actual: float = obtener_reserva_insumo(esquina)
+	var lista: Array[float] = PORCENTAJES_RESERVA_INSUMO
+	var idx: int = -1
+	for i in range(lista.size()):
+		if is_equal_approx(lista[i], actual):
+			idx = i
+			break
+	var nuevo_idx: int = maxi(0, (idx - 1) if idx != -1 else 0)
+	var anterior: float = lista[nuevo_idx]
+	establecer_reserva_insumo(esquina, anterior)
+	return anterior
+
+
 func ciclar_reserva_insumo(esquina: Vector2i) -> float:
 	if not puestos.has(esquina):
 		return 0.0
@@ -1057,6 +1106,17 @@ func ciclar_reserva_insumo(esquina: Vector2i) -> float:
 	var siguiente: float = VALORES_RESERVA_INSUMO[(idx + 1) % VALORES_RESERVA_INSUMO.size()] if idx != -1 else VALORES_RESERVA_INSUMO[0]
 	establecer_reserva_insumo(esquina, siguiente)
 	return siguiente
+
+
+func calcular_reserva_en_unidades(esquina: Vector2i, recurso: String) -> float:
+	var val: float = obtener_reserva_insumo(esquina)
+	if val <= 0.0:
+		return 0.0
+	if val > 1.0:
+		return val  # compatibilidad con valores fijos legacy
+	if ciudad != null and ciudad.almacen.has(recurso):
+		return ciudad.almacen[recurso].limite * val
+	return 0.0
 
 
 ## Qué retiraría ahora un acarreador del stock central para esta refinería: {recurso: cantidad}.
@@ -1075,7 +1135,7 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 		if stock_actual >= 500.0 - 1e-9:
 			return {}
 		if ciudad != null and ciudad.almacen.has("carbon") and ciudad.almacen["carbon"].cantidad > 1e-9:
-			var reserva_cen: float = float(p.get("reserva_insumo", 0.0))
+			var reserva_cen: float = calcular_reserva_en_unidades(esquina, "carbon")
 			var disp_cen: float = maxf(0.0, ciudad.almacen["carbon"].cantidad - reserva_cen)
 			var cant: float = minf(CAPACIDAD_CARGA, disp_cen)
 			if cant > 1e-9:
@@ -1092,10 +1152,10 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 		return {}
 	var plan: Dictionary = {}
 	var total: float = 0.0
-	var reserva: float = float(p.get("reserva_insumo", 0.0))
 	for recurso in entradas:
 		if RECURSOS_LIQUIDOS.has(recurso):
 			continue
+		var reserva: float = calcular_reserva_en_unidades(esquina, recurso)
 		var parte: float = entradas[recurso] / suma
 		var espacio: float = p["capacidad"] * parte - p["almacen"].get(recurso, 0.0)
 		var stock_ciudad: float = ciudad.almacen[recurso].cantidad if (ciudad != null and ciudad.almacen.has(recurso)) else 0.0

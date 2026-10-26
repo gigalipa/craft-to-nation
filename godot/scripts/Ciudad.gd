@@ -18,6 +18,7 @@ const Strings = preload("res://scripts/strings.gd")
 signal tick_simulado
 signal nucleo_reasignado(nuevo_id: int, id_viejo: int)
 signal traslado_nucleo_programado_cambiado(activo: bool)
+signal recurso_escaso_notificado(clave: String)
 
 static var SEGUNDOS_POR_TICK: float = Ajustes.CIUDAD_SEGUNDOS_POR_TICK
 
@@ -177,10 +178,19 @@ var desahuciados := 0
 var nivel_investigado := 1
 var progreso_investigacion := {2: 0.0, 3: 0.0}
 var fuentes_comida_activas: Dictionary = {}
+var sub_almacen_comida: Dictionary = {
+	"pesca": 0.0,
+	"recoleccion_caza": 0.0,
+	"sembradios": 0.0,
+	"granjas_animales": 0.0,
+	"hidroponia": 0.0,
+	"sintetico": 0.0,
+}
 var bono_moral_variedad := 0.0
 ## Estado de Moral Dinámica
 var moral: float = MORAL_INICIAL
 var tasa_cambio_moral: float = 0.0
+var recursos_alertados_5pct: Dictionary = {}
 var cola_desempleo: Array[int] = []
 var historial_peligrosidad: Array[Dictionary] = []
 var bajas_7d: int = 0
@@ -250,6 +260,8 @@ func _init() -> void:
 	}
 	for categoria in CATEGORIAS_COMIDA:
 		fuentes_comida_activas[categoria] = 0.0
+	sub_almacen_comida["recoleccion_caza"] = COMIDA_INICIAL * 0.5
+	sub_almacen_comida["pesca"] = COMIDA_INICIAL * 0.5
 
 
 ## Cobra "monto" de "recurso" del stock central devolviendo un desglose {recurso: cantidad}
@@ -297,6 +309,32 @@ func consumir_costo_con_detalle(recurso: String, monto: float) -> Dictionary:
 ## Las tablas cuentan como madera y los bloques de piedra cuentan como piedra.
 func consumir_costo(recurso: String, monto: float) -> bool:
 	return not consumir_costo_con_detalle(recurso, monto).is_empty()
+
+
+func ingresar_comida_estratificada(cantidad: float, categoria: String = "recoleccion_caza") -> void:
+	if cantidad <= 0.0:
+		return
+	var cat: String = categoria if sub_almacen_comida.has(categoria) else "recoleccion_caza"
+	sub_almacen_comida[cat] = sub_almacen_comida.get(cat, 0.0) + cantidad
+
+
+func _descontar_comida_estratificada(cantidad_requerida: float) -> bool:
+	var restante := cantidad_requerida
+	for cat in Ajustes.CIUDAD_ORDEN_CONSUMO_COMIDA:
+		var disponible: float = sub_almacen_comida.get(cat, 0.0)
+		if disponible <= 0.0:
+			continue
+		var tomar: float = minf(disponible, restante)
+		sub_almacen_comida[cat] -= tomar
+		restante -= tomar
+		if restante <= 1e-5:
+			break
+
+	var exito: bool = (almacen["comida"] as Recurso).consumir(cantidad_requerida)
+	if not exito:
+		for cat in sub_almacen_comida:
+			sub_almacen_comida[cat] = 0.0
+	return exito
 
 
 func _ready() -> void:
@@ -536,8 +574,14 @@ func _recalcular_peligrosidad_7d() -> void:
 
 
 
-func activar_boost_inmigracion() -> bool:
+func puede_activar_boost_inmigracion() -> bool:
 	if horas_boost_inmigracion > 0:
+		return false
+	return calcular_tasa_migracion_mensual(moral) > 0.0
+
+
+func activar_boost_inmigracion() -> bool:
+	if not puede_activar_boost_inmigracion():
 		return false
 	horas_boost_inmigracion = int(HORAS_POR_MES)
 	return true
@@ -545,6 +589,13 @@ func activar_boost_inmigracion() -> bool:
 
 func dias_boost_inmigracion_restantes() -> int:
 	return int(ceil(float(horas_boost_inmigracion) / 24.0))
+
+
+func tasa_migracion_mensual_efectiva() -> float:
+	var base: float = calcular_tasa_migracion_mensual(moral)
+	if base > 0.0 and horas_boost_inmigracion > 0:
+		return base * MULTIPLICADOR_BOOST_INMIGRACION
+	return base
 
 
 func actualizar_fuentes_comida_desde_economia() -> void:
@@ -1007,7 +1058,7 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 		gasto_total *= 1.10
 		periodo_elecciones_restante -= 1
 
-	var exito_comida: bool = (almacen["comida"] as Recurso).consumir(gasto_total)
+	var exito_comida: bool = _descontar_comida_estratificada(gasto_total)
 
 	var bajas_inanicion := 0
 	if not exito_comida:
@@ -1026,46 +1077,84 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	_recalcular_peligrosidad_7d()
 
 	# Dinámica temporal de Moral (tasa horaria delta_M)
+	var total_ciu: int = censo_total
 	var delta_inercia: float = (MORAL_NEUTRAL - moral) * INERCIA_MORAL
 	var delta_escasez := 0.0
 	var todos_positivos := true
 	var hay_consumo_activo := false
 
+	# Comida (recurso crítico principal)
 	var com_rec: Recurso = almacen.get("comida")
 	if com_rec != null:
 		hay_consumo_activo = true
+		var cap_c: float = com_rec.limite if com_rec.limite > 0.0 else Ajustes.CIUDAD_LIMITE_BASE_COMIDA
+		var f_c: float = clampf(com_rec.cantidad / cap_c, 0.0, 1.0)
 		if not exito_comida or com_rec.cantidad <= 0.0:
-			delta_escasez -= 3.0
+			delta_escasez -= Ajustes.CIUDAD_PESO_ESCASEZ_COMIDA
 			todos_positivos = false
-		elif com_rec.tasa_neta_promedio < 0.0:
-			delta_escasez -= 0.6
-			todos_positivos = false
-		elif com_rec.tasa_neta_promedio <= 0.0:
-			todos_positivos = false
+		elif f_c >= Ajustes.CIUDAD_UMBRAL_COMIDA_SUPERAVIT:
+			# Superávit (>=90%): no hay penalización y cuenta como positivo
+			pass
+		elif f_c >= Ajustes.CIUDAD_UMBRAL_COMIDA_ESTABLE:
+			# Estable (80%-90%): neutral ante tasas negativas
+			if com_rec.tasa_neta_promedio < 0.0:
+				todos_positivos = false
+		else:
+			# Escasez (<80%): penaliza si la tasa es negativa según autonomía y déficit
+			if com_rec.tasa_neta_promedio < 0.0:
+				todos_positivos = false
+				var horas_autonomia: float = com_rec.cantidad / absf(com_rec.tasa_neta_promedio)
+				var def_c: float = (Ajustes.CIUDAD_UMBRAL_COMIDA_ESTABLE - f_c) / Ajustes.CIUDAD_UMBRAL_COMIDA_ESTABLE
+				if horas_autonomia < Ajustes.CIUDAD_HORAS_AUTONOMIA_ALARMA:
+					var urg: float = 1.0 - (horas_autonomia / Ajustes.CIUDAD_HORAS_AUTONOMIA_ALARMA)
+					delta_escasez -= Ajustes.CIUDAD_PESO_ESCASEZ_COMIDA * (0.5 * def_c + 0.5 * urg)
+				else:
+					var tasa_rel: float = absf(com_rec.tasa_neta_promedio) / cap_c
+					delta_escasez -= clampf(Ajustes.CIUDAD_PESO_ESCASEZ_COMIDA * def_c * minf(1.0, tasa_rel * 20.0), 0.1, 1.5)
 
 	if cobertura_energia < 1.0:
 		delta_escasez -= 1.5 * (1.0 - cobertura_energia)
 		todos_positivos = false
 
+	# Recursos no críticos (Madera, Piedra, etc.)
 	for clave in almacen:
 		if clave == "comida":
 			continue
 		var rec: Recurso = almacen[clave]
-		if rec.tasa_neta_promedio < 0.0:
+		var cap_r: float = rec.limite if rec.limite > 0.0 else Ajustes.CIUDAD_LIMITE_BASE
+		var f_r: float = clampf(rec.cantidad / cap_r, 0.0, 1.0)
+		if rec.tasa_neta_promedio < 0.0 or (rec.cantidad <= 0.0 and rec.tasa_neta < 0.0):
 			hay_consumo_activo = true
 			todos_positivos = false
 			if rec.cantidad <= 0.0:
 				delta_escasez -= 0.4
-			else:
-				delta_escasez -= 0.1
-		elif rec.cantidad <= 0.0 and rec.tasa_neta < 0.0:
-			hay_consumo_activo = true
-			todos_positivos = false
-			delta_escasez -= 0.4
+			elif f_r < 0.80:
+				var def_r: float = (0.80 - f_r) / 0.80
+				var tasa_rel_r: float = absf(rec.tasa_neta_promedio) / cap_r
+				var pen_r: float = 0.5 * def_r * minf(1.0, tasa_rel_r * 10.0)
+				delta_escasez -= clampf(pen_r, 0.05, 0.4)
+
+	# Notificaciones de recursos bajos (<5%) con histéresis (>15%)
+	for clave in almacen:
+		var rec_notif: Recurso = almacen[clave]
+		var cap_notif: float = rec_notif.limite if rec_notif.limite > 0.0 else Ajustes.CIUDAD_LIMITE_BASE
+		var f_notif: float = clampf(rec_notif.cantidad / cap_notif, 0.0, 1.0)
+		if f_notif < Ajustes.CIUDAD_UMBRAL_NOTIF_RECURSO_BAJO:
+			if not recursos_alertados_5pct.get(clave, false):
+				recursos_alertados_5pct[clave] = true
+				recurso_escaso_notificado.emit(clave)
+		elif f_notif > Ajustes.CIUDAD_UMBRAL_REARME_RECURSO_BAJO:
+			if recursos_alertados_5pct.get(clave, false):
+				recursos_alertados_5pct[clave] = false
 
 	var delta_abundancia := 0.0
-	if hay_consumo_activo and todos_positivos:
-		delta_abundancia = 0.4
+	if total_ciu > 0:
+		var com_rec_ab: Recurso = almacen.get("comida")
+		var f_c_ab: float = (com_rec_ab.cantidad / com_rec_ab.limite) if (com_rec_ab != null and com_rec_ab.limite > 0.0) else 0.0
+		if com_rec_ab != null and f_c_ab >= Ajustes.CIUDAD_UMBRAL_COMIDA_SUPERAVIT:
+			delta_abundancia = Ajustes.CIUDAD_BONO_SUPERAVIT_COMIDA
+		elif hay_consumo_activo and todos_positivos:
+			delta_abundancia = Ajustes.CIUDAD_BONO_SUPERAVIT_COMIDA
 
 	if horas_boost_inmigracion > 0:
 		horas_boost_inmigracion -= 1
@@ -1078,7 +1167,6 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	var delta_sin_techo: float = -0.05 * float(sin_techo)
 	var delta_peligro: float = -impacto_peligrosidad_7d()
 
-	var total_ciu: int = censo_total
 	var delta_empleo := 0.0
 	if total_ciu > 0:
 		var ocupados: int = total_ciu - demografia.get("desempleado", 0) - sin_techo
@@ -1110,3 +1198,33 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	horas_juego += 1
 	tick_simulado.emit()
 	return resultado
+
+
+## Devuelve datos del recurso crítico en mayor urgencia si tiene tasa negativa
+## y autonomía < CIUDAD_HORAS_AUTONOMIA_ALARMA (72 h):
+## {"recurso": clave, "horas": horas_autonomia, "cantidad": cant, "tasa": tasa}
+## o {} si ninguno está en crisis.
+func recurso_critico_urgente() -> Dictionary:
+	var peor: Dictionary = {}
+	var min_horas: float = 999999.0
+
+	var com: Recurso = almacen.get("comida")
+	if com != null and com.tasa_neta_promedio < -1e-6:
+		var cap_c: float = com.limite if com.limite > 0.0 else Ajustes.CIUDAD_LIMITE_BASE_COMIDA
+		if (com.cantidad / cap_c) < Ajustes.CIUDAD_UMBRAL_COMIDA_ESTABLE:
+			var h_c: float = com.cantidad / absf(com.tasa_neta_promedio)
+			if h_c < Ajustes.CIUDAD_HORAS_AUTONOMIA_ALARMA:
+				min_horas = h_c
+				peor = {"recurso": "comida", "horas": h_c, "cantidad": com.cantidad, "tasa": com.tasa_neta_promedio}
+
+	for comb_nom in ["carbon", "combustible"]:
+		var rec: Recurso = almacen.get(comb_nom)
+		if rec != null and rec.tasa_neta_promedio < -1e-6:
+			var cap_comb: float = rec.limite if rec.limite > 0.0 else Ajustes.CIUDAD_LIMITE_BASE
+			if (rec.cantidad / cap_comb) < Ajustes.CIUDAD_UMBRAL_COMIDA_ESTABLE:
+				var h_comb: float = rec.cantidad / absf(rec.tasa_neta_promedio)
+				if h_comb < Ajustes.CIUDAD_HORAS_AUTONOMIA_ALARMA and h_comb < min_horas:
+					min_horas = h_comb
+					peor = {"recurso": comb_nom, "horas": h_comb, "cantidad": rec.cantidad, "tasa": rec.tasa_neta_promedio}
+
+	return peor

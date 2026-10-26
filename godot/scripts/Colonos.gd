@@ -1254,7 +1254,9 @@ func _decidir_acarreo_central(c: Dictionary, esquina: Vector2i, huella: Array, s
 func _llevar_al_nucleo(c: Dictionary) -> bool:
 	var huella_nucleo: Array = zona.huella_del_nucleo()
 	if _junto_a(c["celda"], huella_nucleo):
-		economia.entregar(c["carga"])
+		var esq: Vector2i = c.get("trabajo", {}).get("puesto", Recoleccion.SIN_PUESTO)
+		var cat_comida: String = economia.categoria_comida_de_puesto(esq)
+		economia.entregar(c["carga"], cat_comida)
 		c["carga"] = {}
 		return true
 	_ir_junto_a(c, huella_nucleo)

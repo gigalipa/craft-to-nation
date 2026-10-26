@@ -1182,24 +1182,31 @@ func ejecutar_pruebas() -> void:
 	var c43: Node = _ciudad_nueva()
 	var e43: Node = EconomiaScript.new()
 	e43.ciudad = c43
-	assert(e43.VALORES_RESERVA_INSUMO == [0.0, 50.0, 100.0, 250.0, 500.0])
+	assert(e43.PORCENTAJES_RESERVA_INSUMO == [0.0, 0.10, 0.20, 0.35, 0.50])
 
 	var esq_aserradero := Vector2i(10, 10)
 	e43.registrar_puesto(esq_aserradero, "aserradero", 5, 5, {})
 	assert(e43.obtener_reserva_insumo(esq_aserradero) == 0.0, "reserva inicial es 0")
 
-	# Ciclar reserva
-	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 50.0)
-	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 100.0)
-	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 250.0)
-	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 500.0)
-	assert(e43.ciclar_reserva_insumo(esq_aserradero) == 0.0, "vuelve a 0")
-	e43.establecer_reserva_insumo(esq_aserradero, 100.0)
-	assert(e43.obtener_reserva_insumo(esq_aserradero) == 100.0)
+	# Subir y bajar reserva por porcentajes
+	assert(is_equal_approx(e43.subir_reserva_insumo(esq_aserradero), 0.10))
+	assert(is_equal_approx(e43.subir_reserva_insumo(esq_aserradero), 0.20))
+	assert(is_equal_approx(e43.subir_reserva_insumo(esq_aserradero), 0.35))
+	assert(is_equal_approx(e43.subir_reserva_insumo(esq_aserradero), 0.50))
+	assert(is_equal_approx(e43.subir_reserva_insumo(esq_aserradero), 0.50), "tope máximo en 50%")
+	assert(is_equal_approx(e43.bajar_reserva_insumo(esq_aserradero), 0.35))
+	assert(is_equal_approx(e43.bajar_reserva_insumo(esq_aserradero), 0.20))
+	assert(is_equal_approx(e43.bajar_reserva_insumo(esq_aserradero), 0.10))
+	assert(is_equal_approx(e43.bajar_reserva_insumo(esq_aserradero), 0.0))
+	assert(is_equal_approx(e43.bajar_reserva_insumo(esq_aserradero), 0.0), "tope mínimo en 0%")
 
-	# Insumos a cargar respetando la reserva
+	# Reserva porcentual sobre almacén: límite de madera es 500, reserva de 20% = 100 u.
+	c43.almacen["madera"].limite = 500.0
+	e43.establecer_reserva_insumo(esq_aserradero, 0.20)
+	assert(is_equal_approx(e43.calcular_reserva_en_unidades(esq_aserradero, "madera"), 100.0))
+
+	# Insumos a cargar respetando la reserva porcentual
 	c43.almacen["madera"].cantidad = 130.0
-	# Capacidad de aserradero es 1000, CAPACIDAD_CARGA es 30.
 	# Disponible en ciudad: 130 - 100 = 30. Carga = min(30, 30) = 30.
 	var plan1: Dictionary = e43.insumos_a_cargar(esq_aserradero)
 	assert(is_equal_approx(plan1.get("madera", 0.0), 30.0))
@@ -1214,7 +1221,7 @@ func ejecutar_pruebas() -> void:
 	var plan3: Dictionary = e43.insumos_a_cargar(esq_aserradero)
 	assert(plan3.is_empty(), "bajo la reserva no se cargan insumos")
 
-	# Prueba con fábrica de bloques y piedra
+	# Compatibilidad con valores fijos directos (ej. 50 u fijas):
 	var esq_fabrica := Vector2i(20, 20)
 	e43.registrar_puesto(esq_fabrica, "fabrica_bloques", 5, 6, {})
 	e43.establecer_reserva_insumo(esq_fabrica, 50.0)
@@ -1265,5 +1272,21 @@ func ejecutar_pruebas() -> void:
 	# Tasa nominal de siderúrgica con 1 técnico es 4.0 acero/h; con moral 100 (2.0x) debe ser 8.0
 	assert(is_equal_approx(prod_ref_100.get("acero", 0.0), 8.0), "refinado a moral 100 se modula al 2.0x")
 
-	print("\n=== Las 44 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 45: Productividad protegida para puestos de comida a moral cero ===")
+	var c_m0: Node = CiudadScript.new()
+	c_m0.moral = 0.0
+	var e_m0: Node = _nueva(c_m0)
+	e_m0.asignar(ESQ, "recolector", 1)
+	e_m0.marcar_presente(1, true)
+	# Maderero (no alimento): rinde a 0.5x
+	var prod_mad: Dictionary = e_m0.produccion_por_hora(ESQ)
+	assert(is_equal_approx(prod_mad["madera"], 3.0 * 0.5), "maderero a moral 0 rinde a 0.5x")
+	# Puesto de caza (alimento): rinde a 0.75x mínimo
+	e_m0.registrar_puesto(Vector2i(60, 60), "caza_recoleccion", 4, 4, {"caza": 4.0})
+	e_m0.asignar(Vector2i(60, 60), "recolector", 2)
+	e_m0.marcar_presente(2, true)
+	var prod_caza: Dictionary = e_m0.produccion_por_hora(Vector2i(60, 60))
+	assert(is_equal_approx(prod_caza["comida"], 4.0 * 0.75), "puesto de comida a moral 0 rinde al 0.75x")
+
+	print("\n=== Las 45 pruebas de Economia pasaron correctamente ===")
 

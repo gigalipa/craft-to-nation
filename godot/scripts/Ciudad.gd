@@ -82,6 +82,7 @@ static var MULTIPLICADOR_BOOST_INMIGRACION: float = Ajustes.CIUDAD_MULTIPLICADOR
 static var PRODUCTIVIDAD_BASE: float = Ajustes.CIUDAD_PRODUCTIVIDAD_BASE
 static var PRODUCTIVIDAD_EXPONENCIAL_BASE: float = Ajustes.CIUDAD_PRODUCTIVIDAD_EXPONENCIAL_BASE
 static var PRODUCTIVIDAD_DIVISOR_MORAL: float = Ajustes.CIUDAD_PRODUCTIVIDAD_DIVISOR_MORAL
+static var PRODUCTIVIDAD_SUELO_ALIMENTOS: float = Ajustes.PRODUCTIVIDAD_SUELO_ALIMENTOS
 
 ## Inventario del avatar = almacén central (ver docs/superpowers/specs/
 ## 2026-09-24-extraccion-fisica-agotamiento-design.md, Sección 6). Al empezar
@@ -519,8 +520,12 @@ func actualizar_investigacion(horas: float) -> bool:
 ## Calcula el multiplicador continuo de productividad laboral según la moral (0 a 100)
 ## X = PRODUCTIVIDAD_BASE * PRODUCTIVIDAD_EXPONENCIAL_BASE^(moral / PRODUCTIVIDAD_DIVISOR_MORAL).
 ## Con valores base: a 0 da 0.5x, a 50 da 1.0x, a 100 da 2.0x.
-static func calcular_multiplicador_productividad(p_moral: float) -> float:
-	return PRODUCTIVIDAD_BASE * pow(PRODUCTIVIDAD_EXPONENCIAL_BASE, clampf(p_moral, 0.0, 100.0) / PRODUCTIVIDAD_DIVISOR_MORAL)
+## Para alimentos (es_recurso_alimento == true), el multiplicador no cae por debajo de PRODUCTIVIDAD_SUELO_ALIMENTOS (0.75x).
+static func calcular_multiplicador_productividad(p_moral: float, es_recurso_alimento: bool = false) -> float:
+	var x: float = PRODUCTIVIDAD_BASE * pow(PRODUCTIVIDAD_EXPONENCIAL_BASE, clampf(p_moral, 0.0, 100.0) / PRODUCTIVIDAD_DIVISOR_MORAL)
+	if es_recurso_alimento:
+		return maxf(PRODUCTIVIDAD_SUELO_ALIMENTOS, x)
+	return x
 
 
 ## Tasa de migración neta mensual (ciudadanos/mes) según tramos escalonados de moral.

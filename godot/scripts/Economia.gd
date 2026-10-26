@@ -461,7 +461,11 @@ func produccion_por_hora(esquina: Vector2i) -> Dictionary:
 	var multiplicador: float = Recoleccion.multiplicador_de_nivel(p["tipo"], p["nivel"])
 	for clave in p["tasas"]:
 		var recurso: String = RECURSO_DE_TASA.get(clave, clave)
-		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes * multiplicador * factor_moral
+		var es_alimento: bool = (recurso == "comida")
+		var factor_moral_recurso: float = 1.0
+		if ciudad != null and ciudad.has_method("calcular_multiplicador_productividad"):
+			factor_moral_recurso = ciudad.calcular_multiplicador_productividad(ciudad.moral, es_alimento)
+		resultado[recurso] = resultado.get(recurso, 0.0) + p["tasas"][clave] * presentes * multiplicador * factor_moral_recurso
 	return resultado
 
 

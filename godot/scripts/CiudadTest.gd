@@ -801,5 +801,11 @@ func ejecutar_pruebas() -> void:
 	ciu33.sub_almacen_comida["sintetico"] = 50.0
 	assert(is_equal_approx(ciu33.delta_dieta_actual(), 2.0), "6 fuentes otorgan bono +2.0/h")
 
+	print("\n=== TEST 34: Suelo de Productividad Agraria ===")
+	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(0.0, false), 0.5), "moral 0 general debe ser 0.5")
+	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(0.0, true), 0.75), "moral 0 alimento debe tener suelo de 0.75")
+	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(50.0, true), 1.0), "moral 50 alimento rinde 1.0")
+	assert(is_equal_approx(CiudadScript.calcular_multiplicador_productividad(100.0, true), 2.0), "moral 100 alimento rinde 2.0")
+
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

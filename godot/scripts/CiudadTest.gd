@@ -880,5 +880,32 @@ func ejecutar_pruebas() -> void:
 	assert(bal["dominante"] == "dieselpunk")
 	assert(bal["nivel"] == 2)
 
+	print("\n=== TEST 39: Generación de Ciencia Teórica en Universidad ===")
+	var ciu39: Node = CiudadScript.new()
+	ciu39.moral = 50.0  # X_moral = 1.0
+	# Era 1 no puede investigar tecnología de Era 2
+	assert(not ciu39.iniciar_ciencia_teorica("metalurgia_hornos"))
+
+	ciu39.era_actual = 2
+	assert(ciu39.iniciar_ciencia_teorica("metalurgia_hornos"))
+	assert(ciu39.ciencia_teorica_activa == "metalurgia_hornos")
+
+	# Generar puntos: 10 investigadores * 1.0h * 1.0 moral * 1.0 energia = 10 puntos
+	ciu39.almacen["hierro"].agregar(100.0)
+	ciu39.almacen["madera"].agregar(200.0)
+	ciu39.acumular_ciencia_teorica(100.0)  # Completa los 100 puntos de metalurgia_hornos
+	assert(ciu39.esta_ciencia_descubierta("metalurgia_hornos"))
+	assert(ciu39.ciencia_teorica_activa == "")
+
+	# Doctrina en era 4
+	ciu39.era_actual = 4
+	ciu39.ciencias_teoricas_descubiertas.append("quimica_hidrocarburos")
+	ciu39.almacen["acero"].agregar(100.0)
+	ciu39.almacen["combustible"].agregar(50.0)
+	assert(ciu39.iniciar_ciencia_teorica("combustion_pesada_blindajes"))
+	assert(ciu39.acumular_ciencia_teorica(800.0))
+	assert(ciu39.esta_ciencia_descubierta("combustion_pesada_blindajes"))
+	assert(ciu39.balanza_doctrinal["dieselpunk"] >= 25.0, "Descubrir ciencia de era 4 con doctrina debe aportar +25 puntos")
+
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

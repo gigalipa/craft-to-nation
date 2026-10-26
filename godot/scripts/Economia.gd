@@ -518,14 +518,7 @@ func simular_hora() -> void:
 			continue
 		_liberar_acarreadores_si_agotado(esquina)
 		if es_universidad(esquina):
-			var id_act: int = p.get("investigacion_activa", 0)
-			if id_act > 0 and not p.get("investigacion_pausada", false):
-				var factor_uni: float = 1.0
-				if ciudad != null and id_act == 3:
-					factor_uni = factores_energia.get(esquina, 0.0)
-				var horas_uni: float = float(p["presentes"].size()) * factor_uni
-				if horas_uni > 0.0 and ciudad != null:
-					_avanzar_investigacion(esquina, id_act, horas_uni)
+			_tick_universidad(esquina, factores_energia.get(esquina, 0.0))
 			continue
 		if es_escuela(esquina):
 			_formar(esquina)
@@ -986,6 +979,47 @@ func _avanzar_investigacion(esquina: Vector2i, id_tech: int, horas: float) -> vo
 		p["investigacion_pausada"] = false
 		p["progreso"] = 0.0
 		investigacion_finalizada.emit(costo["nombre"])
+
+
+## Calcula el delta horario de puntos de ciencia según investigadores, moral y electrificación.
+func calcular_delta_puntos_ciencia(investigadores: int, mult_moral: float, energizada: bool) -> float:
+	return float(investigadores) * 1.0 * mult_moral * (1.0 if energizada else 0.5)
+
+
+## Helper para calcular puntos de ciencia generados en un intervalo de horas.
+func generar_puntos_ciencia(horas: float, investigadores_activos: int, mult_moral: float, energizada: bool) -> float:
+	return calcular_delta_puntos_ciencia(investigadores_activos, mult_moral, energizada) * horas
+
+
+## Simula el avance horario en una universidad (investigación de era legacy y Capa 1 de ciencia teórica).
+func _tick_universidad(esquina: Vector2i = Vector2i(-999999, -999999), factor_energia: float = 1.0) -> void:
+	if esquina == Vector2i(-999999, -999999):
+		for esq in puestos:
+			if es_universidad(esq):
+				_tick_universidad(esq, factor_energia_de(esq))
+		return
+	if not puestos.has(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	var id_act: int = p.get("investigacion_activa", 0)
+	if id_act > 0 and not p.get("investigacion_pausada", false):
+		var factor_uni: float = 1.0
+		if ciudad != null and id_act == 3:
+			factor_uni = factor_energia
+		var horas_uni: float = float(p["presentes"].size()) * factor_uni
+		if horas_uni > 0.0 and ciudad != null:
+			_avanzar_investigacion(esquina, id_act, horas_uni)
+
+	# Capa 1: Ciencia teórica en la Universidad y acumulación de puntos_ciencia
+	if ciudad != null and ciudad.ciencia_teorica_activa != "":
+		var inv_activos: int = p["presentes"].size()
+		if inv_activos > 0:
+			var mult_moral: float = 1.0
+			if ciudad.has_method("calcular_multiplicador_productividad"):
+				mult_moral = ciudad.calcular_multiplicador_productividad(ciudad.moral)
+			var energizada: bool = factor_energia > 0.0
+			var delta_pts: float = calcular_delta_puntos_ciencia(inv_activos, mult_moral, energizada)
+			ciudad.acumular_ciencia_teorica(delta_pts)
 
 
 ## Recurso principal que consume la refinería (tipo_entrada de su receta, p. ej. "hierro").

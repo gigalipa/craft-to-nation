@@ -182,7 +182,10 @@ var progreso_investigacion := {2: 0.0, 3: 0.0}
 ## Pacing Orgánico de Eras, IDU y Balanza Doctrinal
 var era_actual: int = 1
 var balanza_doctrinal: Dictionary = {"dieselpunk": 0.0, "cyberpunk": 0.0, "solarpunk": 0.0}
+var puntos_ciencia: float = 0.0
 var ciencias_teoricas_descubiertas: Array[String] = []
+var progreso_ciencia_teorica: Dictionary = {}  # id_tech -> float
+var ciencia_teorica_activa: String = ""
 var mejoras_practicas_instaladas: Array[String] = []
 
 ## Overrides para pruebas unitarias de IDU (-1.0 = inactivo)
@@ -669,6 +672,50 @@ func calcular_porcentajes_doctrinales() -> Dictionary:
 		"dominante": dominante,
 		"nivel": nivel_doc,
 	}
+
+
+## Inicia la investigación de una ciencia básica teórica del catálogo.
+func iniciar_ciencia_teorica(id_ciencia: String) -> bool:
+	if not Ajustes.CIENCIAS_TEORICAS_CATALOGO.has(id_ciencia):
+		return false
+	if ciencias_teoricas_descubiertas.has(id_ciencia):
+		return false
+	var tech: Dictionary = Ajustes.CIENCIAS_TEORICAS_CATALOGO[id_ciencia]
+	var prerreq: String = tech.get("prerrequisito", "")
+	if prerreq != "" and not ciencias_teoricas_descubiertas.has(prerreq):
+		return false
+	if int(tech.get("era", 1)) > era_actual:
+		return false
+	ciencia_teorica_activa = id_ciencia
+	return true
+
+
+## Verifica si una tecnología teórica ya fue descubierta.
+func esta_ciencia_descubierta(id_ciencia: String) -> bool:
+	return ciencias_teoricas_descubiertas.has(id_ciencia)
+
+
+## Acumula puntos de ciencia en la investigación teórica activa y descuenta costos al completar.
+func acumular_ciencia_teorica(pts: float) -> bool:
+	if ciencia_teorica_activa == "" or pts <= 0.0:
+		return false
+	if not Ajustes.CIENCIAS_TEORICAS_CATALOGO.has(ciencia_teorica_activa):
+		return false
+	puntos_ciencia += pts
+	var info: Dictionary = Ajustes.CIENCIAS_TEORICAS_CATALOGO[ciencia_teorica_activa]
+	var meta: float = float(info.get("costo_puntos", 0.0))
+	var actual: float = float(progreso_ciencia_teorica.get(ciencia_teorica_activa, 0.0))
+	progreso_ciencia_teorica[ciencia_teorica_activa] = minf(meta, actual + pts)
+	if progreso_ciencia_teorica[ciencia_teorica_activa] >= meta:
+		var costo_rec: Dictionary = info.get("costo_recursos", {})
+		if consumir_costos(costo_rec):
+			ciencias_teoricas_descubiertas.append(ciencia_teorica_activa)
+			if info.has("doctrina") and str(info["doctrina"]) != "":
+				agregar_puntos_doctrina(str(info["doctrina"]), 25.0)
+			ciencia_teorica_activa = ""
+			actualizar_pacing_era()
+			return true
+	return false
 
 
 ## Calcula el multiplicador continuo de productividad laboral según la moral (0 a 100)

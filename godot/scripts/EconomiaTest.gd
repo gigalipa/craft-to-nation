@@ -1288,5 +1288,27 @@ func ejecutar_pruebas() -> void:
 	var prod_caza: Dictionary = e_m0.produccion_por_hora(Vector2i(60, 60))
 	assert(is_equal_approx(prod_caza["comida"], 4.0 * 0.75), "puesto de comida a moral 0 rinde al 0.75x")
 
-	print("\n=== Las 45 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 46: Generación horaria de puntos de ciencia ===")
+	var e46: Node = EconomiaScript.new()
+	var delta_pts: float = e46.calcular_delta_puntos_ciencia(4, 1.0, true) # 4 inv, 1.0 moral, con energia
+	assert(is_equal_approx(delta_pts, 4.0))
+	var delta_sin_e: float = e46.calcular_delta_puntos_ciencia(4, 1.0, false)
+	assert(is_equal_approx(delta_sin_e, 2.0))
+	var delta_moral: float = e46.calcular_delta_puntos_ciencia(4, 0.5, true)
+	assert(is_equal_approx(delta_moral, 2.0))
+
+	# Integración con ciudad en _tick_universidad
+	var c46: Node = CiudadScript.new()
+	c46.era_actual = 2
+	c46.moral = 50.0
+	assert(c46.iniciar_ciencia_teorica("metalurgia_hornos"))
+	e46.ciudad = c46
+	var esq_uni46 := Vector2i(10, 10)
+	e46.registrar_puesto(esq_uni46, "universidad", 5, 5, {})
+	e46.puestos[esq_uni46]["presentes"] = {1: true, 2: true} # 2 investigadores
+	e46._tick_universidad(esq_uni46, 1.0)
+	# 2 investigadores * 1.0 moral * 1.0 energia = 2.0 puntos acumulados
+	assert(is_equal_approx(c46.progreso_ciencia_teorica.get("metalurgia_hornos", 0.0), 2.0))
+
+	print("\n=== Las 46 pruebas de Economia pasaron correctamente ===")
 

@@ -89,6 +89,7 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["productor_combustible", "Productor combustible", "7"],
 		["central_termoelectrica", "Central termoeléctrica", "8"],
 		["almacen", "Almacén", "9"],
+		["taller_transporte", "Taller de transporte", "0"],
 	],
 	"investigacion": [
 		["escuela_tecnica", "Escuela técnica", "1"],
@@ -110,7 +111,7 @@ const TIPOS_CON_MINIATURA := [
 	"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera",
 	"refineria_petrolera", "productor_combustible", "central_termoelectrica",
 	"escuela_tecnica", "escuela_especialistas", "universidad",
-	"estacion_bombeo", "centro_extraccion", "almacen",
+	"estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte",
 	"vias", "acueducto", "tuberia"
 ]
 
@@ -144,6 +145,7 @@ const METADATOS_CONSTRUCCION := {
 	"productor_combustible": [["piedra"], true, "combustible"],
 	"central_termoelectrica": [["piedra"], false, "energia_dorado"],
 	"almacen": [["piedra"], false, "almacen"],
+	"taller_transporte": [["madera", "piedra"], false, "transporte"],
 	"escuela_tecnica": [["tierra"], false, "tecnico"],
 	"escuela_especialistas": [["piedra"], false, "especialista"],
 	"universidad": [["piedra"], false, "investigador"],

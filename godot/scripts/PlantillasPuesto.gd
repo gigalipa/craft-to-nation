@@ -58,6 +58,7 @@ const MATERIAL := {
 	"estacion_bombeo": "bloque_madera",
 	"centro_extraccion": "estructura_hierro",
 	"almacen": "bloque_piedra",
+	"taller_transporte": "bloque_piedra",
 }
 
 const PLANTILLAS := {
@@ -218,6 +219,13 @@ const PLANTILLAS := {
 		["#E#S#", "#...#", "#...#", "#...#", "##V##"],
 		["#####", "#...#", "#...#", "#...#", "#####"],
 		["#####", "1...2", "3...4", "5...6", "#####"],
+		["#####", "#####", "#####", "#####", "#####"],
+	]},
+	# Taller de transporte: nave industrial 5x5 con puerta frontal, ventanas y baul.
+	"taller_transporte": {"capas": [
+		["#####", "#####", "#####", "#####", "#####"],
+		["##d##", "#...#", "#..B#", "#...#", "#####"],
+		["##D##", "V...V", "#...#", "V...V", "##V##"],
 		["#####", "#####", "#####", "#####", "#####"],
 	]},
 }

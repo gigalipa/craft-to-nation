@@ -32,7 +32,7 @@ const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Madera/h por recolector bajo la cual un maderero se da por agotado (decisión del usuario, 2026-10-02).
 static var UMBRAL_AGOTADO_MADERERO: float = Ajustes.RECOLECCION_UMBRAL_AGOTADO_MADERERO
 
-const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen"]
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte"]
 ## Escuelas: tipo de puesto -> {"origen", "destino", "horas"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
 ## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
 ## conserva (4 obreros = 3 técnicos, 3 técnicos = 2 especialistas) y quien sobra se va de la ciudad.
@@ -175,6 +175,7 @@ func cupo_de(tipo: String) -> int:
 		"central_termoelectrica": return 4
 		"estacion_bombeo", "centro_extraccion": return 3
 		"almacen": return 0
+		"taller_transporte": return 4
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.PERSONAL_MAXIMO_REFINERIA
 	if ESCUELAS.has(tipo):
@@ -192,6 +193,7 @@ func capacidad_almacen_de(tipo: String) -> int:
 		"central_termoelectrica": return 300
 		"estacion_bombeo", "centro_extraccion": return 500
 		"almacen": return 3000
+		"taller_transporte": return 500
 	if CadenaMinerales.REFINERIAS.has(tipo):
 		return CadenaMinerales.CAPACIDAD_ALMACENAMIENTO_REFINERIA
 	return 0
@@ -375,17 +377,50 @@ func tasa_maderero(promedio_arbol: float) -> Dictionary:
 ## drenaje, la corta; y agua que el jugador conecta la une. Devuelve
 ## Vector2i -> true, usado tanto por el círculo visual como por las tasas.
 ## Vacío si el centro no tiene agua.
+static func _superficie_abierta_en(mundo: Object, xz: Vector2i) -> int:
+	var y_max: int = mundo.ALTURA_BUSQUEDA_MAX if ("ALTURA_BUSQUEDA_MAX" in mundo) else 165
+	var y_min: int = mundo.ALTURA_BUSQUEDA_MIN if ("ALTURA_BUSQUEDA_MIN" in mundo) else -34
+	for y in range(y_max, y_min, -1):
+		if mundo.obtener_tipo(Vector3i(xz.x, y, xz.y)) == "agua":
+			if mundo.obtener_tipo(Vector3i(xz.x, y + 1, xz.y)) == "":
+				return y
+	return y_min - 1
+
+
+## Celdas de agua contiguas conectadas a "centro_xz" a la misma altura de
+## superficie, hasta "radio". Cualquier obstáculo a esa altura (isla, piso,
+## drenaje, la corta; y agua que el jugador conecta la une. Devuelve
+## Vector2i -> true, usado tanto por el círculo visual como por las tasas.
+## Vacío si el centro (ni sus celdas adyacentes) no tiene agua.
 func celdas_agua_conectadas(mundo: Object, centro_xz: Vector2i, radio: int) -> Dictionary:
 	var visitadas: Dictionary = {}
-	var y_superficie: int = mundo.ALTURA_BUSQUEDA_MIN - 1
-	for y in range(mundo.ALTURA_BUSQUEDA_MAX, mundo.ALTURA_BUSQUEDA_MIN, -1):
-		if mundo.obtener_tipo(Vector3i(centro_xz.x, y, centro_xz.y)) == "agua":
-			y_superficie = y
-			break
-	if y_superficie < mundo.ALTURA_BUSQUEDA_MIN:
+	var y_min: int = mundo.ALTURA_BUSQUEDA_MIN if ("ALTURA_BUSQUEDA_MIN" in mundo) else -34
+	var origen: Vector2i = centro_xz
+	var y_superficie: int = _superficie_abierta_en(mundo, origen)
+
+	if y_superficie < y_min:
+		# Si centro_xz no es agua abierta (ej. muelle construido encima o pilote),
+		# buscar agua abierta en las celdas inmediatamente adyacentes.
+		for dir in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var cand: Vector2i = centro_xz + dir
+			var y_cand: int = _superficie_abierta_en(mundo, cand)
+			if y_cand >= y_min:
+				origen = cand
+				y_superficie = y_cand
+				break
+
+	if y_superficie < y_min:
+		var y_max: int = mundo.ALTURA_BUSQUEDA_MAX if ("ALTURA_BUSQUEDA_MAX" in mundo) else 165
+		for y in range(y_max, y_min, -1):
+			if mundo.obtener_tipo(Vector3i(centro_xz.x, y, centro_xz.y)) == "agua":
+				y_superficie = y
+				break
+
+	if y_superficie < y_min:
 		return visitadas
-	var pendientes: Array[Vector2i] = [centro_xz]
-	visitadas[centro_xz] = true
+
+	var pendientes: Array[Vector2i] = [origen]
+	visitadas[origen] = true
 	var direcciones := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 	while not pendientes.is_empty():
 		var actual: Vector2i = pendientes.pop_back()

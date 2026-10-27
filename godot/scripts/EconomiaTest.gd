@@ -1378,5 +1378,29 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(sobrante.get("acero", 0.0), 1600.0), "sobrante retiene 1600 u")
 	assert(is_equal_approx(carga_camion.get("acero", 0.0), 1600.0), "diccionario de carga retiene 1600 u")
 
-	print("\n=== Las 48 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 49: Edificio Evolutivo Taller de Transporte ===")
+	var e49: Node = EconomiaScript.new()
+	var c49: Node = CiudadScript.new()
+	e49.ciudad = c49
+	c49.era_actual = 2
+	var esq_taller := Vector2i(50, 50)
+	e49.registrar_puesto(esq_taller, "taller_transporte", 5, 5, {})
+	assert(e49.puestos[esq_taller].has("cola_fabricacion"), "debe inicializar cola_fabricacion vacia")
+	assert(e49.puestos[esq_taller]["cola_fabricacion"].is_empty(), "cola_fabricacion debe ser un array vacio")
+	assert(e49.obtener_nombre_evolutivo_taller(esq_taller) == "Taller de Carretas")
+	assert(e49.vehiculos_fabricables_en_taller(esq_taller) == ["carreta_mano"])
+
+	# Simular investigación de tracción animal y granja animal activa
+	c49.ciencias_teoricas_descubiertas.append("traccion_animal_engranajes")
+	e49.registrar_puesto(Vector2i(20, 20), "granjas_animales", 5, 5, {})
+	assert(e49.obtener_nombre_evolutivo_taller(esq_taller) == "Establo de Transporte")
+	assert(e49.vehiculos_fabricables_en_taller(esq_taller).has("carro_caballos"))
+
+	# Avanzar a Era 3 y química de hidrocarburos
+	c49.era_actual = 3
+	c49.ciencias_teoricas_descubiertas.append("quimica_hidrocarburos")
+	assert(e49.obtener_nombre_evolutivo_taller(esq_taller) == "Taller de Maquinaria y Transporte")
+	assert(e49.vehiculos_fabricables_en_taller(esq_taller).has("camion_diesel"))
+
+	print("\n=== Las 49 pruebas de Economia pasaron correctamente ===")
 

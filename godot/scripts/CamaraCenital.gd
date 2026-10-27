@@ -877,6 +877,20 @@ static func _celdas_extremo_pesca(ancho: int, alto: int, indice: int) -> Array[V
 	return celdas
 
 
+## Celda de agua abierta justo frente al centro del extremo de agua de pesca.
+## Al estar fuera de la huella, nunca queda cubierta por la plataforma ni los pilotes.
+static func _celda_agua_frente_pesca(esquina: Vector2i, ancho: int, alto: int, indice: int) -> Vector2i:
+	var eje_z := _eje_largo_pesca_es_z(ancho, alto)
+	var df: int = -1 if indice == 0 else 1
+	if eje_z:
+		var dz: int = (0 if indice == 0 else alto - 1) + df
+		@warning_ignore("integer_division")
+		return Vector2i(esquina.x + ancho / 2, esquina.y + dz)
+	var dx: int = (0 if indice == 0 else ancho - 1) + df
+	@warning_ignore("integer_division")
+	return Vector2i(esquina.x + dx, esquina.y + alto / 2)
+
+
 ## true si las celdas del extremo "indice" (ver _celdas_extremo_pesca()) son
 ## TODAS agua, false si son TODAS tierra firme, "" (cadena vacía) si están
 ## mezcladas — usa el bloque REAL actual (mundo.obtener_tipo()), mismo
@@ -1026,9 +1040,7 @@ func _actualizar_previsualizacion_puesto() -> void:
 		_actualizar_area_accion(centro, Recoleccion.RADIO_AREA_CAZA_RECOLECCION)
 	elif _tipo_puesto_activo == "pesca_frutos_mar":
 		if extremo_agua_indice != -1:
-			var celdas_extremo := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
-			@warning_ignore("integer_division")
-			var centro_agua := esquina + celdas_extremo[celdas_extremo.size() / 2]
+			var centro_agua := _celda_agua_frente_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 			var celdas_agua: Dictionary = Recoleccion.celdas_agua_conectadas(mundo, centro_agua, Recoleccion.RADIO_AREA_PESCA_FRUTOS_MAR)
 			var promedios: Dictionary = Recoleccion.detectar_pesca_frutos_mar(mundo.generador, celdas_agua)
 			tasas = Recoleccion.tasas_pesca_frutos_mar(promedios)
@@ -1218,6 +1230,8 @@ func _despejar_vias_de_fachada(fachada: Dictionary) -> void:
 		var tipo_bloque: String = mundo.obtener_tipo(celda_actual)
 		if tipo_bloque.begins_with("cuna_") or tipo_bloque == "diag_lat":
 			mundo.set_cell_item(celda_actual, mundo.id_de_tipo("tierra"), 0)
+			if mundo.has_signal("terreno_modificado"):
+				mundo.terreno_modificado.emit(celda_actual)
 		var nivel_objetivo: int = fachada[columna]
 		Vias.agregar([Vector3i(columna.x, nivel_objetivo, columna.y)], tipo_via)
 
@@ -1412,7 +1426,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 ## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias", "ductos"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar", "estacion_bombeo", "centro_extraccion"]
-const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen"]
+const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen", "taller_transporte"]
 const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas", "universidad"]
 const PUESTOS_DUCTOS := ["acueducto", "tuberia"]
 
@@ -1724,12 +1738,15 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 	if (tipo == "refineria_petrolera" or tipo == "productor_combustible" or tipo == "central_termoelectrica") and Ciudad.nivel_investigado < 2:
 		hud.notificar("Requiere Metalurgia Aplicada.")
 		return
+	if tipo == "taller_transporte" and (Ciudad.era_actual if ("era_actual" in Ciudad) else 1) < 2:
+		hud.notificar("Requiere Era 2.")
+		return
 	match tipo:
 		"mina": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MINA, Recoleccion.ALTO_HUELLA_MINA)
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 		"acueducto", "tuberia":
@@ -3172,9 +3189,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 
 	var centro_agua := Recoleccion.SIN_CENTRO
 	if _tipo_puesto_activo == "pesca_frutos_mar":
-		var celdas_extremo_pesca := _celdas_extremo_pesca(_ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
-		@warning_ignore("integer_division")
-		centro_agua = esquina + celdas_extremo_pesca[celdas_extremo_pesca.size() / 2]
+		centro_agua = _celda_agua_frente_pesca(esquina, _ancho_puesto_activo, _alto_puesto_activo, extremo_agua_indice)
 
 	# Drenar agua: instantáneo y gratis (el agua no es un recurso), igual que hoy
 	# — EXCEPTO bajo la huella de "pesca_frutos_mar": ahí el agua abierta debe

@@ -256,6 +256,8 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"proyecto_mejora": {},
 		"estado_operativo": "normal",
 	}
+	if tipo == "taller_transporte":
+		puestos[esquina]["cola_fabricacion"] = []
 
 
 ## Quita el puesto (se deconstruyó): lo que quepa de su almacén local pasa al núcleo
@@ -1737,3 +1739,54 @@ func _tick_mejora_puesto(esquina: Vector2i) -> void:
 		pm["progreso"] = pm.get("progreso", 0.0) + 1.0
 		if pm["progreso"] >= float(pm.get("tiempo", 1.0)):
 			completar_mejora_en_puesto(esquina)
+
+
+## Nombre evolutivo de un taller de transporte según la era y ciencias de la ciudad.
+func obtener_nombre_evolutivo_taller(_esquina: Vector2i = Vector2i.ZERO) -> String:
+	if ciudad == null:
+		return "Taller de Carretas"
+	var era: int = ciudad.era_actual if ("era_actual" in ciudad) else 1
+	var tiene_era_3_plus: bool = (era >= 3)
+	if not tiene_era_3_plus and "ciencias_teoricas_descubiertas" in ciudad:
+		for id_c in ciudad.ciencias_teoricas_descubiertas:
+			var info: Dictionary = Ajustes.CIENCIAS_TEORICAS_CATALOGO.get(id_c, {})
+			if int(info.get("era", 1)) >= 3:
+				tiene_era_3_plus = true
+				break
+	if tiene_era_3_plus:
+		return "Taller de Maquinaria y Transporte"
+	if "ciencias_teoricas_descubiertas" in ciudad and ciudad.ciencias_teoricas_descubiertas.has("traccion_animal_engranajes"):
+		return "Establo de Transporte"
+	return "Taller de Carretas"
+
+
+## Catálogo de vehículos que pueden fabricarse actualmente en el taller de transporte.
+func vehiculos_fabricables_en_taller(_esquina: Vector2i = Vector2i.ZERO) -> Array[String]:
+	var fabricables: Array[String] = []
+	if ciudad == null:
+		return fabricables
+	var era: int = ciudad.era_actual if ("era_actual" in ciudad) else 1
+	var techs: Array = ciudad.ciencias_teoricas_descubiertas if ("ciencias_teoricas_descubiertas" in ciudad) else []
+
+	for tipo in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:
+		if tipo == "acarreador_pie":
+			continue
+		var unit: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES[tipo]
+		var era_min: int = unit.get("era_minima", 1)
+		if era < era_min:
+			continue
+		var tech_req: String = unit.get("tech_requerida", "")
+		if tech_req != "" and not techs.has(tech_req):
+			continue
+		var req_puesto: String = unit.get("req_puesto", "")
+		if req_puesto != "":
+			var puesto_encontrado := false
+			for esq in puestos:
+				var p: Dictionary = puestos[esq]
+				if p.get("tipo", "") == req_puesto and p.get("activo", true):
+					puesto_encontrado = true
+					break
+			if not puesto_encontrado:
+				continue
+		fabricables.append(tipo)
+	return fabricables

@@ -1490,7 +1490,7 @@ func recurso_critico_urgente() -> Dictionary:
 
 ## Registra vehículos nuevos o devueltos al parque disponible de la ciudad.
 func registrar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> void:
-	if cantidad <= 0:
+	if cantidad <= 0 or not Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has(tipo):
 		return
 	parque_transporte_disponible[tipo] = parque_transporte_disponible.get(tipo, 0) + cantidad
 
@@ -1498,7 +1498,7 @@ func registrar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> void:
 ## Retira vehículos del parque disponible (ej. al asignarlos a un puesto).
 ## Devuelve true si la cantidad solicitada estaba disponible y fue retirada con éxito.
 func retirar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> bool:
-	if cantidad <= 0:
+	if cantidad <= 0 or not Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has(tipo):
 		return false
 	var actual: int = parque_transporte_disponible.get(tipo, 0)
 	if actual < cantidad:

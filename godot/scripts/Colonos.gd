@@ -974,6 +974,12 @@ func contratar(esquina: Vector2i, rol: String) -> bool:
 		c_inv["fallos_servicio"] = 0
 		_dejar_lo_que_hacia(c_inv)
 		return true
+	if rol == "acarreador" and economia != null and economia.puestos.has(esquina):
+		var tipo_puesto_transporte: String = str(economia.puestos[esquina].get("tipo_transporte", ""))
+		if not tipo_puesto_transporte.is_empty() and Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has(tipo_puesto_transporte):
+			var datos_v: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES[tipo_puesto_transporte]
+			if int(datos_v.get("cantidad_tripulacion", 1)) == 0:
+				return false
 	var origen: String = Recoleccion.ESCUELAS.get(economia.puestos.get(esquina, {}).get("tipo", ""), {}).get("origen", "") if rol == "aprendiz" else ""
 	var oficio: String = origen if origen == "tecnico" else (rol if rol == "tecnico" or rol == "especialista" else "")
 	var candidatos: Array[int] = _filtrar_con_hogar(_ids_sin_puesto(oficio) if not oficio.is_empty() else _ids_de_tipo("desempleado"))
@@ -1829,4 +1835,19 @@ func liberar_comision(id_proyecto: String) -> void:
 			if _buscador != null and _buscador.has_method("terminar_en_curso"):
 				_buscador.terminar_en_curso(cid)
 	comisiones_activas.erase(id_proyecto)
+
+
+## Reconcilia la tripulación de un puesto según el tipo de transporte asignado (despide humanos si es dron autónomo).
+func reconciliar_tripulacion_puesto(esquina: Vector2i) -> void:
+	if economia == null or not economia.puestos.has(esquina):
+		return
+	var p: Dictionary = economia.puestos[esquina]
+	var tipo_t: String = str(p.get("tipo_transporte", ""))
+	if tipo_t.is_empty():
+		return
+	var datos_v: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_t, {})
+	if int(datos_v.get("cantidad_tripulacion", 1)) == 0:
+		while p.get("acarreadores", []).size() > 0:
+			if not despedir(esquina, "acarreador"):
+				break
 

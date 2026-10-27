@@ -255,6 +255,7 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 		"mejoras": [],
 		"proyecto_mejora": {},
 		"estado_operativo": "normal",
+		"tipo_transporte": "acarreador_pie",
 	}
 	if tipo == "taller_transporte":
 		puestos[esquina]["cola_fabricacion"] = []
@@ -268,6 +269,16 @@ func quitar_puesto(esquina: Vector2i) -> void:
 	if es_universidad(esquina):
 		cancelar_investigacion(esquina)
 	var p: Dictionary = puestos[esquina]
+	# Review Focus 5: Retorno de vehículos asignados al demoler
+	var vehiculo_asig: String = str(p.get("tipo_transporte", ""))
+	if not vehiculo_asig.is_empty() and vehiculo_asig != "acarreador_pie":
+		if ciudad != null:
+			if "parque_transporte_asignado" in ciudad and ciudad.parque_transporte_asignado.has(vehiculo_asig):
+				ciudad.parque_transporte_asignado[vehiculo_asig] = maxi(0, ciudad.parque_transporte_asignado[vehiculo_asig] - 1)
+			if ciudad.has_method("registrar_vehiculo_disponible"):
+				ciudad.registrar_vehiculo_disponible(vehiculo_asig, 1)
+			elif "parque_transporte_disponible" in ciudad:
+				ciudad.parque_transporte_disponible[vehiculo_asig] = ciudad.parque_transporte_disponible.get(vehiculo_asig, 0) + 1
 	if not p.get("proyecto_mejora", {}).is_empty():
 		if colonos != null and colonos.has_method("liberar_comision"):
 			var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
@@ -353,13 +364,22 @@ func roles_de(esquina: Vector2i) -> Array:
 		return ["investigador"]
 	if tipo == "estacion_bombeo" or tipo == "centro_extraccion" or tipo == "refineria_petrolera":
 		return ["tecnico"]
+	var roles_res: Array = []
 	if tipo == "central_termoelectrica":
 		if puestos[esquina].get("combustible_activo", "carbon") == "carbon":
-			return ["tecnico", "acarreador"]
-		return ["tecnico"]
-	if es_refineria(esquina):
-		return ["tecnico", "acarreador"]
-	return ["recolector", "tecnico", "especialista", "acarreador"]
+			roles_res = ["tecnico", "acarreador"]
+		else:
+			return ["tecnico"]
+	elif es_refineria(esquina):
+		roles_res = ["tecnico", "acarreador"]
+	else:
+		roles_res = ["recolector", "tecnico", "especialista", "acarreador"]
+
+	var tipo_t: String = str(puestos[esquina].get("tipo_transporte", ""))
+	if not tipo_t.is_empty() and Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has(tipo_t):
+		if int(Ajustes.TRANSPORTE_CATALOGO_UNIDADES[tipo_t].get("cantidad_tripulacion", 1)) == 0:
+			roles_res.erase("acarreador")
+	return roles_res
 
 
 ## true si el puesto tiene niveles (Recoleccion.TIPOS_CON_NIVELES).
@@ -565,6 +585,9 @@ func simular_hora() -> void:
 			_refinar(esquina, factores_energia.get(esquina, 0.0))
 			continue
 		if p["tipo"] == "central_termoelectrica":
+			continue
+		if p["tipo"] == "taller_transporte":
+			_tick_taller_transporte(esquina, 1.0)
 			continue
 		var producido: Dictionary = produccion_por_hora(esquina)
 		var total_producido := _total(producido)
@@ -1790,3 +1813,157 @@ func vehiculos_fabricables_en_taller(_esquina: Vector2i = Vector2i.ZERO) -> Arra
 				continue
 		fabricables.append(tipo)
 	return fabricables
+
+
+func _obreros_en_taller(p: Dictionary) -> int:
+	var obreros: int = int(p.get("obreros", 0))
+	var recolectores: int = p.get("recolectores", []).size()
+	return maxi(obreros, recolectores)
+
+
+## Ordena la fabricación de un vehículo en el taller de transporte tras cobrar los insumos del almacén central.
+func ordenar_fabricacion_vehiculo(esquina: Vector2i, tipo_vehiculo: String) -> bool:
+	if not puestos.has(esquina):
+		return false
+	var p: Dictionary = puestos[esquina]
+	if p.get("tipo", "") != "taller_transporte":
+		return false
+	if not vehiculos_fabricables_en_taller(esquina).has(tipo_vehiculo):
+		return false
+	if not Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has(tipo_vehiculo):
+		return false
+	var unit: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES[tipo_vehiculo]
+	var costo: Dictionary = unit.get("costo_fabricacion", {})
+	if ciudad == null:
+		return false
+	if ciudad.has_method("consumir_costos"):
+		if not ciudad.consumir_costos(costo):
+			return false
+	elif "almacen" in ciudad and ciudad.almacen != null:
+		for rec in costo:
+			if not ciudad.almacen.has(rec) or ciudad.almacen[rec].cantidad < float(costo[rec]):
+				return false
+		for rec in costo:
+			if ciudad.almacen[rec].has_method("quitar"):
+				ciudad.almacen[rec].quitar(float(costo[rec]))
+			else:
+				ciudad.almacen[rec].cantidad -= float(costo[rec])
+	else:
+		return false
+
+	if not p.has("cola_fabricacion"):
+		p["cola_fabricacion"] = []
+	p["cola_fabricacion"].append({
+		"tipo": tipo_vehiculo,
+		"progreso": 0.0,
+		"tiempo_total": float(unit.get("tiempo_fabricacion", 15.0))
+	})
+	return true
+
+
+## Simula el avance horario o por delta de la cola de ensamblaje en el taller de transporte.
+func _tick_taller_transporte(esquina: Vector2i, delta: float = 1.0) -> void:
+	if not puestos.has(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	var cola: Array = p.get("cola_fabricacion", [])
+	if cola.is_empty():
+		return
+	var cant_obreros: int = _obreros_en_taller(p)
+	if cant_obreros <= 0:
+		return
+	var item: Dictionary = cola[0]
+	item["progreso"] = item.get("progreso", 0.0) + delta * float(cant_obreros)
+	if item["progreso"] >= float(item.get("tiempo_total", 1.0)):
+		completar_fabricacion_en_taller(esquina)
+
+
+## Concluye el ensamble del vehículo al frente de la cola y lo incorpora al parque disponible de la ciudad.
+func completar_fabricacion_en_taller(esquina: Vector2i) -> void:
+	if not puestos.has(esquina):
+		return
+	var p: Dictionary = puestos[esquina]
+	var cola: Array = p.get("cola_fabricacion", [])
+	if cola.is_empty():
+		return
+	var item: Dictionary = cola.pop_front()
+	var tipo_v: String = str(item.get("tipo", ""))
+	if tipo_v.is_empty():
+		return
+	if ciudad != null:
+		if ciudad.has_method("registrar_vehiculo_disponible"):
+			ciudad.registrar_vehiculo_disponible(tipo_v, 1)
+		elif "parque_transporte_disponible" in ciudad:
+			ciudad.parque_transporte_disponible[tipo_v] = ciudad.parque_transporte_disponible.get(tipo_v, 0) + 1
+
+
+## Despliega y asigna un tipo de vehículo de transporte al puesto, administrando el parque móvil de la ciudad.
+func asignar_tipo_transporte_puesto(esquina: Vector2i, tipo_vehiculo: String) -> bool:
+	if not puestos.has(esquina):
+		return false
+	var p: Dictionary = puestos[esquina]
+
+	if tipo_vehiculo == "" or tipo_vehiculo == "acarreador_pie":
+		tipo_vehiculo = "acarreador_pie"
+	elif not Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has(tipo_vehiculo):
+		return false
+
+	var vehiculo_anterior: String = str(p.get("tipo_transporte", "acarreador_pie"))
+	if vehiculo_anterior.is_empty():
+		vehiculo_anterior = "acarreador_pie"
+
+	if vehiculo_anterior == tipo_vehiculo:
+		return true
+
+	# Si tenía asignado otro vehículo motorizado/tracción, liberarlo
+	if vehiculo_anterior != "acarreador_pie":
+		if ciudad != null:
+			if "parque_transporte_asignado" in ciudad and ciudad.parque_transporte_asignado.has(vehiculo_anterior):
+				ciudad.parque_transporte_asignado[vehiculo_anterior] = maxi(0, ciudad.parque_transporte_asignado[vehiculo_anterior] - 1)
+			if ciudad.has_method("registrar_vehiculo_disponible"):
+				ciudad.registrar_vehiculo_disponible(vehiculo_anterior, 1)
+			elif "parque_transporte_disponible" in ciudad:
+				ciudad.parque_transporte_disponible[vehiculo_anterior] = ciudad.parque_transporte_disponible.get(vehiculo_anterior, 0) + 1
+
+	if tipo_vehiculo == "acarreador_pie":
+		p["tipo_transporte"] = "acarreador_pie"
+		if colonos != null and colonos.has_method("reconciliar_tripulacion_puesto"):
+			colonos.reconciliar_tripulacion_puesto(esquina)
+		return true
+
+	# Validar stock disponible en la ciudad
+	var disp: int = 0
+	if ciudad != null:
+		if "parque_transporte_disponible" in ciudad:
+			disp = ciudad.parque_transporte_disponible.get(tipo_vehiculo, 0)
+		if disp <= 0:
+			return false
+
+	var unit_info: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_vehiculo, {})
+
+	# Retirar 1 de disponible y sumar 1 a asignado
+	if ciudad != null:
+		if ciudad.has_method("retirar_vehiculo_disponible"):
+			if not ciudad.retirar_vehiculo_disponible(tipo_vehiculo, 1):
+				return false
+		elif "parque_transporte_disponible" in ciudad:
+			ciudad.parque_transporte_disponible[tipo_vehiculo] = disp - 1
+
+		if "parque_transporte_asignado" in ciudad:
+			ciudad.parque_transporte_asignado[tipo_vehiculo] = ciudad.parque_transporte_asignado.get(tipo_vehiculo, 0) + 1
+
+	p["tipo_transporte"] = tipo_vehiculo
+
+	# Review Focus 4: Dron autónomo opera con tripulación 0 (libera acarreadores humanos)
+	if int(unit_info.get("cantidad_tripulacion", 1)) == 0:
+		if colonos != null and colonos.has_method("despedir"):
+			while p.get("acarreadores", []).size() > 0:
+				if not colonos.despedir(esquina, "acarreador"):
+					break
+		if p.get("acarreadores", []).size() > 0:
+			for cid in p.get("acarreadores", []).duplicate():
+				liberar(cid)
+	elif colonos != null and colonos.has_method("reconciliar_tripulacion_puesto"):
+		colonos.reconciliar_tripulacion_puesto(esquina)
+
+	return true

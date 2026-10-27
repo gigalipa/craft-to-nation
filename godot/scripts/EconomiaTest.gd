@@ -6,6 +6,7 @@ extends Node
 
 const EconomiaScript = preload("res://scripts/Economia.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
+const Ajustes = preload("res://scripts/ajustes.gd")
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
 const EnergiaScript = preload("res://scripts/Energia.gd")
@@ -1402,5 +1403,73 @@ func ejecutar_pruebas() -> void:
 	assert(e49.obtener_nombre_evolutivo_taller(esq_taller) == "Taller de Maquinaria y Transporte")
 	assert(e49.vehiculos_fabricables_en_taller(esq_taller).has("camion_diesel"))
 
-	print("\n=== Las 49 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 50: Cola de Fabricación y Despliegue de Vehículos en Puestos ===")
+	var e50: Node = EconomiaScript.new()
+	var c50: Node = CiudadScript.new()
+	e50.ciudad = c50
+	c50.era_actual = 2
+	var esq_taller50 := Vector2i(50, 50)
+	e50.registrar_puesto(esq_taller50, "taller_transporte", 5, 5, {})
+
+	# 1. Deducción atómica de costos al ordenar fabricación
+	c50.almacen["madera"].cantidad = 100.0
+	c50.almacen["hierro"].cantidad = 50.0
+	var costo_carreta: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES["carreta_mano"]["costo_fabricacion"]
+	assert(e50.ordenar_fabricacion_vehiculo(esq_taller50, "carreta_mano"))
+	assert(is_equal_approx(c50.almacen["madera"].cantidad, 100.0 - costo_carreta["madera"]))
+	assert(is_equal_approx(c50.almacen["hierro"].cantidad, 50.0 - costo_carreta["hierro"]))
+	assert(e50.puestos[esq_taller50]["cola_fabricacion"].size() == 1)
+	assert(e50.puestos[esq_taller50]["cola_fabricacion"][0]["tipo"] == "carreta_mano")
+
+	# 2. Avance de progreso con obreros asignados y completitud
+	e50.puestos[esq_taller50]["obreros"] = 2
+	var tiempo_req: float = float(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["carreta_mano"]["tiempo_fabricacion"])
+	e50._tick_taller_transporte(esq_taller50, 5.0)
+	assert(is_equal_approx(e50.puestos[esq_taller50]["cola_fabricacion"][0]["progreso"], 10.0))
+	e50.completar_fabricacion_en_taller(esq_taller50)
+	assert(e50.puestos[esq_taller50]["cola_fabricacion"].is_empty())
+	assert(c50.parque_transporte_disponible["carreta_mano"] == 1)
+
+	# 3. Asignación a un puesto de trabajo (aserradero)
+	var esq_aser50 := Vector2i(60, 60)
+	e50.registrar_puesto(esq_aser50, "aserradero", 5, 5, {})
+	assert(e50.asignar_tipo_transporte_puesto(esq_aser50, "carreta_mano"))
+	assert(c50.parque_transporte_disponible["carreta_mano"] == 0)
+	assert(c50.parque_transporte_asignado["carreta_mano"] == 1)
+	assert(e50.puestos[esq_aser50]["tipo_transporte"] == "carreta_mano")
+
+	# 4. Review Focus 5: Demoler el aserradero retorna la carreta al parque disponible
+	e50.quitar_puesto(esq_aser50)
+	assert(c50.parque_transporte_disponible["carreta_mano"] == 1)
+	assert(c50.parque_transporte_asignado["carreta_mano"] == 0)
+
+	# 5. Review Focus 4: Dron Autónomo de Carga opera con tripulación 0 sin restar obreros al censo
+	c50.era_actual = 4
+	c50.ciencias_teoricas_descubiertas.append("automatizacion_cibernetica")
+	c50.almacen["acero"].cantidad = 100.0
+	c50.almacen["tierras_raras"].cantidad = 50.0
+	c50.almacen["cobre"].cantidad = 60.0
+	assert(e50.ordenar_fabricacion_vehiculo(esq_taller50, "dron_carga"))
+	e50.completar_fabricacion_en_taller(esq_taller50)
+	assert(c50.parque_transporte_disponible["dron_carga"] == 1)
+
+	var esq_mina50 := Vector2i(70, 70)
+	e50.registrar_puesto(esq_mina50, "mina", 5, 5, {})
+	var obreros_censo_inicial: int = c50.demografia.get("obrero", 0)
+	assert(e50.asignar_tipo_transporte_puesto(esq_mina50, "dron_carga"))
+	assert(c50.parque_transporte_disponible["dron_carga"] == 0)
+	assert(c50.parque_transporte_asignado["dron_carga"] == 1)
+	assert(e50.puestos[esq_mina50]["tipo_transporte"] == "dron_carga")
+	assert(e50.puestos[esq_mina50]["acarreadores"].size() == 0, "Dron autónomo opera con 0 acarreadores humanos")
+	assert(c50.demografia.get("obrero", 0) == obreros_censo_inicial, "Dron autónomo no consume obreros del censo urbano")
+	assert(not e50.roles_de(esq_mina50).has("acarreador"), "Puesto con dron no admite rol de acarreador humano")
+
+	# Desasignar el dron volviendo a acarreador_pie retorna el dron a disponibles
+	assert(e50.asignar_tipo_transporte_puesto(esq_mina50, "acarreador_pie"))
+	assert(c50.parque_transporte_disponible["dron_carga"] == 1)
+	assert(c50.parque_transporte_asignado["dron_carga"] == 0)
+	assert(e50.puestos[esq_mina50]["tipo_transporte"] == "acarreador_pie")
+	assert(e50.roles_de(esq_mina50).has("acarreador"), "Al volver a pie se reactiva el rol de acarreador")
+
+	print("\n=== Las 50 pruebas de Economia pasaron correctamente ===")
 

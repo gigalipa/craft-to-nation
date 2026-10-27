@@ -27,6 +27,7 @@ var _caja_raiz := VBoxContainer.new()
 var abierta := false
 var _arrastrando := false
 var _offset_arrastre := Vector2.ZERO
+var _desplegado_comida: bool = false
 
 
 func _ready() -> void:
@@ -88,6 +89,56 @@ func _actualizar() -> void:
 	for clave in claves:
 		var recurso = Ciudad.almacen[clave]
 		var nombre: String = HUDScript.NOMBRES_RECURSO.get(clave, recurso.nombre)
+
+		if clave == "comida" and "sub_almacen_comida" in Ciudad:
+			var bloque_comida := VBoxContainer.new()
+			bloque_comida.add_theme_constant_override("separation", 2)
+			bloque_comida.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_caja.add_child(bloque_comida)
+
+			var btn_comida := Button.new()
+			btn_comida.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			btn_comida.icon = IconosHUD.icono(IconosHUD.icono_recurso("comida"))
+			btn_comida.text = "%s %s: %.0f/%.0f %s" % [
+				"▼" if _desplegado_comida else "▶",
+				nombre,
+				recurso.cantidad,
+				recurso.limite,
+				BarraSuperiorScript.texto_tasa(recurso.tasa_neta_promedio)
+			]
+			TemaHUD.estilizar_boton(btn_comida)
+			if recurso.tasa_neta_promedio < 0.0:
+				btn_comida.add_theme_color_override("font_color", TemaHUD.INVALIDO)
+			else:
+				btn_comida.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+			btn_comida.pressed.connect(func() -> void:
+				_desplegado_comida = not _desplegado_comida
+				call_deferred("_actualizar")
+			)
+			bloque_comida.add_child(btn_comida)
+
+			var margen_sub := MarginContainer.new()
+			margen_sub.add_theme_constant_override("margin_left", 18)
+			margen_sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			margen_sub.visible = _desplegado_comida
+			bloque_comida.add_child(margen_sub)
+
+			var caja_sub := VBoxContainer.new()
+			caja_sub.add_theme_constant_override("separation", 2)
+			caja_sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			margen_sub.add_child(caja_sub)
+
+			for sub_cat in Ajustes.CIUDAD_ORDEN_CONSUMO_COMIDA:
+				var cant_sc: float = Ciudad.sub_almacen_comida.get(sub_cat, 0.0)
+				var nom_sub: String = Strings.NOMBRES_SUB_COMIDA.get(sub_cat, sub_cat.capitalize())
+				var fila_sub := "%s: %.0f" % [nom_sub, cant_sc]
+				var et_sub := TemaHUD.etiqueta(fila_sub)
+				et_sub.add_theme_font_size_override("font_size", 12)
+				if cant_sc <= 0.0:
+					et_sub.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+				caja_sub.add_child(et_sub)
+			continue
+
 		var fila_cont := HBoxContainer.new()
 		fila_cont.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		fila_cont.add_theme_constant_override("separation", 6)
@@ -98,15 +149,6 @@ func _actualizar() -> void:
 		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if recurso.tasa_neta_promedio < 0.0:
 			etiqueta.add_theme_color_override("font_color", TemaHUD.INVALIDO)
-		if clave == "comida" and "sub_almacen_comida" in Ciudad:
-			var partes_c: Array[String] = []
-			for sub_cat in Ajustes.CIUDAD_ORDEN_CONSUMO_COMIDA:
-				var cant_sc: float = Ciudad.sub_almacen_comida.get(sub_cat, 0.0)
-				if cant_sc > 0.0:
-					partes_c.append("%s: %.0f" % [sub_cat.capitalize(), cant_sc])
-			if not partes_c.is_empty():
-				etiqueta.mouse_filter = Control.MOUSE_FILTER_PASS
-				etiqueta.tooltip_text = "Reservas por fuente:\n  " + "\n  ".join(partes_c)
 		fila_cont.add_child(etiqueta)
 		_caja.add_child(fila_cont)
 

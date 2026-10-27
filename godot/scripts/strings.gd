@@ -34,6 +34,15 @@ static var NOMBRES_RECURSO: Dictionary = {
 	"frutos_mar": "Comida (algas)",
 }
 
+static var NOMBRES_SUB_COMIDA: Dictionary = {
+	"pesca": "Pesca y frutos del mar",
+	"recoleccion_caza": "Caza y recolección",
+	"sembradios": "Sembradíos y agricultura",
+	"granjas_animales": "Granjas animales",
+	"hidroponia": "Cultivo hidropónico",
+	"sintetico": "Alimentos sintéticos",
+}
+
 static var NOMBRES_RECURSO_ALMACEN_INICIAL: Dictionary = {
 	"madera": "Madera",
 	"comida": "Comida",

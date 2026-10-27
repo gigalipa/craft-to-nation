@@ -257,19 +257,27 @@ func probar_ventanas_datos() -> void:
 	ventana_almacen.abrir()
 	assert(ventana_almacen.visible and ventana_almacen.abierta)
 	assert(ventana_almacen._caja.get_child_count() > 0)
-	var etiqueta_comida: Label = null
+	var btn_comida: Button = null
 	var nombres_recursos: Array = []
 	for hijo in ventana_almacen._caja.get_children():
 		if hijo is Label:
 			nombres_recursos.append((hijo as Label).text.split(":")[0])
 		elif hijo is Container:
 			for nieto in hijo.get_children():
-				if nieto is Label:
-					nombres_recursos.append((nieto as Label).text.split(":")[0])
-					if (nieto as Label).text.begins_with("Comida:"):
-						etiqueta_comida = nieto as Label
+				if nieto is Button and (nieto as Button).text.contains("Comida:"):
+					btn_comida = nieto as Button
+					# Limpiar prefijo de flecha "▶ " o "▼ " para comprobar orden alfabetico
+					var txt: String = (nieto as Button).text.replace("▶ ", "").replace("▼ ", "")
+					nombres_recursos.append(txt.split(":")[0])
 					break
-	assert(etiqueta_comida != null and etiqueta_comida.tooltip_text.contains("Sembradios: 150"), "tooltip de comida desglosado")
+				elif nieto is Label:
+					nombres_recursos.append((nieto as Label).text.split(":")[0])
+					break
+	assert(btn_comida != null, "boton desplegable de comida debe existir")
+	assert(btn_comida.text.contains("▶ Comida:"), "por defecto debe estar cerrado con ▶")
+	btn_comida.emit_signal("pressed")
+	# Tras pulsar, _desplegado_comida es true y el texto tiene ▼
+	assert(ventana_almacen._desplegado_comida, "_desplegado_comida debe ser true tras click")
 	var nombres_ordenados := nombres_recursos.duplicate()
 	nombres_ordenados.sort_custom(func(a: String, b: String) -> bool: return a.nocasecmp_to(b) < 0)
 	assert(nombres_recursos == nombres_ordenados, "almacen debe estar ordenado alfabeticamente: %s vs %s" % [nombres_recursos, nombres_ordenados])

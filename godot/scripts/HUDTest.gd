@@ -126,6 +126,7 @@ func ejecutar_pruebas() -> void:
 	probar_marcas_demolicion()
 	probar_zona_overlay_reactividad_terreno()
 	probar_investigacion_ui()
+	probar_transporte_ui()
 
 
 func probar_barra_superior_calculos() -> void:
@@ -1479,4 +1480,81 @@ func probar_investigacion_ui() -> void:
 		panel_e._process(0.0)
 	assert(panel_e._btn_reconversion == btn_rec_ref, "el boton de reconversion no debe ser recreado en cada frame")
 	panel_e.queue_free()
+
+
+func probar_transporte_ui() -> void:
+	print("\n=== TEST: Controles de Transporte y Taller en PanelPuesto ===")
+	var panel_p := PanelPuestoScript.new()
+	add_child(panel_p)
+	assert(panel_p._caja_transporte_puesto != null, "_caja_transporte_puesto debe existir en PanelPuesto")
+	assert(panel_p._caja_taller_transporte != null, "_caja_taller_transporte debe existir en PanelPuesto")
+	assert(panel_p._lbl_transporte_actual != null, "_lbl_transporte_actual debe existir en PanelPuesto")
+	assert(panel_p._lbl_nombre_evolutivo_taller != null, "_lbl_nombre_evolutivo_taller debe existir en PanelPuesto")
+	assert(panel_p._barra_progreso_taller != null, "_barra_progreso_taller debe existir en PanelPuesto")
+
+	# 1. Puesto periférico con acarreadores (ej. mina)
+	var esq_mina := Vector2i(3000, 3000)
+	Economia.registrar_puesto(esq_mina, "mina", 5, 5, {})
+	panel_p.abrir(esq_mina)
+	assert(panel_p._caja_transporte_puesto.visible, "puesto de mina debe mostrar caja de transporte")
+	assert(not panel_p._caja_taller_transporte.visible, "puesto de mina no debe mostrar caja de taller de transporte")
+	assert(panel_p._lbl_transporte_actual.text.contains("Acarreador a Pie"), "transporte inicial debe ser Acarreador a Pie: %s" % panel_p._lbl_transporte_actual.text)
+
+	# Verificar persistencia de botones de asignación de transporte sin recreación por frame
+	var btn_pie: Button = panel_p._botones_transporte.get("acarreador_pie")
+	assert(btn_pie != null, "debe existir boton para volver a acarreador a pie")
+	assert(btn_pie.disabled, "el boton del vehiculo actualmente asignado debe estar deshabilitado")
+
+	# Añadir un vehiculo al parque disponible de la ciudad y comprobar visibilidad del boton
+	Ciudad.registrar_vehiculo_disponible("carreta_mano", 1)
+	panel_p._process(0.0)
+	var btn_carreta: Button = panel_p._botones_transporte.get("carreta_mano")
+	assert(btn_carreta != null and btn_carreta.visible, "el boton de carreta_mano debe hacerse visible al haber unidades disponibles")
+	assert(not btn_carreta.disabled, "el boton de carreta_mano disponible debe estar habilitado")
+
+	for i in range(5):
+		panel_p._process(0.0)
+	assert(panel_p._botones_transporte.get("carreta_mano") == btn_carreta, "los botones de transporte no deben recrearse en cada frame")
+
+	# Asignar carreta de mano al puesto
+	assert(Economia.asignar_tipo_transporte_puesto(esq_mina, "carreta_mano"), "debe poder asignar carreta_mano")
+	panel_p._process(0.0)
+	assert(panel_p._lbl_transporte_actual.text.contains("Carreta de Mano"), "debe reflejar Carreta de Mano asignada")
+	assert(btn_carreta.disabled, "boton de carreta_mano debe deshabilitarse tras ser asignado")
+	assert(not btn_pie.disabled, "boton de volver a pie debe habilitarse")
+
+	# 2. Puesto Taller de Transporte
+	var era_previa: int = Ciudad.era_actual
+	Ciudad.era_actual = 2
+	var esq_taller := Vector2i(3010, 3010)
+	Economia.registrar_puesto(esq_taller, "taller_transporte", 5, 5, {})
+	panel_p.abrir(esq_taller)
+	assert(not panel_p._caja_transporte_puesto.visible, "taller no debe mostrar caja de asignacion de transporte")
+	assert(panel_p._caja_taller_transporte.visible, "taller debe mostrar caja de taller de transporte")
+	var nom_evolutivo: String = Economia.obtener_nombre_evolutivo_taller(esq_taller)
+	assert(panel_p._lbl_nombre_evolutivo_taller.text == nom_evolutivo, "debe mostrar nombre evolutivo del taller")
+
+	# Botones de fabricacion persistentes
+	var btn_fab_carreta: Button = panel_p._botones_fabricacion.get("carreta_mano")
+	assert(btn_fab_carreta != null, "debe existir boton de fabricacion de carreta_mano en catalogo")
+	for i in range(5):
+		panel_p._process(0.0)
+	assert(panel_p._botones_fabricacion.get("carreta_mano") == btn_fab_carreta, "los botones de fabricacion no deben recrearse en cada frame")
+
+	# Simular orden de fabricacion y progreso
+	Ciudad.almacen["madera"].cantidad = 500.0
+	Ciudad.almacen["hierro"].cantidad = 500.0
+	panel_p._process(0.0)
+	assert(not btn_fab_carreta.disabled, "con recursos suficientes el boton de fabricar debe estar habilitado")
+	assert(Economia.ordenar_fabricacion_vehiculo(esq_taller, "carreta_mano"), "debe poder ordenar fabricacion")
+	panel_p._process(0.0)
+	assert(panel_p._lbl_estado_ensamblaje.text.contains("Carreta de Mano"), "debe mostrar estado de ensamblaje en curso")
+	assert(panel_p._barra_progreso_taller.visible, "la barra de progreso de ensamblaje debe ser visible")
+
+	panel_p.cerrar()
+	panel_p.queue_free()
+	Economia.puestos.erase(esq_mina)
+	Economia.puestos.erase(esq_taller)
+	Ciudad.era_actual = era_previa
+	print("OK: Controles de transporte y taller de transporte en PanelPuesto verificados correctamente.")
 

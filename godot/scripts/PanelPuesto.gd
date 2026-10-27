@@ -101,6 +101,18 @@ var _btn_reconversion: Button = null
 var _dialogo_reconversion := ConfirmationDialog.new()
 var _id_mejora_reconversion: String = ""
 
+var _caja_taller_transporte: VBoxContainer = null
+var _lbl_nombre_evolutivo_taller: Label = null
+var _lbl_estado_ensamblaje: Label = null
+var _barra_progreso_taller: ProgressBar = null
+var _caja_botones_fabricacion: VBoxContainer = null
+var _botones_fabricacion: Dictionary = {}
+
+var _caja_transporte_puesto: VBoxContainer = null
+var _lbl_transporte_actual: Label = null
+var _caja_botones_transporte: VBoxContainer = null
+var _botones_transporte: Dictionary = {}
+
 
 func _ready() -> void:
 	visible = false
@@ -406,6 +418,81 @@ func _ready() -> void:
 	TemaHUD.estilizar_dialogo(_dialogo_reconversion)
 	add_child(_dialogo_reconversion)
 
+	_caja_taller_transporte = VBoxContainer.new()
+	_caja_taller_transporte.add_theme_constant_override("separation", 4)
+	caja.add_child(_caja_taller_transporte)
+
+	_lbl_nombre_evolutivo_taller = TemaHUD.etiqueta()
+	_lbl_nombre_evolutivo_taller.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_caja_taller_transporte.add_child(_lbl_nombre_evolutivo_taller)
+
+	_lbl_estado_ensamblaje = TemaHUD.etiqueta()
+	_lbl_estado_ensamblaje.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lbl_estado_ensamblaje.custom_minimum_size.x = 340.0
+	_caja_taller_transporte.add_child(_lbl_estado_ensamblaje)
+
+	_barra_progreso_taller = ProgressBar.new()
+	_barra_progreso_taller.show_percentage = true
+	_barra_progreso_taller.custom_minimum_size = Vector2(340, 16)
+	var sb_bg_taller := TemaHUD.caja_boton(Color(0.04, 0.08, 0.06, 0.9), TemaHUD.DORADO)
+	var sb_fg_taller := StyleBoxFlat.new()
+	sb_fg_taller.bg_color = Color(0.2, 0.7, 0.3)
+	sb_fg_taller.set_corner_radius_all(3)
+	_barra_progreso_taller.add_theme_stylebox_override("background", sb_bg_taller)
+	_barra_progreso_taller.add_theme_stylebox_override("fill", sb_fg_taller)
+	_caja_taller_transporte.add_child(_barra_progreso_taller)
+
+	_caja_botones_fabricacion = VBoxContainer.new()
+	_caja_botones_fabricacion.add_theme_constant_override("separation", 4)
+	_caja_taller_transporte.add_child(_caja_botones_fabricacion)
+
+	for tipo_v in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:
+		if tipo_v == "acarreador_pie":
+			continue
+		var btn_f := Button.new()
+		TemaHUD.estilizar_boton(btn_f)
+		btn_f.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var tipo_cap_f: String = tipo_v
+		btn_f.pressed.connect(func() -> void:
+			if Economia != null and Economia.has_method("ordenar_fabricacion_vehiculo"):
+				Economia.ordenar_fabricacion_vehiculo(esquina, tipo_cap_f)
+				_actualizar()
+		)
+		btn_f.visible = false
+		_caja_botones_fabricacion.add_child(btn_f)
+		_botones_fabricacion[tipo_v] = btn_f
+
+	_caja_transporte_puesto = VBoxContainer.new()
+	_caja_transporte_puesto.add_theme_constant_override("separation", 4)
+	caja.add_child(_caja_transporte_puesto)
+
+	var lbl_tit_transporte := TemaHUD.etiqueta("Transporte logístico:")
+	lbl_tit_transporte.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_caja_transporte_puesto.add_child(lbl_tit_transporte)
+
+	_lbl_transporte_actual = TemaHUD.etiqueta()
+	_lbl_transporte_actual.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lbl_transporte_actual.custom_minimum_size.x = 340.0
+	_caja_transporte_puesto.add_child(_lbl_transporte_actual)
+
+	_caja_botones_transporte = VBoxContainer.new()
+	_caja_botones_transporte.add_theme_constant_override("separation", 4)
+	_caja_transporte_puesto.add_child(_caja_botones_transporte)
+
+	for tipo_v in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:
+		var btn_t := Button.new()
+		TemaHUD.estilizar_boton(btn_t)
+		btn_t.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var tipo_cap_t: String = tipo_v
+		btn_t.pressed.connect(func() -> void:
+			if Economia != null and Economia.has_method("asignar_tipo_transporte_puesto"):
+				Economia.asignar_tipo_transporte_puesto(esquina, tipo_cap_t)
+				_actualizar()
+		)
+		btn_t.visible = false
+		_caja_botones_transporte.add_child(btn_t)
+		_botones_transporte[tipo_v] = btn_t
+
 	_construir_widgets_puertos()
 	caja.add_child(_puertos)
 
@@ -624,13 +711,15 @@ func _actualizar() -> void:
 	elif es_escuela:
 		var horas: int = Recoleccion.ESCUELAS[puesto["tipo"]]["horas"]
 		_trabajadores.text = "%s: %d / %d (presentes: %d)\nFormación de la cohorte: %d / %d h" % [nombre_aprendiz, t["recolectores"], puesto["cupo"], t["presentes"], int(puesto["progreso"]), horas]
+	elif puesto["tipo"] == "taller_transporte":
+		_trabajadores.text = "Mecánicos / Obreros: %d / %d (presentes: %d)" % [t["recolectores"], puesto["cupo"], t["presentes"]]
 	else:
 		_trabajadores.text = "Trabajadores: %d / %d (presentes: %d)" % [t["recolectores"] + t["acarreadores"], puesto["cupo"], t["presentes"]]
 	var siguiente_inv: int = Ciudad.nivel_investigado + 1
 	var sin_candidatos_inv: bool = es_universidad and _libres_de("investigador") == 0 and Ciudad.COSTOS_INVESTIGACION.has(siguiente_inv)
 	var total_trabajadores: int = t["recolectores"] + t["acarreadores"]
 	var hay_vacantes: bool = total_trabajadores < puesto["cupo"]
-	_libres.visible = (not es_escuela and not con_niveles and not es_universidad and puesto["tipo"] != "almacen" and Colonos.tecnicos_libres() == 0 and hay_vacantes) or sin_candidatos_inv
+	_libres.visible = (not es_escuela and not con_niveles and not es_universidad and puesto["tipo"] != "almacen" and puesto["tipo"] != "taller_transporte" and Colonos.tecnicos_libres() == 0 and hay_vacantes) or sin_candidatos_inv
 	if sin_candidatos_inv:
 		_libres.text = "Sin candidatos libres: requiere %s" % ("técnicos o especialistas" if siguiente_inv == 2 else "especialistas")
 	else:
@@ -639,7 +728,7 @@ func _actualizar() -> void:
 		else:
 			_libres.text = "Sin técnicos libres: fórmalos en una escuela técnica"
 	_almacen.visible = not es_escuela and not es_universidad
-	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica" and puesto["tipo"] != "almacen"
+	_produccion.visible = not es_escuela and not es_universidad and puesto["tipo"] != "central_termoelectrica" and puesto["tipo"] != "almacen" and puesto["tipo"] != "taller_transporte"
 	_almacen.text = "Almacén local: " + _texto_recursos(Economia.almacen_local(esquina), "vacío") + " (máx. %d)" % puesto["capacidad"]
 	_actualizar_produccion(Economia.produccion_por_hora(esquina))
 
@@ -952,6 +1041,93 @@ func _actualizar() -> void:
 					_btn_reconversion.text = "%s: %s" % [Strings.RECONVERSION_BTN_INICIAR, Ajustes.MEJORAS_PRACTICAS_CATALOGO[incompatible_para_reconversion]["nombre"]]
 				else:
 					_btn_reconversion.visible = false
+
+	if _caja_taller_transporte != null:
+		if puesto["tipo"] == "taller_transporte":
+			_caja_taller_transporte.visible = true
+			if Economia != null and Economia.has_method("obtener_nombre_evolutivo_taller"):
+				_lbl_nombre_evolutivo_taller.text = Economia.obtener_nombre_evolutivo_taller(esquina)
+			else:
+				_lbl_nombre_evolutivo_taller.text = "Taller de Transporte"
+
+			var cola: Array = puesto.get("cola_fabricacion", [])
+			if cola.is_empty():
+				_lbl_estado_ensamblaje.text = "Ensamblaje: Inactivo (sin órdenes)"
+				_barra_progreso_taller.visible = false
+			else:
+				var item: Dictionary = cola[0]
+				var tipo_v_ens: String = str(item.get("tipo", ""))
+				var nom_v_ens: String = Strings.TRANSPORTE_NOMBRES.get(tipo_v_ens, tipo_v_ens)
+				var prog: float = float(item.get("progreso", 0.0))
+				var t_total: float = float(item.get("tiempo_total", 1.0))
+				var en_cola: int = cola.size() - 1
+				var sufijo_cola := " (+%d en cola)" % en_cola if en_cola > 0 else ""
+				_lbl_estado_ensamblaje.text = "Ensamblando: %s%s (%.0f / %.0f s)" % [nom_v_ens, sufijo_cola, prog, t_total]
+				_barra_progreso_taller.visible = true
+				_barra_progreso_taller.max_value = t_total
+				_barra_progreso_taller.value = prog
+
+			var fabricables: Array[String] = []
+			if Economia != null and Economia.has_method("vehiculos_fabricables_en_taller"):
+				fabricables = Economia.vehiculos_fabricables_en_taller(esquina)
+
+			for tipo_v in _botones_fabricacion:
+				var btn: Button = _botones_fabricacion[tipo_v]
+				if not fabricables.has(tipo_v):
+					btn.visible = false
+				else:
+					btn.visible = true
+					var unit: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_v, {})
+					var nom_v: String = Strings.TRANSPORTE_NOMBRES.get(tipo_v, unit.get("nombre", tipo_v))
+					var tiempo: int = int(unit.get("tiempo_fabricacion", 15.0))
+					var str_costos: String = _texto_costo_vehiculo(tipo_v)
+					btn.text = "Fabricar: %s (%ds) — %s" % [nom_v, tiempo, str_costos]
+					btn.disabled = not _puede_pagar_vehiculo(tipo_v)
+		else:
+			_caja_taller_transporte.visible = false
+
+	if _caja_transporte_puesto != null:
+		var tipo_p: String = puesto.get("tipo", "")
+		var admite_transporte: bool = (Economia.roles_de(esquina).has("acarreador") or (puesto.has("tipo_transporte") and puesto["tipo_transporte"] != "acarreador_pie")) and tipo_p != "taller_transporte" and tipo_p != "almacen" and not es_escuela and not es_universidad
+		if admite_transporte:
+			_caja_transporte_puesto.visible = true
+			var tipo_act: String = str(puesto.get("tipo_transporte", "acarreador_pie"))
+			if tipo_act.is_empty():
+				tipo_act = "acarreador_pie"
+			var unit_act: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_act, Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get("acarreador_pie", {}))
+			var nom_act: String = Strings.TRANSPORTE_NOMBRES.get(tipo_act, unit_act.get("nombre", tipo_act))
+			var cap_act: float = float(unit_act.get("capacidad", 150.0))
+			var vel_act: float = float(unit_act.get("velocidad_base", 2.5))
+			_lbl_transporte_actual.text = "Transporte actual: %s\nCapacidad: %.0f u | Velocidad: %.1f m/s" % [nom_act, cap_act, vel_act]
+
+			for tipo_v in _botones_transporte:
+				var btn: Button = _botones_transporte[tipo_v]
+				var unit_v: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_v, {})
+				var nom_v: String = Strings.TRANSPORTE_NOMBRES.get(tipo_v, unit_v.get("nombre", tipo_v))
+				if tipo_v == "acarreador_pie":
+					btn.visible = true
+					if tipo_act == "acarreador_pie":
+						btn.text = "Acarreador a Pie (actual)"
+						btn.disabled = true
+					else:
+						btn.text = "Volver a Acarreador a Pie"
+						btn.disabled = false
+				else:
+					var disp: int = 0
+					if Ciudad != null and "parque_transporte_disponible" in Ciudad:
+						disp = int(Ciudad.parque_transporte_disponible.get(tipo_v, 0))
+					if tipo_act == tipo_v:
+						btn.visible = true
+						btn.text = "%s (actual)" % nom_v
+						btn.disabled = true
+					elif disp > 0:
+						btn.visible = true
+						btn.text = "Asignar: %s (%d disp.)" % [nom_v, disp]
+						btn.disabled = false
+					else:
+						btn.visible = false
+		else:
+			_caja_transporte_puesto.visible = false
 
 	if puesto["tipo"] == "centro_extraccion":
 		_crudo_restante.visible = true
@@ -1313,4 +1489,28 @@ func _confirmar_reconversion() -> void:
 			var nom_m: String = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(_id_mejora_reconversion, {}).get("nombre", _id_mejora_reconversion)
 			aviso.emit(Strings.RECONVERSION_AVISO_COMPLETADA % nom_m)
 		_actualizar()
+
+
+func _puede_pagar_vehiculo(tipo_v: String) -> bool:
+	if Ciudad == null:
+		return false
+	var unit: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_v, {})
+	var costo: Dictionary = unit.get("costo_fabricacion", {})
+	if "almacen" in Ciudad and Ciudad.almacen != null:
+		for rec in costo:
+			if not Ciudad.almacen.has(rec) or Ciudad.almacen[rec].cantidad < float(costo[rec]):
+				return false
+		return true
+	return false
+
+
+func _texto_costo_vehiculo(tipo_v: String) -> String:
+	var unit: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_v, {})
+	var costo: Dictionary = unit.get("costo_fabricacion", {})
+	var partes: Array[String] = []
+	for rec in costo:
+		var cant: float = float(costo[rec])
+		var nom_rec: String = HUDScript.NOMBRES_RECURSO.get(rec, rec).capitalize()
+		partes.append("%d %s" % [int(cant), nom_rec])
+	return ", ".join(partes)
 

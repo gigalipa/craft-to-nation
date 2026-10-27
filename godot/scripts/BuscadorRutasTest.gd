@@ -320,4 +320,56 @@ func ejecutar_pruebas() -> void:
 	Vias._columnas.clear()
 	Vias.notches.clear()
 
-	print("\n=== Las 21 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== TEST 22: Restricción de Carretera para Camiones Pesados y Unidades de Transporte ===")
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+
+	var m22 := MundoFalso.new()
+	_llano(m22, 10, 5)
+	var b22 := BuscadorRutas.new(m22)
+
+	# 1. Celda sobre terreno natural sin vía afirmada
+	var celda_tierra := Vector3i(2, 1, 2)
+	assert(b22.es_transitable(celda_tierra), "la celda de tierra es transitable para peatones")
+	assert(not b22.es_transitable_para_transporte(celda_tierra, "camion_diesel"), "camion_diesel no puede transitar sobre tierra sin via")
+	assert(not b22.es_transitable_para_transporte(celda_tierra, "trolebus_solar"), "trolebus_solar no puede transitar sobre tierra sin via")
+
+	# 2. Peatones o unidades sin exige_via (pie, carreta_mano, carro_caballos, dron_carga)
+	assert(b22.es_transitable_para_transporte(celda_tierra, "acarreador_pie"), "acarreador_pie puede transitar sobre tierra")
+	assert(b22.es_transitable_para_transporte(celda_tierra, "carreta_mano"), "carreta_mano puede transitar sobre tierra")
+	assert(b22.es_transitable_para_transporte(celda_tierra, "carro_caballos"), "carro_caballos puede transitar sobre tierra")
+	assert(b22.es_transitable_para_transporte(celda_tierra, "dron_carga"), "dron_carga puede transitar sobre tierra")
+	assert(b22.es_transitable_para_transporte(celda_tierra, ""), "sin tipo de transporte puede transitar")
+
+	# 3. Al registrar una vía afirmada en el soporte de esa celda
+	var soporte_celda := Vector3i(2, 0, 2)
+	Vias.agregar([soporte_celda], "tierra_pisada")
+	assert(b22.es_transitable_para_transporte(celda_tierra, "camion_diesel"), "con via en soporte, camion_diesel puede transitar")
+
+	# 4. Búsqueda de ruta para camión diésel:
+	# Sin conexión de vías continua: ruta de (0, 1, 0) a (5, 1, 0)
+	var ruta_sin_via: Array[Vector3i] = b22.buscar_ruta(Vector3i(0, 1, 0), Vector3i(5, 1, 0), {"tipo_transporte": "camion_diesel"})
+	assert(ruta_sin_via.is_empty(), "la ruta para camion_diesel falla si no hay conexion vial continua")
+
+	# Con conexión vial continua: registramos vía en z=0 desde x=0 hasta x=5 (soporte en y=0)
+	var vias_camino: Array = []
+	for x in range(6):
+		vias_camino.append(Vector3i(x, 0, 0))
+	Vias.agregar(vias_camino, "tierra_pisada")
+
+	var ruta_con_via: Array[Vector3i] = b22.buscar_ruta(Vector3i(0, 1, 0), Vector3i(5, 1, 0), {"tipo_transporte": "camion_diesel"})
+	assert(not ruta_con_via.is_empty(), "la ruta para camion_diesel tiene exito con conexion vial continua")
+	assert(ruta_con_via.size() == 5, "camino recto de 5 pasos")
+	assert(ruta_con_via.back() == Vector3i(5, 1, 0))
+
+	# Si se corta la vía intermedia (e.g. demolición en x=3)
+	Vias.quitar([Vector3i(3, 0, 0)])
+	var ruta_cortada: Array[Vector3i] = b22.buscar_ruta(Vector3i(0, 1, 0), Vector3i(5, 1, 0), {"tipo_transporte": "camion_diesel"})
+	assert(ruta_cortada.is_empty(), "si se corta la via intermedia, la ruta para camion_diesel falla limpiamente")
+
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+	Vias.notches.clear()
+
+	print("\n=== Las 22 pruebas de BuscadorRutas pasaron correctamente ===")

@@ -83,23 +83,42 @@ func es_transitable(celda: Vector3i, ignorar: Array = []) -> bool:
 	return suelo != "agua" and not TIPOS_LIBRES.has(suelo)
 
 
+## Verifica transitabilidad considerando las restricciones viales de cada unidad de transporte.
+## Si tipo_transporte exige vía (ej. camiones pesados, trolebuses), el bloque soporte debe ser vía afirmada.
+func es_transitable_para_transporte(celda: Vector3i, tipo_transporte: String, ignorar: Variant = []) -> bool:
+	var arr_ignorar: Array = ignorar.get("ignorar_fantasmas", []) if ignorar is Dictionary else (ignorar if ignorar is Array else [])
+	if not es_transitable(celda, arr_ignorar):
+		return false
+	if tipo_transporte == "" or not Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has(tipo_transporte):
+		return true
+	if Ajustes.TRANSPORTE_CATALOGO_UNIDADES[tipo_transporte].get("exige_via", false):
+		var soporte: Vector3i = celda + Vector3i(0, -1, 0)
+		if Vias == null or not Vias.es_via(soporte):
+			return false
+	return true
+
+
+func es_transitable_para_vehiculo(celda: Vector3i, tipo_transporte: String, ignorar: Variant = []) -> bool:
+	return es_transitable_para_transporte(celda, tipo_transporte, ignorar)
+
+
 ## Celdas transitables a un paso de "celda": mismo nivel, subiendo 1 bloque o
 ## cayendo hasta CAIDA_MAXIMA. Sin diagonales.
-func vecinos(celda: Vector3i, ignorar: Array = []) -> Array[Vector3i]:
+func vecinos(celda: Vector3i, ignorar: Array = [], tipo_transporte: String = "") -> Array[Vector3i]:
 	var resultado: Array[Vector3i] = []
 	for direccion in DIRECCIONES:
 		var columna: Vector3i = celda + direccion
-		if es_transitable(columna, ignorar):
+		if es_transitable_para_transporte(columna, tipo_transporte, ignorar):
 			resultado.append(columna)
 			continue
 		var sobre_columna: Vector3i = columna + ARRIBA
-		if es_transitable(sobre_columna, ignorar) and _libre(celda + ARRIBA * 2, ignorar):
+		if es_transitable_para_transporte(sobre_columna, tipo_transporte, ignorar) and _libre(celda + ARRIBA * 2, ignorar):
 			resultado.append(sobre_columna)
 			continue
 		if _libre(columna, ignorar) and _libre(sobre_columna, ignorar):
 			for caida in range(1, CAIDA_MAXIMA + 1):
 				var abajo: Vector3i = columna - ARRIBA * caida
-				if es_transitable(abajo, ignorar):
+				if es_transitable_para_transporte(abajo, tipo_transporte, ignorar):
 					resultado.append(abajo)
 					break
 				if not _libre(abajo, ignorar):
@@ -113,11 +132,13 @@ func vecinos(celda: Vector3i, ignorar: Array = []) -> Array[Vector3i]:
 ## con celdas que no se pueden pisar (otros colonos, el avatar).
 ## opciones.ignorar_fantasmas: Array de ids de obra cuyos fantasmas son libres
 ## para este solicitante.
+## opciones.tipo_transporte: String con la clave en Ajustes.TRANSPORTE_CATALOGO_UNIDADES.
 func buscar_ruta(origen: Vector3i, destino: Vector3i, opciones: Dictionary = {}) -> Array[Vector3i]:
 	var vacia: Array[Vector3i] = []
 	var bloqueadas: Dictionary = opciones.get("bloqueadas", {})
 	var ignorar: Array = opciones.get("ignorar_fantasmas", [])
-	if origen == destino or bloqueadas.has(destino) or not es_transitable(destino, ignorar):
+	var tipo_t: String = str(opciones.get("tipo_transporte", ""))
+	if origen == destino or bloqueadas.has(destino) or not es_transitable_para_transporte(destino, tipo_t, ignorar):
 		return vacia
 	return _buscar(
 		origen,
@@ -147,9 +168,10 @@ func buscar_ruta_a_alguna(origen: Vector3i, destinos: Array, opciones: Dictionar
 func iniciar_busqueda_a_alguna(origen: Vector3i, destinos: Array, opciones: Dictionary = {}) -> Busqueda:
 	var bloqueadas: Dictionary = opciones.get("bloqueadas", {})
 	var ignorar: Array = opciones.get("ignorar_fantasmas", [])
+	var tipo_t: String = str(opciones.get("tipo_transporte", ""))
 	var metas: Dictionary = {}
 	for destino: Vector3i in destinos:
-		if destino != origen and not bloqueadas.has(destino) and es_transitable(destino, ignorar):
+		if destino != origen and not bloqueadas.has(destino) and es_transitable_para_transporte(destino, tipo_t, ignorar):
 			metas[destino] = true
 	var lista: Array = metas.keys()
 	var busqueda := Busqueda.new(
@@ -208,6 +230,7 @@ class Busqueda extends RefCounted:
 	var _heuristica: Callable
 	var _ignorar: Array
 	var _bloqueadas: Dictionary
+	var _tipo_transporte: String = ""
 	var _tope: int
 	var _costo: Dictionary
 	var _padre: Dictionary = {}
@@ -224,7 +247,8 @@ class Busqueda extends RefCounted:
 		_bloqueadas = opciones.get("bloqueadas", {})
 		_ignorar = opciones.get("ignorar_fantasmas", [])
 		_tope = opciones.get("max_nodos", buscador.max_nodos)
-		if not buscador.es_transitable(origen, _ignorar):
+		_tipo_transporte = str(opciones.get("tipo_transporte", ""))
+		if not buscador.es_transitable_para_transporte(origen, _tipo_transporte, _ignorar):
 			terminada = true
 			return
 		_costo = {origen: 0}
@@ -257,7 +281,7 @@ class Busqueda extends RefCounted:
 			if _expandidos > _tope:
 				terminada = true
 				return usados
-			for vecino: Vector3i in _buscador.vecinos(actual, _ignorar):
+			for vecino: Vector3i in _buscador.vecinos(actual, _ignorar, _tipo_transporte):
 				if _cerrados.has(vecino) or _bloqueadas.has(vecino):
 					continue
 				var soporte: Vector3i = vecino - ARRIBA

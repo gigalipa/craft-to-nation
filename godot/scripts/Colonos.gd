@@ -403,7 +403,8 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 ## transitable (el mundo pudo cambiar: minado, obra, agua) y nadie la ocupa.
 func _iniciar_paso(c: Dictionary, delta: float) -> void:
 	var siguiente: Vector3i = c["ruta"][0]
-	if not _buscador.es_transitable(siguiente, _ignorar_de(c)):
+	var tipo_t: String = tipo_transporte_de_colono(c["id"])
+	if not _buscador.es_transitable_para_transporte(siguiente, tipo_t, {"ignorar_fantasmas": _ignorar_de(c)}):
 		_replanificar(c)
 		return
 	if _ocupada_por_otro(siguiente, c["id"]):
@@ -498,6 +499,8 @@ func velocidad_efectiva_colono(colono_id: int) -> float:
 	if Vias != null and Vias.es_via(soporte):
 		return v_base * Vias.bono_en(soporte)
 	else:
+		if datos_t.get("exige_via", false):
+			return Ajustes.TRANSPORTE_VELOCIDAD_RALENTIZADA_SIN_INSUMO
 		var pen: float = float(datos_t.get("penalizacion_tierra", 0.0))
 		return v_base * maxf(0.0, 1.0 - pen)
 
@@ -707,7 +710,11 @@ func _ignorar_de(c: Dictionary) -> Array:
 
 
 func _opciones_ruta(c: Dictionary) -> Dictionary:
-	return {"bloqueadas": _bloqueadas_para(c["id"]), "ignorar_fantasmas": _ignorar_de(c)}
+	return {
+		"bloqueadas": _bloqueadas_para(c["id"]),
+		"ignorar_fantasmas": _ignorar_de(c),
+		"tipo_transporte": tipo_transporte_de_colono(c["id"])
+	}
 
 
 ## Una obra acaba de pasar a fantasma: cada colono cuya celda esté dentro de
@@ -782,7 +789,9 @@ func _replanificar(c: Dictionary) -> void:
 	if c["ruta"].is_empty():
 		return
 	var destino: Vector3i = c["ruta"].back()
-	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, {"ignorar_fantasmas": _ignorar_de(c), "max_nodos": TOPE_NODOS_DESTINO})
+	var opciones := _opciones_ruta(c)
+	opciones["max_nodos"] = TOPE_NODOS_DESTINO
+	var nueva: Array[Vector3i] = _buscador.buscar_ruta(c["celda"], destino, opciones)
 	c["ruta"] = nueva if not nueva.is_empty() else vacia
 	if nueva.is_empty():
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
@@ -1543,7 +1552,7 @@ func _ir_junto_a(c: Dictionary, huella: Array, servicio: Vector2i = Vector2i.MAX
 			var alt_s: int = mundo.altura_en(servicio.x, servicio.y)
 			if alt_s >= 0:
 				var celda_s := Vector3i(servicio.x, alt_s + 1, servicio.y)
-				if _buscador.es_transitable(celda_s) and not candidatas.has(celda_s):
+				if _buscador.es_transitable_para_transporte(celda_s, tipo_transporte_de_colono(c["id"])) and not candidatas.has(celda_s):
 					candidatas.push_front(celda_s)
 		for celda in candidatas:
 			if not _ocupada_por_otro(celda, c["id"]):

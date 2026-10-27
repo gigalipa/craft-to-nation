@@ -188,6 +188,11 @@ var progreso_ciencia_teorica: Dictionary = {}  # id_tech -> float
 var ciencia_teorica_activa: String = ""
 var mejoras_practicas_instaladas: Array[String] = []
 
+## Parque móvil de transporte (unidades logísticas y de acarreo)
+var parque_transporte_disponible: Dictionary = {}
+var parque_transporte_asignado: Dictionary = {}
+
+
 ## Overrides para pruebas unitarias de IDU (-1.0 = inactivo)
 var idu_override_s: float = -1.0
 var idu_override_q: float = -1.0
@@ -276,6 +281,11 @@ func _init() -> void:
 	}
 	sub_almacen_comida["recoleccion_caza"] = COMIDA_INICIAL * 0.5
 	sub_almacen_comida["pesca"] = COMIDA_INICIAL * 0.5
+
+	for tipo_v in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:
+		parque_transporte_disponible[tipo_v] = 0
+		parque_transporte_asignado[tipo_v] = 0
+
 
 
 ## Cobra "monto" de "recurso" del stock central devolviendo un desglose {recurso: cantidad}
@@ -1476,3 +1486,23 @@ func recurso_critico_urgente() -> Dictionary:
 					peor = {"recurso": comb_nom, "horas": h_comb, "cantidad": rec.cantidad, "tasa": rec.tasa_neta_promedio}
 
 	return peor
+
+
+## Registra vehículos nuevos o devueltos al parque disponible de la ciudad.
+func registrar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> void:
+	if cantidad <= 0:
+		return
+	parque_transporte_disponible[tipo] = parque_transporte_disponible.get(tipo, 0) + cantidad
+
+
+## Retira vehículos del parque disponible (ej. al asignarlos a un puesto).
+## Devuelve true si la cantidad solicitada estaba disponible y fue retirada con éxito.
+func retirar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> bool:
+	if cantidad <= 0:
+		return false
+	var actual: int = parque_transporte_disponible.get(tipo, 0)
+	if actual < cantidad:
+		return false
+	parque_transporte_disponible[tipo] = actual - cantidad
+	return true
+

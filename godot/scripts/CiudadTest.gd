@@ -907,5 +907,25 @@ func ejecutar_pruebas() -> void:
 	assert(ciu39.esta_ciencia_descubierta("combustion_pesada_blindajes"))
 	assert(ciu39.balanza_doctrinal["dieselpunk"] >= 25.0, "Descubrir ciencia de era 4 con doctrina debe aportar +25 puntos")
 
+	print("\n=== TEST 40: Catálogo de Transporte y Parque Móvil ===")
+	assert(Ajustes.TRANSPORTE_VELOCIDAD_RALENTIZADA_SIN_INSUMO == 1.2)
+	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES.has("camion_diesel"))
+	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["camion_diesel"]["capacidad"] == 1800.0)
+	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["dron_carga"]["cantidad_tripulacion"] == 0)
+	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["camion_diesel"]["costo_fabricacion"].has("tierra"))
+	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["trolebus_solar"]["costo_fabricacion"].has("tierra"))
+	assert(Strings.TRANSPORTE_NOMBRES.has("camion_diesel"))
+	assert(Strings.TRANSPORTE_ESTADOS.has("RALENTIZADO"))
+
+	var ciu40: Node = CiudadScript.new()
+	assert(ciu40.parque_transporte_disponible.get("camion_diesel", -1) == 0)
+	assert(ciu40.parque_transporte_asignado.get("camion_diesel", -1) == 0)
+	ciu40.registrar_vehiculo_disponible("camion_diesel", 2)
+	assert(ciu40.parque_transporte_disponible["camion_diesel"] == 2)
+	assert(ciu40.retirar_vehiculo_disponible("camion_diesel", 1))
+	assert(ciu40.parque_transporte_disponible["camion_diesel"] == 1)
+	assert(not ciu40.retirar_vehiculo_disponible("camion_diesel", 5))
+	assert(ciu40.parque_transporte_disponible["camion_diesel"] == 1)
+
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

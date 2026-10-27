@@ -952,6 +952,32 @@ static var BARRA_SUPERIOR_ERA_FORMATO: String = "Era %d"
 static var BARRA_SUPERIOR_IDU_FORMATO: String = "IDU: %.2f"
 static var BARRA_SUPERIOR_IDU_TOOLTIP_FORMATO: String = "Índice de Desarrollo Urbano: %.2f\nSofisticación Infraestructura (S): %.2f\nCualificación Laboral (Q): %.2f\nMasa Crítica Ciencia (K): %.2f"
 
+# ==============================================================================
+# LOGÍSTICA Y UNIDADES DE TRANSPORTE
+# ==============================================================================
+static var TRANSPORTE_NOMBRES: Dictionary = {
+	"acarreador_pie": "Acarreador a Pie",
+	"carreta_mano": "Carreta de Mano",
+	"carro_caballos": "Carro de Tiro (Caballos)",
+	"camion_diesel": "Camión Pesado Diésel",
+	"dron_carga": "Dron Autónomo de Carga",
+	"trolebus_solar": "Trolebús Eléctrico Bio-Vía",
+}
+
+static var TRANSPORTE_ESTADOS: Dictionary = {
+	"NORMAL": "Normal",
+	"RALENTIZADO": "Ralentizado (Sin insumos)",
+	"BLOQUEADO": "Bloqueado (Requiere vía continua)",
+	"normal": "Normal",
+	"ralentizado": "Ralentizado (Sin insumos)",
+	"bloqueado": "Bloqueado (Requiere vía continua)",
+}
+
+static var TRANSPORTE_ESTADO_RALENTIZADO: String = "Ralentizado (Sin insumos)"
+static var TRANSPORTE_ESTADO_BLOQUEADO: String = "Bloqueado (Requiere vía continua)"
+static var TRANSPORTE_AVISO_BLOQUEO_VIA: String = "Ruta bloqueada: el vehículo requiere una vía afirmada continua."
+
+
 
 
 # ==============================================================================

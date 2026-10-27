@@ -808,7 +808,7 @@ func _terminar_bloque(actual: Dictionary) -> void:
 ## el almacén ya tiene la carga completa, o si no hay recolectores presentes
 ## y queda algo (así ningún resto queda atascado ni se hacen viajes de una
 ## unidad mientras se sigue produciendo). {} si no se cumple.
-func recoger(esquina: Vector2i, capacidad: float) -> Dictionary:
+func recoger(esquina: Vector2i, capacidad: float = CAPACIDAD_CARGA) -> Dictionary:
 	if not puestos.has(esquina):
 		return {}
 	var p: Dictionary = puestos[esquina]
@@ -838,13 +838,24 @@ func recoger(esquina: Vector2i, capacidad: float) -> Dictionary:
 
 
 ## Un acarreador llegó al núcleo urbano: suma su carga al stock central. Lo
-## que no cabe (stock lleno) se pierde.
-func entregar(carga: Dictionary, origen_categoria: String = "") -> void:
-	for recurso in carga:
+## que no cabe (stock lleno) se retiene en el vehículo/carga sin destruirse ni desbordar (Review Focus 1).
+func entregar(carga: Dictionary, origen_categoria: String = "") -> Dictionary:
+	var restante: Dictionary = {}
+	for recurso in carga.keys():
+		var monto: float = float(carga[recurso])
 		if ciudad != null and ciudad.almacen.has(recurso):
-			var ingreso_real: float = ciudad.almacen[recurso].agregar(carga[recurso])
+			var ingreso_real: float = ciudad.almacen[recurso].agregar(monto)
 			if recurso == "comida" and ciudad.has_method("ingresar_comida_estratificada"):
 				ciudad.ingresar_comida_estratificada(ingreso_real, origen_categoria)
+			var sobrante: float = monto - ingreso_real
+			if sobrante > 1e-9:
+				restante[recurso] = sobrante
+				carga[recurso] = sobrante
+			else:
+				carga.erase(recurso)
+		else:
+			restante[recurso] = monto
+	return restante
 
 
 func categoria_comida_de_puesto(esquina: Vector2i) -> String:
@@ -1196,10 +1207,10 @@ func calcular_reserva_en_unidades(esquina: Vector2i, recurso: String) -> float:
 
 ## Qué retiraría ahora un acarreador del stock central para esta refinería: {recurso: cantidad}.
 ## Cada insumo tiene su tope en el almacén local, repartido en la proporción de la receta (así uno
-## no llena el almacén y deja sin sitio al otro), y la carga total no pasa de CAPACIDAD_CARGA ni
+## no llena el almacén y deja sin sitio al otro), y la carga total no pasa de capacidad_carga ni
 ## del espacio libre. Respeta el umbral de reserva_insumo fijado para la refinería/central. {} si no es refinería o no hay nada que llevar.
 ## ponytail: reparto fijo por receta; si el almacén se desbalancea mucho, esto no lo corrige.
-func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
+func insumos_a_cargar(esquina: Vector2i, capacidad_carga: float = CAPACIDAD_CARGA) -> Dictionary:
 	if not puestos.has(esquina):
 		return {}
 	var p: Dictionary = puestos[esquina]
@@ -1212,7 +1223,7 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 		if ciudad != null and ciudad.almacen.has("carbon") and ciudad.almacen["carbon"].cantidad > 1e-9:
 			var reserva_cen: float = calcular_reserva_en_unidades(esquina, "carbon")
 			var disp_cen: float = maxf(0.0, ciudad.almacen["carbon"].cantidad - reserva_cen)
-			var cant: float = minf(CAPACIDAD_CARGA, disp_cen)
+			var cant: float = minf(capacidad_carga, disp_cen)
 			if cant > 1e-9:
 				return {"carbon": cant}
 		return {}
@@ -1235,7 +1246,7 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 		var espacio: float = p["capacidad"] * parte - p["almacen"].get(recurso, 0.0)
 		var stock_ciudad: float = ciudad.almacen[recurso].cantidad if (ciudad != null and ciudad.almacen.has(recurso)) else 0.0
 		var disp: float = maxf(0.0, stock_ciudad - reserva)
-		var cantidad: float = minf(minf(CAPACIDAD_CARGA * parte, espacio), disp)
+		var cantidad: float = minf(minf(capacidad_carga * parte, espacio), disp)
 		if cantidad > 1e-9:
 			plan[recurso] = cantidad
 			total += cantidad
@@ -1247,8 +1258,8 @@ func insumos_a_cargar(esquina: Vector2i) -> Dictionary:
 
 
 ## Total de unidades de insumos_a_cargar().
-func insumo_a_cargar(esquina: Vector2i) -> float:
-	return _total(insumos_a_cargar(esquina))
+func insumo_a_cargar(esquina: Vector2i, capacidad_carga: float = CAPACIDAD_CARGA) -> float:
+	return _total(insumos_a_cargar(esquina, capacidad_carga))
 
 
 ## true si el almacén local no alcanza para producir ni 1 unidad de producto (falta algún insumo).
@@ -1298,9 +1309,9 @@ func esta_refinando(esquina: Vector2i) -> bool:
 
 
 ## El acarreador retira insumos del stock central (ver insumos_a_cargar()). {} si no hay nada que llevar.
-func cargar_insumo(esquina: Vector2i) -> Dictionary:
+func cargar_insumo(esquina: Vector2i, capacidad_carga: float = CAPACIDAD_CARGA) -> Dictionary:
 	var carga: Dictionary = {}
-	var plan: Dictionary = insumos_a_cargar(esquina)
+	var plan: Dictionary = insumos_a_cargar(esquina, capacidad_carga)
 	for recurso in plan:
 		var sacado: float = ciudad.almacen[recurso].quitar(plan[recurso])
 		if sacado > 1e-9:
@@ -1331,7 +1342,7 @@ func producto_pendiente(esquina: Vector2i) -> float:
 
 ## El acarreador recoge el producto (nada más) hasta "capacidad". Sin mínimo: el mínimo lo decide
 ## Colonos al elegir si vale la pena el viaje. {} si no hay nada.
-func recoger_producto(esquina: Vector2i, capacidad: float) -> Dictionary:
+func recoger_producto(esquina: Vector2i, capacidad: float = CAPACIDAD_CARGA) -> Dictionary:
 	if not es_refineria(esquina):
 		return {}
 	var producto: String = producto_de(esquina)

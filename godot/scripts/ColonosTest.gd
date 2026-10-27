@@ -1612,5 +1612,57 @@ func ejecutar_pruebas() -> void:
 	assert(not colonos_test.comisiones_activas.has("proyecto_diesel"))
 	assert(colonos_test.colonos[ids_comision[1]]["tarea"].is_empty())
 
-	print("\n=== Las 57 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 27: Acarreadores con Vehículos y Modo Arrastre Lento ===")
+	var ciu_trans: Node = CiudadScript.new()
+	var col_trans: Node = _nuevo(_mundo_llano(), ciu_trans)
+	var econ_trans: Node = EconomiaScript.new()
+	econ_trans.ciudad = ciu_trans
+	col_trans.economia = econ_trans
+
+	# Asignar un puesto con camion_diesel (capacidad 1800)
+	var esq_puesto := Vector2i(30, 30)
+	col_trans.economia.registrar_puesto(esq_puesto, "siderurgica", 5, 5, {})
+	col_trans.economia.puestos[esq_puesto]["tipo_transporte"] = "camion_diesel"
+	var col_id: int = col_trans.agregar_colono("obrero", Vector3i(30, 1, 30))
+	col_trans.colonos[col_id]["trabajo"] = {"puesto": esq_puesto, "rol": "acarreador"}
+
+	var cap_efectiva: float = col_trans.capacidad_transporte_colono(col_id)
+	assert(is_equal_approx(cap_efectiva, 1800.0))
+
+	# Review Focus 2: Sin combustible, la velocidad cae a 1.2 m/s
+	col_trans.ciudad.almacen["combustible"].cantidad = 0.0
+	var vel_ralentizada: float = col_trans.velocidad_efectiva_colono(col_id)
+	assert(is_equal_approx(vel_ralentizada, 1.2))
+
+	# Con combustible disponible, recupera velocidad base (6.5 m/s)
+	# Soporte con vía afirmada para permitir circulación de vehículo pesado
+	Vias.agregar([Vector3i(30, 0, 30), Vector3i(31, 0, 30)], "tierra_pisada")
+	col_trans.ciudad.almacen["combustible"].cantidad = 100.0
+	var vel_normal: float = col_trans.velocidad_efectiva_colono(col_id)
+	assert(vel_normal >= 6.5)
+
+	# Consumo de combustible durante la marcha en _completar_paso
+	col_trans.colonos[col_id]["moviendo"] = true
+	col_trans.colonos[col_id]["ruta"] = [Vector3i(31, 1, 30)]
+	var comb_antes: float = col_trans.ciudad.almacen["combustible"].cantidad
+	col_trans._completar_paso(col_trans.colonos[col_id], 1.0)
+	assert(col_trans.ciudad.almacen["combustible"].cantidad < comb_antes)
+
+	# Si se agota el combustible, no pierde su carga y entra en arrastre lento
+	col_trans.colonos[col_id]["carga"] = {"acero": 1800.0}
+	col_trans.ciudad.almacen["combustible"].cantidad = 0.0
+	var vel_agotado: float = col_trans.velocidad_efectiva_colono(col_id)
+	assert(is_equal_approx(vel_agotado, 1.2))
+	assert(col_trans.colonos[col_id]["carga"]["acero"] == 1800.0)
+
+	# Al reponer combustible, recupera velocidad base sin perder carga
+	col_trans.ciudad.almacen["combustible"].cantidad = 50.0
+	var vel_recuperada: float = col_trans.velocidad_efectiva_colono(col_id)
+	assert(vel_recuperada >= 6.5)
+	assert(col_trans.colonos[col_id]["carga"]["acero"] == 1800.0)
+
+	Vias.celdas.clear()
+	Vias._columnas.clear()
+
+	print("\n=== Las 58 pruebas de Colonos pasaron correctamente ===")
 

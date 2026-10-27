@@ -1357,5 +1357,26 @@ func ejecutar_pruebas() -> void:
 	assert(c47.balanza_doctrinal["solarpunk"] == 0.0)
 	assert(not c47.mejoras_practicas_instaladas.has("ciclo_solarpunk"))
 
-	print("\n=== Las 47 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 48: Recogida de Carga Masiva y Entrega con Almacén Saturado (Review Focus 1) ===")
+	var e48: Node = EconomiaScript.new()
+	var c48: Node = CiudadScript.new()
+	e48.ciudad = c48
+	var esq48 := Vector2i(5, 5)
+	e48.registrar_puesto(esq48, "siderurgica", 5, 5, {})
+	e48.puestos[esq48]["almacen"]["acero"] = 2500.0
+	var carga48: Dictionary = e48.recoger(esq48, 1800.0)
+	assert(is_equal_approx(carga48["acero"], 1800.0))
+	assert(is_equal_approx(e48.puestos[esq48]["almacen"]["acero"], 700.0))
+
+	# Review Focus 1: Almacén con solo 200 u de espacio libre
+	# Stock de acero con límite 1000 y 800 ya ocupados
+	c48.almacen["acero"].limite = 1000.0
+	c48.almacen["acero"].cantidad = 800.0
+	var carga_camion: Dictionary = {"acero": 1800.0}
+	var sobrante: Dictionary = e48.entregar(carga_camion)
+	assert(is_equal_approx(c48.almacen["acero"].cantidad, 1000.0), "almacen se llena exactamente hasta su tope")
+	assert(is_equal_approx(sobrante.get("acero", 0.0), 1600.0), "sobrante retiene 1600 u")
+	assert(is_equal_approx(carga_camion.get("acero", 0.0), 1600.0), "diccionario de carga retiene 1600 u")
+
+	print("\n=== Las 48 pruebas de Economia pasaron correctamente ===")
 

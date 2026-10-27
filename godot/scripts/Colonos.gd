@@ -434,9 +434,89 @@ func _iniciar_paso(c: Dictionary, delta: float) -> void:
 	_completar_paso(c, delta)
 
 
+## Determina el tipo de transporte asignado al colono según su inventario o su puesto de trabajo.
+func tipo_transporte_de_colono(colono_id: int) -> String:
+	if not colonos.has(colono_id):
+		return "acarreador_pie"
+	var c: Dictionary = colonos[colono_id]
+	if c.has("tipo_transporte") and not str(c["tipo_transporte"]).is_empty():
+		return str(c["tipo_transporte"])
+	if c.has("vehiculo") and not str(c["vehiculo"]).is_empty():
+		return str(c["vehiculo"])
+	var trabajo: Dictionary = c.get("trabajo", {})
+	if trabajo.get("rol", "") == "acarreador":
+		var esq: Vector2i = trabajo.get("puesto", Recoleccion.SIN_PUESTO)
+		if economia != null and economia.puestos.has(esq):
+			var tipo_p: String = str(economia.puestos[esq].get("tipo_transporte", ""))
+			if not tipo_p.is_empty():
+				return tipo_p
+	return "acarreador_pie"
+
+
+## Capacidad de transporte de carga en unidades según el vehículo asignado.
+func capacidad_transporte_colono(colono_id: int) -> float:
+	var tipo_t: String = tipo_transporte_de_colono(colono_id)
+	var datos_t: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_t, {})
+	var def_cap: float = economia.CAPACIDAD_CARGA if economia != null else Ajustes.ECONOMIA_CAPACIDAD_CARGA
+	return float(datos_t.get("capacidad", def_cap))
+
+
+## Comprueba si el insumo requerido por una unidad de transporte está agotado o en déficit.
+func _esta_desabastecido(insumo: String) -> bool:
+	if insumo.is_empty():
+		return false
+	if insumo == "energia":
+		if economia != null and economia.has_method("resumen_energia"):
+			if economia.resumen_energia().get("deficit", false):
+				return true
+		if ciudad != null and is_instance_valid(ciudad):
+			if ciudad.get("cobertura_energia") != null and ciudad.cobertura_energia < 1.0 - 1e-9:
+				return true
+		return false
+	if ciudad != null and is_instance_valid(ciudad) and ciudad.almacen != null:
+		if ciudad.almacen.has(insumo):
+			return ciudad.almacen[insumo].cantidad <= 1e-9
+		else:
+			return true
+	return false
+
+
+## Velocidad efectiva del colono/vehículo considerando insumos, bonos de vía y penalizaciones de terreno.
+func velocidad_efectiva_colono(colono_id: int) -> float:
+	if not colonos.has(colono_id):
+		return VELOCIDAD_COLONO
+	var c: Dictionary = colonos[colono_id]
+	var tipo_t: String = tipo_transporte_de_colono(colono_id)
+	var datos_t: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_t, {})
+	var v_base: float = float(datos_t.get("velocidad_base", VELOCIDAD_COLONO))
+	var insumo: String = str(datos_t.get("insumo_tipo", ""))
+
+	if _esta_desabastecido(insumo):
+		return Ajustes.TRANSPORTE_VELOCIDAD_RALENTIZADA_SIN_INSUMO
+
+	var soporte: Vector3i = c.get("celda", Vector3i.ZERO) + Vector3i(0, -1, 0)
+	if Vias != null and Vias.es_via(soporte):
+		return v_base * Vias.bono_en(soporte)
+	else:
+		var pen: float = float(datos_t.get("penalizacion_tierra", 0.0))
+		return v_base * maxf(0.0, 1.0 - pen)
+
+
 func _completar_paso(c: Dictionary, delta: float) -> void:
-	var soporte: Vector3i = c["celda"] + Vector3i(0, -1, 0)
-	c["progreso"] += delta * VELOCIDAD_COLONO * Vias.bono_en(soporte)
+	var vel: float = velocidad_efectiva_colono(c["id"])
+	c["progreso"] += delta * vel
+
+	# Consumo de insumo por segundo de marcha
+	var tipo_t: String = tipo_transporte_de_colono(c["id"])
+	var datos_t: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(tipo_t, {})
+	var insumo: String = str(datos_t.get("insumo_tipo", ""))
+	if not insumo.is_empty() and insumo != "energia":
+		var consumo_h: float = float(datos_t.get("insumo_consumo_h", 0.0))
+		var consumo: float = (consumo_h / 3600.0) * delta
+		if consumo > 0.0 and ciudad != null and is_instance_valid(ciudad) and ciudad.almacen != null:
+			if ciudad.almacen.has(insumo):
+				ciudad.almacen[insumo].quitar(consumo)
+
 	var siguiente: Vector3i = c["ruta"][0]
 	var t: float = minf(c["progreso"], 1.0)
 	c["posicion"] = _centro_de(c["celda"]).lerp(_centro_de(siguiente), t)
@@ -1115,7 +1195,7 @@ func _decidir_trabajo(c: Dictionary) -> void:
 	if not _en_puesto(c["celda"], huella_puesto, servicio, suelo, true):
 		_ir_junto_a(c, huella_puesto, servicio)
 		return
-	var carga: Dictionary = economia.recoger(esquina, economia.CAPACIDAD_CARGA)
+	var carga: Dictionary = economia.recoger(esquina, capacidad_transporte_colono(c["id"]))
 	if carga.is_empty():
 		c["espera"] = ESPERA_TRABAJO  # todavía no hay carga (o nada que llevar)
 		return
@@ -1138,7 +1218,7 @@ func _decidir_acarreo_refineria(c: Dictionary, esquina: Vector2i, huella: Array,
 			if not _junto_a(c["celda"], nucleo):
 				_ir_junto_a(c, nucleo)
 				return
-			c["carga"] = economia.cargar_insumo(esquina)
+			c["carga"] = economia.cargar_insumo(esquina, capacidad_transporte_colono(c["id"]))
 			c["fase"] = "entrada" if not c["carga"].is_empty() else ""
 		"entrada":
 			if not _junto_a(c["celda"], huella, entrada) and Vector2i(c["celda"].x, c["celda"].z) != entrada:
@@ -1151,7 +1231,7 @@ func _decidir_acarreo_refineria(c: Dictionary, esquina: Vector2i, huella: Array,
 			if not _junto_a(c["celda"], huella, salida) and Vector2i(c["celda"].x, c["celda"].z) != salida:
 				_ir_junto_a(c, huella, salida)
 				return
-			c["carga"] = economia.recoger_producto(esquina, economia.CAPACIDAD_CARGA)
+			c["carga"] = economia.recoger_producto(esquina, capacidad_transporte_colono(c["id"]))
 			c["fase"] = "entregar" if not c["carga"].is_empty() else ""
 			if c["carga"].is_empty():
 				c["espera"] = ESPERA_TRABAJO
@@ -1227,10 +1307,11 @@ func _decidir_acarreo_central(c: Dictionary, esquina: Vector2i, huella: Array, s
 				_ir_junto_a(c, huella_f, serv_f)
 				return
 			var carga: Dictionary = {}
+			var cap_carbon: float = capacidad_transporte_colono(c["id"])
 			if fuente.get("tipo", "") == "almacen":
-				carga = economia.cargar_carbon_de_almacen(fuente.get("esquina", Vector2i.MAX), economia.CAPACIDAD_CARGA)
+				carga = economia.cargar_carbon_de_almacen(fuente.get("esquina", Vector2i.MAX), cap_carbon)
 			else:
-				carga = economia.cargar_carbon_de_nucleo(economia.CAPACIDAD_CARGA)
+				carga = economia.cargar_carbon_de_nucleo(cap_carbon)
 			if carga.is_empty() or carga.get("carbon", 0.0) <= 1e-9:
 				c["espera"] = ESPERA_TRABAJO
 				c["fase"] = ""
@@ -1245,7 +1326,8 @@ func _decidir_acarreo_central(c: Dictionary, esquina: Vector2i, huella: Array, s
 				return
 			var stock_local: float = p.get("almacen", {}).get("carbon", 0.0)
 			var espacio_libre: float = 500.0 - stock_local
-			if espacio_libre >= 150.0 - 1e-9:
+			var cap_descarga: float = capacidad_transporte_colono(c["id"])
+			if espacio_libre >= cap_descarga - 1e-9:
 				economia.descargar_insumo(esquina, c["carga"])
 				c["carga"] = {}
 				c["fuente_carbon"] = {}
@@ -1278,9 +1360,12 @@ func _llevar_al_nucleo(c: Dictionary) -> bool:
 	if _junto_a(c["celda"], huella_nucleo):
 		var esq: Vector2i = c.get("trabajo", {}).get("puesto", Recoleccion.SIN_PUESTO)
 		var cat_comida: String = economia.categoria_comida_de_puesto(esq)
-		economia.entregar(c["carga"], cat_comida)
-		c["carga"] = {}
-		return true
+		c["carga"] = economia.entregar(c["carga"], cat_comida)
+		if c["carga"].is_empty():
+			return true
+		# Almacén saturado: retiene el excedente en el vehículo y espera antes de reintentar
+		c["espera"] = ESPERA_TRABAJO
+		return false
 	_ir_junto_a(c, huella_nucleo)
 	return false
 

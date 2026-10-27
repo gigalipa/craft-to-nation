@@ -232,11 +232,12 @@ func _retirar(id: int) -> void:
 	if colono["evacuando"] != -1:
 		mundo.revocar_permiso_salida(colono["evacuando"], id)
 	# Si formaba parte de una comisión científica activa, retirarlo de la lista de miembros
-	for id_proyecto in comisiones_activas:
+	for id_proyecto in comisiones_activas.keys():
 		var info: Dictionary = comisiones_activas[id_proyecto]
 		var miembros: Array = info.get("miembros", [])
 		if miembros.has(id):
 			miembros.erase(id)
+			reponer_bajas_comision(id_proyecto)
 	if _buscador != null and _buscador.has_method("terminar_en_curso"):
 		_buscador.terminar_en_curso(id)
 	ocupadas.erase(colono["celda"])
@@ -375,10 +376,10 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		_avanzar_busqueda(c)  # sigue buscando el camino que empezó en un fotograma anterior
 		return
 	if c["tarea"].get("tipo") == "investigador_itinerante":
-		if c["celda"] == c["tarea"]["destino"]:
+		if _esta_en_destino_o_adyacente(c["celda"], c["tarea"]["destino"]):
 			return
 		if c["ruta"].is_empty() and (_buscador == null or not _buscador.en_curso(c["id"])):
-			_iniciar_busqueda(c, c["tarea"]["destino"])
+			_iniciar_busqueda_comision(c, c["tarea"]["destino"])
 			return
 	if c["ruta"].is_empty():
 		if c["trabajo"].is_empty():
@@ -1545,6 +1546,38 @@ func contar_militares_desplegados(zonif: Object = null) -> int:
 	return desplegados
 
 
+func _esta_en_destino_o_adyacente(celda: Vector3i, destino: Vector3i) -> bool:
+	if celda == destino:
+		return true
+	var diff: Vector3i = celda - destino
+	return absi(diff.x) <= 1 and absi(diff.z) <= 1 and absi(diff.y) <= 1
+
+
+func _iniciar_busqueda_comision(c: Dictionary, destino: Vector3i) -> void:
+	if _buscador == null:
+		return
+	if _esta_en_destino_o_adyacente(c["celda"], destino):
+		return
+	var candidatas: Array[Vector3i] = [destino]
+	for dx in [-1, 0, 1]:
+		for dz in [-1, 0, 1]:
+			if dx == 0 and dz == 0:
+				continue
+			var vecina := Vector3i(destino.x + dx, destino.y, destino.z + dz)
+			if _buscador.es_transitable(vecina):
+				candidatas.append(vecina)
+	var grupos: Array = [candidatas]
+	c["busqueda"] = {
+		"grupos": grupos,
+		"todos_grupos": grupos.duplicate(true),
+		"actual": null,
+		"tope": TOPE_NODOS_DESTINO,
+	}
+	if _buscador.has_method("registrar_en_curso"):
+		_buscador.registrar_en_curso(c["id"])
+	_avanzar_busqueda(c)
+
+
 func _iniciar_busqueda(c: Dictionary, destino: Vector3i) -> void:
 	if _buscador == null:
 		return
@@ -1610,8 +1643,8 @@ func despachar_comision_cientifica(destino: Vector3i, edificio_id: String, num_i
 		c["espera"] = 0.0
 		if _buscador != null and _buscador.has_method("terminar_en_curso"):
 			_buscador.terminar_en_curso(cid)
-		if c["celda"] != destino:
-			_iniciar_busqueda(c, destino)
+		if not _esta_en_destino_o_adyacente(c["celda"], destino):
+			_iniciar_busqueda_comision(c, destino)
 
 	comisiones_activas[id_proyecto] = {
 		"destino": destino,
@@ -1622,7 +1655,53 @@ func despachar_comision_cientifica(destino: Vector3i, edificio_id: String, num_i
 	return ids_seleccionados
 
 
-## Verifica si todos los investigadores requeridos de una comisión han llegado a la celda de destino.
+## Reemplaza automáticamente a los miembros caídos o extraviados en una comisión en curso.
+func reponer_bajas_comision(id_proyecto: String) -> void:
+	if not comisiones_activas.has(id_proyecto):
+		return
+	var info: Dictionary = comisiones_activas[id_proyecto]
+	var miembros: Array = info.get("miembros", [])
+	var requeridos: int = info.get("requeridos", 0)
+	var faltan: int = requeridos - miembros.size()
+	if faltan <= 0:
+		return
+	var destino: Vector3i = info.get("destino", INVALIDA)
+	var ed_id: String = info.get("edificio_id", "")
+	var sin_puesto: Array[int] = _ids_sin_puesto("investigador")
+	var nuevos: Array[int] = []
+	for cid in sin_puesto:
+		if nuevos.size() >= faltan:
+			break
+		if not miembros.has(cid) and colonos[cid].get("tarea", {}).is_empty():
+			nuevos.append(cid)
+	while nuevos.size() < faltan:
+		var celda_spawn := _celda_aparicion()
+		if celda_spawn == INVALIDA:
+			celda_spawn = Vector3i(0, 1, 0)
+			if _buscador != null and not _buscador.es_transitable(celda_spawn):
+				celda_spawn = destino
+		var nuevo_id: int = agregar_colono("investigador", celda_spawn)
+		nuevos.append(nuevo_id)
+	for cid in nuevos:
+		var c: Dictionary = colonos[cid]
+		c["tarea"] = {
+			"tipo": "investigador_itinerante",
+			"proyecto": id_proyecto,
+			"destino": destino,
+			"edificio_id": ed_id,
+		}
+		var vacia: Array[Vector3i] = []
+		c["ruta"] = vacia
+		c["busqueda"] = {}
+		c["espera"] = 0.0
+		if _buscador != null and _buscador.has_method("terminar_en_curso"):
+			_buscador.terminar_en_curso(cid)
+		if not _esta_en_destino_o_adyacente(c["celda"], destino):
+			_iniciar_busqueda_comision(c, destino)
+		miembros.append(cid)
+
+
+## Verifica si todos los investigadores requeridos de una comisión han llegado a la celda de destino o a su perímetro inmediato.
 func comision_esta_completa_en_destino(id_proyecto: String, destino: Vector3i) -> bool:
 	if not comisiones_activas.has(id_proyecto):
 		return false
@@ -1634,7 +1713,7 @@ func comision_esta_completa_en_destino(id_proyecto: String, destino: Vector3i) -
 	for colono_id in miembros:
 		if not colonos.has(colono_id):
 			return false
-		if colonos[colono_id]["celda"] != destino:
+		if not _esta_en_destino_o_adyacente(colonos[colono_id]["celda"], destino):
 			return false
 	return true
 

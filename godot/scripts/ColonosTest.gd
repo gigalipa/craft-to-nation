@@ -1599,13 +1599,13 @@ func ejecutar_pruebas() -> void:
 	# Review Focus 2: No debe considerarse completa hasta que ambos hayan llegado
 	colonos_test.colonos[ids_comision[0]]["celda"] = destino_obra
 	assert(not colonos_test.comision_esta_completa_en_destino("proyecto_diesel", destino_obra))
-	colonos_test.colonos[ids_comision[1]]["celda"] = destino_obra
+	# Ocupación espacial multi-agente: el segundo investigador llega a celda adyacente transitable
+	colonos_test.colonos[ids_comision[1]]["celda"] = destino_obra + Vector3i(1, 0, 0)
 	assert(colonos_test.comision_esta_completa_en_destino("proyecto_diesel", destino_obra))
 
-	# Review Focus 3: Si un investigador es retirado / muere en camino, se remueve de miembros y la comisión no está completa
+	# Review Focus 3: Si un investigador es retirado / muere en camino, se repone la baja pero la comisión no está completa hasta que llegue
 	colonos_test._retirar(ids_comision[0])
 	assert(not colonos_test.comision_esta_completa_en_destino("proyecto_diesel", destino_obra))
-	assert(colonos_test.comisiones_activas["proyecto_diesel"]["miembros"].size() == 1)
 
 	# Liberar la comisión limpia las tareas y la entrada en comisiones_activas
 	colonos_test.liberar_comision("proyecto_diesel")

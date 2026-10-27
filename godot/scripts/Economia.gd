@@ -270,6 +270,21 @@ func quitar_puesto(esquina: Vector2i) -> void:
 		if colonos != null and colonos.has_method("liberar_comision"):
 			var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
 			colonos.liberar_comision(id_proy)
+	for m_id in p.get("mejoras", []):
+		var info_m: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(m_id, {})
+		var doct: String = info_m.get("doctrina", "")
+		var pts: float = float(info_m.get("puntos_doctrina", 0))
+		if ciudad != null and doct != "" and pts > 0.0 and ciudad.has_method("agregar_puntos_doctrina"):
+			ciudad.agregar_puntos_doctrina(doct, -pts)
+		var otro_tiene := false
+		for ot_esq in puestos:
+			if ot_esq != esquina and puestos[ot_esq].get("mejoras", []).has(m_id):
+				otro_tiene = true
+				break
+		if not otro_tiene and ciudad != null and "mejoras_practicas_instaladas" in ciudad:
+			ciudad.mejoras_practicas_instaladas.erase(m_id)
+	if ciudad != null and ciudad.has_method("actualizar_pacing_era"):
+		ciudad.actualizar_pacing_era()
 	retirar_deposito(esquina)  # último intento (el stock pudo liberar espacio desde que empezó la deconstrucción)
 	var dp: Dictionary = p.get("entorno", {}).get("datos_perforacion", {})
 	if not dp.is_empty() and mundo != null and dp.has("perforacion"):
@@ -1512,8 +1527,16 @@ func iniciar_mejora_practica(esquina: Vector2i, id_mejora: String) -> bool:
 		if not ciudad.esta_ciencia_descubierta(req):
 			return false
 
+	var doct_nueva: String = str(info.get("doctrina", ""))
 	for ex in info.get("excluye", []):
 		if p.get("mejoras", []).has(ex):
+			return false
+	for m_inst in p.get("mejoras", []):
+		var info_inst: Dictionary = Ajustes.MEJORAS_PRACTICAS_CATALOGO.get(m_inst, {})
+		if info_inst.get("excluye", []).has(id_mejora):
+			return false
+		var doct_inst: String = str(info_inst.get("doctrina", ""))
+		if doct_nueva != "" and doct_inst != "" and doct_nueva != doct_inst:
 			return false
 
 	var tipo_edif: String = str(info.get("edificio_tipo", ""))
@@ -1525,11 +1548,11 @@ func iniciar_mejora_practica(esquina: Vector2i, id_mejora: String) -> bool:
 		if not ciudad.consumir_costos(costo):
 			return false
 
+	var num_inv: int = int(info.get("investigadores", 1))
 	if colonos != null and colonos.has_method("despachar_comision_cientifica"):
 		var dest: Vector3i = _destino_de_puesto(esquina)
 		var id_edificio: String = "puesto_%d_%d" % [esquina.x, esquina.y]
 		var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
-		var num_inv: int = int(info.get("investigadores", 1))
 		colonos.despachar_comision_cientifica(dest, id_edificio, num_inv, id_proy)
 
 	p["proyecto_mejora"] = {
@@ -1538,7 +1561,8 @@ func iniciar_mejora_practica(esquina: Vector2i, id_mejora: String) -> bool:
 		"progreso": 0.0,
 		"tiempo": float(info.get("tiempo", 1.0)),
 		"es_reconversion": false,
-		"id_anterior": ""
+		"id_anterior": "",
+		"investigadores_requeridos": num_inv,
 	}
 	return true
 
@@ -1597,11 +1621,11 @@ func iniciar_reconversion_industrial(esquina: Vector2i, nueva_mejora: String) ->
 
 	p["estado_operativo"] = "RECONVERSION"
 
+	var num_inv: int = int(info.get("investigadores", 1))
 	if colonos != null and colonos.has_method("despachar_comision_cientifica"):
 		var dest: Vector3i = _destino_de_puesto(esquina)
 		var id_edificio: String = "puesto_%d_%d" % [esquina.x, esquina.y]
 		var id_proy: String = "mejora_%d_%d" % [esquina.x, esquina.y]
-		var num_inv: int = int(info.get("investigadores", 1))
 		colonos.despachar_comision_cientifica(dest, id_edificio, num_inv, id_proy)
 
 	var tiempo_base: float = float(info.get("tiempo", 1.0))
@@ -1612,7 +1636,8 @@ func iniciar_reconversion_industrial(esquina: Vector2i, nueva_mejora: String) ->
 		"progreso": 0.0,
 		"tiempo": tiempo_reconv,
 		"es_reconversion": true,
-		"id_anterior": mejora_anterior
+		"id_anterior": mejora_anterior,
+		"investigadores_requeridos": num_inv,
 	}
 	return true
 

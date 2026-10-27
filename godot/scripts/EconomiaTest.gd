@@ -1348,5 +1348,14 @@ func ejecutar_pruebas() -> void:
 	assert(c47.balanza_doctrinal["dieselpunk"] == 0.0)
 	assert(c47.balanza_doctrinal["solarpunk"] >= 15.0)
 
+	# Exclusión doctrinal en iniciar_mejora_practica sin reconversión
+	c47.ciencias_teoricas_descubiertas.append("automatizacion_cibernetica")
+	assert(not e47.iniciar_mejora_practica(esq_termo47, "control_cibernetico"))
+
+	# Demolición del edificio purga puntos doctrinales e inventario de mejoras
+	e47.quitar_puesto(esq_termo47)
+	assert(c47.balanza_doctrinal["solarpunk"] == 0.0)
+	assert(not c47.mejoras_practicas_instaladas.has("ciclo_solarpunk"))
+
 	print("\n=== Las 47 pruebas de Economia pasaron correctamente ===")
 

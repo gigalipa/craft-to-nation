@@ -11,6 +11,8 @@ extends Node
 ## tiene componente .z, así que la coordenada mundial Z vive en el campo .y
 ## (misma convención que BlueprintValidator._parsear_celda).
 
+signal zonas_cambiadas
+
 const Ajustes = preload("res://scripts/ajustes.gd")
 
 ## Margen del núcleo urbano — sin cambios, sigue siendo especial (no tiene
@@ -97,6 +99,7 @@ func declarar_nucleo(huella: Array, id: int = -1) -> void:
 
 	for celda in huella:
 		zonas[celda] = "residencial_investigacion"
+	zonas_cambiadas.emit()
 
 
 ## Reasigna el núcleo urbano a un nuevo edificio ya construido.
@@ -122,6 +125,7 @@ func reasignar_nucleo(nuevo_id: int, nueva_huella: Array = [], id_anterior: int 
 		_recalcular_influencia()
 		for celda in _huella_nucleo:
 			zonas[celda] = "residencial_investigacion"
+	zonas_cambiadas.emit()
 
 
 ## Registra la huella de "id" (con el margen correspondiente a "categoria")
@@ -142,6 +146,7 @@ func ampliar_influencia(id: int, huella: Array, categoria: String) -> void:
 		"caja": _caja_expandida(huella, margen),
 	}
 	_recalcular_influencia()
+	zonas_cambiadas.emit()
 
 
 ## Quita la contribución de "id" (ver ampliar_influencia()) y recalcula la
@@ -155,6 +160,7 @@ func retirar_contribucion(id: int) -> void:
 		return
 	_contribuciones.erase(id)
 	_recalcular_influencia()
+	zonas_cambiadas.emit()
 
 
 ## Caja delimitadora (min/max) de "huella" expandida por "margen" en las 4
@@ -180,6 +186,8 @@ func _caja_expandida(huella: Array, margen: int) -> Dictionary:
 
 
 func _celda_en_caja(celda: Vector2i, caja: Dictionary) -> bool:
+	if not caja.has("min") or not caja.has("max"):
+		return false
 	return (
 		celda.x >= caja["min"].x and celda.x <= caja["max"].x
 		and celda.y >= caja["min"].y and celda.y <= caja["max"].y
@@ -256,6 +264,8 @@ func pintar_zona(esquina_a: Vector2i, esquina_b: Vector2i, tipo: String) -> int:
 			if dentro_de_influencia(celda):
 				zonas[celda] = tipo
 				pintadas += 1
+	if pintadas > 0:
+		zonas_cambiadas.emit()
 	return pintadas
 
 
@@ -280,4 +290,6 @@ func despintar_zona(esquina_a: Vector2i, esquina_b: Vector2i) -> int:
 			if zonas.has(celda):
 				zonas.erase(celda)
 				borradas += 1
+	if borradas > 0:
+		zonas_cambiadas.emit()
 	return borradas

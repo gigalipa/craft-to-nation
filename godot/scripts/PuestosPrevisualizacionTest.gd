@@ -14,6 +14,7 @@ const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
 const NivelacionOverlayScript = preload("res://scripts/NivelacionOverlay.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const PlayerScript = preload("res://scripts/Player.gd")
+const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const GeneradorArbolScript = preload("res://scripts/GeneradorArbol.gd")
 
 const LADO := 40  # el suelo plano cubre x, z en [0, LADO)
@@ -278,6 +279,50 @@ func ejecutar_pruebas() -> void:
 	camara9.free()
 	mundo9.free()
 	print("OK: pesca conserva su agua abierta al confirmar.")
+
+	print("=== TEST 9b: al completarse un puesto de pesca en pendiente con agua, el volumen de aire interior se drena ===")
+	var mundo9b: Node = _mundo_plano()
+	mundo9b.generador = GeneradorMundo.new(1234, 40, 40)
+	for x in range(9, 15):
+		for z in range(14, 20):
+			mundo9b.set_cell_item(Vector3i(x, 0, z), GridMap.INVALID_CELL_ITEM)
+			mundo9b.colocar_bloque(Vector3i(x, -1, z), "tierra")
+			mundo9b.colocar_bloque(Vector3i(x, 0, z), "agua")
+	var esquina9b := Vector2i(10, 10)
+	var camara9b: Camera3D = _camara(mundo9b, "pesca_frutos_mar", 0)
+	camara9b.hud = _hud_prueba()
+	var ev9b: Dictionary = camara9b._evaluar_puesto(esquina9b)
+	for r_rec in ["tierra", "madera", "piedra", "bloque_piedra"]:
+		if Ciudad.almacen.has(r_rec):
+			Ciudad.almacen[r_rec].cantidad = 999999.0
+	camara9b._confirmar_puesto(esquina9b)
+
+	var y_base_9b: int = ev9b["resultado_base"]["base_y"]
+	var celda_interior_agua := Vector3i(esquina9b.x + 1, y_base_9b + 1, esquina9b.y + 1)
+	mundo9b.colocar_bloque(celda_interior_agua, "agua")
+	assert(mundo9b.obtener_tipo(celda_interior_agua) == "agua", "agua colocada en celda interior antes de terminar")
+
+	var celda_est9b: Vector3i = ev9b["celdas_plantilla"].keys()[0]
+	var res9b: Dictionary
+	var lim9b := 0
+	while lim9b < 2000:
+		lim9b += 1
+		res9b = mundo9b.surtir_construccion(celda_est9b)
+		if res9b.get("completa", false):
+			break
+	assert(res9b.get("completa", false), "pesca completada")
+
+	var jugador9b: CharacterBody3D = PlayerScript.new()
+	jugador9b.mundo = mundo9b
+	jugador9b.hud = camara9b.hud
+	jugador9b._completar_construccion(res9b["metadata"])
+
+	assert(mundo9b.obtener_tipo(celda_interior_agua) == "", "el agua interior debe haberse drenado al completar la construcción: %s" % mundo9b.obtener_tipo(celda_interior_agua))
+	jugador9b.free()
+	camara9b.hud.queue_free()
+	camara9b.free()
+	mundo9b.free()
+	print("OK: el volumen interior de pesca drena cualquier agua atrapada.")
 
 	print("=== TEST 10: deconstruir un puesto nuevo lo desactiva, y reconstruirlo lo reactiva sin re-registrarlo ===")
 	# Regresión encontrada en revisión de código (2026-09-29): un puesto recién

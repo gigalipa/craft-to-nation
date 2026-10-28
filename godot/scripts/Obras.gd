@@ -251,7 +251,17 @@ func _hay_recurso(recurso: String, necesita: float = 0.0) -> bool:
 	var almacen: Dictionary = ciudad.almacen
 	var minimo: float = maxf(necesita, 0.0001)
 	if recurso == "madera":
-		return almacen["tablas"].cantidad + almacen["madera"].cantidad >= minimo
+		var cant_m: float = almacen["madera"].cantidad if almacen.has("madera") else 0.0
+		var cant_t: float = almacen["tablas"].cantidad if almacen.has("tablas") else 0.0
+		return cant_m + cant_t >= minimo
+	elif recurso == "piedra":
+		var cant_p: float = almacen["piedra"].cantidad if almacen.has("piedra") else 0.0
+		var cant_bp: float = almacen["bloques_piedra"].cantidad if almacen.has("bloques_piedra") else 0.0
+		return cant_p + cant_bp >= minimo
+	elif recurso == "vidrio":
+		var cant_v: float = almacen["vidrio"].cantidad if almacen.has("vidrio") else 0.0
+		var cant_t: float = almacen["tierra"].cantidad if almacen.has("tierra") else 0.0
+		return cant_v + floorf(cant_t / 3.0) >= minimo
 	return almacen.has(recurso) and almacen[recurso].cantidad >= minimo
 
 

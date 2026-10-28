@@ -1,3 +1,8 @@
+---
+title: "Guía de Primeros Pasos"
+description: "Aprende los controles en primera persona y cámara cenital, recolección de frutos, minado, ciclo de supervivencia y fundación del núcleo urbano en Craft to Nation."
+---
+
 # Guía de Primeros Pasos
 
 ![Del primer refugio a la metrópolis industrial](/assets/citycraft-hero.webp)
@@ -21,6 +26,10 @@ El juego permite alternar en cualquier momento entre tu avatar físico en primer
 - <kbd>Clic Izquierdo</kbd> (mantener): Talar árboles (`herr_hacha.svg`, `1,0 s` por punto de salud del tronco), minar terreno o vetas minerales con barra de progreso e icono contextual (`herr_pala.svg` en tierra `0,4 s`; `herr_pico.svg` en piedra/carbón `1,2 s`, hierro/cobre `1,6 s`, tierras raras `2,4 s`), o deconstruir paso a paso si el modo <kbd>G</kbd> está activo.
 - <kbd>Clic Derecho</kbd>: Colocar el bloque seleccionado de la barra rápida (`1`–`0`), abastecer una obra fantasma apuntando a sus bloques o muros exteriores, o **drenar/secar celdas inundadas** de `agua` o `crudo` colocando un bloque sólido directamente sobre el líquido.
 - <kbd>1</kbd> – <kbd>9</kbd>, <kbd>0</kbd> / <kbd>Rueda del Ratón</kbd>: Seleccionar bloque en la barra rápida (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`).
+  - **Bloque de Ventana (`vidrio`, tecla <kbd>6</kbd>):** Consume preferentemente `1 Vidrio` (o `3 Tierra` si no hay vidrio en el almacén) y se coloca como un **panel transparente de `1/20` (`0,05 m`) de espesor** en 3 variantes automáticas:
+    - **Ventana recta (`ventana`):** Al mirar horizontalmente, se coloca a media profundidad del bloque (`0,475..0,525`) con la cara frontal orientada hacia tu avatar (solo posee cara frontal y trasera).
+    - **Ventana en esquina (`ventana_esquina`):** En una esquina entre otro bloque de ventana y un muro adyacente, adopta automáticamente forma en "L" rotada 90° en el eje Y.
+    - **Ventana de techo (`ventana_techo`):** Si colocas el bloque mirando **desde abajo hacia arriba** o **desde arriba hacia abajo**, se coloca siempre **al ras de la cara superior del bloque (`Y ∈ [0,95, 1,0]`)**, con solo cara superior e inferior.
 - <kbd>E</kbd>:
   - **Pulsar:** Abrir o cerrar puertas mirando hacia ellas, o abrir el baúl local de un puesto periférico activo (`VentanaBaul`, ventana compacta de `320×260` con transferencia `-`, `+` y `"Extraer todo"`).
   - **Mantener pulsado (`2,0 s`) apuntando a un árbol:** **Recolectar frutos silvestres** (`herr_cesta.svg`, otorga **60 unidades de comida** sin talar el árbol; los frutos rebrotan tras `24 horas` de juego).
@@ -46,7 +55,7 @@ El juego permite alternar en cualquier momento entre tu avatar físico en primer
   - <kbd>1</kbd> **Menú Construir:**
     - `1` **Residencial:** Ranuras `1` a `5` para tus diseños guardados (`Residencia [camas]x[baúles]`).
     - `2` **Periférico:** `1` Caza, `2` Madera, `3` Mina, `4` Pesca, `5` Estación de bombeo, `6` Centro de extracción.
-    - `3` **Industrial:** `1` Siderúrgica, `2` Tierras raras, `3` Aserradero, `4` Fábrica de bloques, `5` Carbonera, `6` Refinería petrolera, `7` Productor combustible, `8` Central termoeléctrica, `9` Almacén.
+    - `3` **Industrial:** `1` Siderúrgica, `2` Tierras raras, `3` Aserradero, `4` Fábrica de bloques, `5` **Vidriera**, `6` Carbonera, `7` Refinería petrolera, `8` Productor combustible, `9` Central termoeléctrica, `0` Taller de transporte / Almacén.
     - `4` **Investigación:** `1` Escuela técnica, `2` Escuela de especialistas, `3` Universidad.
     - `5` **Vías:** `1` Trazar vía *(en cámara cenital, el trazado de carreteras se activa desde este menú `1 -> 5 -> 1`)*.
     - `6` **Ductos:** `1` Acueducto, `2` Tubería.

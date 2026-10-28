@@ -368,6 +368,20 @@ func ejecutar_pruebas() -> void:
 	assert(tiene_entrada_fb and tiene_baul_fb, "fabrica_bloques debe tener puertas y baul")
 	assert(PlantillasPuesto.PLANTILLAS["fabrica_bloques"].get("chimenea") == Vector2i(2, 3), "chimenea en (2,3)")
 
+	print("\n=== TEST: plantilla de vidriera (5x6, adobe, entrada/salida, baul y chimenea) ===")
+	assert(PlantillasPuesto.MATERIAL.get("vidriera") == "adobe")
+	assert(PlantillasPuesto.dimensiones("vidriera") == Vector2i(5, 6))
+	var celdas_vd: Dictionary = PlantillasPuesto.celdas("vidriera", 0)
+	var tiene_entrada_vd := false
+	var tiene_baul_vd := false
+	for b in celdas_vd.values():
+		if b == "puerta_inferior":
+			tiene_entrada_vd = true
+		if b == "baul":
+			tiene_baul_vd = true
+	assert(tiene_entrada_vd and tiene_baul_vd, "vidriera debe tener puertas y baul")
+	assert(PlantillasPuesto.PLANTILLAS["vidriera"].get("chimenea") == Vector2i(2, 3), "chimenea en (2,3)")
+
 	print("\n=== TEST 18: plantilla de taller_transporte (5x5, estructura industrial, puerta, ventanas y baul) ===")
 	assert(PlantillasPuesto.PLANTILLAS.has("taller_transporte"), "debe estar registrada la plantilla taller_transporte")
 	assert(PlantillasPuesto.MATERIAL.has("taller_transporte"), "debe tener material asignado")

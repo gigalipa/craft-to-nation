@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 # Glosario y reglas fonéticas frecuentes de Craft to Nation / Gamedev
+# Sincronizado con GDD v3.59 (Documento de Diseño de Juego (GDD)_ Craft to Nation.md) y godot/scripts/strings.gd
 GAME_CORRECTIONS = [
     (r"\bbaúla\b", "bahía"),
     (r"\bbaula\b", "bahía"),
@@ -34,6 +35,11 @@ GAME_CORRECTIONS = [
     (r"\b4 puntos\b", ""),
     (r"\botro seco\b", "otro puesto"),
     (r"\botro puesto de casa\b", "otro puesto de caza"),
+    (r"\bla centra\b", "la central termoeléctrica"),
+    (r"\bvidrería\b", "vidriera"),
+    (r"\btrole bus\b", "trolebús solar"),
+    (r"\binvestigador y tinerante\b", "investigador itinerante"),
+    (r"\by de u\b", "IDU"),
 ]
 
 

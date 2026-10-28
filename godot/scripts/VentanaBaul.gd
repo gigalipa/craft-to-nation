@@ -150,43 +150,65 @@ func _actualizar() -> void:
 		if not f["fila"].visible:
 			continue
 		var nombre: String = HUDScript.NOMBRES_RECURSO.get(recurso, recurso)
-		f["etiqueta"].text = "%s: %.1f" % [nombre, cantidad_local]
+		f["nombre"].text = nombre
+		f["etiqueta"].text = "%.1f" % cantidad_local
 		f["menos"].disabled = cantidad_local <= 0.0
 		f["mas"].disabled = lleno or Ciudad.almacen[recurso].cantidad <= 0.0
 
 
 func _crear_fila_recurso(recurso: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 6)
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var icono := TextureRect.new()
 	icono.name = "Icono_%s" % recurso
 	icono.custom_minimum_size = Vector2(20, 20)
 	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icono.texture = IconosHUD.icono(IconosHUD.icono_recurso(recurso))
 	icono.visible = true
 	fila.add_child(icono)
+	var lbl_nombre := TemaHUD.etiqueta()
+	lbl_nombre.custom_minimum_size.x = 135.0
+	lbl_nombre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl_nombre.size_flags_vertical = Control.SIZE_FILL
+	fila.add_child(lbl_nombre)
 	var etiqueta := TemaHUD.etiqueta()
-	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	etiqueta.custom_minimum_size.x = 65.0
+	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	etiqueta.size_flags_vertical = Control.SIZE_FILL
 	fila.add_child(etiqueta)
-	var menos := Button.new()
-	menos.icon = IconosHUD.icono("btn_menos")
-	menos.custom_minimum_size = Vector2(28, 28)
-	TemaHUD.estilizar_boton(menos)
-	menos.pressed.connect(func() -> void:
-		Economia.retirar_uno(esquina, recurso, _incremento()))
+	var cont_acciones := HBoxContainer.new()
+	cont_acciones.add_theme_constant_override("separation", 4)
+	cont_acciones.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var mas := Button.new()
-	mas.icon = IconosHUD.icono("btn_mas")
-	mas.custom_minimum_size = Vector2(28, 28)
-	TemaHUD.estilizar_boton(mas)
+	mas.icon = IconosHUD.icono("btn_subir")
+	if mas.icon == null:
+		mas.text = "+"
+	mas.expand_icon = true
+	mas.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mas.custom_minimum_size = Vector2(24, 24)
+	mas.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mas.tooltip_text = "Ingresar al baúl"
+	TemaHUD.estilizar_boton_icono(mas)
 	mas.pressed.connect(func() -> void:
 		Economia.agregar_uno(esquina, recurso, _incremento()))
-	fila.add_child(menos)
-	fila.add_child(mas)
-	var margen_der := Control.new()
-	margen_der.custom_minimum_size = Vector2(4, 0)
-	margen_der.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fila.add_child(margen_der)
-	_filas[recurso] = {"fila": fila, "etiqueta": etiqueta, "menos": menos, "mas": mas}
+	var menos := Button.new()
+	menos.icon = IconosHUD.icono("btn_bajar")
+	if menos.icon == null:
+		menos.text = "-"
+	menos.expand_icon = true
+	menos.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menos.custom_minimum_size = Vector2(24, 24)
+	menos.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	menos.tooltip_text = "Retirar del baúl"
+	TemaHUD.estilizar_boton_icono(menos)
+	menos.pressed.connect(func() -> void:
+		Economia.retirar_uno(esquina, recurso, _incremento()))
+	cont_acciones.add_child(mas)
+	cont_acciones.add_child(menos)
+	fila.add_child(cont_acciones)
+	_filas[recurso] = {"fila": fila, "nombre": lbl_nombre, "etiqueta": etiqueta, "menos": menos, "mas": mas}
 	return fila
 
 

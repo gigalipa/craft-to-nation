@@ -84,12 +84,13 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["refineria_tierras_raras", "Tierras raras", "2"],
 		["aserradero", "Aserradero", "3"],
 		["fabrica_bloques", "Fábrica de bloques", "4"],
-		["carbonera", "Carbonera", "5"],
-		["refineria_petrolera", "Refinería petrolera", "6"],
-		["productor_combustible", "Productor combustible", "7"],
-		["central_termoelectrica", "Central termoeléctrica", "8"],
-		["almacen", "Almacén", "9"],
-		["taller_transporte", "Taller de transporte", "0"],
+		["vidriera", "Vidriera", "5"],
+		["carbonera", "Carbonera", "6"],
+		["refineria_petrolera", "Refinería petrolera", "7"],
+		["productor_combustible", "Productor combustible", "8"],
+		["central_termoelectrica", "Central termoeléctrica", "9"],
+		["almacen", "Almacén", "0"],
+		["taller_transporte", "Taller de transporte", "1"],
 	],
 	"investigacion": [
 		["escuela_tecnica", "Escuela técnica", "1"],
@@ -108,7 +109,7 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 ## Tipos con miniatura 3D real (incluyendo vías, acueducto y tubería)
 const TIPOS_CON_MINIATURA := [
 	"residencial", "mina", "caza_recoleccion", "maderero", "pesca_frutos_mar",
-	"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera",
+	"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera",
 	"refineria_petrolera", "productor_combustible", "central_termoelectrica",
 	"escuela_tecnica", "escuela_especialistas", "universidad",
 	"estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte",
@@ -140,6 +141,7 @@ const METADATOS_CONSTRUCCION := {
 	"refineria_tierras_raras": [["hierro"], true, "tierras_raras"],
 	"aserradero": [["madera"], false, "tablas"],
 	"fabrica_bloques": [["piedra"], false, "bloques_piedra"],
+	"vidriera": [["tierra", "carbon"], false, "vidrio"],
 	"carbonera": [["tierra"], false, "carbon"],
 	"refineria_petrolera": [["hierro"], true, "combustible"],
 	"productor_combustible": [["piedra"], true, "combustible"],
@@ -410,7 +412,7 @@ static func recursos_ordenados_de_construccion(tipo: String) -> Array:
 				elif c in ["d", "D", "s", "S", "B", "M"]:
 					conteo["madera"] = conteo.get("madera", 0) + 1
 				elif c == "V":
-					conteo["tierra"] = conteo.get("tierra", 0) + 1
+					conteo["vidrio"] = conteo.get("vidrio", 0) + 1
 
 	var pares := []
 	for r in conteo:

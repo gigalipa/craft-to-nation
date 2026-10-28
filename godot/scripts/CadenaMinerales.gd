@@ -21,6 +21,7 @@ const REFINERIAS := {
 	"refineria_tierras_raras": "tierras_raras",
 	"aserradero": "aserradero",
 	"fabrica_bloques": "fabrica_bloques",
+	"vidriera": "vidriera",
 	"carbonera": "carbonera",
 	"refineria_petrolera": "petroleo",
 	"productor_combustible": "combustible_sintetico",

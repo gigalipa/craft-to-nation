@@ -1,8 +1,13 @@
-# Godot 4.6 Technical Architecture & Simulation Engine
+---
+title: "Godot Technical Architecture & Simulation Engine"
+description: "Engine implementation details in Godot: Ciudad and Avatar autoloads, 3D GridMap, procedural terrain, fluid physics, and 28 automated test suites."
+---
+
+# Godot 4.7 Technical Architecture & Simulation Engine
 
 ![First-person construction HUD and voxel environment](/assets/hud-primera-persona-construccion.png)
 
-**Craft to Nation** is engineered in **Godot 4.6** (`GDScript`), combining pure simulation state managers (`RefCounted` modules and `Autoloads` without global `class_name` pollution) with a deterministic discrete tick loop decoupled from the rendering framerate.
+**Craft to Nation** is engineered in **Godot 4.7** (`GDScript`), combining pure simulation state managers (`RefCounted` modules and `Autoloads` without global `class_name` pollution) with a deterministic discrete tick loop decoupled from the rendering framerate.
 
 ---
 
@@ -28,19 +33,20 @@
 ## 2. Core Scripts & Autoloads (`godot/scripts/`)
 
 ### Simulation State Autoloads
-- **`Ciudad.gd`:** Master colony state: demographic census (`TIPOS_POBLACION`), Central Stockpile (`Ciudad.almacen`), Urban Levels `1–3` (`NIVELES_VIVIENDA`), university tech tree, continuous productivity curve, and the 9-tier stepped monthly migration table (`calcular_tasa_migracion_mensual`).
-- **`Economia.gd`:** Hourly economic dispatcher, raw material reserve quotas (`[0, 50, 100, 250, 500] u`), hauler task scheduling, electrical grid balance (`kW / MW`), and school training cohorts.
+- **`Ciudad.gd`:** Master colony state: demographic census (`TIPOS_POBLACION`), Central Stockpile (`Ciudad.almacen`) including the 6 food subcategories and refined `vidrio` (glass), Urban & Development Levels `I–IV` (`NIVELES_VIVIENDA`, three-pillar **D/C/S** balance and `IDU` indicator), two-layer decentralized tech tree (Theoretical University + Practical Applications), mobile transport fleet (`PARQUE_TRANSPORTE_TIPOS`), continuous productivity curve, and the 9-tier stepped monthly migration table (`calcular_tasa_migracion_mensual`).
+- **`Economia.gd`:** Hourly economic dispatcher, percentage-based raw material reserve quotas (`[0, 10, 20, 30, 40, 50] %`), hauler and mobile transport unit scheduling, **Itinerant Researcher (`Investigador Itinerante`)** travel, electrical grid balance (`kW / MW`), and school training cohorts.
 - **`Recoleccion.gd`:** Spatial registry of peripheral outposts, 6-hour environmental yield scans, outpost levels `I–III`, automatic level regression, and physical block/tree depletion.
-- **`CadenaMinerales.gd`:** Defines all 7 industrial refinement recipes (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
-- **`Canalizaciones.gd` & `Fluidos.gd`:** Elevated **`Y + 4`** modular fluid pipelines (with **`Y + 6`** conduit-over-conduit crossings), layer-4 fluid ports, rupture spill detection, and gravity/viscosity liquid spreading (drainable by placing a solid block over the liquid cell).
+- **`CadenaMinerales.gd`:** Defines all 8 industrial refinement recipes (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `vidriera`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
+- **`Canalizaciones.gd` & `Fluidos.gd`:** Elevated **`Y + 4`** modular fluid pipelines (with **`Y + 6`** conduit-over-conduit crossings), layer-4 fluid ports, rupture spill detection, and gravity/viscosity liquid spreading (drainable by placing a solid block over the liquid cell or drained automatically inside a building upon completion).
 - **`Zonificacion.gd`:** Manages **Zone A** and **Zone B** polygons inside the Urban Core's `30-cell` Area of Influence.
 
-### Voxel World, Agents & HUD Iconography (v3.57)
-- **`VoxelWorld.gd` & `GeneradorMundo.gd`:** Manages the **200×200** 3D `GridMap` (`y = 130` max height, 24 subsurface layers down to unmineable `bedrock`, 2 mountain peaks, 6 minerals, deep oil reservoirs, rivers with waterfalls, lakes, and seas) plus day/night lighting (`CicloDiaNoche.gd`).
-- **`ValidadorEdificios.gd` & `PlantillasPuesto.gd`:** Flood-fill airtight room detection, doorway/bed clearance audits, and rotatable (`90°`) facility templates.
-- **`Obras.gd`, `ConstructorVias.gd` & `NiveladorTerreno.gd`:** Construction and demolition jobsite management (up to `4` builders per site, `2 blocks/s` speed), work priorities (`High`, `Normal`, `Low`) with a 5-tier work dispatch hierarchy, and road laying with automatic ramps.
-- **`Colonos.gd` & `BuscadorRutas.gd`:** NPC agent finite state machine (FSM) and weighted A* pathfinding (cost `3` on packed dirt roads vs. cost `8` on natural terrain) with lateral yield priorities.
-- **`IconosHUD.gd` & `MiniaturaRenderer.gd`:** Centralized catalog of **90+ crisp pixel-art SVG icons** (`godot/assets/icons/*.svg`) and live 3D thumbnail renderer powering `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px` build buttons), `VentanaMoral.gd`, `VentanaEnergia.gd` (with one-click camera jump to generators/consumers), `VentanaAlmacen.gd`, `VentanaBaul.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd`, and `PanelCanalizacion.gd`.
+### Voxel World, Agents, Configuration & HUD Iconography (v3.57 – v3.59)
+- **`Ajustes.gd` & `Strings.gd`:** Centralized balance parameters and reactive localization. `Ajustes.gd` houses all numerical constants, movement speeds, demographic ratios, and economic rates designed for hot-reloading and modular "New Game" presets. `Strings.gd` manages multi-language catalogs (`Ajustes.idioma`) with static reactive getters dynamically reflecting current `Ajustes.*` variables without scene reloads.
+- **`VoxelWorld.gd`, `GeneradorMundo.gd` & `TranslucidosRenderer.gd`:** Manages the **200×200** 3D `GridMap` (`y = 130` max height, 24 subsurface layers down to unmineable `bedrock`, 2 mountain peaks, 6 minerals, deep oil reservoirs, rivers with waterfalls, lakes, and seas), day/night lighting (`CicloDiaNoche.gd`), and `1/20`-thick (`0.05m`) transparent window panels (`vidrio`) in 3 geometric variants (`ventana` straight mid-depth facing the avatar, `ventana_esquina` L-corner rotated 90° on Y, and `ventana_techo` flush against the top face `Y ∈ [0.95, 1.0]` when placed while looking up or down).
+- **`ValidadorEdificios.gd` & `PlantillasPuesto.gd`:** Flood-fill airtight room detection, doorway/bed clearance audits, and rotatable (`90°`) facility templates (including `vidriera` `5×6` adobe and `taller_transporte`).
+- **`Obras.gd`, `ConstructorVias.gd` & `NiveladorTerreno.gd`:** Construction and demolition jobsite management (up to `4` builders per site, `2 blocks/s` speed), work priorities (`High`, `Normal`, `Low`) adjusted via up/down (`▲`/`▼`) buttons, automatic interior water drainage upon reaching 100%, and road laying with automatic ramps.
+- **`Colonos.gd` & `BuscadorRutas.gd`:** NPC agent finite state machine (FSM) and weighted A* pathfinding (cost `3` on packed dirt roads vs. cost `8` on natural terrain) with lateral yield priorities and support for mobile transport vehicles (`exige_via = true` road constraints and `1.2 m/s` slow-crawl fallback).
+- **`IconosHUD.gd` & `MiniaturaRenderer.gd`:** Centralized catalog of **95+ crisp pixel-art SVG icons** (`godot/assets/icons/*.svg`, including `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg`, and `btn_bajar.svg`) and live 3D thumbnail renderer powering `BarraSuperior.gd` (with Era name + icon and right-side Roman IDU badge with top-right hover tooltip), `BarraModos.gd` (`104×76 px` build buttons), `VentanaMoral.gd`, `VentanaEnergia.gd` (with one-click camera jump to generators/consumers), `VentanaAlmacen.gd` (A–Z raw materials with hierarchical dropdowns and `[Expand All]`/`[Collapse All]` button), `VentanaBaul.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd` (with automatic transition to the finished building panel), and `PanelCanalizacion.gd`.
 
 ---
 

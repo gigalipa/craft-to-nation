@@ -125,7 +125,7 @@ static func _formatear_con_iconos_costo(texto: String) -> String:
 	var recursos: Array[String] = [
 		"bloques_piedra", "mineral_refinado", "tierras_raras",
 		"piedra", "madera", "tierra", "hierro", "cobre", "carbon",
-		"acero", "tablas", "agua", "crudo", "combustible", "comida"
+		"acero", "tablas", "vidrio", "agua", "crudo", "combustible", "comida"
 	]
 	for parte in partes:
 		var p: String = parte
@@ -148,7 +148,7 @@ static func _formatear_con_iconos_extra(texto: String) -> String:
 	var recursos: Array[String] = [
 		"bloques_piedra", "mineral_refinado", "tierras_raras",
 		"piedra", "madera", "tierra", "hierro", "cobre", "carbon",
-		"acero", "tablas", "agua", "crudo", "combustible", "comida"
+		"acero", "tablas", "vidrio", "agua", "crudo", "combustible", "comida"
 	]
 	for linea in lineas:
 		var l: String = linea

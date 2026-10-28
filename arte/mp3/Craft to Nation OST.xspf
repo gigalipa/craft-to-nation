@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist xmlns="http://xspf.org/ns/0/" xmlns:vlc="http://www.videolan.org/vlc/playlist/ns/0/" version="1">
+	<title>Lista de reproducción</title>
+	<trackList>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Clockwork_logistics%20(loop).mp3</location>
+			<title>Clockwork Logistics</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>214248</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>0</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Clockwork_logistics_2%20(loop).mp3</location>
+			<title>Clockwork Logistics 2</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>211968</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>1</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Cozy_colony%20(loop).mp3</location>
+			<title>Cozy Colony</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>120000</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>2</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Glitch_drift%20(loop).mp3</location>
+			<title>Glitch Drift</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>156432</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>3</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Glitch_drift_2%20(loop).mp3</location>
+			<title>Glitch Drift 2</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>163248</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>4</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Hard_stop%20(loop).mp3</location>
+			<title>Hard Stop</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>208800</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>5</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Hard_stop_2%20(loop).mp3</location>
+			<title>Hard Stop 2</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>184800</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>6</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Morning_at_the_Steel_Spire%20(loop).mp3</location>
+			<title>Morning at the Steel Spire</title>
+			<album>Craft to Nation OST</album>
+			<duration>121260</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>7</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/Seamless_loop%20%20(loop).mp3</location>
+			<title>Seamless Loop</title>
+			<creator>gigalipa</creator>
+			<album>Craft to Nation OST</album>
+			<image>file:///C:/Users/peraz/AppData/Roaming/vlc/art/artistalbum/gigalipa/Craft%20to%20Nation%20OST/art.jpg</image>
+			<duration>187632</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>8</vlc:id>
+			</extension>
+		</track>
+		<track>
+			<location>file:///C:/Users/peraz/Projects/Misc/CityCraft/arte/mp3/The_Architect_s_Decree%20(menu).mp3</location>
+			<title>The Architect&#39;s Decree</title>
+			<album>Craft to Nation OST</album>
+			<duration>173322</duration>
+			<extension application="http://www.videolan.org/vlc/playlist/0">
+				<vlc:id>9</vlc:id>
+			</extension>
+		</track>
+	</trackList>
+	<extension application="http://www.videolan.org/vlc/playlist/0">
+		<vlc:item tid="0"/>
+		<vlc:item tid="1"/>
+		<vlc:item tid="2"/>
+		<vlc:item tid="3"/>
+		<vlc:item tid="4"/>
+		<vlc:item tid="5"/>
+		<vlc:item tid="6"/>
+		<vlc:item tid="7"/>
+		<vlc:item tid="8"/>
+		<vlc:item tid="9"/>
+	</extension>
+</playlist>

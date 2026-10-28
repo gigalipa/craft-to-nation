@@ -32,7 +32,7 @@ const SIN_PUESTO := Vector2i(-99999, -99999)
 ## Madera/h por recolector bajo la cual un maderero se da por agotado (decisión del usuario, 2026-10-02).
 static var UMBRAL_AGOTADO_MADERERO: float = Ajustes.RECOLECCION_UMBRAL_AGOTADO_MADERERO
 
-const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte"]
+const TIPOS_PUESTO_TRABAJO := ["mina", "caza_recoleccion", "maderero", "pesca_frutos_mar", "siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte"]
 ## Escuelas: tipo de puesto -> {"origen", "destino", "horas"} (tipos de Ciudad.TIPOS_POBLACION). Una cohorte de
 ## x_cama[origen] colonos de origen sale como x_cama[destino] colonos de destino: la vivienda ocupada se
 ## conserva (4 obreros = 3 técnicos, 3 técnicos = 2 especialistas) y quien sobra se va de la ciudad.

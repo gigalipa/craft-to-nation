@@ -146,6 +146,37 @@ static func estilizar_dialogo(dialogo: AcceptDialog) -> void:
 			cancel.expand_icon = true
 
 
+## Construye un control de tooltip estilizado acorde al HUD (marco dorado, fondo oscuro verde y textos jerárquicos).
+static func crear_tooltip(texto: String) -> Control:
+	if texto.strip_edges().is_empty():
+		return null
+	var panel := PanelContainer.new()
+	var estilo := caja(Color(0.06, 0.12, 0.09, 0.95), DORADO)
+	estilo.set_content_margin_all(8)
+	panel.add_theme_stylebox_override("panel", estilo)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 2)
+	panel.add_child(vbox)
+
+	var lineas := texto.strip_edges().split("\n")
+	for i in range(lineas.size()):
+		var linea := lineas[i]
+		var lbl := Label.new()
+		lbl.text = linea
+		lbl.add_theme_font_size_override("font_size", 12)
+		if i == 0:
+			lbl.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+			lbl.add_theme_font_size_override("font_size", 13)
+		elif linea.begins_with("Doctrina:"):
+			lbl.add_theme_color_override("font_color", DORADO)
+		else:
+			lbl.add_theme_color_override("font_color", TEXTO)
+		vbox.add_child(lbl)
+
+	return panel
+
+
 ## Ancla "etiqueta" a la esquina inferior izquierda (o derecha) de su padre, que debe ser un Control
 ## simple (un Container pisaría las anclas), a MARGEN_X / MARGEN_Y del marco. Crece hacia adentro,
 ## así que sirve para textos que cambian de ancho. Los márgenes se miden desde el borde exterior del

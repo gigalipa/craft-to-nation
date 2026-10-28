@@ -1,3 +1,8 @@
+---
+title: "Beginner's Survival & Settlement Guide"
+description: "Master first-person and overhead controls, foraging, manual mining, the core survival loop, and founding your first town core in Craft to Nation."
+---
+
 # Beginner's Survival & Settlement Guide
 
 ![From pioneer shelter to industrial metropolis](/assets/citycraft-hero.webp)
@@ -23,6 +28,10 @@ The game lets you switch seamlessly between your physical avatar in First-Person
 - <kbd>Left Click</kbd> (hold): Chop trees (`herr_hacha.svg`, `1.0s` per trunk health point), mine terrain or mineral veins with a progress bar and contextual tool icon (`herr_pala.svg` on dirt `0.4s`; `herr_pico.svg` on stone/coal `1.2s`, iron/copper `1.6s`, rare earths `2.4s`), or dismantle blocks step-by-step if <kbd>G</kbd> deconstruction mode is active.
 - <kbd>Right Click</kbd>: Place the block selected in the hotbar (`1`–`0`), supply a targeted ghost construction site by aiming at its ghost blocks or exterior wall, or **drain/dry flooded cells** (`agua` or `crudo`) by placing a solid block directly into the liquid.
 - <kbd>1</kbd> – <kbd>9</kbd>, <kbd>0</kbd> / <kbd>Mouse Wheel</kbd>: Select block type in the 10-slot hotbar (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`).
+  - **Window Block (`vidrio`, key <kbd>6</kbd>):** Consumes `1 Glass` first (or `3 Earth` if no glass is available) and renders as a **`1/20`-thick (`0.05m`) transparent panel** in 3 automatic geometric variants:
+    - **Straight Window (`ventana`):** When aiming horizontally, sits at mid-depth (`0.475..0.525`) with its front face oriented toward your avatar (front and back faces only).
+    - **Corner Window (`ventana_esquina`):** At a corner between another window block and an adjacent wall, automatically forms an "L"-shaped corner panel rotated 90° on Y.
+    - **Ceiling Window (`ventana_techo`):** When placing a window block while looking **upward from below** or **downward from above**, it always sits **flush against the top face of the voxel (`Y ∈ [0.95, 1.0]`)** with only top and bottom faces.
 - <kbd>E</kbd>:
   - **Press:** Open/close doors, or open an active peripheral outpost's chest (`VentanaBaul`, centered `320×260` window with `-`, `+`, and `"Extraer todo"`).
   - **Hold (`2.0s`) on a tree:** **Harvest wild fruit** (`herr_cesta.svg`, yields **60 food units** without chopping down the tree; fruit regrows after `24 in-game hours`).
@@ -48,7 +57,7 @@ The game lets you switch seamlessly between your physical avatar in First-Person
   - <kbd>1</kbd> **Build Menu (`Construir`):**
     - `1` **Residential (`Residencial`):** Slots `1`–`5` for saved blueprints (`Residencia [beds]x[chests]`).
     - `2` **Peripheral (`Periférico`):** `1` Hunting, `2` Lumber, `3` Mine, `4` Fishing, `5` Pumping Station, `6` Extraction Center.
-    - `3` **Industrial (`Industrial`):** `1` Steelworks, `2` Rare Earths, `3` Sawmill, `4` Block Factory, `5` Charcoal Kiln, `6` Oil Refinery, `7` Fuel Producer, `8` Thermal Power Plant, `9` Warehouse (`Almacén`).
+    - `3` **Industrial (`Industrial`):** `1` Steelworks, `2` Rare Earths, `3` Sawmill, `4` Block Factory, `5` **Glassworks (`Vidriera`)**, `6` Charcoal Kiln, `7` Oil Refinery, `8` Fuel Producer, `9` Thermal Power Plant, `0` Transport Workshop / Warehouse (`Almacén`).
     - `4` **Research (`Investigación`):** `1` Technical School, `2` Specialist School, `3` University.
     - `5` **Roads (`Vías`):** `1` Trace Road *(in overhead view, road tracing is accessed via `1 -> 5 -> 1`, not the `V` key)*.
     - `6` **Conduits (`Ductos`):** `1` Aqueduct, `2` Pipeline.

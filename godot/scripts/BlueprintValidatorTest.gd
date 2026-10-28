@@ -1598,6 +1598,29 @@ func ejecutar_pruebas() -> void:
 	assert(mundo.minar_bloque(celda_terreno_48e), "vuelve a ser minable como cualquier terreno")
 	print("OK: quitar un edificio recién emplazado no abre huecos en el terreno.")
 
+	print("\n=== TEST 48f: eliminar_edificio() encola escurrimiento de agua vecina hacia las celdas vaciadas ===")
+	const OX48F := 1460
+	var piso_agua_48f := Vector3i(OX48F, 0, OX48F)
+	var agua_48f := Vector3i(OX48F, 1, OX48F)
+	var piso_edif_48f := Vector3i(OX48F + 1, 0, OX48F)
+	var celda_edif_48f := Vector3i(OX48F + 1, 1, OX48F)
+	mundo.colocar_bloque(piso_agua_48f, "piedra")
+	mundo.colocar_bloque(agua_48f, "agua")
+	mundo.colocar_bloque(piso_edif_48f, "piedra")
+	# Bloquear los otros 3 lados del agua para canalizarla hacia celda_edif_48f
+	mundo.colocar_bloque(Vector3i(OX48F - 1, 1, OX48F), "piedra")
+	mundo.colocar_bloque(Vector3i(OX48F, 1, OX48F + 1), "piedra")
+	mundo.colocar_bloque(Vector3i(OX48F, 1, OX48F - 1), "piedra")
+	var id_48f: int = mundo.iniciar_construccion_fantasma([], {}, [celda_edif_48f], {celda_edif_48f: "bloque_madera"})
+	mundo.surtir_construccion(celda_edif_48f)
+	assert(mundo.obtener_tipo(celda_edif_48f) == "bloque_madera")
+	assert(mundo.procesar_deconstruccion(celda_edif_48f)["lista_para_remocion"])
+	mundo.eliminar_edificio(id_48f)
+	assert(mundo.obtener_tipo(celda_edif_48f) == "", "la celda del edificio eliminado queda vacía")
+	mundo._drenar_escurrimiento_para_pruebas()
+	assert(mundo.obtener_tipo(celda_edif_48f) == "agua", "el agua adyacente debe escurrirse hacia el espacio recién liberado")
+	print("OK: eliminar_edificio() despierta el agua vecina y esta fluye a las celdas vaciadas.")
+
 	print("\n=== TEST 49: celdas_fantasma_destacadas() marca solo puertas y ventanas todavía fantasma, y se actualiza al surtir y deconstruir ===")
 	# Mundo PROPIO para las pruebas 49-50: celdas_fantasma_destacadas() recorre TODOS los
 	# edificios del mundo, y las pruebas anteriores dejan en `mundo` edificios con

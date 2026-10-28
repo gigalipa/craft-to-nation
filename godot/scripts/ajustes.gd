@@ -128,6 +128,7 @@ static var COLORES_RECURSO_CARGA: Dictionary = {
 	"crudo": Color("#141210"),
 	"combustible": Color("#e6a626"),
 	"agua": Color("#2680d9"),
+	"vidrio": Color("#99d9e0"),
 }
 
 static var COLOR_PIEL_COLONO: Color = Color("#e0b38f")
@@ -411,7 +412,7 @@ static var CIUDAD_COSTOS_INVESTIGACION: Dictionary = {
 	3: {"nombre": "Automatización Industrial", "hierro": 800, "madera": 100, "horas_investigador": 50},
 }
 static var CIUDAD_TIPO_INSTALACION: Dictionary = {
-	"siderurgica": 2, "refineria_tierras_raras": 2, "aserradero": 2, "carbonera": 2,
+	"siderurgica": 2, "refineria_tierras_raras": 2, "aserradero": 2, "fabrica_bloques": 2, "carbonera": 2, "vidriera": 2,
 	"refineria_petrolera": 3, "productor_combustible": 3, "central_termoelectrica": 3,
 }
 static var CIUDAD_MINIMO_INSTALACIONES_NIVEL: int = 3
@@ -581,6 +582,7 @@ static var CADENA_MINERALES_RECETAS: Dictionary = {
 	"tierras_raras": {"entradas": {"tierras_raras": 3}, "tipo_salida": "mineral_refinado", "cantidad_salida": 1, "tasa_base": 0.5, "energia_por_lote": 0},
 	"aserradero": {"entradas": {"madera": 1}, "tipo_salida": "tablas", "cantidad_salida": 3, "tasa_base": 0.5, "energia_por_lote": 0},
 	"fabrica_bloques": {"entradas": {"piedra": 1}, "tipo_salida": "bloques_piedra", "cantidad_salida": 3, "tasa_base": 0.5, "energia_por_lote": 0},
+	"vidriera": {"entradas": {"tierra": 1, "carbon": 1}, "tipo_salida": "vidrio", "cantidad_salida": 3, "tasa_base": 0.5, "energia_por_lote": 0},
 	"carbonera": {"entradas": {"madera": 3}, "tipo_salida": "carbon", "cantidad_salida": 1, "tasa_base": 2.0, "energia_por_lote": 0},
 	"petroleo": {"entradas": {"crudo": 2}, "tipo_salida": "combustible", "cantidad_salida": 1, "tasa_base": 1.0, "energia_por_lote": 1},
 	"combustible_sintetico": {"entradas": {"carbon": 3, "agua": 1}, "tipo_salida": "combustible", "cantidad_salida": 2, "tasa_base": 1.0, "energia_por_lote": 1},
@@ -612,7 +614,7 @@ static var NIVELADOR_TERRENO_COSTO_POR_CELDA: Dictionary = {
 	"bloque_piedra": {"piedra": 5},
 	"estructura_hierro": {"hierro": 5},
 	"bloque_acero": {"acero": 3},
-	"vidrio": {"tierra": 1},
+	"vidrio": {"vidrio": 1},
 	"puerta_inferior": {"madera": 1},
 	"puerta_superior": {"madera": 1},
 	"puerta": {"madera": 2},
@@ -888,7 +890,7 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 		"penalizacion_tierra": 1.0,
 		"era_minima": 3,
 		"tech_requerida": "quimica_hidrocarburos",
-		"costo_fabricacion": {"acero": 80.0, "combustible": 50.0, "tierra": 20.0},
+		"costo_fabricacion": {"acero": 80.0, "combustible": 50.0, "vidrio": 20.0},
 		"tiempo_fabricacion": 40.0,
 	},
 	"dron_carga": {
@@ -918,9 +920,7 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 		"penalizacion_tierra": 1.0,
 		"era_minima": 3,
 		"tech_requerida": "redes_electricas_bobinado",
-		"costo_fabricacion": {"tablas": 50.0, "acero": 40.0, "cobre": 30.0, "tierra": 15.0},
+		"costo_fabricacion": {"tablas": 50.0, "acero": 40.0, "cobre": 30.0, "vidrio": 15.0},
 		"tiempo_fabricacion": 35.0,
 	},
 }
-
-

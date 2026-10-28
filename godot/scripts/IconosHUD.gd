@@ -26,6 +26,8 @@ const MAPA_ICONOS := {
 	"agua": "agua.svg",
 	"crudo": "crudo.svg",
 	"combustible": "combustible.svg",
+	"vidrio": "vidrio.svg",
+	"vidriera": "vidrio.svg",
 
 	# Demografía y Oficios
 	"censo": "censo.svg",
@@ -58,6 +60,7 @@ const MAPA_ICONOS := {
 	"romano_1": "romano_1.svg",
 	"romano_2": "romano_2.svg",
 	"romano_3": "romano_3.svg",
+	"romano_4": "romano_4.svg",
 	"alerta": "alerta.svg",
 	"era": "era.svg",
 
@@ -130,6 +133,8 @@ const MAPA_ICONOS := {
 	# Botones de acción y LEDs
 	"btn_mas": "btn_mas.svg",
 	"btn_menos": "btn_menos.svg",
+	"btn_subir": "btn_subir.svg",
+	"btn_bajar": "btn_bajar.svg",
 	"btn_pausa": "btn_pausa.svg",
 	"btn_play": "btn_play.svg",
 	"extraer_todo": "extraer_todo.svg",
@@ -246,6 +251,7 @@ static func icono_nivel_romano(nivel: int) -> String:
 		1: return "romano_1"
 		2: return "romano_2"
 		3: return "romano_3"
+		4: return "romano_4"
 		_: return "romano_1"
 
 

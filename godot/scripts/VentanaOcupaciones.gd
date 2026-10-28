@@ -34,6 +34,8 @@ const CATEGORIA_DE_TIPO := {
 	"siderurgica": "industria",
 	"refineria_tierras_raras": "industria",
 	"aserradero": "industria",
+	"fabrica_bloques": "industria",
+	"vidriera": "industria",
 	"carbonera": "industria",
 	"refineria_petrolera": "industria",
 	"productor_combustible": "industria",

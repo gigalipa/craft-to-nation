@@ -1,5 +1,7 @@
 ---
 layout: home
+title: "Craft to Nation Wiki — Documentación Oficial"
+description: "Wiki oficial y manual técnico de Craft to Nation. Guías de supervivencia en primera persona, gestión de colonias voxel, diseño técnico y GDD v3.59."
 
 hero:
   name: "Craft to Nation"
@@ -13,7 +15,7 @@ hero:
       text: Guía del Jugador
       link: /es/guia/inicio
     - theme: alt
-      text: Desarrollo & GDD v3.57
+      text: Desarrollo & GDD v3.59
       link: /es/dev/gdd
     - theme: alt
       text: Sitio Principal
@@ -26,8 +28,8 @@ features:
     details: Aprende sobre recolección inicial, cámara dual (tecla C), zonificación A/B, edificios herméticos y calculadora de colonos.
     link: /es/guia/inicio
   - icon: ⚙️
-    title: Arquitectura Técnica y GDD v3.57
-    details: Conoce los sistemas en Godot 4.6, bucle de ticks (2.0s = 1h), iconografía vectorial HUD, logística de ductos y 28 suites de pruebas.
+    title: Arquitectura Técnica y GDD v3.59
+    details: Conoce los sistemas en Godot 4.7, bucle de ticks (2.0s = 1h), IDU I-IV e investigación en 2 capas, Vidriera, Taller de Transporte, iconografía vectorial HUD y 28 suites de pruebas.
     link: /es/dev/gdd
   - icon: 🌐
     title: Documentación Multilingüe

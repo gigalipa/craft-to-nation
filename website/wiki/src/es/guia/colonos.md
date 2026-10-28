@@ -1,3 +1,8 @@
+---
+title: "Gestión Demográfica y Colonos"
+description: "Sistema de moral dinámica [0-100], productividad laboral continua X=0.5*2^(Y/50), asignación de oficios, buffers de vivienda y prevención de fuga de cerebros."
+---
+
 # Gestión Demográfica y Colonos
 
 En *Craft to Nation*, los colonos no son meros autómatas decorativos: constituyen la fuerza viva, productiva y cívica de tu nación. Cada habitante posee necesidades biológicas, una especialización laboral, un estado de alojamiento y un nivel de moral que influye de forma directa en su productividad.
@@ -34,21 +39,21 @@ La demografía de la colonia se organiza en una jerarquía de oficios. Los colon
 3. **Escuela Técnica (`escuela_tecnica`):** Entrena una cohorte de **4 Obreros** (1 cama) durante **24 horas de juego** para graduar **3 Técnicos** (1 cama), habilitando la operación de industrias de Zona B, estaciones de bombeo/extracción y mejoras de puestos a Nivel II.
 4. **Escuela de Especialistas (`escuela_especialistas`):** Entrena una cohorte de **3 Técnicos** (1 cama) durante **48 horas de juego** para graduar **2 Especialistas** (1 cama), habilitando puestos periféricos de Nivel III y la dotación académica de la Universidad.
 5. **Cancelación de Cursos con Reembolso del 100 %:** En el panel contextual de las escuelas (<kbd>E</kbd> en 1.ª persona o clic izquierdo en vista cenital), puedes cancelar un curso en marcha antes de su graduación, reembolsando el **100 % de los recursos y alumnos** al almacén y censo municipal.
-6. **Universidad (`universidad`):** Emplea hasta **3 Investigadores** (`1,0 hora_investigador/h` cada uno) para investigar **Metalurgia Aplicada** (`20 h_inv`, `300 Hierro`, `200 Madera`) y **Automatización Industrial** (`50 h_inv`, `800 Hierro`, `100 Madera`).
+6. **Universidad e Investigación en 2 Capas (`universidad`):** Emplea hasta **3 Investigadores** (`1,0 hora_investigador/h` cada uno) para desarrollar ciencia teórica en la Universidad (**Capa 1**) y enviar un **Investigador Itinerante** que camina físicamente hasta los edificios productivos o el Núcleo Urbano para completar las aplicaciones prácticas *in situ* (**Capa 2**).
 7. **Ventanas de Población (<kbd>P</kbd>) y Ocupaciones (<kbd>O</kbd>):** Permiten asignar o retirar trabajadores con controles `[-]` / `[+]` organizados en categorías desplegables (`▼ Recolección`, `▼ Industria`, `▼ Investigación`, `▼ Energía`).
 
 ---
 
-## 3. Sistema de Moral Dinámica (GDD v3.57)
+## 3. Sistema de Moral Dinámica (GDD v3.59)
 
-El estado anímico colectivo de la colonia se cuantifica en una escala continua de **0 a 100 puntos** (consultable en la barra superior o presionando <kbd>M</kbd> para abrir `VentanaMoral.gd`):
+El estado anímico colectivo de la colonia se cuantifica en una escala continua de **0 a 100 puntos** (consultable en la barra superior o presionando <kbd>M</kbd> para abrir `VentanaMoral.gd`, donde el estado de migración se muestra directamente en la línea inferior bajo la productividad laboral):
 - **Inicio de Partida:** La colonia inicia con una moral de **75,0** (bono pionero de optimismo).
 - **Inercia Natural:** La moral converge progresivamente hacia el punto neutro de **50,0** con un factor de inercia de **0,02**.
 - **Aplicación Diaria (`tasa_cambio_moral / 24.0`):** En `Ciudad.gd`, la suma neta de modificadores conforma la **tasa de cambio diaria** (`ΔM / día`), que se aplica en fracciones de `ΔM / 24,0` en cada tick horario (`2,0 s` reales).
 
 ### Factores de Modificación Diaria (`tasa_cambio_moral`)
 - **Superávit de Bienes y Alimentos:** `+0,4` puntos / día (cuando los recursos superan el 50 % de capacidad).
-- **Diversidad de Dieta:** Hasta `+0,5` puntos / día según variedad de fuentes alimentarias.
+- **Diversidad de Dieta (6 Categorías de Comida):** Hasta `+0,5` puntos / día según la variedad de categorías alimentarias disponibles en el almacén (`Frutos silvestres`, `Carne de caza`, `Pescado y algas`, `Cultivos agrícolas`, `Panadería y granos`, `Conservas industriales`).
 - **Escasez Alimentaria:** `-0,6` puntos / día cuando el stock cae por debajo del umbral de seguridad (`< 20 %`).
 - **Hambruna Crítica:** `-3,0` puntos / día cuando el almacén de comida se vacía por completo (`0 u`).
 - **Déficit Energético:** Hasta `-1,5` puntos / día proporcional al déficit de la red eléctrica.

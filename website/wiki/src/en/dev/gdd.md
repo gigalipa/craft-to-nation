@@ -1,4 +1,9 @@
-# Game Design Document (GDD v3.57)
+---
+title: "Game Design Document (GDD v3.59)"
+description: "Technical Game Design Document (GDD v3.59) for Craft to Nation: hybrid voxel survival, organic city planning, hourly simulation tick, centralized settings, Glassworks, IDU I-IV, and finite world economics."
+---
+
+# Game Design Document (GDD v3.59)
 
 **Slogan:** *From first block to living nation.*  
 **Campaign Motto:** *Survive. Craft. Automate. Lead.*  
@@ -57,9 +62,12 @@
 
 ---
 
-## 3. Key Innovations Consolidated in GDD v3.56 – v3.57
+## 3. Key Innovations Consolidated in GDD v3.57 – v3.59
 
-- **Vector HUD Iconography (`IconosHUD.gd`) & Live 3D Thumbnails (`MiniaturaRenderer.gd`):** Centralized catalog of **90+ crisp pixel-art SVG icons** (`shape-rendering="crispEdges"`), enlarged `104×76 px` build buttons with 3-corner overlays (input stack top-left, electric bolt top-center, output badge top-right), and real-time 3D thumbnails.
+- **Vector HUD Iconography (`IconosHUD.gd`) & Live 3D Thumbnails (`MiniaturaRenderer.gd`):** Centralized catalog of **95+ crisp pixel-art SVG icons** (`shape-rendering="crispEdges"`, including `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg`, and `btn_bajar.svg`), enlarged `104×76 px` build buttons with 3-corner overlays (input stack top-left, electric bolt top-center, output badge top-right), and real-time 3D thumbnails.
 - **Electrical Grid in kW / MW (`BarraSuperior.gd`, `VentanaEnergia.gd`):** Interactive tri-color lightning bolt indicator (gold = surplus, gray = zero demand, red = deficit) with a per-building power breakdown window.
-- **Daily Morale Rate & Stepped Monthly Migration (`Ciudad.gd`):** Daily morale rate applied in hourly fractions (`tasa_cambio_moral / 24.0`) and a **9-tier stepped monthly migration table** (`-5` to `+5 colonists/month`), restricting immigration to open beds when `Morale <= 50` and overflowing into `sin_techo` when `Morale > 50`.
+- **Daily Morale Rate & Stepped Monthly Migration (`Ciudad.gd`):** Daily morale rate applied in hourly fractions (`tasa_cambio_moral / 24.0`), `VentanaMoral` with migration status positioned directly below labor productivity, and a **9-tier stepped monthly migration table** (`-5` to `+5 colonists/month`), restricting immigration to open beds when `Morale <= 50` and overflowing into `sin_techo` when `Morale > 50`.
+- **Centralized Runtime Settings & Reactive Strings (`ajustes.gd` & `strings.gd`):** Full decoupling of balance parameters, economic values, demography, and construction costs in `ajustes.gd` enabling runtime hot-reloading and modular "New Game" presets. Synchronized with `strings.gd` for native multi-language catalogs (`Ajustes.idioma`) and static reactive getters that evaluate active values on the fly without reloading scripts.
+- **Era Progression, IDU (`I`–`IV`) & Two-Layer Decentralized Tech Tree (v3.59):** Topbar Era name + icon indicator and right-side Roman numeral **IDU** badge (`I`–`IV`) with a top-right hover tooltip window breaking down Demographic (`D`), Scientific (`C`), and Material Sophistication (`S`) pillars. Two-layer research splits **Theoretical Science** (University) from **Practical Applications** initiated at target buildings via a physical **Itinerant Researcher (`Investigador Itinerante`)**.
+- **Glassworks Refinery (`Vidriera`), Glass (`Vidrio`), Transport Workshop & `1/20` Window Panels (v3.59):** New `5×6` adobe **Glassworks (`1-3-5`)** refining `1 Earth + 1 Coal → 3 Glass`; **Transport Workshop** assembling 6 haulage unit types (`acarreador_pie`, `carreta_mano`, `carro_caballos`, `camion_diesel`, `trolebus_solar`, `dron_carga`, with road requirements and exclusive `vidrio` windshields); `1/20`-thick (`0.05m`) window panels (`TranslucidosRenderer.gd`) in 3 geometric variants (`ventana` straight mid-depth facing the avatar, `ventana_esquina` L-corner, and `ventana_techo` flush against the top face `Y ∈ [0.95, 1.0]` when looking up/down) consuming `1 Glass` first (or `3 Earth`); `VentanaAlmacen` with A–Z raw material dropdowns (`▶`/`▼`) for refined goods and 6 food categories plus an `[Expand All]`/`[Collapse All]` button; percentage-based `Reserva central:` (`0%–50%`); and `PanelEdificio` with `▲`/`▼` priority buttons, automatic panel transition at 100%, and interior water drainage.
 - **Automated Verification Suite:** **28 independent test scenes** running **100% in green**.

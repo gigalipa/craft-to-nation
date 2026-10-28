@@ -29,6 +29,7 @@ func _ready() -> void:
 	_camara_transicion.current = false
 	add_child(_camara_transicion)
 	jugador.mundo = mundo
+	zona_overlay.mundo = mundo
 	Zonificacion.limite_mundo = Vector2i(mundo.ANCHO_MUNDO, mundo.LARGO_MUNDO)
 	Colonos.mundo = mundo
 	Obras.mundo = mundo
@@ -43,6 +44,10 @@ func _ready() -> void:
 	mundo.obra_a_fantasma.connect(jugador._on_obra_a_fantasma)
 	Colonos.colono_creado.connect(func(_id: int) -> void: hud.notificar(Strings.NOTIF_NUEVO_COLONO))
 	Colonos.tecnicos_formados.connect(func(cantidad: int) -> void: hud.notificar(Strings.NOTIF_TECNICOS_FORMADOS % cantidad))
+	Ciudad.recurso_escaso_notificado.connect(func(clave: String) -> void:
+		var nom: String = Strings.NOMBRES_RECURSO.get(clave, clave.capitalize())
+		hud.notificar(Strings.NOTIF_RECURSO_MENOS_5_PCT % nom)
+	)
 	var centro_x: int = mundo.ANCHO_MUNDO / 2
 	var centro_z: int = mundo.LARGO_MUNDO / 2
 	var altura_spawn: int = mundo.altura_en(centro_x, centro_z)

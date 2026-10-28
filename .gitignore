@@ -51,3 +51,19 @@ website/
 
 # Video edition media (grabaciones crudas y entregables de video/audio de gran tamano)
 video_edition/media/
+
+# Remotion & build caches
+.cache/
+.remotion/
+
+# Graphify machine-local state and cache
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+
+# Remotion builds and media
+video_edition/remotion/build/
+video_edition/remotion/out/
+video_edition/remotion/node_modules/
+video_edition/**/*.mp4
+*.mp4

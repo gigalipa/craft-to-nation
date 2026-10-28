@@ -13,6 +13,8 @@ const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
 
 ## Mensaje para el jugador (el HUD lo envía a las notificaciones).
 signal aviso(texto: String)
+## Petición para abrir el panel de puesto si esta obra era un puesto y se completó.
+signal solicitar_abrir_puesto(esquina: Vector2i)
 
 const NOMBRES_ESTADO := {"construccion": "En construcción", "demolicion": "En demolición", "demolicion_programada": "Demolición programada", "completo": "Completo"}
 
@@ -42,6 +44,11 @@ var _btn_racionamiento := Button.new()
 var _toggle_colonizable := Button.new()
 var _remodelar := Button.new()
 var _pausar := Button.new()
+var _fila_prioridad := HBoxContainer.new()
+var _icono_prioridad := TextureRect.new()
+var _lbl_prioridad := TemaHUD.etiqueta()
+var _btn_prioridad_subir := Button.new()
+var _btn_prioridad_bajar := Button.new()
 var _prioridad := Button.new()
 var _demoler := Button.new()
 var _asignar_nucleo := Button.new()
@@ -137,10 +144,42 @@ func _ready() -> void:
 			ciudad.alternar_decreto_racionamiento()
 			_actualizar())
 	caja.add_child(_btn_racionamiento)
-	for boton in [_toggle_colonizable, _remodelar, _pausar, _prioridad, _demoler, _asignar_nucleo]:
+	_fila_prioridad.add_theme_constant_override("separation", 6)
+	_fila_prioridad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_icono_prioridad.custom_minimum_size = Vector2(16, 16)
+	_icono_prioridad.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_fila_prioridad.add_child(_icono_prioridad)
+
+	_lbl_prioridad.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_lbl_prioridad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lbl_prioridad.size_flags_vertical = Control.SIZE_FILL
+	_fila_prioridad.add_child(_lbl_prioridad)
+
+	_btn_prioridad_subir.icon = IconosHUD.icono("btn_subir")
+	_btn_prioridad_subir.custom_minimum_size = Vector2(24, 24)
+	_btn_prioridad_subir.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_btn_prioridad_subir.expand_icon = true
+	_btn_prioridad_subir.tooltip_text = "Aumentar prioridad de construcción"
+	TemaHUD.estilizar_boton_icono(_btn_prioridad_subir)
+	_btn_prioridad_subir.pressed.connect(_on_subir_prioridad)
+	_fila_prioridad.add_child(_btn_prioridad_subir)
+
+	_btn_prioridad_bajar.icon = IconosHUD.icono("btn_bajar")
+	_btn_prioridad_bajar.custom_minimum_size = Vector2(24, 24)
+	_btn_prioridad_bajar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_btn_prioridad_bajar.expand_icon = true
+	_btn_prioridad_bajar.tooltip_text = "Reducir prioridad de construcción"
+	TemaHUD.estilizar_boton_icono(_btn_prioridad_bajar)
+	_btn_prioridad_bajar.pressed.connect(_on_bajar_prioridad)
+	_fila_prioridad.add_child(_btn_prioridad_bajar)
+
+	caja.add_child(_fila_prioridad)
+
+	for boton in [_toggle_colonizable, _remodelar, _pausar, _demoler, _asignar_nucleo]:
 		boton.expand_icon = true
 		TemaHUD.estilizar_boton(boton)
 		caja.add_child(boton)
+	_prioridad.visible = false
 	_toggle_colonizable.pressed.connect(func() -> void:
 		if ciudad != null and ciudad.has_method("alternar_colonizable"):
 			ciudad.alternar_colonizable(id)
@@ -345,6 +384,24 @@ func _confirmar_traslado() -> void:
 	_actualizar()
 
 
+func _on_subir_prioridad() -> void:
+	if obras == null or not obras.has_method("fijar_prioridad"):
+		return
+	var p: int = obras.prioridad_de(id) if obras.has_method("prioridad_de") else Ajustes.OBRAS_PRIORIDAD_NORMAL
+	if p < Ajustes.OBRAS_PRIORIDAD_ALTA:
+		obras.fijar_prioridad(id, p + 1)
+		_actualizar()
+
+
+func _on_bajar_prioridad() -> void:
+	if obras == null or not obras.has_method("fijar_prioridad"):
+		return
+	var p: int = obras.prioridad_de(id) if obras.has_method("prioridad_de") else Ajustes.OBRAS_PRIORIDAD_NORMAL
+	if p > Ajustes.OBRAS_PRIORIDAD_BAJA:
+		obras.fijar_prioridad(id, p - 1)
+		_actualizar()
+
+
 func _ciclar_prioridad() -> void:
 	if obras == null or not obras.has_method("fijar_prioridad"):
 		return
@@ -437,6 +494,14 @@ func _actualizar() -> void:
 	if r.is_empty():
 		return
 	var estado: String = r["estado"]
+
+	if estado == "completo":
+		var esq_p: Vector2i = _esquina_de_puesto()
+		if esq_p != Vector2i(-1, -1) and Recoleccion != null and Recoleccion.puestos.has(esq_p):
+			solicitar_abrir_puesto.emit(esq_p)
+			cerrar()
+			return
+
 	var es_nucleo: bool = false
 	if obras != null and obras.has_method("es_del_nucleo"):
 		es_nucleo = obras.es_del_nucleo(id)
@@ -563,9 +628,12 @@ func _actualizar() -> void:
 
 	var p_actual: int = obras.prioridad_de(id) if obras != null and obras.has_method("prioridad_de") else Ajustes.OBRAS_PRIORIDAD_NORMAL
 	var nom_p: String = Strings.NOMBRES_PRIORIDAD.get(p_actual, Strings.NOMBRES_PRIORIDAD.get(1, "Normal"))
-	_prioridad.visible = (estado == "construccion")
-	_prioridad.text = "Prioridad: %s" % nom_p
-	_prioridad.icon = IconosHUD.icono("prio_alta" if p_actual == Ajustes.OBRAS_PRIORIDAD_ALTA else ("prio_baja" if p_actual == Ajustes.OBRAS_PRIORIDAD_BAJA else "prio_normal"))
+	_fila_prioridad.visible = (estado == "construccion")
+	_lbl_prioridad.text = "Prioridad: %s" % nom_p
+	_icono_prioridad.texture = IconosHUD.icono("prio_alta" if p_actual == Ajustes.OBRAS_PRIORIDAD_ALTA else ("prio_baja" if p_actual == Ajustes.OBRAS_PRIORIDAD_BAJA else "prio_normal"))
+	_btn_prioridad_subir.disabled = (p_actual >= Ajustes.OBRAS_PRIORIDAD_ALTA)
+	_btn_prioridad_bajar.disabled = (p_actual <= Ajustes.OBRAS_PRIORIDAD_BAJA)
+	_prioridad.visible = false
 
 	_remodelar.visible = (es_residencial or es_nucleo) and (estado == "completo")
 	_remodelar.text = "Iniciar remodelación"
@@ -710,7 +778,14 @@ func _actualizar() -> void:
 
 
 func _esquina_de_puesto() -> Vector2i:
-	if Economia != null and "puestos" in Economia:
+	var mundo_obj = obras.get("mundo") if obras != null else null
+	if mundo_obj != null and "edificio_metadata" in mundo_obj:
+		var meta: Dictionary = mundo_obj.edificio_metadata.get(id, {})
+		if meta.has("puesto") and meta["puesto"] is Vector2i:
+			return meta["puesto"]
+		if meta.has("puesto_nuevo") and meta["puesto_nuevo"] is Dictionary and meta["puesto_nuevo"].has("esquina"):
+			return meta["puesto_nuevo"]["esquina"]
+	if Economia != null and Economia.get("puestos") != null:
 		for e in Economia.puestos:
 			if obras != null and obras.has_method("id_en_columna") and obras.id_en_columna(e) == id:
 				return e
@@ -733,5 +808,15 @@ func _confirmar_reconversion() -> void:
 func _en_almacen(recurso: String) -> float:
 	var almacen: Dictionary = ciudad.almacen
 	if recurso == "madera":
-		return almacen["tablas"].cantidad + almacen["madera"].cantidad
+		var cant_m: float = almacen["madera"].cantidad if almacen.has("madera") else 0.0
+		var cant_t: float = almacen["tablas"].cantidad if almacen.has("tablas") else 0.0
+		return cant_m + cant_t
+	elif recurso == "piedra":
+		var cant_p: float = almacen["piedra"].cantidad if almacen.has("piedra") else 0.0
+		var cant_bp: float = almacen["bloques_piedra"].cantidad if almacen.has("bloques_piedra") else 0.0
+		return cant_p + cant_bp
+	elif recurso == "vidrio":
+		var cant_v: float = almacen["vidrio"].cantidad if almacen.has("vidrio") else 0.0
+		var cant_t: float = almacen["tierra"].cantidad if almacen.has("tierra") else 0.0
+		return cant_v + floorf(cant_t / 3.0)
 	return almacen[recurso].cantidad if almacen.has(recurso) else 0.0

@@ -14,6 +14,7 @@ const GeneradorMundo = preload("res://scripts/GeneradorMundo.gd")
 const GeneradorArbol = preload("res://scripts/GeneradorArbol.gd")
 const CuerposObra = preload("res://scripts/CuerposObra.gd")
 const NiveladorTerreno = preload("res://scripts/NiveladorTerreno.gd")
+const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
 const MATERIAL_AGUA := preload("res://assets/mat_agua.tres")
 
 static var ANCHO_MUNDO: int = Ajustes.ANCHO_MUNDO
@@ -79,6 +80,7 @@ var arboles: RefCounted
 ## direccion_flujo_en(). Consumido por CascadaEffects (partículas) y por
 ## Player._empuje_corriente() (empuje extra al pie de la caída).
 var cascadas: Dictionary = {}  # Vector2i -> Dictionary
+var orientacion_ventana: Dictionary = {}  # Vector3i -> Vector3i (dirección frontal)
 
 ## Tipos de bloque que pueden formar parte de un edificio declarado (ver
 ## detectar_estructura()). "hierba" queda deliberadamente fuera: es un
@@ -305,6 +307,9 @@ signal fantasmas_cambiados
 ## dentro del volumen de la obra debe recibir un permiso de salida (Player.gd
 ## para el avatar, Colonos.gd para los colonos).
 signal obra_a_fantasma(id: int)
+
+## Emitida cuando cambia un bloque que puede alterar la superficie o altura del terreno.
+signal terreno_modificado(celda: Vector3i)
 
 ## Permisos de salida: id de obra -> {entidad -> true}. "entidad" es el id de un
 ## colono (int) o "avatar". Con permiso, la entidad ignora la colisión con los
@@ -891,7 +896,7 @@ func altura_natural_en(x: int, z: int) -> int:
 	return real
 
 
-func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) -> bool:
+func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false, orientacion: Variant = null) -> bool:
 	var actual: int = get_cell_item(celda)
 	var tipo_anterior: String = _tipo_por_id.get(actual, "")
 	if actual != GridMap.INVALID_CELL_ITEM:
@@ -902,6 +907,9 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 	if not _id_por_tipo.has(tipo):
 		return false
 	set_cell_item(celda, _id_por_tipo[tipo])
+	if tipo == "vidrio" and orientacion is Vector3i and orientacion != Vector3i.ZERO:
+		orientacion_ventana[celda] = orientacion
+	terreno_modificado.emit(celda)
 	if por_jugador:
 		colocado_por_jugador[celda] = true
 	if TIPOS_LIQUIDOS.has(tipo_anterior):
@@ -914,6 +922,12 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false) ->
 			_encolar_secado_alrededor(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo) or TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
+	else:
+		# Si se coloca un bloque no translúcido, notificar a ventanas vecinas para esquinas
+		for dir_h in VECINOS_ORTOGONALES_XZ:
+			var vec_h: Vector3i = celda + Vector3i(dir_h.x, 0, dir_h.y)
+			if obtener_tipo(vec_h) == "vidrio":
+				bloque_translucido_cambiado.emit(vec_h)
 	if TIPOS_PUERTA.has(tipo):
 		puerta_cambiada.emit(celda)
 	# Solo si "por_jugador": _generar_terreno() coloca miles de bloques de
@@ -963,13 +977,21 @@ func _retirar_bloque(celda: Vector3i) -> void:
 		pareja.erase(celda)
 		if TIPOS_PUERTA.has(tipo_otra):
 			puerta_cambiada.emit(otra)
+		terreno_modificado.emit(otra)
 	_reembolsar_si_corresponde(celda, tipo_anterior)
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+	orientacion_ventana.erase(celda)
 	colocado_por_jugador.erase(celda)
 	if TIPOS_PUERTA.has(tipo_anterior):
 		puerta_cambiada.emit(celda)
 	if TIPOS_TRANSLUCIDOS.has(tipo_anterior):
 		bloque_translucido_cambiado.emit(celda)
+	else:
+		for dir_h in VECINOS_ORTOGONALES_XZ:
+			var vec_h: Vector3i = celda + Vector3i(dir_h.x, 0, dir_h.y)
+			if obtener_tipo(vec_h) == "vidrio":
+				bloque_translucido_cambiado.emit(vec_h)
+	terreno_modificado.emit(celda)
 
 	# Mecánica estilo Minecraft: al vaciar una celda sólida, si algún vecino lateral o
 	# superior es agua, la celda se inunda automáticamente convirtiéndose en agua.
@@ -1812,6 +1834,7 @@ func eliminar_edificio(id: int) -> Vector2i:
 		return Vector2i.ZERO
 	var celdas: Array = edificio_a_celdas[id]
 	var esquina := Vector2i(celdas[0].x, celdas[0].z)
+	var celdas_vaciadas: Array[Vector3i] = []
 	for celda in celdas:
 		esquina.x = min(esquina.x, celda.x)
 		esquina.y = min(esquina.y, celda.z)
@@ -1829,6 +1852,8 @@ func eliminar_edificio(id: int) -> Vector2i:
 			if TIPOS_PUERTA.has(tipo_anterior):
 				puerta_cambiada.emit(celda)
 			_avisar_si_junto_a_translucido(celda)
+			terreno_modificado.emit(celda)
+			celdas_vaciadas.append(celda)
 		celda_a_edificio.erase(celda)
 		# Por si acaso esta celda seguía marcada como pagada (no debería:
 		# procesar_deconstruccion()/_revertir_celda() ya la reembolsó camino a
@@ -1857,7 +1882,9 @@ func eliminar_edificio(id: int) -> Vector2i:
 			if obtener_tipo(celda_pendiente) == "fantasma":
 				set_cell_item(celda_pendiente, GridMap.INVALID_CELL_ITEM)
 				_avisar_si_junto_a_translucido(celda_pendiente)
+				celdas_vaciadas.append(celda_pendiente)
 	edificio_relleno_cola.erase(id)
+	_escurrir_agua_alrededor_de(celdas_vaciadas)
 	# El follaje registrado que aún no se retiró se queda donde está: al
 	# emplazar no se modificó nada, y quitar el edificio a tiempo no debe hacerlo.
 	for columna: Vector2i in edificio_follaje.get(id, []):
@@ -1900,10 +1927,13 @@ func desdeclarar_edificio(id: int) -> Vector2i:
 	edificio_metadata.erase(id)
 	if edificio_relleno_cola.has(id):
 		var pendientes: Array[Vector3i] = Construccion.descartar_pendientes(edificio_relleno_cola[id], ["aire", "fantasma", "tierra"])
+		var celdas_vaciadas: Array[Vector3i] = []
 		for celda_pendiente in pendientes:
 			if obtener_tipo(celda_pendiente) == "fantasma":
 				set_cell_item(celda_pendiente, GridMap.INVALID_CELL_ITEM)
 				_avisar_si_junto_a_translucido(celda_pendiente)
+				celdas_vaciadas.append(celda_pendiente)
+		_escurrir_agua_alrededor_de(celdas_vaciadas)
 	edificio_relleno_cola.erase(id)
 	for columna: Vector2i in edificio_follaje.get(id, []):
 		if _follaje_por_columna.has(columna) and _follaje_por_columna[columna]["id"] == id:
@@ -1945,6 +1975,25 @@ func _avisar_si_junto_a_translucido(celda: Vector3i) -> void:
 		if TIPOS_TRANSLUCIDOS.has(obtener_tipo(celda + delta)):
 			bloque_translucido_cambiado.emit(celda)
 			return
+
+
+## Encola para escurrir todo líquido vecino a las celdas recién vaciadas
+## (p. ej. al demoler un edificio en o junto al agua).
+func _escurrir_agua_alrededor_de(celdas_vaciadas: Array) -> void:
+	if celdas_vaciadas.is_empty():
+		return
+	var semillas: Dictionary = {}
+	for celda_variant in celdas_vaciadas:
+		var celda: Vector3i = celda_variant
+		for delta: Vector3i in VECINOS_3D:
+			var vecino: Vector3i = celda + delta
+			if TIPOS_LIQUIDOS.has(obtener_tipo(vecino)):
+				semillas[vecino] = true
+	if not semillas.is_empty():
+		var lista: Array[Vector3i] = []
+		for s: Vector3i in semillas:
+			lista.append(s)
+		_escurrir_agua_desde(lista)
 
 
 ## Arranca un edificio fantasma. "orden_relleno"/"tipos_relleno" son las
@@ -2388,6 +2437,11 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 	var completa: bool = edificio_progreso[id] == orden.size()
 	if completa:
 		reemparejar_construccion(orden)
+		var meta_completada: Dictionary = edificio_metadata.get(id, {})
+		if meta_completada.has("puesto_nuevo"):
+			var info_pn: Dictionary = meta_completada["puesto_nuevo"]
+			for celda_vacia in PlantillasPuesto.celdas_vacias_mundo(info_pn["tipo"], info_pn.get("giros", 0), info_pn["esquina"], info_pn["y_base"]):
+				liberar_celda_agua(celda_vacia)
 	return {"completa": completa, "metadata": edificio_metadata[id]}
 
 
@@ -2439,6 +2493,20 @@ func drenar_agua(x: int, z: int) -> int:
 		y += 1
 		reemplazados += 1
 	return reemplazados
+
+
+## Vacía un bloque de líquido (agua, etc.) en "celda" si lo hay, dejándolo como aire.
+## Utilizado para limpiar volúmenes de aire interiores de edificios completados.
+func liberar_celda_agua(celda: Vector3i) -> bool:
+	var tipo: String = obtener_tipo(celda)
+	if TIPOS_LIQUIDOS.has(tipo):
+		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+		_nivel_agua.erase(celda)
+		bloque_translucido_cambiado.emit(celda)
+		_encolar_secado_alrededor(celda)
+		terreno_modificado.emit(celda)
+		return true
+	return false
 
 
 ## Coloca la tubería de hierro de un centro de extracción desde y_sup - 1 hasta y_fondo.

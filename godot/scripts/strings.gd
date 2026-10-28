@@ -28,6 +28,7 @@ static var NOMBRES_RECURSO: Dictionary = {
 	"agua": "Agua",
 	"crudo": "Crudo",
 	"combustible": "Combustible",
+	"vidrio": "Vidrio",
 	"caza": "Comida (caza)",
 	"recoleccion": "Comida (frutos)",
 	"pesca": "Comida (pesca)",
@@ -59,6 +60,7 @@ static var NOMBRES_RECURSO_ALMACEN_INICIAL: Dictionary = {
 	"agua": "Agua",
 	"crudo": "Crudo",
 	"combustible": "Combustible",
+	"vidrio": "Vidrio",
 }
 
 static var NOMBRES_RECURSO_LEGIBLE_DUCTO: Dictionary = {
@@ -98,6 +100,7 @@ static var NOMBRES_PUESTO: Dictionary = {
 	"refineria_tierras_raras": "Refinería de tierras raras",
 	"aserradero": "Aserradero",
 	"fabrica_bloques": "Fábrica de bloques",
+	"vidriera": "Vidriera",
 	"carbonera": "Carbonera",
 	"refineria_petrolera": "Refinería petrolera",
 	"productor_combustible": "Productor de combustible",
@@ -119,6 +122,7 @@ static var SUBTITULOS_PUESTO: Dictionary = {
 	"refineria_tierras_raras": "Refinería",
 	"aserradero": "Taller de aserrado",
 	"fabrica_bloques": "Taller de cantería",
+	"vidriera": "Taller de vidriería",
 	"carbonera": "Horno de carbón",
 	"refineria_petrolera": "Destilería industrial",
 	"productor_combustible": "Planta sintética",
@@ -220,6 +224,7 @@ static var BARRA_MODOS_CATALOGOS_CONSTRUIR: Dictionary = {
 	"procesamiento": [
 		{"id": "aserradero", "nombre": "Aserradero"},
 		{"id": "fabrica_bloques", "nombre": "Fáb. Bloques"},
+		{"id": "vidriera", "nombre": "Vidriera"},
 		{"id": "carbonera", "nombre": "Carbonera"},
 		{"id": "siderurgica", "nombre": "Siderúrgica"},
 		{"id": "refineria_tierras_raras", "nombre": "Ref. Tierras"},
@@ -444,6 +449,7 @@ static var PANEL_EDIFICIO_NOMBRES_CONSTRUCCION: Dictionary = {
 	"refineria_tierras_raras": "Refinería de tierras raras",
 	"aserradero": "Aserradero industrial",
 	"fabrica_bloques": "Fábrica de bloques",
+	"vidriera": "Vidriera artesanal e industrial",
 	"carbonera": "Carbonera",
 	"refineria_petrolera": "Refinería petrolera",
 	"productor_combustible": "Planta de combustible",
@@ -935,8 +941,15 @@ static var CANALIZACIONES_ERR_INVADE_PUERTO: String = "Trazado inválido: la tub
 static var ERA_NOMBRES: Dictionary = {
 	1: "Era 1: Asentamiento Pionero",
 	2: "Era 2: Manufactura Temprana",
-	3: "Era 3: Industrialización Plena",
+	3: "Industrialización Plena",
 	4: "Era 4: Doctrina Cúspide",
+}
+
+static var ERA_TITULOS: Dictionary = {
+	1: "Asentamiento Pionero",
+	2: "Manufactura Temprana",
+	3: "Industrialización Plena",
+	4: "Doctrina Cúspide",
 }
 
 static var DOCTRINA_NOMBRES: Dictionary = {

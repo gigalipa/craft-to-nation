@@ -1,3 +1,8 @@
+---
+title: "Logística, Red Vial y Canalizaciones Elevadas"
+description: "Mecánicas de transporte y logística: red modular de canalizaciones aéreas a Y+6, tendido de vías por colonos con prioridades y transmisión de fluidos y energía."
+---
+
 # Logística, Red Vial y Canalizaciones Elevadas
 
 ![Vista estratégica de la red logística, carreteras y acueductos](/assets/citycraft-world.webp)
@@ -27,10 +32,25 @@ En **Craft to Nation**, cada unidad de madera, mineral o fluido debe desplazarse
 - En cámara cenital, activa el modo unificado **<kbd>3</kbd> (Demoler)**, haz clic izquierdo en un extremo de una carretera (incluso en forma de "L" con esquina de 90°) y mueve el cursor hasta el otro extremo:
 - La vista previa naranja translúcida (`ViaDemolicionOverlay`) sigue la red vial mediante **Dijkstra** cubriendo el **ancho completo de 2 carriles (`2×2`)** alrededor de la esquina exterior sin cortar en diagonal. Al confirmar con **doble clic izquierdo**, queda marcado el contorno naranja persistente para que los colonos desmonten la vía tramo por tramo.
 
-### Parámetros del Acarreador y Pathfinding Ponderado (`BuscadorRutas.gd`)
-- **Velocidad Base:** **2,5 celdas / segundo** (`5,0 celdas/h` de juego), con **+35 % de velocidad** sobre carreteras.
-- **Capacidad de Carga:** **150 unidades** por viaje (lote mínimo de **10 u**, respetando siempre la `Reserva central:` de `0 / 50 / 100 / 250 / 500 u`).
+### Parámetros del Acarreador, Parque Móvil y Pathfinding Ponderado (`BuscadorRutas.gd`)
+- **Velocidad Base del Acarreador a Pie:** **2,5 celdas / segundo** (`5,0 celdas/h` de juego), con **+35 % de velocidad** sobre carreteras.
+- **Capacidad de Carga Base:** **150 unidades** por viaje (lote mínimo de **10 u**, respetando siempre la `Reserva central:` porcentual de `0% / 10% / 20% / 30% / 40% / 50%`).
 - **Coste A* Ponderado:** Coste de paso **3** en vía de tierra pisada frente a coste **8** en terreno natural.
+
+### Taller de Transporte y Unidades Móviles de Acarreo (`Ciudad.PARQUE_TRANSPORTE_TIPOS`)
+En el **Taller de Transporte** de la Zona Industrial se fabrican y asignan unidades logísticas que multiplican la capacidad y velocidad de acarreo:
+
+| Unidad de Transporte | Capacidad | Velocidad Base | Exige Vía | Insumo Operativo | Costo de Fabricación |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`acarreador_pie`** *(A pie)* | `150 u` | `2,5 m/s` | No | — | Dotación base de colonos |
+| **`carreta_mano`** *(Carreta de mano)* | `300 u` | `2,2 m/s` | No | — | `20 Tablas + 5 Hierro` |
+| **`carro_caballos`** *(Carro de caballos)* | `600 u` | `4,0 m/s` | No | `2 Comida/h` | `40 Tablas + 15 Hierro` |
+| **`camion_diesel`** *(Camión diésel)* | `1.800 u` | `6,5 m/s` | **Sí (`exige_via`)** | `2 Combustible/h` | `30 Acero + 20 Hierro + 10 Cobre + 6 Vidrio` |
+| **`trolebus_solar`** *(Trolebús solar)* | `900 u` | `5,0 m/s` | **Sí (`exige_via`)** | `1 Energía/h` | `15 Acero + 20 Cobre + 5 Min. Refinado + 4 Vidrio` |
+| **`dron_carga`** *(Dron de carga)* | `600 u` | `7,5 m/s` *(vuelo directo)* | No | `2 Energía/h` | `20 Acero + 25 Cobre + 15 Min. Refinado` |
+
+- **Uso Exclusivo de Vidrio en Cabinas:** Las unidades motorizadas con parabrisas (`camion_diesel` y `trolebus_solar`) exigen exclusivamente el recurso refinado **`vidrio`** (producido en la Vidriera `1-3-5`), sin admitir `tierra` como sustituto.
+- **Arrastre Lento por Falta de Insumo (`1,2 m/s`):** Si un vehículo en ruta se queda sin su insumo operativo (`comida`, `combustible` o `energía`), entra en modo de arrastre de emergencia a **`1,2 m/s`**, conservando el **100 % de su mercancía** hasta completar la entrega.
 
 ---
 
@@ -41,7 +61,7 @@ En pasos estrechos de 1 sola celda, cuando dos colonos se encuentran de frente, 
 ```text
 Comida > Combustible > Crudo > Acero > Mineral Refinado
        > Hierro > Cobre > Carbón > Tierras Raras
-       > Tablas > Madera > Piedra > Tierra > Agua
+       > Vidrio > Tablas > Bloques de Piedra > Madera > Piedra > Tierra > Agua
 ```
 
 El colono sin carga o con menor prioridad se aparta temporalmente a una celda lateral para ceder el paso.

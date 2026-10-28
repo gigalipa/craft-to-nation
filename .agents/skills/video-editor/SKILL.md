@@ -1,96 +1,98 @@
 ---
 name: video-editor
-description: Realiza cortes, formateo (vertical 9:16 con blur o horizontal 16:9), transiciones cinematográficas, subtitulado dinámico Whisper CUDA y renderizado acelerado por GPU NVENC para videos, devlogs y lives de Craft to Nation.
+description: Realiza composición programática con Remotion (React/TypeScript), formateo (9:16 vertical con blur y 16:9 cinematográfico), títulos animados HUD Trebuchet MS, subtítulos dinámicos con @remotion/captions, transcripción Whisper CUDA y renderizado acelerado para videos, devlogs y lives de Craft to Nation.
 ---
 
-# Skill: Video Editor Técnico (Craft to Nation)
+# Skill: Video Editor Técnico con Remotion (Craft to Nation)
 
-Esta skill ejecuta el montaje técnico, procesamiento audiovisual y renderizado acelerado por hardware (NVIDIA NVENC) a partir de grabaciones en `video_edition/media/raw/` para producir masters finales en `video_edition/media/processed/`.
+Esta skill ejecuta el montaje técnico, composición programática con **Remotion (React/TypeScript)**, procesamiento audiovisual y renderizado acelerado por hardware a partir de grabaciones en `video_edition/media/raw/` para producir masters finales en `video_edition/media/processed/`.
+
+El agente aprovecha el plugin y las skills oficiales de Remotion (`remotion-best-practices`, `remotion-markup`, `remotion-captions`, `remotion-render`, `remotion-studio`, `remotion-create`) para crear composiciones reactivas, tipografía cinética y transiciones profesionales.
 
 ---
 
-## Herramientas de Edición (`video_edition/tools/`)
+## Ecosistema de Edición con Remotion
 
-1. **`clip_maker.py`**:
-   - Recorta clips y genera formato vertical 9:16 (1080x1920) con fondo desenfocado (blur) para no perder el HUD del juego.
-   - Usa NVENC para renderizado instantáneo.
-   - Comando tipo:
-     ```powershell
-     python video_edition/tools/clip_maker.py -i "<input.mp4>" -o "video_edition/media/processed/<output_raw.mp4>" -s <start> -e <end> -f vertical
-     ```
+### 1. Composiciones en Remotion (`video_edition/remotion/`)
+- **Composiciones Verticales (`ShortVideo` - 9:16, 1080x1920)**:
+  - Fondo dinámico con efecto *box-blur* y brillo atenuado (`filter: 'blur(20px) brightness(0.85)'`) para mantener visible la acción sin recortar información del HUD.
+  - Video central escalado manteniendo el aspect ratio nativo.
+  - Subtítulos dinámicos cinéticos mediante `@remotion/captions`, aplicando estilo HUD de *Craft to Nation*:
+    - Color de texto principal: Verde oscuro HUD (`#144214`).
+    - Borde/Sombra/Glow: Amarillo dorado HUD (`#F6C424`).
+    - Tipografía: `Trebuchet MS`, peso bold, alineación central inferior (`bottom: 350px`) para evitar colisión con la interfaz de TikTok/Instagram Reels/Shorts.
+  - Pista de audio principal con normalización adaptativa y música loop en segundo plano con sidechain ducking reactivo (baja de volumen durante locución).
+- **Composiciones Horizontales (`DevlogRecap` - 16:9, 1920x1080)**:
+  - Montaje secuencial multi-corte usando `<Series>` y transiciones suaves (`@remotion/transitions`, como `fade` o `slide`).
+  - Títulos inferiores animados de sección (*Lower Thirds*): Caja con borde verde (`#144214`), fondo semitransparente y tipografía Trebuchet MS dorada (`#F6C424`), animada con `spring()` o `interpolate()`.
+  - **REGLA ESTRICTA:** El master horizontal se exporta limpio de subtítulos en pantalla. Se genera el archivo `.srt` sincronizado para YouTube Closed Captions.
 
-2. **`video_editor_studio.py`**:
-   - Editor cinematográfico multi-corte en 16:9 (1920x1080).
-   - Ensambla fragmentos con transiciones suaves (`xfade=transition=fade` y `acrossfade`), títulos inferiores animados de sección (Trebuchet MS en amarillo dorado `0xF6C424` con borde verde `0x144214`), normalización vocal adaptativa y música loop con sidechain ducking.
-   - Comando tipo:
-     ```powershell
-     python video_editor_studio.py -v "<raw.mp4>" -c "<cuts.json>" -o "video_edition/media/processed/<master.mp4>"
-     ```
+### 2. Cadena de Transcripción y Datos
+- **Whisper GPU CUDA (`video_edition/tools/subtitle_generator.py`)**:
+  - Extrae audio y genera marcas de tiempo precisas en JSON por bloques para videos de cualquier duración sin desbordar memoria.
+- **Limpieza de Glosario (`video_edition/tools/llm_subtitle_cleaner.py`)**:
+  - Corrige fonética y alucinaciones fonéticas aplicando el glosario oficial (*"almacén"*, *"central termoeléctrica"*, *"aserradero"*, *"Dieselpunk/Cyberpunk/Solarpunk"*).
+- **Consumo en Remotion**:
+  - Remotion importa directamente el `clean_segments.json` generado para posicionar cada palabra/frase con precisión de fotograma (`useCurrentFrame()`).
 
-3. **`subtitle_generator.py`**:
-   - Transcriptor GPU basado en Whisper CUDA (`base`).
-   - Genera subtítulos `.ass` estilizados, archivos `.srt` y segmentos `.json`.
-   - Permite quemar subtítulos en la imagen (`--burn`) o cargarlos desde JSON corregido (`--from-json`).
-
-4. **`llm_subtitle_cleaner.py`**:
-   - Limpia alucinaciones fonéticas de Whisper (como coreano en silencios o palabras rotas) y aplica el glosario de *Craft to Nation* (*"almacén"*, *"central termoeléctrica"*, *"aserradero"*, *"Dieselpunk / Cyberpunk / Solarpunk"*).
-   - Comando tipo:
-     ```powershell
-     python video_edition/tools/llm_subtitle_cleaner.py -i "<raw_segments.json>" -o "<clean_segments.json>"
-     ```
-
-5. **`audio_mixer.py`**:
-   - Calcula ganancia adaptativa (`get_auto_gain`) para elevar la voz humana al estándar de -1.5 dB de pico (añadiendo de +15 dB a +30 dB automáticamente si el micrófono grabó muy bajo).
-   - Filtra exclusivamente música `(loop)` de `arte/mp3/` (ignora las de menú).
-   - Aplica sidechain compressor agresivo (`threshold=0.015`, `ratio=16:1`, `attack=15`, `release=850ms`, `volume=0.025`) para que la música se atenúe cada vez que el desarrollador habla.
+### 3. Herramientas Auxiliares de Audio y Empaquetado
+- **`audio_mixer.py`**:
+  - Detección de ganancia automática (`get_auto_gain`) a -1.5 dB de pico (-14 LUFS).
+  - Filtrado de pistas `(loop)` en `arte/mp3/`.
+- **`asset_packager.py`**:
+  - Empaqueta el video renderizado y sus complementos (`.srt`, `.ass`, `.json`, `.txt`) en `video_edition/media/processed/<nombre_del_video>/` y traslada el original a `video_edition/media/raw/done/`.
+- **`qa_checker.py`**:
+  - Validador técnico de entregables (resolución, duración, pistas de audio).
 
 ---
 
 ## Reglas Críticas de Formato y Subtitulado
 
 ### 1. Formato Corto / Vertical (Shorts, Reels, TikTok)
-- **Aspecto**: 9:16 (1080x1920).
+- **Aspecto**: 9:16 (1080x1920, 30 fps o 60 fps).
 - **Duración**: Entre 20 y 58 segundos (límite estricto 60s).
-- **Subtítulos**: **OBLIGATORIO QUEMARLOS EN EL VIDEO** (`--burn`).
-  - Color de texto: Verde oscuro HUD (`&H00144214&`).
-  - Borde y sombra: Amarillo dorado (`&H0024C4F6&`).
-  - Posición: Central-inferior (MarginV 350).
+- **Subtítulos**: **OBLIGATORIO RENDERIZARLOS/QUEMARLOS EN EL VIDEO**.
+  - Tipografía: `Trebuchet MS`, tamaño acorde a pantalla móvil.
+  - Color de texto: Verde oscuro HUD (`#144214` o `&H00144214&`).
+  - Borde y sombra: Amarillo dorado HUD (`#F6C424` o `&H0024C4F6&`).
+  - Posición: Central-inferior segura (`MarginV 350` / `bottom: 350px`).
 - **Flujo de Ejecución**:
-  `clip_maker.py` (corte vertical) -> `subtitle_generator.py` (transcripción) -> `llm_subtitle_cleaner.py` (limpieza) -> `subtitle_generator.py --from-json ... --burn` (quemado) -> `audio_mixer.py --track-type loop` (música y ducking).
+  1. Definir timestamps de corte del bruto.
+  2. Transcribir y limpiar fonética con `subtitle_generator.py` y `llm_subtitle_cleaner.py`.
+  3. Componer la escena en Remotion con fondo blur, video centrado, subtítulos dinámicos HUD y música loop con ducking.
+  4. Previsualizar con `npx remotion studio` si se requiere ajuste fino visual.
+  5. Renderizar video final con `npx remotion render` (o fallback optimizado con NVENC).
 
-### 2. Formato Largo / Horizontal (Devlogs de YouTube, Steam Updates, Recap de Live)
+### 2. Formato Largo / Horizontal (Devlogs de YouTube, GitHub Discussions Updates, Recap de Live)
 - **Aspecto**: 16:9 (1920x1080 Full HD).
 - **Duración**: Típicamente 3 a 8 minutos.
 - **Subtítulos**: **ESTRICTAMENTE PROHIBIDO QUEMAR SUBTÍTULOS EN EL VIDEO**.
-  - El video master debe exportarse limpio de subtítulos flotantes (solo contiene títulos animados de capítulo en la esquina inferior).
-  - Los subtítulos se entregan como archivo `.srt` externo limpio y sincronizado para YouTube Closed Captions.
+  - El video master debe exportarse limpio de subtítulos flotantes (solo contiene títulos animados de sección en la esquina inferior izquierda).
+  - Los subtítulos se entregan como archivo `.srt` externo sincronizado para YouTube Closed Captions.
 - **Flujo de Ejecución**:
-  `video_editor_studio.py` (montaje multi-corte y música) -> Mapeo y limpieza de transcripción con `llm_subtitle_cleaner.py` -> Exportar archivo `.srt`.
+  1. Identificar bloques temáticos y duraciones en el timeline.
+  2. Ensamblar composición Remotion en 16:9 con transiciones suaves y títulos animados de capítulo.
+  3. Exportar archivo `.srt` limpio y sincronizado.
+  4. Renderizar master horizontal limpio.
 
 ---
 
-## Flujo Especial para Streams / Lives Largos (`live_w{semana}.mp4`)
-Cuando el video de entrada es un streaming de 2 a 4 horas:
-1. **Extracción de audio preliminar**: Extraer audio puro a MP3 para no sobrecargar memoria ni GPU:
-   ```powershell
-   ffmpeg -y -i "video_edition/media/raw/live_w1.mp4" -vn -c:a libmp3lame -b:a 192k "video_edition/media/processed/live_w1_audio.mp3"
-   ```
-2. **Transcripción global**: Transcribir el MP3 completo en GPU con Whisper CUDA (`subtitle_generator.py`) para generar el mapa temporal completo (`segments.json`).
-3. **Producción simultánea**:
-   - Generar **1 Video Recap Largo (16:9)** con 4 a 5 mejores momentos mediante `video_editor_studio.py` y su archivo `.srt` externo.
-   - Generar **al menos 3 Shorts Virales (9:16)** independientes con subtítulos verde/oro quemados y música ducking.
+## Flujo para Transmisiones en Vivo (Lives)
+1. **Extracción y Transcripción Global**:
+   - Extraer audio puro a MP3 con FFmpeg.
+   - Transcribir en bloques con Whisper GPU (`subtitle_generator.py`) obteniendo el JSON de marcas de tiempo y el autogain.
+2. **Producción Paralela**:
+   - **1 Video Recap Largo (16:9)**: Montar 4-5 mejores momentos en Remotion con transiciones, títulos animados y archivo `.srt` externo limpio.
+   - **Al menos 3 Shorts Virales (9:16)**: Componer 3 clips independientes de 30-50s con fondo blur, subtítulos kinéticos HUD verde/oro quemados y música loop con ducking.
+3. **Auditoría y Empaquetado**:
+   - Validar con `qa_checker.py`.
+   - Empaquetar entregables en carpetas dedicadas y archivar la grabación original en `video_edition/media/raw/done/`.
 
 ---
 
-## Organización de Entregables y Archivado (`asset_packager.py`)
-Una vez finalizada la exportación de cualquier video (corto o largo):
-1. **Carpeta propia por video**: Cada video y sus archivos relacionados se agrupan en su propia subcarpeta:
-   - `video_edition/media/processed/<nombre_del_video>/` conteniendo el video `.mp4`, `.srt`, `.ass`, `_segments.json` y `_transcript.txt`.
-   - Se ejecuta:
-     ```powershell
-     python video_edition/tools/asset_packager.py package -n "<nombre_del_video>" -f "<archivo1>" "<archivo2>" ...
-     ```
-2. **Archivado del original**: Se traslada el archivo bruto de `video_edition/media/raw/<video.mp4>` a `video_edition/media/raw/done/<video.mp4>`:
-   ```powershell
-   python video_edition/tools/asset_packager.py done -r "<video.mp4>"
-   ```
+## Fuentes de Verdad y Conexiones del Repositorio
+
+- **Orquestación y Reglas Generales**: [AGENTS.md](../../AGENTS.md) y [social/SKILL.md](../social/SKILL.md).
+- **Componentes Remotion**: [Root.tsx](../../video_edition/remotion/src/Root.tsx), [VerticalShort.tsx](../../video_edition/remotion/src/VerticalShort.tsx), [DevlogRecap.tsx](../../video_edition/remotion/src/DevlogRecap.tsx), [LowerThird.tsx](../../video_edition/remotion/src/LowerThird.tsx).
+- **Scripts de Procesamiento (`video_edition/tools/`)**: [clip_maker.py](../../video_edition/tools/clip_maker.py), [video_editor_studio.py](../../video_edition/tools/video_editor_studio.py), [subtitle_generator.py](../../video_edition/tools/subtitle_generator.py), [llm_subtitle_cleaner.py](../../video_edition/tools/llm_subtitle_cleaner.py), [audio_mixer.py](../../video_edition/tools/audio_mixer.py), [qa_checker.py](../../video_edition/tools/qa_checker.py), [asset_packager.py](../../video_edition/tools/asset_packager.py).
+- **Glosario y Textos Oficiales del Juego**: [godot/scripts/strings.gd](../../godot/scripts/strings.gd) y [Documento de Diseño de Juego (GDD)_ Craft to Nation.md](../../Documento%20de%20Dise%C3%B1o%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).

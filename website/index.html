@@ -20,20 +20,58 @@
   <meta name="twitter:description" content="Sobrevive, construye y lidera: del primer bloque a una nación viva." data-en-content="Survive, build, and lead: from the first block to a living nation.">
   <meta name="twitter:image" content="https://crafttonation.netlify.app/assets/craft-to-nation-logo.png">
   <title data-en="Craft to Nation — From the first block to a living nation">Craft to Nation — Del primer bloque a una nación viva</title>
+  <link rel="canonical" href="https://crafttonation.netlify.app/">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="google-site-verification" content="32314MEFrp3A3-KL8ZCys7EaSrTp3MSi_YeRkKXCOjU">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="assets/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://crafttonation.netlify.app/#website",
+        "url": "https://crafttonation.netlify.app/",
+        "name": "Craft to Nation",
+        "description": "Sitio oficial de Craft to Nation: juego de supervivencia, construcción voxel y estrategia de colonias.",
+        "inLanguage": ["es-ES", "en-US"]
+      },
+      {
+        "@type": "VideoGame",
+        "@id": "https://crafttonation.netlify.app/#game",
+        "name": "Craft to Nation",
+        "url": "https://crafttonation.netlify.app/",
+        "image": "https://crafttonation.netlify.app/assets/craft-to-nation-logo.png",
+        "description": "Juego indie híbrido que combina supervivencia en primera persona, construcción voxel libre, gestión de ciudades, industrias complejas y estrategia en tiempo real.",
+        "genre": ["City Builder", "Survival", "Strategy", "Sandbox", "Voxel"],
+        "gamePlatform": ["PC game", "Windows", "Linux"],
+        "applicationCategory": "Game",
+        "sameAs": [
+          "https://github.com/gigalipa/craft-to-nation",
+          "https://www.youtube.com/@crafttonation"
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header>
     <a href="#vision" aria-label="Craft to Nation, ir a la visión" data-en-aria-label="Craft to Nation, go to the vision"><img src="assets/craft-to-nation-mark.png" width="512" height="512" alt=""><span>Craft to Nation</span></a>
-    <nav aria-label="Navegación principal" data-en-aria-label="Main navigation">
+    <button id="menu-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Abrir menú" data-en-aria-label="Open menu">
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+    </button>
+    <nav id="main-nav" aria-label="Navegación principal" data-en-aria-label="Main navigation">
       <a href="#vision" data-en="Vision">Visión</a>
       <a href="#desarrollo" data-en="Development">Desarrollo</a>
       <a href="#en-vivo" data-en="Live">En vivo</a>
       <a href="#ayudar" data-en="Support">Ayudar</a>
-      <a href="/wiki/" data-en="Wiki">Wiki</a>
+      <a href="/wiki/" class="nav-wiki-btn" data-en="Wiki">Wiki</a>
       <button id="language-toggle" type="button" aria-label="Cambiar idioma a inglés" data-en-aria-label="Switch language to Spanish" aria-pressed="false"><span>ES</span><span>EN</span></button>
     </nav>
   </header>
@@ -173,21 +211,55 @@
     <section id="desarrollo" aria-labelledby="titulo-desarrollo">
       <h2 id="titulo-desarrollo" data-en="Development status">Estado del desarrollo</h2>
       <div class="development-overview">
-        <p class="development-lead" data-en="The playable prototype now connects survival, freeform voxel construction, city management, physical logistics, seven industries, research, and energy in one growing economy.">El prototipo jugable ya conecta supervivencia, construcción voxel libre, gestión urbana, logística física, siete industrias, investigación y energía en una misma economía creciente.</p>
+        <p class="development-lead" data-en="The playable prototype now connects survival, freeform voxel construction, city management, physical logistics, nine industries, decentralized research, energy, and dynamic morale in one growing economy.">El prototipo jugable ya conecta supervivencia, construcción voxel libre, gestión urbana, logística física, nueve industrias, investigación descentralizada, energía y moral dinámica en una misma economía creciente.</p>
         <ul class="development-stats" aria-label="Resumen del estado / Development summary">
-          <li class="development-stat"><strong>v3.54</strong><span data-en="Current GDD">GDD vigente</span></li>
+          <li class="development-stat"><strong>v3.59</strong><span data-en="Current GDD">GDD vigente</span></li>
           <li class="development-stat"><strong>562</strong><span data-en="Test blocks">Bloques de prueba</span></li>
           <li class="development-stat"><strong>28</strong><span data-en="Test scenes">Escenas de prueba</span></li>
           <li class="development-stat"><strong data-en="In progress">En progreso</strong><span data-en="Phase 3 · Industry">Fase 3 · Industria</span></li>
         </ul>
-        <p class="development-summary" data-en="The simulation now integrates colonist-built roads with configurable priorities, a modular aerial pipeline network with grade-separated crossings at Y+6, deep underground oil wells with mining handlamps, fluid physics, water pumping stations, and an interactive energy modal with camera navigation. Buildings can be remodeled without demolition, a colonizability system uses buffer housing to regulate immigration, and homeless colonists create a temporary civic emergency. The repository also includes a live QA guide and audiovisual assets prepared for integration.">La simulación ahora integra tendido de vías por cuadrillas de colonos con prioridades configurables, una red física aérea de canalizaciones con cruces a desnivel en Y+6, pozos de crudo en el subsuelo profundo con lámpara minera de mano, físicas de fluidos, estación de bombeo y un modal interactivo de energía con teletransporte de cámara. Los edificios pueden remodelarse sin demolición, un sistema de colonizabilidad usa viviendas buffer para regular la inmigración y los colonos sin techo abren una emergencia cívica temporal. El repositorio también incorpora un guion de QA en vivo y recursos audiovisuales preparados para su integración.</p>
+        <p class="development-summary" data-en="The simulation centralizes its full numerical balance and runtime configuration in ajustes.gd alongside reactive multi-language UI strings (strings.gd), preparing game profile presets and hot-reloading. It incorporates dynamic morale [0 to 100] with continuous labor productivity, calibrated stepped monthly migration with brain drain and a 2.5x immigration boost, full SVG vector HUD iconography (90+ icons catalog with live 3D thumbnails), colonist-built road networks, an elevated pipeline system at Y+6, deep oil drilling with miner's lamp, fluid physics, water pumping, glassworks with 1/20 window panels, block manufacturing, transport workshop with 6 haulage units, 2-layer research with the Itinerant Researcher, percentage stockpile reserves, and organic era progression via IDU.">La simulación centraliza todo su balance numérico y parámetros de ejecución en ajustes.gd junto con textos de interfaz reactivos y multi-idioma (strings.gd), sentando las bases para perfiles de partida y ajuste en caliente. Integra el sistema de moral dinámica [0 a 100] con curva continua de productividad laboral, migración mensual escalonada calibrada con fuga de cerebros y boost migratorio de 2.5×, iconografía vectorial SVG completa en el HUD (catálogo de más de 90 íconos con miniaturas 3D vivas), tendido de vías por colonos, canalizaciones aéreas a desnivel en Y+6, pozos de crudo en el subsuelo con lámpara de minero, físicas de fluidos, estación de bombeo, vidriera con paneles de ventana 1/20, fábrica de bloques, taller de transporte con 6 unidades de acarreo, investigación descentralizada en 2 capas con el Investigador Itinerante, reservas porcentuales en el almacén central y progresión orgánica de eras por IDU.</p>
       </div>
 
       <div class="development-demo">
         <div class="development-demo-copy">
-          <p class="eyebrow" data-en="Latest published video · October 1, 2026">Último video publicado · 1 de octubre de 2026</p>
+          <p class="eyebrow" data-en="Latest published video · October 14, 2026">Último video publicado · 14 de octubre de 2026</p>
+          <h3 data-en="Devlog Recap #1: From the Hut to the Power Plant">Devlog Recap #1: De la Choza a la Central Eléctrica</h3>
+          <p data-en="A comprehensive recap of the first live development session of Craft to Nation. It covers the arrival of the first colonists, the initial logistics chain, real terrain zoning, and the first electric spark paving the way to full industrialization. Later developments (dynamic morale, brain drain, block factory, and full HUD vector iconography) do not appear in this recording yet, but are already part of the active simulation.">Resumen completo de la primera sesión de desarrollo en vivo de Craft to Nation. Recorre desde la llegada de los primeros colonos, la construcción de la cadena logística inicial y la zonificación, hasta la primera chispa eléctrica que da paso a la industrialización. Los avances posteriores (el modelo de moral dinámica, la fuga de cerebros, la fábrica de bloques y la iconografía vectorial completa en el HUD) no aparecen todavía en este video pero ya forman parte de la simulación activa.</p>
+          <a class="text-link" href="https://youtu.be/KV8jNMahRSI" target="_blank" rel="noopener noreferrer" data-en="Watch Devlog Recap #1 on YouTube →">Ver Devlog Recap #1 en YouTube →</a>
+        </div>
+        <div class="development-video">
+          <iframe src="https://www.youtube-nocookie.com/embed/KV8jNMahRSI" title="Craft to Nation | Devlog Recap #1: De la Choza a la Central Eléctrica / From the Hut to the Power Plant" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <h3 class="development-heading" data-en="Highlights from Devlog Recap #1">Momentos destacados de Devlog Recap #1</h3>
+      <ul class="milestone-grid">
+        <li><a href="https://youtu.be/KV8jNMahRSI?t=0" target="_blank" rel="noopener noreferrer"><time datetime="PT0S">00:00</time><strong data-en="Warehouse & Resources">Gestión de Almacén y Recursos</strong><span data-en="Real storage management and resource logistics in the early settlement.">Gestión de existencias reales y logística de recursos en el asentamiento inicial.</span></a></li>
+        <li><a href="https://youtu.be/KV8jNMahRSI?t=44" target="_blank" rel="noopener noreferrer"><time datetime="PT44S">00:44</time><strong data-en="Colonist Assignment">Asignación de Colonos y Puestos</strong><span data-en="Workers assigned dynamically to essential resource outposts.">Trabajadores asignados dinámicamente a puestos clave de recolección.</span></a></li>
+        <li><a href="https://youtu.be/KV8jNMahRSI?t=83" target="_blank" rel="noopener noreferrer"><time datetime="PT1M23S">01:23</time><strong data-en="Zoning & Road Layout">Zonificación y Trazado Vial</strong><span data-en="Planning urban sectors and laying roads over the procedural voxel relief.">Planificación de sectores urbanos y trazado de vías sobre el relieve voxel.</span></a></li>
+        <li><a href="https://youtu.be/KV8jNMahRSI?t=127" target="_blank" rel="noopener noreferrer"><time datetime="PT2M7S">02:07</time><strong data-en="Power Grid & Thermal Plant">Cadena de Energía y Central</strong><span data-en="Power generation, coal supply, and grid transmission across the city.">Generación eléctrica, suministro de carbón y distribución de energía por la red.</span></a></li>
+        <li><a href="https://youtu.be/KV8jNMahRSI?t=172" target="_blank" rel="noopener noreferrer"><time datetime="PT2M52S">02:52</time><strong data-en="Tech Eras: Diesel & Solar">Eras Tecnológicas: Diesel y Solar</strong><span data-en="Previewing advanced technological eras and future industrial expansion.">Anticipo de eras tecnológicas avanzadas y futura expansión industrial.</span></a></li>
+      </ul>
+
+      <details class="development-index">
+        <summary data-en="Open the complete timestamp index for Devlog Recap #1 (5 milestones)">Abrir el índice completo de Devlog Recap #1 (5 hitos)</summary>
+        <ol>
+          <li><a href="https://youtu.be/KV8jNMahRSI?t=0" target="_blank" rel="noopener noreferrer"><time datetime="PT0S">00:00</time><span data-en="Warehouse and resource management">Gestión de almacén y recursos</span></a></li>
+          <li><a href="https://youtu.be/KV8jNMahRSI?t=44" target="_blank" rel="noopener noreferrer"><time datetime="PT44S">00:44</time><span data-en="Colonist and outpost assignment">Asignación de colonos y puestos</span></a></li>
+          <li><a href="https://youtu.be/KV8jNMahRSI?t=83" target="_blank" rel="noopener noreferrer"><time datetime="PT1M23S">01:23</time><span data-en="Zoning and road layout over terrain">Zonificación y trazado vial sobre el terreno</span></a></li>
+          <li><a href="https://youtu.be/KV8jNMahRSI?t=127" target="_blank" rel="noopener noreferrer"><time datetime="PT2M7S">02:07</time><span data-en="Power grid and thermal power plant">Cadena de energía y central termoeléctrica</span></a></li>
+          <li><a href="https://youtu.be/KV8jNMahRSI?t=172" target="_blank" rel="noopener noreferrer"><time datetime="PT2M52S">02:52</time><span data-en="Technological eras: Diesel and Solar branches">Eras tecnológicas: ramas Diesel y Solar</span></a></li>
+        </ol>
+      </details>
+
+      <h3 class="development-heading" data-en="Development history">Historial del desarrollo</h3>
+
+      <div class="development-demo">
+        <div class="development-demo-copy">
+          <p class="eyebrow" data-en="Previous update · October 1, 2026">Actualización anterior · 1 de octubre de 2026</p>
           <h3 data-en="Industry comes alive">La industria cobra vida</h3>
-          <p data-en="This narrated update follows the first complete industrial chain: locate and extract iron, move it through the central warehouse, staff the steelworks, and refine real steel. It also shows numeric shortcuts, depth-aware mines, depleted deposits, and material refunds. Since this recording, Phase 3 has grown to seven industries, specialists, research, fluids, energy, advanced logistics, remodeling, controlled immigration, colonist-built roads, aerial pipelines, deep oil extraction, and water pumping.">Esta actualización comentada recorre la primera cadena industrial completa: localizar y extraer hierro, moverlo por el almacén central, contratar personal para la siderúrgica y refinar acero real. También muestra accesos numéricos, minas según profundidad, depósitos agotables y devolución de materiales. Desde esta grabación, la Fase 3 creció hasta siete industrias, especialistas, investigación, fluidos, energía, logística avanzada, remodelación, inmigración controlada, vías por colonos, canalizaciones aéreas, extracción de crudo y bombeo de agua.</p>
+          <p data-en="This narrated update follows the first complete industrial chain: locate and extract iron, move it through the central warehouse, staff the steelworks, and refine real steel. It also shows numeric shortcuts, depth-aware mines, depleted deposits, and material refunds.">Esta actualización comentada recorre la primera cadena industrial completa: localizar y extraer hierro, moverlo por el almacén central, contratar personal para la siderúrgica y refinar acero real. También muestra accesos numéricos, minas según profundidad, depósitos agotables y devolución de materiales.</p>
           <a class="text-link" href="https://youtu.be/E5PWd9CJymQ" target="_blank" rel="noopener noreferrer" data-en="Watch Industry Comes Alive on YouTube →">Ver La industria cobra vida en YouTube →</a>
         </div>
         <div class="development-video">
@@ -195,15 +267,17 @@
         </div>
       </div>
 
-      <h3 class="development-heading" data-en="Highlights from Industry Comes Alive">Momentos destacados de La industria cobra vida</h3>
-      <ul class="milestone-grid">
-        <li><a href="https://youtu.be/E5PWd9CJymQ?t=0" target="_blank" rel="noopener noreferrer"><time datetime="PT0S">00:00</time><strong data-en="The first steelworks">La primera siderúrgica</strong><span data-en="A living settlement now has its first real processing industry.">El asentamiento vivo ya cuenta con su primera industria de transformación.</span></a></li>
-        <li><a href="https://youtu.be/E5PWd9CJymQ?t=46" target="_blank" rel="noopener noreferrer"><time datetime="PT46S">00:46</time><strong data-en="Build through numeric shortcuts">Construye con accesos numéricos</strong><span data-en="Hierarchical key sequences open tools without searching through the interface.">Las secuencias jerárquicas activan herramientas sin recorrer toda la interfaz.</span></a></li>
-        <li><a href="https://youtu.be/E5PWd9CJymQ?t=143" target="_blank" rel="noopener noreferrer"><time datetime="PT2M23S">02:23</time><strong data-en="Recover what you built">Recupera lo que construiste</strong><span data-en="Deconstruction returns the real materials invested in an abandoned mine.">La deconstrucción devuelve los materiales reales invertidos en una mina abandonada.</span></a></li>
-        <li><a href="https://youtu.be/E5PWd9CJymQ?t=271" target="_blank" rel="noopener noreferrer"><time datetime="PT4M31S">04:31</time><strong data-en="Find and extract real iron">Encuentra y extrae hierro real</strong><span data-en="Mining follows exposed deposits and physically changes the underground world.">La minería sigue depósitos expuestos y modifica físicamente el subsuelo.</span></a></li>
-        <li><a href="https://youtu.be/E5PWd9CJymQ?t=388" target="_blank" rel="noopener noreferrer"><time datetime="PT6M28S">06:28</time><strong data-en="Resources travel through the city">Los recursos recorren la ciudad</strong><span data-en="A hauler moves iron from the central warehouse to the steelworks.">Un acarreador lleva hierro desde el almacén central hasta la siderúrgica.</span></a></li>
-        <li><a href="https://youtu.be/E5PWd9CJymQ?t=442" target="_blank" rel="noopener noreferrer"><time datetime="PT7M22S">07:22</time><strong data-en="Iron becomes steel">El hierro se convierte en acero</strong><span data-en="Staff, inputs, storage, and time close the first real refining loop.">Personal, insumos, almacenamiento y tiempo cierran la primera cadena real de refinamiento.</span></a></li>
-      </ul>
+      <details class="development-index">
+        <summary data-en="Open highlights from Industry Comes Alive">Abrir los momentos destacados de La industria cobra vida</summary>
+        <ul class="milestone-grid">
+          <li><a href="https://youtu.be/E5PWd9CJymQ?t=0" target="_blank" rel="noopener noreferrer"><time datetime="PT0S">00:00</time><strong data-en="The first steelworks">La primera siderúrgica</strong><span data-en="A living settlement now has its first real processing industry.">El asentamiento vivo ya cuenta con su primera industria de transformación.</span></a></li>
+          <li><a href="https://youtu.be/E5PWd9CJymQ?t=46" target="_blank" rel="noopener noreferrer"><time datetime="PT46S">00:46</time><strong data-en="Build through numeric shortcuts">Construye con accesos numéricos</strong><span data-en="Hierarchical key sequences open tools without searching through the interface.">Las secuencias jerárquicas activan herramientas sin recorrer toda la interfaz.</span></a></li>
+          <li><a href="https://youtu.be/E5PWd9CJymQ?t=143" target="_blank" rel="noopener noreferrer"><time datetime="PT2M23S">02:23</time><strong data-en="Recover what you built">Recupera lo que construiste</strong><span data-en="Deconstruction returns the real materials invested in an abandoned mine.">La deconstrucción devuelve los materiales reales invertidos en una mina abandonada.</span></a></li>
+          <li><a href="https://youtu.be/E5PWd9CJymQ?t=271" target="_blank" rel="noopener noreferrer"><time datetime="PT4M31S">04:31</time><strong data-en="Find and extract real iron">Encuentra y extrae hierro real</strong><span data-en="Mining follows exposed deposits and physically changes the underground world.">La minería sigue depósitos expuestos y modifica físicamente el subsuelo.</span></a></li>
+          <li><a href="https://youtu.be/E5PWd9CJymQ?t=388" target="_blank" rel="noopener noreferrer"><time datetime="PT6M28S">06:28</time><strong data-en="Resources travel through the city">Los recursos recorren la ciudad</strong><span data-en="A hauler moves iron from the central warehouse to the steelworks.">Un acarreador lleva hierro desde el almacén central hasta la siderúrgica.</span></a></li>
+          <li><a href="https://youtu.be/E5PWd9CJymQ?t=442" target="_blank" rel="noopener noreferrer"><time datetime="PT7M22S">07:22</time><strong data-en="Iron becomes steel">El hierro se convierte en acero</strong><span data-en="Staff, inputs, storage, and time close the first real refining loop.">Personal, insumos, almacenamiento y tiempo cierran la primera cadena real de refinamiento.</span></a></li>
+        </ul>
+      </details>
 
       <details class="development-index">
         <summary data-en="Open the complete timestamp index for Industry Comes Alive (17 advances)">Abrir el índice completo de La industria cobra vida (17 avances)</summary>
@@ -227,8 +301,6 @@
           <li><a href="https://youtu.be/E5PWd9CJymQ?t=484" target="_blank" rel="noopener noreferrer"><time datetime="PT8M4S">08:04</time><span data-en="Resource refining is operational">Refinamiento de recursos completamente funcional</span></a></li>
         </ol>
       </details>
-
-      <h3 class="development-heading" data-en="Development history">Historial del desarrollo</h3>
 
       <div class="development-demo">
         <div class="development-demo-copy">
@@ -255,7 +327,7 @@
       </details>
 
       <details class="development-index">
-        <summary data-en="Open the complete timestamp index for the latest update (23 advances)">Abrir el índice completo de la última actualización (23 avances)</summary>
+        <summary data-en="Open the complete timestamp index for the September 27 update (23 advances)">Abrir el índice completo de la actualización del 27 de septiembre (23 avances)</summary>
         <ol>
           <li><a href="https://youtu.be/ACvMLHZMvG4?t=0" target="_blank" rel="noopener noreferrer"><time datetime="PT0S">00:00</time><span data-en="Mode-based HUD and live city bar">HUD por modos y barra de ciudad en vivo</span></a></li>
           <li><a href="https://youtu.be/ACvMLHZMvG4?t=10" target="_blank" rel="noopener noreferrer"><time datetime="PT10S">00:10</time><span data-en="Interactive construction menu">Menú de construcción interactivo</span></a></li>
@@ -435,7 +507,7 @@
         <div><dt data-en="Phase 0 · Core logic">Fase 0 · Lógica pura</dt><dd><strong data-en="Complete">Completado</strong><span data-en=". Resources, demographics, urban levels, building blueprints, and zoning form a testable foundation outside the 3D scene.">. Recursos, demografía, niveles urbanos, planos de construcción y zonificación forman una base comprobable fuera de la escena 3D.</span></dd></div>
         <div><dt data-en="Phase 1 · First-person construction">Fase 1 · Construcción en primera persona</dt><dd><strong data-en="Verified">Verificado</strong><span data-en=". You can walk, mine, place blocks and multi-cell objects, interact with doors and chests, and validate custom buildings through their internal volume. Irregular and multi-story rooms are recognized, while real pathfinding checks their access.">. Ya es posible caminar, minar, colocar bloques y objetos de varias celdas, interactuar con puertas y baúles y validar edificios personalizados por su volumen interno. Se reconocen habitaciones irregulares y de varios pisos, mientras el pathfinding real comprueba sus accesos.</span></dd></div>
         <div><dt data-en="Phase 2 · City, interface, and zoning">Fase 2 · Ciudad, interfaz y zonificación</dt><dd><strong data-en="Complete">Completado</strong><span data-en=". City state, zoning, migration, and colonist pathfinding work alongside a mode-based HUD. The responsive top bar, alphabetized warehouse, grouped occupations, SVG control icons, live tool cards, and animated camera transition keep the simulation readable across resolutions.">. El estado de la ciudad, la zonificación, la migración y la navegación de colonos funcionan junto con un HUD por modos. La barra superior responsiva, el almacén alfabético, las ocupaciones agrupadas, los iconos SVG de control, las fichas de herramienta en vivo y la transición animada mantienen legible la simulación en distintas resoluciones.</span></dd></div>
-        <div><dt data-en="Phase 3 · Procedural world and resources">Fase 3 · Mundo procedural y recursos</dt><dd><strong data-en="In progress">En progreso</strong><span data-en=". The finite world, physical gathering, dirt roads, priority hauling, seven industries, specialist schools, university research, modular aerial pipelines, deep underground oil wells, fluid physics, water pumping stations, and an interactive energy modal are fully operational. Colonist crews lay roads with configurable priorities, while remodeling, immigration buffers, relocation, and temporary homelessness make the city adaptable. Only universal Era 3 energy use and final balancing remain.">. El mundo finito, la recolección física, las vías de tierra, el acarreo con prioridades, siete industrias, escuelas de especialistas, investigación universitaria, la red aérea de canalizaciones, pozos de crudo en el subsuelo, físicas de fluidos, estación de bombeo y el modal interactivo de energía ya son completamente funcionales. Cuadrillas de colonos tienden vías con prioridades configurables, mientras la remodelación, los buffers de inmigración, la reubicación y el estado temporal sin techo vuelven adaptable a la propia ciudad. Solo restan el consumo universal de energía de Era 3 y el balance final.</span></dd></div>
+        <div><dt data-en="Phase 3 · Procedural world and resources">Fase 3 · Mundo procedural y recursos</dt><dd><strong data-en="In progress">En progreso</strong><span data-en=". The finite world, physical gathering, dirt roads, priority hauling, eight industries (including Glassworks), block factory, Transport Workshop with mobile vehicles, dynamic morale with demographic exodus, IDU I–IV indicator and Era progression, full SVG vector HUD iconography, central balance architecture (ajustes.gd) with reactive multi-language strings (strings.gd), specialist schools, two-layer decentralized university research with Itinerant Researcher, modular aerial pipelines, deep underground oil wells, fluid physics, water pumping stations, and an interactive energy modal are fully operational. Colonist crews lay roads with configurable priorities, while remodeling, immigration buffers, relocation, and temporary homelessness make the city adaptable. Only universal Era 3 energy use and final balancing remain.">. El mundo finito, la recolección física, las vías de tierra, el acarreo con prioridades, ocho industrias (incluyendo Vidriera), fábrica de bloques, Taller de Transporte con unidades móviles, moral dinámica con éxodo demográfico, indicador IDU I–IV y evolución de Eras, iconografía vectorial completa en el HUD, arquitectura centralizada de balance (ajustes.gd) con textos reactivos multi-idioma (strings.gd), escuelas de especialistas, investigación descentralizada en dos capas con Investigador Itinerante, la red aérea de canalizaciones, pozos de crudo en el subsuelo, físicas de fluidos, estación de bombeo y el modal interactivo de energía ya son completamente funcionales. Cuadrillas de colonos tienden vías con prioridades configurables, mientras la remodelación, los buffers de inmigración, la reubicación y el estado temporal sin techo vuelven adaptable a la propia ciudad. Solo restan el consumo universal de energía de Era 3 y el balance final.</span></dd></div>
         <div><dt data-en="Phase 4 · Dual camera and troops">Fase 4 · Cámara dual y tropas</dt><dd><strong data-en="Planned">Planeado</strong><span data-en=". Smooth perspective switching, unit selection, and orders from the strategic view.">. Cambio fluido entre perspectivas, selección de unidades y órdenes desde la vista estratégica.</span></dd></div>
         <div><dt data-en="Phase 5 · Logistics and movement">Fase 5 · Logística y movimiento</dt><dd><strong data-en="Planned">Planeado</strong><span data-en=". Walking A* pathfinding and the first dirt-road tier were implemented early. Road weighting, trains, conveyor belts, pipelines, and bridges remain ahead.">. La navegación A* a pie y el primer nivel de vías de tierra pisada se adelantaron. Quedan la ponderación por carreteras, trenes, cintas transportadoras, tuberías y puentes.</span></dd></div>
         <div><dt data-en="Phase 6 · Combat, intelligence, and underground">Fase 6 · Combate, inteligencia y subsuelo</dt><dd><strong data-en="Planned">Planeado</strong><span data-en=". Sieges, avatar succession, enemies, and tactical use of tunnels and caverns.">. Asedios, sucesión del avatar, enemigos y uso táctico de túneles y cavernas.</span></dd></div>

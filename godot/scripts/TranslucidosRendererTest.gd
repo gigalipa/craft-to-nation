@@ -418,4 +418,96 @@ func ejecutar_pruebas() -> void:
 	assert(mundo_t13.obtener_tipo(Vector3i(420, 1, 420)) == "", "agua inferior no debe subir al minar celda sobre ella")
 	print("OK: inundacion estilo Minecraft confirmada para vecinos laterales y superiores.")
 
+	print("\n=== TEST 16: paneles de ventana (recto 1/20 espesor y esquina L-junction) ===")
+	var mundo_t16: Node = VoxelWorld.new()
+	mundo_t16.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_t16.cell_size = Vector3.ONE * 1.0
+	mundo_t16._indexar_biblioteca()
+	var render_t16: Node3D = TranslucidosRendererScript.new()
+	render_t16.voxel_world = mundo_t16
+	render_t16._indexar_materiales()
+	mundo_t16.bloque_translucido_cambiado.connect(render_t16._on_bloque_translucido_cambiado)
+
+	# 1. Ventana recta aislada en (10, 0, 10): solo cara frontal y trasera (2 quads = 12 vertices)
+	mundo_t16.colocar_bloque(Vector3i(10, 0, 10), "vidrio", true, Vector3i(0, 0, 1))
+	render_t16.flush_pendientes()
+	var chunk_t16: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(10, 0, 10))
+	assert(render_t16._mesh_por_chunk.has("vidrio") and render_t16._mesh_por_chunk["vidrio"].has(chunk_t16))
+	var mesh_v_recta: MeshInstance3D = render_t16._mesh_por_chunk["vidrio"][chunk_t16]
+	var verts_recta: PackedVector3Array = mesh_v_recta.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	assert(verts_recta.size() == 12, "ventana recta debe tener exactamente 12 vertices (2 quads: frontal y trasera), salieron %d" % verts_recta.size())
+
+	# Verificar espesor 1/20 (0.05) y posicion a media profundidad (0.475 y 0.525 en Z local)
+	var min_z := 999.0
+	var max_z := -999.0
+	for v in verts_recta:
+		var z_local: float = v.z - 10.0
+		min_z = minf(min_z, z_local)
+		max_z = maxf(max_z, z_local)
+	assert(is_equal_approx(min_z, 0.475), "cara trasera debe estar a 0.475 en Z, dio %f" % min_z)
+	assert(is_equal_approx(max_z, 0.525), "cara frontal debe estar a 0.525 en Z, dio %f" % max_z)
+	assert(is_equal_approx(max_z - min_z, 0.05), "espesor debe ser 1/20 (0.05), dio %f" % (max_z - min_z))
+
+	# 2. Esquina de ventana: en (20, 0, 20) ventana, en (21, 0, 20) ventana este, en (20, 0, 19) pared norte
+	# La celda (20, 0, 20) es esquina entre ventana este y pared norte -> ventana_esquina L-junction
+	var mundo_esq: Node = VoxelWorld.new()
+	mundo_esq.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_esq.cell_size = Vector3.ONE * 1.0
+	mundo_esq._indexar_biblioteca()
+	var render_esq: Node3D = TranslucidosRendererScript.new()
+	render_esq.voxel_world = mundo_esq
+	render_esq._indexar_materiales()
+	mundo_esq.bloque_translucido_cambiado.connect(render_esq._on_bloque_translucido_cambiado)
+
+	mundo_esq.colocar_bloque(Vector3i(21, 0, 20), "vidrio", true)
+	mundo_esq.colocar_bloque(Vector3i(20, 0, 19), "bloque_piedra", true)
+	mundo_esq.colocar_bloque(Vector3i(20, 0, 20), "vidrio", true)
+	render_esq.flush_pendientes()
+
+	var chunk_esq: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(20, 0, 20))
+	var mesh_esq: MeshInstance3D = render_esq._mesh_por_chunk["vidrio"][chunk_esq]
+	var verts_esq: PackedVector3Array = mesh_esq.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	# (20, 0, 20) es esquina (4 quads = 24 vertices), (21, 0, 20) es recta (2 quads = 12 vertices) -> total 36 vertices
+	assert(verts_esq.size() == 36, "esquina (24 vertices) + recta (12 vertices) deben sumar 36 vertices, salieron %d" % verts_esq.size())
+
+	# 3. Ventana techo / piso: en (30, 0, 30) con orientación vertical (ori.y != 0)
+	var mundo_techo: Node = VoxelWorld.new()
+	mundo_techo.mesh_library = load("res://assets/BlockLibrary.res")
+	mundo_techo.cell_size = Vector3.ONE * 1.0
+	mundo_techo._indexar_biblioteca()
+	var render_techo: Node3D = TranslucidosRendererScript.new()
+	render_techo.voxel_world = mundo_techo
+	render_techo._indexar_materiales()
+	mundo_techo.bloque_translucido_cambiado.connect(render_techo._on_bloque_translucido_cambiado)
+
+	mundo_techo.colocar_bloque(Vector3i(30, 0, 30), "vidrio", true, Vector3i(0, 1, 0))
+	render_techo.flush_pendientes()
+
+	var chunk_techo: Vector3i = TranslucidosRendererScript._chunk_de(Vector3i(30, 0, 30))
+	var mesh_techo: MeshInstance3D = render_techo._mesh_por_chunk["vidrio"][chunk_techo]
+	var verts_techo: PackedVector3Array = mesh_techo.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var norms_techo: PackedVector3Array = mesh_techo.mesh.surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
+	assert(verts_techo.size() == 12, "ventana techo debe tener exactamente 12 vertices (2 quads: superior e inferior), salieron %d" % verts_techo.size())
+
+	var min_y := 999.0
+	var max_y := -999.0
+	for v in verts_techo:
+		var y_local: float = v.y - 0.0
+		min_y = minf(min_y, y_local)
+		max_y = maxf(max_y, y_local)
+	assert(is_equal_approx(min_y, 0.95), "cara inferior de ventana techo debe estar a 0.95 en Y, dio %f" % min_y)
+	assert(is_equal_approx(max_y, 1.0), "cara superior de ventana techo debe estar a 1.0 en Y, dio %f" % max_y)
+	assert(is_equal_approx(max_y - min_y, 0.05), "espesor de ventana techo debe ser 0.05 (1/20), dio %f" % (max_y - min_y))
+
+	var tiene_normal_arriba := false
+	var tiene_normal_abajo := false
+	for n in norms_techo:
+		if is_equal_approx(n.y, 1.0):
+			tiene_normal_arriba = true
+		elif is_equal_approx(n.y, -1.0):
+			tiene_normal_abajo = true
+	assert(tiene_normal_arriba and tiene_normal_abajo, "debe tener normales hacia arriba y hacia abajo")
+
+	print("OK: panel recto de 1/20 a media profundidad, ventana_esquina L-junction y ventana_techo validados correctamente.")
+
 	print("\n=== Las pruebas de TranslucidosRenderer pasaron correctamente ===")

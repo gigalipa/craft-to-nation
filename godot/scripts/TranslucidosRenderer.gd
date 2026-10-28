@@ -176,6 +176,353 @@ static func _agregar_cara(st: SurfaceTool, centro: Vector3, direccion: Vector3i,
 		st.add_vertex(esquinas[i])
 
 
+static func _agregar_quad(st: SurfaceTool, p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, normal: Vector3, u0: float = 0.0, u1: float = 1.0, v0: float = 0.0, v1: float = 1.0) -> void:
+	st.set_normal(normal)
+	st.set_uv(Vector2(u0, v0))
+	st.add_vertex(p0)
+	st.set_normal(normal)
+	st.set_uv(Vector2(u1, v0))
+	st.add_vertex(p1)
+	st.set_normal(normal)
+	st.set_uv(Vector2(u1, v1))
+	st.add_vertex(p2)
+
+	st.set_normal(normal)
+	st.set_uv(Vector2(u0, v0))
+	st.add_vertex(p0)
+	st.set_normal(normal)
+	st.set_uv(Vector2(u1, v1))
+	st.add_vertex(p2)
+	st.set_normal(normal)
+	st.set_uv(Vector2(u0, v1))
+	st.add_vertex(p3)
+
+
+static func _tipo_conecta_ventana(t: String) -> bool:
+	return t != "" and not VoxelWorld.TIPOS_LIQUIDOS.has(t)
+
+
+static func _agregar_ventana_recta_x(st: SurfaceTool, c: Vector3, hacia_z_pos: bool) -> void:
+	if hacia_z_pos:
+		# Cara frontal (+Z)
+		_agregar_quad(
+			st,
+			c + Vector3(0.0, 0.0, 0.525),
+			c + Vector3(1.0, 0.0, 0.525),
+			c + Vector3(1.0, 1.0, 0.525),
+			c + Vector3(0.0, 1.0, 0.525),
+			Vector3(0, 0, 1), 0.0, 1.0, 0.0, 1.0
+		)
+		# Cara trasera (-Z)
+		_agregar_quad(
+			st,
+			c + Vector3(1.0, 0.0, 0.475),
+			c + Vector3(0.0, 0.0, 0.475),
+			c + Vector3(0.0, 1.0, 0.475),
+			c + Vector3(1.0, 1.0, 0.475),
+			Vector3(0, 0, -1), 1.0, 0.0, 0.0, 1.0
+		)
+	else:
+		# Cara frontal (-Z)
+		_agregar_quad(
+			st,
+			c + Vector3(1.0, 0.0, 0.475),
+			c + Vector3(0.0, 0.0, 0.475),
+			c + Vector3(0.0, 1.0, 0.475),
+			c + Vector3(1.0, 1.0, 0.475),
+			Vector3(0, 0, -1), 0.0, 1.0, 0.0, 1.0
+		)
+		# Cara trasera (+Z)
+		_agregar_quad(
+			st,
+			c + Vector3(0.0, 0.0, 0.525),
+			c + Vector3(1.0, 0.0, 0.525),
+			c + Vector3(1.0, 1.0, 0.525),
+			c + Vector3(0.0, 1.0, 0.525),
+			Vector3(0, 0, 1), 1.0, 0.0, 0.0, 1.0
+		)
+
+
+static func _agregar_ventana_recta_z(st: SurfaceTool, c: Vector3, hacia_x_pos: bool) -> void:
+	if hacia_x_pos:
+		# Cara frontal (+X)
+		_agregar_quad(
+			st,
+			c + Vector3(0.525, 0.0, 1.0),
+			c + Vector3(0.525, 0.0, 0.0),
+			c + Vector3(0.525, 1.0, 0.0),
+			c + Vector3(0.525, 1.0, 1.0),
+			Vector3(1, 0, 0), 0.0, 1.0, 0.0, 1.0
+		)
+		# Cara trasera (-X)
+		_agregar_quad(
+			st,
+			c + Vector3(0.475, 0.0, 0.0),
+			c + Vector3(0.475, 0.0, 1.0),
+			c + Vector3(0.475, 1.0, 1.0),
+			c + Vector3(0.475, 1.0, 0.0),
+			Vector3(-1, 0, 0), 1.0, 0.0, 0.0, 1.0
+		)
+	else:
+		# Cara frontal (-X)
+		_agregar_quad(
+			st,
+			c + Vector3(0.475, 0.0, 0.0),
+			c + Vector3(0.475, 0.0, 1.0),
+			c + Vector3(0.475, 1.0, 1.0),
+			c + Vector3(0.475, 1.0, 0.0),
+			Vector3(-1, 0, 0), 0.0, 1.0, 0.0, 1.0
+		)
+		# Cara trasera (+X)
+		_agregar_quad(
+			st,
+			c + Vector3(0.525, 0.0, 1.0),
+			c + Vector3(0.525, 0.0, 0.0),
+			c + Vector3(0.525, 1.0, 0.0),
+			c + Vector3(0.525, 1.0, 1.0),
+			Vector3(1, 0, 0), 1.0, 0.0, 0.0, 1.0
+		)
+
+
+static func _agregar_esquina_ne(st: SurfaceTool, c: Vector3) -> void:
+	# Cara exterior (brazo norte mira -X, brazo este mira +Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.475, 0.0, 0.0),
+		c + Vector3(0.475, 0.0, 0.525),
+		c + Vector3(0.475, 1.0, 0.525),
+		c + Vector3(0.475, 1.0, 0.0),
+		Vector3(-1, 0, 0), 0.0, 0.5, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(0.475, 0.0, 0.525),
+		c + Vector3(1.0, 0.0, 0.525),
+		c + Vector3(1.0, 1.0, 0.525),
+		c + Vector3(0.475, 1.0, 0.525),
+		Vector3(0, 0, 1), 0.5, 1.0, 0.0, 1.0
+	)
+	# Cara interior (brazo norte mira +X, brazo este mira -Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.525, 0.0, 0.475),
+		c + Vector3(0.525, 0.0, 0.0),
+		c + Vector3(0.525, 1.0, 0.0),
+		c + Vector3(0.525, 1.0, 0.475),
+		Vector3(1, 0, 0), 0.5, 0.0, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(1.0, 0.0, 0.475),
+		c + Vector3(0.525, 0.0, 0.475),
+		c + Vector3(0.525, 1.0, 0.475),
+		c + Vector3(1.0, 1.0, 0.475),
+		Vector3(0, 0, -1), 1.0, 0.5, 0.0, 1.0
+	)
+
+
+static func _agregar_esquina_nw(st: SurfaceTool, c: Vector3) -> void:
+	# Cara exterior (brazo norte mira +X, brazo oeste mira +Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.525, 0.0, 0.525),
+		c + Vector3(0.525, 0.0, 0.0),
+		c + Vector3(0.525, 1.0, 0.0),
+		c + Vector3(0.525, 1.0, 0.525),
+		Vector3(1, 0, 0), 0.0, 0.5, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(0.0, 0.0, 0.525),
+		c + Vector3(0.525, 0.0, 0.525),
+		c + Vector3(0.525, 1.0, 0.525),
+		c + Vector3(0.0, 1.0, 0.525),
+		Vector3(0, 0, 1), 0.5, 1.0, 0.0, 1.0
+	)
+	# Cara interior (brazo norte mira -X, brazo oeste mira -Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.475, 0.0, 0.0),
+		c + Vector3(0.475, 0.0, 0.475),
+		c + Vector3(0.475, 1.0, 0.475),
+		c + Vector3(0.475, 1.0, 0.0),
+		Vector3(-1, 0, 0), 0.5, 0.0, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(0.475, 0.0, 0.475),
+		c + Vector3(0.0, 0.0, 0.475),
+		c + Vector3(0.0, 1.0, 0.475),
+		c + Vector3(0.475, 1.0, 0.475),
+		Vector3(0, 0, -1), 1.0, 0.5, 0.0, 1.0
+	)
+
+
+static func _agregar_esquina_se(st: SurfaceTool, c: Vector3) -> void:
+	# Cara exterior (brazo sur mira -X, brazo este mira -Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.475, 0.0, 0.475),
+		c + Vector3(0.475, 0.0, 1.0),
+		c + Vector3(0.475, 1.0, 1.0),
+		c + Vector3(0.475, 1.0, 0.475),
+		Vector3(-1, 0, 0), 0.0, 0.5, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(1.0, 0.0, 0.475),
+		c + Vector3(0.475, 0.0, 0.475),
+		c + Vector3(0.475, 1.0, 0.475),
+		c + Vector3(1.0, 1.0, 0.475),
+		Vector3(0, 0, -1), 0.5, 1.0, 0.0, 1.0
+	)
+	# Cara interior (brazo sur mira +X, brazo este mira +Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.525, 0.0, 1.0),
+		c + Vector3(0.525, 0.0, 0.525),
+		c + Vector3(0.525, 1.0, 0.525),
+		c + Vector3(0.525, 1.0, 1.0),
+		Vector3(1, 0, 0), 0.5, 0.0, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(0.525, 0.0, 0.525),
+		c + Vector3(1.0, 0.0, 0.525),
+		c + Vector3(1.0, 1.0, 0.525),
+		c + Vector3(0.525, 1.0, 0.525),
+		Vector3(0, 0, 1), 1.0, 0.5, 0.0, 1.0
+	)
+
+
+static func _agregar_esquina_sw(st: SurfaceTool, c: Vector3) -> void:
+	# Cara exterior (brazo sur mira +X, brazo oeste mira -Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.525, 0.0, 1.0),
+		c + Vector3(0.525, 0.0, 0.475),
+		c + Vector3(0.525, 1.0, 0.475),
+		c + Vector3(0.525, 1.0, 1.0),
+		Vector3(1, 0, 0), 0.0, 0.5, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(0.525, 0.0, 0.475),
+		c + Vector3(0.0, 0.0, 0.475),
+		c + Vector3(0.0, 1.0, 0.475),
+		c + Vector3(0.525, 1.0, 0.475),
+		Vector3(0, 0, -1), 0.5, 1.0, 0.0, 1.0
+	)
+	# Cara interior (brazo sur mira -X, brazo oeste mira +Z)
+	_agregar_quad(
+		st,
+		c + Vector3(0.475, 0.0, 0.475),
+		c + Vector3(0.475, 0.0, 1.0),
+		c + Vector3(0.475, 1.0, 1.0),
+		c + Vector3(0.475, 1.0, 0.475),
+		Vector3(-1, 0, 0), 0.5, 0.0, 0.0, 1.0
+	)
+	_agregar_quad(
+		st,
+		c + Vector3(0.0, 0.0, 0.525),
+		c + Vector3(0.475, 0.0, 0.525),
+		c + Vector3(0.475, 1.0, 0.525),
+		c + Vector3(0.0, 1.0, 0.525),
+		Vector3(0, 0, 1), 1.0, 0.5, 0.0, 1.0
+	)
+
+
+static func _agregar_ventana_techo(st: SurfaceTool, c: Vector3, _hacia_arriba: bool) -> void:
+	# Cara superior contra el tope del bloque (Y = 1.0, normal +Y)
+	_agregar_quad(
+		st,
+		c + Vector3(0.0, 1.0, 1.0),
+		c + Vector3(1.0, 1.0, 1.0),
+		c + Vector3(1.0, 1.0, 0.0),
+		c + Vector3(0.0, 1.0, 0.0),
+		Vector3(0, 1, 0),
+		0.0, 1.0, 0.0, 1.0
+	)
+	# Cara inferior (Y = 0.95, normal -Y, espesor 1/20 = 0.05)
+	_agregar_quad(
+		st,
+		c + Vector3(0.0, 0.95, 0.0),
+		c + Vector3(1.0, 0.95, 0.0),
+		c + Vector3(1.0, 0.95, 1.0),
+		c + Vector3(0.0, 0.95, 1.0),
+		Vector3(0, -1, 0),
+		0.0, 1.0, 0.0, 1.0
+	)
+
+
+func _agregar_ventana(st: SurfaceTool, celda: Vector3i) -> void:
+	var c := Vector3(celda)
+
+	var ori := Vector3i(0, 0, 1)
+	if voxel_world != null and "orientacion_ventana" in voxel_world and voxel_world.orientacion_ventana.has(celda):
+		ori = voxel_world.orientacion_ventana[celda]
+
+	# Ventana de techo / piso (colocada mirando desde abajo hacia arriba o desde arriba hacia abajo)
+	if ori.y != 0:
+		_agregar_ventana_techo(st, c, ori.y > 0)
+		return
+
+	var n_n := celda + Vector3i(0, 0, -1)
+	var n_s := celda + Vector3i(0, 0, 1)
+	var n_e := celda + Vector3i(1, 0, 0)
+	var n_w := celda + Vector3i(-1, 0, 0)
+
+	var tipo_n: String = voxel_world.obtener_tipo(n_n) if voxel_world != null else ""
+	var tipo_s: String = voxel_world.obtener_tipo(n_s) if voxel_world != null else ""
+	var tipo_e: String = voxel_world.obtener_tipo(n_e) if voxel_world != null else ""
+	var tipo_w: String = voxel_world.obtener_tipo(n_w) if voxel_world != null else ""
+
+	var conecta_n: bool = _tipo_conecta_ventana(tipo_n)
+	var conecta_s: bool = _tipo_conecta_ventana(tipo_s)
+	var conecta_e: bool = _tipo_conecta_ventana(tipo_e)
+	var conecta_w: bool = _tipo_conecta_ventana(tipo_w)
+
+	var vid_n: bool = tipo_n == "vidrio"
+	var vid_s: bool = tipo_s == "vidrio"
+	var vid_e: bool = tipo_e == "vidrio"
+	var vid_w: bool = tipo_w == "vidrio"
+
+	var linea_ew: bool = conecta_e and conecta_w
+	var linea_ns: bool = conecta_n and conecta_s
+
+	# Si es una esquina entre un bloque_ventana y otro bloque (o dos ventanas)
+	if not linea_ew and not linea_ns:
+		if conecta_n and conecta_e and (vid_n or vid_e):
+			_agregar_esquina_ne(st, c)
+			return
+		elif conecta_n and conecta_w and (vid_n or vid_w):
+			_agregar_esquina_nw(st, c)
+			return
+		elif conecta_s and conecta_e and (vid_s or vid_e):
+			_agregar_esquina_se(st, c)
+			return
+		elif conecta_s and conecta_w and (vid_s or vid_w):
+			_agregar_esquina_sw(st, c)
+			return
+
+	if linea_ew or conecta_e or conecta_w:
+		var hacia_z_pos := true
+		if ori.z != 0:
+			hacia_z_pos = ori.z > 0
+		_agregar_ventana_recta_x(st, c, hacia_z_pos)
+	elif linea_ns or conecta_n or conecta_s:
+		var hacia_x_pos := true
+		if ori.x != 0:
+			hacia_x_pos = ori.x > 0
+		_agregar_ventana_recta_z(st, c, hacia_x_pos)
+	else:
+		# Aislada: mira hacia la orientación guardada / avatar
+		if abs(ori.x) > abs(ori.z):
+			_agregar_ventana_recta_z(st, c, ori.x > 0)
+		else:
+			_agregar_ventana_recta_x(st, c, ori.z >= 0)
+
+
 ## Reconstruye desde cero la malla de "chunk" para "tipo": recorre las
 ## CHUNK_SIZE³ celdas del chunk, y para cada celda de ese tipo agrega solo
 ## las caras que _cara_visible() aprueba contra cada uno de sus 6 vecinos
@@ -193,6 +540,10 @@ func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
 			for dz in range(CHUNK_SIZE):
 				var celda: Vector3i = origen + Vector3i(dx, dy, dz)
 				if voxel_world.obtener_tipo(celda) != tipo:
+					continue
+				if tipo == "vidrio":
+					_agregar_ventana(st, celda)
+					hay_caras = true
 					continue
 				var h_propia: float = voxel_world.altura_agua_en(celda) if tipo == "agua" else 1.0
 				for direccion: Vector3i in VoxelWorld.VECINOS_3D:

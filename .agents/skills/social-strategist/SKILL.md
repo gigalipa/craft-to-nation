@@ -18,7 +18,7 @@ Esta skill actúa como el planificador editorial y archivista del estudio de red
      - Archivo `.srt` de subtítulos asociado (si aplica).
      - Formato (Vertical 9:16 o Horizontal 16:9) y duración.
      - Veredicto de Control de Calidad (QA PASS).
-     - Textos completos listos para publicación (Gancho, TikTok/Reels/Shorts, Post para X, y YouTube/Steam para devlogs).
+     - Textos completos listos para publicación (Gancho, TikTok/Reels/Shorts, Post para X, y YouTube / GitHub Discussions para devlogs).
 
 2. **Pilares de Contenido**:
    - Asegurar que el contenido semanal cubra equitativamente los pilares del juego:
@@ -29,6 +29,14 @@ Esta skill actúa como el planificador editorial y archivista del estudio de red
 
 3. **Estrategia de Publicación Semanal**:
    - **Lunes/Martes**: Short viral #1 (Mecánica clave o gancho visual).
-   - **Miércoles**: Publicación principal (Devlog largo en YouTube + Anuncio en Steam Community Update).
+   - **Miércoles**: Publicación principal (Devlog largo en YouTube + Actualización en GitHub Discussions y Web Oficial).
    - **Jueves**: Short viral #2 (Curiosidad arquitectónica o debate gamedev).
    - **Viernes/Sábado**: Short viral #3 (Visión tecnológica o sneak peek del próximo live).
+
+---
+
+## Fuentes de Verdad y Calendarios Activos
+
+- **Calendarios Editoriales**: [video_edition/workspaces/calendario_semana_1.md](../../video_edition/workspaces/calendario_semana_1.md) y [video_edition/workspaces/calendario_semana_2.md](../../video_edition/workspaces/calendario_semana_2.md).
+- **Hoja de Ruta e Hitos para Planificación**: [Documento de Diseño de Juego (GDD)_ Craft to Nation.md](../../Documento%20de%20Dise%C3%B1o%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md), [README.md](../../README.md), [docs/Pendientes y próximos pasos.md](../../docs/Pendientes%20y%20pr%C3%B3ximos%20pasos.md), [docs/ideas-backlog.md](../../docs/ideas-backlog.md) y [website/wiki/src/es/dev/roadmap.md](../../website/wiki/src/es/dev/roadmap.md).
+- **Política de Enlaces y Coordinación**: [AGENTS.md](../../AGENTS.md), [social/SKILL.md](../social/SKILL.md), [gamedev-copywriter/SKILL.md](../gamedev-copywriter/SKILL.md) y [content-qa/SKILL.md](../content-qa/SKILL.md).

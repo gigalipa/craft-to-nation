@@ -1,6 +1,6 @@
 ---
 name: content-qa
-description: Control de calidad técnico y editorial antes de entrega o publicación. Valida especificaciones de video (resolución, duración, quemado de subtítulos en shorts vs externos en largos) y completitud de copys para Craft to Nation.
+description: Control de calidad técnico y editorial antes de entrega o publicación. Valida especificaciones de video (resolución, duración, quemado de subtítulos en shorts vs externos en largos) y verificación de enlaces reales en copys para Craft to Nation.
 ---
 
 # Skill: Content QA (Control de Calidad)
@@ -37,16 +37,22 @@ El QA ejecuta `qa_checker.py` sobre cada video master generado:
 
 ---
 
-## 2. Comprobaciones Editoriales de Texto
+## 2. Comprobaciones Editoriales de Texto y Verificación de Enlaces
 
+- **Validación Estricta de Enlaces**:
+  - ⚠️ **Steam y Discord ficticios**: RECHAZAR inmediatamente cualquier copy que contenga enlaces inventados a Steam (`store.steampowered.com/...`) o Discord (`discord.gg/...`). La página de Steam aún no existe.
+  - **Enlaces verificados y válidos**:
+    - Web oficial: `https://crafttonation.netlify.app/`
+    - Feedback y comunidad: `https://github.com/gigalipa/craft-to-nation/discussions`
+    - YouTube oficial: `https://www.youtube.com/@crafttonation`
 - **Para Shorts**:
   - ¿Contiene un Gancho Inicial (Hook) de 3 segundos claro y magnético?
-  - ¿Incluye llamado a la acción (CTA) hacia la Wishlist de Steam?
+  - ¿Incluye llamado a la acción (CTA) hacia la web oficial o GitHub Discussions?
   - ¿Contiene hashtags requeridos (`#crafttonation`, `#gamedev`, `#indiedev`)?
 - **Para Videos Largos**:
   - ¿El título tiene formato estándar `Craft to Nation | Devlog #...`?
   - ¿Incluye descripción con marcas de tiempo (capítulos `00:00`, `01:15`...)?
-  - ¿Se incluye el borrador para Steam Community Update?
+  - ¿Se incluye el borrador para GitHub Discussions / Devlog Update?
 - **Ortografía y Glosario**:
   - Sin erratas fonéticas ni alucinaciones de Whisper (ej. "almacén" en vez de "al mazón", "central termoeléctrica" en vez de "la centra", "Dieselpunk/Cyberpunk/Solarpunk").
 
@@ -54,5 +60,13 @@ El QA ejecuta `qa_checker.py` sobre cada video master generado:
 
 ## 3. Veredicto Final
 
-- **PASS**: El contenido cumple con el 100% de los criterios técnicos y editoriales.
-- **NEEDS REVISION**: Especifica la desviación detectada (ej. subtítulos quemados en video largo, duración excedida en short, o falta de CTA) y solicita la corrección al agente responsable.
+- **PASS**: El contenido cumple con el 100% de los criterios técnicos y editoriales (incluyendo enlaces verificados).
+- **NEEDS REVISION**: Especifica la desviación detectada (ej. subtítulos quemados en video largo, duración excedida en short, falta de CTA, o uso de enlaces falsos/no existentes) y solicita la corrección al agente responsable.
+
+---
+
+## 4. Fuentes de Verdad para Auditoría Técnica y Editorial
+
+- **Validador Técnico y Limpiador Fonético**: [video_edition/tools/qa_checker.py](../../video_edition/tools/qa_checker.py) y [video_edition/tools/llm_subtitle_cleaner.py](../../video_edition/tools/llm_subtitle_cleaner.py).
+- **Política de Enlaces y Orquestación**: [AGENTS.md](../../AGENTS.md) y [social/SKILL.md](../social/SKILL.md).
+- **Especificaciones Oficiales del Juego**: [Documento de Diseño de Juego (GDD)_ Craft to Nation.md](../../Documento%20de%20Dise%C3%B1o%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md), [README.md](../../README.md), [docs/Pendientes y próximos pasos.md](../../docs/Pendientes%20y%20pr%C3%B3ximos%20pasos.md), [website/wiki/src/es/dev/roadmap.md](../../website/wiki/src/es/dev/roadmap.md) y [godot/scripts/strings.gd](../../godot/scripts/strings.gd).

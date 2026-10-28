@@ -23,6 +23,10 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 		return ""
 	if metadata.has("puesto_nuevo"):
 		var info: Dictionary = metadata["puesto_nuevo"]
+		var PlantillasPuestoScript = preload("res://scripts/PlantillasPuesto.gd")
+		for celda_vacia in PlantillasPuestoScript.celdas_vacias_mundo(info["tipo"], info.get("giros", 0), info["esquina"], info["y_base"]):
+			if mundo != null and mundo.has_method("liberar_celda_agua"):
+				mundo.liberar_celda_agua(celda_vacia)
 		var entorno: Dictionary = {}
 		var tasas: Dictionary = {}
 		if not CadenaMinerales.REFINERIAS.has(info["tipo"]) and not Recoleccion.ESCUELAS.has(info["tipo"]) and info["tipo"] != "universidad" and info["tipo"] != "central_termoelectrica" and info["tipo"] != "almacen":
@@ -70,6 +74,16 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 		else:
 			Zonificacion.id_nucleo = id_edificio
 			print("Núcleo urbano remodelado y redeclarado. ID: ", id_edificio)
+		if metadata.has("huella_xz") and metadata.has("id_edificio") and mundo != null and mundo.has_method("volumen_de_obra") and mundo.has_method("liberar_celda_agua"):
+			var id_ed: int = metadata["id_edificio"]
+			var vol: Dictionary = mundo.volumen_de_obra(id_ed)
+			var celdas_ed: Dictionary = mundo.edificio_tipos.get(id_ed, {}) if "edificio_tipos" in mundo else {}
+			if not vol.is_empty():
+				for p in metadata["huella_xz"]:
+					for y in range(vol["min"].y + 1, vol["max"].y + 1):
+						var celda_int := Vector3i(p.x, y, p.y)
+						if not celdas_ed.has(celda_int):
+							mundo.liberar_celda_agua(celda_int)
 		Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
 		return Strings.FINALIZACION_AVISO_NUCLEO_DECLARADO
 
@@ -85,6 +99,17 @@ static func completar_construccion(mundo: Object, metadata: Dictionary) -> Strin
 
 	Zonificacion.ampliar_influencia(metadata.get("id_edificio", -1), metadata["huella_xz"], blueprint["categoria"])
 	print("Zona de influencia ampliada: ", Zonificacion.influencia_min, " a ", Zonificacion.influencia_max)
+
+	if metadata.has("huella_xz") and metadata.has("id_edificio") and mundo != null and mundo.has_method("volumen_de_obra") and mundo.has_method("liberar_celda_agua"):
+		var id_ed: int = metadata["id_edificio"]
+		var vol: Dictionary = mundo.volumen_de_obra(id_ed)
+		var celdas_ed: Dictionary = mundo.edificio_tipos.get(id_ed, {}) if "edificio_tipos" in mundo else {}
+		if not vol.is_empty():
+			for p in metadata["huella_xz"]:
+				for y in range(vol["min"].y + 1, vol["max"].y + 1):
+					var celda_int := Vector3i(p.x, y, p.y)
+					if not celdas_ed.has(celda_int):
+						mundo.liberar_celda_agua(celda_int)
 
 	Recoleccion.colocar_puesto(metadata["esquina"], "blueprint", metadata["ancho"], metadata["profundidad"])
 	var nombre_edificio: String = str(blueprint.get("nombre", Strings.FINALIZACION_NOMBRE_EDIFICIO_RESIDENCIAL))

@@ -278,6 +278,7 @@ func _init() -> void:
 		"agua": Recurso.new("Agua", 0, LIMITE_BASE),
 		"crudo": Recurso.new("Crudo", 0, LIMITE_BASE),
 		"combustible": Recurso.new("Combustible", 0, LIMITE_BASE),
+		"vidrio": Recurso.new("Vidrio", 0, LIMITE_BASE),
 	}
 	sub_almacen_comida["recoleccion_caza"] = COMIDA_INICIAL * 0.5
 	sub_almacen_comida["pesca"] = COMIDA_INICIAL * 0.5
@@ -321,6 +322,24 @@ func consumir_costo_con_detalle(recurso: String, monto: float) -> Dictionary:
 			desglose["bloques_piedra"] = de_bloques
 		if de_piedra > 0.0:
 			desglose["piedra"] = de_piedra
+		return desglose
+	elif recurso == "vidrio":
+		var vidrio: Recurso = almacen["vidrio"]
+		var tierra: Recurso = almacen["tierra"]
+		var cant_v: float = vidrio.cantidad
+		var cant_t: float = tierra.cantidad
+		var de_vidrio: float = minf(cant_v, monto)
+		var falta_v: float = monto - de_vidrio
+		var necesita_tierra: float = falta_v * 3.0
+		if cant_t < necesita_tierra:
+			return {}
+		vidrio.cantidad -= de_vidrio
+		tierra.cantidad -= necesita_tierra
+		var desglose: Dictionary = {}
+		if de_vidrio > 0.0:
+			desglose["vidrio"] = de_vidrio
+		if necesita_tierra > 0.0:
+			desglose["tierra"] = necesita_tierra
 		return desglose
 	else:
 		if not almacen.has(recurso) or (almacen[recurso] as Recurso).cantidad < monto:
@@ -1505,4 +1524,3 @@ func retirar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> bool:
 		return false
 	parque_transporte_disponible[tipo] = actual - cantidad
 	return true
-

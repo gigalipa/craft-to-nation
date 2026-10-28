@@ -15,6 +15,7 @@ const VentanaPoblacionScript = preload("res://scripts/VentanaPoblacion.gd")
 const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
+const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
 const Strings = preload("res://scripts/strings.gd")
 
 
@@ -39,6 +40,10 @@ class ObrasPanelFalso extends RefCounted:
 	var pausas := 0
 	var rechazo := ""
 	var es_nucleo := false
+	var id_columna := -1
+
+	func id_en_columna(_col: Vector2i) -> int:
+		return id_columna
 
 	func fijar_prioridad(id: int, p: int) -> void:
 		prioridades[id] = p
@@ -258,32 +263,57 @@ func probar_ventanas_datos() -> void:
 	assert(ventana_almacen.visible and ventana_almacen.abierta)
 	assert(ventana_almacen._caja.get_child_count() > 0)
 	var btn_comida: Button = null
+	var btn_tierra: Button = null
 	var nombres_recursos: Array = []
 	for hijo in ventana_almacen._caja.get_children():
 		if hijo is Label:
 			nombres_recursos.append((hijo as Label).text.split(":")[0])
 		elif hijo is Container:
 			for nieto in hijo.get_children():
-				if nieto is Button and (nieto as Button).text.contains("Comida:"):
-					btn_comida = nieto as Button
-					# Limpiar prefijo de flecha "▶ " o "▼ " para comprobar orden alfabetico
-					var txt: String = (nieto as Button).text.replace("▶ ", "").replace("▼ ", "")
+				if nieto is Button:
+					var b := nieto as Button
+					if b.text.contains("Comida:"):
+						btn_comida = b
+					elif b.text.contains("Tierra:"):
+						btn_tierra = b
+					var txt: String = b.text.replace("▶ ", "").replace("▼ ", "")
 					nombres_recursos.append(txt.split(":")[0])
 					break
 				elif nieto is Label:
 					nombres_recursos.append((nieto as Label).text.split(":")[0])
 					break
 	assert(btn_comida != null, "boton desplegable de comida debe existir")
+	assert(btn_tierra != null, "boton desplegable de tierra debe existir")
 	assert(btn_comida.text.contains("▶ Comida:"), "por defecto debe estar cerrado con ▶")
 	btn_comida.emit_signal("pressed")
 	# Tras pulsar, _desplegado_comida es true y el texto tiene ▼
 	assert(ventana_almacen._desplegado_comida, "_desplegado_comida debe ser true tras click")
+	assert(btn_comida.text.contains("▼ Comida:"), "tras click debe mostrar flecha ▼")
+	assert(ventana_almacen._contenedores_hijos["comida"].visible, "contenedor de hijos de comida debe ser visible")
+	btn_tierra.emit_signal("pressed")
+	ventana_almacen._actualizar()
+	assert(ventana_almacen._desplegados.get("tierra", false), "tierra debe quedar desplegado tras click")
+	assert(btn_tierra.text.contains("▼ Tierra:"), "tierra debe mostrar flecha ▼")
+	# Verificar que _process() no destruye los botones bajo el cursor del usuario
+	var ref_btn_comida := btn_comida
+	ventana_almacen._process(0.016)
+	assert(ventana_almacen._botones_desplegable["comida"] == ref_btn_comida, "los botones no deben ser destruidos entre fotogramas")
 	var nombres_ordenados := nombres_recursos.duplicate()
 	nombres_ordenados.sort_custom(func(a: String, b: String) -> bool: return a.nocasecmp_to(b) < 0)
 	assert(nombres_recursos == nombres_ordenados, "almacen debe estar ordenado alfabeticamente: %s vs %s" % [nombres_recursos, nombres_ordenados])
-	var boton_cerrar_almacen: Button = ventana_almacen._caja_raiz.get_child(0).get_child(1)
+	var boton_toggle_todo: Button = ventana_almacen._btn_toggle_todo
+	assert(boton_toggle_todo != null, "boton toggle todo debe existir")
+	ventana_almacen.alternar_expandir_todo()
+	assert(ventana_almacen.estan_todos_expandidos(), "todos deben estar expandidos")
+	assert(boton_toggle_todo.text == "Contraer todo")
+	ventana_almacen.alternar_expandir_todo()
+	assert(not ventana_almacen.estan_todos_expandidos(), "todos deben estar contraidos")
+	assert(boton_toggle_todo.text == "Expandir todo")
+
+	var boton_cerrar_almacen: Button = ventana_almacen._caja_raiz.get_child(0).get_child(2)
 	ventana_almacen._process(0.0)
-	assert(ventana_almacen._caja_raiz.get_child(0).get_child(1) == boton_cerrar_almacen)
+	assert(ventana_almacen._caja_raiz.get_child(0).get_child(2) == boton_cerrar_almacen)
+	assert(ventana_almacen._caja_raiz.get_child(0).get_child(1) == boton_toggle_todo)
 	ventana_almacen.ocultar_temporalmente()
 	assert(not ventana_almacen.visible and ventana_almacen.abierta)
 	ventana_almacen.restaurar()
@@ -599,7 +629,7 @@ func probar_ventana_moral() -> void:
 	var ventana: PanelContainer = VentanaMoralScript.new()
 	add_child(ventana)
 	assert(not ventana.visible and not ventana.abierta)
-	assert(ventana.custom_minimum_size == Vector2(500, 420), "VentanaMoral debe tener tamaño 500x420")
+	assert(ventana.custom_minimum_size == Vector2(380, 440), "VentanaMoral debe tener tamaño 380x440")
 
 	ventana.abrir()
 	assert(ventana.visible and ventana.abierta)
@@ -688,7 +718,8 @@ func probar_barra_superior() -> void:
 	assert(barra.critico.text == "Crítico —", "salió '%s'" % barra.critico.text)
 
 	assert(barra.almacen_total.text == "Almacén", "salió '%s'" % barra.almacen_total.text)
-	assert(barra.era.text == "Prehistoria")
+	assert(barra.era.text == "Asentamiento Pionero", "salió '%s'" % barra.era.text)
+	assert(barra.nivel.text.begins_with("IDU:"), "salió '%s'" % barra.nivel.text)
 	assert(barra._icono_nivel != null and barra._icono_nivel.texture != null)
 
 	for clave in respaldo:
@@ -1210,13 +1241,13 @@ func probar_panel_edificio() -> void:
 	assert(panel._obreros.visible and panel._obreros.text == "Obreros: 3", "obreros")
 	assert(panel._materiales.visible and panel._materiales.text.contains("15") and panel._materiales.text.contains("4"), "faltan 15 de piedra y hay 4: %s" % panel._materiales.text)
 	assert(panel._pausar.visible and panel._pausar.text == "Pausar construcción" and panel._demoler.text == "Demoler", "botones")
-	assert(panel._prioridad.visible and panel._prioridad.text == "Prioridad: Normal", "prioridad visible y normal en construcción")
-	panel._prioridad.pressed.emit()
-	assert(obras.prioridad_de(7) == 2 and panel._prioridad.text == "Prioridad: Alta", "cicla a Alta")
-	panel._prioridad.pressed.emit()
-	assert(obras.prioridad_de(7) == 0 and panel._prioridad.text == "Prioridad: Baja", "cicla a Baja")
-	panel._prioridad.pressed.emit()
-	assert(obras.prioridad_de(7) == 1 and panel._prioridad.text == "Prioridad: Normal", "cicla a Normal")
+	assert(panel._fila_prioridad.visible and panel._lbl_prioridad.text == "Prioridad: Normal", "prioridad visible y normal en construcción")
+	panel._btn_prioridad_subir.pressed.emit()
+	assert(obras.prioridad_de(7) == 2 and panel._lbl_prioridad.text == "Prioridad: Alta" and panel._btn_prioridad_subir.disabled, "sube a Alta")
+	panel._btn_prioridad_bajar.pressed.emit()
+	assert(obras.prioridad_de(7) == 1 and panel._lbl_prioridad.text == "Prioridad: Normal", "baja a Normal")
+	panel._btn_prioridad_bajar.pressed.emit()
+	assert(obras.prioridad_de(7) == 0 and panel._lbl_prioridad.text == "Prioridad: Baja" and panel._btn_prioridad_bajar.disabled, "baja a Baja")
 	assert(panel._dialogo_demoler.has_theme_stylebox_override("panel"), "dialogo estilizado con panel")
 	assert(panel._dialogo_demoler.get_theme_color("title_color") == Color(1.0, 0.85, 0.4), "titulo dorado en dialogo")
 	panel._pausar.pressed.emit()
@@ -1231,7 +1262,7 @@ func probar_panel_edificio() -> void:
 	obras.resumen = {"nombre": "Casa", "tipo": "Residencial", "estado": "completo", "pausada": false, "salud": 1.0, "faltantes": {}}
 	ciudad.registrar_edificio_residencial(7, [2])
 	panel._actualizar()
-	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible and not panel._prioridad.visible, "completo: 100 %, sin materiales, sin obreros, sin pausa y sin prioridad")
+	assert(panel._salud.text == "Salud: 100 %" and not panel._materiales.visible and not panel._obreros.visible and not panel._pausar.visible and not panel._fila_prioridad.visible, "completo: 100 %, sin materiales, sin obreros, sin pausa y sin prioridad")
 	assert(panel._asignar_nucleo.visible, "residencial completo permite asignar como núcleo")
 	assert(panel._remodelar.visible and panel._remodelar.text == "Iniciar remodelación", "botón remodelar visible")
 	assert(panel._colonizable.visible and panel._toggle_colonizable.visible, "colonizabilidad visible")
@@ -1408,11 +1439,19 @@ func probar_investigacion_ui() -> void:
 	assert(barra._lbl_era != null, "_lbl_era no debe ser nulo")
 	assert(barra._lbl_idu != null, "_lbl_idu no debe ser nulo")
 	barra.actualizar()
-	assert(barra._lbl_era.text.contains("Era 1"), "debe mostrar Era 1 inicial: %s" % barra._lbl_era.text)
+	assert(barra._lbl_era.text.contains("Asentamiento Pionero"), "debe mostrar Asentamiento Pionero inicial: %s" % barra._lbl_era.text)
 	assert(barra._lbl_idu.text.begins_with("IDU:"), "debe mostrar IDU formateado: %s" % barra._lbl_idu.text)
 	assert(barra._lbl_idu.tooltip_text.contains("Sofisticación"), "tooltip debe contener desglose S")
 	assert(barra._lbl_idu.tooltip_text.contains("Cualificación"), "tooltip debe contener desglose Q")
 	assert(barra._lbl_idu.tooltip_text.contains("Ciencia"), "tooltip debe contener desglose K")
+	var tt_control = barra._make_custom_tooltip(barra._lbl_idu.tooltip_text)
+	assert(tt_control != null and tt_control is PanelContainer, "debe generar un Control de tooltip estilizado")
+
+	barra._on_nivel_mouse_entered()
+	assert(barra._panel_hover_idu != null and barra._panel_hover_idu.visible, "hover sobre nivel debe abrir panel flotante")
+	assert(barra._lbl_hover_idu_titulo.text.contains("Nivel I"), "debe mostrar Nivel I para IDU 1.0")
+	barra._on_nivel_mouse_exited()
+	assert(not barra._panel_hover_idu.visible, "mouse exit debe cerrar el panel flotante")
 	barra.queue_free()
 
 	print("\n=== TEST: Controles de Capa 1 en PanelPuesto (Universidad) ===")
@@ -1565,4 +1604,46 @@ func probar_transporte_ui() -> void:
 	Economia.puestos.erase(esq_taller)
 	Ciudad.era_actual = era_previa
 	print("OK: Controles de transporte y taller de transporte en PanelPuesto verificados correctamente.")
+
+	print("\n=== TEST 16: Hotbar cuenta bloques_piedra para bloque_piedra y PanelEdificio auto-transición a PanelPuesto ===")
+	# 1. Hotbar con bloques_piedra
+	var hotbar_test: PanelContainer = HotbarScript.new()
+	add_child(hotbar_test)
+	hotbar_test.configurar(["bloque_piedra"])
+	var cant_piedra_previa: float = Ciudad.almacen["piedra"].cantidad if Ciudad.almacen.has("piedra") else 0.0
+	var cant_bp_previa: float = Ciudad.almacen["bloques_piedra"].cantidad if Ciudad.almacen.has("bloques_piedra") else 0.0
+	Ciudad.almacen["piedra"].cantidad = 0.0
+	Ciudad.almacen["bloques_piedra"].cantidad = 50.0
+	hotbar_test.actualizar_cantidades()
+	assert(hotbar_test.cantidad_de(0) == 10, "solo con bloques_piedra se cuentan 10 bloques de piedra (5 cada uno): %d" % hotbar_test.cantidad_de(0))
+	Ciudad.almacen["piedra"].cantidad = cant_piedra_previa
+	Ciudad.almacen["bloques_piedra"].cantidad = cant_bp_previa
+	hotbar_test.queue_free()
+
+	# 2. PanelEdificio auto-transición al completarse un puesto
+	var panel_trans: PanelContainer = PanelEdificioScript.new()
+	add_child(panel_trans)
+	var obras_mock := ObrasPanelFalso.new()
+	panel_trans.obras = obras_mock
+	panel_trans.ciudad = Ciudad
+	panel_trans.colonos = Colonos
+	obras_mock.resumen = {"nombre": "Pesca", "tipo": "Puesto", "estado": "construccion", "pausada": false, "salud": 0.5, "faltantes": {}}
+	var esq_puesto_test := Vector2i(9900, 9900)
+	var puesto_solicitado: Array[Vector2i] = [Vector2i(-1, -1)]
+	panel_trans.solicitar_abrir_puesto.connect(func(e: Vector2i) -> void: puesto_solicitado[0] = e)
+	panel_trans.abrir(77)
+	assert(panel_trans.visible and panel_trans.id == 77, "panel de edificio abierto en construccion")
+
+	# Completar obra y registrar puesto en Recoleccion
+	Recoleccion.colocar_puesto(esq_puesto_test, "pesca_frutos_mar", 4, 6)
+	Economia.registrar_puesto(esq_puesto_test, "pesca_frutos_mar", 4, 6, {})
+	obras_mock.id_columna = 77
+	obras_mock.resumen = {"nombre": "Pesca", "tipo": "Puesto", "estado": "completo", "pausada": false, "salud": 1.0, "faltantes": {}}
+	panel_trans._actualizar()
+	assert(puesto_solicitado[0] == esq_puesto_test, "debe emitir solicitar_abrir_puesto con la esquina del puesto: %s" % str(puesto_solicitado[0]))
+	assert(not panel_trans.visible, "PanelEdificio debe cerrarse tras auto-transición")
+	Recoleccion.puestos.erase(esq_puesto_test)
+	Economia.puestos.erase(esq_puesto_test)
+	panel_trans.queue_free()
+	print("OK: Hotbar y auto-transición a PanelPuesto verificados correctamente.")
 

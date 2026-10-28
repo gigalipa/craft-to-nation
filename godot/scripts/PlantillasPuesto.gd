@@ -49,6 +49,7 @@ const MATERIAL := {
 	"carbonera": "adobe",
 	"aserradero": "bloque_madera",
 	"fabrica_bloques": "bloque_piedra",
+	"vidriera": "adobe",
 	"escuela_tecnica": "adobe",
 	"escuela_especialistas": "bloque_piedra",
 	"universidad": "bloque_piedra",
@@ -128,6 +129,14 @@ const PLANTILLAS := {
 	], "chimenea": Vector2i(2, 3)},
 	# Fábrica de bloques: galpón de mampostería (5 x 6) con trituradora sobre el techo.
 	"fabrica_bloques": {"capas": [
+		["#####", "#####", "#####", "#####", "#####", "#####"],
+		["##e##", "#...#", "#..B#", "#...#", "#...#", "##s##"],
+		["##E##", "V...V", "#...#", "V...V", "#...#", "##S##"],
+		["#####", "#####", "#####", "#####", "#####", "#####"],
+		[".....", ".....", ".....", "..#..", ".....", "....."],
+	], "chimenea": Vector2i(2, 3)},
+	# Vidriera: taller de vidriería de adobe (5 x 6) con horno y chimenea sobre el techo.
+	"vidriera": {"capas": [
 		["#####", "#####", "#####", "#####", "#####", "#####"],
 		["##e##", "#...#", "#..B#", "#...#", "#...#", "##s##"],
 		["##E##", "V...V", "#...#", "V...V", "#...#", "##S##"],
@@ -285,6 +294,26 @@ static func en_mundo(tipo: String, giros: int, esquina: Vector2i, y_base: int) -
 	var local := celdas(tipo, giros)
 	for c in local:
 		resultado[Vector3i(esquina.x + c.x, y_base + c.y, esquina.y + c.z)] = local[c]
+	return resultado
+
+
+## Celdas vacías (carácter ".") de la plantilla girada en coordenadas del mundo.
+## Permite drenar o liberar agua y fluidos atrapados dentro del volumen interior
+## cuando se termina la construcción.
+static func celdas_vacias_mundo(tipo: String, giros: int, esquina: Vector2i, y_base: int) -> Array[Vector3i]:
+	var resultado: Array[Vector3i] = []
+	if not PLANTILLAS.has(tipo):
+		return resultado
+	var d := dimensiones(tipo)
+	var capas: Array = PLANTILLAS[tipo]["capas"]
+	for y in range(capas.size()):
+		var filas: Array = capas[y]
+		for z in range(filas.size()):
+			var fila: String = filas[z]
+			for x in range(fila.length()):
+				if fila[x] == ".":
+					var local := _girar(Vector3i(x, y, z), d.x, d.y, giros)
+					resultado.append(Vector3i(esquina.x + local.x, y_base + local.y, esquina.y + local.z))
 	return resultado
 
 

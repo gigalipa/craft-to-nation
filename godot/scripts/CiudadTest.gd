@@ -254,11 +254,11 @@ func ejecutar_pruebas() -> void:
 	print("Comida tras 300 ticks: ", recien_nacida.almacen["comida"].cantidad)
 	assert(not hubo_hambruna, "no debe haber hambruna en los primeros 10 minutos")
 
-	print("\n=== TEST 18: el almacén tiene los 15 recursos de la economía ===")
+	print("\n=== TEST 18: el almacén tiene los 16 recursos de la economía ===")
 	var ocho: Node = CiudadScript.new()
-	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas", "bloques_piedra", "agua", "crudo", "combustible"]:
+	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas", "bloques_piedra", "agua", "crudo", "combustible", "vidrio"]:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
-	assert(ocho.almacen.size() == 15)
+	assert(ocho.almacen.size() == 16)
 	assert(ocho.almacen["acero"].cantidad == 0.0 and ocho.almacen["acero"].limite == 500.0, "el acero empieza en 0 con el tope inicial")
 	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
 	assert(ocho.almacen["bloques_piedra"].cantidad == 0.0 and ocho.almacen["bloques_piedra"].limite == 500.0)
@@ -357,6 +357,32 @@ func ejecutar_pruebas() -> void:
 	assert(detalle_p == {"bloques_piedra": 4.0, "piedra": 2.0}, "desglosa exactamente lo cobrado: %s" % detalle_p)
 	canteria.almacen["bloques_piedra"].cantidad = 4.0
 	assert(canteria.almacen_general()["piedra"] == 12.0, "almacen_general suma piedra (8) y bloques_piedra (4)")
+
+	print("\n=== TEST 23c: vidrio prefiere vidrio sobre tierra (1 vidrio o 3 tierra) ===")
+	var vidr: Node = CiudadScript.new()
+	vidr.almacen["vidrio"].cantidad = 2.0
+	vidr.almacen["tierra"].cantidad = 10.0
+	var det_v1: Dictionary = vidr.consumir_costo_con_detalle("vidrio", 1.0)
+	assert(det_v1 == {"vidrio": 1.0}, "consume primero 1 vidrio")
+	assert(vidr.almacen["vidrio"].cantidad == 1.0 and vidr.almacen["tierra"].cantidad == 10.0)
+
+	var det_v2: Dictionary = vidr.consumir_costo_con_detalle("vidrio", 2.0)
+	assert(det_v2 == {"vidrio": 1.0, "tierra": 3.0}, "consume 1 vidrio restante + 3 de tierra (1 vidrio = 3 tierra)")
+	assert(vidr.almacen["vidrio"].cantidad == 0.0 and vidr.almacen["tierra"].cantidad == 7.0)
+
+	var det_v3: Dictionary = vidr.consumir_costo_con_detalle("vidrio", 1.0)
+	assert(det_v3 == {"tierra": 3.0}, "sin vidrio consume 3 de tierra")
+	assert(vidr.almacen["vidrio"].cantidad == 0.0 and vidr.almacen["tierra"].cantidad == 4.0)
+
+	# Faltan recursos: pide 2 vidrio (necesita 6 tierra), solo hay 4
+	var det_v4: Dictionary = vidr.consumir_costo_con_detalle("vidrio", 2.0)
+	assert(det_v4.is_empty(), "si no alcanza ni con tierra no descuenta nada")
+	assert(vidr.almacen["tierra"].cantidad == 4.0)
+
+	# Unidades requieren vidrio exclusivo (puede_pagar exige stock real de vidrio)
+	assert(not vidr.puede_pagar({"vidrio": 1.0}), "puede_pagar para unidades exige vidrio estricto sin sustituto")
+	vidr.almacen["vidrio"].cantidad = 5.0
+	assert(vidr.puede_pagar({"vidrio": 5.0}))
 
 	print("\n=== TEST 24: horas explícitas de investigación, atomicidad de cobro e instalaciones físicas ===")
 	var ciu24: Node = CiudadScript.new()
@@ -922,8 +948,10 @@ func ejecutar_pruebas() -> void:
 	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["dron_carga"]["cantidad_tripulacion"] == 0)
 	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["trolebus_solar"]["capacidad"] == 900.0)
 	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["trolebus_solar"]["cantidad_tripulacion"] == 1)
-	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["camion_diesel"]["costo_fabricacion"].has("tierra"))
-	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["trolebus_solar"]["costo_fabricacion"].has("tierra"))
+	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["camion_diesel"]["costo_fabricacion"].has("vidrio"))
+	assert(not Ajustes.TRANSPORTE_CATALOGO_UNIDADES["camion_diesel"]["costo_fabricacion"].has("tierra"))
+	assert(Ajustes.TRANSPORTE_CATALOGO_UNIDADES["trolebus_solar"]["costo_fabricacion"].has("vidrio"))
+	assert(not Ajustes.TRANSPORTE_CATALOGO_UNIDADES["trolebus_solar"]["costo_fabricacion"].has("tierra"))
 	assert(Strings.TRANSPORTE_NOMBRES.has("camion_diesel"))
 	assert(Strings.TRANSPORTE_ESTADOS.has("RALENTIZADO"))
 

@@ -119,6 +119,7 @@ func _init() -> void:
 	_panel_edificio = PanelEdificioScript.new()
 	add_child(_panel_edificio)
 	_panel_edificio.aviso.connect(notificar)
+	_panel_edificio.solicitar_abrir_puesto.connect(abrir_panel_puesto)
 	_panel_canalizacion = PanelCanalizacionScript.new()
 	add_child(_panel_canalizacion)
 	_panel_canalizacion.aviso.connect(notificar)

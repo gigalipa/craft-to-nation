@@ -1,3 +1,8 @@
+---
+title: "Edificios, Niveles Urbanos y Almacenamiento"
+description: "Reglas de construcción hermética, validación por volumen interno, guardado de blueprints, remodelación Shift+B y gestión del almacén central."
+---
+
 # Edificios, Niveles Urbanos y Almacenamiento
 
 ![Vista táctica cenital y planificación de distritos](/assets/hud-camara-cenital.png)
@@ -13,26 +18,27 @@ El sistema organiza las construcciones en tres zonas excluyentes dentro del mund
 | Distrito (`Menú Zonificar`) | Categoría de Edificio (`Menú Construir`) | Ejemplos en el Motor | Regla de Emplazamiento |
 | :--- | :--- | :--- | :--- |
 | **Zona Residencial (`2 -> 1`)** | **Residencial (`1 -> 1`)** e **Investigación (`1 -> 4`)** | Viviendas (`Residencia [camas]x[baúles]`, ranuras `1`–`5`), `escuela_tecnica` (`1-4-1`), `escuela_especialistas` (`1-4-2`), `universidad` (`1-4-3`) | Dentro del Área de Influencia (`Radio 30`, `61×61` celdas) del Núcleo Urbano |
-| **Zona Industrial (`2 -> 2`)** | **Industrial (`1 -> 3`)** | `siderurgica` (`1`), `refineria_tierras_raras` (`2`), `aserradero` (`3`), `fabrica_bloques` (`4`), `carbonera` (`5`), `refineria_petrolera` (`6`), `productor_combustible` (`7`), `central_termoelectrica` (`8`), **`almacen` (`9`)** | Sector industrial pintado dentro del Área de Influencia |
+| **Zona Industrial (`2 -> 2`)** | **Industrial (`1 -> 3`)** | `siderurgica` (`1`), `refineria_tierras_raras` (`2`), `aserradero` (`3`), `fabrica_bloques` (`4`), **`vidriera` (`5`)**, `carbonera` (`6`), `refineria_petrolera` (`7`), `productor_combustible` (`8`), `central_termoelectrica` (`9`), **`taller_transporte` / `almacen` (`0`)** | Sector industrial pintado dentro del Área de Influencia |
 | **Periferia Silvestre** | **Periférico (`1 -> 2`)** | `caza_recoleccion` (`1`), `maderero` (`2`), `mina` (`3`), `pesca_frutos_mar` (`4`), `estacion_bombeo` (`5`), `centro_extraccion` (`6`) | **Fuera del Área de Influencia** (la huella se muestra roja si intentas colocarlos dentro de la ciudad) |
 
 ---
 
-## 2. Niveles Urbanos (1 a 3) y Cadena Estricta de Educación e Investigación
+## 2. Niveles Urbanos, Indicador IDU (`I` a `IV`) e Investigación en Dos Capas
 
-| Nivel Urbano | Nombre de Etapa | Máx. Pisos por Vivienda | Máx. Camas por Piso | Tope por Edificio | Consumo Avatar | Requisitos de Desbloqueo (`Ciudad.gd`) |
+En la barra de estado superior (`BarraSuperior.gd`), el indicador de **Era** muestra su nombre e ícono correspondiente, mientras que en el extremo derecho aparece el **ícono en número romano (`romano_1.svg` a `romano_4.svg`) correspondiente al valor redondeado del Índice de Desarrollo Urbano (`IDU`)**. Al pasar el ratón sobre este ícono, se despliega una **ventana tooltip anclada a la esquina superior derecha** (bajo el borde inferior de la barra de estado) con el desglose de los tres pilares de desarrollo: **Demográfico (`D`)**, **Científico (`C`)** y **Sofisticación Material (`S`)**.
+
+| Nivel Urbano | Nombre de Etapa / Era | Máx. Pisos por Vivienda | Máx. Camas por Piso | Tope por Edificio | Consumo Avatar | Requisitos de Desbloqueo (`Ciudad.gd`) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Nivel 1** | Asentamiento Rudimentario | **2 pisos** | **2 camas/piso** | **4 camas** | `5,0 comida/h` | Nivel inicial de partida |
-| **Nivel 2** | Asentamiento Productivo | **4 pisos** | **4 camas/piso** | **16 camas** | `4,0 comida/h` | Sofisticación media `>= 1,7` + mín. `3` plantas Tipo 2 + Tecnología **Metalurgia Aplicada** (`300 Hierro`, `200 Madera`, `20 h_inv`) |
-| **Nivel 3** | Metrópolis Tecnificada | **8 pisos** | **4 camas/piso** | **32 camas** | `3,0 comida/h` (`2,0` en alcaldía) | Sofisticación media `>= 2,5` + mín. `3` plantas Tipo 3 + Tecnología **Automatización Industrial** (`800 Hierro`, `100 Madera`, `50 h_inv`) |
+| **Nivel 1 (`I`)** | Asentamiento Rudimentario | **2 pisos** | **2 camas/piso** | **4 camas** | `5,0 comida/h` | Nivel inicial de partida (`IDU 1,0`) |
+| **Nivel 2 (`II`)** | Asentamiento Productivo | **4 pisos** | **4 camas/piso** | **16 camas** | `4,0 comida/h` | Sofisticación media `>= 1,7` + mín. `3` plantas Tipo 2 + Tecnología **Metalurgia Aplicada** |
+| **Nivel 3 (`III` / `IV`)** | Metrópolis Tecnificada | **8 pisos** | **4 camas/piso** | **32 camas** | `3,0 comida/h` (`2,0` en alcaldía) | Sofisticación media `>= 2,5` + mín. `3` plantas Tipo 3 + Tecnología **Automatización Industrial** (hasta `IDU 4,0` en Era IV) |
 
-### Orden Estricto de Desbloqueo Académico (`Zona Residencial: 1 -> 4 -> 1..3`)
+### Orden Estricto de Desbloqueo Académico e Investigación en 2 Capas (`1 -> 4 -> 1..3`)
 1. **Escuela Técnica (`1 -> 4 -> 1`, `5×5` adobe):** Requiere contratar el cupo completo de **4 Aprendices** (tomados de `Obreros`/`Desempleados`). Una vez que los 4 están presentes en sus pupitres, el estudio avanza `1 h` por tick (si se despide a uno antes de terminar, el progreso se reinicia a `0`). Al cumplir **24 horas**, gradúa **3 Técnicos libres** (ocupando exactamente 1 cama).
 2. **Escuela de Especialistas (`1 -> 4 -> 2`, `5×5` piedra):** Exige tener al menos **1 Escuela Técnica construida**. Entrena una cohorte completa de **3 Aprendices Técnicos** durante **48 horas** para graduar **2 Especialistas libres** (3 técnicos = 2 especialistas = 1 cama).
-3. **Universidad Interactiva (`1 -> 4 -> 3`, `5×5` piedra):** Exige tener al menos **1 Escuela de Especialistas construida**. Contrata hasta **3 Especialistas libres**, quienes pasan al oficio de **Investigadores** (`investigador`):
-   - **Inicio Manual:** No arranca sola; debes pulsar **`[Iniciar Investigación]`** y confirmar el pago de materiales en el diálogo modal (`300 Hierro + 200 Madera` para *Metalurgia Aplicada*).
-   - **Pausa y Cancelación con Reembolso del 100 %:** Permite **`[Pausar]`** / **`[Reanudar]`** en cualquier momento o **`[Cancelar]`** devolviendo el **100 % del hierro y madera** al almacén central.
-   - Al completar las `20 horas-investigador` de **Metalurgia Aplicada**, se desbloquean en el menú Industrial (`1 -> 3`) la **Refinería Petrolera (`6`)**, el **Productor de Combustible (`7`)** y la **Central Termoeléctrica (`8`)**.
+3. **Universidad Interactiva y Árbol Descentralizado en 2 Capas (`1 -> 4 -> 3`, `5×5` piedra):** Exige tener al menos **1 Escuela de Especialistas construida**. Contrata hasta **3 Especialistas libres**, quienes pasan al oficio de **Investigadores** (`investigador`):
+   - **Capa 1 — Ciencia Teórica (Universidad):** Desarrolla las ramas teóricas troncales (*Metalurgia Aplicada*, *Química y Destilación*, *Termodinámica*, *Electromagnetismo*, *Automatización Industrial*). Requiere inicio manual (`[Iniciar Investigación]`), permite **`[Pausar]`** / **`[Reanudar]`** y **`[Cancelar]`** con reembolso del **100 %** de los materiales.
+   - **Capa 2 — Aplicaciones Prácticas e Investigador Itinerante:** Las mejoras operativas se inician directamente en el panel contextual de cada edificio productivo o del Núcleo Urbano. Cuando inicias una aplicación práctica, un **Investigador Itinerante** sale físicamente de la Universidad, camina hasta la instalación objetivo y hace avanzar las horas de estudio *in situ* mientras permanece en el edificio.
 
 ---
 
@@ -51,9 +57,13 @@ El sistema organiza las construcciones en tres zonas excluyentes dentro del mund
 
 ---
 
-## 5. Prioridades de Construcción (`PanelEdificio`) y Jerarquía de Despacho
+## 5. Prioridades de Construcción (`PanelEdificio`), Transición Automática y Drenaje Interior
 
-En cualquier edificio en construcción puedes hacer clic sobre el botón **`[Prioridad: Normal]`** para ciclar entre **`Normal` → `Alta` → `Baja` → `Normal`**. Los colonos libres (hasta **4 constructores por obra**) se despachan siguiendo estrictamente este orden global de prioridad:
+En cualquier edificio en construcción (`PanelEdificio.gd`) puedes ajustar la prioridad mediante los botones de **subir y bajar (`▲` `btn_subir.svg` / `▼` `btn_bajar.svg`)** entre **`Baja` ↔ `Normal` ↔ `Alta`**. Además:
+- **Transición Automática al Completar Obra:** Si mantienes abierta la ventana de un edificio en construcción cuando alcanza el **100 %**, el panel se transforma automáticamente en la ficha operativa del edificio terminado (`PanelPuesto` o `PanelEdificio`).
+- **Drenaje Automático de Agua Interior:** Al finalizarse la construcción o declaración de un edificio, cualquier bloque de agua atrapado dentro de su volumen interior se drena y elimina automáticamente.
+
+Los colonos libres (hasta **4 constructores por obra**) se despachan siguiendo estrictamente este orden global de prioridad:
 
 1. **Construcción de Prioridad Alta** (`Prioridad Alta ▲▲▲`)
 2. **Construcción de Prioridad Normal** (`Prioridad Normal ▲▲`)

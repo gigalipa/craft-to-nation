@@ -353,8 +353,11 @@ func ejecutar_pruebas() -> void:
 	for x in range(3, 6):
 		mundo_dos.colocar_bloque(Vector3i(x, 5, 1), "agua")
 	assert(Recoleccion.celdas_agua_conectadas(mundo_dos, Vector2i(0, 0), 25).size() == 9 + 3 + 9)
-	# Sin agua en el centro: vacío.
+	# Sin agua en el centro ni alrededor: vacío.
 	assert(Recoleccion.celdas_agua_conectadas(mundo_dos, Vector2i(50, 50), 25).is_empty())
+	# Si el centro queda cubierto (ej. muelle de piedra), conecta a través de vecinos con agua abierta.
+	mundo_dos.colocar_bloque(Vector3i(0, 5, 0), "bloque_piedra")
+	assert(Recoleccion.celdas_agua_conectadas(mundo_dos, Vector2i(0, 0), 25).size() > 0, "centro cubierto por muelle encuentra el agua vecina")
 	print("OK: celdas_agua_conectadas() sigue el agua real (islas, pisos, barreras y conexiones).")
 
 	print("

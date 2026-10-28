@@ -11,8 +11,8 @@ const Strings = preload("res://scripts/strings.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
 
-const ANCHO_VENTANA := 500.0
-const ALTURA_VENTANA := 420.0
+const ANCHO_VENTANA := 380.0
+const ALTURA_VENTANA := 440.0
 
 var abierta := false
 var _frame_apertura := -1
@@ -85,11 +85,6 @@ func _ready() -> void:
 	var sep_est := HSeparator.new()
 	vbox_estado.add_child(sep_est)
 
-	var grid_indicadores := GridContainer.new()
-	grid_indicadores.columns = 2
-	grid_indicadores.add_theme_constant_override("h_separation", 20)
-	grid_indicadores.add_theme_constant_override("v_separation", 4)
-
 	var item_prod := HBoxContainer.new()
 	item_prod.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	item_prod.add_theme_constant_override("separation", 6)
@@ -98,7 +93,7 @@ func _ready() -> void:
 	_rect_productividad.texture = IconosHUD.icono("productividad")
 	item_prod.add_child(_rect_productividad)
 	item_prod.add_child(_lbl_productividad)
-	grid_indicadores.add_child(item_prod)
+	vbox_estado.add_child(item_prod)
 
 	var item_migr := HBoxContainer.new()
 	item_migr.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -107,9 +102,7 @@ func _ready() -> void:
 	_rect_migracion.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	item_migr.add_child(_rect_migracion)
 	item_migr.add_child(_lbl_migracion)
-	grid_indicadores.add_child(item_migr)
-
-	vbox_estado.add_child(grid_indicadores)
+	vbox_estado.add_child(item_migr)
 
 	var sep_boost := HSeparator.new()
 	vbox_estado.add_child(sep_boost)

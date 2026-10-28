@@ -1,3 +1,8 @@
+---
+title: "Buildings, Urban Levels & Storage Infrastructure"
+description: "Learn airtight construction rules, internal volume validation, blueprint auto-saving, non-destructive remodeling, and central warehouse management."
+---
+
 # Buildings, Urban Levels & Storage Infrastructure
 
 ![Overhead tactical camera and district planning](/assets/hud-camara-cenital.png)
@@ -13,26 +18,27 @@ Structures are organized into three mutually exclusive territorial zones across 
 | District (`Zone Menu`) | Building Category (`Build Menu`) | Engine Facilities | Placement Rule |
 | :--- | :--- | :--- | :--- |
 | **Residential Zone (`2 -> 1`)** | **Residential (`1 -> 1`)** & **Research (`1 -> 4`)** | Saved Houses (`Residencia [beds]x[chests]`, slots `1`–`5`), `escuela_tecnica` (`1-4-1`), `escuela_especialistas` (`1-4-2`), `universidad` (`1-4-3`) | Inside the Urban Core's Area of Influence (`Radius 30`, `61×61` cells) |
-| **Industrial Zone (`2 -> 2`)** | **Industrial (`1 -> 3`)** | `siderurgica` (`1`), `refineria_tierras_raras` (`2`), `aserradero` (`3`), `fabrica_bloques` (`4`), `carbonera` (`5`), `refineria_petrolera` (`6`), `productor_combustible` (`7`), `central_termoelectrica` (`8`), **`almacen` (`9`)** | Painted Industrial sector inside the Area of Influence |
+| **Industrial Zone (`2 -> 2`)** | **Industrial (`1 -> 3`)** | `siderurgica` (`1`), `refineria_tierras_raras` (`2`), `aserradero` (`3`), `fabrica_bloques` (`4`), **`vidriera` (`5`)**, `carbonera` (`6`), `refineria_petrolera` (`7`), `productor_combustible` (`8`), `central_termoelectrica` (`9`), **`taller_transporte` / `almacen` (`0`)** | Painted Industrial sector inside the Area of Influence |
 | **Wild Periphery** | **Peripheral (`1 -> 2`)** | `caza_recoleccion` (`1`), `maderero` (`2`), `mina` (`3`), `pesca_frutos_mar` (`4`), `estacion_bombeo` (`5`), `centro_extraccion` (`6`) | **Outside the Area of Influence** (footprint turns red if hovered inside the city perimeter) |
 
 ---
 
-## 2. Urban Levels (1 to 3) & Strict Academic Unlock Chain
+## 2. Urban Levels, IDU Indicator (`I` to `IV`) & Two-Layer Decentralized Research
 
-| Urban Level | Stage Name | Max Floors per House | Max Beds per Floor | Max Beds per Building | Avatar Food Rate | Unlock Requirements (`Ciudad.gd`) |
+On the top status bar (`BarraSuperior.gd`), the **Era** indicator displays its name and icon, while the right end displays the **Roman numeral icon (`romano_1.svg` to `romano_4.svg`) corresponding to the rounded Urban Development Index (`IDU`)**. Hovering over this icon opens a **tooltip window anchored to the top-right corner** (flush beneath the bottom edge of the status bar) detailing the three development pillars: **Demographic (`D`)**, **Scientific (`C`)**, and **Material Sophistication (`S`)**.
+
+| Urban Level | Stage / Era Name | Max Floors per House | Max Beds per Floor | Max Beds per Building | Avatar Food Rate | Unlock Requirements (`Ciudad.gd`) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Level 1** | Rudimentary Settlement | **2 floors** | **2 beds/floor** | **4 beds** | `5.0 food/h` | Default starting tier |
-| **Level 2** | Productive Settlement | **4 floors** | **4 beds/floor** | **16 beds** | `4.0 food/h` | Avg. sophistication `>= 1.7` + min `3` Type-2 plants + **Applied Metallurgy** (`300 Iron`, `200 Wood`, `20 res_h`) |
-| **Level 3** | Technified Metropolis | **8 floors** | **4 beds/floor** | **32 beds** | `3.0 food/h` (`2.0` in town hall) | Avg. sophistication `>= 2.5` + min `3` Type-3 plants + **Industrial Automation** (`800 Iron`, `100 Wood`, `50 res_h`) |
+| **Level 1 (`I`)** | Rudimentary Settlement | **2 floors** | **2 beds/floor** | **4 beds** | `5.0 food/h` | Default starting tier (`IDU 1.0`) |
+| **Level 2 (`II`)** | Productive Settlement | **4 floors** | **4 beds/floor** | **16 beds** | `4.0 food/h` | Avg. sophistication `>= 1.7` + min `3` Type-2 plants + **Applied Metallurgy** |
+| **Level 3 (`III` / `IV`)** | Technified Metropolis | **8 floors** | **4 beds/floor** | **32 beds** | `3.0 food/h` (`2.0` in town hall) | Avg. sophistication `>= 2.5` + min `3` Type-3 plants + **Industrial Automation** (up to `IDU 4.0` in Era IV) |
 
-### Strict Educational & Research Unlock Order (`Residential Zone: 1 -> 4 -> 1..3`)
+### Strict Educational & Two-Layer Research Unlock Order (`Residential Zone: 1 -> 4 -> 1..3`)
 1. **Technical School (`1 -> 4 -> 1`, `5×5` adobe):** Requires hiring the full quota of **4 Apprentices** (drawn from `Laborers`/`Unemployed`). Once all 4 are physically present at their study desks, progress advances `1 h` per tick (dismissing an apprentice before completion resets progress to `0`). After **24 hours**, the cohort graduates into **3 free Technicians (`Técnicos`)** (occupying 1 shared bed).
 2. **Specialist School (`1 -> 4 -> 2`, `5×5` stone):** Requires at least **1 built Technical School**. Trains a full cohort of **3 Apprentice Technicians** for **48 hours** and graduates **2 free Specialists (`Especialistas`)** (3 technicians = 2 specialists = 1 bed).
-3. **Interactive University (`1 -> 4 -> 3`, `5×5` stone):** Requires at least **1 built Specialist School**. Hires up to **3 free Specialists**, who transition into **Researchers (`investigador`)**:
-   - **Manual Start:** Does not start automatically; click **`[Iniciar Investigación]`** and confirm the upfront resource payment in the modal dialog (`300 Iron + 200 Wood` for *Applied Metallurgy*).
-   - **Pause & 100%-Refund Cancellation:** Supports **`[Pausar]`** / **`[Reanudar]`** at any time, or **`[Cancelar]`** which **refunds 100% of the paid iron and wood** back to the central warehouse.
-   - Completing `20 researcher-hours` of **Applied Metallurgy** (`Metalurgia Aplicada`) unlocks the **Oil Refinery (`1-3-6`)**, **Fuel Producer (`1-3-7`)**, and **Thermal Power Plant (`1-3-8`)**.
+3. **Interactive University & Two-Layer Decentralized Tech Tree (`1 -> 4 -> 3`, `5×5` stone):** Requires at least **1 built Specialist School**. Hires up to **3 free Specialists**, who transition into **Researchers (`investigador`)**:
+   - **Layer 1 — Theoretical Science (University):** Develops core theoretical branches (*Applied Metallurgy*, *Chemistry & Distillation*, *Thermodynamics*, *Electromagnetism*, *Industrial Automation*). Requires manual start (`[Iniciar Investigación]`), supports **`[Pausar]`** / **`[Reanudar]`**, and **`[Cancelar]`** with a **100% material refund**.
+   - **Layer 2 — Practical Applications & Itinerant Researcher:** Operational upgrades are initiated directly from the context panel of each productive facility or the Urban Core. Starting a practical upgrade dispatches an **Itinerant Researcher (`Investigador Itinerante`)** who physically walks from the University to the target facility and advances research hours *on site*.
 
 ---
 
@@ -51,9 +57,13 @@ Structures are organized into three mutually exclusive territorial zones across 
 
 ---
 
-## 5. Construction Priorities (`PanelEdificio`) & Dispatch Hierarchy
+## 5. Construction Priorities (`PanelEdificio`), Automatic Panel Transition & Interior Drainage
 
-Selecting any building under construction in View mode (`Esc`) displays the **`[Prioridad: Normal]`** button, which cycles through **`Normal` → `Alta` (High) → `Baja` (Low) → `Normal`**. Free laborers (up to **4 builders per site**) are dispatched strictly following this 5-tier global order:
+Selecting any building under construction (`PanelEdificio.gd`) lets you adjust its priority using the **up and down buttons (`▲` `btn_subir.svg` / `▼` `btn_bajar.svg`)** across **`Baja` (Low) ↔ `Normal` ↔ `Alta` (High)**. In addition:
+- **Automatic Window Transition upon Completion:** If a construction site's panel is open when progress reaches **100%**, it automatically transitions to the finished building's operational panel (`PanelPuesto` or `PanelEdificio`).
+- **Automatic Interior Water Drainage:** When a building's construction or declaration finishes, any water blocks trapped inside its interior volume are automatically drained and cleared.
+
+Free laborers (up to **4 builders per site**) are dispatched strictly following this 5-tier global order:
 
 1. **High Priority Construction** (`Prioridad Alta ▲▲▲`)
 2. **Normal Priority Construction** (`Prioridad Normal ▲▲`)

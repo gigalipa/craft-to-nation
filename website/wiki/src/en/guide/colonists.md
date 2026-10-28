@@ -1,3 +1,8 @@
+---
+title: "Colonist Management & Demographics"
+description: "Detailed breakdown of dynamic morale [0-100], continuous labor productivity curve, specialist careers, housing buffers, and critical exodus brain drain."
+---
+
 # Colonist Management & Demographics
 
 Colonists are the heartbeat of **Craft to Nation**. Unlike generic city builder workers, your settlers possess physical metabolism, vocational ranks, housing requirements, and a dynamic psychological morale system that directly modulates economic output and monthly migration.
@@ -35,9 +40,9 @@ Estimate your colony's hourly and cyclic food and water requirements based on yo
 
 ---
 
-## 3. Dynamic Morale System (GDD v3.57)
+## 3. Dynamic Morale System (GDD v3.59)
 
-Colony productivity and migration are driven by the settlement's **Dynamic Morale** score (`0.0` to `100.0`, accessible from the top bar or by pressing <kbd>M</kbd> to open `VentanaMoral.gd`):
+Colony productivity and migration are driven by the settlement's **Dynamic Morale** score (`0.0` to `100.0`, accessible from the top bar or by pressing <kbd>M</kbd> to open `VentanaMoral.gd`, where migration status is displayed directly on the line beneath labor productivity):
 
 ```
     Morale Score       Productivity Multiplier        Colony Psychological State (VentanaMoral.gd)
@@ -57,7 +62,7 @@ Productivity Multiplier (X) = 0.5 × 2^(Morale / 50)
 ### Daily Morale Rate Applied Hourly (`tasa_cambio_moral / 24.0`):
 In `Ciudad.gd`, active modifiers sum into a **daily morale change rate** (`ΔM / day`), which is applied in increments of `ΔM / 24.0` every hourly tick (`2.0s` real time):
 - **Resource Surplus:** `+0.4 / day` when basic supplies exceed 50% storage capacity.
-- **Diet Diversity:** Up to `+0.5 / day` when providing multiple food sources.
+- **Diet Diversity (6 Food Categories):** Up to `+0.5 / day` when providing multiple food categories in the stockpile (`Wild Fruit`, `Game Meat`, `Fish & Algae`, `Farm Crops`, `Bakery & Grains`, `Industrial Canned Goods`).
 - **Supply Shortages:** `-0.6 / day` when food reserves drop below 20%; up to `-1.5 / day` for power grid deficits.
 - **Active Famine:** `-3.0 / day` whenever food reserves hit `0`.
 - **Homelessness:** `-0.05 / day` per homeless colonist on the streets.
@@ -108,4 +113,4 @@ If the central food stock hits `0`:
 2. **Technical School (`escuela_tecnica`, `5×5` adobe):** Trains a cohort of **4 Workers** (1 shared bed) for **24 in-game hours** and graduates **3 Technicians** (occupying 1 technician bed; the 4th member departs to preserve housing equilibrium).
 3. **Specialist School (`escuela_especialistas`, `5×5` stone):** Trains a cohort of **3 Technicians** (1 bed) for **48 in-game hours** and graduates **2 Specialists** (1 bed).
 4. **Course Cancellation with 100% Refund:** Inside any school's context panel (<kbd>E</kbd> in 1st person or Left Click in overhead view), an active training cohort can be cancelled prior to graduation with a **100% refund of resources and trainees**.
-5. **University (`universidad`, `5×5` stone):** Employs up to **3 Researchers** (`1.0 researcher_hour/h` each) to unlock **Applied Metallurgy** (`20 res_h`, `300 Iron`, `200 Wood`) and **Industrial Automation** (`50 res_h`, `800 Iron`, `100 Wood`).
+5. **University & Two-Layer Research (`universidad`, `5×5` stone):** Employs up to **3 Researchers** (`1.0 researcher_hour/h` each) to develop theoretical science at the University (**Layer 1**) and dispatch an **Itinerant Researcher (`Investigador Itinerante`)** who physically walks to productive facilities or the Urban Core to complete practical applications *on site* (**Layer 2**).

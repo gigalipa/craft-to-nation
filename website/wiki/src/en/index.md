@@ -1,10 +1,12 @@
 ---
 layout: home
+title: "Official Craft to Nation Wiki (English)"
+description: "Complete player guide, industrial logistics manuals, colonist simulation mechanics, and Godot technical documentation in English."
 
 hero:
   name: "Craft to Nation"
   text: "Official Wiki & Knowledge Base"
-  tagline: "From first block to living nation. Comprehensive guide for pioneers, city planners, and system engineers (GDD v3.57)."
+  tagline: "From first block to living nation. Comprehensive guide for pioneers, city planners, and system engineers (GDD v3.59)."
   image:
     src: /assets/craft-to-nation-logo.png
     alt: Craft to Nation Logo
@@ -13,7 +15,7 @@ hero:
       text: Beginner's Guide
       link: /en/guide/start
     - theme: alt
-      text: GDD v3.57 & Technical Design
+      text: GDD v3.59 & Technical Design
       link: /en/dev/gdd
     - theme: alt
       text: Main Site
@@ -33,8 +35,8 @@ features:
     details: Optimize colonist sustenance, manage specialized careers, and harness the stepped monthly migration and dynamic morale curve.
     link: /en/guide/colonists
     linkText: View Demographics
-  - title: Engineering & Godot 4.6 Architecture
-    details: Dive into the game's simulation engine, discrete 2.0s tick cycles, SVG HUD iconography, modular fluid pipelines, and 28 automated test scenes.
+  - title: Engineering & Godot 4.7 Architecture
+    details: Dive into the game's simulation engine, discrete 2.0s tick cycles, central configuration & reactive strings, SVG HUD iconography, modular fluid pipelines, and 28 automated test scenes.
     link: /en/dev/godot
     linkText: Inspect Engine Specs
 ---

@@ -136,9 +136,9 @@ func icono_de(tipo: String) -> Texture2D:
 func _piezas_de_icono(tipo: String) -> Array:
 	if tipo == "vidrio":
 		var piezas: Array = []
-		var cubo := BoxMesh.new()
-		cubo.size = Vector3.ONE
-		piezas.append([cubo, Vector3.ZERO, MATERIAL_VENTANA])
+		var panel := BoxMesh.new()
+		panel.size = Vector3(1.0, 1.0, 0.05)
+		piezas.append([panel, Vector3.ZERO, MATERIAL_VENTANA])
 		return piezas
 	if tipo == "puerta":
 		var piezas: Array = []
@@ -277,8 +277,12 @@ func actualizar_cantidades() -> void:
 		var minimo := 999999
 		for recurso in costo:
 			var stock: float = Ciudad.almacen[recurso].cantidad
-			if recurso == "madera":
+			if recurso == "madera" and Ciudad.almacen.has("tablas"):
 				stock += Ciudad.almacen["tablas"].cantidad  # las tablas cuentan como madera (Ciudad.consumir_costo)
+			elif recurso == "piedra" and Ciudad.almacen.has("bloques_piedra"):
+				stock += Ciudad.almacen["bloques_piedra"].cantidad  # los bloques de piedra cuentan como piedra
+			elif recurso == "vidrio" and Ciudad.almacen.has("tierra"):
+				stock = Ciudad.almacen["vidrio"].cantidad + floorf(Ciudad.almacen["tierra"].cantidad / 3.0)  # 1 ventana = 1 vidrio o 3 tierra
 			var disponible: int = int(stock / costo[recurso])
 			minimo = mini(minimo, disponible)
 		set_cantidad(i, minimo)

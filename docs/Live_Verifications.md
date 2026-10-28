@@ -108,10 +108,10 @@ The script is designed following **strictly the chronological order and real gam
   - **Upper Floor (Level 1):** Closed walls, roof, walkable interior staircase from the ground floor, windows, and up to 2 beds, **with no exterior door**.
 - [ ] **Action (3D Aesthetic Verification):** Closely inspect the placed wooden door and glass windows:
   - Verify that the wooden door features visible three-dimensional relief: a **brass door handle** (`Color(0.85, 0.7, 0.2)`) and **two dark metallic hinges** (`Color(0.15, 0.15, 0.15)`) on its side frame.
-  - Verify that glass window blocks display crisp wooden framing with transparent glass textures (`mat_ventana.tres` / `tex_ventana.png`).
+  - Verify that glass window blocks are rendered as **thin $1/20$-thickness ($0.05$ m) transparent panels** (`ventana` straight at mid-depth facing the avatar with only front and back faces, `ventana_esquina` L-shaped corner rotated 90° on Y when connecting at a corner, and `ventana_techo` ceiling panel flush with the top face $Y \in [0.95, 1.0]$ when placed looking up or down).
 - [ ] **Action:** Step outside, aim at the ground-floor door, and press **`B`**.
 - [ ] **Expected Result:**
-  - The structure validates and declares successfully: **it does not require an exterior door on the upper floor**.
+  - The structure validates and declares successfully (and automatically drains any water blocks trapped inside its interior air volume): **it does not require an exterior door on the upper floor**.
   - Notification: **`"Núcleo urbano declarado."`** (*Urban core declared.*)
   - The building is registered as the **Urban Core** (doubling base central warehouse caps and establishing the **Zone of Influence** around headquarters).
   - The design is automatically saved to the blueprint catalog under the name **`Residencia [beds]x[chests]`**.
@@ -224,7 +224,7 @@ The script is designed following **strictly the chronological order and real gam
 ### 3.6 Configurable Construction Priorities (`PanelEdificio`) and Dispatch Hierarchy
 - [ ] **Action:** In overhead view, start a residential building construction, mark another for demolition, and leave a road segment under construction. Select the building under construction in View mode (`Esc`).
 - [ ] **Expected Result:**
-  - `PanelEdificio` displays the **`[Prioridad: Normal]`** button.
+  - `PanelEdificio` displays the priority row with its icon (`prio_alta.svg`, `prio_normal.svg`, `prio_baja.svg`), the label **`Prioridad: Normal`**, and two arrow buttons: **`btn_subir.svg` (`▲`, increase priority)** and **`btn_bajar.svg` (`▼`, decrease priority)**. When construction reaches 100%, the window automatically transitions to the building panel (`PanelPuesto` or `PanelEdificio`) and drains interior water blocks.
   - Successive clicks cycle the value: **`Normal`** $\to$ **`Alta`** (High) $\to$ **`Baja`** (Low) $\to$ **`Normal`**.
   - Verify that free colonists are dispatched strictly following the global priority order:
     1. *High Priority Construction (`Prioridad Alta`)*
@@ -240,9 +240,9 @@ The script is designed following **strictly the chronological order and real gam
 > **Prerequisite Condition:** With the city founded and roads laid out, you audit the global HUD panels (Warehouse, Population, Occupations, and Morale) and build the first **Level 1 Peripheral Outposts** outside the Zone of Influence (which operate directly with Laborers and unlock outpost chests for the first time to test `VentanaBaul` and road hauling routes).
 
 ### 4.1 Topbar, Alphabetical Warehouse (A-Z), Population, and Occupations
-- [ ] **Topbar:** Verify the counters for **Food (`Comida`)**, **Energy (`Energía`)**, **Critical Resource (`Recurso Crítico`)** (formatting minerals such as `"tierras raras"` with readable spaces), **Population (`Población`)**, and **Morale (`Moral`)**.
+- [ ] **Topbar:** Verify the counters for **Food (`Comida`)**, **Energy (`Energía`)**, **Critical Resource (`Recurso Crítico`)**, **Population (`Población`)**, **Morale (`Moral`)**, the **Era indicator** (Era name + icon), and on the far right the **IDU Level Roman numeral icon (`romano_1.svg`..`romano_4.svg`)** which opens the **IDU breakdown window** attached to the top-right corner below the status bar on mouse hover.
 - [ ] **Warehouse Window (`Almacén`):** Click the **Almacén** button:
-  - The resource list is sorted strictly alphabetically from **A to Z** in Spanish (`Acero`, `Agua`, `Bloques de piedra`, `Carbón`, `Cobre`, `Combustible`, `Comida`, `Crudo`, `Hierro`, `Madera`, `Mineral refinado`, `Piedra`, `Tablas`, `Tierra`, `Tierras raras`).
+  - Raw materials are listed alphabetically from **A to Z** (`Agua`, `Carbón`, `Cobre`, `Comida`, `Crudo`, `Hierro`, `Madera`, `Piedra`, `Tierra`, `Tierras raras`) with collapsible dropdowns (`▶`/`▼`) revealing their refined/processed derivatives (`Combustible`, `Acero`, `Tablas` & `Carbón`, `Bloques de piedra`, **`Vidrio`**, `Mineral refinado`) and the 6 food categories under `Comida`, plus the **`[Expandir todo]` / `[Contraer todo]`** button in the top header between `"ALMACÉN"` and the `X` close button.
 - [ ] **Population and Occupations Windows:** Click **Población**:
   - Displays the unified row: **`Obreros: Total · X empleados · Y desempleados`** (plus rows for Technicians, Specialists, Researchers, Military, and Homeless if applicable).
   - Click the **Ocupaciones** button inside Population: displays the 4 collapsible categories (`▼ Recolección`, `▼ Industria`, `▼ Investigación`, `▼ Energía`) that collapse (`▶`) or expand (`▼`) on click, listing outposts from newest to oldest.

@@ -1,8 +1,13 @@
-# Arquitectura Técnica en Godot 4.6 & PoCs
+---
+title: "Arquitectura Técnica en Godot & PoCs"
+description: "Arquitectura técnica en Godot: autoloads de Ciudad y Avatar, GridMap 3D, generador procedural de terreno, físicas de fluidos y 28 suites de pruebas automatizadas."
+---
+
+# Arquitectura Técnica en Godot 4.7 & PoCs
 
 ![Interfaz de construcción en primera persona y mundo vóxel](/assets/hud-primera-persona-construccion.png)
 
-El desarrollo de **Craft to Nation** está construido en **Godot 4.6** (`GDScript`), empleando una arquitectura desacoplada donde la lógica pura de simulación (`RefCounted` y `Autoloads` sin `class_name` global para evitar colisiones de caché) avanza en ticks deterministas independientes de los cuadros por segundo (*framerate*).
+El desarrollo de **Craft to Nation** está construido en **Godot 4.7** (`GDScript`), empleando una arquitectura desacoplada donde la lógica pura de simulación (`RefCounted` y `Autoloads` sin `class_name` global para evitar colisiones de caché) avanza en ticks deterministas independientes de los cuadros por segundo (*framerate*).
 
 ---
 
@@ -31,19 +36,20 @@ El motor divide su ejecución en dos capas temporales simultáneas:
 ## 2. Mapa de Scripts y Autoloads Reales (`godot/scripts/`)
 
 ### Autoloads de Estado y Simulación
-- **`Ciudad.gd`:** Censo demográfico (`TIPOS_POBLACION`), almacén central (`Ciudad.almacen`), niveles urbanos `1–3` (`NIVELES_VIVIENDA`), investigación universitaria, curva continua de productividad y migración mensual escalonada (`calcular_tasa_migracion_mensual`).
-- **`Economia.gd`:** Orquestador del tick económico horario, reservas de materia prima (`[0, 50, 100, 250, 500] u`), despacho de acarreadores, balance eléctrico en `kW / MW` y ciclos de formación en escuelas.
+- **`Ciudad.gd`:** Censo demográfico (`TIPOS_POBLACION`), almacén central (`Ciudad.almacen`) con las 6 categorías de comida y el recurso procesado `vidrio`, niveles urbanos y de desarrollo `I–IV` (`NIVELES_VIVIENDA`, balanza de 3 pilares **D/C/S** e indicador `IDU`), investigación descentralizada en 2 capas (Universidad Teórica + Aplicaciones Prácticas), parque móvil de transporte (`PARQUE_TRANSPORTE_TIPOS`), curva continua de productividad y migración mensual escalonada (`calcular_tasa_migracion_mensual`).
+- **`Economia.gd`:** Orquestador del tick económico horario, reservas porcentuales de materia prima (`[0, 10, 20, 30, 40, 50] %`), despacho de acarreadores y unidades móviles del Taller de Transporte, gestión del **Investigador Itinerante**, balance eléctrico en `kW / MW` y ciclos de formación en escuelas.
 - **`Recoleccion.gd`:** Registro espacial de puestos periféricos, cálculo de tasas ambientales cada `6 h`, niveles de puesto `I–III`, regresión de nivel y agotamiento físico de bloques/árboles.
-- **`CadenaMinerales.gd`:** Catálogo de las 7 recetas de refinado industrial (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
-- **`Canalizaciones.gd` y `Fluidos.gd`:** Topología de redes de acueductos y tuberías aéreas en **`Y + 4`** (con cruces elevados en **`Y + 6`**), puertos de conexión en capa 4, detección de derrames y propagación de líquidos por gravedad y viscosidad (drenables al colocar un bloque sólido encima).
+- **`CadenaMinerales.gd`:** Catálogo de las 8 recetas de refinado industrial (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `vidriera`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
+- **`Canalizaciones.gd` y `Fluidos.gd`:** Topología de redes de acueductos y tuberías aéreas en **`Y + 4`** (con cruces elevados en **`Y + 6`**), puertos de conexión en capa 4, detección de derrames y propagación de líquidos por gravedad y viscosidad (drenables al colocar un bloque sólido encima o automáticamente en el interior de un edificio al finalizar su construcción).
 - **`Zonificacion.gd`:** Delimitación de los polígonos de **Zona A** y **Zona B** dentro del radio de influencia (`30` celdas) del Núcleo Urbano.
 
-### Subsistemas Espaciales, Agentes e Interfaz HUD (v3.57)
-- **`VoxelWorld.gd` y `GeneradorMundo.gd`:** Gestión del `GridMap` 3D, colocación/extracción de bloques, iluminación diurna/nocturna (`CicloDiaNoche.gd`) y agua estilo *Minecraft*.
-- **`ValidadorEdificios.gd` y `PlantillasPuesto.gd`:** Reconocimiento volumétrico por *flood-fill* de edificios herméticos, validación de despeje de puertas/camas y plantillas predefinidas con rotación de `90°`.
-- **`Obras.gd`, `ConstructorVias.gd` y `NiveladorTerreno.gd`:** Gestión de obras de construcción/demolición con hasta `4` obreros por obra, prioridades (`Alta`, `Normal`, `Baja`) con jerarquía de despacho en 5 niveles y tendido de carreteras con rampas.
-- **`Colonos.gd` y `BuscadorRutas.gd`:** Máquina de estados finitos (FSM) de los agentes NPC y *pathfinding* A* ponderado (costo `3` en vía vs. `8` en terreno natural) con jerarquía de cesión de paso lateral.
-- **`IconosHUD.gd` y `MiniaturaRenderer.gd`:** Catálogo centralizado de **más de 90 iconos SVG pixel-art** (`godot/assets/icons/*.svg`) y generador de miniaturas 3D en vivo para `BarraSuperior.gd`, `BarraModos.gd` (`104×76 px`), `VentanaMoral.gd`, `VentanaEnergia.gd` (con salto de cámara a generadores/consumidores), `VentanaAlmacen.gd`, `VentanaBaul.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd` y `PanelCanalizacion.gd`.
+### Subsistemas Espaciales, Agentes, Configuración e Interfaz HUD (v3.57 – v3.59)
+- **`Ajustes.gd` y `Strings.gd`:** Centralización de balance y textos dinámicos. `Ajustes.gd` almacena todas las constantes numéricas, configuraciones de velocidad, demografía, moral y parámetros de simulación preparados para personalización en caliente («Nueva partida» y opciones globales). `Strings.gd` provee catálogo multi-idioma (`Ajustes.idioma`) y getters estáticos reactivos que inyectan los valores en vivo sin reiniciar escenas ni recargar scripts.
+- **`VoxelWorld.gd`, `GeneradorMundo.gd` y `TranslucidosRenderer.gd`:** Gestión del `GridMap` 3D, colocación/extracción de bloques, iluminación diurna/nocturna (`CicloDiaNoche.gd`), agua estilo *Minecraft* y renderizado de bloques de ventana (`vidrio`) como paneles transparentes de `1/20` (`0,05 m`) en 3 variantes geométricas (`ventana` recta a media profundidad orientada hacia el avatar, `ventana_esquina` en L rotada 90° en Y, y `ventana_techo` horizontal al ras de la cara superior `Y ∈ [0,95, 1,0]` al colocar mirando hacia arriba o hacia abajo).
+- **`ValidadorEdificios.gd` y `PlantillasPuesto.gd`:** Reconocimiento volumétrico por *flood-fill* de edificios herméticos, validación de despeje de puertas/camas y plantillas predefinidas con rotación de `90°` (incluyendo `vidriera` `5×6` en adobe y `taller_transporte`).
+- **`Obras.gd`, `ConstructorVias.gd` y `NiveladorTerreno.gd`:** Gestión de obras de construcción/demolición con hasta `4` obreros por obra, prioridades (`Alta`, `Normal`, `Baja`) ajustables con botones subir/bajar (`▲`/`▼`), drenaje automático de agua interior al completar el 100 % y tendido de carreteras con rampas.
+- **`Colonos.gd` y `BuscadorRutas.gd`:** Máquina de estados finitos (FSM) de los agentes NPC y *pathfinding* A* ponderado (costo `3` en vía vs. `8` en terreno natural) con jerarquía de cesión de paso lateral y soporte para unidades móviles de transporte (incluyendo restricción `exige_via = true` y arrastre lento a `1,2 m/s`).
+- **`IconosHUD.gd` y `MiniaturaRenderer.gd`:** Catálogo centralizado de **más de 95 iconos SVG pixel-art** (`godot/assets/icons/*.svg`, incluyendo `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg` y `btn_bajar.svg`) y generador de miniaturas 3D en vivo para `BarraSuperior.gd` (con nombre + ícono de Era e ícono romano de IDU con ventana tooltip en la esquina superior derecha), `BarraModos.gd` (`104×76 px`), `VentanaMoral.gd`, `VentanaEnergia.gd` (con salto de cámara a generadores/consumidores), `VentanaAlmacen.gd` (materias primas A–Z con desplegables jerárquicos y botón `[Expandir todo]`/`[Contraer todo]`), `VentanaBaul.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd` (con transición automática al panel del edificio terminado) y `PanelCanalizacion.gd`.
 
 ---
 

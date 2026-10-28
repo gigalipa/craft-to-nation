@@ -22,6 +22,7 @@
 18. ✅ (2026-10-16) **Sobreasignación e Integración de Iconografía Completa del HUD / UI:** Catálogo centralizado de más de 90 íconos vectoriales SVG pixel-art en `godot/assets/icons/` administrado por `IconosHUD.gd`; barra superior con íconos de censo, moral (4 rostros emocionales 😡/🙁/😐/🙂), almacén, tendencia horaria de comida, y rayo interactivo tri-color de energía con lectura en kW; botones de construcción ampliados a 104×76 px con overlay de insignias en 3 esquinas (insumos requeridos, electricidad y función producida) y miniaturas 3D vivas (vías con balastro, acueducto con pilares y tubería con codo); indicadores de 1ª persona con batería/ProgressBar de lámpara, burbujas de oxígeno e ícono de herramienta contextual al minar; keycaps dorados para atajos de teclado y cálculo de distancia al núcleo; íconos temáticos en todas las ventanas globales (`VentanaPoblacion`, `VentanaAlmacen`, `VentanaOcupaciones`, `VentanaEnergia`, `VentanaMoral`), paneles de interacción (`VentanaBaul`, `PanelEdificio`, `PanelPuesto`, `PanelCanalizacion`, `PanelNotificaciones`) y botones de confirmación modal (`check`/`cruz`). 28 escenas de prueba al 100% en verde.
 19. **Pasada de balance en partida de larga duración:** balancear recolección, consumo, moral y refinamiento de recursos jugando en vivo tras implementar el control de cuotas, el sistema de moral y la interfaz con iconografía integrada, certificando la economía antes de iniciar Fase 4 (combate y tropas).
 20. ✅ (2026-10-21) **Centralización de variables (`ajustes.gd`) y textos UI con reactividad (`strings.gd`):** Desacoplamiento de constantes de balance a `Ajustes.gd` (economía, moral, demografía, mundo, velocidades, energía y construcción) preparados para modificación en caliente mediante perfiles de partida ("Nueva partida") o configuración global ("Ajustes de juego"); centralización y soporte multilingüe en `Strings.gd` (`Ajustes.idioma`) con getters estáticos reactivos (`static var PROP: String: get: return ...`) que formatean variables dinámicas en tiempo real en la interfaz; calibración de curvas de migración y multiplicador boost (2.5× por 30 días); y corrección de advertencias de identificadores globales sombreados de Godot 4. 28 escenas de prueba al 100% en verde.
+21. ✅ (2026-10-27) **Evolución de Eras, IDU (`I`–`IV`), Investigación en 2 Capas, Vidriera (`vidrio`), Taller de Transporte y Ventanas `1/20` (GDD v3.59):** Indicador superior con nombre + ícono de Era e ícono romano del IDU redondeado (`I`–`IV`) en el extremo derecho con ventana tooltip en la esquina superior derecha al hacer hover (balanza de 3 pilares: Demográfico `D`, Científico `C` y Sofisticación Material `S`); investigación descentralizada en 2 capas (Universidad Teórica + Aplicaciones Prácticas en edificios/Núcleo Urbano mediante el **Investigador Itinerante**); refinería **Vidriera (`1-3-5`, `5×6` adobe: `1 Tierra + 1 Carbón → 3 Vidrio`)**; **Taller de Transporte** y 6 unidades móviles (`acarreador_pie`, `carreta_mano`, `carro_caballos`, `camion_diesel`, `trolebus_solar`, `dron_carga`, exigencia de vía `exige_via = true`, arrastre lento a `1,2 m/s` y uso exclusivo de `vidrio` en cabinas); bloques de ventana (`TranslucidosRenderer.gd`) rediseñados como paneles transparentes de `1/20` (`0,05 m`) en 3 variantes (`ventana` recta a media profundidad orientada hacia el avatar, `ventana_esquina` en L rotada 90° en Y, y `ventana_techo` al ras de la cara superior `Y ∈ [0,95, 1,0]` al mirar arriba/abajo) que consumen preferentemente `1 Vidrio` (o `3 Tierra`); `VentanaAlmacen` con materias primas A–Z, desplegables jerárquicos (`▶`/`▼`) para refinados y las 6 categorías de comida, más botón `[Expandir todo]`/`[Contraer todo]`; reservas centrales porcentuales (`0%–50%`) con botones `▲`/`▼`; `PanelEdificio` con botones de prioridad `▲`/`▼`, transición automática al panel del edificio terminado al 100 % y drenaje automático de agua interior; y `VentanaMoral` compactada con estado de migración bajo productividad laboral. 28 escenas de prueba al 100% en verde.
 
 ## Estado detallado e historial
 
@@ -90,8 +91,9 @@ Basado en `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`. Permite editar edi
 
 Los colonos libres construyen y demuelen obras de edificios y vías con tope de 4 obreros y pausa de edificio.
 
-1. **Prioridades configurables por obra:**
-   - Botón cíclico en `PanelEdificio`: `Prioridad: Normal` (por defecto) -> `Baja` -> `Alta`.
+1. **Prioridades configurables por obra, transición automática y drenaje interior:**
+   - Botones de subir y bajar (`▲` `btn_subir.svg` / `▼` `btn_bajar.svg`) en `PanelEdificio`: ajustan entre `Baja` (0) ↔ `Normal` (1, por defecto) ↔ `Alta` (2).
+   - Si `PanelEdificio` está abierto cuando la obra alcanza el 100%, se transforma automáticamente en la ventana del edificio terminado (`PanelPuesto` o `PanelEdificio`), y se drena automáticamente cualquier bloque de agua atrapado en su volumen interior.
    - Desempate por orden cronológico de emplazamiento (ID más antiguo primero).
    - Jerarquía global de asignación de mano de obra en `Obras.siguiente_tarea()`:
      1. Obras de construcción con prioridad Alta (2).
@@ -193,11 +195,11 @@ Implementación de la cadena de piedra procesada y protección de materias prima
    - Decimoquinto recurso en el almacén central de `Ciudad.gd`.
    - Cobro con prioridad: `consumir_costo_con_detalle()` y `puede_pagar()` descuentan primero los costos de piedra usando `bloques_piedra` y el remanente con `piedra` cruda (análogo a tablas y madera).
    - Función `almacen_general()` que devuelve el stock efectivo unificado de la ciudad.
-3. **Control de reservas de materias primas (Esquema A):**
-   - Valores admisibles: `[0.0, 50.0, 100.0, 250.0, 500.0]`.
-   - Cada refinería (aserradero, siderúrgica, fábrica de bloques, carbonera, tierras raras y central termoeléctrica) dispone de su umbral individual `reserva_insumo`.
-   - Botón interactivo cíclico en `PanelPuesto.gd` para cambiar la reserva sobre la marcha.
-   - Los acarreadores retiran insumos del almacén central solo si el stock supera la reserva fijada (`disponible = maxf(0.0, stock_ciudad - reserva)`), evitando que las industrias consuman recursos esenciales para la construcción (`estructura_hierro`, tablas, piedra).
+3. **Control de reservas de materias primas porcentual (`0%` a `50%`):**
+   - Valores admisibles: `[0, 10, 20, 30, 40, 50]` (% de la capacidad del almacén central).
+   - Cada refinería (aserradero, siderúrgica, fábrica de bloques, vidriera, carbonera, tierras raras y central termoeléctrica) dispone de su umbral individual `reserva_insumo`.
+   - Botones interactivos de subir y bajar (`▲` `btn_subir.svg` / `▼` `btn_bajar.svg`) en `PanelPuesto.gd` para ajustar el porcentaje de reserva sobre la marcha.
+   - Los acarreadores retiran insumos del almacén central solo si el stock supera el porcentaje reservado (`disponible = maxf(0.0, stock_ciudad - reserva)`), evitando que las industrias consuman recursos esenciales para la construcción (`estructura_hierro`, tablas, piedra, tierra).
 
 ### 11. Sistema de Moral Dinámica, Productividad Continua y Demografía — ✅ completo (2026-10-15)
 
@@ -219,7 +221,34 @@ Simulación integral y continua del clima anímico ciudadano, modulación econó
    - Umbral crítico de moral en 20.0: desata éxodo migratorio activo proporcional con fuga jerárquica de talentos (`investigador` > `especialista` > `tecnico` > `militar` > `obrero` > `desempleado` > `ciudadano`).
 4. **Interfaz Visual y HUD:**
    - Botón interactivo de moral en `BarraSuperior.gd` con 4 estados emocionales: 😡 Crítica (<20.0), 🙁 Baja (20.0-35.0), 😐 Neutra (35.0-65.0) y 🙂 Alta (>=65.0).
-   - Ventana modal explicativa `VentanaMoral.gd` accesible con clic o tecla `M`, con métricas en vivo, multiplicador activo, tendencia horaria y desglose analítico factor por factor.
+   - Ventana modal explicativa `VentanaMoral.gd` accesible con clic o tecla `M`, con métricas en vivo, multiplicador activo, estado de migración situado en la línea debajo de la productividad laboral, tendencia horaria y desglose analítico factor por factor.
+
+### 11b. Evolución de Eras, IDU (`I`–`IV`), Investigación en 2 Capas, Vidriera, Transporte y Ventanas `1/20` — ✅ completo (2026-10-27)
+
+Consolidación de los sistemas de progresión tecnológica, logística vehicular, industria vidriera y geometría de ventanas (`Ciudad.gd`, `Economia.gd`, `CadenaMinerales.gd`, `PlantillasPuesto.gd`, `TranslucidosRenderer.gd`, `Player.gd`, `BarraSuperior.gd`, `VentanaAlmacen.gd`, `PanelEdificio.gd`):
+
+1. **Indicador de Era e Índice de Desarrollo Urbano (`IDU` `I`–`IV`):**
+   - En `BarraSuperior.gd`, el indicador de Era muestra su nombre acompañado del ícono correspondiente (sin el prefijo `"Era 1"`/`"Era 2"`).
+   - En el extremo derecho de la barra superior se muestra el ícono en número romano (`romano_1.svg` a `romano_4.svg`) correspondiente al valor redondeado de `IDU`.
+   - Al pasar el ratón (hover) sobre el ícono de nivel, se abre una ventana tooltip anclada a la esquina superior derecha (borde superior pegado al borde inferior de la barra de estado y borde derecho pegado al borde derecho de la pantalla) con el desglose de los 3 pilares: Demográfico (`D`), Científico (`C`) y Sofisticación Material (`S`), cerrándose automáticamente al retirar el ratón.
+2. **Árbol de Investigación Descentralizado en 2 Capas e Investigador Itinerante:**
+   - **Capa 1 (Ciencia Teórica):** se investiga en la Universidad (`Metalurgia Aplicada`, `Química y Destilación`, `Termodinámica`, `Electromagnetismo`, `Automatización Industrial`).
+   - **Capa 2 (Aplicaciones Prácticas):** se inician en el panel de cada edificio productivo o del Núcleo Urbano; un **Investigador Itinerante** sale físicamente de la Universidad, camina hasta la instalación objetivo y hace avanzar las horas de estudio *in situ*.
+3. **Refinería «Vidriera» (`1-3-5`) y Recurso «Vidrio» (`vidrio.svg`):**
+   - Edificio industrial de adobe de huella `5×6` que emplea hasta 4 Técnicos y Acarreadores.
+   - Receta: `1 Tierra + 1 Carbón → 3 Vidrio` (`0,5 lotes/h` por técnico = `1,5 vidrio/h`, `0 E`).
+   - Los bloques de ventana (`vidrio`) consumen con preferencia `1 Vidrio` (o `3 Tierra` si no hay vidrio disponible).
+4. **Taller de Transporte y 6 Unidades Móviles de Acarreo:**
+   - Flota configurable (`acarreador_pie` `150 u`, `carreta_mano` `300 u`, `carro_caballos` `600 u`, `camion_diesel` `1.800 u`, `trolebus_solar` `900 u`, `dron_carga` `600 u`).
+   - Exigencia de vía (`exige_via = true`) y uso exclusivo de `vidrio` (nunca `tierra`) en la fabricación de camiones y trolebuses; modo de arrastre lento a `1,2 m/s` sin perder carga cuando falta insumo operativo.
+5. **Rediseño Geométrico de Bloques de Ventana (`1/20` de espesor en `TranslucidosRenderer.gd`):**
+   - Panel transparente de `0,05 m` (`1/20` de bloque) en 3 variantes según colocación (`arte/dae/bloque_ventana.dae`):
+     - `ventana` recta a media profundidad (`0,475..0,525`) orientada hacia el avatar (solo cara frontal y trasera).
+     - `ventana_esquina` en "L" rotada 90° en Y al conectar en esquina un bloque de ventana con otro bloque.
+     - `ventana_techo` horizontal al colocar mirando hacia arriba o hacia abajo, ubicada siempre **contra la cara superior del bloque (`Y ∈ [0,95, 1,0]`)** con solo cara superior e inferior.
+6. **Ventana de Almacén Jerárquica (`VentanaAlmacen.gd`):**
+   - Materias primas ordenadas alfabéticamente A–Z con desplegables (`▶`/`▼`) para mostrar sus recursos refinados (`Tablas`, `Bloques de piedra`, `Vidrio`, `Acero`, `Mineral refinado`, `Combustible`) y las 6 categorías de comida (`Frutos silvestres`, `Carne de caza`, `Pescado y algas`, `Cultivos agrícolas`, `Panadería y granos`, `Conservas industriales`).
+   - Botón **`[Expandir todo]` / `[Contraer todo]`** en la barra de título entre `"ALMACÉN"` y el botón `[X]`.
 
 ### 12. Cola de pendientes menores de la Fase 3 — no bloqueantes
 
@@ -235,11 +264,13 @@ Pueden intercalarse en cualquier momento.
 ### Después de cerrar la Fase 3
 
 - **Fase 4 (PoC 7):** cámara dual y selección de tropas.
-- **Fase 5 (PoC 8-10):** pathfinding, cintas/tuberías y el Sistema de Puentes (que ya puede apoyarse en los cuerpos de agua reales de PoC 6). Las carretas (vehículos/unidades) también dependen de esta fase.
+- **Fase 5 (PoC 8-10):** ferrocarriles y el Sistema de Puentes (que ya puede apoyarse en los cuerpos de agua reales de PoC 6; el Taller de Transporte y las 6 unidades móviles de acarreo ya quedaron implementados en la Fase 3).
 
 ---
 
 ## Hecho
+
+- ~~**Evolución de Eras, IDU (`I`–`IV`), Investigación en 2 Capas, Vidriera (`vidrio`), Taller de Transporte y Ventanas `1/20`** (2026-10-27).~~ Indicador de nombre + ícono de Era e ícono romano de IDU (`I`–`IV`) con ventana tooltip en la esquina superior derecha al hacer hover; investigación descentralizada en 2 capas con Investigador Itinerante; refinería Vidriera (`1 Tierra + 1 Carbón → 3 Vidrio`); Taller de Transporte con 6 unidades móviles (exigencia de vía y cabinas exclusivas con `vidrio`); bloques de ventana de espesor `1/20` (`ventana` recta a media profundidad, `ventana_esquina` en L y `ventana_techo` contra la cara superior `Y ∈ [0,95, 1,0]`); `VentanaAlmacen` con desplegables A–Z y botón `[Expandir todo]`/`[Contraer todo]`; reservas centrales porcentuales (`0%–50%`); prioridades con flechas `▲`/`▼`, transición automática de panel al 100% y drenaje de agua interior; y 28 escenas de prueba al 100% en verde.
 
 - ~~**Centralización de variables (`ajustes.gd`) y textos UI con reactividad (`strings.gd`)** (2026-10-21).~~ Desacoplamiento de constantes de balance a `Ajustes.gd` (economía, moral, demografía, mundo, velocidades, energía y construcción) preparados para sobreescritura por perfiles de guardado ("Nueva partida") o configuración global ("Ajustes de juego"); centralización y soporte multilingüe en `Strings.gd` (`Ajustes.idioma`) con getters estáticos reactivos (`static var PROP: String: get: return ...`) que formatean variables en vivo en los textos de la interfaz; calibración de curvas migratorias y multiplicador boost (2.5× por 30 días); saneamiento de advertencias de identificadores globales sombreados de Godot 4; y 28 escenas de prueba automatizadas pasando al 100%.
 

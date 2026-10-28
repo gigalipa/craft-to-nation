@@ -499,9 +499,14 @@ func _procesar_frutos(delta: float) -> void:
 		return
 	var id: int = mundo.arboles.obtener_arbol_de(celda)
 	if _progreso_accion.avanzar("frutos:%d" % id, Recoleccion.TIEMPO_RECOLECCION_FRUTOS, delta):
-		_guardar_en_inventario({"comida": mundo.recolectar_frutos(celda, Ciudad.horas_juego)})
+		var comida: float = mundo.recolectar_frutos(celda, Ciudad.horas_juego)
+		_guardar_en_inventario({"comida": comida})
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
+		_e_consumida = true
+		_aviso_sin_frutos_dado = true
+		var cant_str: String = String.num(comida, 1)
+		hud.notificar(Strings.PLAYER_NOTIF_FRUTOS_RECOLECTADOS % cant_str)
 	else:
 		hud.mostrar_progreso(_progreso_accion.fraccion(), false, "herr_cesta")
 
@@ -1125,6 +1130,16 @@ func _colocar() -> void:
 		colocado = mundo.colocar_puerta(celda_destino)
 	elif tipo == "cama":
 		colocado = mundo.colocar_cama(celda_destino, _direccion_cardinal())
+	elif tipo == "vidrio":
+		var dir_mira: Vector3 = -camara.global_transform.basis.z if camara != null else Vector3.FORWARD
+		var hacia_avatar: Vector3i
+		if abs(dir_mira.y) > abs(dir_mira.x) and abs(dir_mira.y) > abs(dir_mira.z):
+			hacia_avatar = Vector3i(0, -1 if dir_mira.y > 0.0 else 1, 0)
+		elif normal.y != 0.0 and abs(dir_mira.y) > 0.4:
+			hacia_avatar = Vector3i(0, -1 if dir_mira.y > 0.0 else 1, 0)
+		else:
+			hacia_avatar = -_direccion_cardinal()
+		colocado = mundo.colocar_bloque(celda_destino, tipo, true, hacia_avatar)
 	else:
 		colocado = mundo.colocar_bloque(celda_destino, tipo, true)
 	if not colocado:

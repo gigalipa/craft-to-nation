@@ -1,10 +1,12 @@
 ---
 layout: home
+title: "Wiki Officiel Craft to Nation (Français)"
+description: "Documentation officielle, guide du joueur et architecture technique pour le jeu de survie et gestion de colonie Craft to Nation."
 
 hero:
   name: "Craft to Nation"
   text: "Portail Officiel & Wiki"
-  tagline: "Du premier bloc à une nation vivante. Guide de colonisation, gestion urbaine et documentation technique (GDD v3.57)."
+  tagline: "Du premier bloc à une nation vivante. Guide de colonisation, gestion urbaine et documentation technique (GDD v3.59)."
   image:
     src: /assets/craft-to-nation-logo.png
     alt: Craft to Nation Logo
@@ -66,14 +68,14 @@ La documentation complète et le manuel de référence sont disponibles dans les
   - [Économie des Ressources et Extraction](/en/guide/resources)
   - [Bâtiments, Abris et Stock Central](/en/guide/buildings)
   - [Gestion des Colons et Calculateur de Production](/en/guide/colonists)
-  - [GDD v3.57 : Piliers et Philosophie de Conception](/en/dev/gdd)
-  - [Architecture Technique sous Godot 4.6](/en/dev/godot)
+  - [GDD v3.59 : Piliers et Philosophie de Conception](/en/dev/gdd)
+  - [Architecture Technique sous Godot 4.7](/en/dev/godot)
   - [Logistique Terrestre et Réseaux de Canalisations](/en/dev/logistics)
   - [Feuille de Route du Développement (Roadmap)](/en/dev/roadmap)
 
 - 🇪🇸 **Version Espagnole (Complète) :**
   - [Guía del Jugador](/es/guia/inicio)
-  - [Documentación Técnica y GDD v3.57](/es/dev/gdd)
+  - [Documentación Técnica y GDD v3.59](/es/dev/gdd)
 
 > [!NOTE]
 > La traduction intégrale des articles en langue française est actuellement en cours de développement. Les liens ci-dessus vous permettent d'accéder à l'ensemble des données techniques et des guides de jeu à jour.

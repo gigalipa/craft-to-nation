@@ -34,6 +34,8 @@ const ORDEN_PRIORIDAD_RECURSOS := [
 	"carbon",
 	"tierras_raras",
 	"tablas",
+	"bloques_piedra",
+	"vidrio",
 	"madera",
 	"piedra",
 	"tierra",

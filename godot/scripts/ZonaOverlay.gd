@@ -39,7 +39,17 @@ const PRIORIDAD_ZONA := 2
 
 const ViasRenderer = preload("res://scripts/ViasRenderer.gd")
 
-@onready var mundo: Node = get_node("../VoxelWorld")
+var mundo: Node:
+	get:
+		if _mundo == null and is_inside_tree():
+			_mundo = get_node_or_null("../VoxelWorld")
+		return _mundo
+	set(valor):
+		_mundo = valor
+		_conectar_senales()
+var _mundo: Node
+
+var _sucio := false
 
 ## Pool de planos de la previsualización en vivo de la zona que se está
 ## pintando (ver previsualizar()/limpiar_previsualizacion(), usados por
@@ -77,6 +87,41 @@ var mostrar_zonas := false
 var _planos_zonas_pintadas: Array[MeshInstance3D] = []
 
 
+func _ready() -> void:
+	_conectar_senales()
+
+
+func _conectar_senales() -> void:
+	var m: Node = mundo
+	if m != null and m.has_signal("terreno_modificado"):
+		if not m.terreno_modificado.is_connected(_on_terreno_modificado):
+			m.terreno_modificado.connect(_on_terreno_modificado)
+	if Zonificacion != null and Zonificacion.has_signal("zonas_cambiadas"):
+		if not Zonificacion.zonas_cambiadas.is_connected(marcar_sucio):
+			Zonificacion.zonas_cambiadas.connect(marcar_sucio)
+
+
+func marcar_sucio() -> void:
+	_sucio = true
+
+
+func _on_terreno_modificado(celda: Vector3i) -> void:
+	var xz := Vector2i(celda.x, celda.z)
+	if Zonificacion != null and Zonificacion.nucleo_declarado:
+		if Zonificacion.dentro_de_influencia(xz) or Zonificacion.zonas.has(xz):
+			marcar_sucio()
+	else:
+		marcar_sucio()
+
+
+func _process(_delta: float) -> void:
+	if not _sucio:
+		return
+	_sucio = false
+	if visible:
+		reconstruir()
+
+
 func set_mostrar_zonas(valor: bool) -> void:
 	if mostrar_zonas == valor:
 		return
@@ -87,7 +132,9 @@ func set_mostrar_zonas(valor: bool) -> void:
 
 
 func reconstruir() -> void:
+	_sucio = false
 	for hijo in get_children():
+		remove_child(hijo)
 		hijo.queue_free()
 	_planos_previsualizacion.clear()
 	_planos_zonas_pintadas.clear()

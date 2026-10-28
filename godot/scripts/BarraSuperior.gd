@@ -52,6 +52,10 @@ var _icono_nivel: TextureRect
 var _lbl_era: Label = null
 var _lbl_idu: Label = null
 
+var _panel_hover_idu: PanelContainer = null
+var _lbl_hover_idu_titulo: Label = null
+var _lbl_hover_idu_cuerpo: Label = null
+
 
 static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String:
 	return "Población: %d/%d (%d)" % [censo, camas, desempleados]
@@ -237,28 +241,6 @@ func _ready() -> void:
 
 	grupo_izq.add_child(_barra_moral)
 
-	grupo_izq.add_child(_separador())
-
-	var cont_era_idu := HBoxContainer.new()
-	cont_era_idu.add_theme_constant_override("separation", 6)
-	cont_era_idu.mouse_filter = Control.MOUSE_FILTER_PASS
-	cont_era_idu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-	_lbl_era = TemaHUD.etiqueta("Era 1")
-	_lbl_era.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_lbl_era.mouse_filter = Control.MOUSE_FILTER_PASS
-	_lbl_era.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
-	cont_era_idu.add_child(_lbl_era)
-
-	cont_era_idu.add_child(_separador())
-
-	_lbl_idu = TemaHUD.etiqueta("IDU: 1.00")
-	_lbl_idu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_lbl_idu.mouse_filter = Control.MOUSE_FILTER_PASS
-	cont_era_idu.add_child(_lbl_idu)
-
-	grupo_izq.add_child(cont_era_idu)
-
 	fila.add_child(grupo_izq)
 
 	var espacio_izq := Control.new()
@@ -330,25 +312,39 @@ func _ready() -> void:
 	espacio_der.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fila.add_child(espacio_der)
 
-	# Grupo derecho: Era | Nivel
+	# Grupo derecho: Era | Nivel (IDU)
 	var grupo_der := HBoxContainer.new()
 	grupo_der.add_theme_constant_override("separation", 6)
-	grupo_der.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	grupo_der.mouse_filter = Control.MOUSE_FILTER_PASS
 	grupo_der.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	_icono_era = IconosHUD.crear_rect("era", Vector2(16, 16))
+	_icono_era.mouse_filter = Control.MOUSE_FILTER_PASS
 	grupo_der.add_child(_icono_era)
-	era.text = "Prehistoria"
+
+	era.mouse_filter = Control.MOUSE_FILTER_PASS
+	era.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_lbl_era = era
 	grupo_der.add_child(era)
+
 	grupo_der.add_child(_separador())
 
 	_icono_nivel = IconosHUD.crear_rect("romano_1", Vector2(16, 16))
+	_icono_nivel.visible = true
+	_icono_nivel.size_flags_vertical = Control.SIZE_FILL
+	_icono_nivel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_icono_nivel.mouse_entered.connect(_on_nivel_mouse_entered)
+	_icono_nivel.mouse_exited.connect(_on_nivel_mouse_exited)
 	grupo_der.add_child(_icono_nivel)
+
 	nivel.visible = false
+	nivel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lbl_idu = nivel
 	grupo_der.add_child(nivel)
 
 	fila.add_child(grupo_der)
 
+	_construir_panel_hover_idu()
 	actualizar()
 
 
@@ -458,15 +454,16 @@ func actualizar() -> void:
 				_icono_critico_recurso.visible = true
 			_colorear_por_tasa(critico, recurso.tasa_neta_promedio)
 
-	nivel.text = ""
-	if _icono_nivel != null:
-		_icono_nivel.texture = IconosHUD.icono(IconosHUD.icono_nivel_romano(Ciudad.nivel))
-
 	if Ciudad != null and _lbl_era != null and _lbl_idu != null:
 		var era_num: int = Ciudad.era_actual if "era_actual" in Ciudad else 1
 		var idu_val: float = Ciudad.calcular_idu() if Ciudad.has_method("calcular_idu") else 1.0
-		_lbl_era.text = Strings.ERA_NOMBRES.get(era_num, Strings.BARRA_SUPERIOR_ERA_FORMATO % era_num)
+		_lbl_era.text = Strings.ERA_TITULOS.get(era_num, Strings.ERA_NOMBRES.get(era_num, Strings.BARRA_SUPERIOR_ERA_FORMATO % era_num))
 		_lbl_idu.text = Strings.BARRA_SUPERIOR_IDU_FORMATO % idu_val
+
+		var nivel_num: int = clampi(roundi(idu_val), 1, 4)
+		if _icono_nivel != null:
+			_icono_nivel.texture = IconosHUD.icono(IconosHUD.icono_nivel_romano(nivel_num))
+			_icono_nivel.visible = true
 
 		var s: float = Ciudad.calcular_sofisticacion_edificios() if Ciudad.has_method("calcular_sofisticacion_edificios") else 1.0
 		var q: float = Ciudad.calcular_cualificacion_laboral() if Ciudad.has_method("calcular_cualificacion_laboral") else 1.0
@@ -483,11 +480,86 @@ func actualizar() -> void:
 					doc_info.get("cyberpunk", 0.0),
 					doc_info.get("solarpunk", 0.0)
 				]
-				_lbl_idu.add_theme_color_override("font_color", TemaHUD.color_doctrina(dominante))
-			else:
-				_lbl_idu.add_theme_color_override("font_color", TemaHUD.TEXTO)
 		_lbl_idu.tooltip_text = tt
-		_lbl_era.tooltip_text = tt
+		_lbl_era.tooltip_text = _lbl_era.text + "\n" + tt
+		if _icono_era != null:
+			_icono_era.tooltip_text = _lbl_era.tooltip_text
+		if _panel_hover_idu != null and _panel_hover_idu.visible:
+			_actualizar_panel_hover_idu()
+
+
+func _construir_panel_hover_idu() -> void:
+	_panel_hover_idu = PanelContainer.new()
+	_panel_hover_idu.top_level = true
+	_panel_hover_idu.visible = false
+	_panel_hover_idu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var estilo_hover := TemaHUD.caja(Color(0.06, 0.12, 0.09, 0.95), TemaHUD.DORADO)
+	estilo_hover.set_content_margin_all(8)
+	_panel_hover_idu.add_theme_stylebox_override("panel", estilo_hover)
+
+	var vb_hover := VBoxContainer.new()
+	vb_hover.add_theme_constant_override("separation", 2)
+	_panel_hover_idu.add_child(vb_hover)
+
+	_lbl_hover_idu_titulo = Label.new()
+	_lbl_hover_idu_titulo.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_lbl_hover_idu_titulo.add_theme_font_size_override("font_size", 13)
+	vb_hover.add_child(_lbl_hover_idu_titulo)
+
+	_lbl_hover_idu_cuerpo = Label.new()
+	_lbl_hover_idu_cuerpo.add_theme_color_override("font_color", TemaHUD.TEXTO)
+	_lbl_hover_idu_cuerpo.add_theme_font_size_override("font_size", 12)
+	vb_hover.add_child(_lbl_hover_idu_cuerpo)
+
+	add_child(_panel_hover_idu)
+
+
+func _on_nivel_mouse_entered() -> void:
+	if _panel_hover_idu == null:
+		return
+	_actualizar_panel_hover_idu()
+	_panel_hover_idu.visible = true
+
+
+func _on_nivel_mouse_exited() -> void:
+	if _panel_hover_idu != null:
+		_panel_hover_idu.visible = false
+
+
+func _actualizar_panel_hover_idu() -> void:
+	if Ciudad == null or _panel_hover_idu == null:
+		return
+	var idu_val: float = Ciudad.calcular_idu() if Ciudad.has_method("calcular_idu") else 1.0
+	var nivel_num: int = clampi(roundi(idu_val), 1, 4)
+	var romanos := ["I", "II", "III", "IV"]
+	var romano: String = romanos[nivel_num - 1]
+	_lbl_hover_idu_titulo.text = "Nivel %s (IDU: %.2f)" % [romano, idu_val]
+
+	var s: float = Ciudad.calcular_sofisticacion_edificios() if Ciudad.has_method("calcular_sofisticacion_edificios") else 1.0
+	var q: float = Ciudad.calcular_cualificacion_laboral() if Ciudad.has_method("calcular_cualificacion_laboral") else 1.0
+	var k: float = Ciudad.calcular_masa_critica_ciencia() if Ciudad.has_method("calcular_masa_critica_ciencia") else 1.0
+	var texto_cuerpo: String = "  - Sofisticación (S): %.2f\n  - Cualificación (Q): %.2f\n  - Ciencia (K): %.2f" % [s, q, k]
+	if Ciudad.has_method("calcular_porcentajes_doctrinales"):
+		var doc_info: Dictionary = Ciudad.calcular_porcentajes_doctrinales()
+		var dominante: String = doc_info.get("dominante", "ninguna")
+		if dominante != "" and dominante != "ninguna":
+			var nom_doc: String = Strings.DOCTRINA_NOMBRES.get(dominante, dominante.capitalize())
+			texto_cuerpo += "\nDoctrina: %s (D: %.0f%%, C: %.0f%%, S: %.0f%%)" % [
+				nom_doc,
+				doc_info.get("dieselpunk", 0.0),
+				doc_info.get("cyberpunk", 0.0),
+				doc_info.get("solarpunk", 0.0)
+			]
+	_lbl_hover_idu_cuerpo.text = texto_cuerpo
+
+	_panel_hover_idu.reset_size()
+	var vp_ancho: float = get_viewport_rect().size.x
+	var panel_ancho: float = maxf(_panel_hover_idu.size.x, _panel_hover_idu.get_combined_minimum_size().x)
+	_panel_hover_idu.global_position = Vector2(vp_ancho - panel_ancho, global_position.y + size.y)
+
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return TemaHUD.crear_tooltip(for_text)
 
 
 func _colorear_por_tasa(etiqueta: Label, tasa: float) -> void:

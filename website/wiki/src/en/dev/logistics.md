@@ -1,3 +1,8 @@
+---
+title: "Logistics, Road Networks & Elevated Conduits"
+description: "Technical breakdown of multi-level logistics: aerial conduit network at Y+6, prioritized dirt roads laid by colonist crews, and fluid spreading."
+---
+
 # Logistics, Road Networks & Elevated Conduits
 
 ![Strategic view of the industrial city connected by roads and conduits](/assets/citycraft-world.webp)
@@ -27,10 +32,25 @@ In **Craft to Nation**, every unit of timber, ore, or liquid physically traverse
 - In overhead view, press **<kbd>3</kbd> (Demolish)**, left-click at one end of a road (including around 90° "L"-shaped corners), and move the cursor to the other end:
 - The translucent orange preview (`ViaDemolicionOverlay`) follows the road network via **Dijkstra** covering the **full 2-lane width (`2×2` section)** around the outer corner without cutting diagonally. Confirming with a **double left-click** marks a persistent orange outline on the ground for colonists to dismantle section by section.
 
-### Physical Carrier Specs & Weighted A* Navigation (`BuscadorRutas.gd`)
-- **Base Ambulation Speed:** **2.5 cells / second** (`5.0 cells/h` in-game time), with a **+35% speed bonus** on packed-dirt roads.
-- **Payload Capacity:** **150 units** per trip (**10-unit** minimum batch, strictly respecting the `0 / 50 / 100 / 250 / 500 u` central reserve quota).
+### Physical Carrier Specs, Mobile Fleet & Weighted A* Navigation (`BuscadorRutas.gd`)
+- **Base Ambulation Speed (On-Foot Hauler):** **2.5 cells / second** (`5.0 cells/h` in-game time), with a **+35% speed bonus** on packed-dirt roads.
+- **Base Payload Capacity:** **150 units** per trip (**10-unit** minimum batch, strictly respecting the `0% / 10% / 20% / 30% / 40% / 50%` percentage central reserve quota).
 - **Weighted A* Traversal Cost:** Packed-dirt roads have a step cost of **3** compared to **8** on natural terrain.
+
+### Transport Workshop & Mobile Haulage Fleet (`Ciudad.PARQUE_TRANSPORTE_TIPOS`)
+Built on the Industrial Zone, the **Transport Workshop (`taller_transporte`)** manufactures and dispatches 6 mobile haulage unit types:
+
+| Haulage Unit | Payload | Base Speed | Road Required | Operating Upkeep | Manufacturing Cost |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`acarreador_pie`** *(On-foot hauler)* | `150 u` | `2.5 m/s` | No | — | Base colonist assignment |
+| **`carreta_mano`** *(Handcart)* | `300 u` | `2.2 m/s` | No | — | `20 Planks + 5 Iron` |
+| **`carro_caballos`** *(Horse wagon)* | `600 u` | `4.0 m/s` | No | `2 Food/h` | `40 Planks + 15 Iron` |
+| **`camion_diesel`** *(Diesel truck)* | `1,800 u` | `6.5 m/s` | **Yes (`exige_via`)** | `2 Fuel/h` | `30 Steel + 20 Iron + 10 Copper + 6 Glass` |
+| **`trolebus_solar`** *(Solar trolleybus)* | `900 u` | `5.0 m/s` | **Yes (`exige_via`)** | `1 Energy/h` | `15 Steel + 20 Copper + 5 Ref. Min. + 4 Glass` |
+| **`dron_carga`** *(Cargo drone)* | `600 u` | `7.5 m/s` *(direct flight)* | No | `2 Energy/h` | `20 Steel + 25 Copper + 15 Ref. Min.` |
+
+- **Exclusive Glass Requirement for Vehicle Cabins:** Motorized units with cab windshields (`camion_diesel` and `trolebus_solar`) exclusively require refined **`Glass` (`vidrio`)** produced at the Glassworks (`1-3-5`); raw `Earth` (`tierra`) cannot substitute for glass in vehicles.
+- **Slow-Crawl Fallback on Supply Depletion (`1.2 m/s`):** If an active vehicle runs out of its operating upkeep (`food`, `fuel`, or `energy`) mid-route, it drops into an emergency slow crawl at **`1.2 m/s`** while preserving **100% of its cargo** until delivery.
 
 ---
 
@@ -41,7 +61,7 @@ In narrow 1-cell passages, head-on encounters between two colonists are resolved
 ```text
 Food > Fuel > Crude Oil > Steel > Refined Minerals
      > Iron > Copper > Coal > Rare Earths
-     > Planks > Wood > Stone > Earth > Water
+     > Glass > Planks > Stone Blocks > Wood > Stone > Earth > Water
 ```
 
 The unloaded or lower-priority colonist steps aside into a lateral cell to yield right-of-way.

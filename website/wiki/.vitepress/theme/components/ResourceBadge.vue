@@ -100,10 +100,16 @@ const palettes: Record<string, BadgePalette> = {
     lightBg: 'rgba(147, 51, 234, 0.12)', lightText: '#581c87', lightBorder: '#9333ea',
     darkBg: 'rgba(168, 85, 247, 0.20)', darkText: '#e9d5ff', darkBorder: '#c084fc',
     icon: '🔮', svg: '/icons/mineral_refinado.svg'
+  },
+  vidrio: {
+    lightBg: 'rgba(6, 182, 212, 0.12)', lightText: '#0e7490', lightBorder: '#06b6d4',
+    darkBg: 'rgba(6, 182, 212, 0.20)', darkText: '#a5f3fc', darkBorder: '#22d3ee',
+    icon: '🪟', svg: '/icons/vidrio.svg'
   }
 }
 
 const aliases: Record<string, string> = {
+  glass: 'vidrio',
   carbon: 'carbón',
   energia: 'energía',
   water: 'agua',

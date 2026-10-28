@@ -74,9 +74,38 @@ def transcribe_video(
     print(f"[*] Cargando modelo Whisper '{model_name}' en dispositivo: {device.upper()}...")
     model = whisper.load_model(model_name, device=device)
 
-    print(f"[*] Transcribiendo '{video_path.name}'...")
-    result = model.transcribe(str(video_path), language=language, fp16=(device == "cuda"))
-    return result["segments"]
+    print(f"[*] Cargando audio '{video_path.name}'...")
+    audio = whisper.load_audio(str(video_path))
+    sample_rate = 16000
+    total_seconds = len(audio) / sample_rate
+    print(f"[*] Duración detectada: {total_seconds:.1f}s ({total_seconds/3600:.2f}h)")
+
+    chunk_duration = 600.0  # 10 minutos por bloque para evitar saturación de memoria RAM en STFT
+    if total_seconds <= chunk_duration:
+        result = model.transcribe(audio, language=language, fp16=(device == "cuda"))
+        return result["segments"]
+
+    print(f"[*] Audio largo detectado (> {chunk_duration}s). Procesando en bloques de {chunk_duration}s...")
+    all_segments = []
+    seg_id = 0
+    chunk_samples = int(chunk_duration * sample_rate)
+
+    for start_sample in range(0, len(audio), chunk_samples):
+        end_sample = min(len(audio), start_sample + chunk_samples)
+        chunk_audio = audio[start_sample:end_sample]
+        offset_sec = start_sample / sample_rate
+
+        print(f"    - Transcribiendo bloque {offset_sec:.1f}s a {end_sample/sample_rate:.1f}s...")
+        res = model.transcribe(chunk_audio, language=language, fp16=(device == "cuda"))
+        for s in res.get("segments", []):
+            s_copy = dict(s)
+            s_copy["id"] = seg_id
+            s_copy["start"] = round(s["start"] + offset_sec, 2)
+            s_copy["end"] = round(s["end"] + offset_sec, 2)
+            all_segments.append(s_copy)
+            seg_id += 1
+
+    return all_segments
 
 
 def burn_subtitles(

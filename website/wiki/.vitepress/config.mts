@@ -8,9 +8,66 @@ export default defineConfig({
   outDir: './dist',
   cleanUrls: true,
   checkDeadLinks: true,
+  sitemap: {
+    hostname: 'https://crafttonation.netlify.app',
+    transformItems(items) {
+      return items.map((item) => ({
+        ...item,
+        url: `wiki/${item.url.replace(/^\//, '')}`
+      }))
+    }
+  },
   head: [
-    ['link', { rel: 'icon', type: 'image/png', href: '/wiki/assets/favicon-32.png' }]
+    ['link', { rel: 'icon', type: 'image/png', href: '/wiki/assets/favicon-32.png' }],
+    ['meta', { name: 'google-site-verification', content: '32314MEFrp3A3-KL8ZCys7EaSrTp3MSi_YeRkKXCOjU' }]
   ],
+
+  transformHead({ pageData }) {
+    const cleanPath = pageData.relativePath
+      .replace(/(?:^|\/)index\.md$/, '/')
+      .replace(/\.md$/, '')
+      .replace(/^\//, '')
+    const canonicalUrl = `https://crafttonation.netlify.app/wiki/${cleanPath}`
+    const pageTitle = pageData.title ? `${pageData.title} | Craft to Nation Wiki` : 'Craft to Nation Wiki'
+    const pageDescription = pageData.description || 'Wiki oficial y documentación de Craft to Nation'
+    const isEn = pageData.relativePath.startsWith('en/')
+    const isFr = pageData.relativePath.startsWith('fr/')
+    const lang = isEn ? 'en-US' : isFr ? 'fr-FR' : 'es-ES'
+    const ogLocale = isEn ? 'en_US' : isFr ? 'fr_FR' : 'es_ES'
+
+    return [
+      ['link', { rel: 'canonical', href: canonicalUrl }],
+      ['meta', { property: 'og:title', content: pageTitle }],
+      ['meta', { property: 'og:description', content: pageDescription }],
+      ['meta', { property: 'og:type', content: 'article' }],
+      ['meta', { property: 'og:url', content: canonicalUrl }],
+      ['meta', { property: 'og:image', content: 'https://crafttonation.netlify.app/assets/citycraft-world.webp' }],
+      ['meta', { property: 'og:site_name', content: 'Craft to Nation Wiki' }],
+      ['meta', { property: 'og:locale', content: ogLocale }],
+      ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+      ['meta', { name: 'twitter:title', content: pageTitle }],
+      ['meta', { name: 'twitter:description', content: pageDescription }],
+      ['meta', { name: 'twitter:image', content: 'https://crafttonation.netlify.app/assets/citycraft-world.webp' }],
+      ['meta', { name: 'twitter:site', content: '@crafttonation' }],
+      [
+        'script',
+        { type: 'application/ld+json' },
+        JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'TechArticle',
+          headline: pageData.title || 'Craft to Nation Wiki',
+          description: pageDescription,
+          inLanguage: lang,
+          mainEntityOfPage: canonicalUrl,
+          publisher: {
+            '@type': 'Organization',
+            name: 'Craft to Nation',
+            url: 'https://crafttonation.netlify.app/'
+          }
+        })
+      ]
+    ]
+  },
 
   themeConfig: {
     logo: '/assets/craft-to-nation-mark.png',

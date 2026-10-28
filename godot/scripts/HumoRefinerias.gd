@@ -23,6 +23,7 @@ static var ESTILOS: Dictionary = {
 	"carbonera": {"color": Color(0.06, 0.06, 0.06), "alfa": 0.85, "escala": 3.2, "vida": VIDA},
 	"aserradero": {"color": Color(0.85, 0.68, 0.4), "alfa": 0.75, "escala": 1.0, "vida": 2.2},
 	"fabrica_bloques": {"color": Color(0.7, 0.7, 0.72), "alfa": 0.6, "escala": 1.4, "vida": 2.5},
+	"vidriera": {"color": Color(0.85, 0.9, 0.95), "alfa": 0.6, "escala": 1.5, "vida": 2.5},
 	"refineria_petrolera": {"color": Color(0.2, 0.15, 0.1), "alfa": 0.8, "escala": 3.0, "vida": VIDA},
 	"productor_combustible": {"color": Color(0.25, 0.25, 0.3), "alfa": 0.7, "escala": 2.8, "vida": VIDA},
 	"central_termoelectrica": {"color": Color(0.4, 0.4, 0.45), "alfa": 0.8, "escala": 3.2, "vida": VIDA},

@@ -1,0 +1,2990 @@
+{
+  ".remotion/chrome-headless-shell/win64/chrome-headless-shell-win64/resources/accessibility/reading_mode_gdocs_helper/content.js": {
+    "mtime": 1792592255.8021052,
+    "seen": 1793184571.597345,
+    "ast_hash": "a6aecf2ab6fd66d72974584438a013b5",
+    "semantic_hash": "a6aecf2ab6fd66d72974584438a013b5"
+  },
+  ".remotion/chrome-headless-shell/win64/chrome-headless-shell-win64/resources/accessibility/reading_mode_gdocs_helper/gdocs_script.js": {
+    "mtime": 1792592255.8031073,
+    "seen": 1793184571.597345,
+    "ast_hash": "0818ea5737462bfe5c021b9d4b922e31",
+    "semantic_hash": "0818ea5737462bfe5c021b9d4b922e31"
+  },
+  ".remotion/chrome-headless-shell/win64/chrome-headless-shell-win64/resources/accessibility/reading_mode_gdocs_helper_manifest.json": {
+    "mtime": 1792592255.8051984,
+    "seen": 1793184571.597345,
+    "ast_hash": "ae17b39f565da6ea15cea6f737df9db3",
+    "semantic_hash": "ae17b39f565da6ea15cea6f737df9db3"
+  },
+  ".remotion/chrome-headless-shell/win64/chrome-headless-shell-win64/vk_swiftshader_icd.json": {
+    "mtime": 1792592255.8358865,
+    "seen": 1793184571.597345,
+    "ast_hash": "8642dd3a87e2de6e991fae08458e302b",
+    "semantic_hash": "8642dd3a87e2de6e991fae08458e302b"
+  },
+  "tools/deploy_wiki.ps1": {
+    "mtime": 1792090729.2252162,
+    "seen": 1793184571.597345,
+    "ast_hash": "45c037fcf670ad90e5ce1ca1f9b1a6ca",
+    "semantic_hash": "45c037fcf670ad90e5ce1ca1f9b1a6ca"
+  },
+  "tools/generate_ui_icons.py": {
+    "mtime": 1792162642.8048477,
+    "seen": 1793184571.597345,
+    "ast_hash": "e24a0109ad49d93c83d24f248e600583",
+    "semantic_hash": "e24a0109ad49d93c83d24f248e600583"
+  },
+  "tools/run-godot-tests.ps1": {
+    "mtime": 1791817399.1408145,
+    "seen": 1793184571.597345,
+    "ast_hash": "6b184a03bcfbfa321a555c7e3fb4b5f0",
+    "semantic_hash": "6b184a03bcfbfa321a555c7e3fb4b5f0"
+  },
+  "tools/run-single-test.ps1": {
+    "mtime": 1792024813.1883078,
+    "seen": 1793184571.597345,
+    "ast_hash": "0af57d45aaee3fb96e6b5c2e4078e042",
+    "semantic_hash": "0af57d45aaee3fb96e6b5c2e4078e042"
+  },
+  "tools/verify_game_balance_data.py": {
+    "mtime": 1792089502.1642966,
+    "seen": 1793184571.597345,
+    "ast_hash": "5090f922a42fb73cb26a5dc9f8b1a913",
+    "semantic_hash": "5090f922a42fb73cb26a5dc9f8b1a913"
+  },
+  "tools/verify_wiki_bundle.py": {
+    "mtime": 1792111461.1109498,
+    "seen": 1793184571.597345,
+    "ast_hash": "3136c457d9d8c86e497bfa5b115e61aa",
+    "semantic_hash": "3136c457d9d8c86e497bfa5b115e61aa"
+  },
+  "video_edition/remotion/eslint.config.mjs": {
+    "mtime": 1792138160.0,
+    "seen": 1793184571.597345,
+    "ast_hash": "e20d59bb6b64567da14d80c3da2c6b15",
+    "semantic_hash": "e20d59bb6b64567da14d80c3da2c6b15"
+  },
+  "video_edition/remotion/package.json": {
+    "mtime": 1792591845.9964266,
+    "seen": 1793184571.597345,
+    "ast_hash": "bf5e8e549ef2e746da4cec075aa43764",
+    "semantic_hash": "bf5e8e549ef2e746da4cec075aa43764"
+  },
+  "video_edition/remotion/remotion.config.ts": {
+    "mtime": 1792138160.0,
+    "seen": 1793184571.597345,
+    "ast_hash": "6338a93bfb160c9897d382735436172e",
+    "semantic_hash": "6338a93bfb160c9897d382735436172e"
+  },
+  "video_edition/remotion/src/Composition.tsx": {
+    "mtime": 1792138160.0,
+    "seen": 1793184571.597345,
+    "ast_hash": "cc05c1cf455cf7ddc59eb6070e942f82",
+    "semantic_hash": "cc05c1cf455cf7ddc59eb6070e942f82"
+  },
+  "video_edition/remotion/src/DevlogRecap.tsx": {
+    "mtime": 1792592348.4079838,
+    "seen": 1793184571.597345,
+    "ast_hash": "b962223eb40d98bba431b3d0ddf30a6a",
+    "semantic_hash": "b962223eb40d98bba431b3d0ddf30a6a"
+  },
+  "video_edition/remotion/src/LowerThird.tsx": {
+    "mtime": 1792592028.6458125,
+    "seen": 1793184571.597345,
+    "ast_hash": "5482a511fa4bc626aab0b09cd8a2f8c6",
+    "semantic_hash": "5482a511fa4bc626aab0b09cd8a2f8c6"
+  },
+  "video_edition/remotion/src/Root.tsx": {
+    "mtime": 1792592268.0530896,
+    "seen": 1793184571.597345,
+    "ast_hash": "d2fb864310ee7771589505fec3e9466a",
+    "semantic_hash": "d2fb864310ee7771589505fec3e9466a"
+  },
+  "video_edition/remotion/src/VerticalShort.tsx": {
+    "mtime": 1792592340.4123847,
+    "seen": 1793184571.597345,
+    "ast_hash": "547dfcee299e540faeb25f2186bdeaf5",
+    "semantic_hash": "547dfcee299e540faeb25f2186bdeaf5"
+  },
+  "video_edition/remotion/src/data.ts": {
+    "mtime": 1792592198.5869517,
+    "seen": 1793184571.597345,
+    "ast_hash": "fdad6fe77123f154b35cec2ee26cd929",
+    "semantic_hash": "fdad6fe77123f154b35cec2ee26cd929"
+  },
+  "video_edition/remotion/src/index.ts": {
+    "mtime": 1792138160.0,
+    "seen": 1793184571.597345,
+    "ast_hash": "d92d9dee1ab16aa44a75ae7fbfb843ca",
+    "semantic_hash": "d92d9dee1ab16aa44a75ae7fbfb843ca"
+  },
+  "video_edition/remotion/tsconfig.json": {
+    "mtime": 1792138160.0,
+    "seen": 1793184571.597345,
+    "ast_hash": "3f9d94814358aa5e8a039f53ae3eee99",
+    "semantic_hash": "3f9d94814358aa5e8a039f53ae3eee99"
+  },
+  "video_edition/tools/asset_packager.py": {
+    "mtime": 1792158496.094283,
+    "seen": 1793184571.597345,
+    "ast_hash": "22e882abab9c9e8e05f2d60448a0808d",
+    "semantic_hash": "22e882abab9c9e8e05f2d60448a0808d"
+  },
+  "video_edition/tools/audio_mixer.py": {
+    "mtime": 1792158496.0953586,
+    "seen": 1793184571.597345,
+    "ast_hash": "aada2596686069a7c16d60f25db454d8",
+    "semantic_hash": "aada2596686069a7c16d60f25db454d8"
+  },
+  "video_edition/tools/build_w2_recap_subtitles.py": {
+    "mtime": 1792341549.4975927,
+    "seen": 1793184571.597345,
+    "ast_hash": "ae17f7d9b4935aadd927202e37e10dee",
+    "semantic_hash": "ae17f7d9b4935aadd927202e37e10dee"
+  },
+  "video_edition/tools/clip_maker.py": {
+    "mtime": 1792158496.097071,
+    "seen": 1793184571.597345,
+    "ast_hash": "26f9a5728d5bab2d8c0fb091433f3b2a",
+    "semantic_hash": "26f9a5728d5bab2d8c0fb091433f3b2a"
+  },
+  "video_edition/tools/fcpxml_generator.py": {
+    "mtime": 1792158496.0981472,
+    "seen": 1793184571.597345,
+    "ast_hash": "c346219e6afc0c9c73307a1d66f9c77f",
+    "semantic_hash": "c346219e6afc0c9c73307a1d66f9c77f"
+  },
+  "video_edition/tools/llm_subtitle_cleaner.py": {
+    "mtime": 1793187728.8478835,
+    "seen": 1793187872.2233787,
+    "ast_hash": "b09fe7bf59c1e4f245bd1e6fd7dd7a29",
+    "semantic_hash": "b09fe7bf59c1e4f245bd1e6fd7dd7a29"
+  },
+  "video_edition/tools/qa_checker.py": {
+    "mtime": 1792158496.1003695,
+    "seen": 1793184571.597345,
+    "ast_hash": "08c80e7e7dc77b2507db4eedd259def0",
+    "semantic_hash": "08c80e7e7dc77b2507db4eedd259def0"
+  },
+  "video_edition/tools/rebuild_recap_subtitles.py": {
+    "mtime": 1792158496.1027143,
+    "seen": 1793184571.597345,
+    "ast_hash": "8bbf75a7c7eefe067ba22d2b62fc14e7",
+    "semantic_hash": "8bbf75a7c7eefe067ba22d2b62fc14e7"
+  },
+  "video_edition/tools/subtitle_generator.py": {
+    "mtime": 1792341250.218919,
+    "seen": 1793184571.597345,
+    "ast_hash": "a766398040f5de2b0837f5b9ac4c5fae",
+    "semantic_hash": "a766398040f5de2b0837f5b9ac4c5fae"
+  },
+  "video_edition/tools/video_editor_studio.py": {
+    "mtime": 1792158496.104807,
+    "seen": 1793184571.597345,
+    "ast_hash": "cee42f4690660acfeed1fc0b35a15dea",
+    "semantic_hash": "cee42f4690660acfeed1fc0b35a15dea"
+  },
+  "video_edition/tools/xml_timeline_generator.py": {
+    "mtime": 1792158496.1064084,
+    "seen": 1793184571.597345,
+    "ast_hash": "8606e8111468d37c0bb5ef981ee8fa3f",
+    "semantic_hash": "8606e8111468d37c0bb5ef981ee8fa3f"
+  },
+  "website/wiki/.vitepress/config.mts": {
+    "mtime": 1792779006.540155,
+    "seen": 1793184571.597345,
+    "ast_hash": "531da5927b5ae284126781df55467b2c",
+    "semantic_hash": "531da5927b5ae284126781df55467b2c"
+  },
+  "website/wiki/.vitepress/theme/components/ProductionCalculator.vue": {
+    "mtime": 1792111440.3604553,
+    "seen": 1793184571.597345,
+    "ast_hash": "9704151b5d1c5fc556643d61b54e4dd4",
+    "semantic_hash": "9704151b5d1c5fc556643d61b54e4dd4"
+  },
+  "website/wiki/.vitepress/theme/components/ResourceBadge.vue": {
+    "mtime": 1793156911.5470314,
+    "seen": 1793184571.597345,
+    "ast_hash": "c107602ee5df666af9a4de09d1b40c88",
+    "semantic_hash": "c107602ee5df666af9a4de09d1b40c88"
+  },
+  "website/wiki/.vitepress/theme/index.ts": {
+    "mtime": 1792111443.3521893,
+    "seen": 1793184571.597345,
+    "ast_hash": "1c867c91d91ecf38ff5b84ee5ede4cea",
+    "semantic_hash": "1c867c91d91ecf38ff5b84ee5ede4cea"
+  },
+  "website/wiki/package.json": {
+    "mtime": 1792089781.838388,
+    "seen": 1793184571.597345,
+    "ast_hash": "5a4e8b9523c84524f32563597685c559",
+    "semantic_hash": "5a4e8b9523c84524f32563597685c559"
+  },
+  "website/wiki/pnpm-workspace.yaml": {
+    "mtime": 1792089590.5263324,
+    "seen": 1793184571.597345,
+    "ast_hash": "b742abf2d03aa9d79c3290767176eb41",
+    "semantic_hash": "b742abf2d03aa9d79c3290767176eb41"
+  },
+  ".agents/skills/content-qa/SKILL.md": {
+    "mtime": 1793187704.4207995,
+    "seen": 1793187872.2233787,
+    "ast_hash": "8b7f17b7a166c6109d4175a50cee6fed",
+    "semantic_hash": "8b7f17b7a166c6109d4175a50cee6fed"
+  },
+  ".agents/skills/gamedev-copywriter/SKILL.md": {
+    "mtime": 1793187702.4569955,
+    "seen": 1793187872.2233787,
+    "ast_hash": "36e491c6d70bf423ab0639007e010d77",
+    "semantic_hash": "36e491c6d70bf423ab0639007e010d77"
+  },
+  ".agents/skills/social-strategist/SKILL.md": {
+    "mtime": 1793187727.575827,
+    "seen": 1793187872.2233787,
+    "ast_hash": "ed363b25d0c2aa87061c1c8383c529df",
+    "semantic_hash": "ed363b25d0c2aa87061c1c8383c529df"
+  },
+  ".agents/skills/social/SKILL.md": {
+    "mtime": 1793187670.4906645,
+    "seen": 1793187872.2233787,
+    "ast_hash": "c59da2ac55faef3a16a467698bcc7c09",
+    "semantic_hash": "c59da2ac55faef3a16a467698bcc7c09"
+  },
+  ".agents/skills/video-editor/SKILL.md": {
+    "mtime": 1793187700.8360488,
+    "seen": 1793187872.2233787,
+    "ast_hash": "4c34e73a9f65d7a049106c38ab20be20",
+    "semantic_hash": "4c34e73a9f65d7a049106c38ab20be20"
+  },
+  "AGENTS.md": {
+    "mtime": 1793186963.5483232,
+    "seen": 1793187872.2233787,
+    "ast_hash": "7dbbf888562fd3496a3f38b910789118",
+    "semantic_hash": "7dbbf888562fd3496a3f38b910789118"
+  },
+  "CLAUDE.md": {
+    "mtime": 1788812395.0960708,
+    "seen": 1793184571.597345,
+    "ast_hash": "e6b4f683a0ecb1f9219c228db0a01d15",
+    "semantic_hash": "e6b4f683a0ecb1f9219c228db0a01d15"
+  },
+  "CONTRIBUTING.md": {
+    "mtime": 1788724148.1654994,
+    "seen": 1793184571.597345,
+    "ast_hash": "91f5393d3df42b07771d0e104928d734",
+    "semantic_hash": "91f5393d3df42b07771d0e104928d734"
+  },
+  "Documento de Dise\u00f1o de Juego (GDD)_ Craft to Nation.md": {
+    "mtime": 1793154110.8375385,
+    "seen": 1793184571.597345,
+    "ast_hash": "c048a204ac6d46b4b73d539df9920e32",
+    "semantic_hash": "c048a204ac6d46b4b73d539df9920e32"
+  },
+  "LICENSE-CONTENT.md": {
+    "mtime": 1788709063.5082102,
+    "seen": 1793184571.597345,
+    "ast_hash": "a3b0f4a3d64df901ca86c3a64573cb91",
+    "semantic_hash": "a3b0f4a3d64df901ca86c3a64573cb91"
+  },
+  "PoC_1/Documento T\u00e9cnico de Desarrollo_ PoC 1 - Motor L\u00f3gico de Recursos, Demograf\u00eda y Nivel Urbano.md": {
+    "mtime": 1788698479.3120239,
+    "seen": 1793184571.597345,
+    "ast_hash": "4eef68c1e70bb1009b7f69e20c41f7d2",
+    "semantic_hash": "4eef68c1e70bb1009b7f69e20c41f7d2"
+  },
+  "PoC_2/Documento T\u00e9cnico de Desarrollo_ PoC 2 - Serializaci\u00f3n JSON y Validaci\u00f3n de Plantillas y Zonas.md": {
+    "mtime": 1788698489.639804,
+    "seen": 1793184571.597345,
+    "ast_hash": "007841247ec79f1be2bd00a17c63145f",
+    "semantic_hash": "007841247ec79f1be2bd00a17c63145f"
+  },
+  "PoC_3/Documento T\u00e9cnico de Desarrollo_ PoC 3 - Prototipo Visual M\u00ednimo en Godot.md": {
+    "mtime": 1790636823.3878107,
+    "seen": 1793184571.597345,
+    "ast_hash": "335720c015e24b78cbeab85c487c4968",
+    "semantic_hash": "335720c015e24b78cbeab85c487c4968"
+  },
+  "PoC_4/Documento T\u00e9cnico de Desarrollo_ PoC 4 - Integraci\u00f3n de Ciudad y Avatar como Autoload.md": {
+    "mtime": 1789987454.0126896,
+    "seen": 1793184571.597345,
+    "ast_hash": "e5f11931860c1d0dd0415b7197116317",
+    "semantic_hash": "e5f11931860c1d0dd0415b7197116317"
+  },
+  "PoC_5/Documento T\u00e9cnico de Desarrollo_ PoC 5 - Cat\u00e1logo de Recursos y Cadenas de Producci\u00f3n.md": {
+    "mtime": 1791196738.9846628,
+    "seen": 1793184571.597345,
+    "ast_hash": "c088a5cc5e77653ea5d44f8741b45a98",
+    "semantic_hash": "c088a5cc5e77653ea5d44f8741b45a98"
+  },
+  "PoC_5/Documento T\u00e9cnico de Desarrollo_ PoC 5 - Edificios de Recolecci\u00f3n.md": {
+    "mtime": 1790764059.3178308,
+    "seen": 1793184571.597345,
+    "ast_hash": "b6e3f42e7be2227adffd9eb2aaf591bc",
+    "semantic_hash": "b6e3f42e7be2227adffd9eb2aaf591bc"
+  },
+  "PoC_5/Documento T\u00e9cnico de Desarrollo_ PoC 5 - Fase 2A - Puestos, Producci\u00f3n y Acarreo.md": {
+    "mtime": 1790995407.784578,
+    "seen": 1793184571.597345,
+    "ast_hash": "d194a9dad99123ec6fbdf89e6f8cdd9e",
+    "semantic_hash": "d194a9dad99123ec6fbdf89e6f8cdd9e"
+  },
+  "PoC_5/Documento T\u00e9cnico de Desarrollo_ PoC 5 - Fase 2B - Extracci\u00f3n F\u00edsica y Agotamiento.md": {
+    "mtime": 1790598762.235751,
+    "seen": 1793184571.597345,
+    "ast_hash": "3a7ddd5070ec2fb73dab4c7429fbc358",
+    "semantic_hash": "3a7ddd5070ec2fb73dab4c7429fbc358"
+  },
+  "PoC_6/Documento T\u00e9cnico de Desarrollo_ PoC 6 - Mundo Procedural y Puestos de Recolecci\u00f3n.md": {
+    "mtime": 1790367052.7051117,
+    "seen": 1793184571.597345,
+    "ast_hash": "391f3cb3c736996635095b2a90fb36ef",
+    "semantic_hash": "391f3cb3c736996635095b2a90fb36ef"
+  },
+  "PoC_8/Documento T\u00e9cnico de Desarrollo_ PoC 8 - Pathfinding a Pie y Colonos NPC.md": {
+    "mtime": 1789958076.4964461,
+    "seen": 1793184571.597345,
+    "ast_hash": "acdcbe4b78768a9aa5df06f3be52b082",
+    "semantic_hash": "acdcbe4b78768a9aa5df06f3be52b082"
+  },
+  "README.md": {
+    "mtime": 1793154299.3047931,
+    "seen": 1793184571.597345,
+    "ast_hash": "9c75c7f11d0d61a66a5a454dcbac7c5f",
+    "semantic_hash": "9c75c7f11d0d61a66a5a454dcbac7c5f"
+  },
+  "docs/Fichas_Consumo_Produccion.md": {
+    "mtime": 1791825549.7556973,
+    "seen": 1793184571.597345,
+    "ast_hash": "b26e115a72e6e435d2b63edac5755f21",
+    "semantic_hash": "b26e115a72e6e435d2b63edac5755f21"
+  },
+  "docs/Fichas_Consumo_Produccion_Consolidada.md": {
+    "mtime": 1792089614.059608,
+    "seen": 1793184571.597345,
+    "ast_hash": "b7fff2b4e855f9d8376b577bfa146baf",
+    "semantic_hash": "b7fff2b4e855f9d8376b577bfa146baf"
+  },
+  "docs/Live_Verifications.md": {
+    "mtime": 1793154451.5988007,
+    "seen": 1793184571.597345,
+    "ast_hash": "8eb53cd83059ba055087342548aa0cb4",
+    "semantic_hash": "8eb53cd83059ba055087342548aa0cb4"
+  },
+  "docs/Pendientes y pr\u00f3ximos pasos.md": {
+    "mtime": 1793155900.432215,
+    "seen": 1793184571.597345,
+    "ast_hash": "4487f613bf2f114e02ced058522faa3a",
+    "semantic_hash": "4487f613bf2f114e02ced058522faa3a"
+  },
+  "docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md": {
+    "mtime": 1791817399.0408907,
+    "seen": 1793184571.597345,
+    "ast_hash": "77256b8c6384917608fa6c21f404640d",
+    "semantic_hash": "77256b8c6384917608fa6c21f404640d"
+  },
+  "docs/Propuesta_Iconos_UI.md": {
+    "mtime": 1792158481.8580227,
+    "seen": 1793184571.597345,
+    "ast_hash": "d9baf4eb8044b3dd5c61acf0106d9638",
+    "semantic_hash": "d9baf4eb8044b3dd5c61acf0106d9638"
+  },
+  "docs/Propuesta_Remodelacion_y_Colonizabilidad.md": {
+    "mtime": 1791307602.6439629,
+    "seen": 1793184571.597345,
+    "ast_hash": "73636d0cee88c3bdfb36b18448073a77",
+    "semantic_hash": "73636d0cee88c3bdfb36b18448073a77"
+  },
+  "docs/Verificaciones_en_vivo.md": {
+    "mtime": 1793154390.3197553,
+    "seen": 1793184571.597345,
+    "ast_hash": "59cb517eab627f0100eaffa4d739e1c9",
+    "semantic_hash": "59cb517eab627f0100eaffa4d739e1c9"
+  },
+  "docs/ideas-backlog.md": {
+    "mtime": 1793154325.7987728,
+    "seen": 1793184571.597345,
+    "ast_hash": "9e112eca9edbe77697060663a983158e",
+    "semantic_hash": "9e112eca9edbe77697060663a983158e"
+  },
+  "docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md": {
+    "mtime": 1788648735.228116,
+    "seen": 1793184571.597345,
+    "ast_hash": "3ed5ed8bb828ad3da7524d3a84b9f9ef",
+    "semantic_hash": "3ed5ed8bb828ad3da7524d3a84b9f9ef"
+  },
+  "docs/superpowers/plans/2026-09-07-mundo-procedural.md": {
+    "mtime": 1788805694.9473202,
+    "seen": 1793184571.597345,
+    "ast_hash": "21a62524668afa0514363f3065b464a4",
+    "semantic_hash": "21a62524668afa0514363f3065b464a4"
+  },
+  "docs/superpowers/plans/2026-09-07-zonificacion.md": {
+    "mtime": 1788784173.4673538,
+    "seen": 1793184571.597345,
+    "ast_hash": "0127316a38f21846874adc085ff0f7eb",
+    "semantic_hash": "0127316a38f21846874adc085ff0f7eb"
+  },
+  "docs/superpowers/plans/2026-09-08-cuerpos-de-agua.md": {
+    "mtime": 1788912374.4416592,
+    "seen": 1793184571.597345,
+    "ast_hash": "6ce817674414e7d423b09d4e0f51110f",
+    "semantic_hash": "6ce817674414e7d423b09d4e0f51110f"
+  },
+  "docs/superpowers/plans/2026-09-08-puestos-recoleccion-minas.md": {
+    "mtime": 1788883148.1396592,
+    "seen": 1793184571.597345,
+    "ast_hash": "be70776e09c0a9527530ab95e0a604f3",
+    "semantic_hash": "be70776e09c0a9527530ab95e0a604f3"
+  },
+  "docs/superpowers/plans/2026-09-09-arboles-procedurales.md": {
+    "mtime": 1788966794.2068148,
+    "seen": 1793184571.597345,
+    "ast_hash": "bd31c148930abb1cb0ca714677fff423",
+    "semantic_hash": "bd31c148930abb1cb0ca714677fff423"
+  },
+  "docs/superpowers/plans/2026-09-09-senales-bioma.md": {
+    "mtime": 1788956143.754455,
+    "seen": 1793184571.597345,
+    "ast_hash": "c09abf12b7604f6cba1f778c1d50d731",
+    "semantic_hash": "c09abf12b7604f6cba1f778c1d50d731"
+  },
+  "docs/superpowers/plans/2026-09-10-blueprints-construccion-fantasma.md": {
+    "mtime": 1789066282.6430829,
+    "seen": 1793184571.597345,
+    "ast_hash": "fef7813255554f92323a775bc431d28f",
+    "semantic_hash": "fef7813255554f92323a775bc431d28f"
+  },
+  "docs/superpowers/plans/2026-09-10-edificios-objeto-completo.md": {
+    "mtime": 1789080523.4186072,
+    "seen": 1793184571.597345,
+    "ast_hash": "a155ac470162bdb6a221195687df0240",
+    "semantic_hash": "a155ac470162bdb6a221195687df0240"
+  },
+  "docs/superpowers/plans/2026-09-10-huellas-irregulares.md": {
+    "mtime": 1789090033.6665206,
+    "seen": 1793184571.597345,
+    "ast_hash": "8b8d8bd46b3672a63fa7fc480eeb5ba7",
+    "semantic_hash": "8b8d8bd46b3672a63fa7fc480eeb5ba7"
+  },
+  "docs/superpowers/plans/2026-09-10-puestos-huella-real-caza-recoleccion.md": {
+    "mtime": 1789050128.3719707,
+    "seen": 1793184571.597345,
+    "ast_hash": "d4432feb791802667ca78201c11ab544",
+    "semantic_hash": "d4432feb791802667ca78201c11ab544"
+  },
+  "docs/superpowers/plans/2026-09-11-construccion-reversible.md": {
+    "mtime": 1789139254.3171468,
+    "seen": 1793184571.597345,
+    "ast_hash": "67a702e59563a8d7b561481ace84e756",
+    "semantic_hash": "67a702e59563a8d7b561481ace84e756"
+  },
+  "docs/superpowers/plans/2026-09-11-deconstruccion-edificios.md": {
+    "mtime": 1789126704.8941643,
+    "seen": 1793184571.597345,
+    "ast_hash": "e3c40eb74d4841da226f50aa3a772754",
+    "semantic_hash": "e3c40eb74d4841da226f50aa3a772754"
+  },
+  "docs/superpowers/plans/2026-09-11-despeje-ventanas-puertas.md": {
+    "mtime": 1789158935.321151,
+    "seen": 1793184571.597345,
+    "ast_hash": "fbe6b65904a23c6c00447c08d77b61d0",
+    "semantic_hash": "fbe6b65904a23c6c00447c08d77b61d0"
+  },
+  "docs/superpowers/plans/2026-09-13-culling-caras-translucidas.md": {
+    "mtime": 1789345088.3816073,
+    "seen": 1793184571.597345,
+    "ast_hash": "c629f44018a3a582844c4d15bcbe52d2",
+    "semantic_hash": "c629f44018a3a582844c4d15bcbe52d2"
+  },
+  "docs/superpowers/plans/2026-09-13-piso-tierra-recurso.md": {
+    "mtime": 1789298430.3966465,
+    "seen": 1793184571.597345,
+    "ast_hash": "e2fc4d24bd880b9810927285f5c7cc9e",
+    "semantic_hash": "e2fc4d24bd880b9810927285f5c7cc9e"
+  },
+  "docs/superpowers/plans/2026-09-13-rios-corriente-cascadas.md": {
+    "mtime": 1789302664.5562232,
+    "seen": 1793184571.597345,
+    "ast_hash": "ef71ac47aa39506950193128071779c1",
+    "semantic_hash": "ef71ac47aa39506950193128071779c1"
+  },
+  "docs/superpowers/plans/2026-09-14-cadena-minerales.md": {
+    "mtime": 1789406774.1634016,
+    "seen": 1793184571.597345,
+    "ast_hash": "eeb2df0a86ab8b2539ff82b303fa5d60",
+    "semantic_hash": "eeb2df0a86ab8b2539ff82b303fa5d60"
+  },
+  "docs/superpowers/plans/2026-09-14-puesto-pesca-frutos-mar.md": {
+    "mtime": 1789390186.0665748,
+    "seen": 1793184571.597345,
+    "ast_hash": "5848e9b1dc761cc5c5533bba1fea4b5e",
+    "semantic_hash": "5848e9b1dc761cc5c5533bba1fea4b5e"
+  },
+  "docs/superpowers/plans/2026-09-14-puesto-pesca-rediseno-4x6.md": {
+    "mtime": 1789397570.4008918,
+    "seen": 1793184571.597345,
+    "ast_hash": "e613ae6552eae0c8ee50278095cc6fd2",
+    "semantic_hash": "e613ae6552eae0c8ee50278095cc6fd2"
+  },
+  "docs/superpowers/plans/2026-09-20-colonos-pathfinding.md": {
+    "mtime": 1789958076.4964461,
+    "seen": 1793184571.597345,
+    "ast_hash": "c394eec6cd6cfa165ce94154636e6591",
+    "semantic_hash": "c394eec6cd6cfa165ce94154636e6591"
+  },
+  "docs/superpowers/plans/2026-09-20-destacar-puertas-ventanas-fantasma.md": {
+    "mtime": 1789913718.1434405,
+    "seen": 1793184571.597345,
+    "ast_hash": "f2769e6ea46b9d4a6400f157aa8c84c8",
+    "semantic_hash": "f2769e6ea46b9d4a6400f157aa8c84c8"
+  },
+  "docs/superpowers/plans/2026-09-20-drenado-y-follaje-progresivos.md": {
+    "mtime": 1789933803.2465022,
+    "seen": 1793184571.597345,
+    "ast_hash": "0b7ccfb95ebe9d2e475bbfcde83925bb",
+    "semantic_hash": "0b7ccfb95ebe9d2e475bbfcde83925bb"
+  },
+  "docs/superpowers/plans/2026-09-20-fantasmas-permeables.md": {
+    "mtime": 1789958076.498466,
+    "seen": 1793184571.597345,
+    "ast_hash": "10efd70d64ff4d8e191329a88b692074",
+    "semantic_hash": "10efd70d64ff4d8e191329a88b692074"
+  },
+  "docs/superpowers/plans/2026-09-20-nivelacion-frente-y-overlays.md": {
+    "mtime": 1789921845.0264056,
+    "seen": 1793184571.597345,
+    "ast_hash": "50dcd7d171b38b631db00ee679b7e14b",
+    "semantic_hash": "50dcd7d171b38b631db00ee679b7e14b"
+  },
+  "docs/superpowers/plans/2026-09-20-poblacion-vivienda.md": {
+    "mtime": 1789958076.498466,
+    "seen": 1793184571.597345,
+    "ast_hash": "4d79df78abd22f7738c3b9f4a231f800",
+    "semantic_hash": "4d79df78abd22f7738c3b9f4a231f800"
+  },
+  "docs/superpowers/plans/2026-09-20-puertas-a-nivel-de-suelo.md": {
+    "mtime": 1789908812.6263542,
+    "seen": 1793184571.597345,
+    "ast_hash": "2bc988056bcc1f9cd054c009f0175f54",
+    "semantic_hash": "2bc988056bcc1f9cd054c009f0175f54"
+  },
+  "docs/superpowers/plans/2026-09-21-economia-puestos-produccion-acarreo.md": {
+    "mtime": 1789997612.873871,
+    "seen": 1793184571.597345,
+    "ast_hash": "dfbd09050f81c2ff6cd3ce43260a23f9",
+    "semantic_hash": "dfbd09050f81c2ff6cd3ce43260a23f9"
+  },
+  "docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md": {
+    "mtime": 1790077387.485693,
+    "seen": 1793184571.597345,
+    "ast_hash": "c1da87539326b6522b1b848cafcd4ebf",
+    "semantic_hash": "c1da87539326b6522b1b848cafcd4ebf"
+  },
+  "docs/superpowers/plans/2026-09-24-edificios-recoleccion-plantillas.md": {
+    "mtime": 1790329509.4773462,
+    "seen": 1793184571.597345,
+    "ast_hash": "1557e13a25413f2511d6bb762fed511a",
+    "semantic_hash": "1557e13a25413f2511d6bb762fed511a"
+  },
+  "docs/superpowers/plans/2026-09-24-extraccion-fisica-agotamiento.md": {
+    "mtime": 1790269307.849136,
+    "seen": 1793184571.597345,
+    "ast_hash": "d9c90c1e72afa656a9ab1b1306c8d7f8",
+    "semantic_hash": "d9c90c1e72afa656a9ab1b1306c8d7f8"
+  },
+  "docs/superpowers/plans/2026-09-25-hud-por-modos.md": {
+    "mtime": 1790356640.3314621,
+    "seen": 1793184571.597345,
+    "ast_hash": "4e775f29c4ba63ffd2d94cc6a08cb776",
+    "semantic_hash": "4e775f29c4ba63ffd2d94cc6a08cb776"
+  },
+  "docs/superpowers/plans/2026-09-25-puertas-interactivas.md": {
+    "mtime": 1790333071.3605459,
+    "seen": 1793184571.597345,
+    "ast_hash": "745b47ed9214e6a2109fccbf6a5382f1",
+    "semantic_hash": "745b47ed9214e6a2109fccbf6a5382f1"
+  },
+  "docs/superpowers/plans/2026-09-28-volumen-interno-edificios.md": {
+    "mtime": 1790610982.010207,
+    "seen": 1793184571.597345,
+    "ast_hash": "c867c96721212d8a6ddf573327038a96",
+    "semantic_hash": "c867c96721212d8a6ddf573327038a96"
+  },
+  "docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md": {
+    "mtime": 1790689021.136325,
+    "seen": 1793184571.597345,
+    "ast_hash": "1900b28efa500315c577ef82b729d9f3",
+    "semantic_hash": "1900b28efa500315c577ef82b729d9f3"
+  },
+  "docs/superpowers/plans/2026-09-29-economia-construccion-puestos.md": {
+    "mtime": 1790704910.9284258,
+    "seen": 1793184571.597345,
+    "ast_hash": "390ec1022c1d11025e7d0ffc4756972d",
+    "semantic_hash": "390ec1022c1d11025e7d0ffc4756972d"
+  },
+  "docs/superpowers/plans/2026-09-30-previsualizacion-construcciones-cenital.md": {
+    "mtime": 1790786466.1839454,
+    "seen": 1793184571.597345,
+    "ast_hash": "65096fd153df1e3ee79f146a686b4a2b",
+    "semantic_hash": "65096fd153df1e3ee79f146a686b4a2b"
+  },
+  "docs/superpowers/plans/2026-09-30-siderurgica-real.md": {
+    "mtime": 1790862340.5546558,
+    "seen": 1793184571.597345,
+    "ast_hash": "92f86e96d287fe886f95ce8af1ed7ce8",
+    "semantic_hash": "92f86e96d287fe886f95ce8af1ed7ce8"
+  },
+  "docs/superpowers/plans/2026-10-01-escuela-tecnica.md": {
+    "mtime": 1790897780.5678744,
+    "seen": 1793184571.597345,
+    "ast_hash": "5729c63b01bd5bc34c8a0db1c71f1ba5",
+    "semantic_hash": "5729c63b01bd5bc34c8a0db1c71f1ba5"
+  },
+  "docs/superpowers/plans/2026-10-02-niveles-de-puesto-empleo-por-tipo.md": {
+    "mtime": 1790983153.126612,
+    "seen": 1793184571.597345,
+    "ast_hash": "e77802b3530d68b36200efda858f8d8a",
+    "semantic_hash": "e77802b3530d68b36200efda858f8d8a"
+  },
+  "docs/superpowers/plans/2026-10-02-obras-por-colonos.md": {
+    "mtime": 1790981551.439655,
+    "seen": 1793184571.597345,
+    "ast_hash": "54d0a958d0910d115448385c0e1639c6",
+    "semantic_hash": "54d0a958d0910d115448385c0e1639c6"
+  },
+  "docs/superpowers/plans/2026-10-04-formacion-investigacion-energia.md": {
+    "mtime": 1791196738.999216,
+    "seen": 1793184571.597345,
+    "ast_hash": "13e7f92971a2eeb26f6a53d9a413b9ad",
+    "semantic_hash": "13e7f92971a2eeb26f6a53d9a413b9ad"
+  },
+  "docs/superpowers/plans/2026-10-04-observaciones-jugabilidad-construccion.md": {
+    "mtime": 1791196739.0002165,
+    "seen": 1793184571.597345,
+    "ast_hash": "d40263f00726e2843d58cf4d4d34bb99",
+    "semantic_hash": "d40263f00726e2843d58cf4d4d34bb99"
+  },
+  "docs/superpowers/plans/2026-10-07-obras-vias-y-prioridades.md": {
+    "mtime": 1791374203.49173,
+    "seen": 1793184571.597345,
+    "ast_hash": "24098c19db1cbe7496cdcd5c28df79de",
+    "semantic_hash": "24098c19db1cbe7496cdcd5c28df79de"
+  },
+  "docs/superpowers/plans/2026-10-08-puestos-extractores-y-refinerias.md": {
+    "mtime": 1791817399.0408907,
+    "seen": 1793184571.597345,
+    "ast_hash": "4b55e299b906672f156c19b21280e29f",
+    "semantic_hash": "4b55e299b906672f156c19b21280e29f"
+  },
+  "docs/superpowers/plans/2026-10-08-red-tuberias-acueductos.md": {
+    "mtime": 1791817399.0408907,
+    "seen": 1793184571.597345,
+    "ast_hash": "8aae7e4c62d490e046d2ecaf73142b01",
+    "semantic_hash": "8aae7e4c62d490e046d2ecaf73142b01"
+  },
+  "docs/superpowers/plans/2026-10-08-subsuelo-pozos-y-bloques.md": {
+    "mtime": 1791817399.045759,
+    "seen": 1793184571.597345,
+    "ast_hash": "5e2e63e6887bcbf0d34fde240b93773b",
+    "semantic_hash": "5e2e63e6887bcbf0d34fde240b93773b"
+  },
+  "docs/superpowers/plans/2026-10-12-ajustes-subsuelo-ductos-energia-npcs.md": {
+    "mtime": 1791825508.5232604,
+    "seen": 1793184571.597345,
+    "ast_hash": "5100967405ea28b6b0e22f1fe44d25d2",
+    "semantic_hash": "5100967405ea28b6b0e22f1fe44d25d2"
+  },
+  "docs/superpowers/plans/2026-10-14-fabrica-bloques-y-reserva-materias-primas.md": {
+    "mtime": 1792024813.1740065,
+    "seen": 1793184571.597345,
+    "ast_hash": "b644242e684ff3765884bae93e379961",
+    "semantic_hash": "b644242e684ff3765884bae93e379961"
+  },
+  "docs/superpowers/plans/2026-10-15-sistema-moral.md": {
+    "mtime": 1792078196.2882,
+    "seen": 1793184571.597345,
+    "ast_hash": "94ab208d5c0d8586e64f6c4ac4000184",
+    "semantic_hash": "94ab208d5c0d8586e64f6c4ac4000184"
+  },
+  "docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md": {
+    "mtime": 1792089466.261557,
+    "seen": 1793184571.597345,
+    "ast_hash": "495aa15bfa08b40f5b4b23f73229b56a",
+    "semantic_hash": "495aa15bfa08b40f5b4b23f73229b56a"
+  },
+  "docs/superpowers/plans/2026-10-16-iconografia-ui.md": {
+    "mtime": 1792158481.8600574,
+    "seen": 1793184571.597345,
+    "ast_hash": "ab7cc428989d5048863fc0563f2c3ed4",
+    "semantic_hash": "ab7cc428989d5048863fc0563f2c3ed4"
+  },
+  "docs/superpowers/plans/2026-10-26-balance-alimentos-demografia.md": {
+    "mtime": 1793031469.9342277,
+    "seen": 1793184571.597345,
+    "ast_hash": "cfb7381d6e26a195ec2af0339be99702",
+    "semantic_hash": "cfb7381d6e26a195ec2af0339be99702"
+  },
+  "docs/superpowers/plans/2026-10-26-investigacion-descentralizada-eras.md": {
+    "mtime": 1793051680.0060225,
+    "seen": 1793184571.597345,
+    "ast_hash": "41e4a449fc4ddf5662ff9740a91052aa",
+    "semantic_hash": "41e4a449fc4ddf5662ff9740a91052aa"
+  },
+  "docs/superpowers/plans/2026-10-26-logistica-unidades-transporte.md": {
+    "mtime": 1793068192.6932383,
+    "seen": 1793184571.597345,
+    "ast_hash": "32b6a3dce5e912471b0239b3350ea114",
+    "semantic_hash": "32b6a3dce5e912471b0239b3350ea114"
+  },
+  "docs/superpowers/specs/2026-09-05-citycraft-presentation-site-design.md": {
+    "mtime": 1788648601.9791932,
+    "seen": 1793184571.597345,
+    "ast_hash": "f86e141fb412836e7da118aa698766d5",
+    "semantic_hash": "f86e141fb412836e7da118aa698766d5"
+  },
+  "docs/superpowers/specs/2026-09-07-mundo-procedural-design.md": {
+    "mtime": 1788805420.708498,
+    "seen": 1793184571.597345,
+    "ast_hash": "ef9dfbfd1c0787df0e7b4f5ca7421e6a",
+    "semantic_hash": "ef9dfbfd1c0787df0e7b4f5ca7421e6a"
+  },
+  "docs/superpowers/specs/2026-09-07-zonificacion-design.md": {
+    "mtime": 1788783897.6699865,
+    "seen": 1793184571.597345,
+    "ast_hash": "b664c6146280019db1018e0783565f95",
+    "semantic_hash": "b664c6146280019db1018e0783565f95"
+  },
+  "docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md": {
+    "mtime": 1788912374.4416592,
+    "seen": 1793184571.597345,
+    "ast_hash": "467af57d6240c71cbf6e4f36c21c6c89",
+    "semantic_hash": "467af57d6240c71cbf6e4f36c21c6c89"
+  },
+  "docs/superpowers/specs/2026-09-08-puestos-recoleccion-minas-design.md": {
+    "mtime": 1789654308.8581343,
+    "seen": 1793184571.597345,
+    "ast_hash": "6b97e7c29864429b5d522c5872149981",
+    "semantic_hash": "6b97e7c29864429b5d522c5872149981"
+  },
+  "docs/superpowers/specs/2026-09-09-arboles-procedurales-design.md": {
+    "mtime": 1788977160.1462896,
+    "seen": 1793184571.597345,
+    "ast_hash": "0d2d5478e0010818e62df9a3bcd3cafd",
+    "semantic_hash": "0d2d5478e0010818e62df9a3bcd3cafd"
+  },
+  "docs/superpowers/specs/2026-09-09-senales-bioma-design.md": {
+    "mtime": 1788950890.2594337,
+    "seen": 1793184571.597345,
+    "ast_hash": "cecec5e191a61352e174350a956814e9",
+    "semantic_hash": "cecec5e191a61352e174350a956814e9"
+  },
+  "docs/superpowers/specs/2026-09-10-blueprints-construccion-fantasma-design.md": {
+    "mtime": 1789065611.990826,
+    "seen": 1793184571.597345,
+    "ast_hash": "a42a343e8999c9ff3deabcbd2c6e0fe2",
+    "semantic_hash": "a42a343e8999c9ff3deabcbd2c6e0fe2"
+  },
+  "docs/superpowers/specs/2026-09-10-edificios-objeto-completo-design.md": {
+    "mtime": 1789080213.0361958,
+    "seen": 1793184571.597345,
+    "ast_hash": "007feb0b0c5177badae72e0f71028633",
+    "semantic_hash": "007feb0b0c5177badae72e0f71028633"
+  },
+  "docs/superpowers/specs/2026-09-10-huellas-irregulares-design.md": {
+    "mtime": 1789092415.479846,
+    "seen": 1793184571.597345,
+    "ast_hash": "3a651a3707ca9a20ec8a5ed78c6e3ffa",
+    "semantic_hash": "3a651a3707ca9a20ec8a5ed78c6e3ffa"
+  },
+  "docs/superpowers/specs/2026-09-10-puestos-huella-real-caza-recoleccion-design.md": {
+    "mtime": 1789049481.1147132,
+    "seen": 1793184571.597345,
+    "ast_hash": "bcb5711ee2a27839887697182251f3a8",
+    "semantic_hash": "bcb5711ee2a27839887697182251f3a8"
+  },
+  "docs/superpowers/specs/2026-09-11-construccion-reversible-design.md": {
+    "mtime": 1789162604.9113584,
+    "seen": 1793184571.597345,
+    "ast_hash": "630f07ca3c0a0ac96423b3543bf8b4e2",
+    "semantic_hash": "630f07ca3c0a0ac96423b3543bf8b4e2"
+  },
+  "docs/superpowers/specs/2026-09-11-deconstruccion-edificios-design.md": {
+    "mtime": 1789125810.9267094,
+    "seen": 1793184571.597345,
+    "ast_hash": "35d62c88920db11b9907966f0614d154",
+    "semantic_hash": "35d62c88920db11b9907966f0614d154"
+  },
+  "docs/superpowers/specs/2026-09-11-despeje-ventanas-puertas-design.md": {
+    "mtime": 1789158935.3226583,
+    "seen": 1793184571.597345,
+    "ast_hash": "208c98aecc3f3cefaf2e81601d0177bf",
+    "semantic_hash": "208c98aecc3f3cefaf2e81601d0177bf"
+  },
+  "docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md": {
+    "mtime": 1789345115.6345887,
+    "seen": 1793184571.597345,
+    "ast_hash": "a321a4c553c6813d60075e23f1be3e3f",
+    "semantic_hash": "a321a4c553c6813d60075e23f1be3e3f"
+  },
+  "docs/superpowers/specs/2026-09-13-rios-corriente-cascadas-design.md": {
+    "mtime": 1789324307.7869623,
+    "seen": 1793184571.597345,
+    "ast_hash": "77e9aa2f7e434eb780cc5aecdaecd840",
+    "semantic_hash": "77e9aa2f7e434eb780cc5aecdaecd840"
+  },
+  "docs/superpowers/specs/2026-09-14-cadena-minerales-design.md": {
+    "mtime": 1789403236.5625005,
+    "seen": 1793184571.597345,
+    "ast_hash": "36dae8c99ae0231909eef94aae96c66b",
+    "semantic_hash": "36dae8c99ae0231909eef94aae96c66b"
+  },
+  "docs/superpowers/specs/2026-09-14-puesto-pesca-frutos-mar-design.md": {
+    "mtime": 1789397425.4416568,
+    "seen": 1793184571.597345,
+    "ast_hash": "596cc74f1ecd82b5bbec34cf5a15f719",
+    "semantic_hash": "596cc74f1ecd82b5bbec34cf5a15f719"
+  },
+  "docs/superpowers/specs/2026-09-20-colonos-pathfinding-design.md": {
+    "mtime": 1789958076.5000622,
+    "seen": 1793184571.597345,
+    "ast_hash": "7e55d2d594eeb3c4142ca70dc34b0bed",
+    "semantic_hash": "7e55d2d594eeb3c4142ca70dc34b0bed"
+  },
+  "docs/superpowers/specs/2026-09-20-destacar-puertas-ventanas-fantasma-design.md": {
+    "mtime": 1789913718.1434405,
+    "seen": 1793184571.597345,
+    "ast_hash": "1416880b4e5cf19d3566173e37d1dc6f",
+    "semantic_hash": "1416880b4e5cf19d3566173e37d1dc6f"
+  },
+  "docs/superpowers/specs/2026-09-20-drenado-y-follaje-progresivos-design.md": {
+    "mtime": 1789933803.248021,
+    "seen": 1793184571.597345,
+    "ast_hash": "efaaa3453cd4795f699411012b276d0e",
+    "semantic_hash": "efaaa3453cd4795f699411012b276d0e"
+  },
+  "docs/superpowers/specs/2026-09-20-nivelacion-frente-y-overlays-design.md": {
+    "mtime": 1789921845.027398,
+    "seen": 1793184571.597345,
+    "ast_hash": "d191fdfe66c53782327b7a41f2dbdc77",
+    "semantic_hash": "d191fdfe66c53782327b7a41f2dbdc77"
+  },
+  "docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md": {
+    "mtime": 1789908812.6263542,
+    "seen": 1793184571.597345,
+    "ast_hash": "b91ab6af76ff12df2d48776961c3c2b8",
+    "semantic_hash": "b91ab6af76ff12df2d48776961c3c2b8"
+  },
+  "docs/superpowers/specs/2026-09-21-economia-puestos-produccion-acarreo-design.md": {
+    "mtime": 1789997612.874854,
+    "seen": 1793184571.597345,
+    "ast_hash": "0fc5b3dc9fb829d3aab4b6526aafd415",
+    "semantic_hash": "0fc5b3dc9fb829d3aab4b6526aafd415"
+  },
+  "docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md": {
+    "mtime": 1790075685.240465,
+    "seen": 1793184571.597345,
+    "ast_hash": "73573224535ce8f7d165623ac668c122",
+    "semantic_hash": "73573224535ce8f7d165623ac668c122"
+  },
+  "docs/superpowers/specs/2026-09-24-edificios-recoleccion-plantillas-design.md": {
+    "mtime": 1790329509.4783459,
+    "seen": 1793184571.597345,
+    "ast_hash": "ab929bcc319ddc2f2236124624072c22",
+    "semantic_hash": "ab929bcc319ddc2f2236124624072c22"
+  },
+  "docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md": {
+    "mtime": 1790597775.342432,
+    "seen": 1793184571.597345,
+    "ast_hash": "1275e66a41cc1c3880a03e45354bec2c",
+    "semantic_hash": "1275e66a41cc1c3880a03e45354bec2c"
+  },
+  "docs/superpowers/specs/2026-09-25-hud-por-modos-design.md": {
+    "mtime": 1790514382.6223834,
+    "seen": 1793184571.597345,
+    "ast_hash": "4fd6b944c73d65bd9f62a9b134ff0a13",
+    "semantic_hash": "4fd6b944c73d65bd9f62a9b134ff0a13"
+  },
+  "docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md": {
+    "mtime": 1790332920.7593517,
+    "seen": 1793184571.597345,
+    "ast_hash": "72bb903967c83a1bdc642baccee00304",
+    "semantic_hash": "72bb903967c83a1bdc642baccee00304"
+  },
+  "docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md": {
+    "mtime": 1790610252.8793962,
+    "seen": 1793184571.597345,
+    "ast_hash": "0fb21200e9a95efa0e2c4794e47c274a",
+    "semantic_hash": "0fb21200e9a95efa0e2c4794e47c274a"
+  },
+  "docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md": {
+    "mtime": 1790688066.7274058,
+    "seen": 1793184571.597345,
+    "ast_hash": "6747f033045c0b71bf2bdb0f8c862ef3",
+    "semantic_hash": "6747f033045c0b71bf2bdb0f8c862ef3"
+  },
+  "docs/superpowers/specs/2026-09-29-economia-construccion-puestos-design.md": {
+    "mtime": 1790704910.9294264,
+    "seen": 1793184571.597345,
+    "ast_hash": "c6761fe8a74d7e20bc0f131080f3c114",
+    "semantic_hash": "c6761fe8a74d7e20bc0f131080f3c114"
+  },
+  "docs/superpowers/specs/2026-09-30-previsualizacion-construcciones-cenital-design.md": {
+    "mtime": 1790785704.498283,
+    "seen": 1793184571.597345,
+    "ast_hash": "73a34fc7a80c84c3836805fd356b59e7",
+    "semantic_hash": "73a34fc7a80c84c3836805fd356b59e7"
+  },
+  "docs/superpowers/specs/2026-09-30-siderurgica-real-design.md": {
+    "mtime": 1790862340.55566,
+    "seen": 1793184571.597345,
+    "ast_hash": "cc4ec5a57a3f6df601152bec9f663a52",
+    "semantic_hash": "cc4ec5a57a3f6df601152bec9f663a52"
+  },
+  "docs/superpowers/specs/2026-10-01-escuela-tecnica-design.md": {
+    "mtime": 1790897780.5688746,
+    "seen": 1793184571.597345,
+    "ast_hash": "6a396882c069daf54370060c06c6a59f",
+    "semantic_hash": "6a396882c069daf54370060c06c6a59f"
+  },
+  "docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md": {
+    "mtime": 1790995407.7875783,
+    "seen": 1793184571.597345,
+    "ast_hash": "7725b59f2f26e3091770f32a65ced0f2",
+    "semantic_hash": "7725b59f2f26e3091770f32a65ced0f2"
+  },
+  "docs/superpowers/specs/2026-10-02-obras-por-colonos-design.md": {
+    "mtime": 1790981551.4416547,
+    "seen": 1793184571.597345,
+    "ast_hash": "906ccf4e036ce31bfffe0ccab94c6735",
+    "semantic_hash": "906ccf4e036ce31bfffe0ccab94c6735"
+  },
+  "docs/superpowers/specs/2026-10-04-formacion-investigacion-energia-design.md": {
+    "mtime": 1791196739.0012138,
+    "seen": 1793184571.597345,
+    "ast_hash": "5b97230d8bdbcca8c956f1d5fcba5ea2",
+    "semantic_hash": "5b97230d8bdbcca8c956f1d5fcba5ea2"
+  },
+  "docs/superpowers/specs/2026-10-04-observaciones-jugabilidad-construccion-design.md": {
+    "mtime": 1791196739.0022166,
+    "seen": 1793184571.597345,
+    "ast_hash": "d45377efcce384702011ea3c91be6804",
+    "semantic_hash": "d45377efcce384702011ea3c91be6804"
+  },
+  "docs/superpowers/specs/2026-10-07-obras-vias-y-prioridades-design.md": {
+    "mtime": 1791374142.0488138,
+    "seen": 1793184571.597345,
+    "ast_hash": "39bc296b31e7484e0eb8a1f491c2a123",
+    "semantic_hash": "39bc296b31e7484e0eb8a1f491c2a123"
+  },
+  "docs/superpowers/specs/2026-10-08-puestos-extractores-y-refinerias-design.md": {
+    "mtime": 1791817399.0478585,
+    "seen": 1793184571.597345,
+    "ast_hash": "9d30b855c14921175e16791224486bc8",
+    "semantic_hash": "9d30b855c14921175e16791224486bc8"
+  },
+  "docs/superpowers/specs/2026-10-08-red-tuberias-acueductos-design.md": {
+    "mtime": 1791817399.0494838,
+    "seen": 1793184571.597345,
+    "ast_hash": "8359f6739df412e7c6f3c0f76810517c",
+    "semantic_hash": "8359f6739df412e7c6f3c0f76810517c"
+  },
+  "docs/superpowers/specs/2026-10-08-subsuelo-pozos-y-bloques-design.md": {
+    "mtime": 1791817399.050014,
+    "seen": 1793184571.597345,
+    "ast_hash": "d499d155349db2d0b1ef777cb5747202",
+    "semantic_hash": "d499d155349db2d0b1ef777cb5747202"
+  },
+  "docs/superpowers/specs/2026-10-12-ajustes-subsuelo-ductos-energia-npcs-design.md": {
+    "mtime": 1791817399.0510795,
+    "seen": 1793184571.597345,
+    "ast_hash": "7721f3b4c71e9431708403d296d0531c",
+    "semantic_hash": "7721f3b4c71e9431708403d296d0531c"
+  },
+  "docs/superpowers/specs/2026-10-14-fabrica-bloques-y-reserva-materias-primas-design.md": {
+    "mtime": 1792024813.1750114,
+    "seen": 1793184571.597345,
+    "ast_hash": "afe37d7348461445eb0f07adce229475",
+    "semantic_hash": "afe37d7348461445eb0f07adce229475"
+  },
+  "docs/superpowers/specs/2026-10-15-sistema-moral-design.md": {
+    "mtime": 1792078196.289256,
+    "seen": 1793184571.597345,
+    "ast_hash": "25ec367aea3784ca57bc29de250e8fe8",
+    "semantic_hash": "25ec367aea3784ca57bc29de250e8fe8"
+  },
+  "docs/superpowers/specs/2026-10-15-wiki-craft-to-nation-design.md": {
+    "mtime": 1792088700.9694724,
+    "seen": 1793184571.597345,
+    "ast_hash": "eb9402ad601815d6fd4eb55ac3fcd131",
+    "semantic_hash": "eb9402ad601815d6fd4eb55ac3fcd131"
+  },
+  "docs/superpowers/specs/2026-10-16-iconografia-ui-design.md": {
+    "mtime": 1792158481.860773,
+    "seen": 1793184571.597345,
+    "ast_hash": "87dadb122880f10762dbb098cbfb49d5",
+    "semantic_hash": "87dadb122880f10762dbb098cbfb49d5"
+  },
+  "docs/superpowers/specs/2026-10-26-balance-alimentos-demografia-spec.md": {
+    "mtime": 1793030198.6173935,
+    "seen": 1793184571.597345,
+    "ast_hash": "fd00886a9a0d33697caa4301a71c3dbc",
+    "semantic_hash": "fd00886a9a0d33697caa4301a71c3dbc"
+  },
+  "docs/superpowers/specs/2026-10-26-investigacion-descentralizada-eras-spec.md": {
+    "mtime": 1793036309.410629,
+    "seen": 1793184571.597345,
+    "ast_hash": "09471207cb31a6ff619300b6c73ed6a0",
+    "semantic_hash": "09471207cb31a6ff619300b6c73ed6a0"
+  },
+  "docs/superpowers/specs/2026-10-26-logistica-unidades-transporte-spec.md": {
+    "mtime": 1793064186.5243375,
+    "seen": 1793184571.597345,
+    "ast_hash": "27ca45424d531e440f54004d0989eba1",
+    "semantic_hash": "27ca45424d531e440f54004d0989eba1"
+  },
+  "docs/superpowers/specs/2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md": {
+    "mtime": 1793050352.2461412,
+    "seen": 1793184571.597345,
+    "ast_hash": "eaf9d4fb7eaf035f656469c0c3dc4de2",
+    "semantic_hash": "eaf9d4fb7eaf035f656469c0c3dc4de2"
+  },
+  "video_edition/remotion/README.md": {
+    "mtime": 1792591714.599975,
+    "seen": 1793184571.597345,
+    "ast_hash": "fcdfe1e0c3220831519fdbf617e6d7ae",
+    "semantic_hash": "fcdfe1e0c3220831519fdbf617e6d7ae"
+  },
+  "video_edition/workspaces/calendario_semana_1.md": {
+    "mtime": 1792158496.1080039,
+    "seen": 1793184571.597345,
+    "ast_hash": "07642e12d2f9d4857986a1002da67fa6",
+    "semantic_hash": "07642e12d2f9d4857986a1002da67fa6"
+  },
+  "video_edition/workspaces/calendario_semana_2.md": {
+    "mtime": 1792595470.7330146,
+    "seen": 1793184571.597345,
+    "ast_hash": "ad42c557a417d1cf0c3def94b319a57a",
+    "semantic_hash": "ad42c557a417d1cf0c3def94b319a57a"
+  },
+  "website/index.html": {
+    "mtime": 1793157058.2111084,
+    "seen": 1793184571.597345,
+    "ast_hash": "5d9ab3d5cc07931f5afe3d35c57bc7ca",
+    "semantic_hash": "5d9ab3d5cc07931f5afe3d35c57bc7ca"
+  },
+  "website/wiki/src/en/dev/gdd.md": {
+    "mtime": 1793154791.932648,
+    "seen": 1793184571.597345,
+    "ast_hash": "834efcbe37627d1d1cd56d613bce098d",
+    "semantic_hash": "834efcbe37627d1d1cd56d613bce098d"
+  },
+  "website/wiki/src/en/dev/godot.md": {
+    "mtime": 1793154836.9327576,
+    "seen": 1793184571.597345,
+    "ast_hash": "2d653074931104c419eeb0043735f43b",
+    "semantic_hash": "2d653074931104c419eeb0043735f43b"
+  },
+  "website/wiki/src/en/dev/logistics.md": {
+    "mtime": 1793154839.7187693,
+    "seen": 1793184571.597345,
+    "ast_hash": "26fa7c5da6c69c2310311b93e700a720",
+    "semantic_hash": "26fa7c5da6c69c2310311b93e700a720"
+  },
+  "website/wiki/src/en/dev/roadmap.md": {
+    "mtime": 1793154796.8249083,
+    "seen": 1793184571.597345,
+    "ast_hash": "f0a6b77f994b6f6970a66b2f303398e4",
+    "semantic_hash": "f0a6b77f994b6f6970a66b2f303398e4"
+  },
+  "website/wiki/src/en/guide/buildings.md": {
+    "mtime": 1793154915.0229375,
+    "seen": 1793184571.597345,
+    "ast_hash": "db9839350159e4b002d661331a1bd9ca",
+    "semantic_hash": "db9839350159e4b002d661331a1bd9ca"
+  },
+  "website/wiki/src/en/guide/colonists.md": {
+    "mtime": 1793154941.4520404,
+    "seen": 1793184571.597345,
+    "ast_hash": "5d99d8833d4c4cd66e09f5744f031589",
+    "semantic_hash": "5d99d8833d4c4cd66e09f5744f031589"
+  },
+  "website/wiki/src/en/guide/resources.md": {
+    "mtime": 1793154884.3223703,
+    "seen": 1793184571.597345,
+    "ast_hash": "3da2122cd22bfca98710bd650ec24ba2",
+    "semantic_hash": "3da2122cd22bfca98710bd650ec24ba2"
+  },
+  "website/wiki/src/en/guide/start.md": {
+    "mtime": 1793154934.9166903,
+    "seen": 1793184571.597345,
+    "ast_hash": "e75e8b323763da49ce44b23ffcdce197",
+    "semantic_hash": "e75e8b323763da49ce44b23ffcdce197"
+  },
+  "website/wiki/src/en/index.md": {
+    "mtime": 1793154995.1233723,
+    "seen": 1793184571.597345,
+    "ast_hash": "fbeddda2a634fd9f0adf6b69e088f181",
+    "semantic_hash": "fbeddda2a634fd9f0adf6b69e088f181"
+  },
+  "website/wiki/src/es/dev/gdd.md": {
+    "mtime": 1793154493.2381053,
+    "seen": 1793184571.597345,
+    "ast_hash": "b1f63cb699f3b733f612c36d93b9703a",
+    "semantic_hash": "b1f63cb699f3b733f612c36d93b9703a"
+  },
+  "website/wiki/src/es/dev/godot.md": {
+    "mtime": 1793154615.5600162,
+    "seen": 1793184571.597345,
+    "ast_hash": "cf1c81eb48eab1b133d83b089e012b70",
+    "semantic_hash": "cf1c81eb48eab1b133d83b089e012b70"
+  },
+  "website/wiki/src/es/dev/logistica.md": {
+    "mtime": 1793154619.9932964,
+    "seen": 1793184571.597345,
+    "ast_hash": "fc1963e292b2972613cd4ad8840bc955",
+    "semantic_hash": "fc1963e292b2972613cd4ad8840bc955"
+  },
+  "website/wiki/src/es/dev/roadmap.md": {
+    "mtime": 1793154576.3017282,
+    "seen": 1793184571.597345,
+    "ast_hash": "018a35484e23113beef4a59a759e7f8d",
+    "semantic_hash": "018a35484e23113beef4a59a759e7f8d"
+  },
+  "website/wiki/src/es/guia/colonos.md": {
+    "mtime": 1793154737.7239938,
+    "seen": 1793184571.597345,
+    "ast_hash": "c4b8f0e7b4086939fc6be1aaae10e931",
+    "semantic_hash": "c4b8f0e7b4086939fc6be1aaae10e931"
+  },
+  "website/wiki/src/es/guia/edificios.md": {
+    "mtime": 1793154708.7005064,
+    "seen": 1793184571.597345,
+    "ast_hash": "7ef6a5e2cf743b2c81d4beeeb0eca650",
+    "semantic_hash": "7ef6a5e2cf743b2c81d4beeeb0eca650"
+  },
+  "website/wiki/src/es/guia/inicio.md": {
+    "mtime": 1793154736.2082193,
+    "seen": 1793184571.597345,
+    "ast_hash": "8de151a3ed8140359b24fc77594b19e4",
+    "semantic_hash": "8de151a3ed8140359b24fc77594b19e4"
+  },
+  "website/wiki/src/es/guia/recursos.md": {
+    "mtime": 1793154674.4799595,
+    "seen": 1793184571.597345,
+    "ast_hash": "ec4a92e345a0dcc11d9de43a48d420a3",
+    "semantic_hash": "ec4a92e345a0dcc11d9de43a48d420a3"
+  },
+  "website/wiki/src/es/index.md": {
+    "mtime": 1793154992.256902,
+    "seen": 1793184571.597345,
+    "ast_hash": "23df578a2bc9d9d1a2cab050a51bc308",
+    "semantic_hash": "23df578a2bc9d9d1a2cab050a51bc308"
+  },
+  "website/wiki/src/fr/index.md": {
+    "mtime": 1793154998.411156,
+    "seen": 1793184571.597345,
+    "ast_hash": "64246307fb55844f1687be9de5c1228f",
+    "semantic_hash": "64246307fb55844f1687be9de5c1228f"
+  },
+  "website/wiki/src/index.md": {
+    "mtime": 1793154988.1848814,
+    "seen": 1793184571.597345,
+    "ast_hash": "5586a9c09f3fcf4ec119a53ee2aaf9d9",
+    "semantic_hash": "5586a9c09f3fcf4ec119a53ee2aaf9d9"
+  },
+  "arte/IMUQwcomLawGk.png": {
+    "mtime": 1792015729.96392,
+    "seen": 1793184571.597345,
+    "ast_hash": "01224799e8f11eb6bb6c0e165be060b9",
+    "semantic_hash": "01224799e8f11eb6bb6c0e165be060b9"
+  },
+  "arte/IMempbkZbl5q0.png": {
+    "mtime": 1792015729.981157,
+    "seen": 1793184571.597345,
+    "ast_hash": "f730e7d26c868ba2c2495bbc13ae6e8d",
+    "semantic_hash": "f730e7d26c868ba2c2495bbc13ae6e8d"
+  },
+  "arte/YT thumbnails/live 2 AB test_A.png": {
+    "mtime": 1792158481.805153,
+    "seen": 1793184571.597345,
+    "ast_hash": "f730e7d26c868ba2c2495bbc13ae6e8d",
+    "semantic_hash": "f730e7d26c868ba2c2495bbc13ae6e8d"
+  },
+  "arte/YT thumbnails/live 2 AB test_B.png": {
+    "mtime": 1792158481.8145528,
+    "seen": 1793184571.597345,
+    "ast_hash": "01224799e8f11eb6bb6c0e165be060b9",
+    "semantic_hash": "01224799e8f11eb6bb6c0e165be060b9"
+  },
+  "arte/banners/Craft_to_Nation_Kick_profile_banner.png": {
+    "mtime": 1792158481.821733,
+    "seen": 1793184571.597345,
+    "ast_hash": "1ac482280bc0706b697f7eef01cc740c",
+    "semantic_hash": "1ac482280bc0706b697f7eef01cc740c"
+  },
+  "arte/banners/Craft_to_Nation_Twitch_offline_banner.png": {
+    "mtime": 1792158481.8254428,
+    "seen": 1793184571.597345,
+    "ast_hash": "539f0ff4de2b2569c7d1d5d6ff5d9601",
+    "semantic_hash": "539f0ff4de2b2569c7d1d5d6ff5d9601"
+  },
+  "arte/banners/Craft_to_Nation_Twitch_profile_banner.png": {
+    "mtime": 1792158481.8354623,
+    "seen": 1793184571.597345,
+    "ast_hash": "299e785d9b473f2b0045a72353239ec2",
+    "semantic_hash": "299e785d9b473f2b0045a72353239ec2"
+  },
+  "arte/banners/kick_banner_preview_test.jpg": {
+    "mtime": 1792158481.8385928,
+    "seen": 1793184571.597345,
+    "ast_hash": "d9ac16a913c2c60d6a671711c627d72d",
+    "semantic_hash": "d9ac16a913c2c60d6a671711c627d72d"
+  },
+  "arte/conceptos-hud/hud-camara-cenital.png": {
+    "mtime": 1790351639.9234354,
+    "seen": 1793184571.597345,
+    "ast_hash": "d22a34f476b28941bb1e1cc193c9473f",
+    "semantic_hash": "d22a34f476b28941bb1e1cc193c9473f"
+  },
+  "arte/conceptos-hud/hud-primera-persona-batalla.png": {
+    "mtime": 1790351495.4654894,
+    "seen": 1793184571.597345,
+    "ast_hash": "305a53b4a635c8589e8421e7f42711d7",
+    "semantic_hash": "305a53b4a635c8589e8421e7f42711d7"
+  },
+  "arte/conceptos-hud/hud-primera-persona-construccion.png": {
+    "mtime": 1790351378.7984867,
+    "seen": 1793184571.597345,
+    "ast_hash": "fd02b54847fe6457e1efb899ace635a6",
+    "semantic_hash": "fd02b54847fe6457e1efb899ace635a6"
+  },
+  "arte/dae/bloques/Translucent_Glass_Tinted.jpg": {
+    "mtime": 1791196850.463212,
+    "seen": 1793184571.597345,
+    "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
+    "semantic_hash": "4210ebc2689e8fee55983fecaff4812d"
+  },
+  "arte/dae/bloques/Water_Sparkling.jpg": {
+    "mtime": 1791196850.4654446,
+    "seen": 1793184571.597345,
+    "ast_hash": "1859eb9dedd7e4d9135d6eeb3724d2fb",
+    "semantic_hash": "1859eb9dedd7e4d9135d6eeb3724d2fb"
+  },
+  "arte/dae/bloques/Water_Sparkling_0.jpg": {
+    "mtime": 1791196850.4671288,
+    "seen": 1793184571.597345,
+    "ast_hash": "1859eb9dedd7e4d9135d6eeb3724d2fb",
+    "semantic_hash": "1859eb9dedd7e4d9135d6eeb3724d2fb"
+  },
+  "arte/dae/bloques/Water_Stream.jpg": {
+    "mtime": 1791196850.4687781,
+    "seen": 1793184571.597345,
+    "ast_hash": "0d30e3b28baafcc456c5a396b36b9369",
+    "semantic_hash": "0d30e3b28baafcc456c5a396b36b9369"
+  },
+  "arte/dae/bloques/Water_Stream_1.jpg": {
+    "mtime": 1791196850.4703705,
+    "seen": 1793184571.597345,
+    "ast_hash": "0d30e3b28baafcc456c5a396b36b9369",
+    "semantic_hash": "0d30e3b28baafcc456c5a396b36b9369"
+  },
+  "arte/dae/casa_base/Translucent_Glass_Tinted.jpg": {
+    "mtime": 1790331340.3936636,
+    "seen": 1793184571.597345,
+    "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
+    "semantic_hash": "4210ebc2689e8fee55983fecaff4812d"
+  },
+  "arte/dae/casa_pared_piedra_2pisos/Translucent_Glass_Tinted.jpg": {
+    "mtime": 1790608225.4205017,
+    "seen": 1793184571.597345,
+    "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
+    "semantic_hash": "4210ebc2689e8fee55983fecaff4812d"
+  },
+  "arte/dae/casa_pared_piedra_min/Translucent_Glass_Tinted.jpg": {
+    "mtime": 1790608240.1216185,
+    "seen": 1793184571.597345,
+    "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
+    "semantic_hash": "4210ebc2689e8fee55983fecaff4812d"
+  },
+  "arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg": {
+    "mtime": 1790608305.1134207,
+    "seen": 1793184571.597345,
+    "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
+    "semantic_hash": "4210ebc2689e8fee55983fecaff4812d"
+  },
+  "arte/dae/puesto_maderero/Translucent_Glass_Tinted.jpg": {
+    "mtime": 1790331416.325505,
+    "seen": 1793184571.597345,
+    "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
+    "semantic_hash": "4210ebc2689e8fee55983fecaff4812d"
+  },
+  "arte/icons/click_der.svg": {
+    "mtime": 1791213234.6472807,
+    "seen": 1793184571.597345,
+    "ast_hash": "44034ce812f2ba09a57f77810200f741",
+    "semantic_hash": "44034ce812f2ba09a57f77810200f741"
+  },
+  "arte/icons/click_izq.svg": {
+    "mtime": 1791213353.6790097,
+    "seen": 1793184571.597345,
+    "ast_hash": "a72f9227a958e6d01e9a83011f8e4034",
+    "semantic_hash": "a72f9227a958e6d01e9a83011f8e4034"
+  },
+  "arte/icons/scroll.svg": {
+    "mtime": 1791213246.672176,
+    "seen": 1793184571.597345,
+    "ast_hash": "cbf562c3fc6f4f9060b37e7e9b177173",
+    "semantic_hash": "cbf562c3fc6f4f9060b37e7e9b177173"
+  },
+  "arte/logo/craft-to-nation-logo.png": {
+    "mtime": 1792158481.8412201,
+    "seen": 1793184571.597345,
+    "ast_hash": "7750b5715ade2880275d67af1702212c",
+    "semantic_hash": "7750b5715ade2880275d67af1702212c"
+  },
+  "arte/logo/craft-to-nation-mark.png": {
+    "mtime": 1792158481.8433425,
+    "seen": 1793184571.597345,
+    "ast_hash": "bba15c015cd91ffd39312bf6034b9539",
+    "semantic_hash": "bba15c015cd91ffd39312bf6034b9539"
+  },
+  "arte/logo/craft_to_nation_text.png": {
+    "mtime": 1792158481.8524702,
+    "seen": 1793184571.597345,
+    "ast_hash": "0cf2bda0fed6a60c1d814885b0207d0f",
+    "semantic_hash": "0cf2bda0fed6a60c1d814885b0207d0f"
+  },
+  "arte/logo/craft_to_nation_text_black.jpg": {
+    "mtime": 1792158481.8554702,
+    "seen": 1793184571.597345,
+    "ast_hash": "af9a460aefda59a6a96d828c52738c7e",
+    "semantic_hash": "af9a460aefda59a6a96d828c52738c7e"
+  },
+  "arte/stream_art/Stream_ag_debug.png": {
+    "mtime": 1792325059.4610822,
+    "seen": 1793184571.597345,
+    "ast_hash": "3812294222f698782109b1880e11f07e",
+    "semantic_hash": "3812294222f698782109b1880e11f07e"
+  },
+  "arte/stream_art/Stream_back_soon.png": {
+    "mtime": 1792327797.2759545,
+    "seen": 1793184571.597345,
+    "ast_hash": "1de7ccf4507bc4cab186089d6266a4b4",
+    "semantic_hash": "1de7ccf4507bc4cab186089d6266a4b4"
+  },
+  "arte/stream_art/Stream_bottombar_ag_debug.png": {
+    "mtime": 1792325046.1771023,
+    "seen": 1793184571.597345,
+    "ast_hash": "baff9b9bb60e1623897fde009fbc843e",
+    "semantic_hash": "baff9b9bb60e1623897fde009fbc843e"
+  },
+  "arte/stream_art/Stream_bottombar_debug.png": {
+    "mtime": 1792325226.6744187,
+    "seen": 1793184571.597345,
+    "ast_hash": "2cfa90860dc46e03d2a9e827d496bfcd",
+    "semantic_hash": "2cfa90860dc46e03d2a9e827d496bfcd"
+  },
+  "arte/stream_art/Stream_debug.png": {
+    "mtime": 1792325217.2020507,
+    "seen": 1793184571.597345,
+    "ast_hash": "f488686fa773465ff80547518262cf08",
+    "semantic_hash": "f488686fa773465ff80547518262cf08"
+  },
+  "arte/stream_art/Stream_topbar_ag_debug.png": {
+    "mtime": 1792325032.879727,
+    "seen": 1793184571.597345,
+    "ast_hash": "edf826739f24c964b91b56a322d92bc8",
+    "semantic_hash": "edf826739f24c964b91b56a322d92bc8"
+  },
+  "arte/stream_art/Stream_topbar_debug.png": {
+    "mtime": 1792325221.419872,
+    "seen": 1793184571.597345,
+    "ast_hash": "458b6664e1f644f63fea73baa40a38ae",
+    "semantic_hash": "458b6664e1f644f63fea73baa40a38ae"
+  },
+  "arte/stream_art/Stream_website.png": {
+    "mtime": 1792326396.8453772,
+    "seen": 1793184571.597345,
+    "ast_hash": "b17467ae6aa2ad05a1833084e3133f9c",
+    "semantic_hash": "b17467ae6aa2ad05a1833084e3133f9c"
+  },
+  "arte/stream_art/overlay_ag_debug.svg": {
+    "mtime": 1792322813.03732,
+    "seen": 1793184571.597345,
+    "ast_hash": "9c9ea34735d896d8ff6698939c7c44e0",
+    "semantic_hash": "9c9ea34735d896d8ff6698939c7c44e0"
+  },
+  "docs/assets/craft-to-nation-logo.png": {
+    "mtime": 1788702154.285517,
+    "seen": 1793184571.597345,
+    "ast_hash": "7750b5715ade2880275d67af1702212c",
+    "semantic_hash": "7750b5715ade2880275d67af1702212c"
+  },
+  "godot/assets/icons/acarreador.svg": {
+    "mtime": 1792164135.6009178,
+    "seen": 1793184571.597345,
+    "ast_hash": "58f15df0da4e5d327f5c711b7e7e628d",
+    "semantic_hash": "58f15df0da4e5d327f5c711b7e7e628d"
+  },
+  "godot/assets/icons/acero.svg": {
+    "mtime": 1792164135.5967677,
+    "seen": 1793184571.597345,
+    "ast_hash": "9a3899d747b5b5b15c9558494f3a02a6",
+    "semantic_hash": "9a3899d747b5b5b15c9558494f3a02a6"
+  },
+  "godot/assets/icons/agua.svg": {
+    "mtime": 1792164135.597288,
+    "seen": 1793184571.597345,
+    "ast_hash": "928a3d058d2ea9d4112780b3b7b2a60f",
+    "semantic_hash": "928a3d058d2ea9d4112780b3b7b2a60f"
+  },
+  "godot/assets/icons/alerta.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "2ad6b1971593734880101c6c90a1f903",
+    "semantic_hash": "2ad6b1971593734880101c6c90a1f903"
+  },
+  "godot/assets/icons/almacen.svg": {
+    "mtime": 1792164135.6019163,
+    "seen": 1793184571.597345,
+    "ast_hash": "d9c8714016f07d142c3dcdcb1995f1b1",
+    "semantic_hash": "d9c8714016f07d142c3dcdcb1995f1b1"
+  },
+  "godot/assets/icons/aprendiz.svg": {
+    "mtime": 1792164135.5999105,
+    "seen": 1793184571.597345,
+    "ast_hash": "11f939fad76a732bbb25b20e89041a68",
+    "semantic_hash": "11f939fad76a732bbb25b20e89041a68"
+  },
+  "godot/assets/icons/asignar_nucleo.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "e5ecfcc406eab5521e5ee48a8dac1437",
+    "semantic_hash": "e5ecfcc406eab5521e5ee48a8dac1437"
+  },
+  "godot/assets/icons/ayuntamiento.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "089a5e37a1707a3b07f3327673268068",
+    "semantic_hash": "089a5e37a1707a3b07f3327673268068"
+  },
+  "godot/assets/icons/balanza.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "593b07176f96ed5a69ef9e9901b9231a",
+    "semantic_hash": "593b07176f96ed5a69ef9e9901b9231a"
+  },
+  "godot/assets/icons/bateria.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "608e35735899112be1916dc38f09ded9",
+    "semantic_hash": "608e35735899112be1916dc38f09ded9"
+  },
+  "godot/assets/icons/baul.svg": {
+    "mtime": 1792164135.6134267,
+    "seen": 1793184571.597345,
+    "ast_hash": "a697591d5897f87b7c50e6b3b1e68fe0",
+    "semantic_hash": "a697591d5897f87b7c50e6b3b1e68fe0"
+  },
+  "godot/assets/icons/bloques_piedra.svg": {
+    "mtime": 1792164135.5957255,
+    "seen": 1793184571.597345,
+    "ast_hash": "8c0d4158520e90000a983730a9f27d2d",
+    "semantic_hash": "8c0d4158520e90000a983730a9f27d2d"
+  },
+  "godot/assets/icons/brujula.svg": {
+    "mtime": 1792164135.6134267,
+    "seen": 1793184571.597345,
+    "ast_hash": "adddf926791f780c23bf3d71ce245d64",
+    "semantic_hash": "adddf926791f780c23bf3d71ce245d64"
+  },
+  "godot/assets/icons/btn_bajar.svg": {
+    "mtime": 1792674002.5442362,
+    "seen": 1793184571.597345,
+    "ast_hash": "b79ccd95de6de181e7602c8645529210",
+    "semantic_hash": "b79ccd95de6de181e7602c8645529210"
+  },
+  "godot/assets/icons/btn_mas.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "0ab1c715be8e416afceedb801d9beb92",
+    "semantic_hash": "0ab1c715be8e416afceedb801d9beb92"
+  },
+  "godot/assets/icons/btn_menos.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "6eb4d8a8d773ee4e6b01004cafd1637b",
+    "semantic_hash": "6eb4d8a8d773ee4e6b01004cafd1637b"
+  },
+  "godot/assets/icons/btn_pausa.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "d57160dacd0701f17eecbb9c6ac338ae",
+    "semantic_hash": "d57160dacd0701f17eecbb9c6ac338ae"
+  },
+  "godot/assets/icons/btn_play.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "dffd00f1c07423ebe464fe06838474d5",
+    "semantic_hash": "dffd00f1c07423ebe464fe06838474d5"
+  },
+  "godot/assets/icons/btn_subir.svg": {
+    "mtime": 1792673989.5996296,
+    "seen": 1793184571.597345,
+    "ast_hash": "edce5d83f5554b572f80ef8e64db0ab2",
+    "semantic_hash": "edce5d83f5554b572f80ef8e64db0ab2"
+  },
+  "godot/assets/icons/cama.svg": {
+    "mtime": 1792164135.6009178,
+    "seen": 1793184571.597345,
+    "ast_hash": "1be12d3861832929f4fe7067347518f7",
+    "semantic_hash": "1be12d3861832929f4fe7067347518f7"
+  },
+  "godot/assets/icons/candado.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "7907663bb7054e262233a761febc2b7c",
+    "semantic_hash": "7907663bb7054e262233a761febc2b7c"
+  },
+  "godot/assets/icons/carbon.svg": {
+    "mtime": 1792164135.5962443,
+    "seen": 1793184571.597345,
+    "ast_hash": "a71b4f12121d106677d962cb5d62652e",
+    "semantic_hash": "a71b4f12121d106677d962cb5d62652e"
+  },
+  "godot/assets/icons/cat_ductos.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "d098d2bc0c49353cf7983cf2c8fa507a",
+    "semantic_hash": "d098d2bc0c49353cf7983cf2c8fa507a"
+  },
+  "godot/assets/icons/cat_industrial.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "77353752adc077d67d3b266a7cdc78df",
+    "semantic_hash": "77353752adc077d67d3b266a7cdc78df"
+  },
+  "godot/assets/icons/cat_investigacion.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "4da5b0dfeefa42b3e31fa84dcd0728c1",
+    "semantic_hash": "4da5b0dfeefa42b3e31fa84dcd0728c1"
+  },
+  "godot/assets/icons/cat_periferico.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "64848bc6296fdc0250c32efce5154b75",
+    "semantic_hash": "64848bc6296fdc0250c32efce5154b75"
+  },
+  "godot/assets/icons/cat_residencial.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "5cdc842d78e39586d3b4fe55b28497c8",
+    "semantic_hash": "5cdc842d78e39586d3b4fe55b28497c8"
+  },
+  "godot/assets/icons/cat_vias.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "dde58a7cc4890679e838fb64a7e90ad2",
+    "semantic_hash": "dde58a7cc4890679e838fb64a7e90ad2"
+  },
+  "godot/assets/icons/censo.svg": {
+    "mtime": 1792164135.5983326,
+    "seen": 1793184571.597345,
+    "ast_hash": "a671f83672ef44b6a6dd17c7477daee2",
+    "semantic_hash": "a671f83672ef44b6a6dd17c7477daee2"
+  },
+  "godot/assets/icons/central_termoelectrica.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "8851ec6ec3430cf699006780243580b4",
+    "semantic_hash": "8851ec6ec3430cf699006780243580b4"
+  },
+  "godot/assets/icons/check.svg": {
+    "mtime": 1792164135.6127982,
+    "seen": 1793184571.597345,
+    "ast_hash": "2b947d06b9fcca63c87865af21d3f641",
+    "semantic_hash": "2b947d06b9fcca63c87865af21d3f641"
+  },
+  "godot/assets/icons/ciudadano.svg": {
+    "mtime": 1792164135.5983326,
+    "seen": 1793184571.597345,
+    "ast_hash": "c31f2a47f5eb3bdb7e92c7122a3c9e82",
+    "semantic_hash": "c31f2a47f5eb3bdb7e92c7122a3c9e82"
+  },
+  "godot/assets/icons/click_der.svg": {
+    "mtime": 1791213234.6472807,
+    "seen": 1793184571.597345,
+    "ast_hash": "44034ce812f2ba09a57f77810200f741",
+    "semantic_hash": "44034ce812f2ba09a57f77810200f741"
+  },
+  "godot/assets/icons/click_izq.svg": {
+    "mtime": 1791213353.6790097,
+    "seen": 1793184571.597345,
+    "ast_hash": "a72f9227a958e6d01e9a83011f8e4034",
+    "semantic_hash": "a72f9227a958e6d01e9a83011f8e4034"
+  },
+  "godot/assets/icons/cobre.svg": {
+    "mtime": 1792164135.5962443,
+    "seen": 1793184571.597345,
+    "ast_hash": "8016e49a21c92f17e120b6ce9bbcb15a",
+    "semantic_hash": "8016e49a21c92f17e120b6ce9bbcb15a"
+  },
+  "godot/assets/icons/combustible.svg": {
+    "mtime": 1792164135.5978065,
+    "seen": 1793184571.597345,
+    "ast_hash": "4585c305cad823d02fcc61919e772db6",
+    "semantic_hash": "4585c305cad823d02fcc61919e772db6"
+  },
+  "godot/assets/icons/comida.svg": {
+    "mtime": 1792164135.593929,
+    "seen": 1793184571.597345,
+    "ast_hash": "cdfc2ae630d5ce449d599e7edbf95419",
+    "semantic_hash": "cdfc2ae630d5ce449d599e7edbf95419"
+  },
+  "godot/assets/icons/corazon_civico.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "9ef1a8e62daefae1acb69d67d086b3d6",
+    "semantic_hash": "9ef1a8e62daefae1acb69d67d086b3d6"
+  },
+  "godot/assets/icons/cornucopia_llena.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "e6a62588ef89dbf55104ac90776add44",
+    "semantic_hash": "e6a62588ef89dbf55104ac90776add44"
+  },
+  "godot/assets/icons/cornucopia_vacia.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "bb6fa4b2e06c7a07cefa3853ff1fc42d",
+    "semantic_hash": "bb6fa4b2e06c7a07cefa3853ff1fc42d"
+  },
+  "godot/assets/icons/crudo.svg": {
+    "mtime": 1792164135.597288,
+    "seen": 1793184571.597345,
+    "ast_hash": "47d13bd34fd344c151c50860d6d3ac1b",
+    "semantic_hash": "47d13bd34fd344c151c50860d6d3ac1b"
+  },
+  "godot/assets/icons/cruz.svg": {
+    "mtime": 1792164135.6127982,
+    "seen": 1793184571.597345,
+    "ast_hash": "e48edafa7f911ca6c79a69ee06135c4b",
+    "semantic_hash": "e48edafa7f911ca6c79a69ee06135c4b"
+  },
+  "godot/assets/icons/desempleado.svg": {
+    "mtime": 1792164135.5988548,
+    "seen": 1793184571.597345,
+    "ast_hash": "b00ac843936cfd9cab30e3e69a0e3b45",
+    "semantic_hash": "b00ac843936cfd9cab30e3e69a0e3b45"
+  },
+  "godot/assets/icons/edificio_engranaje.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "fed58c7279e83f5ff1a82ccc9c979d70",
+    "semantic_hash": "fed58c7279e83f5ff1a82ccc9c979d70"
+  },
+  "godot/assets/icons/enchufe_rojo.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "a32654316b64cc76119e0c778f5e8f10",
+    "semantic_hash": "a32654316b64cc76119e0c778f5e8f10"
+  },
+  "godot/assets/icons/enchufe_verde.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "d65eff028b7d60249ec9f990058b5020",
+    "semantic_hash": "d65eff028b7d60249ec9f990058b5020"
+  },
+  "godot/assets/icons/energia.svg": {
+    "mtime": 1792770395.0268488,
+    "seen": 1793184571.597345,
+    "ast_hash": "0aa186f84085790e4425688a58f281ae",
+    "semantic_hash": "0aa186f84085790e4425688a58f281ae"
+  },
+  "godot/assets/icons/energia_dorado.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "1103e69c7d9c27acf3b54b97ae3f3701",
+    "semantic_hash": "1103e69c7d9c27acf3b54b97ae3f3701"
+  },
+  "godot/assets/icons/energia_gris.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "107d903dd3ff2d0a650d0e008d0bc6e7",
+    "semantic_hash": "107d903dd3ff2d0a650d0e008d0bc6e7"
+  },
+  "godot/assets/icons/energia_rojo.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "2f11b6bd5529ee1cdf28c20a799a19cf",
+    "semantic_hash": "2f11b6bd5529ee1cdf28c20a799a19cf"
+  },
+  "godot/assets/icons/era.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "e5e56fb11cc6d4deb31a8bdd3c4c3009",
+    "semantic_hash": "e5e56fb11cc6d4deb31a8bdd3c4c3009"
+  },
+  "godot/assets/icons/escudo_agrietado.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "03e447ea34c2ea53d2d84fc03e1d7aae",
+    "semantic_hash": "03e447ea34c2ea53d2d84fc03e1d7aae"
+  },
+  "godot/assets/icons/especialista.svg": {
+    "mtime": 1792164135.5993705,
+    "seen": 1793184571.597345,
+    "ast_hash": "47c2c11e63955b323b4d727c9267124c",
+    "semantic_hash": "47c2c11e63955b323b4d727c9267124c"
+  },
+  "godot/assets/icons/extraer_todo.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "fc1d660f4656b5f0e91143cde0fecd36",
+    "semantic_hash": "fc1d660f4656b5f0e91143cde0fecd36"
+  },
+  "godot/assets/icons/herr_cesta.svg": {
+    "mtime": 1792164135.611421,
+    "seen": 1793184571.597345,
+    "ast_hash": "9d742630f214c3772539f8536d004a56",
+    "semantic_hash": "9d742630f214c3772539f8536d004a56"
+  },
+  "godot/assets/icons/herr_hacha.svg": {
+    "mtime": 1792164135.611421,
+    "seen": 1793184571.597345,
+    "ast_hash": "9e411f5e32511ba742b8959e5333e925",
+    "semantic_hash": "9e411f5e32511ba742b8959e5333e925"
+  },
+  "godot/assets/icons/herr_mazo.svg": {
+    "mtime": 1792164135.611421,
+    "seen": 1793184571.597345,
+    "ast_hash": "b7878679c99b1aa2fc3bd7af7f27933b",
+    "semantic_hash": "b7878679c99b1aa2fc3bd7af7f27933b"
+  },
+  "godot/assets/icons/herr_pala.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "dbd2b4c1e81b5ec33336a7f936b493bf",
+    "semantic_hash": "dbd2b4c1e81b5ec33336a7f936b493bf"
+  },
+  "godot/assets/icons/herr_pico.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "9b36774af100823e2fa816aeb8ac57a2",
+    "semantic_hash": "9b36774af100823e2fa816aeb8ac57a2"
+  },
+  "godot/assets/icons/herr_vias.svg": {
+    "mtime": 1792164135.6124263,
+    "seen": 1793184571.597345,
+    "ast_hash": "2b1eea709afa3cbdff9587065aa4436f",
+    "semantic_hash": "2b1eea709afa3cbdff9587065aa4436f"
+  },
+  "godot/assets/icons/hierro.svg": {
+    "mtime": 1792164135.5957255,
+    "seen": 1793184571.597345,
+    "ast_hash": "fc53bedb3c7c41a69f0fc0474a5ef805",
+    "semantic_hash": "fc53bedb3c7c41a69f0fc0474a5ef805"
+  },
+  "godot/assets/icons/investigador.svg": {
+    "mtime": 1792164135.5999105,
+    "seen": 1793184571.597345,
+    "ast_hash": "2a627b88149364f9659e270fd39a9637",
+    "semantic_hash": "2a627b88149364f9659e270fd39a9637"
+  },
+  "godot/assets/icons/lampara_electrica_off.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "e9a80bce65ab615d19bed768b0b776af",
+    "semantic_hash": "e9a80bce65ab615d19bed768b0b776af"
+  },
+  "godot/assets/icons/lampara_electrica_on.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "b718a8c73cd92f1abca3bef97a01eaa5",
+    "semantic_hash": "b718a8c73cd92f1abca3bef97a01eaa5"
+  },
+  "godot/assets/icons/lampara_termica_off.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "466c48a81311da1ee785310d28852899",
+    "semantic_hash": "466c48a81311da1ee785310d28852899"
+  },
+  "godot/assets/icons/lampara_termica_on.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "cff9877583a868edc541da80295b1307",
+    "semantic_hash": "cff9877583a868edc541da80295b1307"
+  },
+  "godot/assets/icons/led_gris.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "0fc79a4d5bca9c0b42f71c479beff7b4",
+    "semantic_hash": "0fc79a4d5bca9c0b42f71c479beff7b4"
+  },
+  "godot/assets/icons/led_rojo.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "c6528f87d92949cba5dba3617d3fe175",
+    "semantic_hash": "c6528f87d92949cba5dba3617d3fe175"
+  },
+  "godot/assets/icons/led_verde.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "636109f7006b7261967c673401e89164",
+    "semantic_hash": "636109f7006b7261967c673401e89164"
+  },
+  "godot/assets/icons/madera.svg": {
+    "mtime": 1792164135.593929,
+    "seen": 1793184571.597345,
+    "ast_hash": "298b8f27a7384771e3fab037cfb86403",
+    "semantic_hash": "298b8f27a7384771e3fab037cfb86403"
+  },
+  "godot/assets/icons/militar.svg": {
+    "mtime": 1792164135.5999105,
+    "seen": 1793184571.597345,
+    "ast_hash": "99d03dca0a0a4a37d64def58a43e083d",
+    "semantic_hash": "99d03dca0a0a4a37d64def58a43e083d"
+  },
+  "godot/assets/icons/mineral_refinado.svg": {
+    "mtime": 1792164135.5967677,
+    "seen": 1793184571.597345,
+    "ast_hash": "d11cf67661d15052f93f817884a21385",
+    "semantic_hash": "d11cf67661d15052f93f817884a21385"
+  },
+  "godot/assets/icons/modo_construir.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "eef306ec7ebfe2526a7d06a247773472",
+    "semantic_hash": "eef306ec7ebfe2526a7d06a247773472"
+  },
+  "godot/assets/icons/modo_demoler.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "cdd5787416d7c25d99dac6cad4eb39e5",
+    "semantic_hash": "cdd5787416d7c25d99dac6cad4eb39e5"
+  },
+  "godot/assets/icons/modo_ver.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "4c42a41c375efa0e07da6acdbd7d17cd",
+    "semantic_hash": "4c42a41c375efa0e07da6acdbd7d17cd"
+  },
+  "godot/assets/icons/modo_zonificar.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "7afc60bd84b265cc8143ce36a4d0a5a6",
+    "semantic_hash": "7afc60bd84b265cc8143ce36a4d0a5a6"
+  },
+  "godot/assets/icons/moral_alta.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "36d82d08b0ad2e6d00610443553c9b4e",
+    "semantic_hash": "36d82d08b0ad2e6d00610443553c9b4e"
+  },
+  "godot/assets/icons/moral_baja.svg": {
+    "mtime": 1792164135.6019163,
+    "seen": 1793184571.597345,
+    "ast_hash": "807fcfe78748602ec92894ba7b6cb3a6",
+    "semantic_hash": "807fcfe78748602ec92894ba7b6cb3a6"
+  },
+  "godot/assets/icons/moral_critica.svg": {
+    "mtime": 1792164135.6019163,
+    "seen": 1793184571.597345,
+    "ast_hash": "13a8cc756a3971446dd29de821f8192c",
+    "semantic_hash": "13a8cc756a3971446dd29de821f8192c"
+  },
+  "godot/assets/icons/moral_neutra.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "87c20aa5ce52335a9b8d8a4b7c5cfdfe",
+    "semantic_hash": "87c20aa5ce52335a9b8d8a4b7c5cfdfe"
+  },
+  "godot/assets/icons/mouse_move.svg": {
+    "mtime": 1792164135.6127982,
+    "seen": 1793184571.597345,
+    "ast_hash": "93a96153864d4fbe4a0f28b3ce0d5d22",
+    "semantic_hash": "93a96153864d4fbe4a0f28b3ce0d5d22"
+  },
+  "godot/assets/icons/obrero.svg": {
+    "mtime": 1792164135.5988548,
+    "seen": 1793184571.597345,
+    "ast_hash": "4ce12a56d11944012987893ba2545686",
+    "semantic_hash": "4ce12a56d11944012987893ba2545686"
+  },
+  "godot/assets/icons/ojo.svg": {
+    "mtime": 1792164135.6134267,
+    "seen": 1793184571.597345,
+    "ast_hash": "55bfac879d18d97c05c143ceb81d8305",
+    "semantic_hash": "55bfac879d18d97c05c143ceb81d8305"
+  },
+  "godot/assets/icons/oxigeno.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "47943d1a184f7196c26f3c4c7d530c88",
+    "semantic_hash": "47943d1a184f7196c26f3c4c7d530c88"
+  },
+  "godot/assets/icons/piedra.svg": {
+    "mtime": 1792164135.5949848,
+    "seen": 1793184571.597345,
+    "ast_hash": "ee4e758678e4a1430f3b99daa7dbae6c",
+    "semantic_hash": "ee4e758678e4a1430f3b99daa7dbae6c"
+  },
+  "godot/assets/icons/prio_alta.svg": {
+    "mtime": 1792164135.6194277,
+    "seen": 1793184571.597345,
+    "ast_hash": "a729f8f3073bbe53c4acefa5701eb0f9",
+    "semantic_hash": "a729f8f3073bbe53c4acefa5701eb0f9"
+  },
+  "godot/assets/icons/prio_baja.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "0f2f345f2252783165a861469868bed3",
+    "semantic_hash": "0f2f345f2252783165a861469868bed3"
+  },
+  "godot/assets/icons/prio_normal.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "fb1ac393188a949ad59bb0f4229bf687",
+    "semantic_hash": "fb1ac393188a949ad59bb0f4229bf687"
+  },
+  "godot/assets/icons/productividad.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "25074f5f921250294f5076e7d72224bc",
+    "semantic_hash": "25074f5f921250294f5076e7d72224bc"
+  },
+  "godot/assets/icons/puerta_abierta.svg": {
+    "mtime": 1792164135.617426,
+    "seen": 1793184571.597345,
+    "ast_hash": "b38d5ec777165e2dafa455f2bfbd8d08",
+    "semantic_hash": "b38d5ec777165e2dafa455f2bfbd8d08"
+  },
+  "godot/assets/icons/puerta_candado.svg": {
+    "mtime": 1792164135.617426,
+    "seen": 1793184571.597345,
+    "ast_hash": "5e0f620952a8a77c88d3b80a41583b82",
+    "semantic_hash": "5e0f620952a8a77c88d3b80a41583b82"
+  },
+  "godot/assets/icons/puerta_reloj.svg": {
+    "mtime": 1792164135.617426,
+    "seen": 1793184571.597345,
+    "ast_hash": "7418c718623842b56673d476a3c59dac",
+    "semantic_hash": "7418c718623842b56673d476a3c59dac"
+  },
+  "godot/assets/icons/reloj_arena.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "1bebf11454459a5268a762e7abc30a2e",
+    "semantic_hash": "1bebf11454459a5268a762e7abc30a2e"
+  },
+  "godot/assets/icons/remodelar.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "f804d348ca51b09dc70b1d8b47f624d7",
+    "semantic_hash": "f804d348ca51b09dc70b1d8b47f624d7"
+  },
+  "godot/assets/icons/romano_1.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "347bd5731d67e974befa65f6827e4e44",
+    "semantic_hash": "347bd5731d67e974befa65f6827e4e44"
+  },
+  "godot/assets/icons/romano_2.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "41fca2ea33f5248d7e80920f173a8334",
+    "semantic_hash": "41fca2ea33f5248d7e80920f173a8334"
+  },
+  "godot/assets/icons/romano_3.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "13f2f588809416ab6134048ba2d5fe7f",
+    "semantic_hash": "13f2f588809416ab6134048ba2d5fe7f"
+  },
+  "godot/assets/icons/romano_4.svg": {
+    "mtime": 1793113070.526704,
+    "seen": 1793184571.597345,
+    "ast_hash": "9425bb982cb0e5bfe0b2e6457a99a5e9",
+    "semantic_hash": "9425bb982cb0e5bfe0b2e6457a99a5e9"
+  },
+  "godot/assets/icons/scroll.svg": {
+    "mtime": 1791213246.672176,
+    "seen": 1793184571.597345,
+    "ast_hash": "cbf562c3fc6f4f9060b37e7e9b177173",
+    "semantic_hash": "cbf562c3fc6f4f9060b37e7e9b177173"
+  },
+  "godot/assets/icons/sin_techo.svg": {
+    "mtime": 1792164135.6009178,
+    "seen": 1793184571.597345,
+    "ast_hash": "c3ea78b5b4bdebb30d2d162afe720045",
+    "semantic_hash": "c3ea78b5b4bdebb30d2d162afe720045"
+  },
+  "godot/assets/icons/tablas.svg": {
+    "mtime": 1792164135.5944555,
+    "seen": 1793184571.597345,
+    "ast_hash": "0464f199313c6c629c6a458ca3e28e6e",
+    "semantic_hash": "0464f199313c6c629c6a458ca3e28e6e"
+  },
+  "godot/assets/icons/tasa_abajo.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "57dd7772fc181a5f44da72187dab09e2",
+    "semantic_hash": "57dd7772fc181a5f44da72187dab09e2"
+  },
+  "godot/assets/icons/tasa_arriba.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "495728460add81848b96b8f46ec8cb72",
+    "semantic_hash": "495728460add81848b96b8f46ec8cb72"
+  },
+  "godot/assets/icons/tasa_neutra.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "b7be7c146fd5f4265aa3bb2840506490",
+    "semantic_hash": "b7be7c146fd5f4265aa3bb2840506490"
+  },
+  "godot/assets/icons/tec_automatizacion.svg": {
+    "mtime": 1792164135.6194277,
+    "seen": 1793184571.597345,
+    "ast_hash": "dcc8f31e1917fdc44a006b91e5cebed8",
+    "semantic_hash": "dcc8f31e1917fdc44a006b91e5cebed8"
+  },
+  "godot/assets/icons/tec_metalurgia.svg": {
+    "mtime": 1792164135.6194277,
+    "seen": 1793184571.597345,
+    "ast_hash": "9294770ae3e300a3dbf585abb2a7c1be",
+    "semantic_hash": "9294770ae3e300a3dbf585abb2a7c1be"
+  },
+  "godot/assets/icons/tecnico.svg": {
+    "mtime": 1792164135.5993705,
+    "seen": 1793184571.597345,
+    "ast_hash": "5601a51725846a62a43038fc22e22b96",
+    "semantic_hash": "5601a51725846a62a43038fc22e22b96"
+  },
+  "godot/assets/icons/tierra.svg": {
+    "mtime": 1792164135.5949848,
+    "seen": 1793184571.597345,
+    "ast_hash": "2bb0f2912fc8b2af25e593a32a4e4490",
+    "semantic_hash": "2bb0f2912fc8b2af25e593a32a4e4490"
+  },
+  "godot/assets/icons/tierras_raras.svg": {
+    "mtime": 1792164135.5962443,
+    "seen": 1793184571.597345,
+    "ast_hash": "4484946fc48beac910827c8c2881694f",
+    "semantic_hash": "4484946fc48beac910827c8c2881694f"
+  },
+  "godot/assets/icons/vidrio.svg": {
+    "mtime": 1793113061.0846846,
+    "seen": 1793184571.597345,
+    "ast_hash": "f774b7377ea8842e5f83fda9652b277a",
+    "semantic_hash": "f774b7377ea8842e5f83fda9652b277a"
+  },
+  "godot/assets/icons/zona_borrar.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "fbd100d0e8c1a058d8c20784121a1b8e",
+    "semantic_hash": "fbd100d0e8c1a058d8c20784121a1b8e"
+  },
+  "godot/assets/icons/zona_industrial.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "c48ac5dfa1b029dba95a648bd9e88fed",
+    "semantic_hash": "c48ac5dfa1b029dba95a648bd9e88fed"
+  },
+  "godot/assets/icons/zona_residencial.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "294d3b02d918a146d790de91a1292feb",
+    "semantic_hash": "294d3b02d918a146d790de91a1292feb"
+  },
+  "godot/assets/tex_ventana.png": {
+    "mtime": 1792164677.77102,
+    "seen": 1793184571.597345,
+    "ast_hash": "989b79c2b1d0893470645d6f7bbef77f",
+    "semantic_hash": "989b79c2b1d0893470645d6f7bbef77f"
+  },
+  "website/wiki/src/public/assets/citycraft-hero.webp": {
+    "mtime": 1788651942.168965,
+    "seen": 1793184571.597345,
+    "ast_hash": "2f93cd008e05010ddff5bf44a3b29450",
+    "semantic_hash": "2f93cd008e05010ddff5bf44a3b29450"
+  },
+  "website/wiki/src/public/assets/citycraft-world.webp": {
+    "mtime": 1788651942.4406898,
+    "seen": 1793184571.597345,
+    "ast_hash": "b3fe30318836d79a3b80d56dc8533f08",
+    "semantic_hash": "b3fe30318836d79a3b80d56dc8533f08"
+  },
+  "website/wiki/src/public/assets/comparison-aerial.webp": {
+    "mtime": 1788689276.990452,
+    "seen": 1793184571.597345,
+    "ast_hash": "5ba7eabed4a22639f6eb604967248740",
+    "semantic_hash": "5ba7eabed4a22639f6eb604967248740"
+  },
+  "website/wiki/src/public/assets/concept-era-evolution.webp": {
+    "mtime": 1789048983.861779,
+    "seen": 1793184571.597345,
+    "ast_hash": "b8d4d9f213ef07a75e7f1c2f71b7fe1c",
+    "semantic_hash": "b8d4d9f213ef07a75e7f1c2f71b7fe1c"
+  },
+  "website/wiki/src/public/assets/concept-planet-network.webp": {
+    "mtime": 1789048983.9614918,
+    "seen": 1793184571.597345,
+    "ast_hash": "9e3c7d4c10ed382428d591125091d322",
+    "semantic_hash": "9e3c7d4c10ed382428d591125091d322"
+  },
+  "website/wiki/src/public/assets/craft-to-nation-logo.png": {
+    "mtime": 1788702154.285517,
+    "seen": 1793184571.597345,
+    "ast_hash": "7750b5715ade2880275d67af1702212c",
+    "semantic_hash": "7750b5715ade2880275d67af1702212c"
+  },
+  "website/wiki/src/public/assets/craft-to-nation-mark.png": {
+    "mtime": 1788702368.3347285,
+    "seen": 1793184571.597345,
+    "ast_hash": "bba15c015cd91ffd39312bf6034b9539",
+    "semantic_hash": "bba15c015cd91ffd39312bf6034b9539"
+  },
+  "website/wiki/src/public/assets/favicon-32.png": {
+    "mtime": 1788702368.3357308,
+    "seen": 1793184571.597345,
+    "ast_hash": "ed5f89fa249b54413dfeff3136e60bc9",
+    "semantic_hash": "ed5f89fa249b54413dfeff3136e60bc9"
+  },
+  "website/wiki/src/public/assets/fp-building.webp": {
+    "mtime": 1788689276.122105,
+    "seen": 1793184571.597345,
+    "ast_hash": "14c9585c4c9dd780808238704da42bea",
+    "semantic_hash": "14c9585c4c9dd780808238704da42bea"
+  },
+  "website/wiki/src/public/assets/fp-defense.webp": {
+    "mtime": 1788689276.666311,
+    "seen": 1793184571.597345,
+    "ast_hash": "6206a483710b7d6cb8750166399865e8",
+    "semantic_hash": "6206a483710b7d6cb8750166399865e8"
+  },
+  "website/wiki/src/public/assets/fp-industry.webp": {
+    "mtime": 1788689276.399189,
+    "seen": 1793184571.597345,
+    "ast_hash": "c83668a555b0227adae184bc2f3f584d",
+    "semantic_hash": "c83668a555b0227adae184bc2f3f584d"
+  },
+  "website/wiki/src/public/assets/hud-camara-cenital.png": {
+    "mtime": 1790351639.9234354,
+    "seen": 1793184571.597345,
+    "ast_hash": "d22a34f476b28941bb1e1cc193c9473f",
+    "semantic_hash": "d22a34f476b28941bb1e1cc193c9473f"
+  },
+  "website/wiki/src/public/assets/hud-primera-persona-batalla.png": {
+    "mtime": 1790351495.4654894,
+    "seen": 1793184571.597345,
+    "ast_hash": "305a53b4a635c8589e8421e7f42711d7",
+    "semantic_hash": "305a53b4a635c8589e8421e7f42711d7"
+  },
+  "website/wiki/src/public/assets/hud-primera-persona-construccion.png": {
+    "mtime": 1790351378.7984867,
+    "seen": 1793184571.597345,
+    "ast_hash": "fd02b54847fe6457e1efb899ace635a6",
+    "semantic_hash": "fd02b54847fe6457e1efb899ace635a6"
+  },
+  "website/wiki/src/public/icons/acarreador.svg": {
+    "mtime": 1792164135.6009178,
+    "seen": 1793184571.597345,
+    "ast_hash": "58f15df0da4e5d327f5c711b7e7e628d",
+    "semantic_hash": "58f15df0da4e5d327f5c711b7e7e628d"
+  },
+  "website/wiki/src/public/icons/acero.svg": {
+    "mtime": 1792164135.5967677,
+    "seen": 1793184571.597345,
+    "ast_hash": "9a3899d747b5b5b15c9558494f3a02a6",
+    "semantic_hash": "9a3899d747b5b5b15c9558494f3a02a6"
+  },
+  "website/wiki/src/public/icons/agua.svg": {
+    "mtime": 1792164135.597288,
+    "seen": 1793184571.597345,
+    "ast_hash": "928a3d058d2ea9d4112780b3b7b2a60f",
+    "semantic_hash": "928a3d058d2ea9d4112780b3b7b2a60f"
+  },
+  "website/wiki/src/public/icons/alerta.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "2ad6b1971593734880101c6c90a1f903",
+    "semantic_hash": "2ad6b1971593734880101c6c90a1f903"
+  },
+  "website/wiki/src/public/icons/almacen.svg": {
+    "mtime": 1792164135.6019163,
+    "seen": 1793184571.597345,
+    "ast_hash": "d9c8714016f07d142c3dcdcb1995f1b1",
+    "semantic_hash": "d9c8714016f07d142c3dcdcb1995f1b1"
+  },
+  "website/wiki/src/public/icons/aprendiz.svg": {
+    "mtime": 1792164135.5999105,
+    "seen": 1793184571.597345,
+    "ast_hash": "11f939fad76a732bbb25b20e89041a68",
+    "semantic_hash": "11f939fad76a732bbb25b20e89041a68"
+  },
+  "website/wiki/src/public/icons/asignar_nucleo.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "e5ecfcc406eab5521e5ee48a8dac1437",
+    "semantic_hash": "e5ecfcc406eab5521e5ee48a8dac1437"
+  },
+  "website/wiki/src/public/icons/ayuntamiento.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "089a5e37a1707a3b07f3327673268068",
+    "semantic_hash": "089a5e37a1707a3b07f3327673268068"
+  },
+  "website/wiki/src/public/icons/balanza.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "593b07176f96ed5a69ef9e9901b9231a",
+    "semantic_hash": "593b07176f96ed5a69ef9e9901b9231a"
+  },
+  "website/wiki/src/public/icons/bateria.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "608e35735899112be1916dc38f09ded9",
+    "semantic_hash": "608e35735899112be1916dc38f09ded9"
+  },
+  "website/wiki/src/public/icons/baul.svg": {
+    "mtime": 1792164135.6134267,
+    "seen": 1793184571.597345,
+    "ast_hash": "a697591d5897f87b7c50e6b3b1e68fe0",
+    "semantic_hash": "a697591d5897f87b7c50e6b3b1e68fe0"
+  },
+  "website/wiki/src/public/icons/bloques_piedra.svg": {
+    "mtime": 1792164135.5957255,
+    "seen": 1793184571.597345,
+    "ast_hash": "8c0d4158520e90000a983730a9f27d2d",
+    "semantic_hash": "8c0d4158520e90000a983730a9f27d2d"
+  },
+  "website/wiki/src/public/icons/brujula.svg": {
+    "mtime": 1792164135.6134267,
+    "seen": 1793184571.597345,
+    "ast_hash": "adddf926791f780c23bf3d71ce245d64",
+    "semantic_hash": "adddf926791f780c23bf3d71ce245d64"
+  },
+  "website/wiki/src/public/icons/btn_mas.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "0ab1c715be8e416afceedb801d9beb92",
+    "semantic_hash": "0ab1c715be8e416afceedb801d9beb92"
+  },
+  "website/wiki/src/public/icons/btn_menos.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "6eb4d8a8d773ee4e6b01004cafd1637b",
+    "semantic_hash": "6eb4d8a8d773ee4e6b01004cafd1637b"
+  },
+  "website/wiki/src/public/icons/btn_pausa.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "d57160dacd0701f17eecbb9c6ac338ae",
+    "semantic_hash": "d57160dacd0701f17eecbb9c6ac338ae"
+  },
+  "website/wiki/src/public/icons/btn_play.svg": {
+    "mtime": 1792164135.620427,
+    "seen": 1793184571.597345,
+    "ast_hash": "dffd00f1c07423ebe464fe06838474d5",
+    "semantic_hash": "dffd00f1c07423ebe464fe06838474d5"
+  },
+  "website/wiki/src/public/icons/cama.svg": {
+    "mtime": 1792164135.6009178,
+    "seen": 1793184571.597345,
+    "ast_hash": "1be12d3861832929f4fe7067347518f7",
+    "semantic_hash": "1be12d3861832929f4fe7067347518f7"
+  },
+  "website/wiki/src/public/icons/candado.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "7907663bb7054e262233a761febc2b7c",
+    "semantic_hash": "7907663bb7054e262233a761febc2b7c"
+  },
+  "website/wiki/src/public/icons/carbon.svg": {
+    "mtime": 1792164135.5962443,
+    "seen": 1793184571.597345,
+    "ast_hash": "a71b4f12121d106677d962cb5d62652e",
+    "semantic_hash": "a71b4f12121d106677d962cb5d62652e"
+  },
+  "website/wiki/src/public/icons/cat_ductos.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "d098d2bc0c49353cf7983cf2c8fa507a",
+    "semantic_hash": "d098d2bc0c49353cf7983cf2c8fa507a"
+  },
+  "website/wiki/src/public/icons/cat_industrial.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "77353752adc077d67d3b266a7cdc78df",
+    "semantic_hash": "77353752adc077d67d3b266a7cdc78df"
+  },
+  "website/wiki/src/public/icons/cat_investigacion.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "4da5b0dfeefa42b3e31fa84dcd0728c1",
+    "semantic_hash": "4da5b0dfeefa42b3e31fa84dcd0728c1"
+  },
+  "website/wiki/src/public/icons/cat_periferico.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "64848bc6296fdc0250c32efce5154b75",
+    "semantic_hash": "64848bc6296fdc0250c32efce5154b75"
+  },
+  "website/wiki/src/public/icons/cat_residencial.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "5cdc842d78e39586d3b4fe55b28497c8",
+    "semantic_hash": "5cdc842d78e39586d3b4fe55b28497c8"
+  },
+  "website/wiki/src/public/icons/cat_vias.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "dde58a7cc4890679e838fb64a7e90ad2",
+    "semantic_hash": "dde58a7cc4890679e838fb64a7e90ad2"
+  },
+  "website/wiki/src/public/icons/censo.svg": {
+    "mtime": 1792164135.5983326,
+    "seen": 1793184571.597345,
+    "ast_hash": "a671f83672ef44b6a6dd17c7477daee2",
+    "semantic_hash": "a671f83672ef44b6a6dd17c7477daee2"
+  },
+  "website/wiki/src/public/icons/central_termoelectrica.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "8851ec6ec3430cf699006780243580b4",
+    "semantic_hash": "8851ec6ec3430cf699006780243580b4"
+  },
+  "website/wiki/src/public/icons/check.svg": {
+    "mtime": 1792164135.6127982,
+    "seen": 1793184571.597345,
+    "ast_hash": "2b947d06b9fcca63c87865af21d3f641",
+    "semantic_hash": "2b947d06b9fcca63c87865af21d3f641"
+  },
+  "website/wiki/src/public/icons/ciudadano.svg": {
+    "mtime": 1792164135.5983326,
+    "seen": 1793184571.597345,
+    "ast_hash": "c31f2a47f5eb3bdb7e92c7122a3c9e82",
+    "semantic_hash": "c31f2a47f5eb3bdb7e92c7122a3c9e82"
+  },
+  "website/wiki/src/public/icons/click_der.svg": {
+    "mtime": 1791213234.6472807,
+    "seen": 1793184571.597345,
+    "ast_hash": "44034ce812f2ba09a57f77810200f741",
+    "semantic_hash": "44034ce812f2ba09a57f77810200f741"
+  },
+  "website/wiki/src/public/icons/click_izq.svg": {
+    "mtime": 1791213353.6790097,
+    "seen": 1793184571.597345,
+    "ast_hash": "a72f9227a958e6d01e9a83011f8e4034",
+    "semantic_hash": "a72f9227a958e6d01e9a83011f8e4034"
+  },
+  "website/wiki/src/public/icons/cobre.svg": {
+    "mtime": 1792164135.5962443,
+    "seen": 1793184571.597345,
+    "ast_hash": "8016e49a21c92f17e120b6ce9bbcb15a",
+    "semantic_hash": "8016e49a21c92f17e120b6ce9bbcb15a"
+  },
+  "website/wiki/src/public/icons/combustible.svg": {
+    "mtime": 1792164135.5978065,
+    "seen": 1793184571.597345,
+    "ast_hash": "4585c305cad823d02fcc61919e772db6",
+    "semantic_hash": "4585c305cad823d02fcc61919e772db6"
+  },
+  "website/wiki/src/public/icons/comida.svg": {
+    "mtime": 1792164135.593929,
+    "seen": 1793184571.597345,
+    "ast_hash": "cdfc2ae630d5ce449d599e7edbf95419",
+    "semantic_hash": "cdfc2ae630d5ce449d599e7edbf95419"
+  },
+  "website/wiki/src/public/icons/corazon_civico.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "9ef1a8e62daefae1acb69d67d086b3d6",
+    "semantic_hash": "9ef1a8e62daefae1acb69d67d086b3d6"
+  },
+  "website/wiki/src/public/icons/cornucopia_llena.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "e6a62588ef89dbf55104ac90776add44",
+    "semantic_hash": "e6a62588ef89dbf55104ac90776add44"
+  },
+  "website/wiki/src/public/icons/cornucopia_vacia.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "bb6fa4b2e06c7a07cefa3853ff1fc42d",
+    "semantic_hash": "bb6fa4b2e06c7a07cefa3853ff1fc42d"
+  },
+  "website/wiki/src/public/icons/crudo.svg": {
+    "mtime": 1792164135.597288,
+    "seen": 1793184571.597345,
+    "ast_hash": "47d13bd34fd344c151c50860d6d3ac1b",
+    "semantic_hash": "47d13bd34fd344c151c50860d6d3ac1b"
+  },
+  "website/wiki/src/public/icons/cruz.svg": {
+    "mtime": 1792164135.6127982,
+    "seen": 1793184571.597345,
+    "ast_hash": "e48edafa7f911ca6c79a69ee06135c4b",
+    "semantic_hash": "e48edafa7f911ca6c79a69ee06135c4b"
+  },
+  "website/wiki/src/public/icons/desempleado.svg": {
+    "mtime": 1792164135.5988548,
+    "seen": 1793184571.597345,
+    "ast_hash": "b00ac843936cfd9cab30e3e69a0e3b45",
+    "semantic_hash": "b00ac843936cfd9cab30e3e69a0e3b45"
+  },
+  "website/wiki/src/public/icons/edificio_engranaje.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "fed58c7279e83f5ff1a82ccc9c979d70",
+    "semantic_hash": "fed58c7279e83f5ff1a82ccc9c979d70"
+  },
+  "website/wiki/src/public/icons/enchufe_rojo.svg": {
+    "mtime": 1792164135.616426,
+    "seen": 1793184571.597345,
+    "ast_hash": "a32654316b64cc76119e0c778f5e8f10",
+    "semantic_hash": "a32654316b64cc76119e0c778f5e8f10"
+  },
+  "website/wiki/src/public/icons/enchufe_verde.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "d65eff028b7d60249ec9f990058b5020",
+    "semantic_hash": "d65eff028b7d60249ec9f990058b5020"
+  },
+  "website/wiki/src/public/icons/energia_dorado.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "1103e69c7d9c27acf3b54b97ae3f3701",
+    "semantic_hash": "1103e69c7d9c27acf3b54b97ae3f3701"
+  },
+  "website/wiki/src/public/icons/energia_gris.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "107d903dd3ff2d0a650d0e008d0bc6e7",
+    "semantic_hash": "107d903dd3ff2d0a650d0e008d0bc6e7"
+  },
+  "website/wiki/src/public/icons/energia_rojo.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "2f11b6bd5529ee1cdf28c20a799a19cf",
+    "semantic_hash": "2f11b6bd5529ee1cdf28c20a799a19cf"
+  },
+  "website/wiki/src/public/icons/era.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "e5e56fb11cc6d4deb31a8bdd3c4c3009",
+    "semantic_hash": "e5e56fb11cc6d4deb31a8bdd3c4c3009"
+  },
+  "website/wiki/src/public/icons/escudo_agrietado.svg": {
+    "mtime": 1792164135.6154275,
+    "seen": 1793184571.597345,
+    "ast_hash": "03e447ea34c2ea53d2d84fc03e1d7aae",
+    "semantic_hash": "03e447ea34c2ea53d2d84fc03e1d7aae"
+  },
+  "website/wiki/src/public/icons/especialista.svg": {
+    "mtime": 1792164135.5993705,
+    "seen": 1793184571.597345,
+    "ast_hash": "47c2c11e63955b323b4d727c9267124c",
+    "semantic_hash": "47c2c11e63955b323b4d727c9267124c"
+  },
+  "website/wiki/src/public/icons/extraer_todo.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "fc1d660f4656b5f0e91143cde0fecd36",
+    "semantic_hash": "fc1d660f4656b5f0e91143cde0fecd36"
+  },
+  "website/wiki/src/public/icons/herr_cesta.svg": {
+    "mtime": 1792164135.611421,
+    "seen": 1793184571.597345,
+    "ast_hash": "9d742630f214c3772539f8536d004a56",
+    "semantic_hash": "9d742630f214c3772539f8536d004a56"
+  },
+  "website/wiki/src/public/icons/herr_hacha.svg": {
+    "mtime": 1792164135.611421,
+    "seen": 1793184571.597345,
+    "ast_hash": "9e411f5e32511ba742b8959e5333e925",
+    "semantic_hash": "9e411f5e32511ba742b8959e5333e925"
+  },
+  "website/wiki/src/public/icons/herr_mazo.svg": {
+    "mtime": 1792164135.611421,
+    "seen": 1793184571.597345,
+    "ast_hash": "b7878679c99b1aa2fc3bd7af7f27933b",
+    "semantic_hash": "b7878679c99b1aa2fc3bd7af7f27933b"
+  },
+  "website/wiki/src/public/icons/herr_pala.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "dbd2b4c1e81b5ec33336a7f936b493bf",
+    "semantic_hash": "dbd2b4c1e81b5ec33336a7f936b493bf"
+  },
+  "website/wiki/src/public/icons/herr_pico.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "9b36774af100823e2fa816aeb8ac57a2",
+    "semantic_hash": "9b36774af100823e2fa816aeb8ac57a2"
+  },
+  "website/wiki/src/public/icons/herr_vias.svg": {
+    "mtime": 1792164135.6124263,
+    "seen": 1793184571.597345,
+    "ast_hash": "2b1eea709afa3cbdff9587065aa4436f",
+    "semantic_hash": "2b1eea709afa3cbdff9587065aa4436f"
+  },
+  "website/wiki/src/public/icons/hierro.svg": {
+    "mtime": 1792164135.5957255,
+    "seen": 1793184571.597345,
+    "ast_hash": "fc53bedb3c7c41a69f0fc0474a5ef805",
+    "semantic_hash": "fc53bedb3c7c41a69f0fc0474a5ef805"
+  },
+  "website/wiki/src/public/icons/investigador.svg": {
+    "mtime": 1792164135.5999105,
+    "seen": 1793184571.597345,
+    "ast_hash": "2a627b88149364f9659e270fd39a9637",
+    "semantic_hash": "2a627b88149364f9659e270fd39a9637"
+  },
+  "website/wiki/src/public/icons/lampara_electrica_off.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "e9a80bce65ab615d19bed768b0b776af",
+    "semantic_hash": "e9a80bce65ab615d19bed768b0b776af"
+  },
+  "website/wiki/src/public/icons/lampara_electrica_on.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "b718a8c73cd92f1abca3bef97a01eaa5",
+    "semantic_hash": "b718a8c73cd92f1abca3bef97a01eaa5"
+  },
+  "website/wiki/src/public/icons/lampara_termica_off.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "466c48a81311da1ee785310d28852899",
+    "semantic_hash": "466c48a81311da1ee785310d28852899"
+  },
+  "website/wiki/src/public/icons/lampara_termica_on.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "cff9877583a868edc541da80295b1307",
+    "semantic_hash": "cff9877583a868edc541da80295b1307"
+  },
+  "website/wiki/src/public/icons/led_gris.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "0fc79a4d5bca9c0b42f71c479beff7b4",
+    "semantic_hash": "0fc79a4d5bca9c0b42f71c479beff7b4"
+  },
+  "website/wiki/src/public/icons/led_rojo.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "c6528f87d92949cba5dba3617d3fe175",
+    "semantic_hash": "c6528f87d92949cba5dba3617d3fe175"
+  },
+  "website/wiki/src/public/icons/led_verde.svg": {
+    "mtime": 1792164135.6214268,
+    "seen": 1793184571.597345,
+    "ast_hash": "636109f7006b7261967c673401e89164",
+    "semantic_hash": "636109f7006b7261967c673401e89164"
+  },
+  "website/wiki/src/public/icons/madera.svg": {
+    "mtime": 1792164135.593929,
+    "seen": 1793184571.597345,
+    "ast_hash": "298b8f27a7384771e3fab037cfb86403",
+    "semantic_hash": "298b8f27a7384771e3fab037cfb86403"
+  },
+  "website/wiki/src/public/icons/militar.svg": {
+    "mtime": 1792164135.5999105,
+    "seen": 1793184571.597345,
+    "ast_hash": "99d03dca0a0a4a37d64def58a43e083d",
+    "semantic_hash": "99d03dca0a0a4a37d64def58a43e083d"
+  },
+  "website/wiki/src/public/icons/mineral_refinado.svg": {
+    "mtime": 1792164135.5967677,
+    "seen": 1793184571.597345,
+    "ast_hash": "d11cf67661d15052f93f817884a21385",
+    "semantic_hash": "d11cf67661d15052f93f817884a21385"
+  },
+  "website/wiki/src/public/icons/modo_construir.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "eef306ec7ebfe2526a7d06a247773472",
+    "semantic_hash": "eef306ec7ebfe2526a7d06a247773472"
+  },
+  "website/wiki/src/public/icons/modo_demoler.svg": {
+    "mtime": 1792164135.6069174,
+    "seen": 1793184571.597345,
+    "ast_hash": "cdd5787416d7c25d99dac6cad4eb39e5",
+    "semantic_hash": "cdd5787416d7c25d99dac6cad4eb39e5"
+  },
+  "website/wiki/src/public/icons/modo_ver.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "4c42a41c375efa0e07da6acdbd7d17cd",
+    "semantic_hash": "4c42a41c375efa0e07da6acdbd7d17cd"
+  },
+  "website/wiki/src/public/icons/modo_zonificar.svg": {
+    "mtime": 1792164135.6059167,
+    "seen": 1793184571.597345,
+    "ast_hash": "7afc60bd84b265cc8143ce36a4d0a5a6",
+    "semantic_hash": "7afc60bd84b265cc8143ce36a4d0a5a6"
+  },
+  "website/wiki/src/public/icons/moral_alta.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "36d82d08b0ad2e6d00610443553c9b4e",
+    "semantic_hash": "36d82d08b0ad2e6d00610443553c9b4e"
+  },
+  "website/wiki/src/public/icons/moral_baja.svg": {
+    "mtime": 1792164135.6019163,
+    "seen": 1793184571.597345,
+    "ast_hash": "807fcfe78748602ec92894ba7b6cb3a6",
+    "semantic_hash": "807fcfe78748602ec92894ba7b6cb3a6"
+  },
+  "website/wiki/src/public/icons/moral_critica.svg": {
+    "mtime": 1792164135.6019163,
+    "seen": 1793184571.597345,
+    "ast_hash": "13a8cc756a3971446dd29de821f8192c",
+    "semantic_hash": "13a8cc756a3971446dd29de821f8192c"
+  },
+  "website/wiki/src/public/icons/moral_neutra.svg": {
+    "mtime": 1792164135.6029189,
+    "seen": 1793184571.597345,
+    "ast_hash": "87c20aa5ce52335a9b8d8a4b7c5cfdfe",
+    "semantic_hash": "87c20aa5ce52335a9b8d8a4b7c5cfdfe"
+  },
+  "website/wiki/src/public/icons/mouse_move.svg": {
+    "mtime": 1792164135.6127982,
+    "seen": 1793184571.597345,
+    "ast_hash": "93a96153864d4fbe4a0f28b3ce0d5d22",
+    "semantic_hash": "93a96153864d4fbe4a0f28b3ce0d5d22"
+  },
+  "website/wiki/src/public/icons/obrero.svg": {
+    "mtime": 1792164135.5988548,
+    "seen": 1793184571.597345,
+    "ast_hash": "4ce12a56d11944012987893ba2545686",
+    "semantic_hash": "4ce12a56d11944012987893ba2545686"
+  },
+  "website/wiki/src/public/icons/ojo.svg": {
+    "mtime": 1792164135.6134267,
+    "seen": 1793184571.597345,
+    "ast_hash": "55bfac879d18d97c05c143ceb81d8305",
+    "semantic_hash": "55bfac879d18d97c05c143ceb81d8305"
+  },
+  "website/wiki/src/public/icons/oxigeno.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "47943d1a184f7196c26f3c4c7d530c88",
+    "semantic_hash": "47943d1a184f7196c26f3c4c7d530c88"
+  },
+  "website/wiki/src/public/icons/piedra.svg": {
+    "mtime": 1792164135.5949848,
+    "seen": 1793184571.597345,
+    "ast_hash": "ee4e758678e4a1430f3b99daa7dbae6c",
+    "semantic_hash": "ee4e758678e4a1430f3b99daa7dbae6c"
+  },
+  "website/wiki/src/public/icons/prio_alta.svg": {
+    "mtime": 1792164135.6194277,
+    "seen": 1793184571.597345,
+    "ast_hash": "a729f8f3073bbe53c4acefa5701eb0f9",
+    "semantic_hash": "a729f8f3073bbe53c4acefa5701eb0f9"
+  },
+  "website/wiki/src/public/icons/prio_baja.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "0f2f345f2252783165a861469868bed3",
+    "semantic_hash": "0f2f345f2252783165a861469868bed3"
+  },
+  "website/wiki/src/public/icons/prio_normal.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "fb1ac393188a949ad59bb0f4229bf687",
+    "semantic_hash": "fb1ac393188a949ad59bb0f4229bf687"
+  },
+  "website/wiki/src/public/icons/productividad.svg": {
+    "mtime": 1792164135.6144266,
+    "seen": 1793184571.597345,
+    "ast_hash": "25074f5f921250294f5076e7d72224bc",
+    "semantic_hash": "25074f5f921250294f5076e7d72224bc"
+  },
+  "website/wiki/src/public/icons/puerta_abierta.svg": {
+    "mtime": 1792164135.617426,
+    "seen": 1793184571.597345,
+    "ast_hash": "b38d5ec777165e2dafa455f2bfbd8d08",
+    "semantic_hash": "b38d5ec777165e2dafa455f2bfbd8d08"
+  },
+  "website/wiki/src/public/icons/puerta_candado.svg": {
+    "mtime": 1792164135.617426,
+    "seen": 1793184571.597345,
+    "ast_hash": "5e0f620952a8a77c88d3b80a41583b82",
+    "semantic_hash": "5e0f620952a8a77c88d3b80a41583b82"
+  },
+  "website/wiki/src/public/icons/puerta_reloj.svg": {
+    "mtime": 1792164135.617426,
+    "seen": 1793184571.597345,
+    "ast_hash": "7418c718623842b56673d476a3c59dac",
+    "semantic_hash": "7418c718623842b56673d476a3c59dac"
+  },
+  "website/wiki/src/public/icons/reloj_arena.svg": {
+    "mtime": 1792164135.6099167,
+    "seen": 1793184571.597345,
+    "ast_hash": "1bebf11454459a5268a762e7abc30a2e",
+    "semantic_hash": "1bebf11454459a5268a762e7abc30a2e"
+  },
+  "website/wiki/src/public/icons/remodelar.svg": {
+    "mtime": 1792164135.6184266,
+    "seen": 1793184571.597345,
+    "ast_hash": "f804d348ca51b09dc70b1d8b47f624d7",
+    "semantic_hash": "f804d348ca51b09dc70b1d8b47f624d7"
+  },
+  "website/wiki/src/public/icons/romano_1.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "347bd5731d67e974befa65f6827e4e44",
+    "semantic_hash": "347bd5731d67e974befa65f6827e4e44"
+  },
+  "website/wiki/src/public/icons/romano_2.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "41fca2ea33f5248d7e80920f173a8334",
+    "semantic_hash": "41fca2ea33f5248d7e80920f173a8334"
+  },
+  "website/wiki/src/public/icons/romano_3.svg": {
+    "mtime": 1792164135.6049156,
+    "seen": 1793184571.597345,
+    "ast_hash": "13f2f588809416ab6134048ba2d5fe7f",
+    "semantic_hash": "13f2f588809416ab6134048ba2d5fe7f"
+  },
+  "website/wiki/src/public/icons/scroll.svg": {
+    "mtime": 1791213246.672176,
+    "seen": 1793184571.597345,
+    "ast_hash": "cbf562c3fc6f4f9060b37e7e9b177173",
+    "semantic_hash": "cbf562c3fc6f4f9060b37e7e9b177173"
+  },
+  "website/wiki/src/public/icons/sin_techo.svg": {
+    "mtime": 1792164135.6009178,
+    "seen": 1793184571.597345,
+    "ast_hash": "c3ea78b5b4bdebb30d2d162afe720045",
+    "semantic_hash": "c3ea78b5b4bdebb30d2d162afe720045"
+  },
+  "website/wiki/src/public/icons/tablas.svg": {
+    "mtime": 1792164135.5944555,
+    "seen": 1793184571.597345,
+    "ast_hash": "0464f199313c6c629c6a458ca3e28e6e",
+    "semantic_hash": "0464f199313c6c629c6a458ca3e28e6e"
+  },
+  "website/wiki/src/public/icons/tasa_abajo.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "57dd7772fc181a5f44da72187dab09e2",
+    "semantic_hash": "57dd7772fc181a5f44da72187dab09e2"
+  },
+  "website/wiki/src/public/icons/tasa_arriba.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "495728460add81848b96b8f46ec8cb72",
+    "semantic_hash": "495728460add81848b96b8f46ec8cb72"
+  },
+  "website/wiki/src/public/icons/tasa_neutra.svg": {
+    "mtime": 1792164135.6039195,
+    "seen": 1793184571.597345,
+    "ast_hash": "b7be7c146fd5f4265aa3bb2840506490",
+    "semantic_hash": "b7be7c146fd5f4265aa3bb2840506490"
+  },
+  "website/wiki/src/public/icons/tec_automatizacion.svg": {
+    "mtime": 1792164135.6194277,
+    "seen": 1793184571.597345,
+    "ast_hash": "dcc8f31e1917fdc44a006b91e5cebed8",
+    "semantic_hash": "dcc8f31e1917fdc44a006b91e5cebed8"
+  },
+  "website/wiki/src/public/icons/tec_metalurgia.svg": {
+    "mtime": 1792164135.6194277,
+    "seen": 1793184571.597345,
+    "ast_hash": "9294770ae3e300a3dbf585abb2a7c1be",
+    "semantic_hash": "9294770ae3e300a3dbf585abb2a7c1be"
+  },
+  "website/wiki/src/public/icons/tecnico.svg": {
+    "mtime": 1792164135.5993705,
+    "seen": 1793184571.597345,
+    "ast_hash": "5601a51725846a62a43038fc22e22b96",
+    "semantic_hash": "5601a51725846a62a43038fc22e22b96"
+  },
+  "website/wiki/src/public/icons/tierra.svg": {
+    "mtime": 1792164135.5949848,
+    "seen": 1793184571.597345,
+    "ast_hash": "2bb0f2912fc8b2af25e593a32a4e4490",
+    "semantic_hash": "2bb0f2912fc8b2af25e593a32a4e4490"
+  },
+  "website/wiki/src/public/icons/tierras_raras.svg": {
+    "mtime": 1792164135.5962443,
+    "seen": 1793184571.597345,
+    "ast_hash": "4484946fc48beac910827c8c2881694f",
+    "semantic_hash": "4484946fc48beac910827c8c2881694f"
+  },
+  "website/wiki/src/public/icons/zona_borrar.svg": {
+    "mtime": 1792164135.6089158,
+    "seen": 1793184571.597345,
+    "ast_hash": "fbd100d0e8c1a058d8c20784121a1b8e",
+    "semantic_hash": "fbd100d0e8c1a058d8c20784121a1b8e"
+  },
+  "website/wiki/src/public/icons/zona_industrial.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "c48ac5dfa1b029dba95a648bd9e88fed",
+    "semantic_hash": "c48ac5dfa1b029dba95a648bd9e88fed"
+  },
+  "website/wiki/src/public/icons/zona_residencial.svg": {
+    "mtime": 1792164135.6079166,
+    "seen": 1793184571.597345,
+    "ast_hash": "294d3b02d918a146d790de91a1292feb",
+    "semantic_hash": "294d3b02d918a146d790de91a1292feb"
+  },
+  "arte/mp3/Clockwork_logistics (loop).mp3": {
+    "mtime": 1792325537.1240773,
+    "seen": 1793184571.597345,
+    "ast_hash": "c3e8256efd962e686ed80dcb2a9d1683",
+    "semantic_hash": "c3e8256efd962e686ed80dcb2a9d1683"
+  },
+  "arte/mp3/Clockwork_logistics_2 (loop).mp3": {
+    "mtime": 1792325619.1703255,
+    "seen": 1793184571.597345,
+    "ast_hash": "d2521584f62f754ad4639257cc63ed4d",
+    "semantic_hash": "d2521584f62f754ad4639257cc63ed4d"
+  },
+  "arte/mp3/Cozy_colony (loop).mp3": {
+    "mtime": 1792325537.1346414,
+    "seen": 1793184571.597345,
+    "ast_hash": "4eefd61720ac308f9aae8a53cbcd8d83",
+    "semantic_hash": "4eefd61720ac308f9aae8a53cbcd8d83"
+  },
+  "arte/mp3/Glitch_drift (loop).mp3": {
+    "mtime": 1792325537.14073,
+    "seen": 1793184571.597345,
+    "ast_hash": "7f045975ecb76d49b5a79e1d73518331",
+    "semantic_hash": "7f045975ecb76d49b5a79e1d73518331"
+  },
+  "arte/mp3/Glitch_drift_2 (loop).mp3": {
+    "mtime": 1792325628.4785504,
+    "seen": 1793184571.597345,
+    "ast_hash": "c953c711e5cc18dc273966705ed7643f",
+    "semantic_hash": "c953c711e5cc18dc273966705ed7643f"
+  },
+  "arte/mp3/Hard_stop (loop).mp3": {
+    "mtime": 1792325537.1507452,
+    "seen": 1793184571.597345,
+    "ast_hash": "6c58349ae8789f334c5cfcbd2ea4524c",
+    "semantic_hash": "6c58349ae8789f334c5cfcbd2ea4524c"
+  },
+  "arte/mp3/Hard_stop_2 (loop).mp3": {
+    "mtime": 1792325635.2403626,
+    "seen": 1793184571.597345,
+    "ast_hash": "e2e77e6c1f21f73680b1e5ed76296137",
+    "semantic_hash": "e2e77e6c1f21f73680b1e5ed76296137"
+  },
+  "arte/mp3/Morning_at_the_Steel_Spire (loop).mp3": {
+    "mtime": 1792325572.6561978,
+    "seen": 1793184571.597345,
+    "ast_hash": "77995fb191ac3b0caa8ab4ce75fde949",
+    "semantic_hash": "77995fb191ac3b0caa8ab4ce75fde949"
+  },
+  "arte/mp3/Seamless_loop  (loop).mp3": {
+    "mtime": 1792325537.1627793,
+    "seen": 1793184571.597345,
+    "ast_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9",
+    "semantic_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9"
+  },
+  "arte/mp3/The_Architect_s_Decree (menu).mp3": {
+    "mtime": 1792325602.293656,
+    "seen": 1793184571.597345,
+    "ast_hash": "1642c22e89c7dcf71776aac9f007f1b8",
+    "semantic_hash": "1642c22e89c7dcf71776aac9f007f1b8"
+  },
+  "arte/sfx/cierre_puerta_baul.mp3": {
+    "mtime": 1791196851.0427594,
+    "seen": 1793184571.597345,
+    "ast_hash": "b16501654f048e92b7b56e69ad39c9ac",
+    "semantic_hash": "b16501654f048e92b7b56e69ad39c9ac"
+  },
+  "arte/sfx/colocar_bloque.mp3": {
+    "mtime": 1791196851.0452428,
+    "seen": 1793184571.597345,
+    "ast_hash": "30e033b96f4291a77884fe38178802c8",
+    "semantic_hash": "30e033b96f4291a77884fe38178802c8"
+  },
+  "arte/sfx/minar_tierra.mp3": {
+    "mtime": 1791196851.050697,
+    "seen": 1793184571.597345,
+    "ast_hash": "5462c9bcf5d680a19ba2c7c825c15241",
+    "semantic_hash": "5462c9bcf5d680a19ba2c7c825c15241"
+  },
+  "video_edition/remotion/public/audio/Clockwork_logistics (loop).mp3": {
+    "mtime": 1792325537.1240773,
+    "seen": 1793184571.597345,
+    "ast_hash": "c3e8256efd962e686ed80dcb2a9d1683",
+    "semantic_hash": "c3e8256efd962e686ed80dcb2a9d1683"
+  },
+  "video_edition/remotion/public/audio/Clockwork_logistics_2 (loop).mp3": {
+    "mtime": 1792325619.1703255,
+    "seen": 1793184571.597345,
+    "ast_hash": "d2521584f62f754ad4639257cc63ed4d",
+    "semantic_hash": "d2521584f62f754ad4639257cc63ed4d"
+  },
+  "video_edition/remotion/public/audio/Cozy_colony (loop).mp3": {
+    "mtime": 1792325537.1346414,
+    "seen": 1793184571.597345,
+    "ast_hash": "4eefd61720ac308f9aae8a53cbcd8d83",
+    "semantic_hash": "4eefd61720ac308f9aae8a53cbcd8d83"
+  },
+  "video_edition/remotion/public/audio/Glitch_drift (loop).mp3": {
+    "mtime": 1792325537.14073,
+    "seen": 1793184571.597345,
+    "ast_hash": "7f045975ecb76d49b5a79e1d73518331",
+    "semantic_hash": "7f045975ecb76d49b5a79e1d73518331"
+  },
+  "video_edition/remotion/public/audio/Glitch_drift_2 (loop).mp3": {
+    "mtime": 1792325628.4785504,
+    "seen": 1793184571.597345,
+    "ast_hash": "c953c711e5cc18dc273966705ed7643f",
+    "semantic_hash": "c953c711e5cc18dc273966705ed7643f"
+  },
+  "video_edition/remotion/public/audio/Hard_stop (loop).mp3": {
+    "mtime": 1792325537.1507452,
+    "seen": 1793184571.597345,
+    "ast_hash": "6c58349ae8789f334c5cfcbd2ea4524c",
+    "semantic_hash": "6c58349ae8789f334c5cfcbd2ea4524c"
+  },
+  "video_edition/remotion/public/audio/Hard_stop_2 (loop).mp3": {
+    "mtime": 1792325635.2403626,
+    "seen": 1793184571.597345,
+    "ast_hash": "e2e77e6c1f21f73680b1e5ed76296137",
+    "semantic_hash": "e2e77e6c1f21f73680b1e5ed76296137"
+  },
+  "video_edition/remotion/public/audio/Morning_at_the_Steel_Spire (loop).mp3": {
+    "mtime": 1792325572.6561978,
+    "seen": 1793184571.597345,
+    "ast_hash": "77995fb191ac3b0caa8ab4ce75fde949",
+    "semantic_hash": "77995fb191ac3b0caa8ab4ce75fde949"
+  },
+  "video_edition/remotion/public/audio/Seamless_loop  (loop).mp3": {
+    "mtime": 1792325537.1627793,
+    "seen": 1793184571.597345,
+    "ast_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9",
+    "semantic_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9"
+  },
+  "video_edition/remotion/public/audio/The_Architect_s_Decree (menu).mp3": {
+    "mtime": 1792325602.293656,
+    "seen": 1793184571.597345,
+    "ast_hash": "1642c22e89c7dcf71776aac9f007f1b8",
+    "semantic_hash": "1642c22e89c7dcf71776aac9f007f1b8"
+  },
+  "video_edition/remotion/public/live_w2.mp4": {
+    "mtime": 1792340266.5733547,
+    "seen": 1793184571.597345,
+    "ast_hash": "affd7c7bba2f696850e3e17b80fc3501",
+    "semantic_hash": "affd7c7bba2f696850e3e17b80fc3501"
+  },
+  ".agents/skills/nodes-and-network/SKILL.md": {
+    "mtime": 1793187667.4743314,
+    "seen": 1793187872.2233787,
+    "ast_hash": "9ef5868ed68778c222df2c449a87e037",
+    "semantic_hash": "9ef5868ed68778c222df2c449a87e037"
+  }
+}

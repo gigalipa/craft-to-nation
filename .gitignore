@@ -60,6 +60,9 @@ video_edition/media/
 graphify-out/cache/
 graphify-out/.graphify_python
 graphify-out/.graphify_root
+graphify-out/20*/
+graphify-out/.graphify_*
+!graphify-out/.graphify_labels.json
 
 # Remotion builds and media
 video_edition/remotion/build/

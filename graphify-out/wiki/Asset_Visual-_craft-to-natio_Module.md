@@ -1,10 +1,10 @@
 # Asset Visual: craft-to-natio Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-logo.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-logo.png`
+- **deploy_wiki.ps1** (0 connections) — `tools/deploy_wiki.ps1`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/craft-to-nation-logo.png`
+- `tools/deploy_wiki.ps1`
 
 ## Audit Trail
 

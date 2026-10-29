@@ -1,10 +1,10 @@
 # Asset Visual: Craft_to_Natio Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Craft_to_Nation_Twitch_offline_banner.png** (0 connections) — `arte/banners/Craft_to_Nation_Twitch_offline_banner.png`
+- **Asset Visual: Water_Sparkling.jpg** (0 connections) — `arte/dae/bloques/Water_Sparkling.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/banners/Craft_to_Nation_Twitch_offline_banner.png`
+- `arte/dae/bloques/Water_Sparkling.jpg`
 
 ## Audit Trail
 

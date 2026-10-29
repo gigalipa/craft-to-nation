@@ -1,10 +1,10 @@
 # Asset Visual: Craft_to_Natio Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Craft_to_Nation_Kick_profile_banner.png** (0 connections) — `arte/banners/Craft_to_Nation_Kick_profile_banner.png`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/bloques/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/banners/Craft_to_Nation_Kick_profile_banner.png`
+- `arte/dae/bloques/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

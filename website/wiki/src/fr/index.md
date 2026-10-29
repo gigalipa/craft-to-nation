@@ -12,11 +12,11 @@ hero:
     alt: Craft to Nation Logo
   actions:
     - theme: brand
-      text: Guide en Anglais (EN)
-      link: /en/guide/start
+      text: Guide du Joueur
+      link: /fr/guide/start
     - theme: alt
-      text: Guide en Espagnol (ES)
-      link: /es/guia/inicio
+      text: Développement & GDD v3.59
+      link: /fr/dev/gdd
     - theme: alt
       text: Site Principal
       link: https://crafttonation.netlify.app/
@@ -25,20 +25,20 @@ hero:
 features:
   - title: Survie & Construction Voxel
     details: Fondez votre premier abri hermétique en vue à la première personne, basculez en vue tactique aérienne (touche C), déclarez votre Noyau Urbain et maîtrisez les ressources de base.
-    link: /en/guide/start
-    linkText: Découvrir le Guide (EN)
+    link: /fr/guide/start
+    linkText: Découvrir le Guide
   - title: Logistique & Économie Industrielle
-    details: 8 chaînes de raffinage, postes d'extraction de niveau I à III, oléoducs surélevés et réseau de transport terrestre pour alimenter vos usines et centrales électriques.
-    link: /en/guide/resources
-    linkText: Économie des Ressources (EN)
+    details: 9 chaînes de raffinage, postes d'extraction de niveau I à III, oléoducs surélevés et réseau de transport terrestre pour alimenter vos usines et centrales électriques.
+    link: /fr/guide/resources
+    linkText: Économie des Ressources
   - title: Démographie & Moral Dynamique
     details: Gérez l'alimentation de vos colons selon leur métier, prévenez les crises et exploitez la courbe de productivité et de migration mensuelle par paliers basée sur le moral.
-    link: /en/guide/colonists
-    linkText: Gestion des Colons (EN)
-  - title: Architecture Moteur Godot 4.6
+    link: /fr/guide/colonists
+    linkText: Gestion des Colons
+  - title: Architecture Moteur Godot 4.7
     details: Conception technique, simulation déterministe à ticks horaires (2,0s = 1h), iconographie vectorielle HUD SVG et 28 scènes de tests automatisés.
-    link: /en/dev/godot
-    linkText: Architecture Godot (EN)
+    link: /fr/dev/godot
+    linkText: Architecture Godot
 ---
 
 # Bienvenue sur le Wiki Officiel de Craft to Nation
@@ -59,24 +59,16 @@ features:
 
 ---
 
-## Documentation et Versions Linguistiques
+## Sommaire de la Documentation en Français
 
-La documentation complète et le manuel de référence sont disponibles dans les sections suivantes :
+- 📖 **Guide du Joueur :**
+  - [Premiers Pas & Survie](/fr/guide/start)
+  - [Économie des Ressources & Industries](/fr/guide/resources)
+  - [Bâtiments, Niveaux Urbains & Stockage](/fr/guide/buildings)
+  - [Gestion des Colons & Démographie](/fr/guide/colonists)
 
-- 🇬🇧 **Version Anglaise (Complète) :**
-  - [Guide du Débutant : Premiers Pas et Survie](/en/guide/start)
-  - [Économie des Ressources et Extraction](/en/guide/resources)
-  - [Bâtiments, Abris et Stock Central](/en/guide/buildings)
-  - [Gestion des Colons et Calculateur de Production](/en/guide/colonists)
-  - [GDD v3.59 : Piliers et Philosophie de Conception](/en/dev/gdd)
-  - [Architecture Technique sous Godot 4.7](/en/dev/godot)
-  - [Logistique Terrestre et Réseaux de Canalisations](/en/dev/logistics)
-  - [Feuille de Route du Développement (Roadmap)](/en/dev/roadmap)
-
-- 🇪🇸 **Version Espagnole (Complète) :**
-  - [Guía del Jugador](/es/guia/inicio)
-  - [Documentación Técnica y GDD v3.59](/es/dev/gdd)
-
-> [!NOTE]
-> La traduction intégrale des articles en langue française est actuellement en cours de développement. Les liens ci-dessus vous permettent d'accéder à l'ensemble des données techniques et des guides de jeu à jour.
-
+- ⚙️ **Conception Technique & Développement :**
+  - [GDD v3.59 : Piliers & Philosophie](/fr/dev/gdd)
+  - [Architecture Technique sous Godot 4.7](/fr/dev/godot)
+  - [Logistique, Voirie & Conduits Surélevés](/fr/dev/logistics)
+  - [Feuille de Route du Développement (Roadmap)](/fr/dev/roadmap)

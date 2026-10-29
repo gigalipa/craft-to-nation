@@ -1,0 +1,141 @@
+{
+  "qa_short_01": {
+    "startSec": 438.0,
+    "durationSec": 47.0,
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 6.5,
+        "text": "Esta cascada tiene corriente y me empuja, pero aquí donde hay menos corriente voy más despacio."
+      },
+      {
+        "start": 6.8,
+        "end": 22.7,
+        "text": "En los bloques superficiales de agua el avatar se mueve libremente. Si mino aquí..."
+      },
+      {
+        "start": 22.7,
+        "end": 35.7,
+        "text": "...el agua rellena el espacio. Y en los bloques más profundos, si me hundo lentamente..."
+      },
+      {
+        "start": 35.7,
+        "end": 47.0,
+        "text": "...comienza el contador de oxígeno. Con espacio subo a la superficie y se recarga otra vez."
+      }
+    ]
+  },
+  "qa_short_02": {
+    "startSec": 2335.0,
+    "durationSec": 43.0,
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 2.5,
+        "text": "Al demoler la casa, los colonos quedan sin techo."
+      },
+      {
+        "start": 2.5,
+        "end": 7.0,
+        "text": "Aquí se supone que hay 6 personas trabajando..."
+      },
+      {
+        "start": 7.0,
+        "end": 14.0,
+        "text": "...pero en realidad estos dos colonos no se están moviendo."
+      },
+      {
+        "start": 14.0,
+        "end": 22.0,
+        "text": "A ver... construyo la casa y ahora ya tienen techo otra vez..."
+      },
+      {
+        "start": 22.0,
+        "end": 31.0,
+        "text": "¡Eso es un bug! Porque no se les reactivó el empleo automáticamente."
+      },
+      {
+        "start": 31.0,
+        "end": 36.0,
+        "text": "Se quedan como trabajadores libres en la ciudad..."
+      },
+      {
+        "start": 36.0,
+        "end": 43.0,
+        "text": "Así que vamos a anotarlo en la lista para resolverlo."
+      }
+    ]
+  },
+  "qa_short_03": {
+    "startSec": 4330.0,
+    "durationSec": 44.0,
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 4.5,
+        "text": "Si no hay pesca se consume de caza, y luego de los sembradíos."
+      },
+      {
+        "start": 4.5,
+        "end": 11.5,
+        "text": "Lo organicé de esta manera porque más adelante..."
+      },
+      {
+        "start": 11.5,
+        "end": 23.5,
+        "text": "...pienso implementar la mecánica de que la comida se descomponga con el tiempo."
+      },
+      {
+        "start": 23.5,
+        "end": 31.0,
+        "text": "Lo que se daña más rápido es el pescado y mariscos, por eso debe consumirse primero."
+      },
+      {
+        "start": 31.0,
+        "end": 39.5,
+        "text": "De esta forma la descomposición no afectará si en la ciudad..."
+      },
+      {
+        "start": 39.5,
+        "end": 44.0,
+        "text": "...tenemos almacenadas comidas no perecederas."
+      }
+    ]
+  },
+  "qa_short_04": {
+    "startSec": 5420.0,
+    "durationSec": 47.0,
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 9.5,
+        "text": "En la wiki hay información técnica sobre cómo generar energía y extraer recursos."
+      },
+      {
+        "start": 9.5,
+        "end": 17.5,
+        "text": "También explicamos cómo gestionar a los colonos y su supervivencia."
+      },
+      {
+        "start": 17.5,
+        "end": 26.5,
+        "text": "Por ejemplo, desarrollamos una Calculadora de Supervivencia interactiva..."
+      },
+      {
+        "start": 26.5,
+        "end": 36.0,
+        "text": "...donde pones la población, por ejemplo 50 colonos en tu metrópoli..."
+      },
+      {
+        "start": 36.0,
+        "end": 43.0,
+        "text": "...y calcula los consumos de comida y energía según cada era."
+      },
+      {
+        "start": 43.0,
+        "end": 47.0,
+        "text": "¡Es una forma mucho más fácil y clara de entender Craft to Nation!"
+      }
+    ]
+  }
+}

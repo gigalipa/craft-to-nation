@@ -7,7 +7,7 @@ description: "Mecánicas de transporte y logística: red modular de canalizacion
 
 ![Vista estratégica de la red logística, carreteras y acueductos](/assets/citycraft-world.webp)
 
-En **Craft to Nation**, cada unidad de madera, mineral o fluido debe desplazarse físicamente a través del mundo de `200×200` celdas. La infraestructura logística se divide en dos capas complementarias: **Red Vial y Acarreo Terrestre** (`ConstructorVias.gd`, `BuscadorRutas.gd`, `Colonos.gd`) y **Redes Aéreas de Canalización de Fluidos** (`Canalizaciones.gd`, `Fluidos.gd`).
+En **Craft to Nation**, cada unidad de madera, mineral o fluido debe desplazarse físicamente a través del mundo de `200×200` celdas. La infraestructura logística se divide en dos capas complementarias: **Red Vial y Acarreo Terrestre** (`ConstructorVias.gd`, `BuscadorRutas.gd`, `Colonos.gd`) y **Redes Aéreas de Canalización de Fluidos** (`Canalizaciones.gd` y físicas en `VoxelWorld.gd`).
 
 ---
 

@@ -1,10 +1,10 @@
 # HUD Vector Iconography & UI
 
-> 218 nodes
+> 218 nodes · cohesion 0.01
 
 ## Key Concepts
 
-- **IconosHUD.gd** (260 connections) — `godot/scripts/IconosHUD.gd`
+- **IconosHUD.gd** (258 connections) — `godot/scripts/IconosHUD.gd`
 - **Icono SVG: vidrio** (2 connections) — `godot/assets/icons/vidrio.svg`
 - **IconosHUD.bbcode()** (1 connections) — `godot/scripts/IconosHUD.gd`
 - **IconosHUD.crear_rect()** (1 connections) — `godot/scripts/IconosHUD.gd`
@@ -33,17 +33,14 @@
 
 ## Relationships
 
-- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (16 shared connections)
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (10 shared connections)
-- [Agent Ecosystem & Orchestration](Agent_Ecosystem_&_Orchestration.md) (8 shared connections)
-- [Voxel World & Window Panels](Voxel_World_&_Window_Panels.md) (2 shared connections)
-- [2026-09-25-hud-por-modos-des Module](2026-09-25-hud-por-modos-des_Module.md) (2 shared connections)
-- [BarraModos.gd Module](BarraModos.gd_Module.md) (1 shared connections)
-- [PanelContextual.gd Module](PanelContextual.gd_Module.md) (1 shared connections)
-- [Investigación Descentralizad Module](Investigación_Descentralizad_Module.md) (1 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (1 shared connections)
-- [VentanaOcupaciones.gd Module](VentanaOcupaciones.gd_Module.md) (1 shared connections)
-- [VentanaPoblacion.gd Module](VentanaPoblacion.gd_Module.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (16 shared connections)
+- [Voxel World & Window Panels](Voxel_World_&_Window_Panels.md) (16 shared connections)
+- [TemaHUD.gd](TemaHUD.gd.md) (4 shared connections)
+- [HUD.gd](HUD.gd.md) (2 shared connections)
+- [Obras.gd Module](Obras.gd_Module.md) (1 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (1 shared connections)
+- [PanelPuesto.gd](PanelPuesto.gd.md) (1 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
 
 ## Source Files
 
@@ -70,7 +67,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 260 (100%)
+- EXTRACTED: 258 (100%)
 - INFERRED: 1 (0%)
 - AMBIGUOUS: 0 (0%)
 

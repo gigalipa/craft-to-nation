@@ -1,10 +1,10 @@
 # Asset Visual: citycraft-hero Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: citycraft-hero.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-hero.webp`
+- **Asset Visual: hud-camara-cenital.png** (0 connections) — `website/wiki/src/public/assets/hud-camara-cenital.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/citycraft-hero.webp`
+- `website/wiki/src/public/assets/hud-camara-cenital.png`
 
 ## Audit Trail
 

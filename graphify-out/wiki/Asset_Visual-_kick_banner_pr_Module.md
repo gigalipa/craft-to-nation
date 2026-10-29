@@ -1,10 +1,10 @@
 # Asset Visual: kick_banner_pr Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: kick_banner_preview_test.jpg** (0 connections) — `arte/banners/kick_banner_preview_test.jpg`
+- **Asset Visual: Water_Stream.jpg** (0 connections) — `arte/dae/bloques/Water_Stream.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/banners/kick_banner_preview_test.jpg`
+- `arte/dae/bloques/Water_Stream.jpg`
 
 ## Audit Trail
 

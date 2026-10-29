@@ -1,29 +1,22 @@
 # Video Edition & Remotion Studio
 
-> 8 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **clip_maker.py** (6 connections) — `video_edition/tools/clip_maker.py`
-- **run_ffmpeg_cut()** (4 connections) — `video_edition/tools/clip_maker.py`
-- **build_filter_complex()** (3 connections) — `video_edition/tools/clip_maker.py`
-- **main()** (3 connections) — `video_edition/tools/clip_maker.py`
-- **time_to_seconds()** (3 connections) — `video_edition/tools/clip_maker.py`
-- **Path** (1 connections)
-- **Construye la cadena de filtros para FFmpeg.** (1 connections) — `video_edition/tools/clip_maker.py`
-- **Convierte HH:MM:SS o SS a segundos flotantes.** (1 connections) — `video_edition/tools/clip_maker.py`
+- **Asset Visual: fp-building.webp** (0 connections) — `website/wiki/src/public/assets/fp-building.webp`
 
 ## Relationships
 
-- [Agent Ecosystem & Orchestration](Agent_Ecosystem_&_Orchestration.md) (2 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `video_edition/tools/clip_maker.py`
+- `website/wiki/src/public/assets/fp-building.webp`
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

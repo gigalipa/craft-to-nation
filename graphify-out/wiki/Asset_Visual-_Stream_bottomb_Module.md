@@ -1,10 +1,10 @@
 # Asset Visual: Stream_bottomb Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_bottombar_ag_debug.png** (0 connections) — `arte/stream_art/Stream_bottombar_ag_debug.png`
+- **CLAUDE.md (Guía para Claude Code)** (0 connections) — `CLAUDE.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_bottombar_ag_debug.png`
+- `CLAUDE.md`
 
 ## Audit Trail
 

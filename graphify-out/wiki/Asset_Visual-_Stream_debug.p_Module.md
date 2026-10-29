@@ -1,10 +1,10 @@
 # Asset Visual: Stream_debug.p Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_debug.png** (0 connections) — `arte/stream_art/Stream_debug.png`
+- **2026-09-05-citycraft-presentation-site.md (CityCraft Presentation Site Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_debug.png`
+- `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
 
 ## Audit Trail
 

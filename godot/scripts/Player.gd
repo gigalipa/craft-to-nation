@@ -578,8 +578,7 @@ func _physics_process(delta: float) -> void:
 	_procesar_zona_lampara()
 
 
-## Panel fijo mientras el modo deconstrucción (G) está activo. Main lo repone al
-## volver de la cenital, cuyo set_vista() descarta el panel.
+## Panel fijo mientras el modo deconstrucción (G) está activo.
 func mostrar_contexto_deconstruccion() -> void:
 	if hud != null:
 		hud.mostrar_contexto(Strings.PLAYER_MODO_DECONSTRUIR_TITULO, {}, [Strings.PLAYER_MODO_DECONSTRUIR_INSTRUCCIONES])  # un solo elemento: cada instrucción en su línea
@@ -871,6 +870,22 @@ func _alternar_modo_vias() -> void:
 	else:
 		if hud != null:
 			hud.ocultar_contexto()
+
+
+## Desactiva incondicionalmente cualquier herramienta activa en 1ª persona (vías,
+## deconstrucción) y limpia estados de acción pendientes. Llamado al cambiar a
+## la cámara cenital para garantizar que al regresar a 1ª persona el jugador
+## siempre se encuentre en el modo principal de minado/colocación de bloques.
+func salir_de_todas_las_herramientas() -> void:
+	modo_deconstruccion = false
+	modo_vias = false
+	_id_listo_para_remocion = -1
+	_ticks_listo_para_remocion = 0
+	_minando = false
+	_colocando = false
+	_temporizador_accion = 0.0
+	if hud != null:
+		hud.ocultar_contexto()
 
 
 func _trabajar_via_manual() -> void:

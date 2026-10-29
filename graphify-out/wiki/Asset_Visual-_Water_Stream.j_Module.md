@@ -1,10 +1,10 @@
 # Asset Visual: Water_Stream.j Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Water_Stream.jpg** (0 connections) — `arte/dae/bloques/Water_Stream.jpg`
+- **Asset Visual: IMempbkZbl5q0.png** (0 connections) — `arte/IMempbkZbl5q0.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/dae/bloques/Water_Stream.jpg`
+- `arte/IMempbkZbl5q0.png`
 
 ## Audit Trail
 

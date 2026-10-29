@@ -1,10 +1,10 @@
 # Asset Visual: comparison-aer Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: comparison-aerial.webp** (0 connections) — `website/wiki/src/public/assets/comparison-aerial.webp`
+- **Asset Visual: hud-primera-persona-construccion.png** (0 connections) — `website/wiki/src/public/assets/hud-primera-persona-construccion.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/comparison-aerial.webp`
+- `website/wiki/src/public/assets/hud-primera-persona-construccion.png`
 
 ## Audit Trail
 

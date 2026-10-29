@@ -21,7 +21,11 @@ Para verificar el sitio:
 python -m unittest discover -s website -p "test_*.py"
 ```
 
-Las pruebas de Godot están en `godot/scenes/Test.tscn` (proyecto compartido usado por PoC_3 en adelante) y deben ejecutarse desde Godot 4.7.
+Las pruebas de Godot cuentan con una suite automatizada de 28 escenas en `godot/scenes/*Test.tscn` ejecutables con `.\tools\run-godot-tests.ps1` (en Windows) o mediante **F6** desde el editor en Godot 4.7.
+
+## Seguridad
+
+Consulta [SECURITY.md](SECURITY.md) para conocer el procedimiento de reporte responsable de vulnerabilidades y la política de seguridad del proyecto.
 
 ## Aportes asistidos por IA
 

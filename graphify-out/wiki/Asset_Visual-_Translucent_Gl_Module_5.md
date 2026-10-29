@@ -1,10 +1,10 @@
 # Asset Visual: Translucent_Gl Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
+- **Asset Visual: Stream_ag_debug.png** (0 connections) — `arte/stream_art/Stream_ag_debug.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
+- `arte/stream_art/Stream_ag_debug.png`
 
 ## Audit Trail
 

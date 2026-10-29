@@ -1,40 +1,51 @@
 # 2026-09-30-previsualizacion- Module
 
-> 9 nodes
+> 18 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **MiniaturaRenderer.gd** (23 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **2026-09-30-previsualizacion-construcciones-cenital-design.md (Diseño: previsualización isométrica de construcciones en el )** (6 connections) — `docs/superpowers/specs/2026-09-30-previsualizacion-construcciones-cenital-design.md`
-- **MiniaturaRenderer.cargar_biblioteca()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.malla_de_item()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.piezas_acueducto()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.piezas_tuberia()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.piezas_via()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.renderizar()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.renderizar_viewport()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
+- **Root.tsx** (18 connections) — `video_edition/remotion/src/Root.tsx`
+- **remotion** (10 connections) — `video_edition/remotion/package.json`
+- **VerticalShort.tsx** (9 connections) — `video_edition/remotion/src/VerticalShort.tsx`
+- **ReelTrendNoPlanB.tsx** (7 connections) — `video_edition/remotion/src/ReelTrendNoPlanB.tsx`
+- **data.ts** (6 connections) — `video_edition/remotion/src/data.ts`
+- **src/index.ts** (3 connections) — `video_edition/remotion/src/index.ts`
+- **CaptionSegment** (2 connections) — `video_edition/remotion/src/VerticalShort.tsx`
+- **ReelTrendNoPlanB()** (2 connections) — `video_edition/remotion/src/ReelTrendNoPlanB.tsx`
+- **RemotionRoot()** (2 connections) — `video_edition/remotion/src/Root.tsx`
+- **VerticalShort()** (2 connections) — `video_edition/remotion/src/VerticalShort.tsx`
+- **remotion@4.0.537** (2 connections) — `video_edition/remotion/package.json`
+- **SHORT_01_SEGMENTS** (2 connections) — `video_edition/remotion/src/data.ts`
+- **SHORT_02_SEGMENTS** (2 connections) — `video_edition/remotion/src/data.ts`
+- **SHORT_03_SEGMENTS** (2 connections) — `video_edition/remotion/src/data.ts`
+- **Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)** (2 connections) — `video_edition/remotion/public/craft-to-nation-logo.png`
+- **VerticalShortProps** (1 connections) — `video_edition/remotion/src/VerticalShort.tsx`
+- **Asset Visual: craft-to-nation-logo.png** (1 connections) — `arte/logo/craft-to-nation-logo.png`
+- **video_edition_remotion_src_qa_shorts_data** (1 connections)
 
 ## Relationships
 
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (5 shared connections)
-- [Voxel World & Window Panels](Voxel_World_&_Window_Panels.md) (3 shared connections)
-- [Agent Ecosystem & Orchestration](Agent_Ecosystem_&_Orchestration.md) (3 shared connections)
-- [BarraModos.gd Module](BarraModos.gd_Module.md) (2 shared connections)
-- [Hotbar.gd Module](Hotbar.gd_Module.md) (2 shared connections)
-- [2026-10-14-fabrica-bloques-y Module](2026-10-14-fabrica-bloques-y_Module.md) (2 shared connections)
-- [2026-09-20-destacar-puertas- Module](2026-09-20-destacar-puertas-_Module.md) (1 shared connections)
-- [PanelContextual.gd Module](PanelContextual.gd_Module.md) (1 shared connections)
+- [DevlogRecap.tsx](DevlogRecap.tsx.md) (13 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [BarraModos.gd Module](BarraModos.gd_Module.md) (1 shared connections)
 - [2026-09-20-nivelacion-frente Module](2026-09-20-nivelacion-frente_Module.md) (1 shared connections)
+- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (1 shared connections)
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-09-30-previsualizacion-construcciones-cenital-design.md`
-- `godot/scripts/MiniaturaRenderer.gd`
+- `arte/logo/craft-to-nation-logo.png`
+- `video_edition/remotion/package.json`
+- `video_edition/remotion/public/craft-to-nation-logo.png`
+- `video_edition/remotion/src/ReelTrendNoPlanB.tsx`
+- `video_edition/remotion/src/Root.tsx`
+- `video_edition/remotion/src/VerticalShort.tsx`
+- `video_edition/remotion/src/data.ts`
+- `video_edition/remotion/src/index.ts`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 44 (96%)
+- INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

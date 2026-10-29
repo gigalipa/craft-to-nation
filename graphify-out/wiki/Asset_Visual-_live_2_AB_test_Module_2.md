@@ -1,10 +1,10 @@
 # Asset Visual: live 2 AB test Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: live 2 AB test_B.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_B.png`
+- **2026-10-15-wiki-craft-to-nation-design.md (Especificación de Diseño: Wiki Híbrida para Craft to Nation)** (0 connections) — `docs/superpowers/specs/2026-10-15-wiki-craft-to-nation-design.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/YT thumbnails/live 2 AB test_B.png`
+- `docs/superpowers/specs/2026-10-15-wiki-craft-to-nation-design.md`
 
 ## Audit Trail
 

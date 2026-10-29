@@ -1,10 +1,10 @@
 # 2026-09-05-citycraft-present Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **2026-09-05-citycraft-presentation-site-design.md (Diseño del sitio de presentación de CityCraft)** (0 connections) — `docs/superpowers/specs/2026-09-05-citycraft-presentation-site-design.md`
+- **index.md: Official Craft to Nation Wiki (English)** (0 connections) — `website/wiki/src/en/index.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-09-05-citycraft-presentation-site-design.md`
+- `website/wiki/src/en/index.md`
 
 ## Audit Trail
 

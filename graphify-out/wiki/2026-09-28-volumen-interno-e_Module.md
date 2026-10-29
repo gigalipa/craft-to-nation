@@ -1,10 +1,10 @@
 # 2026-09-28-volumen-interno-e Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **2026-09-28-volumen-interno-edificios-design.md (Declaración de edificios por volumen interno — diseño)** (0 connections) — `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
+- **index.md: Wiki Officiel Craft to Nation (Français)** (0 connections) — `website/wiki/src/fr/index.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
+- `website/wiki/src/fr/index.md`
 
 ## Audit Trail
 

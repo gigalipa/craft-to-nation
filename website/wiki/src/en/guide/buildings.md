@@ -7,7 +7,7 @@ description: "Learn airtight construction rules, internal volume validation, blu
 
 ![Overhead tactical camera and district planning](/assets/hud-camara-cenital.png)
 
-In **Craft to Nation**, architectural construction is a physical simulation system. Every structure obeys volumetric validation rules (`ValidadorEdificios.gd`), bed density ratios (`x_cama`), floor/bed caps dictated by the settlement's **Urban Level**, a strict academic unlock chain, and a 5-tier construction priority dispatch hierarchy.
+In **Craft to Nation**, architectural construction is a physical simulation system. Every structure obeys volumetric validation rules (`BlueprintValidator.gd`), bed density ratios (`x_cama`), floor/bed caps dictated by the settlement's **Urban Level**, a strict academic unlock chain, and a 5-tier construction priority dispatch hierarchy.
 
 ---
 

@@ -13,7 +13,7 @@ hero:
   actions:
     - theme: brand
       text: Guía del Jugador
-      link: /es/guia/inicio
+      link: /es/guide/start
     - theme: alt
       text: Desarrollo & GDD v3.59
       link: /es/dev/gdd
@@ -26,7 +26,7 @@ features:
   - icon: 🏕️
     title: Guía de Supervivencia y Colonia
     details: Aprende sobre recolección inicial, cámara dual (tecla C), zonificación A/B, edificios herméticos y calculadora de colonos.
-    link: /es/guia/inicio
+    link: /es/guide/start
   - icon: ⚙️
     title: Arquitectura Técnica y GDD v3.59
     details: Conoce los sistemas en Godot 4.7, bucle de ticks (2.0s = 1h), IDU I-IV e investigación en 2 capas, Vidriera, Taller de Transporte, iconografía vectorial HUD y 28 suites de pruebas.

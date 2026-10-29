@@ -7,7 +7,7 @@ description: "Reglas de construcción hermética, validación por volumen intern
 
 ![Vista táctica cenital y planificación de distritos](/assets/hud-camara-cenital.png)
 
-En **Craft to Nation**, las estructuras constituyen el corazón funcional de la civilización. Cada edificación se rige por validación volumétrica interior (`ValidadorEdificios.gd`), densidad demográfica por cama (`x_cama`), límites de altura según el **Nivel Urbano**, cadena estricta de desbloqueo académico y prioridades de obra configurables.
+En **Craft to Nation**, las estructuras constituyen el corazón funcional de la civilización. Cada edificación se rige por validación volumétrica interior (`BlueprintValidator.gd`), densidad demográfica por cama (`x_cama`), límites de altura según el **Nivel Urbano**, cadena estricta de desbloqueo académico y prioridades de obra configurables.
 
 ---
 

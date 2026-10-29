@@ -1,10 +1,10 @@
 # Wiki & GDD Documentation
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **deploy_wiki.ps1** (0 connections) — `tools/deploy_wiki.ps1`
+- **Asset Visual: citycraft-world.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-world.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tools/deploy_wiki.ps1`
+- `website/wiki/src/public/assets/citycraft-world.webp`
 
 ## Audit Trail
 

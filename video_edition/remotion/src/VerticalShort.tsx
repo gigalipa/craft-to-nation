@@ -13,6 +13,8 @@ interface VerticalShortProps {
   durationSec: number;
   musicTrack: string;
   segments: CaptionSegment[];
+  srcVideo?: string;
+  volumeBoost?: number;
 }
 
 export const VerticalShort: React.FC<VerticalShortProps> = ({
@@ -20,6 +22,8 @@ export const VerticalShort: React.FC<VerticalShortProps> = ({
   durationSec,
   musicTrack,
   segments,
+  srcVideo = "live_w2.mp4",
+  volumeBoost = 1.8,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -57,7 +61,7 @@ export const VerticalShort: React.FC<VerticalShortProps> = ({
         }}
       >
         <Video
-          src={staticFile("live_w2.mp4")}
+          src={staticFile(srcVideo)}
           trimBefore={trimBefore}
           durationInFrames={durationInFrames}
           volume={0}
@@ -82,9 +86,10 @@ export const VerticalShort: React.FC<VerticalShortProps> = ({
         }}
       >
         <Video
-          src={staticFile("live_w2.mp4")}
+          src={staticFile(srcVideo)}
           trimBefore={trimBefore}
           durationInFrames={durationInFrames}
+          volume={volumeBoost}
           objectFit="contain"
           style={{
             width: 1080,

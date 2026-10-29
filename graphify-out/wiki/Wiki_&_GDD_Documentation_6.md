@@ -1,10 +1,10 @@
 # Wiki & GDD Documentation
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **index.md: Official Craft to Nation Wiki (English)** (0 connections) — `website/wiki/src/en/index.md`
+- **Asset Visual: fp-industry.webp** (0 connections) — `website/wiki/src/public/assets/fp-industry.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/en/index.md`
+- `website/wiki/src/public/assets/fp-industry.webp`
 
 ## Audit Trail
 

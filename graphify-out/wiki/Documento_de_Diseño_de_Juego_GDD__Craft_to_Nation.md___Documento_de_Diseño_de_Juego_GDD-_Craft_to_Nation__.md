@@ -1,8 +1,8 @@
 # Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)
 
-> God node · 26 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+> God node · 30 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [Agent Ecosystem & Orchestration](Agent_Ecosystem_&_Orchestration.md)
+**Community:** [Ciudad.gd](Ciudad.gd.md)
 
 ## Connections by Relation
 
@@ -13,20 +13,21 @@
 - [Canalizaciones Elevadas (Y+4 / Y+6) y Físicas de Fluidos](Canalizaciones_Elevadas_Y+4_-_Y+6_y_Físicas_de_Fluidos.md) `INFERRED`
 - [Moral Dinámica \[0-100\], 6 Categorías de Comida y Migración Escalonada](Moral_Dinámica_[0-100],_6_Categorías_de_Comida_y_Migración_Escalonada.md) `INFERRED`
 - [Refinería Vidriera (1-3-5) y Recurso Vidrio](Refinería_Vidriera_1-3-5_y_Recurso_Vidrio.md) `INFERRED`
-- [VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%)](VentanaAlmacen_Jerárquica_A-Z_y_Reservas_Porcentuales_0_-50_.md) `INFERRED`
+- VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%) `INFERRED`
 - Taller de Transporte y 6 Unidades Móviles de Acarreo `INFERRED`
 
 ### references
 - IconosHUD.gd `EXTRACTED`
-- Ciudad.gd `EXTRACTED`
-- HUD.gd `EXTRACTED`
+- [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
+- [HUD.gd](HUD.gd.md) `EXTRACTED`
 - ajustes.gd `EXTRACTED`
 - BarraSuperior.gd `EXTRACTED`
 - BuscadorRutas.gd `EXTRACTED`
 - Obras.gd `EXTRACTED`
 - CiudadTest.gd `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- FinalizacionObras.gd `EXTRACTED`
+- [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
+- [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `EXTRACTED`
 - Energia.gd `EXTRACTED`
 - [SKILL.md (Skill: Craft to Nation - Nodes and Network)](SKILL.md_Skill-_Craft_to_Nation_-_Nodes_and_Network.md) `EXTRACTED`
 - SKILL.md (Skill: Gamedev Copywriter (Craft to Nation)) `EXTRACTED`
@@ -34,7 +35,9 @@
 - SKILL.md (Skill: Content QA (Control de Calidad)) `EXTRACTED`
 - SKILL.md (Skill: Social (Orquestador del Estudio de Redes Sociales)) `EXTRACTED`
 - SKILL.md (Skill: Social Media Strategist (Craft to Nation)) `EXTRACTED`
+- Pendientes y próximos pasos.md (Seguimiento Operativo y Roadmap) `EXTRACTED`
 - PanelNotificaciones.gd `EXTRACTED`
+- *…and 2 more `references` connection(s) not listed (lowest-degree first to go)*
 
 ---
 

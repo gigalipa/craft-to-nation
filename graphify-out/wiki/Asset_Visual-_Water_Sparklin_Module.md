@@ -1,10 +1,10 @@
 # Asset Visual: Water_Sparklin Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Water_Sparkling.jpg** (0 connections) — `arte/dae/bloques/Water_Sparkling.jpg`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/dae/bloques/Water_Sparkling.jpg`
+- `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

@@ -6,6 +6,152 @@
   publish = "."
   ignore = "exit 0"
 
+# --- RFC 9116 Security Policy ---
+[[redirects]]
+  from = "/security.txt"
+  to = "/.well-known/security.txt"
+  status = 301
+
+# --- Privacy Policy Aliases (RFC / Crawler & Bot Compliance) ---
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/privacy-policy"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/privacy-notice"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/legal/privacy"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/legal/privacy-policy"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/legal/privacy-notice"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/policies/privacy"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/trust/privacy-policy"
+  to = "/privacy.html"
+  status = 301
+
+# --- Terms of Service Aliases (Crawler & Bot Compliance) ---
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/tos"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/terms-of-service"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/terms-of-use"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/terms-and-conditions"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/legal/terms"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/legal/terms-of-service"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/legal/terms-of-use"
+  to = "/terms.html"
+  status = 301
+
+[[redirects]]
+  from = "/legal/terms-and-conditions"
+  to = "/terms.html"
+  status = 301
+
+# --- Wiki Root & Bot / Slash Aliases ---
+[[redirects]]
+  from = "/wiki"
+  to = "/wiki/es/"
+  status = 302
+
+[[redirects]]
+  from = "/wiki/"
+  to = "/wiki/es/"
+  status = 302
+
+[[redirects]]
+  from = "/wiki/fr/ex"
+  to = "/wiki/fr/"
+  status = 301
+
+[[redirects]]
+  from = "/wiki/en/ex"
+  to = "/wiki/en/"
+  status = 301
+
+[[redirects]]
+  from = "/wiki/es/ex"
+  to = "/wiki/es/"
+  status = 301
+
+# --- Wiki Legacy Spanish Paths ---
+[[redirects]]
+  from = "/wiki/es/guia/inicio"
+  to = "/wiki/es/guide/start"
+  status = 301
+
+[[redirects]]
+  from = "/wiki/es/guia/recursos"
+  to = "/wiki/es/guide/resources"
+  status = 301
+
+[[redirects]]
+  from = "/wiki/es/guia/edificios"
+  to = "/wiki/es/guide/buildings"
+  status = 301
+
+[[redirects]]
+  from = "/wiki/es/guia/colonos"
+  to = "/wiki/es/guide/colonists"
+  status = 301
+
+[[redirects]]
+  from = "/wiki/es/dev/logistica"
+  to = "/wiki/es/dev/logistics"
+  status = 301
+
+# --- Wiki VitePress Routing ---
 [[redirects]]
   from = "/wiki/*"
   to = "/wiki/dist/:splat"

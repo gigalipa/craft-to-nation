@@ -1,10 +1,10 @@
 # Asset Visual: craft-to-natio Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-mark.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-mark.png`
+- **Asset Visual: Stream_debug.png** (0 connections) — `arte/stream_art/Stream_debug.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/craft-to-nation-mark.png`
+- `arte/stream_art/Stream_debug.png`
 
 ## Audit Trail
 

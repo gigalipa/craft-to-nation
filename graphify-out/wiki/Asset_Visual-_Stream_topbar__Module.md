@@ -1,10 +1,10 @@
 # Asset Visual: Stream_topbar_ Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_topbar_ag_debug.png** (0 connections) — `arte/stream_art/Stream_topbar_ag_debug.png`
+- **2026-10-15-wiki-craft-to-nation.md (Wiki Híbrida para Craft to Nation - Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_topbar_ag_debug.png`
+- `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
 
 ## Audit Trail
 

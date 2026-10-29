@@ -1,10 +1,10 @@
 # 2026-10-02-niveles-de-puesto Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md (Niveles de puesto y empleo por tipo — Especificación de dise)** (0 connections) — `docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md`
+- **Asset Visual: citycraft-hero.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-hero.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md`
+- `website/wiki/src/public/assets/citycraft-hero.webp`
 
 ## Audit Trail
 

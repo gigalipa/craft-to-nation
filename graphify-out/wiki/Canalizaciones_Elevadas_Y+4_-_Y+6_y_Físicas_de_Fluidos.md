@@ -1,20 +1,18 @@
 # Canalizaciones Elevadas (Y+4 / Y+6) y Físicas de Fluidos
 
-> God node · 30 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+> God node · 28 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md)
+**Community:** [Ciudad.gd](Ciudad.gd.md)
 
 ## Connections by Relation
 
 ### conceptually_related_to
 - [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `INFERRED`
-- [Pendientes y próximos pasos.md (Pendientes y próximos pasos según el roadmap (GDD Sección 11)](Pendientes_y_próximos_pasos.md_Pendientes_y_próximos_pasos_según_el_roadmap_GDD_Sección_11.md) `INFERRED`
-- ideas-backlog.md (Backlog de Ideas — Craft to Nation) `INFERRED`
-- roadmap.md: Hoja de Ruta y Estado del Desarrollo (GDD v3.59) `INFERRED`
-- godot.md: Arquitectura Técnica en Godot & PoCs `INFERRED`
-- README.md (Craft to Nation) `INFERRED`
-- godot.md: Godot Technical Architecture & Simulation Engine `INFERRED`
+- [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `INFERRED`
+- [ideas-backlog.md (Backlog de Ideas — Craft to Nation)](ideas-backlog.md_Backlog_de_Ideas_—_Craft_to_Nation.md) `INFERRED`
 - gdd.md: Pilares de Diseño y GDD (v3.59) `INFERRED`
+- godot.md: Arquitectura Técnica en Godot & PoCs `INFERRED`
+- godot.md: Godot Technical Architecture & Simulation Engine `INFERRED`
 - Propuesta_Iconos_UI.md (Propuesta de Iconografía Completa para la Interfaz de Usuari) `INFERRED`
 - Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md (Propuesta de Implementación: Ajustes de Subsuelo, Ductos, En) `INFERRED`
 - 2026-10-12-ajustes-subsuelo-ductos-energia-npcs-design.md (Especificación Técnica: Ajustes de Subsuelo, Fluidos, Canali) `INFERRED`
@@ -27,12 +25,14 @@
 - recursos.md: Recursos, Industrias y Energía `INFERRED`
 - Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation) `INFERRED`
 - 2026-10-08-subsuelo-pozos-y-bloques-design.md (Especificación de Diseño: Etapa 9.1 - Subsuelo, Pozos de Líq) `INFERRED`
-- *…and 7 more `conceptually_related_to` connection(s) not listed (lowest-degree first to go)*
+- 2026-10-26-investigacion-descentralizada-eras-spec.md (Especificación Técnica: Investigación Descentralizada, Pacin) `INFERRED`
+- 2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md (Especificación Técnica: Sistema Militar, Doctrinas Asimétric) `INFERRED`
+- *…and 5 more `conceptually_related_to` connection(s) not listed (lowest-degree first to go)*
 
 ### implements
 - Obras.gd `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- FinalizacionObras.gd `EXTRACTED`
+- [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
 
 ---
 

@@ -1,10 +1,10 @@
 # Asset Visual: IMempbkZbl5q0. Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: IMempbkZbl5q0.png** (0 connections) — `arte/IMempbkZbl5q0.png`
+- **Asset Visual: Stream_bottombar_ag_debug.png** (0 connections) — `arte/stream_art/Stream_bottombar_ag_debug.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/IMempbkZbl5q0.png`
+- `arte/stream_art/Stream_bottombar_ag_debug.png`
 
 ## Audit Trail
 

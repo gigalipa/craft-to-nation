@@ -71,7 +71,7 @@ export default defineConfig({
 
   themeConfig: {
     logo: '/assets/craft-to-nation-mark.png',
-    i18nRouting: false,
+    i18nRouting: true,
     search: {
       provider: 'local'
     }
@@ -81,9 +81,10 @@ export default defineConfig({
     root: {
       label: 'Español',
       lang: 'es-ES',
+      link: '/es/',
       themeConfig: {
         nav: [
-          { text: 'Guía del Jugador', link: '/es/guia/inicio', activeMatch: '/es/guia/' },
+          { text: 'Guía del Jugador', link: '/es/guide/start', activeMatch: '/es/guide/' },
           { text: 'Desarrollo & GDD', link: '/es/dev/gdd', activeMatch: '/es/dev/' },
           { text: 'Sitio Principal', link: 'https://crafttonation.netlify.app/', target: '_self', noIcon: true }
         ],
@@ -99,7 +100,22 @@ export default defineConfig({
           prev: 'Página anterior',
           next: 'Página siguiente'
         },
+        footer: {
+          message: 'Publicado bajo licencias MIT (código) y CC BY 4.0 (documentación).',
+          copyright: 'Craft to Nation · <a href="/privacy.html" target="_self">Privacidad</a> · <a href="/terms.html" target="_self">Términos</a> · <a href="/.well-known/security.txt" target="_self">Seguridad</a>'
+        },
         sidebar: {
+          '/es/guide/': [
+            {
+              text: 'Primeros Pasos',
+              items: [
+                { text: 'Introducción', link: '/es/guide/start' },
+                { text: 'Recursos Básicos', link: '/es/guide/resources' },
+                { text: 'Edificios y Almacenes', link: '/es/guide/buildings' },
+                { text: 'Gestión de Colonos', link: '/es/guide/colonists' }
+              ]
+            }
+          ],
           '/es/guia/': [
             {
               text: 'Primeros Pasos',
@@ -117,7 +133,7 @@ export default defineConfig({
               items: [
                 { text: 'Pilares del GDD', link: '/es/dev/gdd' },
                 { text: 'Arquitectura Godot & PoCs', link: '/es/dev/godot' },
-                { text: 'Logística y Ductos', link: '/es/dev/logistica' },
+                { text: 'Logística y Ductos', link: '/es/dev/logistics' },
                 { text: 'Roadmap de Desarrollo', link: '/es/dev/roadmap' }
               ]
             }
@@ -135,6 +151,10 @@ export default defineConfig({
           { text: 'GDD & Development', link: '/en/dev/gdd', activeMatch: '/en/dev/' },
           { text: 'Main Site', link: 'https://crafttonation.netlify.app/', target: '_self', noIcon: true }
         ],
+        footer: {
+          message: 'Released under MIT (code) and CC BY 4.0 (documentation) licenses.',
+          copyright: 'Craft to Nation · <a href="/privacy.html" target="_self">Privacy</a> · <a href="/terms.html" target="_self">Terms</a> · <a href="/.well-known/security.txt" target="_self">Security</a>'
+        },
         sidebar: {
           '/en/guide/': [
             {
@@ -167,9 +187,8 @@ export default defineConfig({
       link: '/fr/',
       themeConfig: {
         nav: [
-          { text: 'Accueil Wiki', link: '/fr/' },
-          { text: 'Guide (EN)', link: '/en/guide/start' },
-          { text: 'GDD & Dev (EN)', link: '/en/dev/gdd' },
+          { text: 'Guide du Joueur', link: '/fr/guide/start', activeMatch: '/fr/guide/' },
+          { text: 'GDD & Dév', link: '/fr/dev/gdd', activeMatch: '/fr/dev/' },
           { text: 'Site Principal', link: 'https://crafttonation.netlify.app/', target: '_self', noIcon: true }
         ],
         sidebarMenuLabel: 'Menu',
@@ -181,6 +200,34 @@ export default defineConfig({
         docFooter: {
           prev: 'Page précédente',
           next: 'Page suivante'
+        },
+        footer: {
+          message: 'Publié sous licences MIT (code) et CC BY 4.0 (documentation).',
+          copyright: 'Craft to Nation · <a href="/privacy.html" target="_self">Confidentialité</a> · <a href="/terms.html" target="_self">Conditions</a> · <a href="/.well-known/security.txt" target="_self">Sécurité</a>'
+        },
+        sidebar: {
+          '/fr/guide/': [
+            {
+              text: 'Guide du Joueur',
+              items: [
+                { text: 'Premiers Pas & Survie', link: '/fr/guide/start' },
+                { text: 'Ressources de Base & Industries', link: '/fr/guide/resources' },
+                { text: 'Bâtiments & Stockage', link: '/fr/guide/buildings' },
+                { text: 'Gestion des Colons & Démographie', link: '/fr/guide/colonists' }
+              ]
+            }
+          ],
+          '/fr/dev/': [
+            {
+              text: 'Conception Technique',
+              items: [
+                { text: 'Piliers du GDD v3.59', link: '/fr/dev/gdd' },
+                { text: 'Architecture Godot 4.7', link: '/fr/dev/godot' },
+                { text: 'Logistique, Voirie & Conduits', link: '/fr/dev/logistics' },
+                { text: 'Feuille de Route (Roadmap)', link: '/fr/dev/roadmap' }
+              ]
+            }
+          ]
         }
       }
     }

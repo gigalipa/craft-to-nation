@@ -1,11 +1,10 @@
 # run-godot-tests.ps1 Module
 
-> 2 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **run-godot-tests.ps1** (1 connections) — `tools/run-godot-tests.ps1`
-- **Resolve-GodotExecutable()** (1 connections) — `tools/run-godot-tests.ps1`
+- **Asset Visual: hud-primera-persona-batalla.png** (0 connections) — `arte/conceptos-hud/hud-primera-persona-batalla.png`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `tools/run-godot-tests.ps1`
+- `arte/conceptos-hud/hud-primera-persona-batalla.png`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

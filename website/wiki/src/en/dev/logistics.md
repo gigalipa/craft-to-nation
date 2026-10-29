@@ -7,7 +7,7 @@ description: "Technical breakdown of multi-level logistics: aerial conduit netwo
 
 ![Strategic view of the industrial city connected by roads and conduits](/assets/citycraft-world.webp)
 
-In **Craft to Nation**, every unit of timber, ore, or liquid physically traverses the `200×200` voxel world. The logistics architecture is divided into two complementary layers: **Road Networks & Solid Land Haulage** (`ConstructorVias.gd`, `BuscadorRutas.gd`, `Colonos.gd`) and **Elevated Fluid Conduits** (`Canalizaciones.gd`, `Fluidos.gd`).
+In **Craft to Nation**, every unit of timber, ore, or liquid physically traverses the `200×200` voxel world. The logistics architecture is divided into two complementary layers: **Road Networks & Solid Land Haulage** (`ConstructorVias.gd`, `BuscadorRutas.gd`, `Colonos.gd`) and **Elevated Fluid Conduits** (`Canalizaciones.gd` and physics in `VoxelWorld.gd`).
 
 ---
 

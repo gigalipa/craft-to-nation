@@ -1,12 +1,10 @@
 # pnpm-workspace.yaml Module
 
-> 3 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **allowBuilds** (2 connections) — `website/wiki/pnpm-workspace.yaml`
-- **pnpm-workspace.yaml** (1 connections) — `website/wiki/pnpm-workspace.yaml`
-- **esbuild** (1 connections) — `website/wiki/pnpm-workspace.yaml`
+- **Asset Visual: kick_banner_preview_test.jpg** (0 connections) — `arte/banners/kick_banner_preview_test.jpg`
 
 ## Relationships
 
@@ -14,11 +12,11 @@
 
 ## Source Files
 
-- `website/wiki/pnpm-workspace.yaml`
+- `arte/banners/kick_banner_preview_test.jpg`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

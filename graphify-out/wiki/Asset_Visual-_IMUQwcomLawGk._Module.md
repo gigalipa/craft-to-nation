@@ -1,10 +1,10 @@
 # Asset Visual: IMUQwcomLawGk. Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: IMUQwcomLawGk.png** (0 connections) — `arte/IMUQwcomLawGk.png`
+- **Asset Visual: Stream_bottombar_debug.png** (0 connections) — `arte/stream_art/Stream_bottombar_debug.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/IMUQwcomLawGk.png`
+- `arte/stream_art/Stream_bottombar_debug.png`
 
 ## Audit Trail
 

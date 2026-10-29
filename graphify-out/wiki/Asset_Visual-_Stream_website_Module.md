@@ -1,10 +1,10 @@
 # Asset Visual: Stream_website Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_website.png** (0 connections) — `arte/stream_art/Stream_website.png`
+- **2026-09-28-volumen-interno-edificios-design.md (Declaración de edificios por volumen interno — diseño)** (0 connections) — `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_website.png`
+- `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
 
 ## Audit Trail
 

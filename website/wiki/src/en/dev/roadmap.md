@@ -17,7 +17,7 @@ This roadmap tracks the past, current, and upcoming development milestones for *
   Phase 0: Pure Simulation Logic (PoC 1 & 2)         [████████████████████] 100% (Completed)
   Phase 1: 1st-Person Voxel & Volume Audit (PoC 3)   [████████████████████] 100% (Verified)
   Phase 2: City, Demography, Zoning & NPCs (PoC 4/8) [████████████████████] 100% (Completed)
-  Phase 3: 200×200 World, Industry, Fluids, HUD v3.58[███████████████████░]  98% (Final Polish)
+  Phase 3: 200×200 World, Industry, Fluids, HUD v3.59[███████████████████░]  98% (Final Polish)
   Phase 4: Dual Combat Camera & Squad RTS (PoC 7)    [████░░░░░░░░░░░░░░░░]  Planned
   Phase 5: Advanced Logistics & Bridges (PoC 8–10)   [██░░░░░░░░░░░░░░░░░░]  Planned
   Phase 6: Warfare, Sieges, AI & Avatar Succession   [██░░░░░░░░░░░░░░░░░░]  Planned
@@ -31,7 +31,7 @@ This roadmap tracks the past, current, and upcoming development milestones for *
 ### Phase 0 & Phase 1: Voxel Substrate, First-Person Avatar & Volumetric Validation
 - [x] Finite procedural **200×200 voxel world** (`GeneradorMundo.gd`) with max height `y = 130`, **24 subsurface layers** down to unmineable `bedrock`, 2 mountain peaks, rivers with water currents and waterfalls, lakes, and seas.
 - [x] First-person pioneer avatar (`Player.gd`) with progress-bar mining and contextual tool icons (`herr_pala`, `herr_pico`, `herr_hacha`), non-destructive fruit harvesting by holding <kbd>E</kbd> (`60 u` in `2.0s`), deep-liquid swimming (`>= 2` blocks) with `10.0s` oxygen bar, solid-block liquid draining (<kbd>Right Click</kbd>), on-foot deconstruction mode (<kbd>G</kbd>), and omnidirectional lantern (<kbd>L</kbd>) with **Thermal** (`Fuel 10h`, `Coal 6h`, `Wood 5h`) and **Electric** (`72h` battery with `+7.2h/tick` recharge) modes.
-- [x] Flood-fill airtight room recognition (`ValidadorEdificios.gd`), 3D doors with brass handle and hinges, building declaration (<kbd>B</kbd>), and non-destructive remodeling (<kbd>Shift</kbd> + <kbd>B</kbd>).
+- [x] Flood-fill airtight room recognition (`BlueprintValidator.gd`), 3D doors with brass handle and hinges, building declaration (<kbd>B</kbd>), and non-destructive remodeling (<kbd>Shift</kbd> + <kbd>B</kbd>).
 
 ### Phase 2: Urban Foundation, Overhead Camera & Demographics
 - [x] Tactical overhead camera (`CamaraCenital.gd`) with smooth `0.6s` animated transition (<kbd>C</kbd>), hierarchical numeric menu (`1` Build, `2` Zone, `3` Demolish) with <kbd>Z</kbd> / <kbd>X</kbd> submenu navigation and pagination, `Ctrl + Scroll` rotation, and up to 5 residential blueprint slots.
@@ -47,6 +47,7 @@ This roadmap tracks the past, current, and upcoming development milestones for *
 - [x] **Vector HUD Iconography & Live 3D Thumbnails (v3.57):** **95+ crisp pixel-art SVG icons** (`IconosHUD.gd`, including `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg`, `btn_bajar.svg`), live 3D thumbnails (`MiniaturaRenderer.gd`), and `104×76 px` build buttons with 3-corner overlays.
 - [x] **Centralized Settings & Reactive Strings Architecture (v3.58):** Full numerical constant decoupling in `ajustes.gd` enabling runtime tweaking and modular "New Game" presets, reactive multi-language strings in `strings.gd`, and exact stepped migration calibration (9 tiers, 2.5× boost for 30 days, and critical brain drain).
 - [x] **Era Progression, IDU (`I`–`IV`), Two-Layer Research, Transport & `1/20` Window Panels (v3.59):** Topbar Era name + icon and right-side Roman numeral IDU badge (`I`–`IV`) with top-right hover tooltip; two-layer decentralized research (Theoretical University + Practical Applications with **Itinerant Researcher**); Transport Workshop with 6 mobile haulage units (`acarreador_pie`, `carreta_mano`, `carro_caballos`, `camion_diesel`, `trolebus_solar`, `dron_carga`, road constraints, and exclusive `vidrio` cabins); `1/20`-thick (`0.05m`) window panels (`TranslucidosRenderer.gd`) in 3 geometric variants (`ventana` straight mid-depth facing the avatar, `ventana_esquina` L-corner, and `ventana_techo` flush against the top face `Y ∈ [0.95, 1.0]` when looking up/down) consuming `1 Glass` first (or `3 Earth`); `VentanaAlmacen` hierarchical dropdowns + `[Expand All]`/`[Collapse All]` button; and `PanelEdificio` with `▲`/`▼` priority buttons, automatic completion transition, and interior water drainage.
+- [x] **1st-Person Tool State Reset on Camera Toggle (2026-10-28):** Unconditional deactivation of 1st-person tools (`Player.salir_de_todas_las_herramientas()`) when transitioning to the overhead camera (`Main._alternar_camara_cenital()`), resetting `modo_deconstruccion`, `modo_vias` and transient placement/mining states. All 28 automated Godot test suites remain at 100% green.
 
 ---
 

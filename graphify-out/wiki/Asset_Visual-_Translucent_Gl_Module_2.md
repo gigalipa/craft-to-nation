@@ -1,10 +1,10 @@
 # Asset Visual: Translucent_Gl Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_base/Translucent_Glass_Tinted.jpg`
+- **Asset Visual: craft-to-nation-mark.png** (0 connections) — `arte/logo/craft-to-nation-mark.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/dae/casa_base/Translucent_Glass_Tinted.jpg`
+- `arte/logo/craft-to-nation-mark.png`
 
 ## Audit Trail
 

@@ -1,10 +1,10 @@
 # 2026-09-05-citycraft-present Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **2026-09-05-citycraft-presentation-site.md (CityCraft Presentation Site Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
+- **run-single-test.ps1** (0 connections) — `tools/run-single-test.ps1`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
+- `tools/run-single-test.ps1`
 
 ## Audit Trail
 

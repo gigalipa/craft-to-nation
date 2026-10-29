@@ -80,6 +80,7 @@ func _alternar_camara_cenital() -> void:
 	var fov_origen: float
 	var fov_destino: float
 	if cenital_activa:
+		jugador.salir_de_todas_las_herramientas()
 		origen = jugador.camara.global_transform
 		fov_origen = jugador.camara.fov
 		# "atrás" del avatar (opuesto a su frente, -basis.z, ver
@@ -135,5 +136,3 @@ func _terminar_transicion() -> void:
 		zona_overlay.reconstruir()
 	mira_ui.visible = not cenital_activa
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if cenital_activa else Input.MOUSE_MODE_CAPTURED
-	if not cenital_activa and jugador.modo_deconstruccion:
-		jugador.mostrar_contexto_deconstruccion()

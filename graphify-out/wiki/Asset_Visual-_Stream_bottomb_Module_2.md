@@ -1,10 +1,10 @@
 # Asset Visual: Stream_bottomb Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_bottombar_debug.png** (0 connections) — `arte/stream_art/Stream_bottombar_debug.png`
+- **Asset Visual: craft-to-nation-logo.png** (0 connections) — `docs/assets/craft-to-nation-logo.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_bottombar_debug.png`
+- `docs/assets/craft-to-nation-logo.png`
 
 ## Audit Trail
 

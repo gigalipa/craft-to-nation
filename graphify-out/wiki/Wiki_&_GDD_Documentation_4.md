@@ -1,10 +1,10 @@
 # Wiki & GDD Documentation
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **2026-10-15-wiki-craft-to-nation.md (Wiki Híbrida para Craft to Nation - Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
+- **Asset Visual: craft-to-nation-mark.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-mark.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
+- `website/wiki/src/public/assets/craft-to-nation-mark.png`
 
 ## Audit Trail
 

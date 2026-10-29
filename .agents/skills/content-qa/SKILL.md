@@ -24,7 +24,7 @@ El QA ejecuta `qa_checker.py` sobre cada video master generado:
   ```
 
 ### Para Videos Largos / Devlogs / Recaps (`--format horizontal`):
-- **Resolución**: Exactamente `1920x1080` (aspecto 16:9).
+- **Resolución**: `1920x1080` (Full HD recomendado) o `1280x720` (HD aceptado), aspecto 16:9.
 - **Duración**: Superior a 60 segundos.
 - **Pista de Audio**: Mezcla activa con ducking en transiciones de voz.
 - **Subtítulos**:

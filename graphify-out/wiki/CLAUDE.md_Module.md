@@ -1,10 +1,10 @@
 # CLAUDE.md Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **CLAUDE.md (Guía para Claude Code)** (0 connections) — `CLAUDE.md`
+- **Asset Visual: tex_ventana.png** (0 connections) — `godot/assets/tex_ventana.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `CLAUDE.md`
+- `godot/assets/tex_ventana.png`
 
 ## Audit Trail
 

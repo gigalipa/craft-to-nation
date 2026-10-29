@@ -1,61 +1,50 @@
 # 2026-09-20-nivelacion-frente Module
 
-> 23 nodes
+> 25 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **CamaraCenital.gd** (123 connections) — `godot/scripts/CamaraCenital.gd`
-- **NiveladorTerreno.gd** (45 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **2026-10-02-obras-por-colonos.md (Construcción y demolición por colonos — Plan de implementaci)** (12 connections) — `docs/superpowers/plans/2026-10-02-obras-por-colonos.md`
-- **NivelacionOverlay.gd** (11 connections) — `godot/scripts/NivelacionOverlay.gd`
-- **2026-09-20-nivelacion-frente-y-overlays.md (Nivelación del Frente y Overlays de Previsualización Impleme)** (8 connections) — `docs/superpowers/plans/2026-09-20-nivelacion-frente-y-overlays.md`
-- **2026-09-20-puertas-a-nivel-de-suelo-design.md (Puertas a Nivel de Suelo — Diseño)** (5 connections) — `docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md`
-- **2026-09-20-nivelacion-frente-y-overlays-design.md (Nivelación del Frente y Overlays de Previsualización — Diseñ)** (4 connections) — `docs/superpowers/specs/2026-09-20-nivelacion-frente-y-overlays-design.md`
-- **CamaraCenital.centrar_en_edificio()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **CamaraCenital.posicionar_sobre()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **CamaraCenital._process()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **CamaraCenital._ready()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **CamaraCenital.salir_de_todos_los_modos()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **CamaraCenital._unhandled_input()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **NivelacionOverlay.mostrar()** (1 connections) — `godot/scripts/NivelacionOverlay.gd`
-- **NivelacionOverlay.ocultar()** (1 connections) — `godot/scripts/NivelacionOverlay.gd`
-- **NiveladorTerreno.altura_objetivo()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **NiveladorTerreno.calcular_base_y()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **NiveladorTerreno.calcular_excavacion()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **NiveladorTerreno.calcular_nivelacion_fachada()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **NiveladorTerreno.calcular_relleno()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **NiveladorTerreno.calcular_relleno_hasta()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **NiveladorTerreno.resumen_materiales()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
-- **NiveladorTerreno.verificar_pendiente()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **remotion/package.json** (24 connections) — `video_edition/remotion/package.json`
+- **devDependencies** (7 connections) — `video_edition/remotion/package.json`
+- **@remotion/eslint-config-flat** (3 connections) — `video_edition/remotion/package.json`
+- **allowScripts** (2 connections) — `video_edition/remotion/package.json`
+- **eslint@10.12.0** (2 connections) — `video_edition/remotion/package.json`
+- **prettier@3.8.1** (2 connections) — `video_edition/remotion/package.json`
+- **@remotion/eslint-config-flat@4.0.537** (2 connections) — `video_edition/remotion/package.json`
+- **@types/react@19.2.7** (2 connections) — `video_edition/remotion/package.json`
+- **@types/web@0.0.166** (2 connections) — `video_edition/remotion/package.json`
+- **typescript@5.9.3** (2 connections) — `video_edition/remotion/package.json`
+- **engines** (2 connections) — `video_edition/remotion/package.json`
+- **eslint** (2 connections) — `video_edition/remotion/package.json`
+- **prettier** (2 connections) — `video_edition/remotion/package.json`
+- **@types/react** (2 connections) — `video_edition/remotion/package.json`
+- **@types/web** (2 connections) — `video_edition/remotion/package.json`
+- **typescript** (2 connections) — `video_edition/remotion/package.json`
+- **eslint.config.mjs** (1 connections) — `video_edition/remotion/eslint.config.mjs`
+- **esbuild** (1 connections) — `video_edition/remotion/package.json`
+- **description** (1 connections) — `video_edition/remotion/package.json`
+- **node** (1 connections) — `video_edition/remotion/package.json`
+- **license** (1 connections) — `video_edition/remotion/package.json`
+- **name** (1 connections) — `video_edition/remotion/package.json`
+- **private** (1 connections) — `video_edition/remotion/package.json`
+- **repository** (1 connections) — `video_edition/remotion/package.json`
+- **version** (1 connections) — `video_edition/remotion/package.json`
 
 ## Relationships
 
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (58 shared connections)
-- [Voxel World & Window Panels](Voxel_World_&_Window_Panels.md) (28 shared connections)
-- [2026-09-10-puestos-huella-re Module](2026-09-10-puestos-huella-re_Module.md) (18 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (12 shared connections)
-- [2026-09-08-cuerpos-de-agua.m Module](2026-09-08-cuerpos-de-agua.m_Module.md) (11 shared connections)
-- [2026-09-20-destacar-puertas- Module](2026-09-20-destacar-puertas-_Module.md) (11 shared connections)
-- [2026-10-02-obras-por-colonos Module](2026-10-02-obras-por-colonos_Module.md) (5 shared connections)
-- [2026-09-25-hud-por-modos.md Module](2026-09-25-hud-por-modos.md_Module.md) (3 shared connections)
-- [Agent Ecosystem & Orchestration](Agent_Ecosystem_&_Orchestration.md) (3 shared connections)
-- [Fichas_Consumo_Produccion.md Module](Fichas_Consumo_Produccion.md_Module.md) (2 shared connections)
-- [Obras.gd Module](Obras.gd_Module.md) (2 shared connections)
-- [2026-10-14-fabrica-bloques-y Module](2026-10-14-fabrica-bloques-y_Module.md) (2 shared connections)
+- [BarraModos.gd Module](BarraModos.gd_Module.md) (4 shared connections)
+- [DevlogRecap.tsx](DevlogRecap.tsx.md) (3 shared connections)
+- [2026-09-30-previsualizacion- Module](2026-09-30-previsualizacion-_Module.md) (1 shared connections)
+- [scripts](scripts.md) (1 shared connections)
 
 ## Source Files
 
-- `docs/superpowers/plans/2026-09-20-nivelacion-frente-y-overlays.md`
-- `docs/superpowers/plans/2026-10-02-obras-por-colonos.md`
-- `docs/superpowers/specs/2026-09-20-nivelacion-frente-y-overlays-design.md`
-- `docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md`
-- `godot/scripts/CamaraCenital.gd`
-- `godot/scripts/NivelacionOverlay.gd`
-- `godot/scripts/NiveladorTerreno.gd`
+- `video_edition/remotion/eslint.config.mjs`
+- `video_edition/remotion/package.json`
 
 ## Audit Trail
 
-- EXTRACTED: 195 (100%)
+- EXTRACTED: 39 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

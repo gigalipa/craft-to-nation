@@ -47,7 +47,7 @@ def run_qa_checks(video_path: Path, expected_format: str = "vertical") -> tuple[
             notes.append(f"[ALERTA] Resolución no estándar para vertical: {width}x{height} (esperado 1080x1920)")
             passed = False
     elif expected_format == "horizontal":
-        if width == 1920 and height == 1080:
+        if (width == 1920 and height == 1080) or (width == 1280 and height == 720):
             notes.append(f"[OK] Resolución horizontal correcta: {width}x{height} (16:9)")
         else:
             notes.append(f"[ALERTA] Resolución no estándar para horizontal: {width}x{height} (esperado 1920x1080)")

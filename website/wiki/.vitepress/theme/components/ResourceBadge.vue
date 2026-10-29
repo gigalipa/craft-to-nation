@@ -133,7 +133,32 @@ const aliases: Record<string, string> = {
   tierras_raras: 'tierras raras',
   'refined minerals': 'mineral refinado',
   'refined mineral': 'mineral refinado',
-  mineral_refinado: 'mineral refinado'
+  mineral_refinado: 'mineral refinado',
+  // French aliases
+  verre: 'vidrio',
+  eau: 'agua',
+  nourriture: 'comida',
+  bois: 'madera',
+  planches: 'tablas',
+  pierre: 'piedra',
+  'blocs de pierre': 'bloques de piedra',
+  fer: 'hierro',
+  cuivre: 'cobre',
+  charbon: 'carbón',
+  pétrole: 'crudo',
+  petrole: 'crudo',
+  'pétrole brut': 'crudo',
+  'petrole brut': 'crudo',
+  carburant: 'combustible',
+  acier: 'acero',
+  énergie: 'energía',
+  energie: 'energía',
+  terre: 'tierra',
+  'terres rares': 'tierras raras',
+  'minéraux raffinés': 'mineral refinado',
+  'mineraux raffines': 'mineral refinado',
+  'minéral raffiné': 'mineral refinado',
+  'mineral raffine': 'mineral refinado'
 }
 
 const key = computed(() => {

@@ -1,10 +1,10 @@
 # run-single-test.ps1 Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **run-single-test.ps1** (0 connections) — `tools/run-single-test.ps1`
+- **Asset Visual: favicon-32.png** (0 connections) — `website/wiki/src/public/assets/favicon-32.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tools/run-single-test.ps1`
+- `website/wiki/src/public/assets/favicon-32.png`
 
 ## Audit Trail
 

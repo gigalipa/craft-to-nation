@@ -1,40 +1,44 @@
 # Obras.gd Module
 
-> 9 nodes
+> 10 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **Obras.gd** (37 connections) — `godot/scripts/Obras.gd`
-- **Obras.alternar_marca()** (1 connections) — `godot/scripts/Obras.gd`
-- **Obras.cancelar_demolicion()** (1 connections) — `godot/scripts/Obras.gd`
-- **Obras.esta_marcado()** (1 connections) — `godot/scripts/Obras.gd`
-- **Obras.esta_programada()** (1 connections) — `godot/scripts/Obras.gd`
-- **Obras.horas_programadas()** (1 connections) — `godot/scripts/Obras.gd`
-- **Obras.programar_demolicion()** (1 connections) — `godot/scripts/Obras.gd`
-- **Obras._ready()** (1 connections) — `godot/scripts/Obras.gd`
-- **Obras.simular_hora()** (1 connections) — `godot/scripts/Obras.gd`
+- **BarraModos.gd** (48 connections) — `godot/scripts/BarraModos.gd`
+- **start.md: Beginner's Survival & Settlement Guide** (3 connections) — `website/wiki/src/en/guide/start.md`
+- **BarraModos.pagina_actual()** (1 connections) — `godot/scripts/BarraModos.gd`
+- **BarraModos.pagina_anterior()** (1 connections) — `godot/scripts/BarraModos.gd`
+- **BarraModos.pagina_siguiente()** (1 connections) — `godot/scripts/BarraModos.gd`
+- **BarraModos._ready()** (1 connections) — `godot/scripts/BarraModos.gd`
+- **BarraModos.recursos_ordenados_de_construccion()** (1 connections) — `godot/scripts/BarraModos.gd`
+- **BarraModos.set_giros()** (1 connections) — `godot/scripts/BarraModos.gd`
+- **BarraModos.set_modo()** (1 connections) — `godot/scripts/BarraModos.gd`
+- **BarraModos.total_paginas()** (1 connections) — `godot/scripts/BarraModos.gd`
 
 ## Relationships
 
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (10 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (8 shared connections)
-- [Voxel World & Window Panels](Voxel_World_&_Window_Panels.md) (2 shared connections)
-- [2026-09-20-nivelacion-frente Module](2026-09-20-nivelacion-frente_Module.md) (2 shared connections)
-- [2026-10-02-obras-por-colonos Module](2026-10-02-obras-por-colonos_Module.md) (2 shared connections)
-- [FinalizacionObras.gd Module](FinalizacionObras.gd_Module.md) (1 shared connections)
-- [Fichas_Consumo_Produccion.md Module](Fichas_Consumo_Produccion.md_Module.md) (1 shared connections)
-- [2026-09-20-destacar-puertas- Module](2026-09-20-destacar-puertas-_Module.md) (1 shared connections)
-- [Investigación Descentralizad Module](Investigación_Descentralizad_Module.md) (1 shared connections)
-- [Agent Ecosystem & Orchestration](Agent_Ecosystem_&_Orchestration.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (10 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (6 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (4 shared connections)
+- [Economia.gd](Economia.gd.md) (3 shared connections)
+- [Hotbar.gd Module](Hotbar.gd_Module.md) (2 shared connections)
+- [PanelPuesto.gd](PanelPuesto.gd.md) (2 shared connections)
+- [Colonos.gd](Colonos.gd.md) (2 shared connections)
+- [Blueprints.gd](Blueprints.gd.md) (1 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
+- [Hotbar.gd](Hotbar.gd.md) (1 shared connections)
+- [HUD.gd](HUD.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `godot/scripts/Obras.gd`
+- `godot/scripts/BarraModos.gd`
+- `website/wiki/src/en/guide/start.md`
 
 ## Audit Trail
 
-- EXTRACTED: 37 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 48 (96%)
+- INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

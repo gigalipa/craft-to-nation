@@ -1,10 +1,10 @@
 # Asset Visual: Stream_ag_debu Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_ag_debug.png** (0 connections) — `arte/stream_art/Stream_ag_debug.png`
+- **Asset Visual: live 2 AB test_A.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_A.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_ag_debug.png`
+- `arte/YT thumbnails/live 2 AB test_A.png`
 
 ## Audit Trail
 

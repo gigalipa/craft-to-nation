@@ -1,10 +1,10 @@
 # Wiki & GDD Documentation
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **2026-10-15-wiki-craft-to-nation-design.md (Especificación de Diseño: Wiki Híbrida para Craft to Nation)** (0 connections) — `docs/superpowers/specs/2026-10-15-wiki-craft-to-nation-design.md`
+- **Asset Visual: fp-defense.webp** (0 connections) — `website/wiki/src/public/assets/fp-defense.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-10-15-wiki-craft-to-nation-design.md`
+- `website/wiki/src/public/assets/fp-defense.webp`
 
 ## Audit Trail
 

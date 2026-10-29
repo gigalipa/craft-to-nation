@@ -1,10 +1,10 @@
 # Asset Visual: hud-primera-pe Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: hud-primera-persona-construccion.png** (0 connections) — `website/wiki/src/public/assets/hud-primera-persona-construccion.png`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_pared_piedra_2pisos/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/hud-primera-persona-construccion.png`
+- `arte/dae/casa_pared_piedra_2pisos/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

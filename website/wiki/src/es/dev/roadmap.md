@@ -7,7 +7,7 @@ description: "Estado técnico del desarrollo de Craft to Nation: fases 0 a 7, pr
 
 ![Vista táctica de defensa y expansión urbana](/assets/comparison-aerial.webp)
 
-La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido en la **Sección 11 del GDD v3.59** y el protocolo de verificación en vivo ([`docs/Live_Verifications.md`](https://github.com/dperaza/craft-to-nation)), sustentado en **28 escenas de prueba automatizadas al 100 % en verde**.
+La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido en la **Sección 11 del GDD v3.59** y el protocolo de verificación en vivo ([`docs/Live_Verifications.md`](https://github.com/gigalipa/craft-to-nation)), sustentado en **28 escenas de prueba automatizadas al 100 % en verde**.
 
 ---
 
@@ -31,7 +31,7 @@ La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido 
 ### Fase 0 y Fase 1: Motor Vóxel, Avatar en Primera Persona y Validación Volumétrica
 - [x] Mundo procedural finito de **200×200 celdas** (`GeneradorMundo.gd`) con altura máxima `y = 130`, **24 capas de subsuelo** hasta la roca madre (`bedrock`), 2 picos montañosos, ríos con corriente y cascadas, lagos y mares.
 - [x] Avatar en primera persona (`Player.gd`) con minado por barra de progreso e icono contextual (`herr_pala`, `herr_pico`, `herr_hacha`), recolección de frutos silvestres manteniendo <kbd>E</kbd> (`60 u` en `2,0 s`), natación en líquidos profundos (`>= 2` bloques) con barra de oxígeno (`10,0 s`), drenaje de líquidos con bloques sólidos (<kbd>Clic Derecho</kbd>), modo de deconstrucción a pie (<kbd>G</kbd>) y lámpara omnidireccional (<kbd>L</kbd>) en modo **Térmico** (`Combustible 10h`, `Carbón 6h`, `Madera 5h`) y **Eléctrico** (`Batería 72h` con recarga `+7,2 h/tick`).
-- [x] Reconocimiento volumétrico de edificios herméticos (`ValidadorEdificios.gd`), puertas 3D con pomo de bronce y bisagras, declaración (<kbd>B</kbd>) y remodelación no destructiva (<kbd>Shift</kbd> + <kbd>B</kbd>).
+- [x] Reconocimiento volumétrico de edificios herméticos (`BlueprintValidator.gd`), puertas 3D con pomo de bronce y bisagras, declaración (<kbd>B</kbd>) y remodelación no destructiva (<kbd>Shift</kbd> + <kbd>B</kbd>).
 
 ### Fase 2: Fundación Cívica, Cámara Cenital y Demografía
 - [x] Cámara cenital táctica (`CamaraCenital.gd`) con vuelo suave de transición (`0,6 s` con <kbd>C</kbd>), menú numérico jerárquico (`1` Construir, `2` Zonificar, `3` Demoler) con navegación y paginación <kbd>Z</kbd> / <kbd>X</kbd>, rotación `Ctrl + Rueda` y hasta 5 *blueprints* residenciales.
@@ -47,6 +47,7 @@ La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido 
 - [x] **Iconografía Vectorial HUD y Miniaturas 3D (v3.57):** Más de **90 iconos SVG pixel-art** (`IconosHUD.gd`, incluyendo `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg`, `btn_bajar.svg`), miniaturas 3D en vivo (`MiniaturaRenderer.gd`) y botones de `104×76 px` con insignias en 3 esquinas.
 - [x] **Arquitectura de Centralización y Textos Reactivos (v3.58):** Desacoplamiento de constantes y parámetros en `ajustes.gd` con soporte para manipulación en caliente y personalización por partida («Nueva partida»), catálogo multi-idioma en `strings.gd` con getters estáticos reactivos, y calibración de la tabla de migración escalonada (9 tramos, boost 2.5× por 30 días y fuga de cerebros).
 - [x] **Evolución de Eras, IDU (`I`–`IV`), Investigación en 2 Capas, Transporte y Ventanas `1/20` (v3.59):** Indicador superior de nombre + ícono de Era e ícono romano del IDU redondeado (`I`–`IV`) con ventana tooltip bajo la barra de estado al hacer hover; investigación descentralizada en 2 capas (Universidad Teórica + Aplicaciones Prácticas con **Investigador Itinerante**); Taller de Transporte con 6 unidades móviles (`acarreador_pie`, `carreta_mano`, `carro_caballos`, `camion_diesel`, `trolebus_solar`, `dron_carga`, exigencia de vía y cabinas con `vidrio`); bloques de ventana (`TranslucidosRenderer.gd`) rediseñados como paneles transparentes de `1/20` (`0,05 m`) en 3 variantes (`ventana` recta a media profundidad orientada al avatar, `ventana_esquina` en L y `ventana_techo` al ras de la cara superior `Y ∈ [0,95, 1,0]` al mirar arriba/abajo) que consumen preferentemente `1 Vidrio` (o `3 Tierra`); `VentanaAlmacen` con desplegables jerárquicos y botón `[Expandir todo]`/`[Contraer todo]`; y `PanelEdificio` con flechas de prioridad (`▲`/`▼`), transición automática de panel al completar el 100 % y drenaje automático de agua interior.
+- [x] **Saneamiento de Herramientas de 1ª Persona al Alternar Cámaras (2026-10-28):** Desactivación incondicional de herramientas en 1ª persona (`Player.salir_de_todas_las_herramientas()`) al pasar a cámara cenital (`Main._alternar_camara_cenital()`), reseteando `modo_deconstruccion`, `modo_vias` y estados temporales de minado y colocación. Las 28 escenas de prueba de Godot se mantienen al 100% en verde.
 
 ---
 

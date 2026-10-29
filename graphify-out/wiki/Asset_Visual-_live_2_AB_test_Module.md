@@ -1,10 +1,10 @@
 # Asset Visual: live 2 AB test Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: live 2 AB test_A.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_A.png`
+- **2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md (Niveles de puesto y empleo por tipo — Especificación de dise)** (0 connections) — `docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/YT thumbnails/live 2 AB test_A.png`
+- `docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md`
 
 ## Audit Trail
 

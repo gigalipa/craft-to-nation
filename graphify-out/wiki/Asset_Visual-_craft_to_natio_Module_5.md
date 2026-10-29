@@ -1,10 +1,10 @@
 # Asset Visual: craft_to_natio Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: craft_to_nation_text_black.jpg** (0 connections) — `arte/logo/craft_to_nation_text_black.jpg`
+- **Asset Visual: Stream_website.png** (0 connections) — `arte/stream_art/Stream_website.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/logo/craft_to_nation_text_black.jpg`
+- `arte/stream_art/Stream_website.png`
 
 ## Audit Trail
 

@@ -1,10 +1,10 @@
 # Documento Técnico de Desarro Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md (**Documento Técnico de Desarrollo: PoC 1 - Motor Lógico de R)** (0 connections) — `PoC_1/Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md`
+- **Asset Visual: concept-planet-network.webp** (0 connections) — `website/wiki/src/public/assets/concept-planet-network.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `PoC_1/Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md`
+- `website/wiki/src/public/assets/concept-planet-network.webp`
 
 ## Audit Trail
 

@@ -1,48 +1,43 @@
 # Logistics, Roads & Elevated Conduits
 
-> 14 nodes
+> 8 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **Vias.gd** (32 connections) — `godot/scripts/Vias.gd`
-- **2026-09-22-vias-tierra-pisada-design.md (Vías de tierra pisada (sub-proyecto 6, primer tramo))** (12 connections) — `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
-- **ViasRenderer.gd** (10 connections) — `godot/scripts/ViasRenderer.gd`
-- **Vias.bono_en()** (1 connections) — `godot/scripts/Vias.gd`
-- **Vias.columnas()** (1 connections) — `godot/scripts/Vias.gd`
-- **Vias.coste_paso_en()** (1 connections) — `godot/scripts/Vias.gd`
-- **Vias.es_via()** (1 connections) — `godot/scripts/Vias.gd`
-- **Vias.ficha_tecnica()** (1 connections) — `godot/scripts/Vias.gd`
-- **Vias.hay_via_en_columna()** (1 connections) — `godot/scripts/Vias.gd`
-- **Vias.notch_en()** (1 connections) — `godot/scripts/Vias.gd`
-- **Vias.tipo_en()** (1 connections) — `godot/scripts/Vias.gd`
-- **ViasRenderer.flush_pendientes()** (1 connections) — `godot/scripts/ViasRenderer.gd`
-- **ViasRenderer._process()** (1 connections) — `godot/scripts/ViasRenderer.gd`
-- **ViasRenderer.reconstruir_todo()** (1 connections) — `godot/scripts/ViasRenderer.gd`
+- **ConstructorVias.gd** (23 connections) — `godot/scripts/ConstructorVias.gd`
+- **ObrasTest.gd** (10 connections) — `godot/scripts/ObrasTest.gd`
+- **logistics.md: Logistics, Road Networks & Elevated Conduits** (7 connections) — `website/wiki/src/en/dev/logistics.md`
+- **ConstructorVias.construir()** (1 connections) — `godot/scripts/ConstructorVias.gd`
+- **ConstructorVias.ejecutar_paso()** (1 connections) — `godot/scripts/ConstructorVias.gd`
+- **ConstructorVias.planificar()** (1 connections) — `godot/scripts/ConstructorVias.gd`
+- **ObrasTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/ObrasTest.gd`
+- **ObrasTest._ready()** (1 connections) — `godot/scripts/ObrasTest.gd`
 
 ## Relationships
 
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (14 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (7 shared connections)
-- [Voxel World & Window Panels](Voxel_World_&_Window_Panels.md) (5 shared connections)
-- [2026-09-20-nivelacion-frente Module](2026-09-20-nivelacion-frente_Module.md) (2 shared connections)
-- [2026-09-10-puestos-huella-re Module](2026-09-10-puestos-huella-re_Module.md) (2 shared connections)
-- [2026-09-20-destacar-puertas- Module](2026-09-20-destacar-puertas-_Module.md) (2 shared connections)
-- [Fichas_Consumo_Produccion.md Module](Fichas_Consumo_Produccion.md_Module.md) (1 shared connections)
-- [Obras.gd Module](Obras.gd_Module.md) (1 shared connections)
-- [NiveladorVia.gd Module](NiveladorVia.gd_Module.md) (1 shared connections)
-- [Agent Ecosystem & Orchestration](Agent_Ecosystem_&_Orchestration.md) (1 shared connections)
-- [2026-10-02-obras-por-colonos Module](2026-10-02-obras-por-colonos_Module.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (7 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (4 shared connections)
+- [Vias.gd](Vias.gd.md) (3 shared connections)
+- [2026-10-02-obras-por-colonos Module](2026-10-02-obras-por-colonos_Module.md) (3 shared connections)
+- [Colonos.gd](Colonos.gd.md) (3 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (2 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (2 shared connections)
+- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (1 shared connections)
+- [NiveladorVia.gd](NiveladorVia.gd.md) (1 shared connections)
+- [Video Edition & Remotion Studio](Video_Edition_&_Remotion_Studio.md) (1 shared connections)
+- [TrazadorVias.gd](TrazadorVias.gd.md) (1 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
-- `godot/scripts/Vias.gd`
-- `godot/scripts/ViasRenderer.gd`
+- `godot/scripts/ConstructorVias.gd`
+- `godot/scripts/ObrasTest.gd`
+- `website/wiki/src/en/dev/logistics.md`
 
 ## Audit Trail
 
-- EXTRACTED: 50 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 36 (95%)
+- INFERRED: 2 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

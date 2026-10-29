@@ -1,10 +1,10 @@
 # Asset Visual: tex_ventana.pn Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: tex_ventana.png** (0 connections) — `godot/assets/tex_ventana.png`
+- **Asset Visual: comparison-aerial.webp** (0 connections) — `website/wiki/src/public/assets/comparison-aerial.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `godot/assets/tex_ventana.png`
+- `website/wiki/src/public/assets/comparison-aerial.webp`
 
 ## Audit Trail
 

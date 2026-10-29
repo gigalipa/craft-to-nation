@@ -1,10 +1,10 @@
 # Asset Visual: Stream_back_so Module
 
-> 1 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_back_soon.png** (0 connections) — `arte/stream_art/Stream_back_soon.png`
+- **Asset Visual: live 2 AB test_B.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_B.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_back_soon.png`
+- `arte/YT thumbnails/live 2 AB test_B.png`
 
 ## Audit Trail
 

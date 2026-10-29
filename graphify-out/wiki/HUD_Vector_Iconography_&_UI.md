@@ -1,26 +1,26 @@
 # HUD Vector Iconography & UI
 
-> 5 nodes
+> 5 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **generate_icons()** (4 connections) — `tools/generate_ui_icons.py`
-- **generate_ui_icons.py** (4 connections) — `tools/generate_ui_icons.py`
-- **ensure_dir()** (2 connections) — `tools/generate_ui_icons.py`
-- **svg_wrap()** (2 connections) — `tools/generate_ui_icons.py`
-- **write_svg()** (2 connections) — `tools/generate_ui_icons.py`
+- **Composition.tsx** (5 connections) — `video_edition/remotion/src/Composition.tsx`
+- **Props** (1 connections) — `video_edition/remotion/src/Composition.tsx`
+- **calculateMetadata()** (1 connections) — `video_edition/remotion/src/Composition.tsx`
+- **MyComponent()** (1 connections) — `video_edition/remotion/src/Composition.tsx`
+- **MyComposition()** (1 connections) — `video_edition/remotion/src/Composition.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [2026-09-30-previsualizacion- Module](2026-09-30-previsualizacion-_Module.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/generate_ui_icons.py`
+- `video_edition/remotion/src/Composition.tsx`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

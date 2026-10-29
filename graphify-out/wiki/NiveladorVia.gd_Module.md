@@ -1,30 +1,39 @@
 # NiveladorVia.gd Module
 
-> 7 nodes
+> 8 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **NiveladorVia.gd** (14 connections) — `godot/scripts/NiveladorVia.gd`
-- **NiveladorVia.bloque_de_vertice()** (1 connections) — `godot/scripts/NiveladorVia.gd`
-- **NiveladorVia.columnas_solape()** (1 connections) — `godot/scripts/NiveladorVia.gd`
-- **NiveladorVia.nivel_de_bloque()** (1 connections) — `godot/scripts/NiveladorVia.gd`
-- **NiveladorVia.niveles_efectivos()** (1 connections) — `godot/scripts/NiveladorVia.gd`
-- **NiveladorVia.notches_de_paso()** (1 connections) — `godot/scripts/NiveladorVia.gd`
-- **NiveladorVia.plan_transicion()** (1 connections) — `godot/scripts/NiveladorVia.gd`
+- **ViasTest.gd** (13 connections) — `godot/scripts/ViasTest.gd`
+- **ViaDemolicionOverlay.gd** (10 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
+- **ViaDemolicionOverlay.limpiar()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
+- **ViaDemolicionOverlay.mostrar_tramo()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
+- **ViaDemolicionOverlay._ready()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
+- **ViaDemolicionOverlay.reconstruir_outline()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
+- **ViasTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/ViasTest.gd`
+- **ViasTest._ready()** (1 connections) — `godot/scripts/ViasTest.gd`
 
 ## Relationships
 
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (6 shared connections)
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (1 shared connections)
-- [2026-09-20-nivelacion-frente Module](2026-09-20-nivelacion-frente_Module.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (3 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (3 shared connections)
+- [2026-10-02-obras-por-colonos Module](2026-10-02-obras-por-colonos_Module.md) (2 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (1 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (1 shared connections)
+- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (1 shared connections)
+- [NiveladorVia.gd](NiveladorVia.gd.md) (1 shared connections)
+- [TrazadorVias.gd](TrazadorVias.gd.md) (1 shared connections)
+- [Vias.gd](Vias.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `godot/scripts/NiveladorVia.gd`
+- `godot/scripts/ViaDemolicionOverlay.gd`
+- `godot/scripts/ViasTest.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 14 (100%)
+- EXTRACTED: 22 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

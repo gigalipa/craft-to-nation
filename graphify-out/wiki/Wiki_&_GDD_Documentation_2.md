@@ -1,12 +1,10 @@
 # Wiki & GDD Documentation
 
-> 3 nodes
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **verify_wiki_bundle.py** (2 connections) — `tools/verify_wiki_bundle.py`
-- **verify_bundle()** (1 connections) — `tools/verify_wiki_bundle.py`
-- **tools/verify_wiki_bundle.py Verifica la integridad del bundle estático…** (1 connections) — `tools/verify_wiki_bundle.py`
+- **README.md (Remotion video)** (0 connections) — `video_edition/remotion/README.md`
 
 ## Relationships
 
@@ -14,11 +12,11 @@
 
 ## Source Files
 
-- `tools/verify_wiki_bundle.py`
+- `video_edition/remotion/README.md`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

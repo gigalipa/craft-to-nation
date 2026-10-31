@@ -9,7 +9,7 @@
   },
   "private": true,
   "dependencies": {
-    "@remotion/captions": "^4.0.537",
+    "@remotion/captions": "^4.0.539",
     "@remotion/cli": "4.0.537",
     "@remotion/media": "^4.0.537",
     "@remotion/transitions": "^4.0.537",

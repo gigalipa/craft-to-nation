@@ -94,7 +94,7 @@ En Windows también puedes ejecutar las 28 escenas en modo headless. El script f
 
 ## Contribuir
 
-Consulta [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar cambios y [SECURITY.md](SECURITY.md) para reportes de seguridad y vulnerabilidades. Se aceptan aportes humanos o asistidos por IA siempre que quien los envía los haya revisado y pueda responder por ellos.
+Consulta [CONTRIBUTING.md](CONTRIBUTING.md) antes de enviar cambios, [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) para normas de convivencia, y [SECURITY.md](SECURITY.md) para reportes de seguridad y vulnerabilidades. Se aceptan aportes humanos o asistidos por IA siempre que quien los envía los haya revisado y pueda responder por ellos.
 
 ## Licencias
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Preguntas Generales y Debate de la Comunidad
+    url: https://github.com/gigalipa/craft-to-nation/discussions
+    about: Participa en discusiones abiertas, comparte feedback general, pregunta dudas y debate sobre el diseño del juego.
+  - name: 🛡️ Reporte Responsable de Vulnerabilidad de Seguridad
+    url: https://github.com/gigalipa/craft-to-nation/security/policy
+    about: Consulta el procedimiento privado y seguro para reportar fallos de seguridad (SECURITY.md).

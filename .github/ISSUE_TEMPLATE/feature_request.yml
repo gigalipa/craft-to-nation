@@ -1,0 +1,60 @@
+name: 💡 Propuesta de Mejora o Mecánica (Feature Request)
+description: Sugiere una nueva funcionalidad, mecánica de juego o mejora técnica.
+title: "[Propuesta]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por tu idea para *Craft to Nation*!
+        Ten en cuenta que las propuestas deben considerar la coherencia con el [Documento de Diseño de Juego (GDD)](https://github.com/gigalipa/craft-to-nation/blob/main/Documento%20de%20Dise%C3%B1o%20de%20Juego%20(GDD)_%20Craft%20to%20Nation.md) y los pilares de simulación urbana descentralizada.
+
+  - type: dropdown
+    id: system_area
+    attributes:
+      label: Pilar o Sistema relacionado
+      options:
+        - "Economía, Cadenas Productivas y Mercados"
+        - "Logística, Vías y Redes de Transporte"
+        - "Demografía, Moral y Comportamiento de Colonos"
+        - "Construcción por Capas y Bloques Vóxel"
+        - "Interfaz de Usuario (HUD, Mapas, Ventanas Contextuales)"
+        - "Herramientas de Desarrollo y Flujo Editorial"
+        - "Otro"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem_or_motivation
+    attributes:
+      label: ¿Qué necesidad o problema busca resolver?
+      description: Explica qué fricción experimentas como jugador/desarrollador o qué oportunidad detectas.
+      placeholder: "Actualmente la asignación de prioridades en obras requiere muchos clics..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_feature
+    attributes:
+      label: Solución o Mecánica propuesta
+      description: Describe detalladamente cómo funcionaría esta característica dentro del juego.
+      placeholder: "Implementar un selector radial rápido que permita priorizar obras en lote..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: ¿Has evaluado otras formas de resolver esto?
+      placeholder: "Se consideró una ventana modal, pero saturaría el HUD..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Contexto adicional o referencias
+      description: Enlaces, bocetos conceptuales o referencias a otros juegos de gestión/construcción.
+    validations:
+      required: false

@@ -23,6 +23,10 @@ python -m unittest discover -s website -p "test_*.py"
 
 Las pruebas de Godot cuentan con una suite automatizada de 28 escenas en `godot/scenes/*Test.tscn` ejecutables con `.\tools\run-godot-tests.ps1` (en Windows) o mediante **F6** desde el editor en Godot 4.7.
 
+## Código de Conducta
+
+Este proyecto y su comunidad se rigen por el [Código de Conducta](CODE_OF_CONDUCT.md). Al participar, se espera que mantengas y promuevas este estándar de convivencia.
+
 ## Seguridad
 
 Consulta [SECURITY.md](SECURITY.md) para conocer el procedimiento de reporte responsable de vulnerabilidades y la política de seguridad del proyecto.

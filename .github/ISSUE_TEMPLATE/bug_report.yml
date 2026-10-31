@@ -1,0 +1,84 @@
+name: 🐛 Reporte de Error (Bug Report)
+description: Reporta un error o comportamiento inesperado en Craft to Nation.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por reportar este problema! Por favor completa la mayor cantidad de información posible para ayudarnos a reproducirlo y solucionarlo.
+        *Si descubriste una vulnerabilidad de seguridad, NO uses este formulario; consulta nuestra [Política de Seguridad](https://github.com/gigalipa/craft-to-nation/security/policy).*
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Componente afectado
+      description: ¿En qué parte del proyecto se manifiesta el problema?
+      options:
+        - "Juego / Motor (Godot 4.7)"
+        - "Lógica de Simulación (Economía, Demografía, IDU)"
+        - "Sistemas Urbanos (Vías, Obras, Colonos, Canales)"
+        - "Interfaz y HUD"
+        - "Herramientas y Scripts (Python / Generación de Video)"
+        - "Documentación / Wiki"
+        - "Otro"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del problema
+      description: Explica de manera concisa qué está ocurriendo de forma incorrecta.
+      placeholder: "Al colocar una vía en pendiente, el colono asignado a la obra queda bloqueado..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: Enumera los pasos secuenciales para reproducir el fallo.
+      placeholder: |
+        1. Iniciar la escena 'Main.tscn'.
+        2. Seleccionar la herramienta de tendido de vías en la barra inferior.
+        3. Hacer clic en las coordenadas (X, Y, Z).
+        4. Observar el error en la consola.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento esperado
+      description: ¿Qué esperabas que sucediera normalmente?
+      placeholder: "La vía debería nivelar el terreno y completar la animación de construcción."
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Entorno y Versiones
+      description: Especifica sistema operativo, versión de Godot y tarjeta gráfica si aplica.
+      placeholder: "Windows 11, Godot 4.7-dev, NVIDIA RTX 3060"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs_or_screenshots
+    attributes:
+      label: Logs, Capturas o Mensajes de Error
+      description: Pega aquí trazas de error de la consola de Godot, logs o arrastra capturas de pantalla.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificaciones previas
+      options:
+        - label: He comprobado que no existe ya un reporte similar abierto en Issues.
+          required: true
+        - label: No he incluido contraseñas, tokens de API ni información sensible.
+          required: true

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **index.md: Official Craft to Nation Wiki (English)** (0 connections) — `website/wiki/src/en/index.md`
+- **calendario_semana_1.md (Calendario Editorial - Semana 1: Craft to Nation)** (0 connections) — `video_edition/workspaces/calendario_semana_1.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/en/index.md`
+- `video_edition/workspaces/calendario_semana_1.md`
 
 ## Audit Trail
 

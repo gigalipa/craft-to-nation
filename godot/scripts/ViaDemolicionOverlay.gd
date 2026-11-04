@@ -24,11 +24,15 @@ var obras: Object = null:
 				obras.demolicion_via_paso.disconnect(_on_demolicion_paso)
 			if obras.demolicion_via_completada.is_connected(_on_demolicion_cambiada):
 				obras.demolicion_via_completada.disconnect(_on_demolicion_cambiada)
+			if obras.has_signal("demolicion_via_cancelada") and obras.demolicion_via_cancelada.is_connected(_on_demolicion_cambiada):
+				obras.demolicion_via_cancelada.disconnect(_on_demolicion_cambiada)
 		obras = valor
 		if obras != null:
 			obras.demolicion_via_creada.connect(_on_demolicion_cambiada)
 			obras.demolicion_via_paso.connect(_on_demolicion_paso)
 			obras.demolicion_via_completada.connect(_on_demolicion_cambiada)
+			if obras.has_signal("demolicion_via_cancelada"):
+				obras.demolicion_via_cancelada.connect(_on_demolicion_cambiada)
 		_asegurar_outline_instance()
 		reconstruir_outline()
 

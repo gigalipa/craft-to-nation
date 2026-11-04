@@ -30,6 +30,8 @@ signal obra_via_completada(id_via: int)
 signal demolicion_via_creada(id_demolicion: int)
 signal demolicion_via_paso(id_demolicion: int, celda: Vector3i)
 signal demolicion_via_completada(id_demolicion: int)
+signal demolicion_via_cancelada(id_demolicion: int)
+signal prioridad_obra_cambiada(id: int, nueva_prioridad: int)
 
 
 static var ESPERA_BLOQUEADA: float = Ajustes.OBRAS_ESPERA_BLOQUEADA  # s que espera un colono si hay alguien dentro de la obra
@@ -196,6 +198,16 @@ func fijar_prioridad(id: int, p: int) -> void:
 		prioridades.erase(id)
 	else:
 		prioridades[id] = p
+	prioridad_obra_cambiada.emit(id, p)
+
+
+## Alterna el estado de demolición programada de un edificio. Si ya está programado
+## o marcado, cancela la orden; si no, programa la demolición para iniciar tras "horas".
+func alternar_demolicion(id: int, horas: int = Ajustes.OBRAS_HORAS_PROGRAMADAS) -> String:
+	if demolicion_programada.has(id) or marcados.has(id):
+		cancelar_demolicion(id)
+		return ""
+	return programar_demolicion(id, horas)
 
 
 func prioridad_de(id: int) -> int:
@@ -679,6 +691,32 @@ func obra_via_en_columna(col: Vector2i) -> int:
 			if paso["columna"] == col:
 				return id_via
 	return 0
+
+
+## Devuelve el id_dem de la orden de demolición de vía que contiene la celda "celda", o 0 si ninguna.
+func obra_demolicion_via_en_celda(celda: Vector3i) -> int:
+	for id_dem in obras_demolicion_vias:
+		if obras_demolicion_vias[id_dem]["celdas"].has(celda):
+			return id_dem
+	return 0
+
+
+## Devuelve el id_dem de la orden de demolición de vía que contiene la columna "col", o 0 si ninguna.
+func obra_demolicion_via_en_columna(col: Vector2i) -> int:
+	for id_dem in obras_demolicion_vias:
+		for c in obras_demolicion_vias[id_dem]["celdas"]:
+			if Vector2i(c.x, c.z) == col:
+				return id_dem
+	return 0
+
+
+## Cancela una orden de demolición de vía activa.
+func cancelar_demolicion_via(id_dem: int) -> bool:
+	if obras_demolicion_vias.has(id_dem):
+		obras_demolicion_vias.erase(id_dem)
+		demolicion_via_cancelada.emit(id_dem)
+		return true
+	return false
 
 
 ## Crea una orden de demolición de un tramo de vía (celdas Vector3i).

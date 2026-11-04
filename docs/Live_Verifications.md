@@ -20,22 +20,25 @@ The script is designed following **strictly the chronological order and real gam
 
 ### Key Keyboard Shortcuts
 
+> [!IMPORTANT]
+> **Opening and Closing Morale (`VentanaMoral`) and Energy (`VentanaEnergia`) Windows:**
+> The **`M`**, **`E`**, and **`Esc`** keys **do not** open or close the Morale or Energy modal windows. Both windows open **exclusively by left-clicking their respective button in the HUD topbar** and close **solely by clicking their `X` button** (`cruz.svg`) in the top-right corner of the modal.
+
 #### First Person (Avatar)
 | Key / Action | Function |
 | :--- | :--- |
-| **C** | Toggle between **1st-Person Camera** and **Overhead Camera** (with animated transition). |
+| **C** | Toggle between **1st-Person Camera** and **Overhead Camera** (with animated transition; temporarily hides `VentanaMoral` and `VentanaEnergia` in 1st person and restores them in overhead; **switching to overhead automatically deactivates active 1st-person tools such as road mode `V` or deconstruct mode `G`**). |
 | **W, A, S, D** | Avatar movement. |
 | **Space / Ctrl** | Jump on land / Swim up (**Space**) or down (**Ctrl**) in deep liquids ($\ge 2$ blocks). |
-| **Left Click** | Chop trees, mine terrain/veins (with progress bar), or deconstruct if **G** mode is active. |
-| **Right Click** | Place the block selected in the hotbar (`1`–`0`) or supply a targeted ghost construction site. |
+| **Left Click** | Chop trees, mine terrain/veins (with progress bar and tool icon), or deconstruct / advance roadwork if mode **G** or **V** is active. |
+| **Right Click** | Place the block selected in the hotbar (`1`–`0`) or supply a targeted ghost construction site (with `modo_construir.svg`). In road mode (`V`) or deconstruct mode (`G`), marks/unmarks demolition. |
 | **1 – 9, 0** | Select block type in the hotbar (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`). |
 | **L** | **Toggle avatar omnidirectional lantern on / off** (`PanelLampara`). |
-| **E** | Press: open/close doors or open an active outpost's chest (`VentanaBaul`). Hold on tree: harvest fruit. |
-| **G** | Toggle manual on-foot deconstruction mode (left click dismantles step by step; right click marks/unmarks for demolition). |
-| **V** | Toggle on-foot road interaction mode (left click builds a 2×2 section; right click demolishes a 2×2 section). |
-| **B / Shift + B** | Declare finished structure (**B**) / Start remodeling (**Shift + B**) while aiming at its exterior door. |
-| **M** | Open / close the **Citizen Morale** analytical window (`VentanaMoral`). |
-| **Esc** | Close active modal window, exit road/deconstruction mode, or release the mouse cursor. |
+| **E** | Press: open/close doors or open an active outpost's chest (`VentanaBaul`). Hold on tree: harvest fruit (`herr_cesta.svg`). |
+| **G** | Toggle manual on-foot deconstruction mode (left click dismantles step by step with `modo_demoler.svg`; right click schedules/cancels building demolition with a 5-hour wait period). |
+| **V** | Toggle on-foot road interaction mode: **left click** builds/advances 2×2 section (or advances demolition if marked for demolition); **right click** marks or unmarks the 2×2 section for demolition. |
+| **B / Shift + B** | Declare finished structure (**B**) / Start remodeling (**Shift + B**, with warning dialog if eviction risk exists) while aiming at its exterior door. |
+| **Esc** | Close active chest/warehouse/population modal window, exit road/deconstruction mode, or release the mouse cursor. |
 
 #### Overhead Camera (Urban Management)
 | Key / Action | Function |
@@ -47,9 +50,8 @@ The script is designed following **strictly the chronological order and real gam
 | **Shift + W / Shift + S** | **Vertical Elevation:** Raise (**Shift+W**) or lower (**Shift+S**) the focal point elevation directly. |
 | **1** | **Build** Menu (`1`: Residential, `2`: Peripheral, `3`: Industrial, `4`: Research, `5`: Roads, `6`: Conduits). |
 | **2** | **Zone** Menu (`1`: Residential Zone, `2`: Industrial Zone, `3`: Clear Zone). |
-| **3** | Unified **Demolish** Mode (red mark on buildings and orange guided demolition on roads). |
+| **3** | Unified **Demolish** Mode: left click on a building schedules demolition with a 5-hour wait period (another click cancels); left click on a road traces guided orange demolition with Dijkstra, and clicking on a road already marked for demolition **unmarks and cancels it immediately** (`cancelar_demolicion_via`). |
 | **Z / X** | Go back a submenu (**Z**) / Next page (**X**) in numeric menus with more than 9 items. |
-| **M** | Open / close the **Citizen Morale** analytical window (`VentanaMoral`). |
 | **Ctrl + Scroll** | Rotate blueprint preview or outpost template in 90° steps. |
 | **Left Click** | Set zone/road/conduit corner, place structure, or inspect building/outpost/conduit in View mode. |
 | **Double Left Click** | Confirm road layout, road demolition, or elevated conduit path. |
@@ -62,12 +64,15 @@ The script is designed following **strictly the chronological order and real gam
 
 > **Starting Condition:** Right after launching the scene (`F5`), before founding the city. Tests on-foot avatar physics, surface river/lake interactions, draining liquids with solid blocks, and the initial thermal mode of the lantern. *(Note: Physics on `crudo` [crude oil] are verified in **Block 6.7** after extracting subterranean oil, since natural oil pools lie at depth $\ge 4$ underground).*
 
-### 1.1 Movement, Tree Chopping, Mining, and Block Placement on Foot
+### 1.1 Movement, Tree Chopping, Mining, Block Placement on Foot, and Window Highlight
 - [ ] **Action:** Move with **W, A, S, D** and jump with **Space**. Aim at a tree or the ground while holding **Left Click**, and place blocks from the hotbar (`1`–`0`) with **Right Click**.
 - [ ] **Expected Result:**
   - The green highlight (`CaraApuntada`) marks the block face under the crosshair.
   - Chopping or mining displays the circular/linear progress bar and extracted resources are added to the warehouse.
   - Placing a block inside the 2 cells occupied by the avatar's own body is prevented.
+- [ ] **Action (`CaraApuntada` Highlight on Glass Windows from Side View):** Place a glass window block (`6`). Move the avatar to view it from a shallow angle or from the side and point the crosshair at the window.
+- [ ] **Expected Result:**
+  - The green selection wireframe (`CaraApuntada`) renders with **`render_priority = 3`**, clearly drawing on top of the translucent window mesh without the semi-transparent glass rendering over the green outline.
 
 ### 1.2 Swimming in Water, Currents, Oxygen, and Draining with Solid Blocks
 - [ ] **Action (Swimming and Current):** Walk into a river, waterfall, or lake with $\ge 2$ blocks of `agua` (water) depth.
@@ -102,19 +107,20 @@ The script is designed following **strictly the chronological order and real gam
 
 > **Mechanics & Logical Order:** The **very first building** declared with `B` always founds the **Urban Core (`Núcleo Urbano`)** (establishing the Zone of Influence and saving the first blueprint, though it does not house colonists). Next, you paint the **Residential Zone (`2 -> 1`)**, build the **1st Habitable Residence** (which triggers immigration with `Colonizable: SÍ`), test the `"Sin techo"` (Homeless) state by remodeling it, and then build the **2nd Residence** (which spawns as a `Colonizable: NO 24h` buffer and allows relocating residents without leaving anyone homeless).
 
-### 2.1 Hand-Building a 2-Story House and Declaring the Urban Core (`B`)
+### 2.1 Hand-Building a 2-Story House, Roof Windows, and Declaring the Urban Core (`B`)
 - [ ] **Action:** In 1st person, manually build a closed **2-story** structure using blocks from the hotbar (respecting Level 1 limits: max 2 floors and max 2 beds per floor):
   - **Ground Floor (Level 0):** Closed walls, **1 exterior door** (`7`), at least **1 glass window** (`6`), **1 or 2 beds** (`8`), and **1 chest** (`9`).
   - **Upper Floor (Level 1):** Closed walls, roof, walkable interior staircase from the ground floor, windows, and up to 2 beds, **with no exterior door**.
-- [ ] **Action (3D Aesthetic Verification):** Closely inspect the placed wooden door and glass windows:
+  - **Roof Windows:** Place at least one window on the ceiling looking upward or downward to create a horizontal ceiling panel (**`ventana_techo`**).
+- [ ] **Action (3D Aesthetic Verification and 3D Orientation Capture):** Closely inspect the placed wooden door and glass windows:
   - Verify that the wooden door features visible three-dimensional relief: a **brass door handle** (`Color(0.85, 0.7, 0.2)`) and **two dark metallic hinges** (`Color(0.15, 0.15, 0.15)`) on its side frame.
-  - Verify that glass window blocks are rendered as **thin $1/20$-thickness ($0.05$ m) transparent panels** (`ventana` straight at mid-depth facing the avatar with only front and back faces, `ventana_esquina` L-shaped corner rotated 90° on Y when connecting at a corner, and `ventana_techo` ceiling panel flush with the top face $Y \in [0.95, 1.0]$ when placed looking up or down).
+  - Verify that glass window blocks are rendered as **thin $1/20$-thickness ($0.05$ m) transparent panels** (`ventana` straight at mid-depth facing the avatar with only front and back faces, `ventana_esquina` L-shaped corner rotated 90° on Y when connecting at a corner, and `ventana_techo` ceiling panel flush with the top face $Y \in [0.95, 1.0]$).
 - [ ] **Action:** Step outside, aim at the ground-floor door, and press **`B`**.
 - [ ] **Expected Result:**
   - The structure validates and declares successfully (and automatically drains any water blocks trapped inside its interior air volume): **it does not require an exterior door on the upper floor**.
   - Notification: **`"Núcleo urbano declarado."`** (*Urban core declared.*)
   - The building is registered as the **Urban Core** (doubling base central warehouse caps and establishing the **Zone of Influence** around headquarters).
-  - The design is automatically saved to the blueprint catalog under the name **`Residencia [beds]x[chests]`**.
+  - The design is automatically saved to the blueprint catalog under the name **`Residencia [beds]x[chests]`**, with its 3D window orientations persisted via `rotar_orientaciones_3d`.
 
 ### 2.2 Urban Core Remodeling Exception (`Shift + B`)
 - [ ] **Action:** Aim at the door of the newly declared Urban Core and press **`Shift + B`** (or select it in overhead view and click `[Iniciar remodelación]`).
@@ -132,39 +138,49 @@ The script is designed following **strictly the chronological order and real gam
   - The button displays the name `Residencia [beds]x[chests]` along with its live-generated **isometric 3D thumbnail** (up to 5 blueprint slots are supported).
   - Upon selecting it (`1`), the contextual card displays the vector icons `[Ctrl] [Scroll Icon] ROTAR` and `[Left Click Icon] COLOCAR`.
   - Rotating with **`Ctrl + Mouse Wheel`** rotates both the 3D ghost footprint and the thumbnail in 90° steps.
-- [ ] **Action (Build the 1st Residence):** Left-click on the painted **Residential Zone** to place the ghost building. Return to 1st person (**`C`**) and hold **Right Click** aiming at the ghost blocks (and then any exterior wall) until construction reaches 100%.
+- [ ] **Action (Build the 1st Residence and 3D Roof Window Orientation):** Left-click on the painted **Residential Zone** to place the ghost building. Return to 1st person (**`C`**) and hold **Right Click** aiming at the ghost blocks (and then any exterior wall) until construction reaches 100%.
+- [ ] **Expected Result:**
+  - The construction progress bar shows the **construction icon (`modo_construir.svg`)**, never the harvest basket icon.
+  - **3D Fidelity of Built Roof Windows:** Inspect the completed roof: verify that roof windows (`ventana_techo`) are built **horizontally flush with the ceiling plane** ($Y \in [0.95, 1.0]$), preserving their 3D blueprint orientation without reverting to vertical wall orientation.
 
-### 2.4 1st Habitable Residence: `Colonizable: SÍ` and Arrival of the First Colonists
+### 2.4 1st Habitable Residence: `Colonizable: SÍ`, Arrival of Colonists, and Immigration Boost (+250%)
 - [ ] **Action:** Switch to overhead view (**`C`**), ensure View mode (**`Esc`**), and left-click on the newly finished residence (not the Urban Core).
 - [ ] **Expected Result:**
-  - `PanelEdificio` indicates: **`Colonizable: SÍ (inmigración activa)`** and displays the **`[Pausar colonización]`** button with the open-door vector icon (`puerta_abierta.svg`).
-  - As hourly ticks advance (every 2 s), colonists (`desempleado`) start immigrating and walking toward their new home until its bed capacity is filled (4 unemployed/laborers per bed).
-  - With initial morale around 75% (*Pioneer Optimism* / *Optimismo pionero*), the colony operates under **Massive Immigration (`moral > 50%`)**, routing arriving colonists directly to available beds.
-  - The panel breaks down how many residents of each category live in the building.
+  - `PanelEdificio` indicates: **`Colonizable: SÍ (inmigración activa)`** and displays the **`[Pausar colonización]`** button with the open-door vector icon (`puerta_candado.svg`).
+  - **Recalibrated Immigration at 75% Morale:** With base morale at 75%, baseline immigration operates at **`5.0 colonists / month`** (scaling to `7.0 / month` at 90% and `10.0 / month` at 100%).
+- [ ] **Action (Activate Immigration Boost +250%):** Select the Urban Core (or open `VentanaMoral` from topbar) and click **`[Impulso inmigración (+250%)]`**.
+- [ ] **Expected Result:**
+  - Notification: **`"¡Impulso de inmigración activado en el núcleo urbano por 30 días!"`**
+  - Monthly immigration rate multiplies by **`2.5x` (+250%)**, accelerating to **`12.5 colonists / month`** for 30 days and removing bed capacity limits.
 
-### 2.5 Remodeling the Only Populated Residence: "Homeless" (`Sin techo`) State and Reabsorption
-- [ ] **Condition:** Wait until the 1st Habitable Residence has colonists living in it (while **no other house** with free beds exists in the colony yet).
+### 2.5 Remodeling the Only Populated Residence: Eviction, Job Release, and In-Situ Homeless Colonists
+- [ ] **Condition:** Wait until the 1st Habitable Residence has colonists living in it (while no other house with free beds exists yet) and at least one resident is employed at an outpost (e.g., Quarry, Hunting, or Lumberjack).
 - [ ] **Action:** In overhead view, select that residence and click **`[Iniciar remodelación]`** (or press **`Shift + B`** in 1st person aiming at its door).
 - [ ] **Expected Result:**
-  - In overhead view, a **modal dialog styled with `TemaHUD`** appears warning how many residents will be left **homeless (`sin techo`)** due to a lack of alternative beds.
-  - Upon confirming, the building enters free-edit mode and the evicted residents appear in the **Population (`Población`)** window as **`"Sin techo: X"`**.
-  - While homeless, they consume food at the unemployed rate, do not work on construction sites or outposts, and penalize morale by `-0.05/h`.
-- [ ] **Action (Immediate Reabsorption):** In 1st person, aim at the house door and press **`B`** to redeclare it.
+  - A modal dialog opens warning of eviction risk and how many residents will become homeless (`sin techo`).
+- [ ] **Action (Confirm Remodeling and Verify Workplace Release):** Click **`[Confirmar]`**.
 - [ ] **Expected Result:**
-  - The `"Sin techo"` colonists are **instantly reabsorbed** into the newly declared beds (`Sin techo: 0`) and resume normal activity.
+  - Evicted residents become **`"Sin techo: X"`**.
+  - **Immediate Workplace Release (`FinalizacionObras.gd` / `Colonos.gd` / `Economia.liberar()`):** Inspect the outpost where the evicted colonist worked: verify the job is **instantly freed** and employee count decrements (no ghost workers).
+  - **In-Situ Colonists (`Colonos.gd`):** Homeless colonists **remain physically in-situ in the city** (`hogar = -1`); they do NOT respawn at the map edge or trigger false "New colonist" alerts.
+- [ ] **Action (Immediate Reabsorption as Unemployed):** In 1st person, aim at the house door and press **`B`** to redeclare it.
+- [ ] **Expected Result:**
+  - The `"Sin techo"` colonists are **instantly reabsorbed** into the beds (`Sin techo: 0`), enter the census as **`desempleado`** (available for hire), and the outpost retains its open vacancy.
 
-### 2.6 2nd Residence Onward: 24 h Buffer (`Colonizable: NO`), Colonist Construction, and Relocation
+### 2.6 2nd Residence Onward: 24 h Buffer (`Colonizable: NO`), Surplus Immigrants, and Relocation
 - [ ] **Action:** In overhead view (`1 -> 1`), place a **2nd Residence** on the Residential Zone.
 - [ ] **Expected Result (Autonomous Construction by Colonists):**
-  - Because there are now unemployed/laborer colonists in the city, **colonists automatically walk to the ghost construction site** and build it block by block until completion without player intervention.
-- [ ] **Action:** Once the 2nd Residence is finished, select it in View mode (`Esc`).
+  - Colonists automatically build it block by block until completion without player intervention.
+- [ ] **Action:** Once finished, select it in View mode (`Esc`).
 - [ ] **Expected Result (Housing Buffer):**
-  - It spawns with the state **`Colonizable: NO (apertura en 24 h)`** and the **`[Permitir colonización]`** button.
-  - Its beds are protected as a buffer for internal relocations (they do not attract new external immigrants until the 24 h countdown reaches 0 or the player opens it manually).
-  - Clicking **`[Permitir colonización]`** switches it immediately to `Colonizable: SÍ (inmigración activa)`; clicking **`[Pausar colonización]`** returns it to `Colonizable: NO (buffer protegido)`. Leave it set to `NO` with free beds.
-- [ ] **Action (Automatic Relocation on Remodel):** Start remodeling (`Shift + B` or overhead view) on the **1st Populated Residence** while the 2nd Residence has free buffer beds.
-- [ ] **Expected Result:**
-  - The residents of the 1st Residence **automatically move into the free beds of the 2nd Residence**, generating **`0 homeless colonists` (`Sin techo: 0`)**. Redeclare the 1st Residence with **`B`**.
+  - Spawns as **`Colonizable: NO (apertura en 24 h)`** with **`[Permitir colonización]`** button.
+  - Beds are protected as buffer for internal relocations.
+- [ ] **Action (Surplus Immigrants with Buffer House & `_alojar_sin_techo`):**
+  - While 2nd Residence is `Colonizable: NO`, let immigrants arrive beyond the 1st house's bed capacity.
+  - New immigrants become **`Sin techo: X`** (`hogar = -1`).
+  - Check `PanelEdificio` of the 2nd Residence: verify it does **NOT** falsely list them as residents (occupants remain 0).
+  - Click **`[Permitir colonización]`** (or wait for 24h timer): `_alojar_sin_techo()` executes immediately, absorbing homeless colonists into the free beds as **`desempleado`**.
+- [ ] **Action (Automatic Relocation on Remodel):** Start remodeling (`Shift + B` or overhead) on the **1st Populated Residence** while the 2nd Residence has free buffer beds: residents move into the 2nd Residence generating **`0 homeless colonists`**. Redeclare with **`B`**.
 
 ### 2.7 Row Houses (Wall-to-Wall) and Urban Core Relocation
 - [ ] **Action (Row Houses):** In 1st person, build two small houses sharing a wall **wall-to-wall** on the Residential Zone and declare both with **`B`** (Building A and Building B).
@@ -207,31 +223,36 @@ The script is designed following **strictly the chronological order and real gam
 
 ### 3.4 Manual On-Foot Road Intervention in 1st Person (`V` Key)
 - [ ] **Action:** Trace another road in overhead view, switch to 1st person (**`C`**), and press **`V`** to activate on-foot road mode.
-- [ ] **Build 2×2 Section (Left Click):** Aim at a pending road section (with yellow wireframe) and left-click:
-  - Completes the **entire 2×2 section** at once (all 4 road-width cells or wedges) without spamming individual cell notifications.
-- [ ] **Demolish 2×2 Section (Right Click):** Aim at an already built road section and right-click:
-  - Instantly removes the entire 2×2 section along with its wedges.
-- [ ] Press **`V`** or **`Esc`** to exit road mode.
+- [ ] **Expected Result and On-Screen Help:**
+  - HUD contextual help displays:  
+    `"(clic izq.) AVANZAR OBRA DE VÍA\n(clic der.) MARCAR/DESMARCAR DEMOLICIÓN\n[V] Salir del modo vías"`.
+- [ ] **Mark / Unmark Road Demolition (Right Click):** Aim at an already built road section and right-click $\to$ marks the 2×2 section for demolition with an outline. Right-click that same section again $\to$ unmarks demolition and clears the outline.
+- [ ] **Advance Construction or Demolition (Left Click):**
+  - If aimed at a section marked for demolition, left-clicking completes demolition of the 2×2 section.
+  - If aimed at a pending construction section (yellow wireframe), left-clicking completes the 2×2 section at once.
+- [ ] **Automatic Deactivation on Camera Switch (`C`):** With mode `V` active (or deconstruction mode `G`), press **`C`** to switch to overhead view $\to$ mode `V` deactivates automatically (`modo_vias = false`) and 1st-person instructions hide.
 
 ### 3.5 Unified Overhead Demolition Tool (`3` Key)
-- [ ] **Building Demolition:** In overhead view, press **`3`** (Demolish) and left-click on a secondary building: toggles its red demolition mark so colonists dismantle it.
+- [ ] **Scheduled Building Demolition (5-Hour Grace Period):** In overhead view, press **`3`** (Demolish) and left-click on a secondary building:
+  - **Does NOT demolish instantly**: invokes `programar_demolicion(id, 5)` scheduling demolition with a **5-hour countdown** and visual alert.
+  - Left-clicking the building again before 5 hours elapse **cancels scheduled demolition** and restores normal state.
+  - Letting 5 hours elapse begins actual demolition by laborers (and water escarpments flow naturally).
 - [ ] **Guided Road Demolition Around 90° Corners:** Trace and complete an "L"-shaped road (with a 90° corner). Activate mode **`3`**, left-click at one end of the road, and move the cursor to the other end around the corner:
   - The **translucent orange preview** (`ViaDemolicionOverlay`) follows the road network via Dijkstra covering the **full 2-lane width (2×2 section)** around the outer corner without cutting diagonally.
-- [ ] **Confirmation and Persistent Orange Outline:** **Double left-click** to confirm demolition of the road segment:
-  - The road remains marked with a **persistent orange outline** on the ground.
-  - Colonists walk over to demolish the road, and the orange outline disappears section by section until demolition is complete.
+- [ ] **Confirmation and Persistent Orange Outline:** **Double left-click** to confirm demolition: marked with a **persistent orange outline** dismantled section by section by colonists.
+- [ ] **Unmark and Cancel Road Demolition (`cancelar_demolicion_via`):** With tool **`3`** active, left-click on a road section with the persistent orange demolition outline:
+  - The system executes `cancelar_demolicion_via()`, immediately clearing the orange outline and canceling the colonists' demolition task.
 
-### 3.6 Configurable Construction Priorities (`PanelEdificio`) and Dispatch Hierarchy
-- [ ] **Action:** In overhead view, start a residential building construction, mark another for demolition, and leave a road segment under construction. Select the building under construction in View mode (`Esc`).
+### 3.6 Construction Priorities with Buttons `▲` / `▼` (`PanelEdificio`), Immediate Redirection, and Auto-Transition
+- [ ] **Action:** In overhead view, start a building construction, mark another for demolition, and leave a road segment under construction. Select the building under construction in View mode (`Esc`).
 - [ ] **Expected Result:**
-  - `PanelEdificio` displays the priority row with its icon (`prio_alta.svg`, `prio_normal.svg`, `prio_baja.svg`), the label **`Prioridad: Normal`**, and two arrow buttons: **`btn_subir.svg` (`▲`, increase priority)** and **`btn_bajar.svg` (`▼`, decrease priority)**. When construction reaches 100%, the window automatically transitions to the building panel (`PanelPuesto` or `PanelEdificio`) and drains interior water blocks.
-  - Successive clicks cycle the value: **`Normal`** $\to$ **`Alta`** (High) $\to$ **`Baja`** (Low) $\to$ **`Normal`**.
-  - Verify that free colonists are dispatched strictly following the global priority order:
-    1. *High Priority Construction (`Prioridad Alta`)*
-    2. *Normal Priority Construction (`Prioridad Normal`)*
-    3. *Building and Road Demolitions*
-    4. *Road Laying*
-    5. *Low Priority Construction (`Prioridad Baja`)*
+  - `PanelEdificio` displays the priority row with its icon (`prio_alta.svg`, `prio_normal.svg`, `prio_baja.svg`), label **`Prioridad: Normal`**, and compact arrow buttons: **`btn_subir.svg` (`▲`)** and **`btn_bajar.svg` (`▼`)**.
+  - Clicking **`▲`** steps `Baja` $\to$ `Normal` $\to$ `Alta` (disabling `▲` at `Alta`); clicking **`▼`** steps `Alta` $\to$ `Normal` $\to$ `Baja` (disabling `▼` at `Baja`).
+  - Colonists are dispatched following: *1. High Priority Construction $\to$ 2. Normal Priority Construction $\to$ 3. Demolitions $\to$ 4. Road Laying $\to$ 5. Low Priority Construction*.
+- [ ] **Action (Immediate Laborer Redirection on Raising Priority to `Alta`):** While laborers are working on a `Normal` priority building or road, select another construction site and press **`▲`** to raise it to **`Alta`**.
+- [ ] **Expected Result:**
+  - `Obras.gd` emits `prioridad_obra_cambiada`, and `Colonos.gd` **immediately interrupts active workers on lower-priority sites and redirects them on the spot toward the High Priority construction**, without waiting for the next tick.
+- [ ] **Automatic Transition:** When construction reaches 100%, `PanelEdificio` closes and automatically opens `PanelPuesto` for the new building.
 
 ---
 
@@ -240,30 +261,29 @@ The script is designed following **strictly the chronological order and real gam
 > **Prerequisite Condition:** With the city founded and roads laid out, you audit the global HUD panels (Warehouse, Population, Occupations, and Morale) and build the first **Level 1 Peripheral Outposts** outside the Zone of Influence (which operate directly with Laborers and unlock outpost chests for the first time to test `VentanaBaul` and road hauling routes).
 
 ### 4.1 Topbar, Alphabetical Warehouse (A-Z), Population, and Occupations
-- [ ] **Topbar:** Verify the counters for **Food (`Comida`)**, **Energy (`Energía`)**, **Critical Resource (`Recurso Crítico`)**, **Population (`Población`)**, **Morale (`Moral`)**, the **Era indicator** (Era name + icon), and on the far right the **IDU Level Roman numeral icon (`romano_1.svg`..`romano_4.svg`)** which opens the **IDU breakdown window** attached to the top-right corner below the status bar on mouse hover.
+- [ ] **Topbar:** Verify the counters for **Food (`Comida`)**, **Energy (`Energía`)**, **Critical Resource (`Recurso Crítico`)**, **Population (`Población`)**, **Morale (`Moral`)**, the **Era indicator** (Era name + icon), and on the far right the **IDU Level Roman numeral icon (`romano_1.svg`..`romano_4.svg`)** which opens the **IDU breakdown window** on hover.
 - [ ] **Warehouse Window (`Almacén`):** Click the **Almacén** button:
-  - Raw materials are listed alphabetically from **A to Z** (`Agua`, `Carbón`, `Cobre`, `Comida`, `Crudo`, `Hierro`, `Madera`, `Piedra`, `Tierra`, `Tierras raras`) with collapsible dropdowns (`▶`/`▼`) revealing their refined/processed derivatives (`Combustible`, `Acero`, `Tablas` & `Carbón`, `Bloques de piedra`, **`Vidrio`**, `Mineral refinado`) and the 6 food categories under `Comida`, plus the **`[Expandir todo]` / `[Contraer todo]`** button in the top header between `"ALMACÉN"` and the `X` close button.
+  - Raw materials are listed alphabetically from **A to Z** (`Agua`, `Carbón`, `Cobre`, `Comida`, `Crudo`, `Hierro`, `Madera`, `Piedra`, `Tierra`, `Tierras raras`) with collapsible dropdowns (`▶`/`▼`) revealing refined products (`Combustible`, `Acero`, `Tablas` & `Carbón`, `Bloques de piedra`, **`Vidrio`**, `Mineral refinado`) and the 6 food categories.
+  - Header displays **`[Expandir todo]` / `[Contraer todo]`**.
+  - **Dynamic Height Adaptation (`reset_size`):** Click **`[Contraer todo]`** (or collapse categories individually with `▼`): verify that `VentanaAlmacen` calls **`reset_size()`** and **immediately shrinks its height to match the collapsed content**, eliminating dead vertical space.
 - [ ] **Population and Occupations Windows:** Click **Población**:
   - Displays the unified row: **`Obreros: Total · X empleados · Y desempleados`** (plus rows for Technicians, Specialists, Researchers, Military, and Homeless if applicable).
-  - Click the **Ocupaciones** button inside Population: displays the 4 collapsible categories (`▼ Recolección`, `▼ Industria`, `▼ Investigación`, `▼ Energía`) that collapse (`▶`) or expand (`▼`) on click, listing outposts from newest to oldest.
+  - Click the **Ocupaciones** button inside Population: displays the 4 collapsible categories (`▼ Recolección`, `▼ Industria`, `▼ Investigación`, `▼ Energía`).
 
-### 4.2 Dynamic Citizen Morale System (`VentanaMoral` — `M` Key)
-- [ ] **Action:** Observe the morale button on the topbar (defaulting around `🙂 75%` at start) and click it or press **`M`**.
+### 4.2 Dynamic Citizen Morale System (`VentanaMoral` — Topbar Click & `X` Button Only)
+- [ ] **Action (Centered Opening & Keyboard Lock):** Click the Morale button on the topbar.
 - [ ] **Expected Result:**
-  - The centered modal window **`VentanaMoral`** styled with `TemaHUD` opens.
-  - Displays **Current Mood (`Estado Anímico Actual`)** (with visual thresholds: `😡` <20%, `🙁` 20–35%, `😐` 35–65%, `🙂` $\ge$65%), **Projected Daily Rate** (`Tendencia: %+.2f / día` with vector arrows `tasa_arriba.svg`, `tasa_abajo.svg`, or `tasa_neutra.svg`), continuous **Labor Productivity Multiplier** ($X = 0.5 \times 2^{(Y/50)}$, where 50% = `1.00x`, 75% $\approx$ `1.41x`, 100% = `2.00x`), and the **Migration Flow** state.
-  - **Three Staggered Monthly Migration Tiers:**
-    1. **`Moral <= 20%` (Despair):** Displays `Migración: ⚠ Éxodo de cerebros (X/mes)` in red (`TemaHUD.INVALIDO`) alongside `investigador.svg`. Active brain drain expelling highest-skilled citizens first.
-    2. **`20% < Moral <= 50%` (Immigration with Beds):** Displays `Migración: Inmigración con camas (X/mes)` in soft green (`Color(0.85, 0.95, 0.6)`) alongside `ciudadano.svg`. **Immigrants only arrive if free beds exist in declared housing**; never overflows into homeless ("Sin techo") even if an Urban Core is founded.
-    3. **`Moral > 50%` (Massive Immigration):** Displays `Migración: Inmigración masiva (X/mes)` in bright green (`Color(0.6, 1.0, 0.6)`) with `ciudadano.svg`. Attracts a steady stream of immigrants; if all beds are full but an Urban Core exists, overflows into the streets as "Sin techo".
-  - Details the analytical breakdown of factors expressed per day (`/día`):
-    1. *Inertia toward neutrality (50%): `• Tendencia natural al equilibrio (50%): %+.2f/día`*
-    2. *Food diet variety: `• Variedad de alimentos (X/6 grupos): %+.2f/día`*
-    3. *Resource abundance & reserves: `• Abundancia y reservas: Estable` (or `Déficit de comida (-0.6/día)`, `Hambruna crítica (-3.0/día)`)*
-    4. *Homeless drain: `• Ciudadanos sin techo (X en la calle): %+.2f/día` (-0.05/day per homeless colonist)*
-    5. *Rolling 7-day (168 h) hazard buffer: `• Peligrosidad 7 días (bajas/robos): %+.2f/día`*
-  - Verify that during hourly simulation ticks (`Ciudad.gd`), morale changes by adding `tasa_cambio_moral / 24.0` per tick.
-  - Closes cleanly via the `X` button, **`M`** key, or **`Esc`**.
+  - `VentanaMoral` opens **perfectly centered on screen**.
+  - Pressing **`M`** and **`Esc`** does NOT close the window (only closed via its **`X`** button).
+- [ ] **Action (Auto-Hide in 1st Person):** With `VentanaMoral` open in overhead view, press **`C`** to switch to 1st person.
+- [ ] **Expected Result:**
+  - `VentanaMoral` **automatically hides** in 1st person and **restores visibility** upon pressing **`C`** to return to overhead view.
+- [ ] **Metrics & Recalibrated Immigration Tiers:**
+  - Displays **Current Mood** (`😡` $\le$20%, `🙁` 20–35%, `😐` 35–65%, `🙂` >65%), Daily Trend, Continuous Multiplier, and **Recalibrated Migration Tiers**:
+    1. **`Moral <= 20%`:** Brain drain (`Éxodo de cerebros`).
+    2. **`20% < Moral <= 50%`:** Immigration with beds (1.0 to 2.0 / month).
+    3. **`Moral > 50%`:** Massive immigration with accelerated rates of **5.0 colonists/month at 75%**, **7.0 colonists/month at 90%**, and **10.0 colonists/month at 100%**.
+  - Food diet variety (`X/6` groups) and monoculture penalty after 360 hours.
 
 ### 4.3 Peripheral Gathering Outposts (`1 -> 2 -> 1..4`: Hunting, Lumber, Mine, Fishing)
 - [ ] **Zone of Influence Exclusion Rule:** In overhead view, press **`1`** (Build) $\to$ **`2`** (Peripheral) and select **Mine (`3`)**, **Lumber (`2`)**, or **Hunting (`1`)**.
@@ -544,24 +564,24 @@ The script is designed following **strictly the chronological order and real gam
 
 | Block | Verified Feature (in logical gameplay order) | Status (OK / Fail) | Tester Notes |
 | :--- | :--- | :---: | :--- |
-| **1.1** | 1st-person movement, face highlight, chopping/mining with progress bar, and block placement | | |
+| **1.1** | 1st-person movement, chopping/mining, fruit harvesting (`E`), 1:3 glass/dirt equivalence, and **`CaraApuntada` priority (`render_priority = 3`) on glass windows from side** | | |
 | **1.2** | Swimming in water ($\ge 2$ blocks), currents, oxygen bar, and draining with solid blocks | | |
 | **1.3** | Lantern in initial Thermal mode (`L`: fuel 10h, coal 6h, wood 5h) and stacked oxygen window | | |
-| **2.1** | 1st Building with `B`: 3D doors (brass handle & hinges), crisp windows, founds **Urban Core** & saves blueprint | | |
-| **2.2** | Urban Core remodeling (`Shift+B`) in free-edit mode without losing headquarters status | | |
-| **2.3** | Painting Residential Zone (`2-1`), 3D blueprint thumbnail (`1-1`), `Ctrl+Scroll` rotation, and on-foot supplying | | |
-| **2.4** | 1st Habitable Residence spawns with `Colonizable: SÍ` & massive immigration (initial morale >50%) | | |
-| **2.5** | Remodeling the only populated residence creates `"Sin techo"` colonists and redeclaring with `B` reabsorbs them | | |
-| **2.6** | 2nd Residence built by colonists spawns as a buffer (`Colonizable: NO 24h`) and relocates residents with 0 homeless | | |
+| **2.1** | 1st Building with `B`: 3D doors, **windows and roof windows (`ventana_techo`) without Z-fighting**, 3D orientation capture, draining & **Urban Core** foundation | | |
+| **2.2** | Urban Core remodeling (`Shift+B`) and civic buttons in `PanelEdificio`: **Immigration Boost (+250%)** and **Strict Rationing Decree (-35% food, max 35% morale)** | | |
+| **2.3** | Residential Zone (`2-1`), **costs with icons in blueprint preview (`1-1`)**, **horizontal 3D fidelity of built roof windows**, icons in `PanelEdificio`, and `modo_construir` icon on supplying | | |
+| **2.4** | 1st Habitable Residence (`Colonizable: SÍ`), **recalibrated base immigration (5.0/mo at 75%, 7.0/mo at 90%, 10.0/mo at 100%)** & **Immigration Boost (+250% $\to$ 12.5/mo without bed limit)** | | |
+| **2.5** | Remodeling with `Shift+B` opens eviction warning dialog, **immediate workplace release (`Economia.liberar()`)**, homeless remain in-situ (no respawn), and `B` reabsorbs as unemployed | | |
+| **2.6** | 2nd Residence buffer (`Colonizable: NO 24h`): **surplus immigrants do not falsely occupy it**, `[Permitir colonización]` runs `_alojar_sin_techo` immediately, and clean relocation | | |
 | **2.7** | Row houses (flood-fill stops at neighbor wall) and Urban Core relocation (5 h grace period) | | |
 | **3.1** | Overhead road tool (`1-5-1`) with SVG icons, spec sheet (`+35%`), and clean right-click cancellation | | |
 | **3.2** | Shared leveling and clearance between facing doors across a street | | |
 | **3.3** | Progressive road laying by colonists (consecutive yellow `ViaObraOverlay`) and segment merging | | |
-| **3.4** | Manual on-foot road intervention (`V`): build (left click) and demolish (right click) 2×2 sections | | |
-| **3.5** | Unified overhead demolition (`3`): buildings and roads with Dijkstra around 90° corners & orange outline | | |
-| **3.6** | Construction priorities (`Normal`/`Alta`/`Baja` in `PanelEdificio`) and strict dispatch hierarchy | | |
-| **4.1** | Responsive topbar (`"tierras raras"`), alphabetical Warehouse A-Z (`"Bloques de piedra"`), Population & Occupations (▼/▶) | | |
-| **4.2** | Dynamic morale: rate in `/día`, 3 migration tiers (<=20 exodus, 20-50 with beds, >50 massive) & factors in `VentanaMoral` | | |
+| **3.4** | Manual on-foot road intervention (`V`): build (left click), **mark/unmark demolition (right click)**, advance demolition (left click), and **auto-deactivation on camera switch (`C`)** | | |
+| **3.5** | Unified overhead demolition (`3`): **scheduled 5-hour building demolition with click cancellation**, Dijkstra roads, and **unmarking roads (`cancelar_demolicion_via`)** | | |
+| **3.6** | Construction priorities with `▲`/`▼` in `PanelEdificio`, **immediate laborer redirection upon raising to `Alta` (`▲`)**, and auto-transition to `PanelPuesto` on completion | | |
+| **4.1** | Responsive topbar with **IDU hover**, alphabetical Warehouse with dropdowns (`▶`/`▼`), and **dynamic height adaptation with `reset_size()` upon collapsing** | | |
+| **4.2** | `VentanaMoral` centered (topbar click & `X` button only, **auto-hides in 1st person**), **recalibrated migration tiers (5/7/10 col/mo)**, diet variety (`X/6`), and 75% agricultural floor | | |
 | **4.3** | Peripheral outposts (`1-2-1..4`): `PanelPuesto` clean title, Roman badges, clean +/- buttons & production row with SVG icons | | |
 | **4.4** | Road preference in pathfinding (`BuscadorRutas`: road cost 3 vs terrain 8) and loaded right-of-way priority | | |
 | **4.5** | 1st-person interaction with active outpost chest (`VentanaBaul` via `E`: centered `320x260`, scroll, and quick close) | | |

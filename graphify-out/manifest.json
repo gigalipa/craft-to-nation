@@ -31,9 +31,9 @@
   },
   "tools/verify_wiki_bundle.py": {
     "mtime": 1793282829.1817007,
-    "seen": 1793283153.588203,
+    "seen": 1793468307.2935495,
     "ast_hash": "f0c56a0bb01a3d4b856f32bee7870c46",
-    "semantic_hash": ""
+    "semantic_hash": "f0c56a0bb01a3d4b856f32bee7870c46"
   },
   "video_edition/remotion/eslint.config.mjs": {
     "mtime": 1792138160.0,
@@ -72,15 +72,15 @@
     "semantic_hash": "5482a511fa4bc626aab0b09cd8a2f8c6"
   },
   "video_edition/remotion/src/Root.tsx": {
-    "mtime": 1793229753.856417,
-    "seen": 1793237010.8554149,
-    "ast_hash": "0c2aed614f25f64273c406871bff6317",
+    "mtime": 1793810559.3571823,
+    "seen": 1793810601.0871043,
+    "ast_hash": "105413c336dacaa3efb9144ef9c2ca87",
     "semantic_hash": ""
   },
   "video_edition/remotion/src/VerticalShort.tsx": {
-    "mtime": 1793229713.039554,
-    "seen": 1793237010.8554149,
-    "ast_hash": "f3bb0207339dbf7b6f21b8cbb28a3158",
+    "mtime": 1793810534.9142976,
+    "seen": 1793810601.0871043,
+    "ast_hash": "3f46ea1820a502cf6f3a3b25bf72d7e5",
     "semantic_hash": ""
   },
   "video_edition/remotion/src/data.ts": {
@@ -138,10 +138,10 @@
     "semantic_hash": "b09fe7bf59c1e4f245bd1e6fd7dd7a29"
   },
   "video_edition/tools/qa_checker.py": {
-    "mtime": 1793236950.4552996,
-    "seen": 1793237010.8554149,
-    "ast_hash": "37de1bd905809f54e43aa288d12b2a7a",
-    "semantic_hash": ""
+    "mtime": 1793555975.0874102,
+    "seen": 1793570940.3049161,
+    "ast_hash": "b9808d468336c92b1598973cbbb428ca",
+    "semantic_hash": "b9808d468336c92b1598973cbbb428ca"
   },
   "video_edition/tools/rebuild_recap_subtitles.py": {
     "mtime": 1792158496.1027143,
@@ -169,9 +169,9 @@
   },
   "website/wiki/.vitepress/config.mts": {
     "mtime": 1793282787.694429,
-    "seen": 1793283153.588203,
+    "seen": 1793468307.296548,
     "ast_hash": "c434979c0899a9c8b7daf7dda700ff74",
-    "semantic_hash": ""
+    "semantic_hash": "c434979c0899a9c8b7daf7dda700ff74"
   },
   "website/wiki/.vitepress/theme/components/ProductionCalculator.vue": {
     "mtime": 1792111440.3604553,
@@ -181,9 +181,9 @@
   },
   "website/wiki/.vitepress/theme/components/ResourceBadge.vue": {
     "mtime": 1793282329.9284816,
-    "seen": 1793283153.588203,
+    "seen": 1793468307.2975478,
     "ast_hash": "e8be3476cf09ed1f0a3fe071004a9ff7",
-    "semantic_hash": ""
+    "semantic_hash": "e8be3476cf09ed1f0a3fe071004a9ff7"
   },
   "website/wiki/.vitepress/theme/index.ts": {
     "mtime": 1792111443.3521893,
@@ -205,27 +205,27 @@
   },
   ".agents/skills/content-qa/SKILL.md": {
     "mtime": 1793313443.0970113,
-    "seen": 1793313472.5386,
+    "seen": 1793484453.84455,
     "ast_hash": "800f30a0a3da34f37f1232469ac22920",
-    "semantic_hash": ""
+    "semantic_hash": "800f30a0a3da34f37f1232469ac22920"
   },
   ".agents/skills/gamedev-copywriter/SKILL.md": {
-    "mtime": 1793187702.4569955,
-    "seen": 1793187872.2233787,
-    "ast_hash": "36e491c6d70bf423ab0639007e010d77",
-    "semantic_hash": "36e491c6d70bf423ab0639007e010d77"
+    "mtime": 1793500580.363412,
+    "seen": 1793570940.3059158,
+    "ast_hash": "7258937071aa1307516bbf7fdb193d95",
+    "semantic_hash": "7258937071aa1307516bbf7fdb193d95"
   },
   ".agents/skills/social-strategist/SKILL.md": {
-    "mtime": 1793187727.575827,
-    "seen": 1793187872.2233787,
-    "ast_hash": "ed363b25d0c2aa87061c1c8383c529df",
-    "semantic_hash": "ed363b25d0c2aa87061c1c8383c529df"
+    "mtime": 1793500589.7276762,
+    "seen": 1793570940.3059158,
+    "ast_hash": "f118583830464027a52a7e09af2f2534",
+    "semantic_hash": "f118583830464027a52a7e09af2f2534"
   },
   ".agents/skills/social/SKILL.md": {
-    "mtime": 1793187670.4906645,
-    "seen": 1793187872.2233787,
-    "ast_hash": "c59da2ac55faef3a16a467698bcc7c09",
-    "semantic_hash": "c59da2ac55faef3a16a467698bcc7c09"
+    "mtime": 1793500627.9676197,
+    "seen": 1793570940.3059158,
+    "ast_hash": "a931c5172ce9f460ef109b4c0e81aac5",
+    "semantic_hash": "a931c5172ce9f460ef109b4c0e81aac5"
   },
   ".agents/skills/video-editor/SKILL.md": {
     "mtime": 1793187700.8360488,
@@ -234,10 +234,10 @@
     "semantic_hash": "4c34e73a9f65d7a049106c38ab20be20"
   },
   "AGENTS.md": {
-    "mtime": 1793186963.5483232,
-    "seen": 1793187872.2233787,
-    "ast_hash": "7dbbf888562fd3496a3f38b910789118",
-    "semantic_hash": "7dbbf888562fd3496a3f38b910789118"
+    "mtime": 1793500529.2202728,
+    "seen": 1793570940.3059158,
+    "ast_hash": "7d05d4a3df20854238fba75a63274762",
+    "semantic_hash": "7d05d4a3df20854238fba75a63274762"
   },
   "CLAUDE.md": {
     "mtime": 1788812395.0960708,
@@ -246,15 +246,15 @@
     "semantic_hash": "e6b4f683a0ecb1f9219c228db0a01d15"
   },
   "CONTRIBUTING.md": {
-    "mtime": 1793313169.120762,
-    "seen": 1793313472.5386,
-    "ast_hash": "52b7d3f51f3554bf60c779e1cd6d4ea8",
-    "semantic_hash": ""
+    "mtime": 1793482988.176888,
+    "seen": 1793484453.84455,
+    "ast_hash": "0e783ab665ad24669f0c35ebca0a45c6",
+    "semantic_hash": "0e783ab665ad24669f0c35ebca0a45c6"
   },
   "Documento de Dise\u00f1o de Juego (GDD)_ Craft to Nation.md": {
-    "mtime": 1793311417.6993594,
-    "seen": 1793311541.9601736,
-    "ast_hash": "16e44f0c266c17a4868d31fab0c50935",
+    "mtime": 1793743481.862525,
+    "seen": 1793743793.4156556,
+    "ast_hash": "c0a92ff8a7dcd9c691e647e494b8394a",
     "semantic_hash": ""
   },
   "LICENSE-CONTENT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": "acdcbe4b78768a9aa5df06f3be52b082"
   },
   "README.md": {
-    "mtime": 1793313178.1401389,
-    "seen": 1793313472.5386,
-    "ast_hash": "868f980ee3614d5fd3f2d2f67f48745d",
+    "mtime": 1793743501.170152,
+    "seen": 1793743793.4156556,
+    "ast_hash": "f78b9d25273b3d23389bb0cf6f1040eb",
     "semantic_hash": ""
   },
   "docs/Fichas_Consumo_Produccion.md": {
@@ -342,15 +342,15 @@
     "semantic_hash": "b7fff2b4e855f9d8376b577bfa146baf"
   },
   "docs/Live_Verifications.md": {
-    "mtime": 1793154451.5988007,
-    "seen": 1793184571.597345,
-    "ast_hash": "8eb53cd83059ba055087342548aa0cb4",
-    "semantic_hash": "8eb53cd83059ba055087342548aa0cb4"
+    "mtime": 1793806565.859503,
+    "seen": 1793810601.0871043,
+    "ast_hash": "69da7aae70685c45e4ece294442130d0",
+    "semantic_hash": ""
   },
   "docs/Pendientes y pr\u00f3ximos pasos.md": {
-    "mtime": 1793311471.0238981,
-    "seen": 1793311541.9601736,
-    "ast_hash": "1a339b537861061fb0d2014f021a12fd",
+    "mtime": 1793743641.7334905,
+    "seen": 1793743793.4156556,
+    "ast_hash": "4145d89bad4b2af9304a0772fe8c8b8a",
     "semantic_hash": ""
   },
   "docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md": {
@@ -372,15 +372,15 @@
     "semantic_hash": "73636d0cee88c3bdfb36b18448073a77"
   },
   "docs/Verificaciones_en_vivo.md": {
-    "mtime": 1793154390.3197553,
-    "seen": 1793184571.597345,
-    "ast_hash": "59cb517eab627f0100eaffa4d739e1c9",
-    "semantic_hash": "59cb517eab627f0100eaffa4d739e1c9"
+    "mtime": 1793806248.5834498,
+    "seen": 1793810601.0871043,
+    "ast_hash": "a232c0a1d563d49ef711652f1f36a9b9",
+    "semantic_hash": ""
   },
   "docs/ideas-backlog.md": {
-    "mtime": 1793311478.3377154,
-    "seen": 1793311541.9601736,
-    "ast_hash": "3df1997086cce3a09681389c084b2314",
+    "mtime": 1793743661.9404204,
+    "seen": 1793743793.4156556,
+    "ast_hash": "cb139d69cc63bcf5365a16647369af24",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md": {
@@ -1045,45 +1045,45 @@
   },
   "website/index.html": {
     "mtime": 1793290753.3810947,
-    "seen": 1793290968.064083,
+    "seen": 1793484453.84455,
     "ast_hash": "f97bb265d4f5137263468d8cf9f8bff0",
-    "semantic_hash": ""
+    "semantic_hash": "f97bb265d4f5137263468d8cf9f8bff0"
   },
   "website/wiki/src/en/dev/gdd.md": {
-    "mtime": 1793154791.932648,
-    "seen": 1793184571.597345,
-    "ast_hash": "834efcbe37627d1d1cd56d613bce098d",
-    "semantic_hash": "834efcbe37627d1d1cd56d613bce098d"
+    "mtime": 1793806296.9454992,
+    "seen": 1793810601.0871043,
+    "ast_hash": "19df443f258ae0d9e1c73a43f39275bd",
+    "semantic_hash": ""
   },
   "website/wiki/src/en/dev/godot.md": {
     "mtime": 1793313267.452221,
-    "seen": 1793313472.5395951,
+    "seen": 1793484453.84455,
     "ast_hash": "6e9c17d612e24075ee988e174b9034e7",
-    "semantic_hash": ""
+    "semantic_hash": "6e9c17d612e24075ee988e174b9034e7"
   },
   "website/wiki/src/en/dev/logistics.md": {
     "mtime": 1793313397.7193074,
-    "seen": 1793313472.5395951,
+    "seen": 1793484453.84455,
     "ast_hash": "91e99385f33fb5523c156915732aaacf",
-    "semantic_hash": ""
+    "semantic_hash": "91e99385f33fb5523c156915732aaacf"
   },
   "website/wiki/src/en/dev/roadmap.md": {
-    "mtime": 1793313338.0890698,
-    "seen": 1793313472.5395951,
-    "ast_hash": "6c65a246cd06101939b50d98b0cba139",
+    "mtime": 1793806747.1801963,
+    "seen": 1793810601.0871043,
+    "ast_hash": "4e3d468a8f985b772d860156cce00482",
     "semantic_hash": ""
   },
   "website/wiki/src/en/guide/buildings.md": {
     "mtime": 1793313348.440106,
-    "seen": 1793313472.5395951,
+    "seen": 1793484453.84455,
     "ast_hash": "b92a61245a5cc4add2def1b8e044c492",
-    "semantic_hash": ""
+    "semantic_hash": "b92a61245a5cc4add2def1b8e044c492"
   },
   "website/wiki/src/en/guide/colonists.md": {
-    "mtime": 1793154941.4520404,
-    "seen": 1793184571.597345,
-    "ast_hash": "5d99d8833d4c4cd66e09f5744f031589",
-    "semantic_hash": "5d99d8833d4c4cd66e09f5744f031589"
+    "mtime": 1793743688.975452,
+    "seen": 1793743793.4156556,
+    "ast_hash": "38f1a1d2a3de44538392297f7779ac59",
+    "semantic_hash": ""
   },
   "website/wiki/src/en/guide/resources.md": {
     "mtime": 1793154884.3223703,
@@ -1104,40 +1104,40 @@
     "semantic_hash": "fbeddda2a634fd9f0adf6b69e088f181"
   },
   "website/wiki/src/es/dev/gdd.md": {
-    "mtime": 1793313277.9769704,
-    "seen": 1793313472.5395951,
-    "ast_hash": "131f032944a03b68b81224b29fcfd3af",
+    "mtime": 1793806296.9454992,
+    "seen": 1793810601.0871043,
+    "ast_hash": "d7435b0579ea7baf9e0c64fc015ee4af",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/godot.md": {
     "mtime": 1793313231.6301978,
-    "seen": 1793313472.5395951,
+    "seen": 1793484453.84455,
     "ast_hash": "0644e9c40814ebc667f386b105ec3d28",
-    "semantic_hash": ""
+    "semantic_hash": "0644e9c40814ebc667f386b105ec3d28"
   },
   "website/wiki/src/es/dev/logistica.md": {
     "mtime": 1793313376.6270742,
-    "seen": 1793313472.5395951,
+    "seen": 1793484453.84455,
     "ast_hash": "2618a433cfcaca942aed59c0c67031fd",
-    "semantic_hash": ""
+    "semantic_hash": "2618a433cfcaca942aed59c0c67031fd"
   },
   "website/wiki/src/es/dev/roadmap.md": {
-    "mtime": 1793313287.7509115,
-    "seen": 1793313472.5395951,
-    "ast_hash": "802a1531d97b7ed1dd03b7db6f53e0f9",
+    "mtime": 1793806747.1792104,
+    "seen": 1793810601.0871043,
+    "ast_hash": "ae7556cfb6c0ca5d7f62cc5216a88796",
     "semantic_hash": ""
   },
   "website/wiki/src/es/guia/colonos.md": {
-    "mtime": 1793154737.7239938,
-    "seen": 1793184571.597345,
-    "ast_hash": "c4b8f0e7b4086939fc6be1aaae10e931",
-    "semantic_hash": "c4b8f0e7b4086939fc6be1aaae10e931"
+    "mtime": 1793806296.9433832,
+    "seen": 1793810601.0871043,
+    "ast_hash": "a7118956bd7416c9b109cc0d6ea847bf",
+    "semantic_hash": ""
   },
   "website/wiki/src/es/guia/edificios.md": {
     "mtime": 1793313297.6706955,
-    "seen": 1793313472.5395951,
+    "seen": 1793484453.84455,
     "ast_hash": "34b58e7a83c104a909a8ad5627c0afac",
-    "semantic_hash": ""
+    "semantic_hash": "34b58e7a83c104a909a8ad5627c0afac"
   },
   "website/wiki/src/es/guia/inicio.md": {
     "mtime": 1793154736.2082193,
@@ -1153,21 +1153,21 @@
   },
   "website/wiki/src/es/index.md": {
     "mtime": 1793282436.277302,
-    "seen": 1793283153.588203,
+    "seen": 1793570940.3059158,
     "ast_hash": "aaa8467fca780193dfdd353dec4ce411",
-    "semantic_hash": ""
+    "semantic_hash": "aaa8467fca780193dfdd353dec4ce411"
   },
   "website/wiki/src/fr/index.md": {
     "mtime": 1793282746.1587505,
-    "seen": 1793283153.588203,
+    "seen": 1793484453.84455,
     "ast_hash": "bdbe63427312c54deb0dcb5bccd07cb7",
-    "semantic_hash": ""
+    "semantic_hash": "bdbe63427312c54deb0dcb5bccd07cb7"
   },
   "website/wiki/src/index.md": {
     "mtime": 1793290774.6087253,
-    "seen": 1793290968.064083,
+    "seen": 1793484453.84455,
     "ast_hash": "0d0812ba6a368effb07cda785e3247c9",
-    "semantic_hash": ""
+    "semantic_hash": "0d0812ba6a368effb07cda785e3247c9"
   },
   "arte/IMUQwcomLawGk.png": {
     "mtime": 1792015729.96392,
@@ -2953,9 +2953,9 @@
   },
   ".agents/skills/nodes-and-network/SKILL.md": {
     "mtime": 1793313432.2380183,
-    "seen": 1793313472.5386,
+    "seen": 1793484453.84455,
     "ast_hash": "913c4f2e4a70b244655d1b6373de85e1",
-    "semantic_hash": ""
+    "semantic_hash": "913c4f2e4a70b244655d1b6373de85e1"
   },
   "video_edition/remotion/src/ReelTrendNoPlanB.tsx": {
     "mtime": 1793211268.5818367,
@@ -2970,44 +2970,206 @@
     "semantic_hash": "7750b5715ade2880275d67af1702212c"
   },
   "docs/reporte_bug_28-10-26.md": {
-    "mtime": 1793228488.4077675,
-    "seen": 1793237010.8554149,
-    "ast_hash": "df622b8439c3d3ba1453b1190ca9d05d",
+    "mtime": 1793666034.0278594,
+    "seen": 1793743793.4156556,
+    "ast_hash": "f8d9be05beb22d4c85bcbb62213a6c8d",
     "semantic_hash": ""
   },
   "video_edition/remotion/src/QASessionRecap.tsx": {
     "mtime": 1793229687.4688418,
-    "seen": 1793237010.8554149,
+    "seen": 1793468307.294548,
     "ast_hash": "ef5cfbd610853324a6bb2a5d91ff9878",
-    "semantic_hash": ""
+    "semantic_hash": "ef5cfbd610853324a6bb2a5d91ff9878"
   },
   "video_edition/remotion/src/qa_shorts_data.json": {
     "mtime": 1793229609.8359654,
-    "seen": 1793237010.8554149,
+    "seen": 1793468307.294548,
     "ast_hash": "a4d5b5cc343ae82ebaa68d7bb8bd5dca",
-    "semantic_hash": ""
+    "semantic_hash": "a4d5b5cc343ae82ebaa68d7bb8bd5dca"
   },
   "video_edition/workspaces/calendario_semana_3.md": {
-    "mtime": 1793236987.744633,
-    "seen": 1793237010.856944,
-    "ast_hash": "2f24f1043b10e40e05f0f2b5bea7ef87",
-    "semantic_hash": ""
+    "mtime": 1793500659.1687734,
+    "seen": 1793570940.3059158,
+    "ast_hash": "445adc3d7e2055d0c5a64c744f768a13",
+    "semantic_hash": "445adc3d7e2055d0c5a64c744f768a13"
   },
   "SECURITY.md": {
     "mtime": 1793270020.3166127,
-    "seen": 1793276107.2876709,
+    "seen": 1793484453.84455,
     "ast_hash": "2840dbe2146377318aa6573ee3c69b62",
+    "semantic_hash": "2840dbe2146377318aa6573ee3c69b62"
+  },
+  ".github/ISSUE_TEMPLATE/bug_report.yml": {
+    "mtime": 1793482899.4826279,
+    "seen": 1793484453.83791,
+    "ast_hash": "aaa7a3d9099e872c2f700ac22bacf7a5",
+    "semantic_hash": "aaa7a3d9099e872c2f700ac22bacf7a5"
+  },
+  ".github/ISSUE_TEMPLATE/config.yml": {
+    "mtime": 1793482911.8367486,
+    "seen": 1793484453.83791,
+    "ast_hash": "599254c4eb6ae0511a489640201286cf",
+    "semantic_hash": "599254c4eb6ae0511a489640201286cf"
+  },
+  ".github/ISSUE_TEMPLATE/feature_request.yml": {
+    "mtime": 1793482906.8442843,
+    "seen": 1793484453.83791,
+    "ast_hash": "c58a4720184042c8e1663fdae1b5118d",
+    "semantic_hash": "c58a4720184042c8e1663fdae1b5118d"
+  },
+  ".github/dependabot.yml": {
+    "mtime": 1793482923.5459259,
+    "seen": 1793484453.83791,
+    "ast_hash": "284fe70c0cd9e82740808ea3ca9ec6a7",
+    "semantic_hash": "284fe70c0cd9e82740808ea3ca9ec6a7"
+  },
+  ".github/workflows/ci.yml": {
+    "mtime": 1793482934.924742,
+    "seen": 1793484453.83791,
+    "ast_hash": "1d25ea53e133d1422876a1072d65ae4e",
+    "semantic_hash": "1d25ea53e133d1422876a1072d65ae4e"
+  },
+  ".github/pull_request_template.md": {
+    "mtime": 1793482918.6601994,
+    "seen": 1793484453.84455,
+    "ast_hash": "0e7025c8c16b138dad1ef5581465d519",
+    "semantic_hash": "0e7025c8c16b138dad1ef5581465d519"
+  },
+  "CODE_OF_CONDUCT.md": {
+    "mtime": 1793482890.4785447,
+    "seen": 1793484453.84455,
+    "ast_hash": "984f9694a470875191995fe38a05daa4",
+    "semantic_hash": "984f9694a470875191995fe38a05daa4"
+  },
+  "video_edition/tools/build_antigravity_master.py": {
+    "mtime": 1793556005.374181,
+    "seen": 1793570940.303911,
+    "ast_hash": "80bc1588e009770c9781f3b96059ee2f",
+    "semantic_hash": "80bc1588e009770c9781f3b96059ee2f"
+  },
+  "video_edition/tools/check_start_transcript.py": {
+    "mtime": 1793553530.1027021,
+    "seen": 1793570940.303911,
+    "ast_hash": "b744d554d2637878c84275cd232594bc",
+    "semantic_hash": "b744d554d2637878c84275cd232594bc"
+  },
+  "video_edition/tools/export_full_timed.py": {
+    "mtime": 1793553658.5334146,
+    "seen": 1793570940.303911,
+    "ast_hash": "f1f6b4d938b5eb9f3f76f5b3008c5b90",
+    "semantic_hash": "f1f6b4d938b5eb9f3f76f5b3008c5b90"
+  },
+  "video_edition/tools/find_cam_crop.py": {
+    "mtime": 1793553630.6717122,
+    "seen": 1793570940.303911,
+    "ast_hash": "e9a505b0167e8ba9a92df83dd94a6288",
+    "semantic_hash": "e9a505b0167e8ba9a92df83dd94a6288"
+  },
+  "video_edition/tools/generate_antigravity_popups.py": {
+    "mtime": 1793554185.3962388,
+    "seen": 1793570940.303911,
+    "ast_hash": "c54b4e3f3a690a9fdf9a0f608a44d99f",
+    "semantic_hash": "c54b4e3f3a690a9fdf9a0f608a44d99f"
+  },
+  "video_edition/tools/sync_checker.py": {
+    "mtime": 1793553502.3458245,
+    "seen": 1793570940.3049161,
+    "ast_hash": "2ee84126d965568f8eece58ec32e7113",
+    "semantic_hash": "2ee84126d965568f8eece58ec32e7113"
+  },
+  "video_edition/tools/verify_offset_dir.py": {
+    "mtime": 1793553713.4580336,
+    "seen": 1793570940.3049161,
+    "ast_hash": "471f310fbfc0c254e9880f03eccb0323",
+    "semantic_hash": "471f310fbfc0c254e9880f03eccb0323"
+  },
+  "video_edition/workspaces/calendario_semana_4.md": {
+    "mtime": 1793554677.871146,
+    "seen": 1793570940.3059158,
+    "ast_hash": "73af807e752b3ea3d279237a93db22d6",
+    "semantic_hash": "73af807e752b3ea3d279237a93db22d6"
+  },
+  ".agents/agents/content-qa.md": {
+    "mtime": 1793713232.8324862,
+    "seen": 1793743793.4156556,
+    "ast_hash": "b8e6001c726ea891009bd1293839360d",
+    "semantic_hash": ""
+  },
+  ".agents/agents/ctn-video-editor.md": {
+    "mtime": 1793713223.3382912,
+    "seen": 1793743793.4156556,
+    "ast_hash": "2b65e66aeabae43a6409c239da3a6b42",
+    "semantic_hash": ""
+  },
+  ".agents/agents/gamedev-copywriter.md": {
+    "mtime": 1793713225.4688234,
+    "seen": 1793743793.4156556,
+    "ast_hash": "f660077c15a8af3808a245c9481fdbd2",
+    "semantic_hash": ""
+  },
+  ".agents/agents/nodes-and-network.md": {
+    "mtime": 1793713260.3893404,
+    "seen": 1793743793.4156556,
+    "ast_hash": "d2e012e9a76d9d5573311d74bf73e2d6",
+    "semantic_hash": ""
+  },
+  ".agents/agents/social-strategist.md": {
+    "mtime": 1793713258.069643,
+    "seen": 1793743793.4156556,
+    "ast_hash": "0f470fa680c6a580e0a3f5ab871287b1",
+    "semantic_hash": ""
+  },
+  ".agents/agents/social.md": {
+    "mtime": 1793713221.1446493,
+    "seen": 1793743793.4156556,
+    "ast_hash": "a5ab06ade5320de94eaee5e410b1c6a6",
+    "semantic_hash": ""
+  },
+  "video_edition/tools/build_debugging_devlog.py": {
+    "mtime": 1793792128.7107356,
+    "seen": 1793792390.4210763,
+    "ast_hash": "dce129d71caee7fdcdb9791a1a51e035",
+    "semantic_hash": ""
+  },
+  "video_edition/tools/build_debugging_shorts.py": {
+    "mtime": 1793803568.9216626,
+    "seen": 1793803698.1452088,
+    "ast_hash": "c9419c0f00a39918a59215383763c241",
+    "semantic_hash": ""
+  },
+  "video_edition/tools/generate_debugging_popups.py": {
+    "mtime": 1793787134.506685,
+    "seen": 1793787477.1323452,
+    "ast_hash": "1aedb34b84ca222f7379c8e1190c1854",
+    "semantic_hash": ""
+  },
+  "video_edition/tools/scan_debug_timeline.ps1": {
+    "mtime": 1793786712.120187,
+    "seen": 1793787477.1323452,
+    "ast_hash": "41be6d28cabf3f8fb0edd34c5c6b3f9b",
+    "semantic_hash": ""
+  },
+  "video_edition/tools/test_ocr.ps1": {
+    "mtime": 1793786683.3219104,
+    "seen": 1793787477.1323452,
+    "ast_hash": "2a08992d1e63d4275efaac86d47c942b",
+    "semantic_hash": ""
+  },
+  "video_edition/workspaces/calendario_semana_5.md": {
+    "mtime": 1793790257.7181888,
+    "seen": 1793792390.4210763,
+    "ast_hash": "2dac1658220289c767cfaf41c2fb07e4",
     "semantic_hash": ""
   },
   "video_edition/remotion/package-lock.json": {
     "mtime": 1792591846.082358,
-    "seen": 1793237010.856944,
+    "seen": 1793657016.7790637,
     "ast_hash": "0eead1ba58dd40c31145ed4b1bbbb6cb",
     "semantic_hash": ""
   },
   "website/wiki/pnpm-lock.yaml": {
     "mtime": 1792089559.3306847,
-    "seen": 1793237010.856944,
+    "seen": 1793657016.7790637,
     "ast_hash": "189c2cefde227c8b9074a9ee2db30c88",
     "semantic_hash": ""
   }

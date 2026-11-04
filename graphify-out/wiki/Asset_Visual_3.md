@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: Craft_to_Nation_Kick_profile_banner.png** (0 connections) — `arte/banners/Craft_to_Nation_Kick_profile_banner.png`
+- **Asset Visual: hud-primera-persona-construccion.png** (0 connections) — `arte/conceptos-hud/hud-primera-persona-construccion.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/banners/Craft_to_Nation_Kick_profile_banner.png`
+- `arte/conceptos-hud/hud-primera-persona-construccion.png`
 
 ## Audit Trail
 

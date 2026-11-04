@@ -8,20 +8,20 @@ export interface CaptionSegment {
   text: string;
 }
 
-interface VerticalShortProps {
-  startSec: number;
-  durationSec: number;
-  musicTrack: string;
-  segments: CaptionSegment[];
+export interface VerticalShortProps {
+  startSec?: number;
+  durationSec?: number;
+  musicTrack?: string;
+  segments?: CaptionSegment[];
   srcVideo?: string;
   volumeBoost?: number;
 }
 
 export const VerticalShort: React.FC<VerticalShortProps> = ({
-  startSec,
-  durationSec,
-  musicTrack,
-  segments,
+  startSec = 0,
+  durationSec = 0,
+  musicTrack = "",
+  segments = [],
   srcVideo = "live_w2.mp4",
   volumeBoost = 1.8,
 }) => {
@@ -99,12 +99,12 @@ export const VerticalShort: React.FC<VerticalShortProps> = ({
         />
       </div>
 
-      {/* Subtitles: Dynamic HUD styling with safe zone at bottom: 350px */}
+      {/* Subtitles: High-contrast, fatigue-free modern captions */}
       {activeSegment && (
         <div
           style={{
             position: "absolute",
-            bottom: 350,
+            bottom: 340,
             left: 40,
             right: 40,
             display: "flex",
@@ -116,24 +116,22 @@ export const VerticalShort: React.FC<VerticalShortProps> = ({
         >
           <div
             style={{
-              backgroundColor: "rgba(10, 32, 10, 0.85)",
-              border: "3px solid #F6C424",
-              borderRadius: "18px",
-              padding: "16px 32px",
-              boxShadow: "0 8px 30px rgba(0, 0, 0, 0.85), 0 0 15px rgba(246, 196, 36, 0.35)",
-              maxWidth: 1000,
+              backgroundColor: "rgba(0, 0, 0, 0.84)",
+              borderRadius: "20px",
+              padding: "18px 36px",
+              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.9), 0 0 0 1.5px rgba(255, 255, 255, 0.14)",
+              maxWidth: 980,
             }}
           >
             <span
               style={{
-                fontFamily: "'Trebuchet MS', sans-serif",
-                fontSize: 48,
+                fontFamily: "system-ui, -apple-system, 'Trebuchet MS', 'Segoe UI', Roboto, sans-serif",
+                fontSize: 58,
                 fontWeight: "900",
-                color: "#F6C424",
-                WebkitTextStroke: "1.5px #144214",
-                textShadow: "2px 2px 6px rgba(0, 0, 0, 0.9)",
-                lineHeight: 1.3,
-                letterSpacing: "0.5px",
+                color: "#FFFFFF",
+                textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
+                lineHeight: 1.28,
+                letterSpacing: "-0.2px",
                 display: "inline-block",
               }}
             >

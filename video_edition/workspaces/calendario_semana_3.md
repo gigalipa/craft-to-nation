@@ -21,7 +21,7 @@
 ### 1. Short #1 (Lunes/Martes) - Física de Agua, Corrientes y Oxígeno
 - **Archivo Master**: `video_edition/media/processed/qa_session_01_short_01/qa_session_01_short_01.mp4`
 - **Formato**: Vertical 9:16 (1080x1920) | 47s
-- **Subtítulos**: Quemados en video (Estilo HUD Verde Oscuro / Borde Dorado)
+- **Subtítulos**: Quemados en video (Estilo Moderno Alto Contraste: Blanco Puro / Cápsula Negra Obsidiana 58px Bold)
 - **Audio**: Voz normalizada + Música loop (`Glitch_drift`) con ducking
 - **QA Status**: PASS (Aprobado)
 - **Gancho Inicial (3s)**: *"¿Tu avatar sabe nadar? Así funciona el agua profunda y el oxígeno en Craft to Nation..."*
@@ -88,7 +88,7 @@
 ### 3. Short #2 (Jueves) - Caza de Bugs en Vivo: Desahucio y Empleo
 - **Archivo Master**: `video_edition/media/processed/qa_session_01_short_02/qa_session_01_short_02.mp4`
 - **Formato**: Vertical 9:16 (1080x1920) | 43s
-- **Subtítulos**: Quemados en video (Estilo HUD Verde Oscuro / Borde Dorado)
+- **Subtítulos**: Quemados en video (Estilo Moderno Alto Contraste: Blanco Puro / Cápsula Negra Obsidiana 58px Bold)
 - **Audio**: Voz normalizada + Música loop (`Hard_stop_2`) con ducking
 - **QA Status**: PASS (Aprobado)
 - **Gancho Inicial (3s)**: *"Lo que pasa cuando destruyes una casa en tu city builder y descubres un bug en directo..."*
@@ -107,7 +107,7 @@
 ### 4. Short #3 (Viernes) - Almacén Inteligente: Prioridad de Comida Perecedera
 - **Archivo Master**: `video_edition/media/processed/qa_session_01_short_03/qa_session_01_short_03.mp4`
 - **Formato**: Vertical 9:16 (1080x1920) | 44s
-- **Subtítulos**: Quemados en video (Estilo HUD Verde Oscuro / Borde Dorado)
+- **Subtítulos**: Quemados en video (Estilo Moderno Alto Contraste: Blanco Puro / Cápsula Negra Obsidiana 58px Bold)
 - **Audio**: Voz normalizada + Música loop (`Clockwork_logistics_2`) con ducking
 - **QA Status**: PASS (Aprobado)
 - **Gancho Inicial (3s)**: *"¿Por qué tus colonos deberían comer pescado antes que trigo? La nueva logística en Craft to Nation..."*
@@ -121,13 +121,19 @@
   Pescado fresco primero, reservas secas para el invierno 🐟🍞 Así diseñamos la prioridad de consumo y alimentos perecederos en #CraftToNation.
   🌐 Detalles del juego: https://crafttonation.netlify.app/
   💬 Debate con nosotros: https://github.com/gigalipa/craft-to-nation/discussions
+- **Post en Threads**:
+  En la mayoría de city builders la comida es solo un número abstracto en un almacén infinito 🌾
+  En Craft to Nation los alimentos perecederos (pescado y mariscos) tienen prioridad absoluta de consumo antes de que se descompongan, reservando granos secos para épocas difíciles.
+  
+  ¿Prefieres microgestión realista de recursos perecederos o logística más relajada? 👇
+  🌐 Detalles en https://crafttonation.netlify.app/
 
 ---
 
 ### 5. Short #4 (Sábado/Domingo) - Tour por la Wiki y Calculadora de Supervivencia
 - **Archivo Master**: `video_edition/media/processed/qa_session_01_short_04/qa_session_01_short_04.mp4`
 - **Formato**: Vertical 9:16 (1080x1920) | 47s
-- **Subtítulos**: Quemados en video (Estilo HUD Verde Oscuro / Borde Dorado)
+- **Subtítulos**: Quemados en video (Estilo Moderno Alto Contraste: Blanco Puro / Cápsula Negra Obsidiana 58px Bold)
 - **Audio**: Voz normalizada + Música loop (`Cozy_colony`) con ducking
 - **QA Status**: PASS (Aprobado)
 - **Gancho Inicial (3s)**: *"¿Sobrevivirán 50 colonos en tu ciudad? Presentamos la Calculadora de Supervivencia oficial..."*
@@ -142,6 +148,12 @@
   Documentación completa trilingüe y Calculadora interactiva de supervivencia para tu colonia.
   Pruébala aquí: https://crafttonation.netlify.app/
   💬 GitHub: https://github.com/gigalipa/craft-to-nation/discussions
+- **Post en Threads**:
+  Hacer un city builder indie con profundidad mecánica requiere documentar cada sistema sin abrumar al jugador 📖
+  Por eso lanzamos la Wiki oficial trilingüe (ES / EN / FR) con una Calculadora de Supervivencia interactiva: pones el número de colonos y calcula en tiempo real la demanda de comida, agua y energía según la era tecnológica.
+  
+  Pruébala gratis en la web: https://crafttonation.netlify.app/
+  ¿Qué te parece la herramienta? Te leo 👇
 
 
 ---

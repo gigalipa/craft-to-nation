@@ -1,41 +1,35 @@
 # DevlogRecap.tsx
 
-> 14 nodes · cohesion 0.23
+> 12 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **DevlogRecap.tsx** (10 connections) — `video_edition/remotion/src/DevlogRecap.tsx`
-- **QASessionRecap.tsx** (9 connections) — `video_edition/remotion/src/QASessionRecap.tsx`
-- **react** (8 connections) — `video_edition/remotion/package.json`
-- **LowerThird.tsx** (7 connections) — `video_edition/remotion/src/LowerThird.tsx`
-- **@remotion/media** (6 connections) — `video_edition/remotion/package.json`
-- **LowerThird()** (5 connections) — `video_edition/remotion/src/LowerThird.tsx`
-- **@remotion/transitions** (5 connections) — `video_edition/remotion/package.json`
-- **DevlogRecap()** (3 connections) — `video_edition/remotion/src/DevlogRecap.tsx`
-- **QASessionRecap()** (3 connections) — `video_edition/remotion/src/QASessionRecap.tsx`
+- **dependencies** (8 connections) — `video_edition/remotion/package.json`
+- **@remotion/cli** (3 connections) — `video_edition/remotion/package.json`
+- **react-dom** (2 connections) — `video_edition/remotion/package.json`
+- **@remotion/captions** (2 connections) — `video_edition/remotion/package.json`
+- **react@19.2.3** (2 connections) — `video_edition/remotion/package.json`
+- **react-dom@19.2.3** (2 connections) — `video_edition/remotion/package.json`
+- **remotion@4.0.537** (2 connections) — `video_edition/remotion/package.json`
+- **@remotion/captions@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
+- **@remotion/cli@4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **@remotion/media@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **@remotion/transitions@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
-- **LowerThirdProps** (1 connections) — `video_edition/remotion/src/LowerThird.tsx`
-- **RECAP_CUTS** (1 connections) — `video_edition/remotion/src/DevlogRecap.tsx`
-- **QA_RECAP_CUTS** (1 connections) — `video_edition/remotion/src/QASessionRecap.tsx`
+- **remotion.config.ts** (1 connections) — `video_edition/remotion/remotion.config.ts`
 
 ## Relationships
 
-- [2026-09-30-previsualizacion- Module](2026-09-30-previsualizacion-_Module.md) (13 shared connections)
-- [BarraModos.gd Module](BarraModos.gd_Module.md) (3 shared connections)
-- [2026-09-20-nivelacion-frente Module](2026-09-20-nivelacion-frente_Module.md) (3 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [Hotbar.gd](Hotbar.gd.md) (4 shared connections)
+- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (4 shared connections)
 
 ## Source Files
 
 - `video_edition/remotion/package.json`
-- `video_edition/remotion/src/DevlogRecap.tsx`
-- `video_edition/remotion/src/LowerThird.tsx`
-- `video_edition/remotion/src/QASessionRecap.tsx`
+- `video_edition/remotion/remotion.config.ts`
 
 ## Audit Trail
 
-- EXTRACTED: 42 (100%)
+- EXTRACTED: 19 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

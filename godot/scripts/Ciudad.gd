@@ -926,14 +926,7 @@ func registrar_edificio_residencial(id: int, camas_por_piso: Array, baules: int 
 			colonizable_por_edificio[id] = false
 			horas_apertura_colonizacion[id] = 24
 	recalcular_limites()
-	# Si había colonos sin techo y ahora hay camas libres, se reincorporan como desempleados
-	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
-	while sin_techo > 0 and vivienda_libre >= espacio_minimo - 1e-6:
-		sin_techo -= 1
-		demografia["desempleado"] += 1
-		cola_desempleo.append(0)
-	if sin_techo == 0:
-		tiempo_sin_techo = 0
+	_alojar_sin_techo()
 
 
 ## Retira las camas de un edificio residencial que empieza a deconstruirse
@@ -967,6 +960,19 @@ func alternar_colonizable(id: int) -> void:
 	var actual: bool = colonizable_por_edificio.get(id, false)
 	colonizable_por_edificio[id] = not actual
 	horas_apertura_colonizacion.erase(id)
+	if colonizable_por_edificio[id]:
+		_alojar_sin_techo()
+
+
+## Reubica colonos sin techo en viviendas colonizables disponibles.
+func _alojar_sin_techo() -> void:
+	var espacio_minimo: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
+	while sin_techo > 0 and vivienda_colonizable_libre >= espacio_minimo - 1e-6:
+		sin_techo -= 1
+		demografia["desempleado"] += 1
+		cola_desempleo.append(0)
+	if sin_techo == 0:
+		tiempo_sin_techo = 0
 
 
 ## Calcula cuántos colonos quedarían sin techo si se remodela el edificio "id".
@@ -1291,6 +1297,8 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 	for ed_id in expirados_col:
 		horas_apertura_colonizacion.erase(ed_id)
 		colonizable_por_edificio[ed_id] = true
+	if not expirados_col.is_empty():
+		_alojar_sin_techo()
 
 	# Temporizador de 72h para colonos sin techo (tolerancia ampliada de 3 días)
 	if sin_techo > 0:

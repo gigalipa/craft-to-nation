@@ -1,38 +1,79 @@
 # Paneles de Ventana 1/20 (Recta, Esquina y Techo)
 
-> God node · 35 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+> 32 nodes · cohesion 0.12
 
-**Community:** [VoxelWorld.gd](VoxelWorld.gd.md)
+## Key Concepts
 
-## Connections by Relation
+- **Paneles de Ventana 1/20 (Recta, Esquina y Techo)** (35 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **CadenaMinerales.gd** (31 connections) — `godot/scripts/CadenaMinerales.gd`
+- **Canalizaciones Elevadas (Y+4 / Y+6) y Físicas de Fluidos** (28 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **Energia.gd** (25 connections) — `godot/scripts/Energia.gd`
+- **Refinería Vidriera (1-3-5) y Recurso Vidrio** (24 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **godot.md: Arquitectura Técnica en Godot & PoCs** (21 connections) — `website/wiki/src/es/dev/godot.md`
+- **godot.md: Godot Technical Architecture & Simulation Engine** (20 connections) — `website/wiki/src/en/dev/godot.md`
+- **Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md (Propuesta de Implementación: Ajustes de Subsuelo, Ductos, En)** (16 connections) — `docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md`
+- **2026-10-12-ajustes-subsuelo-ductos-energia-npcs-design.md (Especificación Técnica: Ajustes de Subsuelo, Fluidos, Canali)** (16 connections) — `docs/superpowers/specs/2026-10-12-ajustes-subsuelo-ductos-energia-npcs-design.md`
+- **2026-10-08-red-tuberias-acueductos.md (Red de Tuberías y Acueductos Implementation Plan)** (14 connections) — `docs/superpowers/plans/2026-10-08-red-tuberias-acueductos.md`
+- **2026-10-12-ajustes-subsuelo-ductos-energia-npcs.md (Plan de Implementación: Ajustes de Subsuelo, Fluidos, Canali)** (14 connections) — `docs/superpowers/plans/2026-10-12-ajustes-subsuelo-ductos-energia-npcs.md`
+- **2026-09-22-vias-tierra-pisada.md (Vías de Tierra Pisada Implementation Plan)** (13 connections) — `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
+- **BuscadorRutasTest.gd** (13 connections) — `godot/scripts/BuscadorRutasTest.gd`
+- **Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation)** (11 connections) — `docs/Live_Verifications.md`
+- **2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md (Especificación Técnica: Sistema Militar, Doctrinas Asimétric)** (10 connections) — `docs/superpowers/specs/2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md`
+- **CanalizacionesTest.gd** (9 connections) — `godot/scripts/CanalizacionesTest.gd`
+- **Fichas_Consumo_Produccion.md (Fichas de Consumo/Producción)** (8 connections) — `docs/Fichas_Consumo_Produccion.md`
+- **Fichas_Consumo_Produccion_Consolidada.md (Fichas de Consumo y Producción Consolidadas (Craft to Nation)** (7 connections) — `docs/Fichas_Consumo_Produccion_Consolidada.md`
+- **inicio.md: Guía de Primeros Pasos** (6 connections) — `website/wiki/src/es/guia/inicio.md`
+- **2026-09-30-siderurgica-real-design.md (Siderúrgica real (PoC 5, sub-proyecto 2C, parte 2 — primera )** (3 connections) — `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`
+- **start.md: Beginner's Survival & Settlement Guide** (3 connections) — `website/wiki/src/en/guide/start.md`
+- **index.md: Wiki Oficial de Craft to Nation (Español)** (3 connections) — `website/wiki/src/es/index.md`
+- **index.md: Craft to Nation Wiki — Documentación Oficial** (3 connections) — `website/wiki/src/index.md`
+- **BuscadorRutasTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/BuscadorRutasTest.gd`
+- **BuscadorRutasTest._ready()** (1 connections) — `godot/scripts/BuscadorRutasTest.gd`
+- *... and 7 more nodes in this community*
 
-### conceptually_related_to
-- [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `INFERRED`
-- [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `INFERRED`
-- [ideas-backlog.md (Backlog de Ideas — Craft to Nation)](ideas-backlog.md_Backlog_de_Ideas_—_Craft_to_Nation.md) `INFERRED`
-- gdd.md: Pilares de Diseño y GDD (v3.59) `INFERRED`
-- godot.md: Arquitectura Técnica en Godot & PoCs `INFERRED`
-- godot.md: Godot Technical Architecture & Simulation Engine `INFERRED`
-- gdd.md: Game Design Document (GDD v3.59) `INFERRED`
-- Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md (Propuesta de Implementación: Ajustes de Subsuelo, Ductos, En) `INFERRED`
-- 2026-09-29-costo-colocacion-bloques.md (Costo de colocación y bloques estructurales reales — Plan de) `INFERRED`
-- 2026-10-12-ajustes-subsuelo-ductos-energia-npcs-design.md (Especificación Técnica: Ajustes de Subsuelo, Fluidos, Canali) `INFERRED`
-- Verificaciones_en_vivo.md (Guión de Verificaciones en Vivo (Live QA Script) — Craft to ) `INFERRED`
-- 2026-09-21-economia-puestos-produccion-acarreo.md (Economía de Puestos: producción y acarreo (sub-proyecto 2A) ) `INFERRED`
-- 2026-10-08-red-tuberias-acueductos.md (Red de Tuberías y Acueductos Implementation Plan) `INFERRED`
-- 2026-10-12-ajustes-subsuelo-ductos-energia-npcs.md (Plan de Implementación: Ajustes de Subsuelo, Fluidos, Canali) `INFERRED`
-- 2026-09-22-vias-tierra-pisada.md (Vías de Tierra Pisada Implementation Plan) `INFERRED`
-- [2026-09-30-previsualizacion-construcciones-cenital.md (Previsualización isométrica de construcciones (HUD cenital) )](2026-09-30-previsualizacion-construcciones-cenital.md_Previsualización_isométrica_de_construcciones_HUD_cenital_.md) `INFERRED`
-- Documento Técnico de Desarrollo_ PoC 6 - Mundo Procedural y Puestos de Recolección.md (**Documento Técnico de Desarrollo: PoC 6 - Mundo Procedural ) `INFERRED`
-- 2026-09-22-vias-tierra-pisada-design.md (Vías de tierra pisada (sub-proyecto 6, primer tramo)) `INFERRED`
-- 2026-10-08-red-tuberias-acueductos-design.md (Especificación de Diseño: Red de Tuberías y Acueductos (Etap) `INFERRED`
-- Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation) `INFERRED`
-- *…and 12 more `conceptually_related_to` connection(s) not listed (lowest-degree first to go)*
+## Relationships
 
-### implements
-- [VoxelWorld.gd](VoxelWorld.gd.md) `EXTRACTED`
-- Player.gd `EXTRACTED`
-- TranslucidosRenderer.gd `EXTRACTED`
+- [Economia.gd](Economia.gd.md) (38 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (35 shared connections)
+- [ajustes.gd](ajustes.gd.md) (26 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (21 shared connections)
+- [BuscadorRutas.gd](BuscadorRutas.gd.md) (18 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (16 shared connections)
+- [Recoleccion.gd](Recoleccion.gd.md) (13 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (8 shared connections)
+- [BarraSuperior.gd](BarraSuperior.gd.md) (7 shared connections)
+- [bug_report.yml](bug_report.yml.md) (7 shared connections)
+- [HUD.gd](HUD.gd.md) (6 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (5 shared connections)
+
+## Source Files
+
+- `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- `docs/Fichas_Consumo_Produccion.md`
+- `docs/Fichas_Consumo_Produccion_Consolidada.md`
+- `docs/Live_Verifications.md`
+- `docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md`
+- `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
+- `docs/superpowers/plans/2026-10-08-red-tuberias-acueductos.md`
+- `docs/superpowers/plans/2026-10-12-ajustes-subsuelo-ductos-energia-npcs.md`
+- `docs/superpowers/specs/2026-09-30-siderurgica-real-design.md`
+- `docs/superpowers/specs/2026-10-12-ajustes-subsuelo-ductos-energia-npcs-design.md`
+- `docs/superpowers/specs/2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md`
+- `godot/scripts/BuscadorRutasTest.gd`
+- `godot/scripts/CadenaMinerales.gd`
+- `godot/scripts/CanalizacionesTest.gd`
+- `godot/scripts/Energia.gd`
+- `website/wiki/src/en/dev/godot.md`
+- `website/wiki/src/en/guide/start.md`
+- `website/wiki/src/es/dev/godot.md`
+- `website/wiki/src/es/guia/inicio.md`
+- `website/wiki/src/es/index.md`
+
+## Audit Trail
+
+- EXTRACTED: 182 (64%)
+- INFERRED: 101 (36%)
+- AMBIGUOUS: 0 (0%)
 
 ---
 

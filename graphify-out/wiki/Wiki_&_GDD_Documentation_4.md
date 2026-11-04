@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-mark.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-mark.png`
+- **Asset Visual: citycraft-hero.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-hero.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/craft-to-nation-mark.png`
+- `website/wiki/src/public/assets/citycraft-hero.webp`
 
 ## Audit Trail
 

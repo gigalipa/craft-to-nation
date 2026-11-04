@@ -1,41 +1,49 @@
 # Hotbar.gd
 
-> 9 nodes · cohesion 0.22
+> 25 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **Hotbar.gd** (34 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar.actualizar_cantidades()** (1 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar.configurar()** (1 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar.descripcion_de()** (1 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar.icono_de()** (1 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar.nombre_de()** (1 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar.nombre_hotbar_de()** (1 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar._process()** (1 connections) — `godot/scripts/Hotbar.gd`
-- **Hotbar._ready()** (1 connections) — `godot/scripts/Hotbar.gd`
+- **remotion/package.json** (24 connections) — `video_edition/remotion/package.json`
+- **devDependencies** (7 connections) — `video_edition/remotion/package.json`
+- **@remotion/eslint-config-flat** (3 connections) — `video_edition/remotion/package.json`
+- **eslint** (2 connections) — `video_edition/remotion/package.json`
+- **prettier** (2 connections) — `video_edition/remotion/package.json`
+- **@types/react** (2 connections) — `video_edition/remotion/package.json`
+- **@types/web** (2 connections) — `video_edition/remotion/package.json`
+- **typescript** (2 connections) — `video_edition/remotion/package.json`
+- **allowScripts** (2 connections) — `video_edition/remotion/package.json`
+- **eslint@10.12.0** (2 connections) — `video_edition/remotion/package.json`
+- **prettier@3.8.1** (2 connections) — `video_edition/remotion/package.json`
+- **@remotion/eslint-config-flat@4.0.537** (2 connections) — `video_edition/remotion/package.json`
+- **@types/react@19.2.7** (2 connections) — `video_edition/remotion/package.json`
+- **@types/web@0.0.166** (2 connections) — `video_edition/remotion/package.json`
+- **typescript@5.9.3** (2 connections) — `video_edition/remotion/package.json`
+- **engines** (2 connections) — `video_edition/remotion/package.json`
+- **eslint.config.mjs** (1 connections) — `video_edition/remotion/eslint.config.mjs`
+- **esbuild** (1 connections) — `video_edition/remotion/package.json`
+- **description** (1 connections) — `video_edition/remotion/package.json`
+- **node** (1 connections) — `video_edition/remotion/package.json`
+- **license** (1 connections) — `video_edition/remotion/package.json`
+- **name** (1 connections) — `video_edition/remotion/package.json`
+- **private** (1 connections) — `video_edition/remotion/package.json`
+- **repository** (1 connections) — `video_edition/remotion/package.json`
+- **version** (1 connections) — `video_edition/remotion/package.json`
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (7 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (3 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (3 shared connections)
-- [Hotbar.gd Module](Hotbar.gd_Module.md) (2 shared connections)
-- [Obras.gd Module](Obras.gd_Module.md) (1 shared connections)
-- [HUD.gd](HUD.gd.md) (1 shared connections)
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (1 shared connections)
-- [PanelContextual.gd](PanelContextual.gd.md) (1 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
-- [2026-09-25-puertas-interactivas.md](2026-09-25-puertas-interactivas.md.md) (1 shared connections)
-- [TemaHUD.gd](TemaHUD.gd.md) (1 shared connections)
-- [Zonificacion.gd](Zonificacion.gd.md) (1 shared connections)
+- [DevlogRecap.tsx](DevlogRecap.tsx.md) (4 shared connections)
+- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (4 shared connections)
+- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (1 shared connections)
 
 ## Source Files
 
-- `godot/scripts/Hotbar.gd`
+- `video_edition/remotion/eslint.config.mjs`
+- `video_edition/remotion/package.json`
 
 ## Audit Trail
 
-- EXTRACTED: 34 (100%)
+- EXTRACTED: 39 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

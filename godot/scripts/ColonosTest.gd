@@ -89,6 +89,7 @@ class BuscadorEspia extends "res://scripts/BuscadorRutas.gd":
 ## Obras falsas: ofrece una tarea fija y anota cada llamada a trabajar().
 class ObrasFalsa extends RefCounted:
 	signal marca_cambiada(id: int, marcado: bool)
+	signal prioridad_obra_cambiada(id: int, nueva_prioridad: int)
 
 	var colonos: Object = null
 	var tarea: Dictionary = {}
@@ -96,6 +97,10 @@ class ObrasFalsa extends RefCounted:
 	var resultado: Dictionary = {"estado": "avanzo", "espera": 0.0}
 	var trabajos: Array = []
 	var vetos: Array = []
+	var prioridades: Dictionary = {}
+
+	func prioridad_de(id: int) -> int:
+		return prioridades.get(id, 1)
 
 	func hay_obras_pendientes() -> bool:
 		return not tarea.is_empty()
@@ -1664,5 +1669,44 @@ func ejecutar_pruebas() -> void:
 	Vias.celdas.clear()
 	Vias._columnas.clear()
 
-	print("\n=== Las 58 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 56: Reasignación de obreros por prioridad de obra y liberación de empleos al remodelar ===")
+	# 1. Liberación de empleo al desahuciar en remodelación
+	var ciu56: Node = CiudadScript.new()
+	ciu56.registrar_edificio_residencial(100, [1])
+	ciu56.alternar_colonizable(100)
+	var col56: Node = _nuevo_con_puesto(ciu56)
+	ciu56.demografia["obrero"] = 1
+	col56.reconciliar()
+	var col_obrero: Dictionary = col56.colonos.values()[0]
+	assert(col_obrero["tipo"] == "obrero")
+	# Asignar a puesto en economia
+	var puesto_pos := Vector2i(2, 2)
+	col56.economia.puestos[puesto_pos]["recolectores"].append(col_obrero["id"])
+	col56.economia._puesto_de[col_obrero["id"]] = puesto_pos
+	col_obrero["trabajo"] = {"puesto": puesto_pos, "rol": "recolector"}
+	assert(col56.economia._puesto_de.has(col_obrero["id"]))
+
+	# Remodelar edificio 100 sin camas alternativas -> colono queda sin techo
+	ciu56.iniciar_remodelacion_residencial(100)
+	assert(ciu56.sin_techo == 1)
+	col56.reubicar_por_remodelacion(100)
+	assert(col_obrero["tipo"] == "desempleado", "obrero desahuciado pasa a desempleado/sin techo")
+	assert(col_obrero["trabajo"].is_empty(), "trabajo liberado en colono")
+	assert(not col56.economia._puesto_de.has(col_obrero["id"]), "trabajo liberado en Economia")
+
+	# 2. Reasignación dinámica por prioridad de obra
+	var col_obra: Node = _nuevo(_mundo_llano(), ciu56)
+	var obras_f: ObrasFalsa = ObrasFalsa.new()
+	col_obra.obras = obras_f
+	ciu56.demografia["desempleado"] = 1
+	ciu56.sin_techo = 0
+	col_obra.reconciliar()
+	var c_libre: Dictionary = col_obra.colonos.values()[0]
+	c_libre["tarea"] = {"tipo": "construir", "id": 10}
+	obras_f.prioridades[10] = 1 # Normal
+	obras_f.prioridades[20] = 2 # Alta
+	obras_f.prioridad_obra_cambiada.emit(20, 2)
+	assert(c_libre["tarea"].is_empty(), "obrero libera tarea de menor prioridad al subir otra a Alta")
+
+	print("\n=== Las 59 pruebas de Colonos pasaron correctamente ===")
 

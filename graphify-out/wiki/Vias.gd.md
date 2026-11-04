@@ -16,18 +16,18 @@
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (4 shared connections)
-- [Colonos.gd](Colonos.gd.md) (3 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (3 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (2 shared connections)
-- [2026-10-02-obras-por-colonos Module](2026-10-02-obras-por-colonos_Module.md) (2 shared connections)
-- [ViaPreviewOverlay.gd](ViaPreviewOverlay.gd.md) (2 shared connections)
+- [BuscadorRutas.gd](BuscadorRutas.gd.md) (3 shared connections)
+- [Economia.gd](Economia.gd.md) (3 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (2 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (2 shared connections)
+- [ZonaOverlay.gd](ZonaOverlay.gd.md) (2 shared connections)
+- [ajustes.gd](ajustes.gd.md) (2 shared connections)
 - [Zonificacion.gd](Zonificacion.gd.md) (2 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (1 shared connections)
-- [Economia.gd](Economia.gd.md) (1 shared connections)
-- [Video Edition & Remotion Studio](Video_Edition_&_Remotion_Studio.md) (1 shared connections)
-- [NiveladorVia.gd](NiveladorVia.gd.md) (1 shared connections)
-- [NiveladorVia.gd Module](NiveladorVia.gd_Module.md) (1 shared connections)
+- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
+- [Obras.gd](Obras.gd.md) (1 shared connections)
+- [Recoleccion.gd](Recoleccion.gd.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
 
 ## Source Files
 

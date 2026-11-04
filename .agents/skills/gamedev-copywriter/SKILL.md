@@ -1,6 +1,6 @@
 ---
 name: gamedev-copywriter
-description: Especialista en marketing y redacción de copys para videojuegos indie (Craft to Nation). Redacta ganchos virales, textos para TikTok, Reels, YouTube Shorts y X (Twitter) con llamadas a la acción verificadas (Web oficial y GitHub Discussions), así como títulos, descripciones con capítulos y actualizaciones de desarrollo (Devlogs) para la comunidad.
+description: Especialista en marketing y redacción de copys para videojuegos indie (Craft to Nation). Redacta ganchos virales, textos para TikTok, Reels, YouTube Shorts, X (Twitter) y Threads con llamadas a la acción verificadas (Web oficial y GitHub Discussions), así como títulos, descripciones con capítulos y actualizaciones de desarrollo (Devlogs) para la comunidad.
 ---
 
 # Skill: Gamedev Copywriter (Craft to Nation)
@@ -25,6 +25,7 @@ Esta skill predispone al agente como redactor publicitario senior y especialista
 > - 🌐 **Sitio Web Oficial**: `https://crafttonation.netlify.app/`
 > - 💬 **Comunidad y Feedback (GitHub Discussions)**: `https://github.com/gigalipa/craft-to-nation/discussions`
 > - 🔴 **Canal de YouTube**: `https://www.youtube.com/@crafttonation`
+> - 🧵 **Threads**: `@crafttonation`
 > - 📺 **Directos de Desarrollo**: `@crafttonation` (Twitch/Kick)
 
 ---
@@ -46,6 +47,10 @@ Para cada clip vertical generado, el copywriter debe entregar:
 - **Post para X (Twitter)**:
   - Breve, directo y visual (menos de 280 caracteres).
   - Llamada a la acción (CTA) con enlace real: Web oficial (`https://crafttonation.netlify.app/`) o debate en GitHub Discussions (`https://github.com/gigalipa/craft-to-nation/discussions`).
+- **Post para Threads**:
+  - Conversacional, cercano y reflexivo, ideal para la comunidad indie gamedev (hasta 500 caracteres).
+  - Planteamiento de preguntas abiertas o dilemas de diseño para generar debate y respuestas orgánicas.
+  - CTA hacia la Web Oficial o GitHub Discussions con enlace limpio.
 
 ### 2. Para Videos Largos Editados / Devlogs Semanales (16:9)
 Para devlogs horizontales y resúmenes de desarrollo:
@@ -65,13 +70,13 @@ Para devlogs horizontales y resúmenes de desarrollo:
   - Hashtags de la industria indie.
 - **Actualización de Comunidad / Devlog (GitHub Discussions / Web)**:
   - Artículo en formato Markdown listo para publicar en GitHub Discussions o blog web del proyecto, explicando las nuevas funciones y solicitando feedback de balance.
-- **Post en X (Twitter)**:
+- **Posts en X (Twitter) y Threads**:
   - Anuncio del estreno del devlog con puntos clave y enlace al video.
 
 ### 3. Para Transmisiones en Vivo Procesadas (Lives)
 El copywriter produce el paquete completo combinado:
 - 1 Paquete de Formato Largo (YouTube + Capítulos + Devlog Update) para el Video Recap.
-- 3 Paquetes de Formato Corto independientes (Gancho 3s + TikTok/Reels/Shorts + Post en X) para cada uno de los 3 Shorts virales extraídos.
+- 3 Paquetes de Formato Corto independientes (Gancho 3s + TikTok/Reels/Shorts + Posts en X y Threads) para cada uno de los 3 Shorts virales extraídos.
 
 ---
 

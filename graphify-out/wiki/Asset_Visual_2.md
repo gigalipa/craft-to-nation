@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-logo.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-logo.png`
+- **Asset Visual: hud-camara-cenital.png** (0 connections) — `arte/conceptos-hud/hud-camara-cenital.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/craft-to-nation-logo.png`
+- `arte/conceptos-hud/hud-camara-cenital.png`
 
 ## Audit Trail
 

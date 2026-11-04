@@ -24,6 +24,8 @@
 20. ✅ (2026-10-21) **Centralización de variables (`ajustes.gd`) y textos UI con reactividad (`strings.gd`):** Desacoplamiento de constantes de balance a `Ajustes.gd` (economía, moral, demografía, mundo, velocidades, energía y construcción) preparados para modificación en caliente mediante perfiles de partida ("Nueva partida") o configuración global ("Ajustes de juego"); centralización y soporte multilingüe en `Strings.gd` (`Ajustes.idioma`) con getters estáticos reactivos (`static var PROP: String: get: return ...`) que formatean variables dinámicas en tiempo real en la interfaz; calibración de curvas de migración y multiplicador boost (2.5× por 30 días); y corrección de advertencias de identificadores globales sombreados de Godot 4. 28 escenas de prueba al 100% en verde.
 21. ✅ (2026-10-27) **Evolución de Eras, IDU (`I`–`IV`), Investigación en 2 Capas, Vidriera (`vidrio`), Taller de Transporte y Ventanas `1/20` (GDD v3.59):** Indicador superior con nombre + ícono de Era e ícono romano del IDU redondeado (`I`–`IV`) en el extremo derecho con ventana tooltip en la esquina superior derecha al hacer hover (balanza de 3 pilares: Demográfico `D`, Científico `C` y Sofisticación Material `S`); investigación descentralizada en 2 capas (Universidad Teórica + Aplicaciones Prácticas en edificios/Núcleo Urbano mediante el **Investigador Itinerante**); refinería **Vidriera (`1-3-5`, `5×6` adobe: `1 Tierra + 1 Carbón → 3 Vidrio`)**; **Taller de Transporte** y 6 unidades móviles (`acarreador_pie`, `carreta_mano`, `carro_caballos`, `camion_diesel`, `trolebus_solar`, `dron_carga`, exigencia de vía `exige_via = true`, arrastre lento a `1,2 m/s` y uso exclusivo de `vidrio` en cabinas); bloques de ventana (`TranslucidosRenderer.gd`) rediseñados como paneles transparentes de `1/20` (`0,05 m`) en 3 variantes (`ventana` recta a media profundidad orientada hacia el avatar, `ventana_esquina` en L rotada 90° en Y, y `ventana_techo` al ras de la cara superior `Y ∈ [0,95, 1,0]` al mirar arriba/abajo) que consumen preferentemente `1 Vidrio` (o `3 Tierra`); `VentanaAlmacen` con materias primas A–Z, desplegables jerárquicos (`▶`/`▼`) para refinados y las 6 categorías de comida, más botón `[Expandir todo]`/`[Contraer todo]`; reservas centrales porcentuales (`0%–50%`) con botones `▲`/`▼`; `PanelEdificio` con botones de prioridad `▲`/`▼`, transición automática al panel del edificio terminado al 100 % y drenaje automático de agua interior; y `VentanaMoral` compactada con estado de migración bajo productividad laboral. 28 escenas de prueba al 100% en verde.
 22. ✅ (2026-10-28) **Saneamiento de herramientas de 1ª persona al alternar con cámara cenital:** Desactivación incondicional de herramientas en primera persona (`Player.salir_de_todas_las_herramientas()`) al transicionar a la vista cenital (`Main._alternar_camara_cenital()`), limpiando `modo_deconstruccion`, `modo_vias` y estados temporales de minado y colocación. Garantiza que al regresar a 1ª persona el avatar siempre se encuentre en modo neutro de minado y colocación. Cobertura con pruebas unitarias añadidas a `PlayerNatacionTest.gd`. Las 28 escenas de prueba de Godot se mantienen al 100% en verde.
+23. ✅ (2026-10-31) **Infraestructura comunitaria, CI/CD y subtítulos modernos en Remotion:** Adopción del Código de Conducta (`CODE_OF_CONDUCT.md`), workflows de CI (`.github/workflows/ci.yml`), plantillas de reporte/PR y configuración de Dependabot; y modernización del renderizado de subtítulos de shorts en Remotion (`VerticalShort.tsx`) a cápsulas de alto contraste y tipografía bold de 58px. Las 28 suites de prueba automatizadas permanecen al 100% en verde.
+24. ✅ (2026-11-03) **Resolución integral de incidencias de QA y pulido de simulación:** Corrección de los 9 bugs y la sugerencia del reporte de QA (`docs/reporte_bug_28-10-26.md`): (1) render priority en `CaraApuntada.gd` para bloques translúcidos, (2) alojamiento inmediato de colonos sin techo al activar colonizabilidad o vencer temporizador en `Ciudad.gd`, (3) reconciliación de puestos periféricos de colonos desahuciados en `Colonos.gd` y `FinalizacionObras.gd`, (4) persistencia y rotación de orientaciones 3D en blueprints (`BlueprintValidator.gd`, `CamaraCenital.gd`, `VoxelWorld.gd`) asegurando correcta colocación de `ventana_techo` y paneles orientables, (5) desmarcado de vías en demolición en cenital (`CamaraCenital.gd`, `Obras.gd`), (6) interacción bidireccional con obras y demoliciones de vías en 1ª persona (`Player.gd`), (7) tiempo de espera y confirmación unificado para demolición en cenital y 1ª persona (`Obras.gd`), (8) reasignación reactiva inmediata de cuadrillas al elevar prioridad de obras (`Obras.gd`, `Colonos.gd`), (9) autoajuste de tamaño (`reset_size`) en `VentanaAlmacen.gd` al contraer; y recalibración de la tabla de migración en `Ajustes.CIUDAD_TRAMOS_MIGRACION` (75: +5/mes, 90: +7/mes, 100: +10/mes). Las 28 escenas de prueba de Godot se mantienen al 100% en verde.
 
 ## Estado detallado e historial
 
@@ -251,6 +253,34 @@ Consolidación de los sistemas de progresión tecnológica, logística vehicular
    - Materias primas ordenadas alfabéticamente A–Z con desplegables (`▶`/`▼`) para mostrar sus recursos refinados (`Tablas`, `Bloques de piedra`, `Vidrio`, `Acero`, `Mineral refinado`, `Combustible`) y las 6 categorías de comida (`Frutos silvestres`, `Carne de caza`, `Pescado y algas`, `Cultivos agrícolas`, `Panadería y granos`, `Conservas industriales`).
    - Botón **`[Expandir todo]` / `[Contraer todo]`** en la barra de título entre `"ALMACÉN"` y el botón `[X]`.
 
+### 11c. Infraestructura comunitaria, CI/CD y estilización moderna de subtítulos en Remotion — ✅ hecho (2026-10-31)
+
+1. **Estándares Comunitarios y Gobernanza de Código Abierto:**
+   - Adopción de `CODE_OF_CONDUCT.md` basado en el estándar Contributor Covenant v2.1.
+   - Plantillas oficiales de GitHub para reportes de errores estructurados (`bug_report.yml`), solicitudes de características (`feature_request.yml`) y pull requests (`pull_request_template.md`).
+   - Automatización de mantenimiento de dependencias mediante `dependabot.yml` para GitHub Actions, npm y dependencias del proyecto.
+2. **Integración Continua (CI/CD):**
+   - Workflow multi-job en `.github/workflows/ci.yml`: compilación y tipado estricto de TypeScript en `video_edition/remotion/`, verificación de sintaxis de scripts Python (`video_edition/tools/`), y escaneo de higiene para prevenir credenciales o tokens expuestos.
+3. **Estudio de Video y Composición de Subtítulos:**
+   - Rediseño de subtítulos en `video_edition/remotion/src/VerticalShort.tsx`: tipografía bold moderna de 58px blanca sobre cápsula redondeada negro obsidiana (`rgba(0, 0, 0, 0.84)` con contorno sutil `rgba(255, 255, 255, 0.14)`), eliminando la fatiga visual de bordes gruesos y optimizando la lectura móvil en vertical (9:16) con zona segura inferior de 340px.
+   - Auditoría técnica en `video_edition/tools/qa_checker.py`: validación de Display Aspect Ratio (DAR) y Sample Aspect Ratio (SAR) para prevenir reproducciones verticales deformadas en entregables horizontales (16:9).
+
+### 11d. Resolución integral de incidencias de QA y pulido de simulación — ✅ hecho (2026-11-03)
+
+1. **Correcciones de Renderizado y Gráficos:**
+   - `godot/scripts/CaraApuntada.gd`: configuración de `render_priority = 3` para garantizar el renderizado limpio del overlay de selección sobre mallas translúcidas (ventanas) al mirarlas en ángulos oblicuos.
+2. **Sincronización Demográfica y Remodelación:**
+   - `godot/scripts/Ciudad.gd` y `godot/scripts/Colonos.gd`: método `_alojar_sin_techo()` invocado inmediatamente al activar la colonizabilidad o al vencer el temporizador de buffer residencial de 24h. Los colonos que ingresan sin cama inician con hogar `-1` sin ocupar indebidamente residencias buffer protegidas.
+   - `godot/scripts/FinalizacionObras.gd`: invocación de `Colonos.reconciliar()` tras `reubicar_por_remodelacion()`. Al desahuciar residentes durante una remodelación, se liberan automáticamente sus puestos periféricos o empleos industriales con `Economia.liberar()`.
+3. **Persistencia y Rotación 3D de Blueprints:**
+   - `godot/scripts/BlueprintValidator.gd`, `godot/scripts/CamaraCenital.gd` y `godot/scripts/VoxelWorld.gd`: registro, rotación de 90° (`rotar_orientaciones_3d`) y aplicación de `orientaciones_3d` en blueprints, garantizando que ventanas de techo (`ventana_techo`), esquinas y bloques orientables mantengan su orientación correcta en mundo al emplazarse o rotarse con blueprints.
+4. **Herramientas de Demolición y Priorización de Obras:**
+   - `godot/scripts/CamaraCenital.gd` y `godot/scripts/Obras.gd`: función `cancelar_demolicion_via()` permitiendo alternar y desmarcar vías en demolición en modo cenital. En `Player.gd` (modo vías `V`), clic derecho permite alternar el marcaje de demolición de la vía apuntada y clic izquierdo avanza su demolición.
+   - `godot/scripts/Obras.gd`: función `alternar_demolicion()` unificada con cuenta regresiva previa de confirmación tanto en vista cenital como en primera persona. Señal `prioridad_obra_cambiada` conectada a `Colonos.gd` para reasignar inmediatamente obreros hacia construcciones de mayor prioridad.
+5. **Interfaz y Calibración Demográfica:**
+   - `godot/scripts/VentanaAlmacen.gd`: invocación de `reset_size()` al contraer categorías o colapsar el almacén.
+   - `godot/scripts/ajustes.gd`: recalibración de la tabla `CIUDAD_TRAMOS_MIGRACION` a 10 tramos con auge migratorio acelerado ante moral sobresaliente: moral $\le 75 	o +5.0$/mes; $\le 90 	o +7.0$/mes; $\le 100 	o +10.0$/mes.
+
 ### 12. Cola de pendientes menores de la Fase 3 — no bloqueantes
 
 Pueden intercalarse en cualquier momento.
@@ -261,15 +291,15 @@ Pueden intercalarse en cualquier momento.
 - ~~Restaurar el terreno excavado al deconstruir un edificio~~ — ✅ Resuelto por diseño: la mecánica queda tal como está; el terreno excavado permanece tal como se haya cavado para la colocación del edificio (la terraformación es permanente).
 - Revisar el dithering de Alpha Hash en ventanas cuando exista una textura real.
 - ~~Devolver "Agregar todo" a `VentanaBaul` solo en los baúles dentro de un edificio de almacén y en los del núcleo urbano~~ — ✅ Resuelto por diseño: no habrá botón de "agregar todo" en los baúles de puestos periféricos ni refinerías; el comportamiento actual (transferencia individual y extracción) es definitivo.
-- Cola de incidencias y ajustes detectados en sesión de QA (reporte `docs/reporte_bug_28-10-26.md`):
-  - Superposición visual de ventana sobre overlay de bloque apuntado al mirar de lado.
-  - Sincronización de colonos sin techo y estado desempleado al activar colonización en edificios residenciales.
-  - Reasignación y actualización de empleados en puestos periféricos al desahuciar residentes durante remodelación.
-  - Orientación automática de ventanas de techo en construcción desde blueprints (evitar que queden en vertical).
-  - Desmarcado de vías en demolición desde la herramienta de demolición cenital y de vías en 1ª persona.
-  - Tiempo de confirmación/espera previo en demolición desde vista cenital y herramienta de deconstrucción de 1ª persona.
-  - Reasignación de obreros ya asignados al aumentar la prioridad de una construcción en curso.
-  - Adaptación dinámica de tamaño de `VentanaAlmacen` al presionar el botón «Contraer todo».
+- ~~Cola de incidencias y ajustes detectados en sesión de QA (reporte `docs/reporte_bug_28-10-26.md`)~~ — ✅ resueltas todas (2026-11-03):
+  - ~~Superposición visual de ventana sobre overlay de bloque apuntado al mirar de lado~~ — ✅ resuelto (2026-11-03).
+  - ~~Sincronización de colonos sin techo y estado desempleado al activar colonización en edificios residenciales~~ — ✅ resuelto (2026-11-03).
+  - ~~Reasignación y actualización de empleados en puestos periféricos al desahuciar residentes durante remodelación~~ — ✅ resuelto (2026-11-03).
+  - ~~Orientación automática de ventanas de techo en construcción desde blueprints (evitar que queden en vertical)~~ — ✅ resuelto (2026-11-03).
+  - ~~Desmarcado de vías en demolición desde la herramienta de demolición cenital y de vías en 1ª persona~~ — ✅ resuelto (2026-11-03).
+  - ~~Tiempo de confirmación/espera previo en demolición desde vista cenital y herramienta de deconstrucción de 1ª persona~~ — ✅ resuelto (2026-11-03).
+  - ~~Reasignación de obreros ya asignados al aumentar la prioridad de una construcción en curso~~ — ✅ resuelto (2026-11-03).
+  - ~~Adaptación dinámica de tamaño de `VentanaAlmacen` al presionar el botón «Contraer todo»~~ — ✅ resuelto (2026-11-03).
 
 ### Después de cerrar la Fase 3
 
@@ -279,6 +309,10 @@ Pueden intercalarse en cualquier momento.
 ---
 
 ## Hecho
+
+- ~~**Resolución integral de incidencias de QA y pulido de simulación** (2026-11-03).~~ Corrección completa de los 9 bugs y la sugerencia de QA reportados en `docs/reporte_bug_28-10-26.md`: render priority del overlay sobre translúcidos (`CaraApuntada.gd`), alojamiento reactivo de colonos sin techo y reconciliación laboral al desahuciar (`Ciudad.gd`, `Colonos.gd`, `FinalizacionObras.gd`), persistencia y rotación de orientaciones 3D en blueprints (`BlueprintValidator.gd`, `CamaraCenital.gd`, `VoxelWorld.gd`), desmarcado de demolición de vías y confirmación temporal unificada en cenital y 1ª persona (`CamaraCenital.gd`, `Obras.gd`, `Player.gd`), reasignación de cuadrillas ante cambios de prioridad (`Obras.gd`, `Colonos.gd`), autoajuste de tamaño al contraer `VentanaAlmacen.gd`, y recalibración de la curva de migración mensual en `Ajustes.CIUDAD_TRAMOS_MIGRACION` (hasta +10 colonos/mes en moral sobresaliente). Las 28 escenas de prueba de Godot se mantienen al 100% en verde.
+
+- ~~**Infraestructura comunitaria, CI/CD y estilización moderna de subtítulos en Remotion** (2026-10-31).~~ Integración del Código de Conducta de la comunidad (`CODE_OF_CONDUCT.md` basado en Contributor Covenant v2.1), workflows automatizados de GitHub Actions (`.github/workflows/ci.yml` para validación de sintaxis Python, comprobación estricta de tipos TypeScript en Remotion y auditoría de higiene de secretos), plantillas oficiales de incidencias (`bug_report.yml`, `feature_request.yml`), configuración de dependencias (`dependabot.yml`) y plantilla de PR. En el estudio de video, actualización de la composición de shorts verticales (`VerticalShort.tsx`) y calendario editorial (`calendario_semana_3.md`) con subtítulos modernos de alto contraste (texto blanco bold de 58px sobre cápsula de fondo negro obsidiana redondeada y zona segura inferior de 340px) optimizados para legibilidad móvil y reducción de fatiga visual. Las 28 escenas de prueba de Godot se mantienen al 100% en verde.
 
 - ~~**Saneamiento de herramientas de 1ª persona al alternar con cámara cenital** (2026-10-28).~~ Desactivación incondicional de herramientas en primera persona (`Player.salir_de_todas_las_herramientas()`) invocada al transicionar a la cámara cenital (`Main._alternar_camara_cenital()`), limpiando `modo_deconstruccion`, `modo_vias` y estados temporales de minado/colocación. Garantiza que al regresar a 1ª persona el avatar siempre se encuentre en modo neutro de minado y colocación. Cobertura con pruebas unitarias añadidas a `PlayerNatacionTest.gd`. Las 28 escenas de prueba de Godot se mantienen al 100% en verde.
 

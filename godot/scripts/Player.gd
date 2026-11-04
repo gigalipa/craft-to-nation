@@ -893,6 +893,16 @@ func _trabajar_via_manual() -> void:
 		return
 	var celda := _celda_impactada()
 	var col := Vector2i(celda.x, celda.z)
+
+	# Si la vía está marcada para demolición, el clic izquierdo avanza la demolición
+	var id_dem: int = Obras.obra_demolicion_via_en_columna(col)
+	if id_dem != 0:
+		Obras.reclamar(id_dem)
+		var res_dem: Dictionary = Obras.trabajar_demoler_via(id_dem, celda)
+		if res_dem.get("estado") == "completa":
+			hud.notificar(Strings.OBRAS_AVISO_TRAMO_VIA_DEMOLIDO)
+		return
+
 	var id_via: int = Obras.obra_via_en_columna(col)
 	if id_via == 0:
 		var col_arriba := Vector2i(celda.x, celda.z)
@@ -966,6 +976,13 @@ func _demoler_via_manual() -> void:
 			hud.notificar(Strings.PLAYER_NOTIF_SIN_VIA_CONSTRUIDA)
 			return
 
+	# Si ya está marcada para demolición, el clic derecho quita la marca
+	var id_dem_existente: int = Obras.obra_demolicion_via_en_columna(col)
+	if id_dem_existente != 0:
+		Obras.cancelar_demolicion_via(id_dem_existente)
+		hud.notificar("Marca de demolición de vía quitada.")
+		return
+
 	var celdas_seccion: Array[Vector3i] = Vias.celdas_de_seccion(col)
 	if celdas_seccion.is_empty():
 		var c_unica: Vector3i = Vias.celda_en_columna(col)
@@ -976,26 +993,13 @@ func _demoler_via_manual() -> void:
 		hud.notificar(Strings.PLAYER_NOTIF_SIN_VIA_CONSTRUIDA)
 		return
 
-	var id_dem := 0
-	for c in celdas_seccion:
-		for id_cand in Obras.obras_demolicion_vias:
-			if Obras.obras_demolicion_vias[id_cand]["celdas"].has(c):
-				id_dem = id_cand
-				break
-		if id_dem != 0:
-			break
-
-	if id_dem == 0:
-		id_dem = Obras.crear_demolicion_via(celdas_seccion)
-
-	Obras.reclamar(id_dem)
-	for c in celdas_seccion:
-		Obras.trabajar_demoler_via(id_dem, c)
-
+	var nuevo_id: int = Obras.crear_demolicion_via(celdas_seccion)
+	if nuevo_id != 0:
+		hud.notificar("Vía marcada para demolición.")
 
 
 ## Clic derecho con el modo deconstrucción: marca (o desmarca) para demolición el edificio
-## bajo la mira; los colonos libres lo demolerán.
+## bajo la mira; los colonos libres lo demolerán tras la cuenta regresiva.
 func _marcar_demolicion() -> void:
 	var id := -1
 	if raycast.is_colliding() and mundo != null:
@@ -1007,10 +1011,10 @@ func _marcar_demolicion_de(id: int) -> void:
 	if id == -1:
 		hud.notificar(Strings.PLAYER_NOTIF_SIN_EDIFICIO_PARA_MARCAR)
 		return
-	var motivo: String = Obras.alternar_marca(id)
+	var motivo: String = Obras.alternar_demolicion(id)
 	if motivo != "":
 		hud.notificar(motivo)
-	elif Obras.esta_marcado(id):
+	elif Obras.esta_programada(id) or Obras.esta_marcado(id):
 		hud.notificar(Strings.PLAYER_NOTIF_EDIFICIO_MARCADO_DEMOLICION)
 	else:
 		hud.notificar(Strings.PLAYER_NOTIF_MARCA_DEMOLICION_QUITADA)
@@ -1339,7 +1343,12 @@ func _declarar_edificio() -> void:
 	if celdas.is_empty():
 		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_PUERTA_NO_JUGADOR)
 		return
-	var blueprint := BlueprintValidator.estructura_a_blueprint(celdas)
+	var orientaciones: Dictionary = {}
+	if mundo != null and "orientacion_ventana" in mundo:
+		for pos in celdas:
+			if mundo.orientacion_ventana.has(pos):
+				orientaciones[pos] = mundo.orientacion_ventana[pos]
+	var blueprint := BlueprintValidator.estructura_a_blueprint(celdas, orientaciones)
 
 	# Huella en planta (X,Z) del edificio, sin repetir celdas — usada tanto
 	# para el bootstrap del núcleo urbano como, más adelante, para pintarla

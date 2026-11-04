@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: hud-camara-cenital.png** (0 connections) — `website/wiki/src/public/assets/hud-camara-cenital.png`
+- **Asset Visual: citycraft-world.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-world.webp`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/hud-camara-cenital.png`
+- `website/wiki/src/public/assets/citycraft-world.webp`
 
 ## Audit Trail
 

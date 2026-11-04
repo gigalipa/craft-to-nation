@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: citycraft-world.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-world.webp`
+- **index.md: Wiki Officiel Craft to Nation (Français)** (0 connections) — `website/wiki/src/fr/index.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/citycraft-world.webp`
+- `website/wiki/src/fr/index.md`
 
 ## Audit Trail
 

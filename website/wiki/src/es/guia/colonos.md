@@ -75,7 +75,7 @@ Productividad = 0.5 × 2^(Moral / 50)
 - **Moral = 100 (Euforia):** Rendimiento duplicado al **2,0×** (`🙂` Alta, `>= 65 %`).
 
 ### Regímenes y Tramos Escalonados de Migración Mensual (`Ciudad.calcular_tasa_migracion_mensual()`)
-Un mes de simulación equivale a `720 horas` de juego (`30 días × 24 h`). En `VentanaMoral.gd` (<kbd>M</kbd>) se sintetizan tres regímenes migratorios principales (**`<= 20 %` `⚠ Éxodo de cerebros`**, **`20 % – 50 %` `Inmigración con camas`** y **`> 50 %` `Inmigración masiva`**), desglosados internamente en 9 tramos escalonados:
+Un mes de simulación equivale a `720 horas` de juego (`30 días × 24 h`). En `VentanaMoral.gd` (<kbd>M</kbd>) se sintetizan tres regímenes migratorios principales (**`<= 20 %` `⚠ Éxodo de cerebros`**, **`20 % – 50 %` `Inmigración con camas`** y **`> 50 %` `Inmigración masiva`**), desglosados internamente en 10 tramos escalonados:
 
 | Tramo de Moral | Tasa Mensual (`colonos / mes`) | Régimen Migratorio en `Ciudad.gd` |
 | :--- | :--- | :--- |
@@ -86,8 +86,9 @@ Un mes de simulación equivale a `720 horas` de juego (`30 días × 24 h`). En `
 | **`20,0 – 25,0`** | **+1,0 / mes** | **Inmigración prudente** (*solo ingresa si existen camas colonizables libres*) |
 | **`25,0 – 35,0`** | **+2,0 / mes** | **Inmigración moderada** (*solo ingresa si existen camas colonizables libres*) |
 | **`35,0 – 50,0`** | **+3,0 / mes** | **Inmigración sostenida** (*solo ingresa si existen camas colonizables libres; no genera sin techo*) |
-| **`50,0 – 75,0`** | **+3,0 / mes** | **Inmigración masiva** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
-| **`75,0 – 100,0`** | **+5,0 / mes** | **Auge migratorio** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
+| **`50,0 – 75,0`** | **+5,0 / mes** | **Inmigración masiva** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
+| **`75,0 – 90,0`** | **+7,0 / mes** | **Auge migratorio** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
+| **`90,0 – 100,0`** | **+10,0 / mes** | **Auge migratorio sobresaliente** (*máxima atracción cívica bajo moral excepcional*) |
 
 ---
 

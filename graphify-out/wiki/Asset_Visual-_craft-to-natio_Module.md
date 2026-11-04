@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **deploy_wiki.ps1** (0 connections) — `tools/deploy_wiki.ps1`
+- **Asset Visual: Stream_debug.png** (0 connections) — `arte/stream_art/Stream_debug.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tools/deploy_wiki.ps1`
+- `arte/stream_art/Stream_debug.png`
 
 ## Audit Trail
 

@@ -336,6 +336,7 @@ var _cuerpos_obra: Node3D = null
 ## deconstrucción, punto 2.5).
 var edificio_orden: Dictionary = {}  # int -> Array[Vector3i]
 var edificio_tipos: Dictionary = {}  # int -> Dictionary (Vector3i -> String)
+var edificio_orientaciones: Dictionary = {}  # int -> Dictionary (Vector3i -> Vector3i)
 var edificio_progreso: Dictionary = {}  # int -> int
 var edificio_metadata: Dictionary = {}  # int -> Dictionary
 
@@ -1869,6 +1870,7 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_sobre_techo.erase(id)
 	edificio_orden.erase(id)
 	edificio_tipos.erase(id)
+	edificio_orientaciones.erase(id)
 	edificio_progreso.erase(id)
 	edificio_metadata.erase(id)
 	# Lo que quede pendiente de la cola de preparación se cancela: la
@@ -1923,6 +1925,7 @@ func desdeclarar_edificio(id: int) -> Vector2i:
 	edificio_sobre_techo.erase(id)
 	edificio_orden.erase(id)
 	edificio_tipos.erase(id)
+	edificio_orientaciones.erase(id)
 	edificio_progreso.erase(id)
 	edificio_metadata.erase(id)
 	if edificio_relleno_cola.has(id):
@@ -2021,6 +2024,8 @@ func iniciar_construccion_fantasma(orden_relleno: Array, tipos_relleno: Dictiona
 		edificio_relleno_cola[id] = Construccion.iniciar(orden_relleno, tipos_relleno)
 	edificio_orden[id] = orden_estructura
 	edificio_tipos[id] = tipos_estructura
+	if metadata.has("orientaciones_mundo"):
+		edificio_orientaciones[id] = metadata["orientaciones_mundo"].duplicate()
 	edificio_progreso[id] = 0
 	edificio_metadata[id] = metadata
 	var despeje: Dictionary = calcular_despeje(tipos_estructura)
@@ -2083,7 +2088,7 @@ func estampar_puesto(celdas: Dictionary, esquina: Vector2i) -> int:
 ## desregistra del árbol); todo lo demás se vacía primero. Así el agua se
 ## drena y el follaje desaparece en el mismo instante en que el bloque sólido
 ## ocupa la celda.
-func _reemplazar_celda(celda: Vector3i, tipo: String) -> void:
+func _reemplazar_celda(celda: Vector3i, tipo: String, orientacion: Variant = null) -> void:
 	var actual: String = obtener_tipo(celda)
 	if actual == tipo:
 		return
@@ -2091,7 +2096,7 @@ func _reemplazar_celda(celda: Vector3i, tipo: String) -> void:
 		eliminar_follaje(celda)
 	elif actual != "agua":
 		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
-	colocar_bloque(celda, tipo, true)
+	colocar_bloque(celda, tipo, true, orientacion)
 
 
 ## Registra el follaje de "id" (huella y fachada, ver
@@ -2430,7 +2435,10 @@ func surtir_construccion(celda: Vector3i) -> Dictionary:
 	if falta != "":
 		return {"insuficiente": true, "recurso": falta, "tipo": tipo}
 	_despejar_follaje_de_columna(Vector2i(celda_a_surtir.x, celda_a_surtir.z))
-	_reemplazar_celda(celda_a_surtir, tipo)
+	var orientacion = null
+	if edificio_orientaciones.has(id) and edificio_orientaciones[id].has(celda_a_surtir):
+		orientacion = edificio_orientaciones[id][celda_a_surtir]
+	_reemplazar_celda(celda_a_surtir, tipo, orientacion)
 	edificio_progreso[id] = progreso + 1
 	_sincronizar_cuerpo(id)
 	fantasmas_cambiados.emit()

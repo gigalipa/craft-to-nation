@@ -37,7 +37,7 @@ El usuario interactúa exclusivamente con el **Agente Orquestador (`social`)**, 
 | :--- | :--- | :--- |
 | **Orquestador General** | `social` | Punto de contacto con el usuario y supervisor de automatización. Descompone los comandos en subtareas, dirige el flujo y ejecuta el archivado final. |
 | **Editor de Video** | `video-editor` | Crea composiciones programáticas en React con Remotion, anima títulos Trebuchet MS estilo HUD, genera subtítulos dinámicos (@remotion/captions), aplica transiciones, ducking y renderiza por GPU integrando Whisper CUDA. |
-| **Copywriter Indie** | `gamedev-copywriter` | Redacta ganchos virales de 3 segundos, textos para TikTok/Shorts/Reels, posts para X, descripciones de YouTube y Devlog Updates para la comunidad con enlaces reales verificados. |
+| **Copywriter Indie** | `gamedev-copywriter` | Redacta ganchos virales de 3 segundos, textos para TikTok/Shorts/Reels, posts para X (Twitter) y Threads, descripciones de YouTube y Devlog Updates para la comunidad con enlaces reales verificados. |
 | **Control de Calidad** | `content-qa` | Ejecuta auditorías técnicas automatizadas (`qa_checker.py`), revisiones editoriales de texto y auditoría de enlaces oficiales. |
 | **Estratega Editorial** | `social-strategist` | Mantiene la parrilla semanal en `video_edition/workspaces/calendario_semana_{num}.md` y balancea pilares temáticos. |
 | **Nodos y Red (Graphify)** | `nodes-and-network` | Agente *Craft to Nation - Nodes and network*. Mantiene actualizado el grafo (`graphify-out/`) y su documentación (5:00 PM diario), y audita conexiones entre nodos, brechas y contradicciones (Lunes, Jueves y Sábados 2:00 PM), aplicando correcciones tras la aprobación del usuario. |
@@ -54,6 +54,7 @@ El usuario interactúa exclusivamente con el **Agente Orquestador (`social`)**, 
 > - 🌐 **Sitio Web Oficial**: `https://crafttonation.netlify.app/`
 > - 💬 **Comunidad y Feedback (GitHub Discussions)**: `https://github.com/gigalipa/craft-to-nation/discussions`
 > - 🔴 **Canal Oficial de YouTube**: `https://www.youtube.com/@crafttonation`
+> - 🧵 **Threads**: `@crafttonation`
 > - 📺 **Directos de Desarrollo**: `@crafttonation` (Twitch/Kick)
 > 
 > Todos los llamados a la acción (CTA) deben enfocarse en invitar a conocer el proyecto en la web oficial y sumarse al debate en GitHub Discussions.
@@ -75,7 +76,7 @@ El orquestador `social` responde directamente a los siguientes tres comandos:
      - Quema subtítulos estilo HUD verde/oro (`subtitle_generator.py --burn` o Remotion).
      - Calcula autogain de voz y mezcla música loop con `audio_mixer.py --track-type loop`.
   2. `gamedev-copywriter`:
-     - Redacta gancho de 3s, copy para TikTok/Instagram Reels/YouTube Shorts con hashtags, y post para X con CTA hacia la web oficial o GitHub Discussions.
+     - Redacta gancho de 3s, copy para TikTok/Instagram Reels/YouTube Shorts con hashtags, y posts optimizados para X y Threads con CTA hacia la web oficial o GitHub Discussions.
   3. `content-qa`:
      - Valida con `qa_checker.py` (9:16, 1080x1920, <60s, audio activo) y audita que los enlaces sean 100% reales.
   4. `social-strategist`:
@@ -98,7 +99,7 @@ El orquestador `social` responde directamente a los siguientes tres comandos:
      - Título para YouTube (`Craft to Nation | Devlog #...`).
      - Descripción de YouTube con marcas de tiempo (capítulos `00:00`, `01:15`...) y enlaces verificados (Web y GitHub).
      - Borrador para GitHub Discussions / Devlog Update.
-     - Post promocional en X.
+     - Posts promocionales en X y Threads.
   3. `content-qa`:
      - Valida con `qa_checker.py --format horizontal` (16:9, 1920x1080, audio activo, `.srt` presente y sin subtítulos incrustados) y verifica enlaces oficiales.
   4. `social-strategist`:
@@ -119,7 +120,7 @@ El orquestador `social` responde directamente a los siguientes tres comandos:
      - **3 Shorts Verticales (9:16):** Corta 3 clips independientes de 30-50s con Remotion o `clip_maker.py`, transcribe, limpia fonética (`llm_subtitle_cleaner.py`), quema subtítulos verde/oro y mezcla música loop con ducking.
   2. `gamedev-copywriter`:
      - Genera el paquete editorial del Recap Largo (YouTube + capítulos + GitHub Discussions Update).
-     - Genera los paquetes de los 3 Shorts (ganchos de 3s + TikTok/Reels/Shorts + X con enlaces verificados).
+     - Genera los paquetes de los 3 Shorts (ganchos de 3s + TikTok/Reels/Shorts + X y Threads con enlaces verificados).
   3. `content-qa`:
      - Audita los 4 videos exportados con `qa_checker.py` y aprueba los copys verificando ausencia de enlaces falsos.
   4. `social-strategist`:

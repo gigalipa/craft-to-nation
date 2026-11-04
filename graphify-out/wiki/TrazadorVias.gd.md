@@ -13,12 +13,13 @@
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (1 shared connections)
 - [NiveladorVia.gd](NiveladorVia.gd.md) (1 shared connections)
-- [Colonos.gd](Colonos.gd.md) (1 shared connections)
-- [NiveladorVia.gd Module](NiveladorVia.gd_Module.md) (1 shared connections)
+- [ajustes.gd](ajustes.gd.md) (1 shared connections)
+- [BuscadorRutas.gd](BuscadorRutas.gd.md) (1 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (1 shared connections)
+- [ViasTest.gd](ViasTest.gd.md) (1 shared connections)
 
 ## Source Files
 

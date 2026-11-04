@@ -23,6 +23,7 @@ func _init() -> void:
 	mesh = quad
 	_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_material.render_priority = 3
 	_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_material.albedo_color = COLOR
 	material_override = _material

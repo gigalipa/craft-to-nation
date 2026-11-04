@@ -16,16 +16,18 @@
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (4 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (2 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (2 shared connections)
+- [ajustes.gd](ajustes.gd.md) (2 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (2 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (2 shared connections)
 - [Hotbar.gd](Hotbar.gd.md) (1 shared connections)
 - [HUD.gd](HUD.gd.md) (1 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (1 shared connections)
 - [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (1 shared connections)
-- [Hotbar.gd Module](Hotbar.gd_Module.md) (1 shared connections)
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (1 shared connections)
+- [MiniaturaRenderer.gd](MiniaturaRenderer.gd.md) (1 shared connections)
 - [TemaHUD.gd](TemaHUD.gd.md) (1 shared connections)
-- [2026-09-25-hud-por-modos.md (HUD por modos Implementation Plan)](2026-09-25-hud-por-modos.md_HUD_por_modos_Implementation_Plan.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (1 shared connections)
+- [BarraSuperior.gd](BarraSuperior.gd.md) (1 shared connections)
 
 ## Source Files
 

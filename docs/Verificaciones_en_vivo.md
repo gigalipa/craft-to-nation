@@ -28,16 +28,16 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 #### Primera Persona (Avatar)
 | Tecla / Acción | Función |
 | :--- | :--- |
-| **C** | Alternar entre cámara en **1ª persona** y **Cámara Cenital** (con transición animada; oculta temporalmente `VentanaMoral` y `VentanaEnergia` al bajar a 1ª persona y las restaura al volver a cenital). |
+| **C** | Alternar entre cámara en **1ª persona** y **Cámara Cenital** (con transición animada; oculta temporalmente `VentanaMoral` y `VentanaEnergia` al bajar a 1ª persona y las restaura al volver a cenital; **al subir a cenital desactiva automáticamente las herramientas activas de 1ª persona como el modo vías `V` o deconstrucción `G`**). |
 | **W, A, S, D** | Movimiento del avatar. |
 | **Espacio / Ctrl** | Saltar en tierra / Nadar hacia arriba (**Espacio**) o hacia abajo (**Ctrl**) en líquidos profundos ($\ge 2$ bloques). |
-| **Clic izquierdo** | Talar árboles, minar terreno/vetas (con barra de progreso e ícono de herramienta) o deconstruir si el modo **G** está activo. |
-| **Clic derecho** | Colocar el bloque seleccionado en la hotbar (`1`–`0`) o surtir una obra fantasma apuntada (con ícono `modo_construir.svg`). |
+| **Clic izquierdo** | Talar árboles, minar terreno/vetas (con barra de progreso e ícono de herramienta) o deconstruir/avanzar obra de vía si el modo **G** o **V** está activo. |
+| **Clic derecho** | Colocar el bloque seleccionado en la hotbar (`1`–`0`) o surtir una obra fantasma apuntada (con ícono `modo_construir.svg`). En modo vías (`V`) o deconstrucción (`G`), marca/desmarca demolición. |
 | **1 – 9, 0** | Seleccionar tipo de bloque en la hotbar (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`). |
 | **L** | **Encender / apagar lámpara omnidireccional** del avatar (`PanelLampara`). |
 | **E** | Pulsar: abrir/cerrar puertas o abrir el baúl de un puesto activo (`VentanaBaul`). Mantener sobre árbol: recolectar frutos (`herr_cesta.svg`). |
-| **G** | Alternar modo deconstrucción manual a pie (clic izq. desmonta paso a paso con ícono `modo_demoler.svg`; clic der. marca/desmarca para demolición). |
-| **V** | Alternar modo interacción con vías a pie (clic izq. construye sección 2×2; clic der. demuele sección 2×2). |
+| **G** | Alternar modo deconstrucción manual a pie (clic izq. desmonta paso a paso con ícono `modo_demoler.svg`; clic der. programa/cancela demolición de edificio con período de espera de 5 h). |
+| **V** | Alternar modo interacción con vías a pie: **clic izq.** construye/avanza sección 2×2 (o avanza demolición si la celda está marcada para demolición); **clic der.** marca o desmarca la sección 2×2 para demolición. |
 | **B / Shift + B** | Declarar estructura terminada (**B**) / Iniciar remodelación (**Shift + B**, con diálogo de advertencia si hay riesgo de desahucio) apuntando a su puerta exterior. |
 | **Esc** | Cerrar ventana de baúl/almacén/población, salir del modo vías/deconstrucción o liberar el cursor. |
 
@@ -51,7 +51,7 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 | **Shift + W / Shift + S** | **Altura vertical:** Sube (**Shift+W**) o baja (**Shift+S**) directamente la cota del foco. |
 | **1** | Menú **Construir** (`1`: Residencial, `2`: Periférico, `3`: Industrial, `4`: Investigación, `5`: Vías, `6`: Ductos). |
 | **2** | Menú **Zonificar** (`1`: Zona Residencial, `2`: Zona Industrial, `3`: Borrar). |
-| **3** | Modo **Demoler** unificado (marca roja en edificios y demolición guiada naranja en vías). |
+| **3** | Modo **Demoler** unificado: clic izq. sobre edificio programa su demolición con período de espera de 5 h (otro clic cancela); clic izq. sobre tramo de vía traza demolición guiada naranja con Dijkstra, y hacer clic sobre una vía ya marcada para demolición **la desmarca y cancela al instante** (`cancelar_demolicion_via`). |
 | **Z / X** | Retroceder submenú o página (**Z**) / Avanzar página (**X**) en menús numéricos con más de 9 ítems (ej. categoría Industrial). |
 | **Ctrl + Scroll** | Rotar previsualización de blueprint o plantilla de puesto en pasos de 90°. |
 | **Clic izquierdo** | Fijar esquina de zona/vía/ducto, emplazar estructura o inspeccionar edificio/puesto/ducto en modo Ver. |
@@ -65,12 +65,15 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 
 > **Condición de partida:** Recién iniciada la escena (`F5`), antes de fundar la ciudad. Se comprueban las físicas del avatar a pie, la recolección de frutos, la colocación de bloques (incluyendo la equivalencia `vidrio`/`tierra`), la interacción con ríos/lagos superficiales, el secado de líquidos con bloques sólidos y el modo térmico inicial de la lámpara. *(Nota: Las físicas sobre `crudo` se verifican en el **Bloque 6.7** tras extraer crudo del subsuelo).*
 
-### 1.1 Movimiento, Tala, Minado, Recolección de Frutos (`E`) y Colocación de Bloques a Pie
+### 1.1 Movimiento, Tala, Minado, Recolección de Frutos (`E`), Colocación de Bloques a Pie y Resaltado en Ventanas
 - [ ] **Acción (Movimiento, Tala y Minado):** Desplazarse con **W, A, S, D** y saltar con **Espacio**. Apuntar a un árbol o al suelo manteniendo **Clic Izquierdo**, y colocar bloques de la hotbar (`1`–`0`) con **Clic Derecho**.
 - [ ] **Resultado esperado:**
   - El resaltado verde (`CaraApuntada`) marca la cara del bloque bajo la mira.
   - Al talar o minar aparece la barra de progreso acompañada del ícono contextual de la herramienta (`herr_hacha.svg`, `herr_pico.svg` o `herr_pala.svg`) y los recursos extraídos se suman al almacén.
   - No permite colocar un bloque en las 2 celdas ocupadas por el cuerpo del propio avatar.
+- [ ] **Acción (Resaltado `CaraApuntada` en Ventanas de Vidrio desde Vista Lateral):** Colocar un bloque de ventana de vidrio (`6`) en el suelo o en una pared. Mover el avatar para observarlo desde un ángulo rasante o de perfil lateral y apuntar la mira hacia la ventana.
+- [ ] **Resultado esperado:**
+  - El contorno verde del overlay (`CaraApuntada`) se dibuja de forma **nítida y prioritaria por encima de la malla translúcida** de la ventana gracias a `render_priority = 3`. El material semitransparente del vidrio ya no oculta ni solapa visualmente el marco verde de selección.
 - [ ] **Acción (Recolección de Frutos con `E`):** Apuntar al tronco o follaje de un árbol frutal y mantener pulsada la tecla **`E`** durante 2 segundos.
 - [ ] **Resultado esperado:**
   - Durante la acción, la barra de progreso muestra el ícono de la **cesta de recolección (`herr_cesta.svg`)**.
@@ -112,19 +115,20 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 
 > **Mecánicas y orden lógico:** El **primer edificio** declarado con `B` funda siempre el **Núcleo Urbano** (crea la Zona de Influencia, habilita los decretos cívicos de Impulso de Inmigración y Racionamiento Estricto, y guarda el primer blueprint, pero aún no aloja colonos). A continuación se pinta la **Zona Residencial (`2 -> 1`)**, se construye la **1ª Residencia habitable** (verificando los costos en previsualización, los íconos de camas/baúles/faltantes en `PanelEdificio` y el ícono `modo_construir` al surtir en 1ª persona), se prueba la advertencia de desahucio con `Shift + B` y la permanencia in-situ de colonos `"Sin techo"`, y luego se construye la **2ª Residencia** como buffer de reubicación.
 
-### 2.1 Construcción a Mano de Casa de 2 Plantas, Ventanas sin Z-Fighting y Declaración del Núcleo Urbano (`B`)
+### 2.1 Construcción a Mano de Casa de 2 Plantas, Ventanas de Techo sin Z-Fighting y Declaración del Núcleo Urbano (`B`)
 - [ ] **Acción:** En 1ª persona, levantar manualmente con bloques de la hotbar una estructura cerrada de **2 pisos** (respetando el límite de Nivel 1: máx. 2 pisos y máx. 2 camas por piso):
   - **Planta baja (Nivel 0):** Muros cerrados, **1 puerta exterior** (`7`), al menos **1 ventana de vidrio** (`6`), **1 o 2 camas** (`8`) y **1 baúl** (`9`).
   - **Planta alta (Nivel 1):** Muros cerrados, techo, escalera interior transitable desde planta baja, ventanas y hasta 2 camas, **sin ninguna puerta exterior**.
-- [ ] **Acción (Verificación Estética 3D y Ausencia de Z-Fighting en Ventanas):** Inspeccionar de cerca la puerta de madera y los bloques de ventana colocados:
+  - **Ventanas de Techo:** Colocar en el techo al menos un bloque de ventana mirando desde abajo hacia arriba o desde arriba hacia abajo para generar un panel horizontal de techo (**`ventana_techo`**).
+- [ ] **Acción (Verificación Estética 3D, Ausencia de Z-Fighting y Captura de Orientación):** Inspeccionar de cerca la puerta de madera y los bloques de ventana colocados:
   - Comprobar que la puerta de madera cuenta con relieve tridimensional visible: un **picaporte dorado** (`Color(0.85, 0.7, 0.2)`) y **dos bisagras metálicas oscuras** (`Color(0.15, 0.15, 0.15)`) en su marco lateral.
-  - Mover la cámara frente y de costado a los bloques de ventana de vidrio (`mat_ventana.tres` con `cull_mode = 0`): comprobar que son **paneles transparentes delgados de $1/20$ de espesor ($0.05$ m)** sin caras laterales, superior ni inferior (`ventana` recta a media profundidad orientada hacia el avatar), que en las esquinas entre una ventana y otro bloque forman automáticamente un **panel en L (`ventana_esquina`)** rotado 90° en Y, y que al colocar una ventana mirando desde abajo hacia arriba o desde arriba hacia abajo se coloca un **panel horizontal de techo (`ventana_techo`)** alineado al ras con la cara superior del bloque ($Y \in [0.95, 1.0]$).
+  - Mover la cámara frente y de costado a los bloques de ventana de vidrio (`mat_ventana.tres` con `cull_mode = 0`): comprobar que son **paneles transparentes delgados de $1/20$ de espesor ($0.05$ m)** sin caras laterales, superior ni inferior (`ventana` recta a media profundidad orientada hacia el avatar), que en las esquinas entre una ventana y otro bloque forman automáticamente un **panel en L (`ventana_esquina`)** rotado 90° en Y, y que la **`ventana_techo`** queda alineada al ras con la cara superior del bloque ($Y \in [0.95, 1.0]$).
 - [ ] **Acción:** Salir al exterior, apuntar a la puerta de planta baja y pulsar **`B`**.
 - [ ] **Resultado esperado:**
   - La estructura se valida y declara con éxito (y si se construyó sobre o junto al agua, drena automáticamente cualquier bloque de líquido atrapado en el volumen de aire interior).
   - Notificación: **`"Núcleo urbano declarado."`**
   - El edificio queda registrado como **Núcleo Urbano** (duplica los topes base del almacén central y establece la **Zona de Influencia** alrededor de la sede).
-  - Se guarda automáticamente el diseño en el catálogo de blueprints bajo el nombre **`Residencia [camas]x[baules]`**.
+  - Se guarda automáticamente el diseño en el catálogo de blueprints bajo el nombre **`Residencia [camas]x[baules]`**, registrando de forma persistente las orientaciones 3D de sus ventanas (`rotar_orientaciones_3d`).
 
 ### 2.2 Excepción de Remodelación (`Shift + B`) y Controles Cívicos del Núcleo Urbano (`PanelEdificio`)
 - [ ] **Acción (Remodelación libre del Núcleo):** Apuntar a la puerta del Núcleo Urbano recién declarado y pulsar **`Shift + B`** (o seleccionarlo en cenital y pulsar `[Iniciar remodelación]`):
@@ -154,36 +158,39 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
     - La fila **`Camas: X`** precedida por su ícono vectorial **`cama.svg`**.
     - La fila **`Baúles: Y`** precedida por su ícono vectorial **`baul.svg`**.
     - El desglose vertical de **materiales faltantes**, donde cada recurso requerido aparece acompañado de su **ícono vectorial de 16 px** (`X Recurso (hay Y)`).
-- [ ] **Acción (Ícono Contextual al Construir en 1ª Persona):** Pasar a 1ª persona (**`C`**), acercarse al edificio fantasma y mantener **Clic Derecho** apuntando a los bloques fantasma (y luego a cualquier pared exterior) hasta completar el 100% de la obra.
+- [ ] **Acción (Ícono Contextual al Construir en 1ª Persona y Orientación 3D de Ventanas de Techo):** Pasar a 1ª persona (**`C`**), acercarse al edificio fantasma y mantener **Clic Derecho** apuntando a los bloques fantasma (y luego a cualquier pared exterior) hasta completar el 100% de la obra.
 - [ ] **Resultado esperado:**
   - Mientras se mantiene presionado el clic derecho para construir, la barra de progreso central muestra a su izquierda el **ícono de Construcción (`modo_construir.svg`)**, **nunca** el ícono de la canasta de cosecha (`herr_cesta.svg`).
+  - **Fidelidad 3D de ventanas de techo construidas:** Al completarse la obra, subir a inspeccionar el techo: comprobar que las ventanas de techo (`ventana_techo`) se colocan de forma **automática y horizontal en el plano del techo** ($Y \in [0.95, 1.0]$), respetando con exactitud la orientación capturada en el blueprint sin quedar erróneamente en formato vertical de pared.
 
 ### 2.4 1ª Residencia Habitable: `Colonizable: SÍ`, Llegada de Colonos e Impulso de Inmigración (+250%)
 - [ ] **Acción:** Pasar a cenital (**`C`**), asegurar modo Ver (**`Esc`**) y hacer clic izquierdo sobre la residencia recién terminada (no sobre el Núcleo Urbano).
 - [ ] **Resultado esperado:**
   - `PanelEdificio` indica: **`Colonizable: SÍ (inmigración activa)`** y muestra el botón **`[Pausar colonización]`** (`puerta_candado.svg`).
+  - **Escala de inmigración a moral optimista (75%):** Con la moral inicial al 75%, la tasa de inmigración base opera al valor recalibrado de **`5.0 colonos / mes`** (escalando a `7.0 / mes` al 90% y `10.0 / mes` al 100%).
 - [ ] **Acción (Activar Impulso de Inmigración +250%):** Seleccionar el **Núcleo Urbano** (o abrir `VentanaMoral` desde la barra superior) y pulsar el botón **`[Impulso inmigración (+250%)]`**.
 - [ ] **Resultado esperado:**
   - Notificación: **`"¡Impulso de inmigración activado en el núcleo urbano por 30 días!"`**
   - El botón pasa a estado deshabilitado indicando **`"Impulso activo (30 d restantes)"`**.
-  - La tasa mensual de inmigración vigente se multiplica por **`2.5x` (+250%)** durante 30 días (720 horas de juego) y **elimina la limitación de disponibilidad de camas**, acelerando la llegada de colonos (`desempleado`) para dinamizar la partida.
+  - La tasa mensual de inmigración vigente se multiplica por **`2.5x` (+250%)** elevándose a **`12.5 colonos / mes`** durante 30 días (720 horas de juego) y **elimina la limitación de disponibilidad de camas**, acelerando la llegada de colonos (`desempleado`) para dinamizar la partida sin largas esperas.
 
-### 2.5 Remodelación de Única Residencia Poblada (`Shift + B`): Advertencia de Desahucio y Colonos "Sin Techo" In-Situ
-- [ ] **Condición:** Esperar a que la 1ª Residencia habitable tenga colonos residiendo en ella (cuando todavía **no existe ninguna otra casa** con camas libres en la colonia).
+### 2.5 Remodelación de Única Residencia Poblada (`Shift + B`): Desahucio, Liberación Laboral y Colonos "Sin Techo" In-Situ
+- [ ] **Condición:** Esperar a que la 1ª Residencia habitable tenga colonos residiendo en ella (cuando todavía **no existe ninguna otra casa** con camas libres en la colonia) y que al menos un residente esté empleado en un puesto periférico (ej. Mina, Caza o Maderero).
 - [ ] **Acción (Advertencia de Desahucio con `Shift + B` en 1ª Persona):** Pasar a 1ª persona (**`C`**), apuntar a la puerta exterior de esa residencia habitada y pulsar **`Shift + B`**.
 - [ ] **Resultado esperado:**
   - Como hay riesgo de desahucio (`calcular_sin_techo_al_remodelar(id) > 0`), **NO inicia la remodelación a ciegas**: se libera el cursor del ratón y se abre centrada la ventana modal **`"Confirmar remodelación"`** detallando los residentes actuales, cuántos serán reubicados y advirtiendo cuántos colonos **quedarán sin techo**.
   - Si se pulsa **`[Cancelar]`**, el diálogo se cierra y el cursor vuelve a capturarse inmediatamente para seguir jugando en 1ª persona.
-- [ ] **Acción (Confirmar Remodelación y Verificar Permanencia In-Situ):** Volver a pulsar **`Shift + B`** (o pulsar `[Iniciar remodelación]` desde `PanelEdificio` en cenital) y hacer clic en **`[Confirmar]`**.
+- [ ] **Acción (Confirmar Remodelación, Desahucio y Liberación Laboral Inmediata):** Volver a pulsar **`Shift + B`** (o pulsar `[Iniciar remodelación]` desde `PanelEdificio` en cenital) y hacer clic en **`[Confirmar]`**.
 - [ ] **Resultado esperado:**
   - El edificio pasa a edición libre y los habitantes desalojados pasan al estado **`"Sin techo: X"`** en la ventana **Población**.
-  - **Verificación crítica de reconciliación (`Colonos.gd`):** Los colonos que quedan sin techo **permanecen físicamente en su ubicación actual dentro de la ciudad** (`hogar = -1`); **NO desaparecen ni reaparecen caminando desde el borde del mapa** ni disparan notificaciones falsas de *"¡Ha llegado un nuevo colono!"*.
+  - **Liberación inmediata del puesto de trabajo (`FinalizacionObras.gd` / `Colonos.gd` / `Economia.liberar()`):** Inspeccionar el puesto periférico donde estaba empleado el colono desahuciado: comprobar que su plaza laboral ha sido **liberada automáticamente en el acto** y el contador de empleados disminuye, reflejando la vacante real sin retener "obreros fantasma" que carezcan de hogar.
+  - **Permanencia in-situ sin reaparición desde el borde (`Colonos.gd`):** Los colonos desahuciados **permanecen físicamente en su ubicación actual dentro de la ciudad** (`hogar = -1`); **NO desaparecen ni reaparecen caminando desde el borde del mapa** ni disparan notificaciones falsas de *"¡Ha llegado un nuevo colono!"*.
   - Mientras están sin techo, consumen comida a tasa de desempleado (`3.0 u/h`), no trabajan en obras ni puestos y penalizan la moral en `-0.05/día` por colono.
-- [ ] **Acción (Reabsorción inmediata):** En 1ª persona, apuntar a la puerta de la casa y pulsar **`B`** para volver a declararla.
+- [ ] **Acción (Reabsorción Inmediata y Estado Desempleado):** En 1ª persona, apuntar a la puerta de la casa y pulsar **`B`** para volver a declararla.
 - [ ] **Resultado esperado:**
-  - Los colonos `"Sin techo"` son **reabsorbidos al instante** en las camas recién declaradas (`Sin techo: 0`) y recuperan su actividad normal.
+  - Los colonos `"Sin techo"` son **reabsorbidos al instante** en las camas recién declaradas (`Sin techo: 0`), ingresan al censo como **`desempleado`** (disponibles para nuevas contrataciones) y el puesto periférico conserva su vacante abierta para ser contratado limpiamente.
 
-### 2.6 2ª Residencia en adelante: Buffer de 24 h (`Colonizable: NO`), Obra por Colonos y Reubicación
+### 2.6 2ª Residencia en adelante: Buffer de 24 h (`Colonizable: NO`), Colonos Excedentes y Reubicación
 - [ ] **Acción:** En cenital (`1 -> 1`), emplazar una **2ª Residencia** sobre la Zona Residencial.
 - [ ] **Resultado esperado (Construcción autónoma por colonos):**
   - Como ahora ya hay colonos desempleados/obreros en la ciudad, **los colonos acuden automáticamente a la obra fantasma** y la construyen bloque a bloque hasta terminarla sin intervención del jugador.
@@ -191,6 +198,13 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 - [ ] **Resultado esperado (Buffer habitacional):**
   - Nace con estado **`Colonizable: NO (apertura en 24 h)`** y botón **`[Permitir colonización]`** (`puerta_reloj.svg`).
   - Sus camas están protegidas como buffer para reubicaciones internas. Pulsar **`[Permitir colonización]`** cambia a `Colonizable: SÍ`; pulsar **`[Pausar colonización]`** lo devuelve a `Colonizable: NO (buffer protegido)`. Dejarlo en `NO` con camas libres.
+- [ ] **Acción (Inmigrantes Excedentes frente a Buffer Protegido y Absorción con `_alojar_sin_techo`):**
+  - Mantener la 2ª Residencia en `Colonizable: NO` y esperar a que lleguen nuevos inmigrantes por encima de las camas disponibles en la 1ª Residencia.
+  - Comprobar que los nuevos inmigrantes pasan a ser **`Sin techo: X`** con `hogar = -1`.
+  - Inspeccionar `PanelEdificio` de la 2ª Residencia: comprobar que **NO muestra a estos colonos como residentes** (la casa se mantiene con 0 ocupantes y sus camas libres como buffer).
+  - Hacer clic en el botón **`[Permitir colonización]`** (o esperar a que venza el temporizador de 24 horas):
+    - Se ejecuta inmediatamente `Ciudad._alojar_sin_techo()`.
+    - Los colonos sin techo son **absorbidos al instante en las camas de la residencia**, su estado pasa a **`desempleado`** y `PanelEdificio` actualiza su conteo de residentes legítimos.
 - [ ] **Acción (Reubicación automática al remodelar):** Iniciar remodelación (`Shift + B` o cenital) sobre la **1ª Residencia poblada** mientras la 2ª Residencia tiene camas libres en buffer.
 - [ ] **Resultado esperado:**
   - Los residentes de la 1ª Residencia **se mudan automáticamente a las camas libres de la 2ª Residencia**, generando **`0 colonos sin techo`**. Volver a declarar la 1ª Residencia con **`B`**.
@@ -230,22 +244,36 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 
 ### 3.4 Intervención Manual de Vías a Pie en 1ª Persona (Tecla `V`)
 - [ ] **Acción:** Trazar otra vía en cenital, pasar a 1ª persona (**`C`**) y pulsar **`V`** para activar el modo vías a pie.
-- [ ] **Construir sección 2×2 (Clic Izquierdo):** Apuntar a una sección pendiente (con alambre amarillo) y hacer clic izquierdo $\to$ completa de golpe la **sección 2×2 entera** sin notificaciones repetitivas.
-- [ ] **Demoler sección 2×2 (Clic Derecho):** Apuntar a un tramo de vía ya construido y hacer clic derecho $\to$ retira al instante la sección 2×2 completa junto con sus cuñas. Pulsar **`V`** o **`Esc`** para salir.
+- [ ] **Resultado esperado e instrucciones en pantalla:**
+  - El HUD muestra el texto de ayuda contextual:  
+    `"(clic izq.) AVANZAR OBRA DE VÍA\n(clic der.) MARCAR/DESMARCAR DEMOLICIÓN\n[V] Salir del modo vías"`.
+- [ ] **Marcar / Desmarcar Demolición (Clic Derecho):** Apuntar a una sección de vía ya construida y hacer clic derecho $\to$ marca la sección 2×2 para demolición y dibuja el contorno de demolición. Apuntar a esa misma sección y volver a hacer clic derecho $\to$ desmarca la demolición y retira el contorno.
+- [ ] **Avanzar Demolición o Construcción (Clic Izquierdo):**
+  - Si la sección apuntada está marcada para demolición, hacer clic izquierdo avanza y completa el desmontaje de la sección 2×2.
+  - Si la sección apuntada está en construcción (con alambre amarillo), hacer clic izquierdo completa de golpe la sección 2×2 entera.
+- [ ] **Desactivación Automática al Cambiar a Cenital (`C`):** Con el modo `V` activo (o modo deconstrucción `G`), pulsar **`C`** para pasar a la vista cenital $\to$ comprobar que el modo vías se desactiva solo (`modo_vias = false`) y las instrucciones de 1ª persona desaparecen limpiamente.
 
 ### 3.5 Herramienta Unificada de Demolición Cenital (Tecla `3`)
-- [ ] **Demolición de Edificios:** En cenital, pulsar **`3`** (Demoler) y hacer clic izquierdo sobre un edificio secundario: alterna su marca roja de demolición para que los colonos lo desmonten (y si el edificio estaba en contacto con el agua, al vaciarse sus celdas el agua vecina vuelve a escurrir naturalmente).
+- [ ] **Demolición Programada de Edificios (Período de Espera de 5 Horas):** En cenital, pulsar **`3`** (Demoler) y hacer clic izquierdo sobre un edificio secundario:
+  - **NO se destruye en el acto**: el sistema invoca `programar_demolicion(id, 5)` activando una cuenta regresiva de **5 horas de juego** con alerta visual de demolición programada.
+  - Hacer clic izquierdo nuevamente sobre el mismo edificio antes de que transcurran las 5 horas: comprobar que **se cancela la demolición programada** y el edificio regresa a su estado normal.
+  - Dejar transcurrir las 5 horas para que comience la demolición efectiva por los obreros (y si el edificio estaba en contacto con agua, al vaciarse sus celdas el agua vecina vuelve a escurrir naturalmente).
 - [ ] **Demolición Guiada de Vías en Esquinas de 90°:** Trazar y completar una vía en forma de "L". Activar el modo **`3`**, hacer clic izquierdo en un extremo de la vía y mover el cursor hasta el otro extremo pasando por la esquina:
   - La previsualización **naranja translúcida** (`ViaDemolicionOverlay`) sigue la red vial mediante Dijkstra cubriendo **todo el ancho de 2 canales (sección 2×2)** en la esquina exterior sin recortar en diagonal.
 - [ ] **Confirmación y Outline Naranja Persistente:** Hacer **doble clic izquierdo** para confirmar la demolición del tramo $\to$ queda marcado con un **outline naranja persistente** que se va retirando sección a sección a medida que los colonos lo demuelen.
+- [ ] **Desmarcar y Cancelar Vía en Demolición (`cancelar_demolicion_via`):** Con la herramienta **`3`** activa, hacer clic izquierdo sobre una sección de la vía que tiene el outline naranja de demolición:
+  - El sistema ejecuta `cancelar_demolicion_via()` retirando de inmediato el outline naranja y cancelando la tarea de demolición de los colonos.
 
-### 3.6 Prioridades de Obra con Botones `▲` / `▼` (`PanelEdificio`) y Apertura Automática de `PanelPuesto`
+### 3.6 Prioridades de Obra con Botones `▲` / `▼` (`PanelEdificio`), Reasignación Inmediata y Apertura de `PanelPuesto`
 - [ ] **Acción:** En cenital, iniciar una obra de edificio o puesto, marcar otro para demolición y dejar un tramo de vía en obra. Seleccionar el edificio en construcción en modo Ver (`Esc`).
 - [ ] **Resultado esperado:**
   - En `PanelEdificio` aparece la fila de prioridad compuesta por el ícono (`prio_alta.svg`, `prio_normal.svg` o `prio_baja.svg`), la etiqueta **`Prioridad: Normal`** y dos botones de flecha compactos (`24x24`): **`btn_subir.svg` (`▲`, aumentar prioridad)** y **`btn_bajar.svg` (`▼`, reducir prioridad)**.
   - Pulsar **`▲`** sube de `Baja` $\to$ `Normal` $\to$ `Alta` (deshabilitando `▲` al llegar a `Alta`); pulsar **`▼`** baja de `Alta` $\to$ `Normal` $\to$ `Baja` (deshabilitando `▼` al llegar a `Baja`).
   - Los colonos libres se despachan respetando estrictamente la jerarquía global: *1. Construcción Alta $\to$ 2. Construcción Normal $\to$ 3. Demoliciones $\to$ 4. Tendido de Vías $\to$ 5. Construcción Baja*.
-  - **Transición automática al terminar un puesto:** Si se mantiene abierto el `PanelEdificio` de un puesto en construcción cuando su progreso alcanza el 100%, `PanelEdificio` se cierra solo y abre automáticamente el `PanelPuesto` del nuevo edificio.
+- [ ] **Acción (Reasignación Inmediata de Obreros al Subir a Prioridad `Alta`):** Con obreros ocupados construyendo un edificio de prioridad `Normal` o tendiendo una vía, seleccionar otro edificio en obra y pulsar **`▲`** para elevar su prioridad a **`Alta`**.
+- [ ] **Resultado esperado:**
+  - `Obras.gd` emite la señal `prioridad_obra_cambiada`, y `Colonos.gd` **interrumpe inmediatamente a los obreros de sus tareas actuales de menor prioridad y los despacha al instante hacia la obra de prioridad Alta**, sin demoras ni tener que esperar al siguiente tick horario.
+- [ ] **Transición automática al terminar un puesto:** Si se mantiene abierto el `PanelEdificio` de un puesto en construcción cuando su progreso alcanza el 100%, `PanelEdificio` se cierra solo y abre automáticamente el `PanelPuesto` del nuevo edificio.
 
 ---
 
@@ -273,9 +301,10 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
       5. `Raciones hidropónicas: 0`
       6. `Alimento sintético: 0`
     - Comprobar que con cada tick horario el consumo metabólico de la población se descuenta primero de `Pescado y mariscos` (la fuente más fresca) y, solo cuando esta se agota, empieza a descontar de `Caza y frutos`.
-  - **Desplegables de Recursos Refinados y Botón «Expandir todo / Contraer todo»:** Hacer clic sobre **`▶ Crudo`**, **`▶ Hierro`**, **`▶ Madera`**, **`▶ Piedra`**, **`▶ Tierra`** y **`▶ Tierras raras`**:
+  - **Desplegables de Recursos Refinados, «Expandir todo / Contraer todo» y Adaptación Dinámica de Altura (`reset_size`):** Hacer clic sobre **`▶ Crudo`**, **`▶ Hierro`**, **`▶ Madera`**, **`▶ Piedra`**, **`▶ Tierra`** y **`▶ Tierras raras`**:
     - Comprobar que cada uno despliega con sangría su producto refinado hijo con su propio ícono de 20 px, stock, límite y tasa horaria: `Combustible`, `Acero`, `Tablas` y `Carbón`, `Bloques de piedra`, **`Vidrio`** y `Mineral refinado`.
-    - En el encabezado superior de la ventana (entre el título **`ALMACÉN`** y el botón **`X`**), pulsar el botón **`[Expandir todo]`**: comprobar que todos los desplegables se abren simultáneamente y el texto del botón cambia a **`[Contraer todo]`** (y al pulsarlo de nuevo, contrae todos los desplegables).
+    - En el encabezado superior de la ventana (entre el título **`ALMACÉN`** y el botón **`X`**), pulsar el botón **`[Expandir todo]`**: comprobar que todos los desplegables se abren simultáneamente y el texto del botón cambia a **`[Contraer todo]`**.
+    - Pulsar **`[Contraer todo]`** (o replegar categorías individualmente con `▼`): comprobar que la ventana invoca internamente **`reset_size()`** y **adapta de inmediato su altura vertical al contenido colapsado**, eliminando cualquier espacio vacío vertical sobrante en el panel modal.
 - [ ] **Ventana de Población y Ocupaciones:** Hacer clic en **Población**:
   - Muestra la fila unificada: **`Obreros: Total · X empleados · Y desempleados`** (más Técnicos, Especialistas, Investigadores, Militares y Sin techo si aplica).
   - Pulsar **Ocupaciones**: muestra las 4 categorías colapsables (`▼ Recolección`, `▼ Industria`, `▼ Investigación`, `▼ Energía`).
@@ -289,7 +318,7 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 - [ ] **Resultado esperado:**
   - `VentanaMoral` **se oculta automáticamente** al entrar en 1ª persona para no estorbar la visión del avatar, y **vuelve a mostrarse automáticamente** al pulsar **`C`** para regresar a la vista cenital.
 - [ ] **Verificación de Indicadores, Impulso y Factores en `VentanaMoral`:**
-  - Muestra el **Estado Anímico Actual** (`😡` $\le$20%, `🙁` 20–35%, `😐` 35–65%, `🙂` >65%), la **Tendencia Diaria** (`%+.2f / día`), el **Multiplicador de Productividad Laboral** ($X = 0.5 \times 2^{(Y/50)}$, mientras que los puestos de alimentos tienen un **suelo mínimo garantizado de `0.75x` [75%]** incluso con moral crítica) y el **Flujo Migratorio** (`Éxodo de cerebros` $\le$20%, `Inmigración con camas` 20–50%, `Inmigración masiva` >50%).
+  - Muestra el **Estado Anímico Actual** (`😡` $\le$20%, `🙁` 20–35%, `😐` 35–65%, `🙂` >65%), la **Tendencia Diaria** (`%+.2f / día`), el **Multiplicador de Productividad Laboral** ($X = 0.5 \times 2^{(Y/50)}$, mientras que los puestos de alimentos tienen un **suelo mínimo garantizado de `0.75x` [75%]** incluso con moral crítica) y el **Flujo Migratorio** (`Éxodo de cerebros` $\le$20%, `Inmigración con camas` 20–50% [1.0 a 2.0/mes], y `Inmigración masiva` >50% con tasas recalibradas de **5.0 colonos/mes al 75%**, **7.0 colonos/mes al 90%** y **10.0 colonos/mes al 100%**).
   - Incluye la sección de **Impulso de Inmigración (+250%)** con su propio botón de activación sincronizado con el Núcleo Urbano.
   - En el desglose de factores (`/día`), comprobar que la fila **`Variedad de alimentos (X/6 grupos)`** reconoce las fuentes activas en reserva/producción (ej. `2/6 grupos: +7.20/día` al contar con pesca y caza/frutos; si la colonia permanece más de **360 horas [15 días]** con **1 sola fuente**, aplica la penalización de monocultivo `Variedad (Monocultivo crítico): -4.80/día`).
 
@@ -600,24 +629,24 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 
 | Bloque | Característica comprobada (en orden lógico de juego) | Estado (OK / Fallo) | Notas del tester |
 | :--- | :--- | :---: | :--- |
-| **1.1** | Movimiento 1ª persona, tala/minado, recolección de frutos (`E` con `herr_cesta.svg`) y equivalencia `vidrio`/`tierra` (1:3) | | |
+| **1.1** | Movimiento 1ª persona, tala/minado, recolección de frutos (`E` con `herr_cesta.svg`), equivalencia `vidrio`/`tierra` (1:3) y **resaltado `CaraApuntada` prioritario (`render_priority = 3`) sobre ventanas de lado** | | |
 | **1.2** | Natación en agua ($\ge 2$ bloques), corrientes, oxígeno y drenado con bloques sólidos | | |
 | **1.3** | Lámpara en modo Térmico inicial (`L`: combustible 10h, carbón 6h, madera 5h) y oxígeno apilado | | |
-| **2.1** | 1er Edificio con `B`: puertas 3D, **ventanas sin Z-fighting lateral**, drenado interior automático y fundación de **Núcleo Urbano** | | |
+| **2.1** | 1er Edificio con `B`: puertas 3D, **ventanas y ventanas de techo (`ventana_techo`) sin Z-fighting**, captura de orientación 3D, drenado interior y fundación de **Núcleo Urbano** | | |
 | **2.2** | Remodelación del Núcleo (`Shift+B`) y botones cívicos en `PanelEdificio`: **Impulso (+250%)** y **Decreto de Racionamiento (-35% comida, máx. 35% moral)** | | |
-| **2.3** | Zona Residencial (`2-1`), **costos con íconos en previsualización de blueprint (`1-1`)**, íconos de camas/baúles/faltantes en `PanelEdificio` e ícono `modo_construir` al surtir en 1ª persona | | |
-| **2.4** | 1ª Residencia habitable (`Colonizable: SÍ`), llegada de colonos y activación del **Impulso de Inmigración (+250% por 30 días sin tope de camas)** | | |
-| **2.5** | Remodelación con `Shift+B` en 1ª persona abre **diálogo de advertencia de desahucio**, colonos `"Sin techo"` **permanecen in-situ** (sin respawn desde el borde) y `B` los reabsorbe | | |
-| **2.6** | 2ª Residencia construida por colonos nace como buffer (`Colonizable: NO 24h`) y permite reubicar sin dejar sin techo | | |
+| **2.3** | Zona Residencial (`2-1`), **costos con íconos en previsualización de blueprint (`1-1`)**, **fidelidad horizontal 3D de ventanas de techo construidas**, íconos en `PanelEdificio` e ícono `modo_construir` al surtir | | |
+| **2.4** | 1ª Residencia habitable (`Colonizable: SÍ`), **inmigración base recalibrada (5.0/mes al 75%, 7.0/mes al 90%, 10.0/mes al 100%)** e **Impulso de Inmigración (+250% $\to$ 12.5/mes sin tope de camas)** | | |
+| **2.5** | Remodelación con `Shift+B` abre advertencia de desahucio, **liberación inmediata de plazas laborales (`Economia.liberar()`)**, colonos `"Sin techo"` **permanecen in-situ** (sin respawn) y `B` los reabsorbe como `desempleado` | | |
+| **2.6** | 2ª Residencia buffer (`Colonizable: NO 24h`): **inmigrantes excedentes no la ocupan falsamente**, `[Permitir colonización]` ejecuta `_alojar_sin_techo` al instante y reubicación limpia | | |
 | **2.7** | Edificios adosados (flood-fill se detiene en muro vecino) y traslado de Núcleo Urbano (gracia de 5 h) | | |
 | **3.1** | Trazador cenital de vías (`1-5-1`) con iconos SVG, ficha técnica (`+35%`) y cancelación limpia con clic derecho | | |
 | **3.2** | Nivelación y despeje compartidos entre puertas enfrentadas en una calle | | |
 | **3.3** | Tendido progresivo de vías por colonos (`ViaObraOverlay` amarillo consecutivo) y fusión de tramos | | |
-| **3.4** | Intervención manual de vías a pie (`V`): construir (clic izq.) y demoler (clic der.) secciones 2×2 | | |
-| **3.5** | Demolición cenital unificada (`3`): edificios (con escurrimiento de agua vecina) y vías con Dijkstra en esquinas de 90° | | |
-| **3.6** | Prioridades de obra con botones `btn_subir` (`▲`) / `btn_bajar` (`▼`) en `PanelEdificio` y apertura automática de `PanelPuesto` al terminar obra | | |
-| **4.1** | Topbar con **hover de Nivel (IDU)** y `VentanaAlmacen` con **desplegables `▶`/`▼`** (6 sub-categorías de comida por perecibilidad y recursos refinados hijos) | | |
-| **4.2** | `VentanaMoral` centrada (solo clic en topbar y cierre con `X`, **se oculta al pasar a 1ª persona**), variedad dietética (`X/6`), regla de monocultivo (360h) y suelo agrario del 75% | | |
+| **3.4** | Intervención manual de vías a pie (`V`): construir (clic izq.), **marcar/desmarcar demolición (clic der.)**, avanzar demolición (clic izq.) y **desactivación automática al cambiar a cenital (`C`)** | | |
+| **3.5** | Demolición cenital unificada (`3`): **demolición programada de edificios con espera de 5 h y cancelación con clic**, vías con Dijkstra y **desmarcar vías en demolición (`cancelar_demolicion_via`)** | | |
+| **3.6** | Prioridades de obra con botones `▲`/`▼` en `PanelEdificio`, **reasignación inmediata de obreros al subir a `Alta` (`▲`)**, y apertura automática de `PanelPuesto` al terminar obra | | |
+| **4.1** | Topbar con **hover de Nivel (IDU)**, `VentanaAlmacen` con desplegables `▶`/`▼` y **adaptación dinámica de altura con `reset_size()` al contraer** | | |
+| **4.2** | `VentanaMoral` centrada (solo clic en topbar y cierre con `X`, **se oculta al pasar a 1ª persona**), **tramos de inmigración recalibrados (5/7/10 colono/mes)**, variedad dietética (`X/6`), monocultivo (360h) y suelo agrario del 75% | | |
 | **4.3** | Puestos periféricos (`1-2-1..4`): botones `▲`/`▼` siempre visibles y **lista vertical de producción con scroll fijo (`72 px`, 3 filas visibles)** | | |
 | **4.4** | Preferencia de vías en pathfinding (`BuscadorRutas`: vía coste 3 vs campo 8) y prioridad de paso con carga | | |
 | **4.5** | Interacción en 1ª persona con `VentanaBaul` (`E`): centrada, columnas alineadas y botones `▲`/`▼` para ingresar/retirar | | |

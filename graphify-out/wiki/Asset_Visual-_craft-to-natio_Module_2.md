@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: Stream_debug.png** (0 connections) — `arte/stream_art/Stream_debug.png`
+- **Asset Visual: Stream_topbar_ag_debug.png** (0 connections) — `arte/stream_art/Stream_topbar_ag_debug.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_debug.png`
+- `arte/stream_art/Stream_topbar_ag_debug.png`
 
 ## Audit Trail
 

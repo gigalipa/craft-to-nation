@@ -91,14 +91,19 @@ var economia: Object = null:  # Economia
 ## Coordinador de obras (Obras en el juego): reparte la construcción y demolición a los colonos libres.
 var obras: Object = null:
 	set(valor):
-		if obras != null and obras.has_signal("marca_cambiada") and obras.marca_cambiada.is_connected(_on_marca_cambiada):
-			obras.marca_cambiada.disconnect(_on_marca_cambiada)
+		if obras != null:
+			if obras.has_signal("marca_cambiada") and obras.marca_cambiada.is_connected(_on_marca_cambiada):
+				obras.marca_cambiada.disconnect(_on_marca_cambiada)
+			if obras.has_signal("prioridad_obra_cambiada") and obras.prioridad_obra_cambiada.is_connected(_on_prioridad_obra_cambiada):
+				obras.prioridad_obra_cambiada.disconnect(_on_prioridad_obra_cambiada)
 		obras = valor
 		if obras != null:
 			if obras.get("colonos") == null:
 				obras.colonos = self
 			if obras.has_signal("marca_cambiada") and not obras.marca_cambiada.is_connected(_on_marca_cambiada):
 				obras.marca_cambiada.connect(_on_marca_cambiada)
+			if obras.has_signal("prioridad_obra_cambiada") and not obras.prioridad_obra_cambiada.is_connected(_on_prioridad_obra_cambiada):
+				obras.prioridad_obra_cambiada.connect(_on_prioridad_obra_cambiada)
 
 ## id -> {"id", "tipo", "hogar", "celda", "posicion", "ruta", "progreso",
 ## "moviendo", "espera", "bloqueo", "trabajo", "tarea", "carga", "fase", "fallos_servicio"}. "fase" del acarreador:
@@ -133,11 +138,13 @@ func _ready() -> void:
 		economia = Economia
 	if obras == null:
 		obras = Obras
-	elif obras != null:
+	if obras != null:
 		if obras.colonos == null:
 			obras.colonos = self
 		if obras.has_signal("marca_cambiada") and not obras.marca_cambiada.is_connected(_on_marca_cambiada):
 			obras.marca_cambiada.connect(_on_marca_cambiada)
+		if obras.has_signal("prioridad_obra_cambiada") and not obras.prioridad_obra_cambiada.is_connected(_on_prioridad_obra_cambiada):
+			obras.prioridad_obra_cambiada.connect(_on_prioridad_obra_cambiada)
 	if ciudad != null:
 		if not ciudad.tick_simulado.is_connected(reconciliar):
 			ciudad.tick_simulado.connect(reconciliar)
@@ -192,6 +199,15 @@ func reconciliar() -> void:
 					colonos[id_a_mover]["tipo"] = otro_tipo
 					if colonos[id_a_mover].get("hogar", -1) != -1 and not ciudad.edificios_residenciales.has(colonos[id_a_mover]["hogar"]):
 						colonos[id_a_mover]["hogar"] = -1
+					if otro_tipo == "desempleado" or colonos[id_a_mover].get("hogar", -1) == -1:
+						if not colonos[id_a_mover]["trabajo"].is_empty():
+							economia.liberar(id_a_mover)
+							colonos[id_a_mover]["trabajo"] = {}
+							colonos[id_a_mover]["tarea"] = {}
+							colonos[id_a_mover]["carga"] = {}
+							var vacia: Array[Vector3i] = []
+							colonos[id_a_mover]["ruta"] = vacia
+							colonos[id_a_mover]["moviendo"] = false
 					reasignado = true
 					break
 			if not reasignado:
@@ -206,7 +222,7 @@ func reconciliar() -> void:
 			var celda: Vector3i = _celda_aparicion()
 			if celda == INVALIDA:
 				break  # sin celda de aparición transitable: se reintenta en el siguiente tick
-			existentes.append(agregar_colono(tipo, celda, _elegir_hogar(tipo)))
+			existentes.append(agregar_colono(tipo, celda, -1))
 	_reasignar_hogares()
 
 
@@ -318,6 +334,14 @@ func _reasignar_hogares() -> void:
 			candidatos_sin_hogar[i]["hogar"] = _elegir_hogar(candidatos_sin_hogar[i]["tipo"])
 		else:
 			candidatos_sin_hogar[i]["hogar"] = -1
+			if not candidatos_sin_hogar[i]["trabajo"].is_empty():
+				economia.liberar(candidatos_sin_hogar[i]["id"])
+				candidatos_sin_hogar[i]["trabajo"] = {}
+				candidatos_sin_hogar[i]["tarea"] = {}
+				candidatos_sin_hogar[i]["carga"] = {}
+				var vacia: Array[Vector3i] = []
+				candidatos_sin_hogar[i]["ruta"] = vacia
+				candidatos_sin_hogar[i]["moviendo"] = false
 
 
 func reubicar_por_remodelacion(de_hogar: int) -> void:
@@ -325,6 +349,7 @@ func reubicar_por_remodelacion(de_hogar: int) -> void:
 		if c.get("hogar", -1) == de_hogar:
 			c["hogar"] = -1
 	_reasignar_hogares()
+	reconciliar()
 
 
 func _on_nucleo_reasignado(nuevo_id: int, id_viejo: int) -> void:
@@ -734,6 +759,20 @@ func _on_obra_a_fantasma(id_obra: int) -> void:
 
 func _on_marca_cambiada(_id: int, _marcado: bool) -> void:
 	despertar_ociosos()
+
+
+func _on_prioridad_obra_cambiada(id_obra: int, nueva_prioridad: int) -> void:
+	for c in colonos.values():
+		if not c["trabajo"].is_empty():
+			continue
+		if c["tarea"].is_empty():
+			_dejar_lo_que_hacia(c)
+			continue
+		var tarea_id: int = c["tarea"].get("id", -999)
+		if tarea_id != -999:
+			var p_actual: int = obras.prioridad_de(tarea_id) if (obras != null and obras.has_method("prioridad_de")) else 1
+			if (tarea_id != id_obra and nueva_prioridad > p_actual) or (tarea_id == id_obra and nueva_prioridad < 1):
+				_dejar_lo_que_hacia(c)
 
 
 ## Cancela el deambular o la espera de los colonos libres para que puedan tomar

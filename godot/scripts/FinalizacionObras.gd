@@ -160,6 +160,8 @@ static func iniciar_remodelacion(mundo: Object, id: int) -> Dictionary:
 	Obras.olvidar(id)
 	if Colonos != null and Colonos.has_method("reubicar_por_remodelacion"):
 		Colonos.reubicar_por_remodelacion(id)
+	if Colonos != null and Colonos.has_method("reconciliar"):
+		Colonos.reconciliar()
 	var es_nucleo: bool = res_ciudad.get("es_nucleo", false)
 	var sin_techo: int = res_ciudad.get("sin_techo_generados", 0)
 	var nombre: String = Strings.FINALIZACION_NOMBRE_EL_NUCLEO if es_nucleo else (Strings.FINALIZACION_NOMBRE_EL_EDIFICIO_ID % id)

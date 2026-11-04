@@ -1,73 +1,76 @@
 # VoxelWorld.gd
 
-> 32 nodes · cohesion 0.11
+> 41 nodes · cohesion 0.07
 
 ## Key Concepts
 
 - **VoxelWorld.gd** (113 connections) — `godot/scripts/VoxelWorld.gd`
-- **Paneles de Ventana 1/20 (Recta, Esquina y Techo)** (35 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 - **TranslucidosRenderer.gd** (27 connections) — `godot/scripts/TranslucidosRenderer.gd`
 - **TranslucidosRendererTest.gd** (15 connections) — `godot/scripts/TranslucidosRendererTest.gd`
-- **2026-09-22-vias-tierra-pisada.md (Vías de Tierra Pisada Implementation Plan)** (13 connections) — `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
-- **2026-10-08-red-tuberias-acueductos-design.md (Especificación de Diseño: Red de Tuberías y Acueductos (Etap)** (12 connections) — `docs/superpowers/specs/2026-10-08-red-tuberias-acueductos-design.md`
+- **2026-09-25-hud-por-modos.md (HUD por modos Implementation Plan)** (12 connections) — `docs/superpowers/plans/2026-09-25-hud-por-modos.md`
 - **2026-10-08-subsuelo-pozos-y-bloques-design.md (Especificación de Diseño: Etapa 9.1 - Subsuelo, Pozos de Líq)** (11 connections) — `docs/superpowers/specs/2026-10-08-subsuelo-pozos-y-bloques-design.md`
-- **PlayerNatacionTest.gd** (9 connections) — `godot/scripts/PlayerNatacionTest.gd`
+- **FantasmasDestacados.gd** (10 connections) — `godot/scripts/FantasmasDestacados.gd`
 - **2026-10-08-subsuelo-pozos-y-bloques.md (Plan de Implementación: Etapa 9.1 - Subsuelo, Pozos de Líqui)** (9 connections) — `docs/superpowers/plans/2026-10-08-subsuelo-pozos-y-bloques.md`
+- **PlayerNatacionTest.gd** (9 connections) — `godot/scripts/PlayerNatacionTest.gd`
+- **PuertasTest.gd** (9 connections) — `godot/scripts/PuertasTest.gd`
 - **2026-09-25-puertas-interactivas.md (Puertas interactivas Implementation Plan)** (8 connections) — `docs/superpowers/plans/2026-09-25-puertas-interactivas.md`
+- **2026-09-20-drenado-y-follaje-progresivos.md (Drenado de Agua y Eliminación de Follaje Progresivos Impleme)** (7 connections) — `docs/superpowers/plans/2026-09-20-drenado-y-follaje-progresivos.md`
 - **2026-09-13-culling-caras-translucidas.md (Culling de Caras Translúcidas (agua/ventana) Implementation )** (6 connections) — `docs/superpowers/plans/2026-09-13-culling-caras-translucidas.md`
+- **2026-09-20-destacar-puertas-ventanas-fantasma.md (Destacar Puertas y Ventanas en el Fantasma Implementation Pl)** (6 connections) — `docs/superpowers/plans/2026-09-20-destacar-puertas-ventanas-fantasma.md`
+- **PlayerOxigenoTest.gd** (6 connections) — `godot/scripts/PlayerOxigenoTest.gd`
 - **2026-09-13-culling-caras-translucidas-design.md (Diseño: Culling de caras internas entre bloques translúcidos)** (5 connections) — `docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md`
-- **reporte_bug_28-10-26.md (Corrección de Estado de Herramientas al Cambiar de Cámara)** (4 connections) — `docs/reporte_bug_28-10-26.md`
-- **2026-09-29-costo-colocacion-bloques-design.md (Diseño: PoC 5, sub-proyecto 2C (parte 1) — Costo de colocaci)** (4 connections) — `docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md`
-- **2026-09-25-puertas-interactivas-design.md (Puertas interactivas — diseño)** (2 connections) — `docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md`
+- **2026-09-20-destacar-puertas-ventanas-fantasma-design.md (Destacar Puertas y Ventanas en el Fantasma — Diseño)** (4 connections) — `docs/superpowers/specs/2026-09-20-destacar-puertas-ventanas-fantasma-design.md`
+- **reporte_bug_28-10-26.md (Corrección de Estado de Herramientas al Cambiar de Cámara)** (3 connections) — `docs/reporte_bug_28-10-26.md`
+- **2026-09-20-drenado-y-follaje-progresivos-design.md (Drenado de Agua y Eliminación de Follaje Progresivos — Diseñ)** (3 connections) — `docs/superpowers/specs/2026-09-20-drenado-y-follaje-progresivos-design.md`
+- **FantasmasDestacados.marcar_sucio()** (1 connections) — `godot/scripts/FantasmasDestacados.gd`
+- **FantasmasDestacados._process()** (1 connections) — `godot/scripts/FantasmasDestacados.gd`
 - **PlayerNatacionTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/PlayerNatacionTest.gd`
 - **PlayerNatacionTest._ready()** (1 connections) — `godot/scripts/PlayerNatacionTest.gd`
-- **TranslucidosRenderer._agregar_ventana()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
-- **TranslucidosRenderer._agregar_ventana_techo()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
-- **TranslucidosRenderer.flush_pendientes()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
-- **TranslucidosRenderer._process()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
-- **TranslucidosRenderer.reconstruir_todo()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
-- **TranslucidosRendererTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/TranslucidosRendererTest.gd`
-- **TranslucidosRendererTest._ready()** (1 connections) — `godot/scripts/TranslucidosRendererTest.gd`
-- **VoxelWorld.direccion_de_puerto()** (1 connections) — `godot/scripts/VoxelWorld.gd`
-- *... and 7 more nodes in this community*
+- **PlayerOxigenoTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/PlayerOxigenoTest.gd`
+- **PlayerOxigenoTest._ready()** (1 connections) — `godot/scripts/PlayerOxigenoTest.gd`
+- **PuertasTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/PuertasTest.gd`
+- *... and 16 more nodes in this community*
 
 ## Relationships
 
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (42 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (27 shared connections)
-- [2026-09-10-puestos-huella-re Module](2026-09-10-puestos-huella-re_Module.md) (20 shared connections)
-- [Zonificacion.gd](Zonificacion.gd.md) (18 shared connections)
-- [Colonos.gd](Colonos.gd.md) (9 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (29 shared connections)
+- [CuerposObra.gd](CuerposObra.gd.md) (17 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (15 shared connections)
+- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (15 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (14 shared connections)
+- [Recoleccion.gd](Recoleccion.gd.md) (12 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (9 shared connections)
+- [HUD.gd](HUD.gd.md) (8 shared connections)
 - [HUDTest.gd](HUDTest.gd.md) (7 shared connections)
-- [PanelPuesto.gd](PanelPuesto.gd.md) (7 shared connections)
-- [Video Edition & Remotion Studio](Video_Edition_&_Remotion_Studio.md) (7 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (6 shared connections)
-- [City Simulation, Economy & IDU](City_Simulation,_Economy_&_IDU.md) (5 shared connections)
-- [Obras.gd Module](Obras.gd_Module.md) (4 shared connections)
-- [Hotbar.gd](Hotbar.gd.md) (3 shared connections)
+- [Economia.gd](Economia.gd.md) (6 shared connections)
+- [Puertas.gd](Puertas.gd.md) (5 shared connections)
+- [ajustes.gd](ajustes.gd.md) (5 shared connections)
 
 ## Source Files
 
-- `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 - `docs/reporte_bug_28-10-26.md`
 - `docs/superpowers/plans/2026-09-13-culling-caras-translucidas.md`
-- `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
+- `docs/superpowers/plans/2026-09-20-destacar-puertas-ventanas-fantasma.md`
+- `docs/superpowers/plans/2026-09-20-drenado-y-follaje-progresivos.md`
+- `docs/superpowers/plans/2026-09-25-hud-por-modos.md`
 - `docs/superpowers/plans/2026-09-25-puertas-interactivas.md`
 - `docs/superpowers/plans/2026-10-08-subsuelo-pozos-y-bloques.md`
 - `docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md`
-- `docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md`
-- `docs/superpowers/specs/2026-09-29-costo-colocacion-bloques-design.md`
-- `docs/superpowers/specs/2026-10-08-red-tuberias-acueductos-design.md`
+- `docs/superpowers/specs/2026-09-20-destacar-puertas-ventanas-fantasma-design.md`
+- `docs/superpowers/specs/2026-09-20-drenado-y-follaje-progresivos-design.md`
 - `docs/superpowers/specs/2026-10-08-subsuelo-pozos-y-bloques-design.md`
+- `godot/scripts/FantasmasDestacados.gd`
 - `godot/scripts/PlayerNatacionTest.gd`
+- `godot/scripts/PlayerOxigenoTest.gd`
+- `godot/scripts/PuertasTest.gd`
 - `godot/scripts/TranslucidosRenderer.gd`
 - `godot/scripts/TranslucidosRendererTest.gd`
 - `godot/scripts/VoxelWorld.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 197 (83%)
-- INFERRED: 39 (17%)
+- EXTRACTED: 214 (95%)
+- INFERRED: 12 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -22,7 +22,7 @@ Su responsabilidad es recibir instrucciones de alto nivel, planificar la ejecuci
    - Renderizar los subtítulos dinámicos estilo HUD (verde oscuro `#144214` y oro `#F6C424`) mediante `@remotion/captions`.
    - Aplicar ganancia adaptativa y mezclar música `(loop)` con ducking agresivo (`audio_mixer.py --track-type loop`).
 2. **Instrucción a `gamedev-copywriter`**:
-   - Analizar la transcripción limpia y crear: Gancho inicial de 3s, texto para TikTok/Reels/Shorts con hashtags, y post para X con CTA a la Web Oficial (`https://crafttonation.netlify.app/`) o GitHub Discussions (`https://github.com/gigalipa/craft-to-nation/discussions`).
+   - Analizar la transcripción limpia y crear: Gancho inicial de 3s, texto para TikTok/Reels/Shorts con hashtags, y posts para X y Threads con CTA a la Web Oficial (`https://crafttonation.netlify.app/`) o GitHub Discussions (`https://github.com/gigalipa/craft-to-nation/discussions`).
 3. **Instrucción a `content-qa`**:
    - Ejecutar `qa_checker.py` sobre el video maestro generado.
 4. **Instrucción a `social-strategist`**:
@@ -45,7 +45,7 @@ Su responsabilidad es recibir instrucciones de alto nivel, planificar la ejecuci
 2. **Instrucción a `gamedev-copywriter`**:
    - Redactar título optimizado para YouTube (`Craft to Nation | Devlog #...`).
    - Redactar descripción completa con marcas de tiempo (capítulos `00:00`, `01:20`...), links oficiales verificados (Web y GitHub Discussions) y hashtags.
-   - Redactar borrador de Devlog Update para la comunidad (GitHub Discussions / Web) y post para X.
+   - Redactar borrador de Devlog Update para la comunidad (GitHub Discussions / Web) y posts para X y Threads.
 3. **Instrucción a `content-qa`**:
    - Ejecutar `qa_checker.py -v <master.mp4> --format horizontal`.
    - Verificar presencia del `.srt` corregido, ausencia de texto quemado en el video y ausencia de enlaces no existentes (Steam/Discord).
@@ -66,8 +66,8 @@ Su responsabilidad es recibir instrucciones de alto nivel, planificar la ejecuci
    - **Producir el Video Largo Recap (16:9)**: Seleccionar 4-5 momentos clave, ensamblar composición en Remotion / `video_editor_studio.py` con títulos animados y generar el `.srt` limpio para YouTube (sin quemar en la imagen).
    - **Producir los 3 Shorts Virales (9:16)**: Seleccionar 3 momentos de 30-50s, componerlos en Remotion con fondo blur, subtítulos HUD verde/oro dinámicos (`@remotion/captions`) y música loop con ducking (`audio_mixer.py`).
 2. **Instrucción a `gamedev-copywriter`**:
-   - Redactar el paquete completo del Recap (YouTube con capítulos + Devlog Update + X) asegurando enlaces reales.
-   - Redactar el paquete de los 3 Shorts (ganchos de 3s, copys TikTok/Shorts/Reels, y posts en X con enlaces reales).
+   - Redactar el paquete completo del Recap (YouTube con capítulos + Devlog Update + posts en X y Threads) asegurando enlaces reales.
+   - Redactar el paquete de los 3 Shorts (ganchos de 3s, copys TikTok/Shorts/Reels, y posts en X y Threads con enlaces reales).
 3. **Instrucción a `content-qa`**:
    - Auditar los 4 videos exportados con `qa_checker.py` y verificar ausencia de enlaces simulados.
 4. **Instrucción a `social-strategist`**:

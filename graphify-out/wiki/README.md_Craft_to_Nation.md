@@ -1,8 +1,8 @@
 # README.md (Craft to Nation)
 
-> God node · 26 connections · `README.md`
+> God node · 23 connections · `README.md`
 
-**Community:** [Ciudad.gd](Ciudad.gd.md)
+**Community:** [ajustes.gd](ajustes.gd.md)
 
 ## Connections by Relation
 
@@ -13,27 +13,24 @@
 - [Canalizaciones Elevadas (Y+4 / Y+6) y Físicas de Fluidos](Canalizaciones_Elevadas_Y+4_-_Y+6_y_Físicas_de_Fluidos.md) `INFERRED`
 - [Moral Dinámica \[0-100\], 6 Categorías de Comida y Migración Escalonada](Moral_Dinámica_[0-100],_6_Categorías_de_Comida_y_Migración_Escalonada.md) `INFERRED`
 - [Refinería Vidriera (1-3-5) y Recurso Vidrio](Refinería_Vidriera_1-3-5_y_Recurso_Vidrio.md) `INFERRED`
-- VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%) `INFERRED`
+- [VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%)](VentanaAlmacen_Jerárquica_A-Z_y_Reservas_Porcentuales_0_-50_.md) `INFERRED`
 - Taller de Transporte y 6 Unidades Móviles de Acarreo `INFERRED`
-- Pendientes y próximos pasos.md (Seguimiento Operativo y Roadmap) `INFERRED`
 
 ### references
 - IconosHUD.gd `EXTRACTED`
 - [HUD.gd](HUD.gd.md) `EXTRACTED`
-- ajustes.gd `EXTRACTED`
+- [ajustes.gd](ajustes.gd.md) `EXTRACTED`
 - strings.gd `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `EXTRACTED`
 - VentanaAlmacen.gd `EXTRACTED`
-- [ideas-backlog.md (Backlog de Ideas — Craft to Nation)](ideas-backlog.md_Backlog_de_Ideas_—_Craft_to_Nation.md) `EXTRACTED`
+- [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `EXTRACTED`
 - [SKILL.md (Skill: Craft to Nation - Nodes and Network)](SKILL.md_Skill-_Craft_to_Nation_-_Nodes_and_Network.md) `EXTRACTED`
 - VentanaMoral.gd `EXTRACTED`
-- SKILL.md (Skill: Gamedev Copywriter (Craft to Nation)) `EXTRACTED`
+- ideas-backlog.md (Backlog de Ideas — Craft to Nation) `EXTRACTED`
 - SKILL.md (Skill: Content QA (Control de Calidad)) `EXTRACTED`
-- SKILL.md (Skill: Social (Orquestador del Estudio de Redes Sociales)) `EXTRACTED`
-- SKILL.md (Skill: Social Media Strategist (Craft to Nation)) `EXTRACTED`
-- SECURITY.md `EXTRACTED`
+- CODE_OF_CONDUCT.md `EXTRACTED`
 - CONTRIBUTING.md (Contribuir a Craft to Nation) `EXTRACTED`
+- SECURITY.md `EXTRACTED`
 - LICENSE-CONTENT.md (Licencia del contenido) `EXTRACTED`
 
 ---

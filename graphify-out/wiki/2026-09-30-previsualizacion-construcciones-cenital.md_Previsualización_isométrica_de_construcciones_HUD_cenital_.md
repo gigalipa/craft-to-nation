@@ -14,17 +14,18 @@
 
 ## Relationships
 
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (3 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (3 shared connections)
 - [Blueprints.gd](Blueprints.gd.md) (2 shared connections)
-- [Hotbar.gd Module](Hotbar.gd_Module.md) (2 shared connections)
-- [Video Edition & Remotion Studio](Video_Edition_&_Remotion_Studio.md) (1 shared connections)
-- [FinalizacionObras.gd](FinalizacionObras.gd.md) (1 shared connections)
-- [Obras.gd Module](Obras.gd_Module.md) (1 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (2 shared connections)
+- [MiniaturaRenderer.gd](MiniaturaRenderer.gd.md) (2 shared connections)
+- [Economia.gd](Economia.gd.md) (2 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (1 shared connections)
 - [Hotbar.gd](Hotbar.gd.md) (1 shared connections)
 - [HUD.gd](HUD.gd.md) (1 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (1 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (1 shared connections)
+- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (1 shared connections)
 
 ## Source Files
 

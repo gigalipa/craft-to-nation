@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: concept-era-evolution.webp** (0 connections) — `website/wiki/src/public/assets/concept-era-evolution.webp`
+- **Asset Visual: Craft_to_Nation_Kick_profile_banner.png** (0 connections) — `arte/banners/Craft_to_Nation_Kick_profile_banner.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/concept-era-evolution.webp`
+- `arte/banners/Craft_to_Nation_Kick_profile_banner.png`
 
 ## Audit Trail
 

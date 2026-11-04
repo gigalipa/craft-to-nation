@@ -117,6 +117,7 @@ func alternar_expandir_todo() -> void:
 			_contenedores_hijos[clave].visible = nuevo_estado
 	_actualizar_boton_toggle_todo()
 	_actualizar_textos()
+	reset_size()
 
 
 func _actualizar_boton_toggle_todo() -> void:
@@ -137,6 +138,7 @@ func toggle_desplegado(clave: String) -> void:
 		_contenedores_hijos[clave].visible = nuevo_estado
 	_actualizar_boton_toggle_todo()
 	_actualizar_textos()
+	reset_size()
 
 
 func _necesita_reconstruir() -> bool:

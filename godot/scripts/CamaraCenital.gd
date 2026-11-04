@@ -1202,6 +1202,15 @@ func _celdas_mundo_blueprint(esquina: Vector2i, base_y: int) -> Dictionary:
 	return celdas_mundo
 
 
+func _orientaciones_mundo_blueprint(esquina: Vector2i, base_y: int) -> Dictionary:
+	var orientaciones_mundo: Dictionary = {}
+	if _blueprint_activo.has("orientaciones_3d"):
+		for rel in _blueprint_activo["orientaciones_3d"]:
+			var real := Vector3i(esquina.x + rel.x, base_y + rel.y, esquina.y + rel.z)
+			orientaciones_mundo[real] = _blueprint_activo["orientaciones_3d"][rel]
+	return orientaciones_mundo
+
+
 ## Todo lo que hay que cavar y rellenar para emplazar el blueprint: la huella
 ## (hasta `base_y - 1`) más la fachada (cada columna a su nivel). Fuente ÚNICA
 ## del clic, el resumen de materiales y los overlays. "excavacion" son celdas
@@ -1260,6 +1269,7 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 	columnas_union.append_array(columnas)
 	columnas_union.append_array(columnas_fachada)
 	var celdas_mundo: Dictionary = _celdas_mundo_blueprint(esquina, resultado_base["base_y"])
+	var orientaciones_mundo: Dictionary = _orientaciones_mundo_blueprint(esquina, resultado_base["base_y"])
 	return {
 		"columnas": columnas,
 		"resultado_base": resultado_base,
@@ -1267,6 +1277,7 @@ func _evaluar_blueprint(esquina: Vector2i) -> Dictionary:
 		"columnas_fachada": columnas_fachada,
 		"columnas_union": columnas_union,
 		"celdas_mundo": celdas_mundo,
+		"orientaciones_mundo": orientaciones_mundo,
 		"zona_correcta": _huella_en_zona_correcta(esquina, columnas, _blueprint_activo["zona_permitida"]),
 		"errores_vivienda": BlueprintValidator.validar_limites_vivienda(_blueprint_activo, Ciudad.NIVELES_VIVIENDA[Ciudad.nivel]),
 		"relieve_valido": nivelador_puesto.verificar_pendiente(esquina, columnas_union),
@@ -1840,6 +1851,8 @@ func _rotar_blueprint() -> void:
 	var profundidad_previa: int = _blueprint_activo["profundidad"]
 
 	_blueprint_activo["celdas_3d"] = BlueprintValidator.rotar_celdas_3d(_blueprint_activo["celdas_3d"], profundidad_previa)
+	if _blueprint_activo.has("orientaciones_3d"):
+		_blueprint_activo["orientaciones_3d"] = BlueprintValidator.rotar_orientaciones_3d(_blueprint_activo["orientaciones_3d"], profundidad_previa)
 
 	var huella_rotada: Array[Vector2i] = []
 	for rel in _blueprint_activo["huella_relativa"]:
@@ -2517,17 +2530,24 @@ func _procesar_clic_demoler(posicion_pantalla: Vector2, es_doble_clic_evento: bo
 	var col := _celda_bajo_mouse(posicion_pantalla)
 	var id: int = Obras.id_en_columna(col)
 	if id != -1:
-		var motivo: String = Obras.alternar_marca(id)
+		var motivo: String = Obras.alternar_demolicion(id)
 		if motivo != "":
 			hud.notificar(motivo)
+		elif Obras.esta_programada(id):
+			hud.notificar("Demolición programada para iniciar en %d h." % Obras.horas_programadas(id))
 		elif Obras.esta_marcado(id):
 			hud.notificar("Edificio marcado para demolición.")
 		else:
 			hud.notificar("Marca de demolición quitada.")
 		return
 
-	# Si apunta a una vía existente, inicia la selección de demolición
+	# Si apunta a una vía existente: si ya está en demolición la desmarca; si no, inicia la selección
 	if celda_via != Vector3i.ZERO:
+		var id_dem: int = Obras.obra_demolicion_via_en_columna(Vector2i(celda_via.x, celda_via.z))
+		if id_dem != 0:
+			Obras.cancelar_demolicion_via(id_dem)
+			hud.notificar("Orden de demolición de vía cancelada.")
+			return
 		_ultimo_clic_demoler_tiempo_ms = ahora
 		_ultima_celda_clic_demoler = celda_via
 		_iniciar_demolicion_via(celda_via)
@@ -3344,6 +3364,7 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 		"profundidad": alto,
 		"base_y": base_y,
 		"fachada": fachada,
+		"orientaciones_mundo": ev.get("orientaciones_mundo", {}),
 	}
 	var id_edificio: int = mundo.iniciar_construccion_fantasma(relleno_orden, tipos_relleno, orden_estructura, celdas_mundo, metadata)
 	# El follaje NO se borra al emplazar: se registra y desaparece por columna con

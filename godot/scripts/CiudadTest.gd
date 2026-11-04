@@ -545,6 +545,7 @@ func ejecutar_pruebas() -> void:
 
 	# Remodelación con exceso poblacional -> Sin Techo
 	ciu28.registrar_edificio_residencial(15, [1])
+	ciu28.alternar_colonizable(15)
 	ciu28.demografia["desempleado"] = 8  # 4 caben en 15, 4 exceden al remodelar 20
 	assert(ciu28.calcular_sin_techo_al_remodelar(20) == 4)
 	var res20: Dictionary = ciu28.iniciar_remodelacion_residencial(20)
@@ -561,9 +562,11 @@ func ejecutar_pruebas() -> void:
 	assert(is_equal_approx(ciu28.almacen["comida"].cantidad, comida_inicio - 24.0))
 	assert(ciu28.tiempo_sin_techo == 1)
 
-	# Reabsorción inmediata al habilitar nueva vivienda
+	# Reabsorción al habilitar nueva vivienda y abrirla a colonización
 	ciu28.registrar_edificio_residencial(30, [1])  # 1 cama = 4 desempleados
-	assert(ciu28.sin_techo == 0, "sin techo reabsorbidos inmediatamente")
+	assert(ciu28.sin_techo == 4, "sin techo no entran mientras el edificio está inactivo/no colonizable")
+	ciu28.alternar_colonizable(30)
+	assert(ciu28.sin_techo == 0, "sin techo reabsorbidos al abrir colonización")
 	assert(ciu28.demografia["desempleado"] == 8)
 	assert(ciu28.tiempo_sin_techo == 0)
 
@@ -629,8 +632,9 @@ func ejecutar_pruebas() -> void:
 	assert(CiudadScript.calcular_tasa_migracion_mensual(25.0) == 1.0)
 	assert(CiudadScript.calcular_tasa_migracion_mensual(35.0) == 2.0)
 	assert(CiudadScript.calcular_tasa_migracion_mensual(50.0) == 3.0)
-	assert(CiudadScript.calcular_tasa_migracion_mensual(75.0) == 3.0)
-	assert(CiudadScript.calcular_tasa_migracion_mensual(100.0) == 5.0)
+	assert(CiudadScript.calcular_tasa_migracion_mensual(75.0) == 5.0)
+	assert(CiudadScript.calcular_tasa_migracion_mensual(90.0) == 7.0)
+	assert(CiudadScript.calcular_tasa_migracion_mensual(100.0) == 10.0)
 
 	# 1. Éxodo jerárquico cuando moral <= 20
 	ciu31.moral = 15.0

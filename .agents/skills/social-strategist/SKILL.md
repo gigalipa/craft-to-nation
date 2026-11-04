@@ -18,7 +18,7 @@ Esta skill actúa como el planificador editorial y archivista del estudio de red
      - Archivo `.srt` de subtítulos asociado (si aplica).
      - Formato (Vertical 9:16 o Horizontal 16:9) y duración.
      - Veredicto de Control de Calidad (QA PASS).
-     - Textos completos listos para publicación (Gancho, TikTok/Reels/Shorts, Post para X, y YouTube / GitHub Discussions para devlogs).
+     - Textos completos listos para publicación (Gancho, TikTok/Reels/Shorts, Posts para X y Threads, y YouTube / GitHub Discussions para devlogs).
 
 2. **Pilares de Contenido**:
    - Asegurar que el contenido semanal cubra equitativamente los pilares del juego:

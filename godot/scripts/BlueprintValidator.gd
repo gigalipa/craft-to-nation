@@ -547,7 +547,19 @@ static func rotar_celdas_3d(celdas_3d: Dictionary, profundidad_previa: int) -> D
 	return celdas_rotadas
 
 
-static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
+## Rota las orientaciones de bloques (p. ej. ventanas) 90° horario en consonancia con rotar_celdas_3d.
+## Las orientaciones verticales (Y != 0, como ventana_techo) conservan su eje; las horizontales rotan en XZ.
+static func rotar_orientaciones_3d(orientaciones_3d: Dictionary, profundidad_previa: int) -> Dictionary:
+	var ori_rotadas: Dictionary = {}
+	for rel in orientaciones_3d:
+		var punto_rotado := Vector3i(profundidad_previa - 1 - rel.z, rel.y, rel.x)
+		var ori: Vector3i = orientaciones_3d[rel]
+		var ori_rotada := Vector3i(-ori.z, ori.y, ori.x) if ori.y == 0 else ori
+		ori_rotadas[punto_rotado] = ori_rotada
+	return ori_rotadas
+
+
+static func estructura_a_blueprint(celdas: Dictionary, orientaciones: Dictionary = {}) -> Dictionary:
 	# "puerta_superior" se remapea a "pared" (nunca se omite): físicamente
 	# tapa el muro, y si se omitiera por completo dejaría un "agujero
 	# fantasma" en su capa de Y — si esa capa fuera además el techo del
@@ -748,8 +760,12 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 	# partir de "celdas" (el parámetro original, SIN el remapeo de
 	# puerta_superior->pared que ya sufrió "celdas_relevantes" más arriba).
 	var celdas_3d: Dictionary = {}  # Vector3i (normalizado) -> tipo original
-	for pos in celdas.keys():
-		celdas_3d[pos - Vector3i(x_min, y_min, z_min)] = celdas[pos]
+	var orientaciones_3d: Dictionary = {}  # Vector3i (normalizado) -> Vector3i orientación
+	for pos: Vector3i in celdas.keys():
+		var norm: Vector3i = pos - Vector3i(x_min, y_min, z_min)
+		celdas_3d[norm] = celdas[pos]
+		if orientaciones.has(pos):
+			orientaciones_3d[norm] = orientaciones[pos]
 
 	var huella_relativa: Array[Vector2i] = []
 	for clave in huella_real:
@@ -770,6 +786,7 @@ static func estructura_a_blueprint(celdas: Dictionary) -> Dictionary:
 		"zona_permitida": "residencial_investigacion",
 		"pisos": pisos,
 		"celdas_3d": celdas_3d,
+		"orientaciones_3d": orientaciones_3d,
 		"ancho": x_max + 1,       # x_max ya es (máximo - x_min), ver arriba
 		"profundidad": z_max + 1,
 		"huella_relativa": huella_relativa,

@@ -16,6 +16,7 @@ venv/
 .godot-mcp/
 .superpowers/
 .claude/settings.local.json
+.mcp.json
 
 # Secrets
 .env

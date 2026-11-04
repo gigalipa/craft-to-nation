@@ -4,7 +4,6 @@ import { DevlogRecap } from "./DevlogRecap";
 import { QASessionRecap } from "./QASessionRecap";
 import { VerticalShort } from "./VerticalShort";
 import { ReelTrendNoPlanB } from "./ReelTrendNoPlanB";
-import { SHORT_01_SEGMENTS, SHORT_02_SEGMENTS, SHORT_03_SEGMENTS } from "./data";
 import qaData from "./qa_shorts_data.json";
 
 export const RemotionRoot: React.FC = () => {

@@ -81,8 +81,9 @@ One simulation month equals `720 in-game hours` (`30 days × 24h`). `VentanaMora
 | **`20.0 – 25.0`** | **+1.0 / month** | **Cautious Immigration** (*only enters if free colonizable beds exist*) |
 | **`25.0 – 35.0`** | **+2.0 / month** | **Moderate Immigration** (*only enters if free colonizable beds exist*) |
 | **`35.0 – 50.0`** | **+3.0 / month** | **Steady Immigration** (*only enters if free colonizable beds exist; never creates homeless*) |
-| **`50.0 – 75.0`** | **+3.0 / month** | **Mass Immigration** (*fills open beds and overflows into `sin_techo` if Urban Core exists*) |
-| **`75.0 – 100.0`** | **+5.0 / month** | **Migration Boom** (*fills open beds and overflows into `sin_techo` if Urban Core exists*) |
+| **`50.0 – 75.0`** | **+5.0 / month** | **Mass Immigration** (*fills open beds and overflows into `sin_techo` if Urban Core exists*) |
+| **`75.0 – 90.0`** | **+7.0 / month** | **Migration Boom** (*fills open beds and overflows into `sin_techo` if Urban Core exists*) |
+| **`90.0 – 100.0`** | **+10.0 / month** | **Outstanding Migration Boom** (*maximum civic attraction under exceptional morale*) |
 
 ---
 

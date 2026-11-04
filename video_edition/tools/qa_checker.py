@@ -11,7 +11,7 @@ def inspect_video(video_path: Path) -> dict:
         "-v",
         "error",
         "-show_entries",
-        "stream=width,height,duration,codec_type",
+        "stream=width,height,duration,codec_type,sample_aspect_ratio,display_aspect_ratio",
         "-of",
         "json",
         str(video_path),
@@ -37,20 +37,31 @@ def run_qa_checks(video_path: Path, expected_format: str = "vertical") -> tuple[
     if not v_stream:
         return False, ["No se detectó pista de video en el archivo."]
 
-    # 1. Comprobación de resolución
+    # 1. Comprobación de resolución y aspect ratio
     width = int(v_stream.get("width", 0))
     height = int(v_stream.get("height", 0))
+    dar = v_stream.get("display_aspect_ratio", "")
+    sar = v_stream.get("sample_aspect_ratio", "")
+
     if expected_format == "vertical":
         if width == 1080 and height == 1920:
-            notes.append(f"[OK] Resolución vertical correcta: {width}x{height} (9:16)")
+            if dar and dar not in ["9:16", "1:1"]:
+                notes.append(f"[ALERTA] Aspect ratio anómalo para vertical: DAR={dar} (SAR={sar})")
+                passed = False
+            else:
+                notes.append(f"[OK] Resolución vertical correcta: {width}x{height} (9:16)")
         else:
             notes.append(f"[ALERTA] Resolución no estándar para vertical: {width}x{height} (esperado 1080x1920)")
             passed = False
     elif expected_format == "horizontal":
         if (width == 1920 and height == 1080) or (width == 1280 and height == 720):
-            notes.append(f"[OK] Resolución horizontal correcta: {width}x{height} (16:9)")
+            if dar and dar != "16:9":
+                notes.append(f"[ERROR] Display Aspect Ratio incorrecto para horizontal: DAR={dar} (SAR={sar}) - Provoca que se reproduzca en vertical")
+                passed = False
+            else:
+                notes.append(f"[OK] Resolución horizontal correcta: {width}x{height} (16:9, DAR={dar or '16:9'})")
         else:
-            notes.append(f"[ALERTA] Resolución no estándar para horizontal: {width}x{height} (esperado 1920x1080)")
+            notes.append(f"[ALERTA] Resolución no estándar para horizontal: {width}x{height} (esperado 1920x1080 o 1280x720)")
             passed = False
 
     # 2. Comprobación de duración

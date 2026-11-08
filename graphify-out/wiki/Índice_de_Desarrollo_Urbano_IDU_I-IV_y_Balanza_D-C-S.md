@@ -1,38 +1,69 @@
 # Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S
 
-> God node · 55 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+> 18 nodes · cohesion 0.11
 
-**Community:** [bug_report.yml](bug_report.yml.md)
+## Key Concepts
 
-## Connections by Relation
+- **Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S** (55 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **Icono SVG: btn_bajar** (2 connections) — `godot/assets/icons/btn_bajar.svg`
+- **Icono SVG: btn_subir** (2 connections) — `godot/assets/icons/btn_subir.svg`
+- **Icono SVG: energia** (2 connections) — `godot/assets/icons/energia.svg`
+- **Icono SVG: energia_dorado** (2 connections) — `godot/assets/icons/energia_dorado.svg`
+- **Icono SVG: energia_gris** (2 connections) — `godot/assets/icons/energia_gris.svg`
+- **Icono SVG: energia_rojo** (2 connections) — `godot/assets/icons/energia_rojo.svg`
+- **Icono SVG: romano_1** (2 connections) — `godot/assets/icons/romano_1.svg`
+- **Icono SVG: romano_2** (2 connections) — `godot/assets/icons/romano_2.svg`
+- **Icono SVG: romano_3** (2 connections) — `godot/assets/icons/romano_3.svg`
+- **Icono SVG: romano_4** (2 connections) — `godot/assets/icons/romano_4.svg`
+- **Documento Técnico de Desarrollo_ PoC 2 - Serialización JSON y Validación de Plantillas y Zonas.md (**Documento Técnico de Desarrollo: PoC 2 - Serialización JSO)** (2 connections) — `PoC_2/Documento Técnico de Desarrollo_ PoC 2 - Serialización JSON y Validación de Plantillas y Zonas.md`
+- **Icono SVG: energia_dorado** (2 connections) — `website/wiki/src/public/icons/energia_dorado.svg`
+- **Icono SVG: energia_gris** (2 connections) — `website/wiki/src/public/icons/energia_gris.svg`
+- **Icono SVG: energia_rojo** (2 connections) — `website/wiki/src/public/icons/energia_rojo.svg`
+- **Icono SVG: romano_1** (2 connections) — `website/wiki/src/public/icons/romano_1.svg`
+- **Icono SVG: romano_2** (2 connections) — `website/wiki/src/public/icons/romano_2.svg`
+- **Icono SVG: romano_3** (2 connections) — `website/wiki/src/public/icons/romano_3.svg`
 
-### conceptually_related_to
-- [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `INFERRED`
-- [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `INFERRED`
-- ideas-backlog.md (Backlog de Ideas — Craft to Nation) `INFERRED`
-- godot.md: Arquitectura Técnica en Godot & PoCs `INFERRED`
-- godot.md: Godot Technical Architecture & Simulation Engine `INFERRED`
-- gdd.md: Pilares de Diseño y GDD (v3.59) `INFERRED`
-- gdd.md: Game Design Document (GDD v3.59) `INFERRED`
-- Propuesta_Iconos_UI.md (Propuesta de Iconografía Completa para la Interfaz de Usuari) `INFERRED`
-- Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md (Propuesta de Implementación: Ajustes de Subsuelo, Ductos, En) `INFERRED`
-- 2026-09-29-costo-colocacion-bloques.md (Costo de colocación y bloques estructurales reales — Plan de) `INFERRED`
-- 2026-10-12-ajustes-subsuelo-ductos-energia-npcs-design.md (Especificación Técnica: Ajustes de Subsuelo, Fluidos, Canali) `INFERRED`
-- Verificaciones_en_vivo.md (Guión de Verificaciones en Vivo (Live QA Script) — Craft to ) `INFERRED`
-- 2026-09-20-colonos-pathfinding.md (Colonos NPC y Pathfinding a Pie (Plan 2 de 3) Implementation) `INFERRED`
-- 2026-10-07-obras-vias-y-prioridades.md (Obras por Colonos: Tendido de Vías y Prioridades Configurabl) `INFERRED`
-- 2026-10-26-investigacion-descentralizada-eras.md (Plan de Implementación: Investigación Descentralizada, Pacin) `INFERRED`
-- 2026-09-20-colonos-pathfinding-design.md (Colonos NPC y Pathfinding a Pie — Diseño) `INFERRED`
-- 2026-09-09-arboles-procedurales-design.md (Diseño: Árboles Procedurales Talables (PoC 5, sub-proyecto s) `INFERRED`
-- Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation) `INFERRED`
-- 2026-10-08-subsuelo-pozos-y-bloques-design.md (Especificación de Diseño: Etapa 9.1 - Subsuelo, Pozos de Líq) `INFERRED`
-- 2026-10-26-investigacion-descentralizada-eras-spec.md (Especificación Técnica: Investigación Descentralizada, Pacin) `INFERRED`
-- *…and 32 more `conceptually_related_to` connection(s) not listed (lowest-degree first to go)*
+## Relationships
 
-### implements
-- [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
-- [ajustes.gd](ajustes.gd.md) `EXTRACTED`
-- [BarraSuperior.gd](BarraSuperior.gd.md) `EXTRACTED`
+- [ajustes.gd](ajustes.gd.md) (16 shared connections)
+- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (16 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (4 shared connections)
+- [HUD.gd](HUD.gd.md) (3 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (3 shared connections)
+- [BarraSuperior.gd](BarraSuperior.gd.md) (2 shared connections)
+- [BuscadorRutas.gd](BuscadorRutas.gd.md) (2 shared connections)
+- [Economia.gd](Economia.gd.md) (2 shared connections)
+- [GeneradorMundo.gd](GeneradorMundo.gd.md) (2 shared connections)
+- [Recoleccion.gd](Recoleccion.gd.md) (1 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
+
+## Source Files
+
+- `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- `PoC_2/Documento Técnico de Desarrollo_ PoC 2 - Serialización JSON y Validación de Plantillas y Zonas.md`
+- `godot/assets/icons/btn_bajar.svg`
+- `godot/assets/icons/btn_subir.svg`
+- `godot/assets/icons/energia.svg`
+- `godot/assets/icons/energia_dorado.svg`
+- `godot/assets/icons/energia_gris.svg`
+- `godot/assets/icons/energia_rojo.svg`
+- `godot/assets/icons/romano_1.svg`
+- `godot/assets/icons/romano_2.svg`
+- `godot/assets/icons/romano_3.svg`
+- `godot/assets/icons/romano_4.svg`
+- `website/wiki/src/public/icons/energia_dorado.svg`
+- `website/wiki/src/public/icons/energia_gris.svg`
+- `website/wiki/src/public/icons/energia_rojo.svg`
+- `website/wiki/src/public/icons/romano_1.svg`
+- `website/wiki/src/public/icons/romano_2.svg`
+- `website/wiki/src/public/icons/romano_3.svg`
+
+## Audit Trail
+
+- EXTRACTED: 19 (26%)
+- INFERRED: 53 (74%)
+- AMBIGUOUS: 0 (0%)
 
 ---
 

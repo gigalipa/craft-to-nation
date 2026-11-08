@@ -1,22 +1,26 @@
 # HUD.gd
 
-> 26 nodes · cohesion 0.10
+> 58 nodes · cohesion 0.05
 
 ## Key Concepts
 
 - **HUD.gd** (95 connections) — `godot/scripts/HUD.gd`
-- **ExtraccionTest.gd** (18 connections) — `godot/scripts/ExtraccionTest.gd`
-- **2026-09-29-costo-colocacion-bloques.md (Costo de colocación y bloques estructurales reales — Plan de)** (16 connections) — `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`
-- **PlantillasPuestoTest.gd** (13 connections) — `godot/scripts/PlantillasPuestoTest.gd`
-- **2026-09-24-extraccion-fisica-agotamiento.md (Extracción física y agotamiento (PoC 5, sub-proyecto 2B) Imp)** (12 connections) — `docs/superpowers/plans/2026-09-24-extraccion-fisica-agotamiento.md`
-- **2026-10-08-puestos-extractores-y-refinerias.md (Puestos Extractores y Modificación de Refinerías (Etapa 9.2))** (12 connections) — `docs/superpowers/plans/2026-10-08-puestos-extractores-y-refinerias.md`
-- **Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md (**Documento Técnico de Desarrollo: PoC 5 - Fase 2B - Extracc)** (12 connections) — `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`
-- **2026-10-08-puestos-extractores-y-refinerias-design.md (Diseño: Puestos Extractores y Modificación de Edificios de R)** (9 connections) — `docs/superpowers/specs/2026-10-08-puestos-extractores-y-refinerias-design.md`
-- **2026-09-14-puesto-pesca-frutos-mar-design.md (Puesto de Pesca y Frutos del Mar — Diseño)** (8 connections) — `docs/superpowers/specs/2026-09-14-puesto-pesca-frutos-mar-design.md`
-- **ProgresoAccion.gd** (8 connections) — `godot/scripts/ProgresoAccion.gd`
-- **2026-09-24-extraccion-fisica-agotamiento-design.md (Diseño: PoC 5, sub-proyecto 2B — Extracción física y agotami)** (7 connections) — `docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md`
-- **ExtraccionTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/ExtraccionTest.gd`
-- **ExtraccionTest._ready()** (1 connections) — `godot/scripts/ExtraccionTest.gd`
+- **HUDTest.gd** (54 connections) — `godot/scripts/HUDTest.gd`
+- **PanelEdificio.gd** (36 connections) — `godot/scripts/PanelEdificio.gd`
+- **TemaHUD.gd** (29 connections) — `godot/scripts/TemaHUD.gd`
+- **PanelContextual.gd** (23 connections) — `godot/scripts/PanelContextual.gd`
+- **VentanaPoblacion.gd** (18 connections) — `godot/scripts/VentanaPoblacion.gd`
+- **VentanaBaul.gd** (17 connections) — `godot/scripts/VentanaBaul.gd`
+- **2026-10-07-obras-vias-y-prioridades.md (Obras por Colonos: Tendido de Vías y Prioridades Configurabl)** (14 connections) — `docs/superpowers/plans/2026-10-07-obras-vias-y-prioridades.md`
+- **2026-09-25-hud-por-modos.md (HUD por modos Implementation Plan)** (12 connections) — `docs/superpowers/plans/2026-09-25-hud-por-modos.md`
+- **2026-10-26-investigacion-descentralizada-eras-spec.md (Especificación Técnica: Investigación Descentralizada, Pacin)** (11 connections) — `docs/superpowers/specs/2026-10-26-investigacion-descentralizada-eras-spec.md`
+- **2026-09-25-hud-por-modos-design.md (HUD por modos — diseño)** (10 connections) — `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`
+- **2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md (Especificación Técnica: Sistema Militar, Doctrinas Asimétric)** (10 connections) — `docs/superpowers/specs/2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md`
+- **CaraApuntada.gd** (9 connections) — `godot/scripts/CaraApuntada.gd`
+- **Propuesta_Remodelacion_y_Colonizabilidad.md (Propuesta de Diseño Técnico: Remodelación de Edificaciones y)** (7 connections) — `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`
+- **CaraApuntada.mostrar_en()** (1 connections) — `godot/scripts/CaraApuntada.gd`
+- **CaraApuntada.ocultar()** (1 connections) — `godot/scripts/CaraApuntada.gd`
+- **CaraApuntada._process()** (1 connections) — `godot/scripts/CaraApuntada.gd`
 - **HUD.configurar_hotbar()** (1 connections) — `godot/scripts/HUD.gd`
 - **HUD.iniciar_transicion()** (1 connections) — `godot/scripts/HUD.gd`
 - **HUD.pagina_actual()** (1 connections) — `godot/scripts/HUD.gd`
@@ -25,45 +29,44 @@
 - **HUD.set_modo()** (1 connections) — `godot/scripts/HUD.gd`
 - **HUD.set_tipo_hotbar()** (1 connections) — `godot/scripts/HUD.gd`
 - **HUD.set_vista()** (1 connections) — `godot/scripts/HUD.gd`
-- **PlantillasPuestoTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/PlantillasPuestoTest.gd`
-- **PlantillasPuestoTest._ready()** (1 connections) — `godot/scripts/PlantillasPuestoTest.gd`
-- **ProgresoAccion.avanzar()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
-- **ProgresoAccion.fraccion()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
-- *... and 1 more nodes in this community*
+- *... and 33 more nodes in this community*
 
 ## Relationships
 
-- [Economia.gd](Economia.gd.md) (19 shared connections)
-- [Recoleccion.gd](Recoleccion.gd.md) (19 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (18 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (17 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (15 shared connections)
-- [Zonificacion.gd](Zonificacion.gd.md) (9 shared connections)
-- [CuerposObra.gd](CuerposObra.gd.md) (9 shared connections)
-- [ajustes.gd](ajustes.gd.md) (9 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (6 shared connections)
-- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (6 shared connections)
-- [TemaHUD.gd](TemaHUD.gd.md) (6 shared connections)
-- [PlantillasPuesto.gd](PlantillasPuesto.gd.md) (4 shared connections)
+- [Economia.gd](Economia.gd.md) (44 shared connections)
+- [ajustes.gd](ajustes.gd.md) (38 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (27 shared connections)
+- [BuscadorRutas.gd](BuscadorRutas.gd.md) (16 shared connections)
+- [BarraSuperior.gd](BarraSuperior.gd.md) (14 shared connections)
+- [Player.gd](Player.gd.md) (13 shared connections)
+- [Recoleccion.gd](Recoleccion.gd.md) (12 shared connections)
+- [PlantillasPuesto.gd](PlantillasPuesto.gd.md) (10 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (7 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (7 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (6 shared connections)
+- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (6 shared connections)
 
 ## Source Files
 
-- `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`
-- `docs/superpowers/plans/2026-09-24-extraccion-fisica-agotamiento.md`
-- `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`
-- `docs/superpowers/plans/2026-10-08-puestos-extractores-y-refinerias.md`
-- `docs/superpowers/specs/2026-09-14-puesto-pesca-frutos-mar-design.md`
-- `docs/superpowers/specs/2026-09-24-extraccion-fisica-agotamiento-design.md`
-- `docs/superpowers/specs/2026-10-08-puestos-extractores-y-refinerias-design.md`
-- `godot/scripts/ExtraccionTest.gd`
+- `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`
+- `docs/superpowers/plans/2026-09-25-hud-por-modos.md`
+- `docs/superpowers/plans/2026-10-07-obras-vias-y-prioridades.md`
+- `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`
+- `docs/superpowers/specs/2026-10-26-investigacion-descentralizada-eras-spec.md`
+- `docs/superpowers/specs/2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md`
+- `godot/scripts/CaraApuntada.gd`
 - `godot/scripts/HUD.gd`
-- `godot/scripts/PlantillasPuestoTest.gd`
-- `godot/scripts/ProgresoAccion.gd`
+- `godot/scripts/HUDTest.gd`
+- `godot/scripts/PanelContextual.gd`
+- `godot/scripts/PanelEdificio.gd`
+- `godot/scripts/TemaHUD.gd`
+- `godot/scripts/VentanaBaul.gd`
+- `godot/scripts/VentanaPoblacion.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 188 (98%)
-- INFERRED: 4 (2%)
+- EXTRACTED: 301 (97%)
+- INFERRED: 10 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

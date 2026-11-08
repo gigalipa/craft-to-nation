@@ -24,7 +24,7 @@
 - Canalizaciones.gd `EXTRACTED`
 - VentanaAlmacen.gd `EXTRACTED`
 - [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `EXTRACTED`
-- [SKILL.md (Skill: Craft to Nation - Nodes and Network)](SKILL.md_Skill-_Craft_to_Nation_-_Nodes_and_Network.md) `EXTRACTED`
+- SKILL.md (Skill: Craft to Nation - Nodes and Network) `EXTRACTED`
 - VentanaMoral.gd `EXTRACTED`
 - ideas-backlog.md (Backlog de Ideas — Craft to Nation) `EXTRACTED`
 - SKILL.md (Skill: Content QA (Control de Calidad)) `EXTRACTED`

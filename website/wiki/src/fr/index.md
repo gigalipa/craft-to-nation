@@ -6,7 +6,7 @@ description: "Documentation officielle, guide du joueur et architecture techniqu
 hero:
   name: "Craft to Nation"
   text: "Portail Officiel & Wiki"
-  tagline: "Du premier bloc à une nation vivante. Guide de colonisation, gestion urbaine et documentation technique (GDD v3.59)."
+  tagline: "Du premier bloc à une nation vivante. Guide de colonisation, gestion urbaine et documentation technique (GDD v3.61)."
   image:
     src: /assets/craft-to-nation-logo.png
     alt: Craft to Nation Logo
@@ -15,7 +15,7 @@ hero:
       text: Guide du Joueur
       link: /fr/guide/start
     - theme: alt
-      text: Développement & GDD v3.59
+      text: Développement & GDD v3.61
       link: /fr/dev/gdd
     - theme: alt
       text: Site Principal
@@ -36,7 +36,7 @@ features:
     link: /fr/guide/colonists
     linkText: Gestion des Colons
   - title: Architecture Moteur Godot 4.7
-    details: Conception technique, simulation déterministe à ticks horaires (2,0s = 1h), iconographie vectorielle HUD SVG et 28 scènes de tests automatisés.
+    details: Conception technique, simulation déterministe à ticks horaires (2,0s = 1h), moteur audio spatial SFX, iconographie vectorielle HUD SVG et 35 scènes de tests automatisés.
     link: /fr/dev/godot
     linkText: Architecture Godot
 ---
@@ -68,7 +68,7 @@ features:
   - [Gestion des Colons & Démographie](/fr/guide/colonists)
 
 - ⚙️ **Conception Technique & Développement :**
-  - [GDD v3.59 : Piliers & Philosophie](/fr/dev/gdd)
+  - [GDD v3.61 : Piliers & Philosophie](/fr/dev/gdd)
   - [Architecture Technique sous Godot 4.7](/fr/dev/godot)
   - [Logistique, Voirie & Conduits Surélevés](/fr/dev/logistics)
   - [Feuille de Route du Développement (Roadmap)](/fr/dev/roadmap)

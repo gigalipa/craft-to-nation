@@ -33,18 +33,17 @@
 
 ## Relationships
 
-- [bug_report.yml](bug_report.yml.md) (16 shared connections)
-- [TemaHUD.gd](TemaHUD.gd.md) (5 shared connections)
-- [ajustes.gd](ajustes.gd.md) (5 shared connections)
+- [Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S](Índice_de_Desarrollo_Urbano_IDU_I-IV_y_Balanza_D-C-S.md) (16 shared connections)
+- [ajustes.gd](ajustes.gd.md) (8 shared connections)
+- [HUD.gd](HUD.gd.md) (6 shared connections)
 - [BarraSuperior.gd](BarraSuperior.gd.md) (3 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (3 shared connections)
 - [BuscadorRutas.gd](BuscadorRutas.gd.md) (3 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (2 shared connections)
-- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (1 shared connections)
 - [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
-- [HUD.gd](HUD.gd.md) (1 shared connections)
-- [PanelContextual.gd](PanelContextual.gd.md) (1 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (1 shared connections)
+- [PanelLampara.gd](PanelLampara.gd.md) (1 shared connections)
+- [Economia.gd](Economia.gd.md) (1 shared connections)
+- [Player.gd](Player.gd.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
+- [VentanaOcupaciones.gd](VentanaOcupaciones.gd.md) (1 shared connections)
 
 ## Source Files
 

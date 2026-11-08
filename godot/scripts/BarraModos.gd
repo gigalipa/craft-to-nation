@@ -206,6 +206,7 @@ func _ready() -> void:
 		var id: String = modo[0]
 		var boton := _crear_boton(modo[1], Vector2(88, 56), modo[3], modo[2])
 		boton.pressed.connect(func() -> void:
+			Sonidos.reproducir("sfx_ui_boton_clic")
 			modo_pedido.emit(id)
 			_refrescar()
 		)
@@ -217,6 +218,7 @@ func _ready() -> void:
 		var id: String = categoria[0]
 		var boton := _crear_boton(categoria[1], Vector2(88, 56), categoria[3], categoria[2])
 		boton.pressed.connect(func() -> void:
+			Sonidos.reproducir("sfx_ui_boton_clic")
 			categoria_pedida.emit(id)
 			_refrescar()
 		)
@@ -242,6 +244,7 @@ func _ready() -> void:
 			var tipo: String = edificio[0]
 			var boton: Button = _crear_boton_construccion(tipo, edificio[1], edificio[2])
 			boton.pressed.connect(func() -> void:
+				Sonidos.reproducir("sfx_ui_boton_clic")
 				construccion_pedida.emit(tipo)
 				_refrescar()
 			)
@@ -257,6 +260,7 @@ func _ready() -> void:
 		btn_prev.custom_minimum_size = Vector2(40, 24)
 		TemaHUD.estilizar_boton(btn_prev)
 		btn_prev.pressed.connect(func() -> void:
+			Sonidos.reproducir("sfx_ui_boton_clic")
 			pagina_anterior(id)
 		)
 		var lbl_pag := TemaHUD.etiqueta("Pág 1/1")
@@ -266,6 +270,7 @@ func _ready() -> void:
 		btn_next.custom_minimum_size = Vector2(40, 24)
 		TemaHUD.estilizar_boton(btn_next)
 		btn_next.pressed.connect(func() -> void:
+			Sonidos.reproducir("sfx_ui_boton_clic")
 			pagina_siguiente(id)
 		)
 		cont_pag.add_child(btn_prev)
@@ -285,6 +290,7 @@ func _ready() -> void:
 		var tipo: String = zona[0]
 		var boton := _crear_boton(zona[1], Vector2(128, 56), zona[3], zona[2])
 		boton.pressed.connect(func() -> void:
+			Sonidos.reproducir("sfx_ui_boton_clic")
 			zona_pedida.emit(tipo)
 			_refrescar()
 		)

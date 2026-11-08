@@ -468,6 +468,7 @@ static func texto_materiales(neto: Dictionary, camas: int = -1, baules: int = -1
 ## la vez (decisión del usuario, 2026-09-27): cada una se coloca por defecto
 ## en su propia esquina (ver POSICION_INICIAL de cada una) para no solaparse.
 func abrir_ventana_dato(cual: String) -> void:
+	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	if cual == "poblacion":
 		_ventana_poblacion.abrir()
 	elif cual == "almacen":
@@ -481,12 +482,14 @@ func abrir_ventana_dato(cual: String) -> void:
 
 
 func abrir_panel_puesto(esquina: Vector2i) -> void:
+	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	_panel_edificio.cerrar()
 	_panel_canalizacion.cerrar()
 	_panel_puesto.abrir(esquina)
 
 
 func cerrar_panel_puesto() -> void:
+	Sonidos.reproducir("sfx_ui_ventana_cerrar")
 	_panel_puesto.cerrar()
 	_panel_edificio.cerrar()
 	_panel_canalizacion.cerrar()
@@ -494,6 +497,7 @@ func cerrar_panel_puesto() -> void:
 
 ## Ventana de un edificio u obra (ver PanelEdificio).
 func abrir_panel_edificio(id: int) -> void:
+	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	_panel_puesto.cerrar()
 	_panel_canalizacion.cerrar()
 	_panel_edificio.abrir(id)
@@ -501,22 +505,26 @@ func abrir_panel_edificio(id: int) -> void:
 
 ## Ventana de una canalización (ver PanelCanalizacion).
 func abrir_panel_canalizacion(id_red: int) -> void:
+	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	_panel_puesto.cerrar()
 	_panel_edificio.cerrar()
 	_panel_canalizacion.abrir(id_red)
 
 
 func cerrar_panel_canalizacion() -> void:
+	Sonidos.reproducir("sfx_ui_ventana_cerrar")
 	_panel_canalizacion.cerrar()
 
 
 ## Ventana de interacción del baúl (E apuntando al depósito de un puesto,
 ## ver Player._interactuar()).
 func abrir_ventana_baul(esquina: Vector2i) -> void:
+	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	_ventana_baul.abrir(esquina)
 
 
 func cerrar_ventana_baul() -> void:
+	Sonidos.reproducir("sfx_ui_ventana_cerrar")
 	_ventana_baul.cerrar()
 
 
@@ -559,6 +567,11 @@ func ocultar_progreso() -> void:
 ## nuevo colono, etc.), no estado continuo.
 func notificar(texto: String) -> void:
 	_notificaciones.notificar(texto)
+	var t_lower := texto.to_lower()
+	if "falta" in t_lower or "no se puede" in t_lower or "rechazad" in t_lower or "bloquead" in t_lower or "inválid" in t_lower or "agotad" in t_lower:
+		Sonidos.reproducir("sfx_ui_notificacion_alerta", -3.0)
+	else:
+		Sonidos.reproducir("sfx_ui_notificacion_info", -4.0)
 
 
 func actualizar_panel_lampara(estado: Dictionary) -> void:

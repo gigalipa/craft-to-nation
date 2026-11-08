@@ -265,6 +265,7 @@ func pintar_zona(esquina_a: Vector2i, esquina_b: Vector2i, tipo: String) -> int:
 				zonas[celda] = tipo
 				pintadas += 1
 	if pintadas > 0:
+		Sonidos.reproducir("sfx_zona_marcar")
 		zonas_cambiadas.emit()
 	return pintadas
 
@@ -291,5 +292,121 @@ func despintar_zona(esquina_a: Vector2i, esquina_b: Vector2i) -> int:
 				zonas.erase(celda)
 				borradas += 1
 	if borradas > 0:
+		Sonidos.reproducir("sfx_zona_desmarcar")
 		zonas_cambiadas.emit()
 	return borradas
+
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func reiniciar() -> void:
+	nucleo_declarado = false
+	id_nucleo = -1
+	influencia_min = Vector2i.ZERO
+	influencia_max = Vector2i.ZERO
+	zonas.clear()
+	_huella_nucleo.clear()
+	_contribuciones.clear()
+	_caja_nucleo.clear()
+	zonas_cambiadas.emit()
+
+
+func exportar_estado() -> Dictionary:
+	var zonas_exp: Dictionary = {}
+	for c in zonas:
+		zonas_exp["%d,%d" % [c.x, c.y]] = zonas[c]
+
+	var huella_exp: Array = []
+	for c in _huella_nucleo:
+		if c is Vector2i:
+			huella_exp.append({"x": c.x, "y": c.y})
+
+	var contrib_exp: Dictionary = {}
+	for id_e in _contribuciones:
+		var c_info: Dictionary = _contribuciones[id_e]
+		var c_huella: Array = []
+		for h in c_info.get("huella", []):
+			if h is Vector2i:
+				c_huella.append({"x": h.x, "y": h.y})
+		var caja_d: Dictionary = {}
+		if c_info.has("caja"):
+			var b = c_info["caja"]
+			caja_d = {
+				"min": {"x": b["min"].x, "y": b["min"].y},
+				"max": {"x": b["max"].x, "y": b["max"].y}
+			}
+		contrib_exp[str(id_e)] = {
+			"huella": c_huella,
+			"margen": c_info.get("margen", 0),
+			"caja": caja_d
+		}
+
+	var caja_nuc: Dictionary = {}
+	if not _caja_nucleo.is_empty():
+		caja_nuc = {
+			"min": {"x": _caja_nucleo["min"].x, "y": _caja_nucleo["min"].y},
+			"max": {"x": _caja_nucleo["max"].x, "y": _caja_nucleo["max"].y}
+		}
+
+	return {
+		"nucleo_declarado": nucleo_declarado,
+		"id_nucleo": id_nucleo,
+		"influencia_min": {"x": influencia_min.x, "y": influencia_min.y},
+		"influencia_max": {"x": influencia_max.x, "y": influencia_max.y},
+		"zonas": zonas_exp,
+		"huella_nucleo": huella_exp,
+		"contribuciones": contrib_exp,
+		"caja_nucleo": caja_nuc
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	reiniciar()
+	nucleo_declarado = bool(d.get("nucleo_declarado", false))
+	id_nucleo = int(d.get("id_nucleo", -1))
+	if d.has("influencia_min") and d["influencia_min"] is Dictionary:
+		influencia_min = Vector2i(int(d["influencia_min"]["x"]), int(d["influencia_min"]["y"]))
+	if d.has("influencia_max") and d["influencia_max"] is Dictionary:
+		influencia_max = Vector2i(int(d["influencia_max"]["x"]), int(d["influencia_max"]["y"]))
+
+	if d.has("zonas") and d["zonas"] is Dictionary:
+		for k in d["zonas"]:
+			var parts := (k as String).split(",")
+			if parts.size() >= 2:
+				zonas[Vector2i(int(parts[0]), int(parts[1]))] = str(d["zonas"][k])
+
+	if d.has("huella_nucleo") and d["huella_nucleo"] is Array:
+		for pt in d["huella_nucleo"]:
+			if pt is Dictionary:
+				_huella_nucleo.append(Vector2i(int(pt["x"]), int(pt["y"])))
+
+	if d.has("caja_nucleo") and d["caja_nucleo"] is Dictionary and not d["caja_nucleo"].is_empty():
+		var cn: Dictionary = d["caja_nucleo"]
+		_caja_nucleo = {
+			"min": Vector2i(int(cn["min"]["x"]), int(cn["min"]["y"])),
+			"max": Vector2i(int(cn["max"]["x"]), int(cn["max"]["y"]))
+		}
+
+	if d.has("contribuciones") and d["contribuciones"] is Dictionary:
+		for id_str in d["contribuciones"]:
+			var id_e := int(id_str)
+			var c_info: Dictionary = d["contribuciones"][id_str]
+			var c_huella: Array = []
+			for pt in c_info.get("huella", []):
+				if pt is Dictionary:
+					c_huella.append(Vector2i(int(pt["x"]), int(pt["y"])))
+			var b = c_info.get("caja", {})
+			var caja_d: Dictionary = {}
+			if not b.is_empty():
+				caja_d = {
+					"min": Vector2i(int(b["min"]["x"]), int(b["min"]["y"])),
+					"max": Vector2i(int(b["max"]["x"]), int(b["max"]["y"]))
+				}
+			_contribuciones[id_e] = {
+				"huella": c_huella,
+				"margen": int(c_info.get("margen", 0)),
+				"caja": caja_d
+			}
+	zonas_cambiadas.emit()

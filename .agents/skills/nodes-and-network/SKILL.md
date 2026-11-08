@@ -18,9 +18,9 @@ Su propósito arquitectónico es **desacoplar el mantenimiento documental y del 
 Durante la rutina diaria de actualización (**Modo A — 5:00 PM**) o tras ejecutar cambios aprobados (**Modo C**), el agente debe inspeccionar los cambios recientes en `godot/`, `docs/superpowers/specs/` y `video_edition/` y mantener sincronizados los siguientes 6 grupos de archivos siguiendo sus reglas estrictas de formato:
 
 ### 1.1. [Documento de Diseño de Juego (GDD)_ Craft to Nation.md](../../Documento%20de%20Dise%C3%B1o%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md)
-- **Rol en la red:** Fuente maestra de diseño y arquitectura del juego (actualmente `v3.59`).
+- **Rol en la red:** Fuente maestra de diseño y arquitectura del juego (actualmente `v3.61`).
 - **Instrucciones de actualización:**
-  1. **Encabezado de versión (`**Versión vigente del Documento:** 3.XX`)**: Cuando se consoliden nuevas mecánicas o sistemas en `godot/`, añadir o actualizar el bloque superior `**Versión vigente del Documento:** 3.XX (**Título resumen (YYYY-MM-DD):** ...)` detallando numeradamente `(1)`, `(2)`... los sistemas implementados, scripts involucrados (`Ciudad.gd`, `Economia.gd`, `BarraSuperior.gd`, `TranslucidosRenderer.gd`, etc.) y el estado de las escenas de prueba (`Las 28 escenas de prueba de Godot se ejecutan al 100% en verde`). **Nunca borrar el historial de versiones previas** (`3.58`, `3.57`, `3.56`...).
+  1. **Encabezado de versión (`**Versión vigente del Documento:** 3.XX`)**: Cuando se consoliden nuevas mecánicas o sistemas en `godot/`, añadir o actualizar el bloque superior `**Versión vigente del Documento:** 3.XX (**Título resumen (YYYY-MM-DD):** ...)` detallando numeradamente `(1)`, `(2)`... los sistemas implementados, scripts involucrados (`Ciudad.gd`, `Economia.gd`, `BarraSuperior.gd`, `TranslucidosRenderer.gd`, etc.) y el estado de las escenas de prueba (`Las 35 escenas de prueba de Godot se ejecutan al 100% en verde`). **Nunca borrar el historial de versiones previas** (`3.60`, `3.59`, `3.58`, `3.57`, `3.56`...).
   2. **Cuerpo temático (Secciones 3 a 10)**: Actualizar las subsecciones afectadas (taxonomía de edificios, logística, industria, moral, interfaz o eras) reflejando las reglas vigentes.
   3. **Sección 11 (`Hoja de Ruta Técnica y Plan de Desarrollo`)**: Sincronizar tanto el párrafo `**Estado sincronizado v3.XX:**` previo a la tabla de fases como el cierre `**Estado vigente de la Fase 3 (YYYY-MM-DD):**` posterior a la tabla.
   4. **Sección 12 (`Próximos Pasos Inmediatos`)**: Tachar con `~~...~~ **Completado:**` los hitos concluidos y mantener visibles únicamente los pasos pendientes reales.
@@ -30,7 +30,7 @@ Durante la rutina diaria de actualización (**Modo A — 5:00 PM**) o tras ejecu
 - **Instrucciones de actualización:**
   1. **Referencia al GDD (Línea 9)**: Mantener actualizado el número de versión en el enlace `[GDD v3.XX](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md)`.
   2. **Sección `## Estado actual`**: Actualizar el bloque de la fase en curso (`Fase 1 — verificada`, `Fase 2 — completa`, `Fase 3 — en progreso`) incorporando las mecánicas, edificios, unidades o mejoras de HUD recién integradas.
-  3. **Conteo y listado de pruebas (`## Ejecutar el prototipo`)**: Verificar que el número declarado de escenas (`**28 escenas** *Test.tscn`) y la lista de `godot/scenes/*Test.tscn` coincidan exactamente con los archivos existentes en `godot/scenes/`.
+  3. **Conteo y listado de pruebas (`## Ejecutar el prototipo`)**: Verificar que el número declarado de escenas (`**35 escenas** *Test.tscn`) y la lista de `godot/scenes/*Test.tscn` coincidan exactamente con los archivos existentes en `godot/scenes/`.
   4. **Sección `## Ideas incorporadas al roadmap`**: Mantener al día los bullets de resumen funcional que enlazan con [docs/ideas-backlog.md](../../docs/ideas-backlog.md).
 
 ### 1.3. [docs/Pendientes y próximos pasos.md](../../docs/Pendientes%20y%20pr%C3%B3ximos%20pasos.md)

@@ -1967,3 +1967,91 @@ func asignar_tipo_transporte_puesto(esquina: Vector2i, tipo_vehiculo: String) ->
 		colonos.reconciliar_tripulacion_puesto(esquina)
 
 	return true
+
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func reiniciar() -> void:
+	puestos.clear()
+	_puesto_de.clear()
+	_contador_orden = 0
+	_factores_energia.clear()
+	_horas_desde_recalculo = 0
+	reserva_fluidos = {
+		"agua": 0.0,
+		"crudo": 0.0,
+		"combustible": 0.0,
+	}
+	_ultimo_resumen_energia = {
+		"produccion": 0.0,
+		"consumo": 0.0,
+		"balance": 0.0,
+		"cobertura": 1.0,
+		"por_fuente": {},
+		"por_sector": {},
+	}
+
+
+func exportar_estado() -> Dictionary:
+	var puestos_export: Dictionary = {}
+	for esq in puestos:
+		var p: Dictionary = puestos[esq]
+		var p_dict := p.duplicate(true)
+		if p_dict.has("servicio") and p_dict["servicio"] is Vector2i:
+			p_dict["servicio"] = {"x": p_dict["servicio"].x, "y": p_dict["servicio"].y}
+		if p_dict.has("salida") and p_dict["salida"] is Vector2i:
+			p_dict["salida"] = {"x": p_dict["salida"].x, "y": p_dict["salida"].y}
+		if p_dict.has("deposito") and p_dict["deposito"] is Vector3i:
+			p_dict["deposito"] = {"x": p_dict["deposito"].x, "y": p_dict["deposito"].y, "z": p_dict["deposito"].z}
+		if p_dict.has("chimenea") and p_dict["chimenea"] is Vector3i:
+			p_dict["chimenea"] = {"x": p_dict["chimenea"].x, "y": p_dict["chimenea"].y, "z": p_dict["chimenea"].z}
+		puestos_export["%d,%d" % [esq.x, esq.y]] = p_dict
+
+	var puesto_de_export: Dictionary = {}
+	for cid in _puesto_de:
+		var esq: Vector2i = _puesto_de[cid]
+		puesto_de_export[str(cid)] = "%d,%d" % [esq.x, esq.y]
+
+	return {
+		"contador_orden": _contador_orden,
+		"horas_desde_recalculo": _horas_desde_recalculo,
+		"reserva_fluidos": reserva_fluidos.duplicate(),
+		"factores_energia": _factores_energia.duplicate(),
+		"puestos": puestos_export,
+		"puesto_de": puesto_de_export,
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	reiniciar()
+	_contador_orden = int(d.get("contador_orden", 0))
+	_horas_desde_recalculo = int(d.get("horas_desde_recalculo", 0))
+	if d.has("reserva_fluidos") and d["reserva_fluidos"] is Dictionary:
+		reserva_fluidos = d["reserva_fluidos"].duplicate()
+	if d.has("factores_energia") and d["factores_energia"] is Dictionary:
+		_factores_energia = d["factores_energia"].duplicate()
+
+	if d.has("puestos") and d["puestos"] is Dictionary:
+		for k in d["puestos"]:
+			var parts := (k as String).split(",")
+			if parts.size() < 2:
+				continue
+			var esq := Vector2i(int(parts[0]), int(parts[1]))
+			var p_dict: Dictionary = (d["puestos"][k] as Dictionary).duplicate(true)
+			if p_dict.has("servicio") and p_dict["servicio"] is Dictionary:
+				p_dict["servicio"] = Vector2i(int(p_dict["servicio"]["x"]), int(p_dict["servicio"]["y"]))
+			if p_dict.has("salida") and p_dict["salida"] is Dictionary:
+				p_dict["salida"] = Vector2i(int(p_dict["salida"]["x"]), int(p_dict["salida"]["y"]))
+			if p_dict.has("deposito") and p_dict["deposito"] is Dictionary:
+				p_dict["deposito"] = Vector3i(int(p_dict["deposito"]["x"]), int(p_dict["deposito"]["y"]), int(p_dict["deposito"]["z"]))
+			if p_dict.has("chimenea") and p_dict["chimenea"] is Dictionary:
+				p_dict["chimenea"] = Vector3i(int(p_dict["chimenea"]["x"]), int(p_dict["chimenea"]["y"]), int(p_dict["chimenea"]["z"]))
+			puestos[esq] = p_dict
+
+	if d.has("puesto_de") and d["puesto_de"] is Dictionary:
+		for cid in d["puesto_de"]:
+			var parts := (d["puesto_de"][cid] as String).split(",")
+			if parts.size() >= 2:
+				_puesto_de[int(cid)] = Vector2i(int(parts[0]), int(parts[1]))

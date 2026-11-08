@@ -121,6 +121,16 @@ var _ultimo_aviso_deconstruccion_ms := -INTERVALO_AVISO_DECONSTRUCCION_MS
 var _id_listo_para_remocion := -1
 var _ticks_listo_para_remocion := 0
 
+# Variables de control para efectos de sonido (SFX)
+var _distancia_paso_acumulada: float = 0.0
+var _distancia_paso_objetivo: float = 2.2
+var _estaba_en_piso: bool = true
+var _velocidad_y_previa: float = 0.0
+var _estaba_nadando: bool = false
+var _tiempo_brazada: float = 0.0
+var _tiempo_golpe_herramienta: float = 0.0
+const INTERVALO_GOLPE_HERRAMIENTA: float = 0.35
+
 ## true justo después de que _colocar() completó una construcción (surtió su
 ## última celda pendiente): bloquea nuevas colocaciones mientras el clic
 ## derecho sigue sostenido, para no colocar de inmediato un bloque nuevo
@@ -237,6 +247,7 @@ func _input(event: InputEvent) -> void:
 		if tecla.pressed and tecla.keycode == KEY_ESCAPE:
 			if hud != null and hud.ventana_baul_abierta():
 				hud.cerrar_ventana_baul()
+				Sonidos.reproducir("sfx_baul_cerrar")
 				return
 			# Esc desactiva primero la herramienta activa (modo deconstrucción o modo vías);
 			# sin ninguna activa, libera el mouse como siempre.
@@ -258,6 +269,7 @@ func _input(event: InputEvent) -> void:
 		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_E:
 			if hud != null and hud.ventana_baul_abierta():
 				hud.cerrar_ventana_baul()
+				Sonidos.reproducir("sfx_baul_cerrar")
 				_e_consumida = true
 				get_viewport().set_input_as_handled()
 				return
@@ -271,6 +283,7 @@ func _input(event: InputEvent) -> void:
 			if indice >= 0 and indice < tipos_disponibles.size():
 				tipo_seleccionado = indice
 				hud.set_tipo_hotbar(indice)
+				Sonidos.reproducir("sfx_ui_hotbar_slot", -4.0, 0.05)
 				if not modo_deconstruccion and not modo_vias:
 					hud.mostrar_contexto_bloque(indice, tipos_disponibles[indice])
 				print("Tipo de bloque seleccionado: ", tipos_disponibles[tipo_seleccionado])
@@ -423,10 +436,24 @@ func _procesar_minado(delta: float) -> void:
 		return
 	var tipo_b: String = mundo.material_real(mundo.obtener_tipo(celda))
 	var duracion: float = Recoleccion.tiempo_minado_de(tipo_b)
+	_tiempo_golpe_herramienta += delta
+	if _tiempo_golpe_herramienta >= INTERVALO_GOLPE_HERRAMIENTA:
+		_tiempo_golpe_herramienta = 0.0
+		if tipo_b == "tierra" or tipo_b == "adobe":
+			Sonidos.reproducir("sfx_pala_impacto", -4.0, 0.06)
+		elif tipo_b in ["hierro", "cobre", "carbon", "tierras_raras"]:
+			Sonidos.reproducir("sfx_pico_metal", -4.0, 0.06)
+		else:
+			Sonidos.reproducir("sfx_pico_piedra", -4.0, 0.06)
 	if _progreso_accion.avanzar("celda:%s" % celda, duracion, delta):
 		_guardar_en_inventario(mundo.extraer_por_avatar(celda))
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
+		_tiempo_golpe_herramienta = 0.0
+		if tipo_b == "tierra" or tipo_b == "adobe":
+			Sonidos.reproducir("sfx_pala_extraer", -2.0, 0.04)
+		else:
+			Sonidos.reproducir("sfx_bloque_rotura_piedra", -2.0, 0.04)
 	else:
 		var herr := IconosHUD.icono_herramienta_minado(tipo_b)
 		hud.mostrar_progreso(_progreso_accion.fraccion(), false, herr)
@@ -441,10 +468,17 @@ func _procesar_tala(celda: Vector3i, delta: float) -> void:
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return
+	_tiempo_golpe_herramienta += delta
+	if _tiempo_golpe_herramienta >= INTERVALO_GOLPE_HERRAMIENTA:
+		_tiempo_golpe_herramienta = 0.0
+		Sonidos.reproducir("sfx_hacha_impacto", -3.0, 0.06)
 	if _progreso_accion.avanzar("arbol:%d" % id, Recoleccion.TIEMPO_TALA_POR_SALUD, delta):
 		var derribado: bool = mundo.talar_bloque_de_arbol(celda, DANO_TALA)
 		_guardar_en_inventario({"madera": Recoleccion.rendimiento_de("madera") * DANO_TALA})
+		_tiempo_golpe_herramienta = 0.0
 		if derribado:
+			Sonidos.reproducir("sfx_arbol_derribo")
+			Sonidos.reproducir("sfx_follaje_caida", -2.0)
 			_progreso_accion.soltar()
 			hud.ocultar_progreso()
 			return
@@ -472,10 +506,17 @@ func _interactuar() -> void:
 	var esquina: Vector2i = Economia.puesto_con_deposito(celda)
 	if esquina != Recoleccion.SIN_PUESTO:
 		hud.abrir_ventana_baul(esquina)
+		Sonidos.reproducir("sfx_baul_abrir")
 		_e_consumida = true
 		get_viewport().set_input_as_handled()
 	elif mundo.obtener_tipo(celda) == "baul":
 		hud.notificar(Strings.PLAYER_NOTIF_BAUL_NO_PUESTO)
+		Sonidos.reproducir("sfx_accion_bloqueada")
+	elif mundo.obtener_tipo(celda) == "cama" or mundo.obtener_tipo(celda) == "cama_cabecera":
+		Sonidos.reproducir("sfx_cama_acostarse")
+		hud.notificar("Descansando en la cama...")
+		_e_consumida = true
+		get_viewport().set_input_as_handled()
 
 
 ## Frutos: mantener E sobre un árbol con frutos. No consume el árbol (ver
@@ -503,6 +544,7 @@ func _procesar_frutos(delta: float) -> void:
 		_guardar_en_inventario({"comida": comida})
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
+		Sonidos.reproducir("sfx_cosecha_frutos", -2.0)
 		_e_consumida = true
 		_aviso_sin_frutos_dado = true
 		var cant_str: String = String.num(comida, 1)
@@ -527,6 +569,12 @@ func _physics_process(delta: float) -> void:
 		direccion = direccion.normalized()
 
 	var nadando := _profundidad_agua_en_pies() >= 2
+	if nadando and not _estaba_nadando:
+		Sonidos.reproducir("sfx_avatar_entrar_agua", -2.0, 0.05)
+	elif not nadando and _estaba_nadando:
+		Sonidos.reproducir("sfx_avatar_salir_agua", -2.0, 0.05)
+	_estaba_nadando = nadando
+
 	var celda_pies: Vector3i = _celda_en(global_position) if mundo != null else Vector3i.ZERO
 	var bono := 1.0
 	if mundo != null:
@@ -554,6 +602,7 @@ func _physics_process(delta: float) -> void:
 			velocity.y -= GRAVEDAD * delta
 	elif movimiento_habilitado and Input.is_key_pressed(KEY_SPACE):
 		velocity.y = VELOCIDAD_SALTO * factor_viscosidad
+		Sonidos.reproducir("sfx_avatar_salto", -3.0, 0.06)
 	else:
 		velocity.y = 0.0
 	if mundo != null:
@@ -561,6 +610,38 @@ func _physics_process(delta: float) -> void:
 		_actualizar_permisos_avatar()
 
 	move_and_slide()
+
+	var en_piso := is_on_floor()
+	if en_piso and not _estaba_en_piso and not nadando:
+		if _velocidad_y_previa < -8.0:
+			Sonidos.reproducir("sfx_avatar_aterrizaje_fuerte", 0.0, 0.04)
+		else:
+			Sonidos.reproducir("sfx_avatar_aterrizaje_suave", -4.0, 0.04)
+	_estaba_en_piso = en_piso
+	_velocidad_y_previa = velocity.y
+
+	if en_piso and not nadando:
+		var vel_h := Vector2(velocity.x, velocity.z).length()
+		if vel_h > 0.5:
+			_distancia_paso_acumulada += vel_h * delta
+			if _distancia_paso_acumulada >= _distancia_paso_objetivo:
+				_distancia_paso_acumulada = 0.0
+				_reproducir_sonido_paso()
+		else:
+			_distancia_paso_acumulada = 0.0
+
+	if nadando:
+		var mov_nado := Vector2(velocity.x, velocity.z).length() + absf(velocity.y)
+		if mov_nado > 0.5:
+			_tiempo_brazada += delta
+			if _tiempo_brazada >= 1.1:
+				_tiempo_brazada = 0.0
+				if _cabeza_sumergida():
+					Sonidos.reproducir("sfx_avatar_nado_sumergido", -4.0, 0.05)
+				else:
+					Sonidos.reproducir("sfx_avatar_nado_brazada", -2.0, 0.05)
+		else:
+			_tiempo_brazada = 0.0
 	if mundo != null:
 		var limitada := _limitar_al_mundo(global_position, mundo.ANCHO_MUNDO, mundo.LARGO_MUNDO)
 		if limitada != global_position:
@@ -576,6 +657,28 @@ func _physics_process(delta: float) -> void:
 	_procesar_oxigeno(delta)
 	_procesar_flotacion(delta, nadando)
 	_procesar_zona_lampara()
+
+
+func _reproducir_sonido_paso() -> void:
+	var celda_suelo: Vector3i = _celda_en(global_position - Vector3(0, 0.2, 0))
+	if Vias != null and Vias.es_via(celda_suelo):
+		Sonidos.reproducir("sfx_avatar_paso_via", -6.0, 0.06)
+		return
+	if mundo == null:
+		Sonidos.reproducir("sfx_avatar_paso_hierba", -6.0, 0.06)
+		return
+	var tipo_suelo: String = mundo.obtener_tipo(celda_suelo)
+	match tipo_suelo:
+		"bloque_madera":
+			Sonidos.reproducir("sfx_avatar_paso_madera", -6.0, 0.06)
+		"estructura_hierro", "bloque_acero":
+			Sonidos.reproducir("sfx_avatar_paso_metal", -6.0, 0.06)
+		"crudo":
+			Sonidos.reproducir("sfx_avatar_paso_crudo", -5.0, 0.06)
+		"bloque_piedra", "piedra", "adobe":
+			Sonidos.reproducir("sfx_avatar_paso_piedra", -6.0, 0.06)
+		_:
+			Sonidos.reproducir("sfx_avatar_paso_hierba", -6.0, 0.06)
 
 
 ## Panel fijo mientras el modo deconstrucción (G) está activo.
@@ -651,6 +754,7 @@ func _celda_ocupada_por_jugador(celda: Vector3i) -> bool:
 ## derecho.
 func _avisar_colocacion_rechazada(mensaje: String) -> void:
 	print(mensaje)
+	Sonidos.reproducir("sfx_accion_bloqueada", -3.0)
 	if not _aviso_colocacion_dado:
 		_aviso_colocacion_dado = true
 		hud.notificar(mensaje)
@@ -670,6 +774,7 @@ func _nombre_recurso(recurso: String) -> String:
 ## no necesita el debounce de _avisar_colocacion_rechazada()).
 func _notificar_rechazo(mensaje: String) -> void:
 	print(mensaje)
+	Sonidos.reproducir("sfx_accion_bloqueada", -3.0)
 	hud.notificar(mensaje)
 
 
@@ -830,6 +935,7 @@ func _procesar_oxigeno(delta: float) -> void:
 		if hud != null:
 			hud.ocultar_oxigeno()
 	if oxigeno_actual <= 0.0:
+		Sonidos.reproducir("sfx_avatar_ahogo_estertor")
 		_ejecutar_sucesion("ahogamiento")
 
 
@@ -1035,6 +1141,7 @@ func _avisar_modo_deconstruccion(accion: String) -> void:
 func _deconstruir() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
+	Sonidos.reproducir("sfx_mazo_demolicion", 0.0, 0.04)
 	_procesar_deconstruccion(_celda_impactada())
 
 
@@ -1125,11 +1232,14 @@ func _colocar() -> void:
 		elif resultado.get("insuficiente", false):
 			_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_FALTA_MATERIAL_OBRA % _nombre_recurso(resultado["recurso"]))
 		elif resultado.get("completa", false):
+			Sonidos.reproducir_3d("sfx_obra_paso_surtido", mundo.to_global(mundo.map_to_local(celda)))
 			_completar_construccion(resultado["metadata"])
 			# La construcción se completó con este mismo clic sostenido: no
 			# seguir colocando bloques nuevos contra la fachada recién
 			# terminada hasta que el jugador suelte y vuelva a presionar.
 			_colocacion_bloqueada_tras_completar = true
+		else:
+			Sonidos.reproducir_3d("sfx_obra_paso_surtido", mundo.to_global(mundo.map_to_local(celda)), -3.0, 0.05)
 		return
 	var normal := raycast.get_collision_normal()
 	var celda_destino := celda + Vector3i(round(normal.x), round(normal.y), round(normal.z))
@@ -1165,6 +1275,19 @@ func _colocar() -> void:
 		_reembolsar_colocacion(tipo)
 		_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_SIN_ESPACIO_COLOCAR % _nombre_bloque(tipo))
 		return
+	var sfx_coloc := "sfx_colocar_tierra"
+	match tipo:
+		"bloque_piedra":
+			sfx_coloc = "sfx_colocar_piedra"
+		"bloque_madera", "puerta", "cama", "baul":
+			sfx_coloc = "sfx_colocar_madera"
+		"estructura_hierro", "bloque_acero":
+			sfx_coloc = "sfx_colocar_metal"
+		"vidrio":
+			sfx_coloc = "sfx_colocar_vidrio"
+		_:
+			sfx_coloc = "sfx_colocar_tierra"
+	Sonidos.reproducir_3d(sfx_coloc, mundo.to_global(mundo.map_to_local(celda_destino)), -2.0, 0.04)
 	# Marca como REALMENTE pagadas las celdas que se acaban de cobrar (ver
 	# VoxelWorld.celdas_pagadas) para que, y solo entonces, volver a minarlas
 	# reembolse — a diferencia de colocado_por_jugador, que también marcan
@@ -1453,6 +1576,7 @@ func _morir_jugador() -> void:
 ## (hoy solo ahogamiento, ver _procesar_oxigeno()) — sin sistema de
 ## salud/combate todavía, toda muerte pasa por la misma sucesión de Ciudad.
 func _ejecutar_sucesion(motivo: String) -> void:
+	Sonidos.reproducir("sfx_ui_avatar_muerte")
 	var resultado: String = Ciudad.suceder_avatar()
 	print("Muerte del jugador (", motivo, ") -> Sucesión: ", resultado)
 	if resultado == "sucesion_exitosa":
@@ -1524,7 +1648,9 @@ func encender_lampara() -> void:
 	if fuente == "":
 		if hud != null and hud.has_method("notificar"):
 			hud.notificar(Strings.PLAYER_NOTIF_SIN_ENERGIA_LAMPARA)
+		Sonidos.reproducir("sfx_accion_bloqueada")
 		return
+	Sonidos.reproducir("sfx_lampara_encender")
 	lampara_encendida = true
 	fuente_lampara_actual = fuente
 	_aplicar_luz_lampara(fuente)
@@ -1532,6 +1658,8 @@ func encender_lampara() -> void:
 
 
 func apagar_lampara() -> void:
+	if lampara_encendida:
+		Sonidos.reproducir("sfx_lampara_apagar")
 	lampara_encendida = false
 	fuente_lampara_actual = ""
 	horas_quemadas_lampara = 0.0
@@ -1597,6 +1725,8 @@ func simular_hora_lampara() -> void:
 		if fuente_lampara_actual == "electrica":
 			if not en_zona:
 				bateria_lampara = maxf(0.0, bateria_lampara - 1.0)
+				if bateria_lampara <= 1.0 and bateria_lampara > 0.0:
+					Sonidos.reproducir("sfx_lampara_bateria_baja")
 				if bateria_lampara <= 0.0:
 					var siguiente := evaluar_fuente_lampara()
 					if siguiente != "" and siguiente != "electrica":
@@ -1669,3 +1799,50 @@ func obtener_estado_lampara() -> Dictionary:
 func _actualizar_panel_lampara() -> void:
 	if hud != null and hud.has_method("actualizar_panel_lampara"):
 		hud.actualizar_panel_lampara(obtener_estado_lampara())
+
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func exportar_estado() -> Dictionary:
+	var pos := global_position if is_inside_tree() else position
+	return {
+		"posicion": {"x": pos.x, "y": pos.y, "z": pos.z},
+		"rotacion_y": rotation.y,
+		"camara_rotacion_x": camara.rotation.x if camara != null else 0.0,
+		"oxigeno_actual": oxigeno_actual,
+		"lampara_encendida": lampara_encendida,
+		"bateria_lampara": bateria_lampara,
+		"horas_quemadas_lampara": horas_quemadas_lampara,
+		"fuente_lampara_actual": fuente_lampara_actual,
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	if d.has("posicion") and d["posicion"] is Dictionary:
+		var p: Dictionary = d["posicion"]
+		var nueva_pos := Vector3(float(p.get("x", 0.0)), float(p.get("y", 0.0)), float(p.get("z", 0.0)))
+		if is_inside_tree():
+			global_position = nueva_pos
+		else:
+			position = nueva_pos
+
+	if d.has("rotacion_y"):
+		rotation.y = float(d["rotacion_y"])
+
+	if d.has("camara_rotacion_x") and camara != null:
+		camara.rotation.x = float(d["camara_rotacion_x"])
+
+	if d.has("oxigeno_actual"):
+		oxigeno_actual = float(d["oxigeno_actual"])
+
+	lampara_encendida = bool(d.get("lampara_encendida", false))
+	bateria_lampara = float(d.get("bateria_lampara", BATERIA_LAMPARA_MAX))
+	horas_quemadas_lampara = float(d.get("horas_quemadas_lampara", 0.0))
+	fuente_lampara_actual = str(d.get("fuente_lampara_actual", ""))
+
+	if lampara_encendida and fuente_lampara_actual != "":
+		_aplicar_luz_lampara(fuente_lampara_actual)
+	else:
+		apagar_lampara()

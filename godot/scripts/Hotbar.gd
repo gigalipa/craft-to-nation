@@ -291,6 +291,8 @@ func actualizar_cantidades() -> void:
 func seleccionar(indice: int) -> void:
 	if indice < 0 or indice >= _casillas.size():
 		return
+	if _seleccionada != indice:
+		Sonidos.reproducir("sfx_ui_hotbar_slot", -4.0, 0.05)
 	_seleccionada = indice
 	_resaltar()
 

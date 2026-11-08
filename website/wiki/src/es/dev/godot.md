@@ -1,6 +1,6 @@
 ---
 title: "Arquitectura Técnica en Godot & PoCs"
-description: "Arquitectura técnica en Godot: autoloads de Ciudad y Avatar, GridMap 3D, generador procedural de terreno, físicas de fluidos y 28 suites de pruebas automatizadas."
+description: "Arquitectura técnica en Godot: autoloads de Ciudad, Sonidos y Avatar, GridMap 3D, generador procedural de terreno, físicas de fluidos y 35 suites de pruebas automatizadas."
 ---
 
 # Arquitectura Técnica en Godot 4.7 & PoCs
@@ -42,8 +42,11 @@ El motor divide su ejecución en dos capas temporales simultáneas:
 - **`CadenaMinerales.gd`:** Catálogo de las 8 recetas de refinado industrial (`siderurgica`, `refineria_tierras_raras`, `aserradero`, `fabrica_bloques`, `vidriera`, `carbonera`, `refineria_petrolera`, `productor_combustible`).
 - **`Canalizaciones.gd` y `VoxelWorld.gd`:** Topología de redes de acueductos y tuberías aéreas en **`Y + 4`** (con cruces elevados en **`Y + 6`**), puertos de conexión en capa 4, detección de derrames y propagación y físicas de líquidos por gravedad y viscosidad en `VoxelWorld.gd` (drenables al colocar un bloque sólido encima o automáticamente en el interior de un edificio al finalizar su construcción).
 - **`Zonificacion.gd`:** Delimitación de los polígonos de **Zona A** y **Zona B** dentro del radio de influencia (`30` celdas) del Núcleo Urbano.
+- **`Configuracion.gd`:** Singleton Autoload para gestión y persistencia de preferencias de cliente en `user://configuracion.json` (volumen SFX, volumen Música BGM, sensibilidad de ratón, FOV e idioma).
+- **`GestorPartida.gd`:** Singleton Autoload para serialización y carga atómica del estado completo del juego (`Ciudad`, `Economia`, `Colonos`, `VoxelWorld`, `Vias`, `Canalizaciones`, `Player`, `Zonificacion`) en `user://saves/*.json` con soporte para slot rápido y metadatos.
+- **`Sonidos.gd`:** Singleton Autoload para gestión y reproducción de efectos de sonido (SFX). Dispone de un doble pool circular de 16 reproductores 2D (`AudioStreamPlayer` para UI y avatar) y 16 reproductores 3D (`AudioStreamPlayer3D` para mundo espacial con atenuación inversa hasta 35 m), microvariación aleatoria de tono (pitch modulation $\pm 5\%$) y carga diferida con caché de memoria de 102 efectos OGG en 8 familias funcionales (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`).
 
-### Subsistemas Espaciales, Agentes, Configuración e Interfaz HUD (v3.57 – v3.59)
+### Subsistemas Espaciales, Agentes, Configuración e Interfaz HUD (v3.57 – v3.61)
 - **`Ajustes.gd` y `Strings.gd`:** Centralización de balance y textos dinámicos. `Ajustes.gd` almacena todas las constantes numéricas, configuraciones de velocidad, demografía, moral y parámetros de simulación preparados para personalización en caliente («Nueva partida» y opciones globales). `Strings.gd` provee catálogo multi-idioma (`Ajustes.idioma`) y getters estáticos reactivos que inyectan los valores en vivo sin reiniciar escenas ni recargar scripts.
 - **`VoxelWorld.gd`, `GeneradorMundo.gd` y `TranslucidosRenderer.gd`:** Gestión del `GridMap` 3D, colocación/extracción de bloques, agua estilo *Minecraft* y renderizado de bloques de ventana (`vidrio`) como paneles transparentes de `1/20` (`0,05 m`) en 3 variantes geométricas (`ventana` recta a media profundidad orientada hacia el avatar, `ventana_esquina` en L rotada 90° en Y, y `ventana_techo` horizontal al ras de la cara superior `Y ∈ [0,95, 1,0]` al colocar mirando hacia arriba o hacia abajo).
 - **`BlueprintValidator.gd` y `PlantillasPuesto.gd`:** Reconocimiento volumétrico por *flood-fill* de edificios herméticos, validación de despeje de puertas/camas y plantillas predefinidas con rotación de `90°` (incluyendo `vidriera` `5×6` en adobe y `taller_transporte`).
@@ -53,12 +56,12 @@ El motor divide su ejecución en dos capas temporales simultáneas:
 
 ---
 
-## 3. Activos 3D y Suite de 28 Escenas de Prueba (`godot/scenes/*Test.tscn`)
+## 3. Activos 3D y Suite de 35 Escenas de Prueba (`godot/scenes/*Test.tscn`)
 
 El proyecto integra paquetes de modelos 3D *low-poly* bajo licencia **CC0**:
 - **KayKit Block Bits & Medieval Hexagon Pack:** Bloques de terreno, recursos y estructuras.
 - **Quaternius Modular Men:** Modelos articulados de colonos y trabajadores.
 - **Poly Haven:** Texturas ambientales y materiales.
 
-> [!IMPORTANT] Verificación Automatizada (28 Escenas al 100 % en Verde)
-> Cada sistema cuenta con su propia escena de prueba ejecutable en modo *headless* (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `UI Mejoras Visuales (IconosHUD)`, entre otras), sumando **28 suites completas en verde**.
+> [!IMPORTANT] Verificación Automatizada (35 Escenas al 100 % en Verde)
+> Cada sistema cuenta con su propia escena de prueba ejecutable en modo *headless* (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `SonidosTest.tscn`, `ConfiguracionTest.tscn`, `GestorPartidaTest.tscn`, `MenuInicioTest.tscn`, `MenuPausaTest.tscn`, `PantallaCargaTest.tscn`, `BienvenidaTest.tscn`, entre otras), sumando **35 suites completas en verde**.

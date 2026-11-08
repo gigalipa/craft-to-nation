@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cxvgetu2opw6t"
+path="res://.godot/imported/Cozy_colony (loop).mp3-aacfc68b5942b6291d2619a14ee0eea3.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Cozy_colony (loop).mp3"
+dest_files=["res://.godot/imported/Cozy_colony (loop).mp3-aacfc68b5942b6291d2619a14ee0eea3.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

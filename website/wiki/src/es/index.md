@@ -6,7 +6,7 @@ description: "Manual completo del jugador, guías de industria, economía de col
 hero:
   name: "Craft to Nation"
   text: "Wiki Oficial (Español)"
-  tagline: "Manual del jugador y especificaciones de desarrollo para Craft to Nation (GDD v3.59)."
+  tagline: "Manual del jugador y especificaciones de desarrollo para Craft to Nation (GDD v3.61)."
   image:
     src: /assets/craft-to-nation-logo.png
     alt: Craft to Nation Logo
@@ -15,7 +15,7 @@ hero:
       text: Guía del Jugador
       link: /es/guide/start
     - theme: alt
-      text: Desarrollo & GDD v3.59
+      text: Desarrollo & GDD v3.61
       link: /es/dev/gdd
     - theme: alt
       text: Sitio Principal
@@ -28,8 +28,8 @@ features:
     details: Aprende sobre recolección inicial, cámara dual (tecla C), zonificación A/B, edificios herméticos y calculadora de colonos.
     link: /es/guide/start
   - icon: ⚙️
-    title: Arquitectura Técnica y GDD v3.59
-    details: Conoce los sistemas en Godot 4.7, bucle de ticks (2.0s = 1h), IDU I-IV e investigación en 2 capas, Vidriera, Taller de Transporte, iconografía vectorial HUD y 28 suites de pruebas.
+    title: Arquitectura Técnica y GDD v3.61
+    details: Conoce los sistemas en Godot 4.7, bucle de ticks (2.0s = 1h), IDU I-IV e investigación en 2 capas, Vidriera, Taller de Transporte, motor de audio espacial (SFX), iconografía vectorial HUD y 35 suites de pruebas.
     link: /es/dev/gdd
   - icon: 🌐
     title: Documentación Multilingüe

@@ -80,6 +80,7 @@ func reiniciar() -> void:
 	tipo_por_puerto.clear()
 	derrames_activos.clear()
 	_siguiente_id_red = 1
+	canalizaciones_cambiadas.emit()
 
 
 
@@ -142,6 +143,7 @@ func asignar_puerto_a_red(id_red: int, celda_puerto: Vector3i, tipo_puerto: Stri
 		return false
 	puertos_conectados[celda_puerto] = id_red
 	tipo_por_puerto[celda_puerto] = tipo_puerto
+	Sonidos.reproducir_3d("sfx_canalizacion_conectar", Vector3(celda_puerto) + Vector3(0.5, 0.5, 0.5))
 
 	if tipo_puerto.ends_with("_in"):
 		cancelar_derrame_de_red(id_red, mundo)
@@ -270,6 +272,7 @@ func verter_derrame(id_red: int, recurso: String, mundo: Object) -> Vector3i:
 		mundo.colocar_bloque(celda_extremo, recurso, true)
 	derrames_activos[celda_extremo] = recurso
 	derrame_detectado.emit(celda_extremo, recurso)
+	Sonidos.reproducir_3d("sfx_canalizacion_derrame", Vector3(celda_extremo) + Vector3(0.5, 0.5, 0.5))
 	return celda_extremo
 
 
@@ -953,6 +956,7 @@ func construir_tramo(tipo: String, geom: Dictionary, mundo: Object, id_existente
 
 ## Elimina las celdas especificadas y actualiza la red.
 func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
+	Sonidos.reproducir("sfx_canalizacion_desconectar")
 	var redes_afectadas: Dictionary = {}
 	for celda: Vector3i in celdas:
 		if celda_a_red.has(celda):
@@ -1041,5 +1045,103 @@ func quitar_celdas(celdas: Array, mundo: Object = null) -> void:
 	for p in puertos_a_eliminar:
 		puertos_conectados.erase(p)
 		tipo_por_puerto.erase(p)
+
+	canalizaciones_cambiadas.emit()
+
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func exportar_estado() -> Dictionary:
+	var c_a_r: Dictionary = {}
+	for c in celda_a_red:
+		c_a_r["%d,%d,%d" % [c.x, c.y, c.z]] = celda_a_red[c]
+
+	var r_a_c: Dictionary = {}
+	for id_r in red_a_celdas:
+		var arr: Array = []
+		for c in red_a_celdas[id_r]:
+			arr.append({"x": c.x, "y": c.y, "z": c.z})
+		r_a_c[str(id_r)] = arr
+
+	var t_p_r: Dictionary = {}
+	for id_r in tipo_por_red:
+		t_p_r[str(id_r)] = tipo_por_red[id_r]
+
+	var rec_p_r: Dictionary = {}
+	for id_r in recurso_por_red:
+		rec_p_r[str(id_r)] = recurso_por_red[id_r]
+
+	var p_con: Dictionary = {}
+	for p in puertos_conectados:
+		p_con["%d,%d,%d" % [p.x, p.y, p.z]] = puertos_conectados[p]
+
+	var t_p_p: Dictionary = {}
+	for p in tipo_por_puerto:
+		t_p_p["%d,%d,%d" % [p.x, p.y, p.z]] = tipo_por_puerto[p]
+
+	var cols_exp: Dictionary = {}
+	for c in columnas:
+		cols_exp["%d,%d,%d" % [c.x, c.y, c.z]] = columnas[c]
+
+	return {
+		"siguiente_id_red": _siguiente_id_red,
+		"celda_a_red": c_a_r,
+		"red_a_celdas": r_a_c,
+		"tipo_por_red": t_p_r,
+		"recurso_por_red": rec_p_r,
+		"puertos_conectados": p_con,
+		"tipo_por_puerto": t_p_p,
+		"columnas": cols_exp,
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	reiniciar()
+	_siguiente_id_red = int(d.get("siguiente_id_red", 1))
+
+	if d.has("celda_a_red") and d["celda_a_red"] is Dictionary:
+		for k in d["celda_a_red"]:
+			var p := (k as String).split(",")
+			if p.size() >= 3:
+				celda_a_red[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = int(d["celda_a_red"][k])
+
+	if d.has("red_a_celdas") and d["red_a_celdas"] is Dictionary:
+		for id_str in d["red_a_celdas"]:
+			var arr: Array[Vector3i] = []
+			for pt in d["red_a_celdas"][id_str]:
+				if pt is Dictionary:
+					arr.append(Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"])))
+			red_a_celdas[int(id_str)] = arr
+
+	if d.has("tipo_por_red") and d["tipo_por_red"] is Dictionary:
+		for id_str in d["tipo_por_red"]:
+			tipo_por_red[int(id_str)] = str(d["tipo_por_red"][id_str])
+
+	if d.has("recurso_por_red") and d["recurso_por_red"] is Dictionary:
+		for id_str in d["recurso_por_red"]:
+			recurso_por_red[int(id_str)] = str(d["recurso_por_red"][id_str])
+
+	if d.has("puertos_conectados") and d["puertos_conectados"] is Dictionary:
+		for k in d["puertos_conectados"]:
+			var p := (k as String).split(",")
+			if p.size() >= 3:
+				puertos_conectados[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = int(d["puertos_conectados"][k])
+
+	if d.has("tipo_por_puerto") and d["tipo_por_puerto"] is Dictionary:
+		for k in d["tipo_por_puerto"]:
+			var p := (k as String).split(",")
+			if p.size() >= 3:
+				tipo_por_puerto[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = str(d["tipo_por_puerto"][k])
+
+	if d.has("columnas") and d["columnas"] is Dictionary:
+		for k in d["columnas"]:
+			var p := (k as String).split(",")
+			if p.size() >= 3:
+				var c := Vector3i(int(p[0]), int(p[1]), int(p[2]))
+				columnas[c] = int(d["columnas"][k])
+				var xz := Vector2i(c.x, c.z)
+				columnas_xz[xz] = columnas_xz.get(xz, 0) + 1
 
 	canalizaciones_cambiadas.emit()

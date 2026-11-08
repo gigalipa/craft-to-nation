@@ -9,6 +9,7 @@ const Strings = preload("res://scripts/strings.gd")
 @onready var zona_overlay: Node3D = $ZonaOverlay
 @onready var mira_ui: CanvasLayer = $MiraUI
 @onready var hud: CanvasLayer = $HUDLayer
+@onready var menu_pausa: Control = get_node_or_null("MenuPausaLayer/MenuPausa")
 
 var cenital_activa := false
 
@@ -53,12 +54,59 @@ func _ready() -> void:
 	var altura_spawn: int = mundo.altura_en(centro_x, centro_z)
 	jugador.position = Vector3(centro_x, altura_spawn + 1, centro_z)
 
+	if menu_pausa != null:
+		menu_pausa.reanudar_solicitado.connect(_alternar_menu_pausa)
+		menu_pausa.salir_al_menu_solicitado.connect(_salir_al_menu_principal)
+
+	Sonidos.reproducir_musica_juego()
+
+	if GestorPartida != null and not GestorPartida.partida_pendiente_a_cargar.is_empty():
+		var archivo_a_cargar := GestorPartida.partida_pendiente_a_cargar
+		GestorPartida.partida_pendiente_a_cargar = ""
+		GestorPartida.cargar_partida(archivo_a_cargar)
+
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var tecla := event as InputEventKey
-		if tecla.pressed and tecla.keycode == KEY_C and not _en_transicion:
+		if tecla.pressed and tecla.keycode == KEY_F11 and not _en_transicion:
+			_alternar_menu_pausa()
+			get_viewport().set_input_as_handled()
+			return
+		if tecla.pressed and tecla.keycode == KEY_F12 and not _en_transicion and not (menu_pausa != null and menu_pausa.esta_abierto()):
+			if GestorPartida != null:
+				GestorPartida.guardado_rapido()
+				Sonidos.reproducir("sfx_ui_guardar")
+				if hud != null and hud.has_method("notificar"):
+					hud.notificar("¡Guardado rápido realizado (F12)!")
+			get_viewport().set_input_as_handled()
+			return
+		if tecla.pressed and tecla.keycode == KEY_C and not _en_transicion and not (menu_pausa != null and menu_pausa.esta_abierto()):
 			_alternar_camara_cenital()
+
+
+func _alternar_menu_pausa() -> void:
+	if menu_pausa == null:
+		return
+	if menu_pausa.esta_abierto():
+		menu_pausa.ocultar()
+		get_tree().paused = false
+		if not cenital_activa:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		else:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	else:
+		menu_pausa.mostrar()
+		get_tree().paused = true
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		Sonidos.reproducir("sfx_ui_modal_abrir")
+
+
+func _salir_al_menu_principal() -> void:
+	get_tree().paused = false
+	Sonidos.reproducir_musica_menu()
+	GestorPartida.reiniciar_partida()
+	get_tree().change_scene_to_file("res://scenes/MenuInicio.tscn")
 
 
 ## Alterna entre la cámara en 1ª persona del jugador y la cenital, con una
@@ -81,6 +129,7 @@ func _alternar_camara_cenital() -> void:
 	var fov_destino: float
 	if cenital_activa:
 		jugador.salir_de_todas_las_herramientas()
+		Sonidos.reproducir("sfx_ui_camara_a_cenital")
 		origen = jugador.camara.global_transform
 		fov_origen = jugador.camara.fov
 		# "atrás" del avatar (opuesto a su frente, -basis.z, ver
@@ -92,6 +141,7 @@ func _alternar_camara_cenital() -> void:
 		destino = camara_cenital.global_transform
 		fov_destino = camara_cenital.fov
 	else:
+		Sonidos.reproducir("sfx_ui_camara_a_avatar")
 		origen = camara_cenital.global_transform
 		fov_origen = camara_cenital.fov
 		camara_cenital.salir_de_todos_los_modos()

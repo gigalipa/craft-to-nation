@@ -1,11 +1,12 @@
 # BarraModos.gd
 
-> 10 nodes · cohesion 0.20
+> 11 nodes · cohesion 0.18
 
 ## Key Concepts
 
 - **BarraModos.gd** (48 connections) — `godot/scripts/BarraModos.gd`
-- **2026-09-30-previsualizacion-construcciones-cenital-design.md (Diseño: previsualización isométrica de construcciones en el )** (6 connections) — `docs/superpowers/specs/2026-09-30-previsualizacion-construcciones-cenital-design.md`
+- **inicio.md: Guía de Primeros Pasos** (6 connections) — `website/wiki/src/es/guia/inicio.md`
+- **start.md: Beginner's Survival & Settlement Guide** (3 connections) — `website/wiki/src/en/guide/start.md`
 - **BarraModos.pagina_actual()** (1 connections) — `godot/scripts/BarraModos.gd`
 - **BarraModos.pagina_anterior()** (1 connections) — `godot/scripts/BarraModos.gd`
 - **BarraModos.pagina_siguiente()** (1 connections) — `godot/scripts/BarraModos.gd`
@@ -17,28 +18,29 @@
 
 ## Relationships
 
-- [Economia.gd](Economia.gd.md) (7 shared connections)
-- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (5 shared connections)
-- [HUD.gd](HUD.gd.md) (3 shared connections)
-- [ajustes.gd](ajustes.gd.md) (3 shared connections)
-- [Zonificacion.gd](Zonificacion.gd.md) (3 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (3 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (3 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (2 shared connections)
-- [Hotbar.gd](Hotbar.gd.md) (2 shared connections)
-- [MiniaturaRenderer.gd](MiniaturaRenderer.gd.md) (2 shared connections)
-- [PlantillasPuesto.gd](PlantillasPuesto.gd.md) (2 shared connections)
-- [TemaHUD.gd](TemaHUD.gd.md) (2 shared connections)
+- [Economia.gd](Economia.gd.md) (10 shared connections)
+- [ajustes.gd](ajustes.gd.md) (8 shared connections)
+- [PlantillasPuesto.gd](PlantillasPuesto.gd.md) (6 shared connections)
+- [BuscadorRutas.gd](BuscadorRutas.gd.md) (5 shared connections)
+- [HUD.gd](HUD.gd.md) (4 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (4 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
+- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (1 shared connections)
+- [Puertas.gd](Puertas.gd.md) (1 shared connections)
+- [ViasTest.gd](ViasTest.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-09-30-previsualizacion-construcciones-cenital-design.md`
 - `godot/scripts/BarraModos.gd`
+- `website/wiki/src/en/guide/start.md`
+- `website/wiki/src/es/guia/inicio.md`
 
 ## Audit Trail
 
-- EXTRACTED: 53 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 49 (89%)
+- INFERRED: 6 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

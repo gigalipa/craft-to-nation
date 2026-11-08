@@ -340,3 +340,51 @@ func buscar_camino_en_red(inicio: Vector3i, fin: Vector3i) -> Array[Vector3i]:
 		return []
 	return celdas_de_vertices(camino_v)
 
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func reiniciar() -> void:
+	celdas.clear()
+	_columnas.clear()
+	notches.clear()
+
+
+func exportar_estado() -> Dictionary:
+	var celdas_exp: Dictionary = {}
+	for c in celdas:
+		celdas_exp["%d,%d,%d" % [c.x, c.y, c.z]] = celdas[c]
+
+	var notches_exp: Dictionary = {}
+	for c in notches:
+		var n: Vector2i = notches[c]
+		notches_exp["%d,%d,%d" % [c.x, c.y, c.z]] = {"x": n.x, "y": n.y}
+
+	return {
+		"celdas": celdas_exp,
+		"notches": notches_exp,
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	reiniciar()
+	if d.has("celdas") and d["celdas"] is Dictionary:
+		for k in d["celdas"]:
+			var parts := (k as String).split(",")
+			if parts.size() >= 3:
+				var c := Vector3i(int(parts[0]), int(parts[1]), int(parts[2]))
+				var tipo := str(d["celdas"][k])
+				celdas[c] = tipo
+				var col := Vector2i(c.x, c.z)
+				_columnas[col] = _columnas.get(col, 0) + 1
+
+	if d.has("notches") and d["notches"] is Dictionary:
+		for k in d["notches"]:
+			var parts := (k as String).split(",")
+			if parts.size() >= 3:
+				var c := Vector3i(int(parts[0]), int(parts[1]), int(parts[2]))
+				var nd: Dictionary = d["notches"][k]
+				notches[c] = Vector2i(int(nd.get("x", 0)), int(nd.get("y", 0)))
+
+

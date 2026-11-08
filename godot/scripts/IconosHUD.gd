@@ -141,6 +141,18 @@ const MAPA_ICONOS := {
 	"led_verde": "led_verde.svg",
 	"led_gris": "led_gris.svg",
 	"led_rojo": "led_rojo.svg",
+
+	# Menús de inicio, pausa y modales
+	"menu_nueva_partida": "menu_nueva_partida.svg",
+	"menu_cargar_partida": "menu_cargar_partida.svg",
+	"menu_cargar": "menu_cargar.svg",
+	"menu_volver": "menu_volver.svg",
+	"menu_guardar": "menu_guardar.svg",
+	"menu_salir": "menu_salir.svg",
+	"menu_quicksave": "menu_quicksave.svg",
+	"menu_configuracion": "menu_configuracion.svg",
+	"menu_reset": "menu_reset.svg",
+	"menu_reanudar": "menu_reanudar.svg",
 }
 
 

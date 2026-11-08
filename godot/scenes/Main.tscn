@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://n1ch6wdi5ywp" path="res://scripts/HumoRefinerias.gd" id="14"]
 [ext_resource type="Script" uid="uid://dn7ocwsx7x4wl" path="res://scripts/ViaObraOverlay.gd" id="15"]
 [ext_resource type="Script" uid="uid://cpqf5peagw1kp" path="res://scripts/ViaDemolicionOverlay.gd" id="16"]
+[ext_resource type="Script" path="res://scripts/MenuPausa.gd" id="17_pausa"]
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_obra"]
 
@@ -94,3 +95,17 @@ offset_top = 72.0
 offset_right = 260.0
 offset_bottom = 102.0
 text = "Oxígeno: 100%"
+
+[node name="MenuPausaLayer" type="CanvasLayer" parent="."]
+process_mode = 3
+layer = 100
+
+[node name="MenuPausa" type="Control" parent="MenuPausaLayer"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("17_pausa")

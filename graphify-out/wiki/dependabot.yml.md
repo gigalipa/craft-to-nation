@@ -1,6 +1,6 @@
 # dependabot.yml
 
-> 15 nodes · cohesion 0.22
+> 16 nodes · cohesion 0.21
 
 ## Key Concepts
 
@@ -8,6 +8,7 @@
 - **llm_subtitle_cleaner.py** (12 connections) — `video_edition/tools/llm_subtitle_cleaner.py`
 - **re** (7 connections)
 - **build_w2_recap_subtitles.py** (6 connections) — `video_edition/tools/build_w2_recap_subtitles.py`
+- **main()** (5 connections) — `video_edition/tools/llm_subtitle_cleaner.py`
 - **rebuild_recap_subtitles.py** (5 connections) — `video_edition/tools/rebuild_recap_subtitles.py`
 - **verify_game_balance_data.py** (4 connections) — `tools/verify_game_balance_data.py`
 - **verify_wiki_bundle.py** (4 connections) — `tools/verify_wiki_bundle.py`
@@ -22,14 +23,13 @@
 
 ## Relationships
 
-- [json](json.md) (9 shared connections)
-- [2026-10-07-obras-vias-y-prioridades-design.md (Obras por Colonos: Tendido de Vías y Prioridades Configurabl) / Obras.gd](2026-10-07-obras-vias-y-prioridades-design.md_Obras_por_Colonos-_Tendido_de_Vías_y_Prioridades_Configurabl_-_Obras.gd.md) (3 shared connections)
+- [json](json.md) (10 shared connections)
+- [clip_maker.py](clip_maker.py.md) (4 shared connections)
 - [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (2 shared connections)
 - [config.yml](config.yml.md) (1 shared connections)
-- [VentanaAlmacen.gd / VentanaAlmacen.abrir()](VentanaAlmacen.gd_-_VentanaAlmacen.abrir.md) (1 shared connections)
-- [clip_maker.py](clip_maker.py.md) (1 shared connections)
+- [subprocess](subprocess.md) (1 shared connections)
+- [fcpxml_generator.py](fcpxml_generator.py.md) (1 shared connections)
 - [tsconfig.json](tsconfig.json.md) (1 shared connections)
-- [video_editor_studio.py](video_editor_studio.py.md) (1 shared connections)
 - [ajustes.gd](ajustes.gd.md) (1 shared connections)
 
 ## Source Files
@@ -42,7 +42,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 43 (100%)
+- EXTRACTED: 46 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

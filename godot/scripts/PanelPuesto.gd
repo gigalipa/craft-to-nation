@@ -644,6 +644,31 @@ func abrir(nueva_esquina: Vector2i) -> void:
 	visible = true
 	if Economia.puestos[esquina].get("agotado", false):
 		Economia.recalcular_tasas(esquina)
+	var tipo_p: String = Economia.puestos[esquina].get("tipo", "")
+	var sfx_map: Dictionary = {
+		"maderero": "sfx_puesto_maderero",
+		"mina": "sfx_puesto_mina",
+		"caza_recoleccion": "sfx_puesto_caza",
+		"pesca_frutos_mar": "sfx_puesto_pesca",
+		"siderurgica": "sfx_ind_siderurgica",
+		"refineria_tierras_raras": "sfx_ind_tierras_raras",
+		"carbonera": "sfx_ind_carbonera",
+		"aserradero": "sfx_ind_aserradero",
+		"vidriera": "sfx_ind_vidriera",
+		"escuela_tecnica": "sfx_ind_escuela_tecnica",
+		"escuela_especialistas": "sfx_ind_escuela_especialistas",
+		"universidad": "sfx_ind_universidad",
+		"fabrica_bloques": "sfx_ind_fabrica_bloques",
+		"refineria_petrolera": "sfx_ind_refineria_petrolera",
+		"productor_combustible": "sfx_ind_productor_combustible",
+		"central_termoelectrica": "sfx_ind_central_termoelectrica",
+		"estacion_bombeo": "sfx_ind_estacion_bombeo",
+		"centro_extraccion": "sfx_ind_centro_extraccion",
+		"almacen": "sfx_ind_almacen_industrial",
+		"taller_transporte": "sfx_ind_taller_transporte",
+	}
+	if sfx_map.has(tipo_p):
+		Sonidos.reproducir(sfx_map[tipo_p], -4.0)
 	_actualizar()
 
 

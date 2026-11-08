@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ccyfo8hurhr3s"
+path="res://.godot/imported/Clockwork_logistics (loop).mp3-52d2db3bec2faeb77d23d8e248ac1453.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Clockwork_logistics (loop).mp3"
+dest_files=["res://.godot/imported/Clockwork_logistics (loop).mp3-52d2db3bec2faeb77d23d8e248ac1453.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

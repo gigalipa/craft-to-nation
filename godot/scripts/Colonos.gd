@@ -558,6 +558,21 @@ func _completar_paso(c: Dictionary, delta: float) -> void:
 	c["moviendo"] = false
 	c["progreso"] = 0.0
 	c["busqueda"] = {}
+
+	# Reproducir sonido espacial según tipo de transporte o paso
+	if tipo_t == "a_pie":
+		var en_via := Vias != null and Vias.es_via(c["celda"])
+		Sonidos.reproducir_3d("sfx_colono_paso_via" if en_via else "sfx_colono_paso", c["posicion"], -12.0, 0.08, 20.0)
+	elif tipo_t == "carreta_mano":
+		Sonidos.reproducir_3d("sfx_carreta_mano_rodar", c["posicion"], -8.0, 0.05, 25.0)
+	elif tipo_t == "carro_caballos":
+		Sonidos.reproducir_3d("sfx_carro_caballos_marcha", c["posicion"], -6.0, 0.05, 30.0)
+	elif tipo_t == "camion_diesel":
+		Sonidos.reproducir_3d("sfx_camion_diesel_motor", c["posicion"], -4.0, 0.05, 35.0)
+	elif tipo_t == "dron_carga":
+		Sonidos.reproducir_3d("sfx_dron_carga_vuelo", c["posicion"], -6.0, 0.05, 30.0)
+	elif tipo_t == "trolebus":
+		Sonidos.reproducir_3d("sfx_trolebus_marcha", c["posicion"], -4.0, 0.05, 35.0)
 	if c["ruta"].is_empty() and c["trabajo"].is_empty() and c["tarea"].is_empty():
 		c["espera"] = _rng.randf_range(ESPERA_ENTRE_DESTINOS_MIN, ESPERA_ENTRE_DESTINOS_MAX)
 
@@ -1418,6 +1433,7 @@ func _llevar_al_nucleo(c: Dictionary) -> bool:
 		var cat_comida: String = economia.categoria_comida_de_puesto(esq)
 		c["carga"] = economia.entregar(c["carga"], cat_comida)
 		if c["carga"].is_empty():
+			Sonidos.reproducir_3d("sfx_colono_carga_estibar", c["posicion"], -6.0, 0.05, 25.0)
 			return true
 		# Almacén saturado: retiene el excedente en el vehículo y espera antes de reintentar
 		c["espera"] = ESPERA_TRABAJO
@@ -1891,4 +1907,76 @@ func reconciliar_tripulacion_puesto(esquina: Vector2i) -> void:
 		while p.get("acarreadores", []).size() > 0:
 			if not despedir(esquina, "acarreador"):
 				break
+
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func reiniciar() -> void:
+	colonos.clear()
+	ocupadas.clear()
+	celdas_avatar.clear()
+	comisiones_activas.clear()
+	_siguiente_id = 1
+	if _buscador != null and _buscador.has_method("cancelar_todas"):
+		_buscador.cancelar_todas()
+
+
+func exportar_estado() -> Dictionary:
+	var col_export: Dictionary = {}
+	for cid in colonos:
+		var c: Dictionary = colonos[cid]
+		var c_dict: Dictionary = c.duplicate(true)
+		if c_dict.has("hogar") and c_dict["hogar"] is Vector3i:
+			c_dict["hogar"] = {"x": c_dict["hogar"].x, "y": c_dict["hogar"].y, "z": c_dict["hogar"].z}
+		if c_dict.has("celda") and c_dict["celda"] is Vector3i:
+			c_dict["celda"] = {"x": c_dict["celda"].x, "y": c_dict["celda"].y, "z": c_dict["celda"].z}
+		if c_dict.has("posicion") and c_dict["posicion"] is Vector3:
+			c_dict["posicion"] = {"x": c_dict["posicion"].x, "y": c_dict["posicion"].y, "z": c_dict["posicion"].z}
+		if c_dict.has("trabajo") and c_dict["trabajo"] is Vector2i:
+			c_dict["trabajo"] = {"x": c_dict["trabajo"].x, "y": c_dict["trabajo"].y}
+		if c_dict.has("ruta") and c_dict["ruta"] is Array:
+			var r_arr: Array = []
+			for pt in c_dict["ruta"]:
+				if pt is Vector3i:
+					r_arr.append({"x": pt.x, "y": pt.y, "z": pt.z})
+			c_dict["ruta"] = r_arr
+		col_export[str(cid)] = c_dict
+
+	return {
+		"siguiente_id": _siguiente_id,
+		"colonos": col_export,
+		"comisiones_activas": comisiones_activas.duplicate(true),
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	reiniciar()
+	_siguiente_id = int(d.get("siguiente_id", 1))
+
+	if d.has("colonos") and d["colonos"] is Dictionary:
+		for cid_str in d["colonos"]:
+			var cid := int(cid_str)
+			var c_dict: Dictionary = (d["colonos"][cid_str] as Dictionary).duplicate(true)
+			if c_dict.has("hogar") and c_dict["hogar"] is Dictionary:
+				c_dict["hogar"] = Vector3i(int(c_dict["hogar"]["x"]), int(c_dict["hogar"]["y"]), int(c_dict["hogar"]["z"]))
+			if c_dict.has("celda") and c_dict["celda"] is Dictionary:
+				c_dict["celda"] = Vector3i(int(c_dict["celda"]["x"]), int(c_dict["celda"]["y"]), int(c_dict["celda"]["z"]))
+			if c_dict.has("posicion") and c_dict["posicion"] is Dictionary:
+				c_dict["posicion"] = Vector3(float(c_dict["posicion"]["x"]), float(c_dict["posicion"]["y"]), float(c_dict["posicion"]["z"]))
+			if c_dict.has("trabajo") and c_dict["trabajo"] is Dictionary:
+				c_dict["trabajo"] = Vector2i(int(c_dict["trabajo"]["x"]), int(c_dict["trabajo"]["y"]))
+			if c_dict.has("ruta") and c_dict["ruta"] is Array:
+				var r_arr: Array[Vector3i] = []
+				for pt in c_dict["ruta"]:
+					if pt is Dictionary:
+						r_arr.append(Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"])))
+				c_dict["ruta"] = r_arr
+			colonos[cid] = c_dict
+			if c_dict.has("celda") and c_dict["celda"] is Vector3i:
+				ocupadas[c_dict["celda"]] = cid
+
+	if d.has("comisiones_activas") and d["comisiones_activas"] is Dictionary:
+		comisiones_activas = d["comisiones_activas"].duplicate(true)
 

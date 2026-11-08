@@ -1,6 +1,6 @@
 # DevlogRecap.tsx
 
-> 12 nodes · cohesion 0.17
+> 11 nodes · cohesion 0.18
 
 ## Key Concepts
 
@@ -13,7 +13,6 @@
 - **remotion@4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **@remotion/captions@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **@remotion/cli@4.0.537** (2 connections) — `video_edition/remotion/package.json`
-- **@remotion/media@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **@remotion/transitions@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **remotion.config.ts** (1 connections) — `video_edition/remotion/remotion.config.ts`
 
@@ -29,7 +28,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 19 (100%)
+- EXTRACTED: 18 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

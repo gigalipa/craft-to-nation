@@ -12,10 +12,10 @@
     "semantic_hash": "e24a0109ad49d93c83d24f248e600583"
   },
   "tools/run-godot-tests.ps1": {
-    "mtime": 1791817399.1408145,
-    "seen": 1793184571.597345,
-    "ast_hash": "6b184a03bcfbfa321a555c7e3fb4b5f0",
-    "semantic_hash": "6b184a03bcfbfa321a555c7e3fb4b5f0"
+    "mtime": 1794071294.1644213,
+    "seen": 1794089524.4356856,
+    "ast_hash": "e45f304c6495324b404a55b03a9407ba",
+    "semantic_hash": ""
   },
   "tools/run-single-test.ps1": {
     "mtime": 1792024813.1883078,
@@ -252,9 +252,9 @@
     "semantic_hash": "0e783ab665ad24669f0c35ebca0a45c6"
   },
   "Documento de Dise\u00f1o de Juego (GDD)_ Craft to Nation.md": {
-    "mtime": 1793743481.862525,
-    "seen": 1793743793.4156556,
-    "ast_hash": "c0a92ff8a7dcd9c691e647e494b8394a",
+    "mtime": 1794089221.671354,
+    "seen": 1794089524.436685,
+    "ast_hash": "15f3a5885c043848ca0300b67d4d338b",
     "semantic_hash": ""
   },
   "LICENSE-CONTENT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": "acdcbe4b78768a9aa5df06f3be52b082"
   },
   "README.md": {
-    "mtime": 1793743501.170152,
-    "seen": 1793743793.4156556,
-    "ast_hash": "f78b9d25273b3d23389bb0cf6f1040eb",
+    "mtime": 1794175571.2404609,
+    "seen": 1794175678.4522777,
+    "ast_hash": "2f347467afe8ccc369806943c7b22421",
     "semantic_hash": ""
   },
   "docs/Fichas_Consumo_Produccion.md": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "docs/Pendientes y pr\u00f3ximos pasos.md": {
-    "mtime": 1793743641.7334905,
-    "seen": 1793743793.4156556,
-    "ast_hash": "4145d89bad4b2af9304a0772fe8c8b8a",
+    "mtime": 1794089397.824131,
+    "seen": 1794089524.436685,
+    "ast_hash": "5496525b76109c14a1711c43630a6b79",
     "semantic_hash": ""
   },
   "docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md": {
@@ -378,9 +378,9 @@
     "semantic_hash": ""
   },
   "docs/ideas-backlog.md": {
-    "mtime": 1793743661.9404204,
-    "seen": 1793743793.4156556,
-    "ast_hash": "cb139d69cc63bcf5365a16647369af24",
+    "mtime": 1794089416.9793406,
+    "seen": 1794089524.436685,
+    "ast_hash": "3eeccae21680251852f184cdc43f500f",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md": {
@@ -1050,16 +1050,16 @@
     "semantic_hash": "f97bb265d4f5137263468d8cf9f8bff0"
   },
   "website/wiki/src/en/dev/gdd.md": {
-    "mtime": 1793806296.9454992,
-    "seen": 1793810601.0871043,
-    "ast_hash": "19df443f258ae0d9e1c73a43f39275bd",
+    "mtime": 1794175511.785684,
+    "seen": 1794175678.4522777,
+    "ast_hash": "72c1f09be2b53822d7118a99fdb77263",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/godot.md": {
-    "mtime": 1793313267.452221,
-    "seen": 1793484453.84455,
-    "ast_hash": "6e9c17d612e24075ee988e174b9034e7",
-    "semantic_hash": "6e9c17d612e24075ee988e174b9034e7"
+    "mtime": 1794175487.4271264,
+    "seen": 1794175678.4522777,
+    "ast_hash": "6fb32d435a940480cc09e0979929f38b",
+    "semantic_hash": ""
   },
   "website/wiki/src/en/dev/logistics.md": {
     "mtime": 1793313397.7193074,
@@ -1068,9 +1068,9 @@
     "semantic_hash": "91e99385f33fb5523c156915732aaacf"
   },
   "website/wiki/src/en/dev/roadmap.md": {
-    "mtime": 1793806747.1801963,
-    "seen": 1793810601.0871043,
-    "ast_hash": "4e3d468a8f985b772d860156cce00482",
+    "mtime": 1794175558.7023745,
+    "seen": 1794175678.4522777,
+    "ast_hash": "c2b8bedc5856ecc2ca229c1a74b0cba8",
     "semantic_hash": ""
   },
   "website/wiki/src/en/guide/buildings.md": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": "b92a61245a5cc4add2def1b8e044c492"
   },
   "website/wiki/src/en/guide/colonists.md": {
-    "mtime": 1793743688.975452,
-    "seen": 1793743793.4156556,
-    "ast_hash": "38f1a1d2a3de44538392297f7779ac59",
+    "mtime": 1794175588.8623173,
+    "seen": 1794175678.4522777,
+    "ast_hash": "547559a1b897b418b5b287ab3c260785",
     "semantic_hash": ""
   },
   "website/wiki/src/en/guide/resources.md": {
@@ -1098,22 +1098,22 @@
     "semantic_hash": "e75e8b323763da49ce44b23ffcdce197"
   },
   "website/wiki/src/en/index.md": {
-    "mtime": 1793154995.1233723,
-    "seen": 1793184571.597345,
-    "ast_hash": "fbeddda2a634fd9f0adf6b69e088f181",
-    "semantic_hash": "fbeddda2a634fd9f0adf6b69e088f181"
+    "mtime": 1794175474.9686418,
+    "seen": 1794175678.4522777,
+    "ast_hash": "4ff47542d3d410fb1296ea8b6e54d333",
+    "semantic_hash": ""
   },
   "website/wiki/src/es/dev/gdd.md": {
-    "mtime": 1793806296.9454992,
-    "seen": 1793810601.0871043,
-    "ast_hash": "d7435b0579ea7baf9e0c64fc015ee4af",
+    "mtime": 1794175492.1858785,
+    "seen": 1794175678.4522777,
+    "ast_hash": "ea92f7fbd65c5ae77603ed976c3cf38f",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/godot.md": {
-    "mtime": 1793313231.6301978,
-    "seen": 1793484453.84455,
-    "ast_hash": "0644e9c40814ebc667f386b105ec3d28",
-    "semantic_hash": "0644e9c40814ebc667f386b105ec3d28"
+    "mtime": 1794089476.0146549,
+    "seen": 1794089524.436685,
+    "ast_hash": "425e3b716b82a4389c283952c791e528",
+    "semantic_hash": ""
   },
   "website/wiki/src/es/dev/logistica.md": {
     "mtime": 1793313376.6270742,
@@ -1122,15 +1122,15 @@
     "semantic_hash": "2618a433cfcaca942aed59c0c67031fd"
   },
   "website/wiki/src/es/dev/roadmap.md": {
-    "mtime": 1793806747.1792104,
-    "seen": 1793810601.0871043,
-    "ast_hash": "ae7556cfb6c0ca5d7f62cc5216a88796",
+    "mtime": 1794175542.3293948,
+    "seen": 1794175678.4522777,
+    "ast_hash": "975d3b46ecac17936a3e8fd5aec398a9",
     "semantic_hash": ""
   },
   "website/wiki/src/es/guia/colonos.md": {
-    "mtime": 1793806296.9433832,
-    "seen": 1793810601.0871043,
-    "ast_hash": "a7118956bd7416c9b109cc0d6ea847bf",
+    "mtime": 1794175584.899019,
+    "seen": 1794175678.4522777,
+    "ast_hash": "3234ad681911f905fd6c49e1c61bd49f",
     "semantic_hash": ""
   },
   "website/wiki/src/es/guia/edificios.md": {
@@ -1152,22 +1152,22 @@
     "semantic_hash": "ec4a92e345a0dcc11d9de43a48d420a3"
   },
   "website/wiki/src/es/index.md": {
-    "mtime": 1793282436.277302,
-    "seen": 1793570940.3059158,
-    "ast_hash": "aaa8467fca780193dfdd353dec4ce411",
-    "semantic_hash": "aaa8467fca780193dfdd353dec4ce411"
+    "mtime": 1794089476.0471609,
+    "seen": 1794089524.436685,
+    "ast_hash": "233ede5983df412b7ba63d21147fd37f",
+    "semantic_hash": ""
   },
   "website/wiki/src/fr/index.md": {
-    "mtime": 1793282746.1587505,
-    "seen": 1793484453.84455,
-    "ast_hash": "bdbe63427312c54deb0dcb5bccd07cb7",
-    "semantic_hash": "bdbe63427312c54deb0dcb5bccd07cb7"
+    "mtime": 1794175479.930271,
+    "seen": 1794175678.4522777,
+    "ast_hash": "432b8382a7c23561d082f57429fb577d",
+    "semantic_hash": ""
   },
   "website/wiki/src/index.md": {
-    "mtime": 1793290774.6087253,
-    "seen": 1793484453.84455,
-    "ast_hash": "0d0812ba6a368effb07cda785e3247c9",
-    "semantic_hash": "0d0812ba6a368effb07cda785e3247c9"
+    "mtime": 1794089476.0732145,
+    "seen": 1794089524.436685,
+    "ast_hash": "a40e24f1cf54cf2d640f2b2b26a9f0e3",
+    "semantic_hash": ""
   },
   "arte/IMUQwcomLawGk.png": {
     "mtime": 1792015729.96392,
@@ -2952,10 +2952,10 @@
     "semantic_hash": "1642c22e89c7dcf71776aac9f007f1b8"
   },
   ".agents/skills/nodes-and-network/SKILL.md": {
-    "mtime": 1793313432.2380183,
-    "seen": 1793484453.84455,
-    "ast_hash": "913c4f2e4a70b244655d1b6373de85e1",
-    "semantic_hash": "913c4f2e4a70b244655d1b6373de85e1"
+    "mtime": 1794141130.1369982,
+    "seen": 1794141227.7591472,
+    "ast_hash": "d6bdc3c07fc06c4de6f3fe76834b1bb1",
+    "semantic_hash": ""
   },
   "video_edition/remotion/src/ReelTrendNoPlanB.tsx": {
     "mtime": 1793211268.5818367,
@@ -3159,6 +3159,2286 @@
     "mtime": 1793790257.7181888,
     "seen": 1793792390.4210763,
     "ast_hash": "2dac1658220289c767cfaf41c2fb07e4",
+    "semantic_hash": ""
+  },
+  "tools/export_windows.ps1": {
+    "mtime": 1793882752.347926,
+    "seen": 1793916227.6758425,
+    "ast_hash": "8361d4bf668b8b46289353706869f130",
+    "semantic_hash": ""
+  },
+  "arte/cand_short1.jpg": {
+    "mtime": 1793873664.777133,
+    "seen": 1793916227.6768415,
+    "ast_hash": "258ba12753188d7173551aa63f62ad92",
+    "semantic_hash": ""
+  },
+  "arte/cand_w2_01.jpg": {
+    "mtime": 1793873664.1334321,
+    "seen": 1793916227.6768415,
+    "ast_hash": "f4d401b9b4b9cbe4ad26ae2923cc4c15",
+    "semantic_hash": ""
+  },
+  "arte/cand_w2_02.jpg": {
+    "mtime": 1793873664.3907232,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2c594010920c61a0037e8c3fddb71b1c",
+    "semantic_hash": ""
+  },
+  "arte/cand_w2_03.jpg": {
+    "mtime": 1793873664.63473,
+    "seen": 1793916227.6768415,
+    "ast_hash": "16d5d9708926a4ce2c0876a66e3e9840",
+    "semantic_hash": ""
+  },
+  "arte/citycraft-world.jpg": {
+    "mtime": 1793874263.782512,
+    "seen": 1793916227.6768415,
+    "ast_hash": "e20d883b510b8c97491a1a10d63847d1",
+    "semantic_hash": ""
+  },
+  "arte/comparison-aerial.jpg": {
+    "mtime": 1793874263.5641043,
+    "seen": 1793916227.6768415,
+    "ast_hash": "7c71e2e8a900be867ef9d867d8665e5a",
+    "semantic_hash": ""
+  },
+  "arte/crop_scene1_firstperson.jpg": {
+    "mtime": 1793873976.597999,
+    "seen": 1793916227.6768415,
+    "ast_hash": "dea91f8707068168513ebe75df1f7820",
+    "semantic_hash": ""
+  },
+  "arte/crop_scene2_overhead_colony.jpg": {
+    "mtime": 1793873977.5463212,
+    "seen": 1793916227.6768415,
+    "ast_hash": "e1748eeebb8c16abe1e22ffc0bc3dab0",
+    "semantic_hash": ""
+  },
+  "arte/crop_scene3_industry_smoke.jpg": {
+    "mtime": 1793873978.2805328,
+    "seen": 1793916227.6768415,
+    "ast_hash": "49283d439906e86a2cc1a79da79bb05d",
+    "semantic_hash": ""
+  },
+  "arte/dev_01.jpg": {
+    "mtime": 1793873440.472219,
+    "seen": 1793916227.6768415,
+    "ast_hash": "585e259e96580f6093600d7289c4fdba",
+    "semantic_hash": ""
+  },
+  "arte/dev_02.jpg": {
+    "mtime": 1793873440.6078467,
+    "seen": 1793916227.6768415,
+    "ast_hash": "1a18bad67a233112b6abba0470d988bc",
+    "semantic_hash": ""
+  },
+  "arte/dev_03.jpg": {
+    "mtime": 1793873440.7263787,
+    "seen": 1793916227.6768415,
+    "ast_hash": "dec91af35e7388f4b1b489d45171baaa",
+    "semantic_hash": ""
+  },
+  "arte/flight_0.jpg": {
+    "mtime": 1793876799.7663097,
+    "seen": 1793916227.6768415,
+    "ast_hash": "d1cce000a897310c59fea41d38a348fa",
+    "semantic_hash": ""
+  },
+  "arte/flight_1.jpg": {
+    "mtime": 1793876799.8596842,
+    "seen": 1793916227.6768415,
+    "ast_hash": "c67a6c9e27fd05f3517c43ee727e408a",
+    "semantic_hash": ""
+  },
+  "arte/flight_2.jpg": {
+    "mtime": 1793876799.9559004,
+    "seen": 1793916227.6768415,
+    "ast_hash": "ca9745e5aa3c34211db3301d996e49e5",
+    "semantic_hash": ""
+  },
+  "arte/flight_3.jpg": {
+    "mtime": 1793876800.0665395,
+    "seen": 1793916227.6768415,
+    "ast_hash": "fbf7933835f782381fa6522af2a40b2b",
+    "semantic_hash": ""
+  },
+  "arte/flight_4.jpg": {
+    "mtime": 1793876800.1804535,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5d2f1a4ee2f681fdb9af23d0bcf6ff0f",
+    "semantic_hash": ""
+  },
+  "arte/flight_5.jpg": {
+    "mtime": 1793876800.3024023,
+    "seen": 1793916227.6768415,
+    "ast_hash": "50143690114b81c9ede52bbf219789e9",
+    "semantic_hash": ""
+  },
+  "arte/flight_6.jpg": {
+    "mtime": 1793876800.4290504,
+    "seen": 1793916227.6768415,
+    "ast_hash": "46206d9b1afcca0d1155b8d0d8cc7ac9",
+    "semantic_hash": ""
+  },
+  "arte/flight_7.jpg": {
+    "mtime": 1793876800.5573888,
+    "seen": 1793916227.6768415,
+    "ast_hash": "a56d1e628bd771c87ec9bd7c5c82831d",
+    "semantic_hash": ""
+  },
+  "arte/flight_8.jpg": {
+    "mtime": 1793876800.6998854,
+    "seen": 1793916227.6768415,
+    "ast_hash": "383f3b325021de0df7b1eaa58199f3ac",
+    "semantic_hash": ""
+  },
+  "arte/flight_9.jpg": {
+    "mtime": 1793876800.8088176,
+    "seen": 1793916227.6768415,
+    "ast_hash": "0777f399d40d2877ea2565093517aed4",
+    "semantic_hash": ""
+  },
+  "arte/fp-building.jpg": {
+    "mtime": 1793874263.619655,
+    "seen": 1793916227.6768415,
+    "ast_hash": "a5060ddab219a4e21540d8c514aa50e0",
+    "semantic_hash": ""
+  },
+  "arte/fp-defense.jpg": {
+    "mtime": 1793874263.725736,
+    "seen": 1793916227.6768415,
+    "ast_hash": "3447f2230ef0d3ce4faaf21ed492be2d",
+    "semantic_hash": ""
+  },
+  "arte/fp-industry.jpg": {
+    "mtime": 1793874263.6726604,
+    "seen": 1793916227.6768415,
+    "ast_hash": "9ac28bed8a749215227db5291ee02e0e",
+    "semantic_hash": ""
+  },
+  "arte/fp_117_30.jpg": {
+    "mtime": 1793875560.878736,
+    "seen": 1793916227.6768415,
+    "ast_hash": "dfbf853e3a19d4a54298c49ab44ab5f6",
+    "semantic_hash": ""
+  },
+  "arte/fp_117_35.jpg": {
+    "mtime": 1793875560.992158,
+    "seen": 1793916227.6768415,
+    "ast_hash": "24ad4e963e71885061acc8a8ebc701a9",
+    "semantic_hash": ""
+  },
+  "arte/fp_117_40.jpg": {
+    "mtime": 1793875561.1388206,
+    "seen": 1793916227.6768415,
+    "ast_hash": "0ff22c096032450028eec6746f0dd9b5",
+    "semantic_hash": ""
+  },
+  "arte/fp_117_45.jpg": {
+    "mtime": 1793875561.281652,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2b9ea36e0c75de76b3e378c7ed231088",
+    "semantic_hash": ""
+  },
+  "arte/fp_117_50.jpg": {
+    "mtime": 1793875561.416777,
+    "seen": 1793916227.6768415,
+    "ast_hash": "ef78f45c50e90491b3e166a16fd41351",
+    "semantic_hash": ""
+  },
+  "arte/fp_117_55.jpg": {
+    "mtime": 1793875561.5460806,
+    "seen": 1793916227.6768415,
+    "ast_hash": "6756cf769c000070d975eac64daf75b3",
+    "semantic_hash": ""
+  },
+  "arte/fp_end_48.jpg": {
+    "mtime": 1793875561.6803083,
+    "seen": 1793916227.6768415,
+    "ast_hash": "ef23855c0277e2d88108cdf8f03893a7",
+    "semantic_hash": ""
+  },
+  "arte/fp_end_49.jpg": {
+    "mtime": 1793875561.8143091,
+    "seen": 1793916227.6768415,
+    "ast_hash": "ee58e3a655225476d5c0892f1f62d31d",
+    "semantic_hash": ""
+  },
+  "arte/fp_end_50.jpg": {
+    "mtime": 1793875561.9361715,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2dc7749be4edd92fca092b2cada46f65",
+    "semantic_hash": ""
+  },
+  "arte/qa_1260.jpg": {
+    "mtime": 1793876167.6158037,
+    "seen": 1793916227.6768415,
+    "ast_hash": "d7639a8014d550cf1a5141da9f7f5e44",
+    "semantic_hash": ""
+  },
+  "arte/qa_1860.jpg": {
+    "mtime": 1793876167.9352145,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5b1e51255073d33c57fa88476a68559c",
+    "semantic_hash": ""
+  },
+  "arte/qa_2460.jpg": {
+    "mtime": 1793876168.1827784,
+    "seen": 1793916227.6768415,
+    "ast_hash": "6528b3ad578034eea914431baad0e82b",
+    "semantic_hash": ""
+  },
+  "arte/qa_3060.jpg": {
+    "mtime": 1793876168.5244708,
+    "seen": 1793916227.6768415,
+    "ast_hash": "97b2fcdee85a919cb7ccca539c8b8a1f",
+    "semantic_hash": ""
+  },
+  "arte/qa_3660.jpg": {
+    "mtime": 1793876168.811651,
+    "seen": 1793916227.6768415,
+    "ast_hash": "563784b790d3df70599bd436a56358d2",
+    "semantic_hash": ""
+  },
+  "arte/qa_4260.jpg": {
+    "mtime": 1793876169.1022892,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2238f14dbf3089fbbcaecf888477db8f",
+    "semantic_hash": ""
+  },
+  "arte/qa_4860.jpg": {
+    "mtime": 1793876169.4459367,
+    "seen": 1793916227.6768415,
+    "ast_hash": "678a7cc8eca51e08f97907cb7612198b",
+    "semantic_hash": ""
+  },
+  "arte/qa_5460.jpg": {
+    "mtime": 1793876169.7383587,
+    "seen": 1793916227.6768415,
+    "ast_hash": "36f50980fe1f48f326391526e4a0d6a0",
+    "semantic_hash": ""
+  },
+  "arte/qa_60.jpg": {
+    "mtime": 1793876166.9590583,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2ccd27023f4a9c500c54f529258a6204",
+    "semantic_hash": ""
+  },
+  "arte/qa_660.jpg": {
+    "mtime": 1793876167.3353965,
+    "seen": 1793916227.6768415,
+    "ast_hash": "667df8bed3a55bb90d94048e1aed0f97",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_100.jpg": {
+    "mtime": 1793876394.5873573,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5ae1d66e304c32939098cc5ec20bd8eb",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_140.jpg": {
+    "mtime": 1793876394.8447485,
+    "seen": 1793916227.6768415,
+    "ast_hash": "f820da28cab9b3afaedb043f72ae6317",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_180.jpg": {
+    "mtime": 1793876395.1812832,
+    "seen": 1793916227.6768415,
+    "ast_hash": "aa86054752dba087179ff2183a67cef9",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_220.jpg": {
+    "mtime": 1793876395.4826078,
+    "seen": 1793916227.6768415,
+    "ast_hash": "f77693ba44cd7d59766d6ab24a7dd3fd",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_260.jpg": {
+    "mtime": 1793876395.838597,
+    "seen": 1793916227.6768415,
+    "ast_hash": "168c1a16ebd54dbc7842458d6681a818",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_300.jpg": {
+    "mtime": 1793876396.0442073,
+    "seen": 1793916227.6768415,
+    "ast_hash": "b4cea194fedd4d9f2db7dd621e7bf1a4",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_340.jpg": {
+    "mtime": 1793876396.3308635,
+    "seen": 1793916227.6768415,
+    "ast_hash": "7f2bef78c9cae1ab3e4f22664eae8fd9",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_380.jpg": {
+    "mtime": 1793876396.5786705,
+    "seen": 1793916227.6768415,
+    "ast_hash": "a7b35412d32f819c5fbf8b4edf28f602",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_420.jpg": {
+    "mtime": 1793876396.8698306,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5be32c7b2b8743b62d47638e7b4a182a",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_460.jpg": {
+    "mtime": 1793876397.1993327,
+    "seen": 1793916227.6768415,
+    "ast_hash": "b7ee88ba25093769ff41a25fadac1cd5",
+    "semantic_hash": ""
+  },
+  "arte/qa_act1_60.jpg": {
+    "mtime": 1793876394.396038,
+    "seen": 1793916227.6768415,
+    "ast_hash": "72a78918a81e0e9c36b566fd5351cc54",
+    "semantic_hash": ""
+  },
+  "arte/raw_live_w1.mp4.jpg": {
+    "mtime": 1793873781.124279,
+    "seen": 1793916227.6768415,
+    "ast_hash": "0f9a957053de031f78c22cad4d72dae1",
+    "semantic_hash": ""
+  },
+  "arte/reel_01.jpg": {
+    "mtime": 1793873440.8847582,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5eaa1ca5b9ed1385d2e8ff9fdb90afd1",
+    "semantic_hash": ""
+  },
+  "arte/reel_02.jpg": {
+    "mtime": 1793873441.119414,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2be10912a72853064739e5a234e9c916",
+    "semantic_hash": ""
+  },
+  "arte/scene1_perspective.jpg": {
+    "mtime": 1793873552.1423328,
+    "seen": 1793916227.6768415,
+    "ast_hash": "0ef8d86cf54f1c21be171765a8c1e397",
+    "semantic_hash": ""
+  },
+  "arte/scene2_roads_logistics.jpg": {
+    "mtime": 1793873552.257451,
+    "seen": 1793916227.6768415,
+    "ast_hash": "1b32c7d0337f31f0aa5f986031263e4a",
+    "semantic_hash": ""
+  },
+  "arte/scene3_power_industry.jpg": {
+    "mtime": 1793873552.5413642,
+    "seen": 1793916227.6768415,
+    "ast_hash": "db6b01b512936f0b2a48320eb4f15ecc",
+    "semantic_hash": ""
+  },
+  "arte/scene_firstperson_clean.jpg": {
+    "mtime": 1793874134.7784307,
+    "seen": 1793916227.6768415,
+    "ast_hash": "42889faf8c928780b821866d78e55a5a",
+    "semantic_hash": ""
+  },
+  "arte/scene_industry_clean.jpg": {
+    "mtime": 1793874132.9616625,
+    "seen": 1793916227.6768415,
+    "ast_hash": "a25dc6f615d7217e334c92a040553edc",
+    "semantic_hash": ""
+  },
+  "arte/scene_roads_clean.jpg": {
+    "mtime": 1793874134.5817766,
+    "seen": 1793916227.6768415,
+    "ast_hash": "bc955b89d04f57624848c28d851a2685",
+    "semantic_hash": ""
+  },
+  "arte/trans_50.jpg": {
+    "mtime": 1793875195.609424,
+    "seen": 1793916227.6768415,
+    "ast_hash": "577091b3423c31bb6802694e3a5530c9",
+    "semantic_hash": ""
+  },
+  "arte/trans_51.jpg": {
+    "mtime": 1793875195.8841655,
+    "seen": 1793916227.6768415,
+    "ast_hash": "03ee08212543554f3e2284634d3a9249",
+    "semantic_hash": ""
+  },
+  "arte/trans_52.jpg": {
+    "mtime": 1793875196.1608746,
+    "seen": 1793916227.6768415,
+    "ast_hash": "af0214647f0e89e3d403319c6e40b093",
+    "semantic_hash": ""
+  },
+  "arte/trans_53.jpg": {
+    "mtime": 1793875196.4708562,
+    "seen": 1793916227.6768415,
+    "ast_hash": "d6f65856dd2718a3a7eb69a7ed2540db",
+    "semantic_hash": ""
+  },
+  "arte/trans_54.jpg": {
+    "mtime": 1793875196.7183459,
+    "seen": 1793916227.6768415,
+    "ast_hash": "9618f598ea482e45d1ef7f451c374b24",
+    "semantic_hash": ""
+  },
+  "arte/trans_55.jpg": {
+    "mtime": 1793875196.971243,
+    "seen": 1793916227.6768415,
+    "ast_hash": "789019837f085b4cb7d055caebc17fc9",
+    "semantic_hash": ""
+  },
+  "arte/trans_56.jpg": {
+    "mtime": 1793875197.212851,
+    "seen": 1793916227.6768415,
+    "ast_hash": "ef8a013377fc2e8fed2c8d79ddbe4c58",
+    "semantic_hash": ""
+  },
+  "arte/trans_57.jpg": {
+    "mtime": 1793875197.4993029,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5259160c8a3ebb1bfc4b47ca2ea1b0ae",
+    "semantic_hash": ""
+  },
+  "arte/trans_58.jpg": {
+    "mtime": 1793875197.8355076,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2abb33fc4ce6c6ab2b8255ddfbdd924b",
+    "semantic_hash": ""
+  },
+  "arte/trans_59.jpg": {
+    "mtime": 1793875198.1335795,
+    "seen": 1793916227.6768415,
+    "ast_hash": "f6bd9a31168e25ec8fbdd24b01a38284",
+    "semantic_hash": ""
+  },
+  "arte/w1_00_25.jpg": {
+    "mtime": 1793873333.6564577,
+    "seen": 1793916227.6768415,
+    "ast_hash": "b95750e7174b54164aed63f37fe62536",
+    "semantic_hash": ""
+  },
+  "arte/w1_01_25.jpg": {
+    "mtime": 1793873333.8905454,
+    "seen": 1793916227.6768415,
+    "ast_hash": "295c87728e7ac68de0658b7c74964d06",
+    "semantic_hash": ""
+  },
+  "arte/w1_02_10.jpg": {
+    "mtime": 1793873334.170046,
+    "seen": 1793916227.6768415,
+    "ast_hash": "fcd7f4c94dca1b926795aef64e8cfb17",
+    "semantic_hash": ""
+  },
+  "arte/w1_02_55.jpg": {
+    "mtime": 1793873334.264603,
+    "seen": 1793916227.6768415,
+    "ast_hash": "f781b0aefcdf46c518f4c1e10389479c",
+    "semantic_hash": ""
+  },
+  "arte/w1_high_35.jpg": {
+    "mtime": 1793875850.067583,
+    "seen": 1793916227.6768415,
+    "ast_hash": "0aa8d82e518f1d559187cb4ca6cf08a6",
+    "semantic_hash": ""
+  },
+  "arte/w1_high_40.jpg": {
+    "mtime": 1793875850.204746,
+    "seen": 1793916227.6768415,
+    "ast_hash": "4b775d1dfabcd336866c4380d53104be",
+    "semantic_hash": ""
+  },
+  "arte/w1_high_45.jpg": {
+    "mtime": 1793875850.350271,
+    "seen": 1793916227.6768415,
+    "ast_hash": "b0e102562bf3a8c90d59964a01acb721",
+    "semantic_hash": ""
+  },
+  "arte/w1_high_50.jpg": {
+    "mtime": 1793875850.4803638,
+    "seen": 1793916227.6768415,
+    "ast_hash": "8f77633217cb4b5ad2a7edbb395b679d",
+    "semantic_hash": ""
+  },
+  "arte/w1_high_55.jpg": {
+    "mtime": 1793875850.6078005,
+    "seen": 1793916227.6768415,
+    "ast_hash": "e1fcc3ab4add3fe941a2bb789b669581",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_00.jpg": {
+    "mtime": 1793875848.7917342,
+    "seen": 1793916227.6768415,
+    "ast_hash": "c18f659beebfe9c847aaa1925a5571a6",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_05.jpg": {
+    "mtime": 1793875848.9408803,
+    "seen": 1793916227.6768415,
+    "ast_hash": "9778434333d4d284f6b17f21fff73f7a",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_10.jpg": {
+    "mtime": 1793875849.0908093,
+    "seen": 1793916227.6768415,
+    "ast_hash": "7a6d4990fcc9c367b8a82724fcaa9cd7",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_15.jpg": {
+    "mtime": 1793875849.231191,
+    "seen": 1793916227.6768415,
+    "ast_hash": "e189a3a1fcab0c9c370be622b7a6e2a0",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_20.jpg": {
+    "mtime": 1793875849.3592682,
+    "seen": 1793916227.6768415,
+    "ast_hash": "326ccfcc9bd0bfbefe40fb186e4831f0",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_25.jpg": {
+    "mtime": 1793875849.4965074,
+    "seen": 1793916227.6768415,
+    "ast_hash": "739a7152e5b2acffdf31b35092eb18a7",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_30.jpg": {
+    "mtime": 1793875849.611569,
+    "seen": 1793916227.6768415,
+    "ast_hash": "be6d7aef69ae3e0297d124bc2419dc07",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_35.jpg": {
+    "mtime": 1793875849.7645993,
+    "seen": 1793916227.6768415,
+    "ast_hash": "558c11d97d1131a34bf7befd7af5f6a0",
+    "semantic_hash": ""
+  },
+  "arte/w1_trans_40.jpg": {
+    "mtime": 1793875849.9234438,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5f5aacdbb88f3dc3892733cec0913923",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_00.jpg": {
+    "mtime": 1793875999.5668602,
+    "seen": 1793916227.6768415,
+    "ast_hash": "88619cf232fa5cc907dee6de3749a45b",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_02.jpg": {
+    "mtime": 1793875999.6997344,
+    "seen": 1793916227.6768415,
+    "ast_hash": "dcb32b7766fbde829d24304735f56b4f",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_04.jpg": {
+    "mtime": 1793875999.86051,
+    "seen": 1793916227.6768415,
+    "ast_hash": "e5949d16d71d6cc289379fca0097e2b4",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_06.jpg": {
+    "mtime": 1793876000.0233836,
+    "seen": 1793916227.6768415,
+    "ast_hash": "922f5232b1479d9df456300ebf0693dc",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_08.jpg": {
+    "mtime": 1793876000.1900768,
+    "seen": 1793916227.6768415,
+    "ast_hash": "dc779a661895afde1746a938e2641adc",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_10.jpg": {
+    "mtime": 1793876000.3757095,
+    "seen": 1793916227.6768415,
+    "ast_hash": "45f3db3469fd9d091b440f5dac48745a",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_12.jpg": {
+    "mtime": 1793876000.5062826,
+    "seen": 1793916227.6768415,
+    "ast_hash": "85c551ea1999223e7eef78cfc5be0355",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_14.jpg": {
+    "mtime": 1793876000.6677003,
+    "seen": 1793916227.6768415,
+    "ast_hash": "b14aeb01dfc4466c6aa4014808d51784",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_16.jpg": {
+    "mtime": 1793876000.8447416,
+    "seen": 1793916227.6768415,
+    "ast_hash": "68a1662104b34ca4b3f00e19b881d612",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk2_18.jpg": {
+    "mtime": 1793876000.9736598,
+    "seen": 1793916227.6768415,
+    "ast_hash": "ce43a51f6849451d0b6ff2a415305420",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_35.jpg": {
+    "mtime": 1793875997.6882002,
+    "seen": 1793916227.6768415,
+    "ast_hash": "0aa8d82e518f1d559187cb4ca6cf08a6",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_37.jpg": {
+    "mtime": 1793875997.8177564,
+    "seen": 1793916227.6768415,
+    "ast_hash": "e5001685bcf1432aae59f34894659178",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_39.jpg": {
+    "mtime": 1793875997.9534695,
+    "seen": 1793916227.6768415,
+    "ast_hash": "f923f42ecb382d5ed9123db4b2dcf818",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_41.jpg": {
+    "mtime": 1793875998.0960948,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5e3360a3d6b9a476bd9041ef7290b53a",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_43.jpg": {
+    "mtime": 1793875998.2180512,
+    "seen": 1793916227.6768415,
+    "ast_hash": "5fb4aaaffbf2818ebc333381ea91d71d",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_45.jpg": {
+    "mtime": 1793875998.3632786,
+    "seen": 1793916227.6768415,
+    "ast_hash": "b0e102562bf3a8c90d59964a01acb721",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_47.jpg": {
+    "mtime": 1793875998.519776,
+    "seen": 1793916227.6768415,
+    "ast_hash": "33bb4e38c93bb94c4695e8161bc6de4d",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_49.jpg": {
+    "mtime": 1793875998.6400318,
+    "seen": 1793916227.6768415,
+    "ast_hash": "53dd949e7cb98df70a77606bfdbd32c8",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_51.jpg": {
+    "mtime": 1793875998.7771082,
+    "seen": 1793916227.6768415,
+    "ast_hash": "1ddabc1640289afc59985daaf2614e23",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_53.jpg": {
+    "mtime": 1793875998.9672542,
+    "seen": 1793916227.6768415,
+    "ast_hash": "9aaed15e31be07ac5f813c93c0069c8f",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_55.jpg": {
+    "mtime": 1793875999.1218028,
+    "seen": 1793916227.6768415,
+    "ast_hash": "e1fcc3ab4add3fe941a2bb789b669581",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_57.jpg": {
+    "mtime": 1793875999.2820702,
+    "seen": 1793916227.6768415,
+    "ast_hash": "1b1c55041d8aea1d232702910509b710",
+    "semantic_hash": ""
+  },
+  "arte/w1_walk_59.jpg": {
+    "mtime": 1793875999.448733,
+    "seen": 1793916227.6768415,
+    "ast_hash": "78be6e321e2eaabfc1c70e9c7b66c592",
+    "semantic_hash": ""
+  },
+  "arte/w2_00_15.jpg": {
+    "mtime": 1793873334.5899298,
+    "seen": 1793916227.6768415,
+    "ast_hash": "d9454122ecac2fbb531c6da69677532a",
+    "semantic_hash": ""
+  },
+  "arte/w2_01_00.jpg": {
+    "mtime": 1793873334.753282,
+    "seen": 1793916227.6768415,
+    "ast_hash": "c6ad4e796af012e7df302d44b289e3e5",
+    "semantic_hash": ""
+  },
+  "arte/w2_01_45.jpg": {
+    "mtime": 1793873335.0078135,
+    "seen": 1793916227.6768415,
+    "ast_hash": "ee6082d653275f728d1f54f866dfd749",
+    "semantic_hash": ""
+  },
+  "arte/w2_02_40.jpg": {
+    "mtime": 1793873335.185434,
+    "seen": 1793916227.6768415,
+    "ast_hash": "2ec01ea9a439ee8de43b26cc2a6f19f6",
+    "semantic_hash": ""
+  },
+  "godot/icon.png": {
+    "mtime": 1792158481.8433425,
+    "seen": 1793916227.6768415,
+    "ast_hash": "bba15c015cd91ffd39312bf6034b9539",
+    "semantic_hash": ""
+  },
+  "arte/sfx/sfx_catalog.json": {
+    "mtime": 1793983834.873354,
+    "seen": 1793983888.0025158,
+    "ast_hash": "86528d635654699d72eedd74be449e80",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ATTRIBUTIONS.md": {
+    "mtime": 1793983835.6903338,
+    "seen": 1793983888.0025158,
+    "ast_hash": "119cb1a1eaf786860d56cebe4ee09509",
+    "semantic_hash": ""
+  },
+  "arte/banners/itch_Cover_Image.png": {
+    "mtime": 1793971316.0948937,
+    "seen": 1793983888.0025158,
+    "ast_hash": "8ef5550109130dfe81adbf2f773fa946",
+    "semantic_hash": ""
+  },
+  "arte/banners/itch_Cover_Image2.png": {
+    "mtime": 1793971405.7427802,
+    "seen": 1793983888.0025158,
+    "ast_hash": "f6bfb944d2b7461e2321678b246fae02",
+    "semantic_hash": ""
+  },
+  "arte/cover_concept_1_hero.jpg": {
+    "mtime": 1793967942.6497395,
+    "seen": 1793983888.0025158,
+    "ast_hash": "bebbddb0478827569def60a6b43c0351",
+    "semantic_hash": ""
+  },
+  "arte/cover_concept_2_split.jpg": {
+    "mtime": 1793968013.7893157,
+    "seen": 1793983888.0025158,
+    "ast_hash": "dd157ee5a81799fe32bcdbe7e1db227c",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_camion_diesel_bocina.ogg": {
+    "mtime": 1793983568.701488,
+    "seen": 1793983888.0025158,
+    "ast_hash": "1d7734767f208d6dac608c5c66894206",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_camion_diesel_motor.ogg": {
+    "mtime": 1793983567.1676154,
+    "seen": 1793983888.0025158,
+    "ast_hash": "9535174bb65c200986f2586588918afe",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_carreta_mano_rodar.ogg": {
+    "mtime": 1793983563.2177515,
+    "seen": 1793983888.0025158,
+    "ast_hash": "8789aa28f8fd2c7a282ba20d7e5f8787",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_carro_caballos_marcha.ogg": {
+    "mtime": 1793983565.5401218,
+    "seen": 1793983888.0025158,
+    "ast_hash": "efac6880faa5b65a9d324f2d7c9cce8f",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_colono_carga_estibar.ogg": {
+    "mtime": 1793983561.584795,
+    "seen": 1793983888.0025158,
+    "ast_hash": "642b5c85aab4a5ec20ac279eb87ea5eb",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_colono_exodo.ogg": {
+    "mtime": 1793983805.4494338,
+    "seen": 1793983888.0025158,
+    "ast_hash": "dde13ee2daef8c4ab9c0328257fef004",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_colono_paso.ogg": {
+    "mtime": 1793983554.1944675,
+    "seen": 1793983888.0025158,
+    "ast_hash": "6650f7899bd70a56511cabbb58b2b00a",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_colono_paso_via.ogg": {
+    "mtime": 1793983555.4238248,
+    "seen": 1793983888.0025158,
+    "ast_hash": "3ccc74cbe511df6ad824f90406ca17e5",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_colono_queja.ogg": {
+    "mtime": 1793983558.287771,
+    "seen": 1793983888.0025158,
+    "ast_hash": "af7781c97ada41144ce603849608a9be",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_colono_saludo.ogg": {
+    "mtime": 1793983556.860664,
+    "seen": 1793983888.0025158,
+    "ast_hash": "7cd0bca473328bde52f52288d30b3157",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_dron_carga_vuelo.ogg": {
+    "mtime": 1793983570.4120412,
+    "seen": 1793983888.0025158,
+    "ast_hash": "37ad7449914ea0c0cdd72343bca6da13",
+    "semantic_hash": ""
+  },
+  "arte/sfx/colonos/sfx_trolebus_marcha.ogg": {
+    "mtime": 1793983572.0607357,
+    "seen": 1793983888.0025158,
+    "ast_hash": "c2006eab5ceb3c38f96cd06f1f1321ba",
+    "semantic_hash": ""
+  },
+  "arte/sfx/fluidos/sfx_acueducto_flujo.ogg": {
+    "mtime": 1793983821.9059951,
+    "seen": 1793983888.0025158,
+    "ast_hash": "f1b61dc3837191c59e0f192678c82809",
+    "semantic_hash": ""
+  },
+  "arte/sfx/fluidos/sfx_ambiente_cascada.ogg": {
+    "mtime": 1793983829.2778695,
+    "seen": 1793983888.0025158,
+    "ast_hash": "b99645ffb182b209a25b76792adea616",
+    "semantic_hash": ""
+  },
+  "arte/sfx/fluidos/sfx_canalizacion_conectar.ogg": {
+    "mtime": 1793983824.9864426,
+    "seen": 1793983888.0025158,
+    "ast_hash": "0cc2f66ef243a6fdbf95c4bfa0d72d70",
+    "semantic_hash": ""
+  },
+  "arte/sfx/fluidos/sfx_canalizacion_derrame.ogg": {
+    "mtime": 1793983827.8608177,
+    "seen": 1793983888.0025158,
+    "ast_hash": "1ec6f1866f5dd06f87a1b93b3475f2b5",
+    "semantic_hash": ""
+  },
+  "arte/sfx/fluidos/sfx_canalizacion_desconectar.ogg": {
+    "mtime": 1793983826.4115007,
+    "seen": 1793983888.0025158,
+    "ast_hash": "d87b134d6fe796ca05a4893857c7d5d0",
+    "semantic_hash": ""
+  },
+  "arte/sfx/fluidos/sfx_tuberia_presion.ogg": {
+    "mtime": 1793983823.5209696,
+    "seen": 1793983888.0025158,
+    "ast_hash": "c9b8184331300b594f542d7524273c25",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_accion_bloqueada.ogg": {
+    "mtime": 1793983449.8975942,
+    "seen": 1793983888.0025158,
+    "ast_hash": "aa3c570cad6adbc0457770b3eb60350a",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_arbol_derribo.ogg": {
+    "mtime": 1793983436.7435598,
+    "seen": 1793983888.0025158,
+    "ast_hash": "c936a6435f49ed3367db496a4e8e9ab2",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_bloque_rotura_piedra.ogg": {
+    "mtime": 1793983433.8886003,
+    "seen": 1793983888.0025158,
+    "ast_hash": "9f2bcaac647b91cd485bce29c281d536",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_colocar_madera.ogg": {
+    "mtime": 1793983445.4804325,
+    "seen": 1793983888.0025158,
+    "ast_hash": "8f9387d52bb5d647d661cb5b4cd62992",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_colocar_metal.ogg": {
+    "mtime": 1793983447.158685,
+    "seen": 1793983888.0025158,
+    "ast_hash": "a46ca3083b2c85a550e03625459392ed",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_colocar_piedra.ogg": {
+    "mtime": 1793983444.0498924,
+    "seen": 1793983888.0025158,
+    "ast_hash": "5721d60d6ea20bdba483bdc8b1b236d8",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_colocar_tierra.ogg": {
+    "mtime": 1793983442.821137,
+    "seen": 1793983888.0025158,
+    "ast_hash": "987fbf3743d72aaf799c9e6dde00bae2",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_colocar_vidrio.ogg": {
+    "mtime": 1793983448.6542501,
+    "seen": 1793983888.0025158,
+    "ast_hash": "f1653da4ef74d211aeba71f2bfab0731",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_cosecha_frutos.ogg": {
+    "mtime": 1793983439.8796785,
+    "seen": 1793983888.0025158,
+    "ast_hash": "500cbec9ea77ba6dce06469faf0cfe0d",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_follaje_caida.ogg": {
+    "mtime": 1793983438.375477,
+    "seen": 1793983888.0025158,
+    "ast_hash": "fa20f085c27c4658a51ee5346e2eef6c",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_hacha_impacto.ogg": {
+    "mtime": 1793983435.3088107,
+    "seen": 1793983888.0025158,
+    "ast_hash": "11010ae99805d001465dd8255ddc7475",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_mazo_demolicion.ogg": {
+    "mtime": 1793983441.5776896,
+    "seen": 1793983888.0025158,
+    "ast_hash": "f742bf0e4bb7164a9c66c968625def39",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_pala_extraer.ogg": {
+    "mtime": 1793983429.7436204,
+    "seen": 1793983888.0025158,
+    "ast_hash": "8d1fee28efdcd2dfe77de7745fead190",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_pala_impacto.ogg": {
+    "mtime": 1793983427.9769096,
+    "seen": 1793983888.0025158,
+    "ast_hash": "8d1fee28efdcd2dfe77de7745fead190",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_pico_metal.ogg": {
+    "mtime": 1793983432.2407694,
+    "seen": 1793983888.0025158,
+    "ast_hash": "9ca64a1034f988a246f20a1520169a82",
+    "semantic_hash": ""
+  },
+  "arte/sfx/herramientas/sfx_pico_piedra.ogg": {
+    "mtime": 1793983430.983971,
+    "seen": 1793983888.0025158,
+    "ast_hash": "0ffb9a87536a2bd98743b45a0d5f2771",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_almacen_industrial.ogg": {
+    "mtime": 1793983818.6562295,
+    "seen": 1793983888.0025158,
+    "ast_hash": "52ccb633e3fec81701c3f59fb507277c",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_aserradero.ogg": {
+    "mtime": 1793983585.5176866,
+    "seen": 1793983888.0025158,
+    "ast_hash": "e8138b8526390e545b7a2bc217c8aa8d",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_carbonera.ogg": {
+    "mtime": 1793983583.1644835,
+    "seen": 1793983888.0025158,
+    "ast_hash": "c3a4920008f2b1dd7c73e0e985c6d8dd",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_central_termoelectrica.ogg": {
+    "mtime": 1793983814.2785766,
+    "seen": 1793983888.0025158,
+    "ast_hash": "c803c266721dbeb0287f79ba3c1d87b1",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_centro_extraccion.ogg": {
+    "mtime": 1793983817.1571386,
+    "seen": 1793983888.0025158,
+    "ast_hash": "bdc5ce5e5b7f38ea4f72d373a773bb43",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_escuela_especialistas.ogg": {
+    "mtime": 1793983592.1459193,
+    "seen": 1793983888.0025158,
+    "ast_hash": "8ee2ff12fa0e7fdd57eb99aa86bb432a",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_escuela_tecnica.ogg": {
+    "mtime": 1793983590.4826155,
+    "seen": 1793983888.0025158,
+    "ast_hash": "0d05ce008f4f5a49d9849699eea1d4dd",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_estacion_bombeo.ogg": {
+    "mtime": 1793983815.689772,
+    "seen": 1793983888.0025158,
+    "ast_hash": "e924a16a61de8fc4332be182c674945b",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_fabrica_bloques.ogg": {
+    "mtime": 1793983808.484916,
+    "seen": 1793983888.0025158,
+    "ast_hash": "063c5a51351b1e150f3316c6fc94eb88",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_productor_combustible.ogg": {
+    "mtime": 1793983812.8211007,
+    "seen": 1793983888.0035148,
+    "ast_hash": "7dd62a09838774b5131fc7ed5b471cca",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_refineria_petrolera.ogg": {
+    "mtime": 1793983811.1784546,
+    "seen": 1793983888.0035148,
+    "ast_hash": "0792e8822990dcc173c6d31ca8758841",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_siderurgica.ogg": {
+    "mtime": 1793983579.4199924,
+    "seen": 1793983888.0035148,
+    "ast_hash": "5e118d783fb34e12c0663f49305b1d77",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_taller_transporte.ogg": {
+    "mtime": 1793983820.2828987,
+    "seen": 1793983888.0035148,
+    "ast_hash": "be5dfbdfd6b0429cb16d8b5ec791a9a1",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_tierras_raras.ogg": {
+    "mtime": 1793983581.3236823,
+    "seen": 1793983888.0035148,
+    "ast_hash": "a712fc8885ba62288718a115c506deea",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_universidad.ogg": {
+    "mtime": 1793983593.8066585,
+    "seen": 1793983888.0035148,
+    "ast_hash": "2c6da19c92a7f6f607e85e5d1f03d312",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_ind_vidriera.ogg": {
+    "mtime": 1793983588.84398,
+    "seen": 1793983888.0035148,
+    "ast_hash": "4e6b337e64386483df5784397bd28c8e",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_puesto_caza.ogg": {
+    "mtime": 1793983576.2325087,
+    "seen": 1793983888.0035148,
+    "ast_hash": "cb0a30ac55fd47e5fa80457777be429f",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_puesto_maderero.ogg": {
+    "mtime": 1793983573.5364122,
+    "seen": 1793983888.0035148,
+    "ast_hash": "563f228f1f815007ddd1b0d4ec7e5964",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_puesto_mina.ogg": {
+    "mtime": 1793983574.9888823,
+    "seen": 1793983888.0035148,
+    "ast_hash": "d0070a726ea36ddc26a98d073db605ee",
+    "semantic_hash": ""
+  },
+  "arte/sfx/industrias/sfx_puesto_pesca.ogg": {
+    "mtime": 1793983806.8895764,
+    "seen": 1793983888.0035148,
+    "ast_hash": "07cca691831fd3ad2042b7915495a3c0",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_ahogo_estertor.ogg": {
+    "mtime": 1793983552.4560907,
+    "seen": 1793983888.0035148,
+    "ast_hash": "637a4214b9cd492f0b7c4dff1c8f9547",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_aterrizaje_fuerte.ogg": {
+    "mtime": 1793983276.1246002,
+    "seen": 1793983888.0035148,
+    "ast_hash": "987fbf3743d72aaf799c9e6dde00bae2",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_aterrizaje_suave.ogg": {
+    "mtime": 1793983418.6588295,
+    "seen": 1793983888.0035148,
+    "ast_hash": "987fbf3743d72aaf799c9e6dde00bae2",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_entrar_agua.ogg": {
+    "mtime": 1793983420.102325,
+    "seen": 1793983888.0035148,
+    "ast_hash": "14d5dde84442ee3ded723fd37c895616",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_nado_brazada.ogg": {
+    "mtime": 1793983423.914511,
+    "seen": 1793983888.0035148,
+    "ast_hash": "98525bb72df0e83d084d17ec48ce5a34",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_nado_sumergido.ogg": {
+    "mtime": 1793983425.386803,
+    "seen": 1793983888.0035148,
+    "ast_hash": "df261950590fec2eaa11a4ddeb33d031",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_paso_crudo.ogg": {
+    "mtime": 1793983279.43606,
+    "seen": 1793983888.0035148,
+    "ast_hash": "9f7530bf1ad841b74bc21861ae1f0190",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_paso_hierba.ogg": {
+    "mtime": 1793983270.291451,
+    "seen": 1793983888.0035148,
+    "ast_hash": "9d0a16278452ddbe030fa649ef1e972c",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_paso_madera.ogg": {
+    "mtime": 1793983272.2196639,
+    "seen": 1793983888.0035148,
+    "ast_hash": "af7781c97ada41144ce603849608a9be",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_paso_metal.ogg": {
+    "mtime": 1793983273.475503,
+    "seen": 1793983888.0035148,
+    "ast_hash": "314d771b207d39b5b08eac262631af64",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_paso_piedra.ogg": {
+    "mtime": 1793983414.5156896,
+    "seen": 1793983888.0035148,
+    "ast_hash": "d3b128a4d10d4f65f64721fc358be048",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_paso_via.ogg": {
+    "mtime": 1793983415.968569,
+    "seen": 1793983888.0035148,
+    "ast_hash": "4819ee2183e87a768cd6875c9d0460a8",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_salir_agua.ogg": {
+    "mtime": 1793983422.0287147,
+    "seen": 1793983888.0035148,
+    "ast_hash": "0863bd77870b510773859a98c8951bee",
+    "semantic_hash": ""
+  },
+  "arte/sfx/locomocion/sfx_avatar_salto.ogg": {
+    "mtime": 1793983417.416099,
+    "seen": 1793983888.0035148,
+    "ast_hash": "85551fdd1fdc6a2aedbb0ad323912b89",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_baul_abrir.ogg": {
+    "mtime": 1793983451.500725,
+    "seen": 1793983888.0035148,
+    "ast_hash": "d09e9271be0cdafbd8013f96c09e4f5d",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_baul_cerrar.ogg": {
+    "mtime": 1793983452.9335291,
+    "seen": 1793983888.0035148,
+    "ast_hash": "bb500ac9826fcee08ed3d22f55c5d1ba",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_cama_acostarse.ogg": {
+    "mtime": 1793983454.5786483,
+    "seen": 1793983888.0035148,
+    "ast_hash": "38cddc8aed3c8e4ef5cb1f18071c1eb0",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_lampara_apagar.ogg": {
+    "mtime": 1793983288.328189,
+    "seen": 1793983888.0035148,
+    "ast_hash": "36d22def395eb85dd2c44479b3b82182",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_lampara_bateria_baja.ogg": {
+    "mtime": 1793983458.9177296,
+    "seen": 1793983888.0035148,
+    "ast_hash": "20879b4ce613ca8e5ab60505beac98e5",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_lampara_encender.ogg": {
+    "mtime": 1793983457.4300072,
+    "seen": 1793983888.0035148,
+    "ast_hash": "75ef3617b3aacd4fb3c05643c6303807",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_mesa_estudio_hojear.ogg": {
+    "mtime": 1793983456.0066204,
+    "seen": 1793983888.0035148,
+    "ast_hash": "eaddb8b5397eb5db70abec606d3b32f5",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_puerta_abrir.ogg": {
+    "mtime": 1793983281.432427,
+    "seen": 1793983888.0035148,
+    "ast_hash": "0af94748e176be2faa6c37335bfa89a7",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_puerta_cerrar.ogg": {
+    "mtime": 1793983282.8715212,
+    "seen": 1793983888.0035148,
+    "ast_hash": "216032050f17468caa2d575ea05b7395",
+    "semantic_hash": ""
+  },
+  "arte/sfx/mobiliario/sfx_puerta_trabada.ogg": {
+    "mtime": 1793983284.4627783,
+    "seen": 1793983888.0035148,
+    "ast_hash": "c5be8aa49614778eb358685c9fa63e83",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_acordeon_colapsar.ogg": {
+    "mtime": 1793983630.0042846,
+    "seen": 1793983888.0035148,
+    "ast_hash": "20d347b0c2520d69d159b47385496c39",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_avatar_muerte.ogg": {
+    "mtime": 1793983636.1728866,
+    "seen": 1793983888.0035148,
+    "ast_hash": "d5bf9f36bdc6b578bb6e712102454958",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_boton_cancelar.ogg": {
+    "mtime": 1793983461.5710802,
+    "seen": 1793983888.0035148,
+    "ast_hash": "702a5b82007ea683d7181f478042e974",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_boton_clic.ogg": {
+    "mtime": 1793983460.14586,
+    "seen": 1793983888.0035148,
+    "ast_hash": "994e27d7207bf5fb3f3bcd5f3fcad3f6",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_camara_a_avatar.ogg": {
+    "mtime": 1793983466.2301173,
+    "seen": 1793983888.0035148,
+    "ast_hash": "020e65ece911066b20013a3d6b9e9908",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_camara_a_cenital.ogg": {
+    "mtime": 1793983464.7389548,
+    "seen": 1793983888.0035148,
+    "ast_hash": "a2c07372ff82283dd7b0e97afb250643",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_hotbar_slot.ogg": {
+    "mtime": 1793983467.4746437,
+    "seen": 1793983888.0035148,
+    "ast_hash": "485d61105294b8394c34dd7e9a7794c0",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_hover.ogg": {
+    "mtime": 1793983463.0965374,
+    "seen": 1793983888.0035148,
+    "ast_hash": "a85ecee50bfedcfcdcadb0a5e212b59b",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_investigacion_completada.ogg": {
+    "mtime": 1793983477.9950402,
+    "seen": 1793983888.0035148,
+    "ast_hash": "de02933640c903ebf921de3a1878e5a9",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_notificacion_alerta.ogg": {
+    "mtime": 1793983632.8903458,
+    "seen": 1793983888.0035148,
+    "ast_hash": "8dbdd062a311ae04a7c9e4dc2246ef0b",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_notificacion_info.ogg": {
+    "mtime": 1793983631.4596894,
+    "seen": 1793983888.0035148,
+    "ast_hash": "8f1db96c40532883090f3edfb34632cf",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_reloj_nuevo_dia.ogg": {
+    "mtime": 1793983634.5254152,
+    "seen": 1793983888.0035148,
+    "ast_hash": "b4b0bb6172466c4b6b6d61fa67eaf3a2",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_slider_mover.ogg": {
+    "mtime": 1793983628.7046099,
+    "seen": 1793983888.0035148,
+    "ast_hash": "1fca8bc0b9a163a08b121ad9293b6b8b",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_ventana_abrir.ogg": {
+    "mtime": 1793983468.9637432,
+    "seen": 1793983888.0035148,
+    "ast_hash": "8163c54b4ce98af27d96fb626ef64644",
+    "semantic_hash": ""
+  },
+  "arte/sfx/ui/sfx_ui_ventana_cerrar.ogg": {
+    "mtime": 1793983627.452736,
+    "seen": 1793983888.0035148,
+    "ast_hash": "02c5a5ea7bf37f4098ed412e0a9c82a0",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_blueprint_estampar.ogg": {
+    "mtime": 1793983833.4074528,
+    "seen": 1793983888.0035148,
+    "ast_hash": "b8cdf9c5f45822ab66ddf28c531856bf",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_blueprint_invalido.ogg": {
+    "mtime": 1793983621.8539605,
+    "seen": 1793983888.0035148,
+    "ast_hash": "a842eb33d2b270f5d84e54d049831b75",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_blueprint_rotar.ogg": {
+    "mtime": 1793983620.3796089,
+    "seen": 1793983888.0035148,
+    "ast_hash": "7df53908321ffa8608cff54dc4ff78dc",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_obra_paso_surtido.ogg": {
+    "mtime": 1793983626.2075853,
+    "seen": 1793983888.0035148,
+    "ast_hash": "f73077dbadd06c5fa73a5abccf76b2c7",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_via_completar_tramo.ogg": {
+    "mtime": 1793983830.5218172,
+    "seen": 1793983888.0035148,
+    "ast_hash": "186f84924a2fa471683bcbc7f24f176c",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_via_demoler_tramo.ogg": {
+    "mtime": 1793983831.968505,
+    "seen": 1793983888.0035148,
+    "ast_hash": "4c1e002aa80e156f43e7b9052735fb2e",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_via_trazar_nodo.ogg": {
+    "mtime": 1793983613.6118574,
+    "seen": 1793983888.0035148,
+    "ast_hash": "ddc0d1b0af366f2cfd6767987c66db5f",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_zona_desmarcar.ogg": {
+    "mtime": 1793983834.8721752,
+    "seen": 1793983888.0035148,
+    "ast_hash": "3106fc64cda13d96aacbcffaa9d1ddf6",
+    "semantic_hash": ""
+  },
+  "arte/sfx/urbanismo/sfx_zona_marcar.ogg": {
+    "mtime": 1793983623.0871704,
+    "seen": 1793983888.0035148,
+    "ast_hash": "4c8d14490bfd3fe98ad061f71484c605",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/sfx_catalog.json": {
+    "mtime": 1793983834.873354,
+    "seen": 1794000253.6908307,
+    "ast_hash": "86528d635654699d72eedd74be449e80",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ATTRIBUTIONS.md": {
+    "mtime": 1793983835.6903338,
+    "seen": 1794000253.6908307,
+    "ast_hash": "119cb1a1eaf786860d56cebe4ee09509",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/cierre_puerta_baul.mp3": {
+    "mtime": 1791196851.0427594,
+    "seen": 1794000253.6918423,
+    "ast_hash": "b16501654f048e92b7b56e69ad39c9ac",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colocar_bloque.mp3": {
+    "mtime": 1791196851.0452428,
+    "seen": 1794000253.6918423,
+    "ast_hash": "30e033b96f4291a77884fe38178802c8",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_camion_diesel_bocina.ogg": {
+    "mtime": 1793983568.701488,
+    "seen": 1794000253.6918423,
+    "ast_hash": "1d7734767f208d6dac608c5c66894206",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_camion_diesel_motor.ogg": {
+    "mtime": 1793983567.1676154,
+    "seen": 1794000253.6918423,
+    "ast_hash": "9535174bb65c200986f2586588918afe",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_carreta_mano_rodar.ogg": {
+    "mtime": 1793983563.2177515,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8789aa28f8fd2c7a282ba20d7e5f8787",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_carro_caballos_marcha.ogg": {
+    "mtime": 1793983565.5401218,
+    "seen": 1794000253.6918423,
+    "ast_hash": "efac6880faa5b65a9d324f2d7c9cce8f",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_colono_carga_estibar.ogg": {
+    "mtime": 1793983561.584795,
+    "seen": 1794000253.6918423,
+    "ast_hash": "642b5c85aab4a5ec20ac279eb87ea5eb",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_colono_exodo.ogg": {
+    "mtime": 1793983805.4494338,
+    "seen": 1794000253.6918423,
+    "ast_hash": "dde13ee2daef8c4ab9c0328257fef004",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_colono_paso.ogg": {
+    "mtime": 1793983554.1944675,
+    "seen": 1794000253.6918423,
+    "ast_hash": "6650f7899bd70a56511cabbb58b2b00a",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_colono_paso_via.ogg": {
+    "mtime": 1793983555.4238248,
+    "seen": 1794000253.6918423,
+    "ast_hash": "3ccc74cbe511df6ad824f90406ca17e5",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_colono_queja.ogg": {
+    "mtime": 1793983558.287771,
+    "seen": 1794000253.6918423,
+    "ast_hash": "af7781c97ada41144ce603849608a9be",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_colono_saludo.ogg": {
+    "mtime": 1793983556.860664,
+    "seen": 1794000253.6918423,
+    "ast_hash": "7cd0bca473328bde52f52288d30b3157",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_dron_carga_vuelo.ogg": {
+    "mtime": 1793983570.4120412,
+    "seen": 1794000253.6918423,
+    "ast_hash": "37ad7449914ea0c0cdd72343bca6da13",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/colonos/sfx_trolebus_marcha.ogg": {
+    "mtime": 1793983572.0607357,
+    "seen": 1794000253.6918423,
+    "ast_hash": "c2006eab5ceb3c38f96cd06f1f1321ba",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/fluidos/sfx_acueducto_flujo.ogg": {
+    "mtime": 1793983821.9059951,
+    "seen": 1794000253.6918423,
+    "ast_hash": "f1b61dc3837191c59e0f192678c82809",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/fluidos/sfx_ambiente_cascada.ogg": {
+    "mtime": 1793983829.2778695,
+    "seen": 1794000253.6918423,
+    "ast_hash": "b99645ffb182b209a25b76792adea616",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/fluidos/sfx_canalizacion_conectar.ogg": {
+    "mtime": 1793983824.9864426,
+    "seen": 1794000253.6918423,
+    "ast_hash": "0cc2f66ef243a6fdbf95c4bfa0d72d70",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/fluidos/sfx_canalizacion_derrame.ogg": {
+    "mtime": 1793983827.8608177,
+    "seen": 1794000253.6918423,
+    "ast_hash": "1ec6f1866f5dd06f87a1b93b3475f2b5",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/fluidos/sfx_canalizacion_desconectar.ogg": {
+    "mtime": 1793983826.4115007,
+    "seen": 1794000253.6918423,
+    "ast_hash": "d87b134d6fe796ca05a4893857c7d5d0",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/fluidos/sfx_tuberia_presion.ogg": {
+    "mtime": 1793983823.5209696,
+    "seen": 1794000253.6918423,
+    "ast_hash": "c9b8184331300b594f542d7524273c25",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_accion_bloqueada.ogg": {
+    "mtime": 1793983449.8975942,
+    "seen": 1794000253.6918423,
+    "ast_hash": "aa3c570cad6adbc0457770b3eb60350a",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_arbol_derribo.ogg": {
+    "mtime": 1793983436.7435598,
+    "seen": 1794000253.6918423,
+    "ast_hash": "c936a6435f49ed3367db496a4e8e9ab2",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_bloque_rotura_piedra.ogg": {
+    "mtime": 1793983433.8886003,
+    "seen": 1794000253.6918423,
+    "ast_hash": "9f2bcaac647b91cd485bce29c281d536",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_colocar_madera.ogg": {
+    "mtime": 1793983445.4804325,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8f9387d52bb5d647d661cb5b4cd62992",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_colocar_metal.ogg": {
+    "mtime": 1793983447.158685,
+    "seen": 1794000253.6918423,
+    "ast_hash": "a46ca3083b2c85a550e03625459392ed",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_colocar_piedra.ogg": {
+    "mtime": 1793983444.0498924,
+    "seen": 1794000253.6918423,
+    "ast_hash": "5721d60d6ea20bdba483bdc8b1b236d8",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_colocar_tierra.ogg": {
+    "mtime": 1793983442.821137,
+    "seen": 1794000253.6918423,
+    "ast_hash": "987fbf3743d72aaf799c9e6dde00bae2",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_colocar_vidrio.ogg": {
+    "mtime": 1793983448.6542501,
+    "seen": 1794000253.6918423,
+    "ast_hash": "f1653da4ef74d211aeba71f2bfab0731",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_cosecha_frutos.ogg": {
+    "mtime": 1793983439.8796785,
+    "seen": 1794000253.6918423,
+    "ast_hash": "500cbec9ea77ba6dce06469faf0cfe0d",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_follaje_caida.ogg": {
+    "mtime": 1793983438.375477,
+    "seen": 1794000253.6918423,
+    "ast_hash": "fa20f085c27c4658a51ee5346e2eef6c",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_hacha_impacto.ogg": {
+    "mtime": 1793983435.3088107,
+    "seen": 1794000253.6918423,
+    "ast_hash": "11010ae99805d001465dd8255ddc7475",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_mazo_demolicion.ogg": {
+    "mtime": 1793983441.5776896,
+    "seen": 1794000253.6918423,
+    "ast_hash": "f742bf0e4bb7164a9c66c968625def39",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_pala_extraer.ogg": {
+    "mtime": 1793983429.7436204,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8d1fee28efdcd2dfe77de7745fead190",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_pala_impacto.ogg": {
+    "mtime": 1793983427.9769096,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8d1fee28efdcd2dfe77de7745fead190",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_pico_metal.ogg": {
+    "mtime": 1793983432.2407694,
+    "seen": 1794000253.6918423,
+    "ast_hash": "9ca64a1034f988a246f20a1520169a82",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/herramientas/sfx_pico_piedra.ogg": {
+    "mtime": 1793983430.983971,
+    "seen": 1794000253.6918423,
+    "ast_hash": "0ffb9a87536a2bd98743b45a0d5f2771",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_almacen_industrial.ogg": {
+    "mtime": 1793983818.6562295,
+    "seen": 1794000253.6918423,
+    "ast_hash": "52ccb633e3fec81701c3f59fb507277c",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_aserradero.ogg": {
+    "mtime": 1793983585.5176866,
+    "seen": 1794000253.6918423,
+    "ast_hash": "e8138b8526390e545b7a2bc217c8aa8d",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_carbonera.ogg": {
+    "mtime": 1793983583.1644835,
+    "seen": 1794000253.6918423,
+    "ast_hash": "c3a4920008f2b1dd7c73e0e985c6d8dd",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_central_termoelectrica.ogg": {
+    "mtime": 1793983814.2785766,
+    "seen": 1794000253.6918423,
+    "ast_hash": "c803c266721dbeb0287f79ba3c1d87b1",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_centro_extraccion.ogg": {
+    "mtime": 1793983817.1571386,
+    "seen": 1794000253.6918423,
+    "ast_hash": "bdc5ce5e5b7f38ea4f72d373a773bb43",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_escuela_especialistas.ogg": {
+    "mtime": 1793983592.1459193,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8ee2ff12fa0e7fdd57eb99aa86bb432a",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_escuela_tecnica.ogg": {
+    "mtime": 1793983590.4826155,
+    "seen": 1794000253.6918423,
+    "ast_hash": "0d05ce008f4f5a49d9849699eea1d4dd",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_estacion_bombeo.ogg": {
+    "mtime": 1793983815.689772,
+    "seen": 1794000253.6918423,
+    "ast_hash": "e924a16a61de8fc4332be182c674945b",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_fabrica_bloques.ogg": {
+    "mtime": 1793983808.484916,
+    "seen": 1794000253.6918423,
+    "ast_hash": "063c5a51351b1e150f3316c6fc94eb88",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_productor_combustible.ogg": {
+    "mtime": 1793983812.8211007,
+    "seen": 1794000253.6918423,
+    "ast_hash": "7dd62a09838774b5131fc7ed5b471cca",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_refineria_petrolera.ogg": {
+    "mtime": 1793983811.1784546,
+    "seen": 1794000253.6918423,
+    "ast_hash": "0792e8822990dcc173c6d31ca8758841",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_siderurgica.ogg": {
+    "mtime": 1793983579.4199924,
+    "seen": 1794000253.6918423,
+    "ast_hash": "5e118d783fb34e12c0663f49305b1d77",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_taller_transporte.ogg": {
+    "mtime": 1793983820.2828987,
+    "seen": 1794000253.6918423,
+    "ast_hash": "be5dfbdfd6b0429cb16d8b5ec791a9a1",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_tierras_raras.ogg": {
+    "mtime": 1793983581.3236823,
+    "seen": 1794000253.6918423,
+    "ast_hash": "a712fc8885ba62288718a115c506deea",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_universidad.ogg": {
+    "mtime": 1793983593.8066585,
+    "seen": 1794000253.6918423,
+    "ast_hash": "2c6da19c92a7f6f607e85e5d1f03d312",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_ind_vidriera.ogg": {
+    "mtime": 1793983588.84398,
+    "seen": 1794000253.6918423,
+    "ast_hash": "4e6b337e64386483df5784397bd28c8e",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_puesto_caza.ogg": {
+    "mtime": 1793983576.2325087,
+    "seen": 1794000253.6918423,
+    "ast_hash": "cb0a30ac55fd47e5fa80457777be429f",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_puesto_maderero.ogg": {
+    "mtime": 1793983573.5364122,
+    "seen": 1794000253.6918423,
+    "ast_hash": "563f228f1f815007ddd1b0d4ec7e5964",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_puesto_mina.ogg": {
+    "mtime": 1793983574.9888823,
+    "seen": 1794000253.6918423,
+    "ast_hash": "d0070a726ea36ddc26a98d073db605ee",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/industrias/sfx_puesto_pesca.ogg": {
+    "mtime": 1793983806.8895764,
+    "seen": 1794000253.6918423,
+    "ast_hash": "07cca691831fd3ad2042b7915495a3c0",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_ahogo_estertor.ogg": {
+    "mtime": 1793983552.4560907,
+    "seen": 1794000253.6918423,
+    "ast_hash": "637a4214b9cd492f0b7c4dff1c8f9547",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_aterrizaje_fuerte.ogg": {
+    "mtime": 1793983276.1246002,
+    "seen": 1794000253.6918423,
+    "ast_hash": "987fbf3743d72aaf799c9e6dde00bae2",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_aterrizaje_suave.ogg": {
+    "mtime": 1793983418.6588295,
+    "seen": 1794000253.6918423,
+    "ast_hash": "987fbf3743d72aaf799c9e6dde00bae2",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_entrar_agua.ogg": {
+    "mtime": 1793983420.102325,
+    "seen": 1794000253.6918423,
+    "ast_hash": "14d5dde84442ee3ded723fd37c895616",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_nado_brazada.ogg": {
+    "mtime": 1793983423.914511,
+    "seen": 1794000253.6918423,
+    "ast_hash": "98525bb72df0e83d084d17ec48ce5a34",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_nado_sumergido.ogg": {
+    "mtime": 1793983425.386803,
+    "seen": 1794000253.6918423,
+    "ast_hash": "df261950590fec2eaa11a4ddeb33d031",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_paso_crudo.ogg": {
+    "mtime": 1793983279.43606,
+    "seen": 1794000253.6918423,
+    "ast_hash": "9f7530bf1ad841b74bc21861ae1f0190",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_paso_hierba.ogg": {
+    "mtime": 1793983270.291451,
+    "seen": 1794000253.6918423,
+    "ast_hash": "9d0a16278452ddbe030fa649ef1e972c",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_paso_madera.ogg": {
+    "mtime": 1793983272.2196639,
+    "seen": 1794000253.6918423,
+    "ast_hash": "af7781c97ada41144ce603849608a9be",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_paso_metal.ogg": {
+    "mtime": 1793983273.475503,
+    "seen": 1794000253.6918423,
+    "ast_hash": "314d771b207d39b5b08eac262631af64",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_paso_piedra.ogg": {
+    "mtime": 1793983414.5156896,
+    "seen": 1794000253.6918423,
+    "ast_hash": "d3b128a4d10d4f65f64721fc358be048",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_paso_via.ogg": {
+    "mtime": 1793983415.968569,
+    "seen": 1794000253.6918423,
+    "ast_hash": "4819ee2183e87a768cd6875c9d0460a8",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_salir_agua.ogg": {
+    "mtime": 1793983422.0287147,
+    "seen": 1794000253.6918423,
+    "ast_hash": "0863bd77870b510773859a98c8951bee",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/locomocion/sfx_avatar_salto.ogg": {
+    "mtime": 1793983417.416099,
+    "seen": 1794000253.6918423,
+    "ast_hash": "85551fdd1fdc6a2aedbb0ad323912b89",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/minar_tierra.mp3": {
+    "mtime": 1791196851.050697,
+    "seen": 1794000253.6918423,
+    "ast_hash": "5462c9bcf5d680a19ba2c7c825c15241",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_baul_abrir.ogg": {
+    "mtime": 1793983451.500725,
+    "seen": 1794000253.6918423,
+    "ast_hash": "d09e9271be0cdafbd8013f96c09e4f5d",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_baul_cerrar.ogg": {
+    "mtime": 1793983452.9335291,
+    "seen": 1794000253.6918423,
+    "ast_hash": "bb500ac9826fcee08ed3d22f55c5d1ba",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_cama_acostarse.ogg": {
+    "mtime": 1793983454.5786483,
+    "seen": 1794000253.6918423,
+    "ast_hash": "38cddc8aed3c8e4ef5cb1f18071c1eb0",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_lampara_apagar.ogg": {
+    "mtime": 1793983288.328189,
+    "seen": 1794000253.6918423,
+    "ast_hash": "36d22def395eb85dd2c44479b3b82182",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_lampara_bateria_baja.ogg": {
+    "mtime": 1793983458.9177296,
+    "seen": 1794000253.6918423,
+    "ast_hash": "20879b4ce613ca8e5ab60505beac98e5",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_lampara_encender.ogg": {
+    "mtime": 1793983457.4300072,
+    "seen": 1794000253.6918423,
+    "ast_hash": "75ef3617b3aacd4fb3c05643c6303807",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_mesa_estudio_hojear.ogg": {
+    "mtime": 1793983456.0066204,
+    "seen": 1794000253.6918423,
+    "ast_hash": "eaddb8b5397eb5db70abec606d3b32f5",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_puerta_abrir.ogg": {
+    "mtime": 1793983281.432427,
+    "seen": 1794000253.6918423,
+    "ast_hash": "0af94748e176be2faa6c37335bfa89a7",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_puerta_cerrar.ogg": {
+    "mtime": 1793983282.8715212,
+    "seen": 1794000253.6918423,
+    "ast_hash": "216032050f17468caa2d575ea05b7395",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/mobiliario/sfx_puerta_trabada.ogg": {
+    "mtime": 1793983284.4627783,
+    "seen": 1794000253.6918423,
+    "ast_hash": "c5be8aa49614778eb358685c9fa63e83",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_acordeon_colapsar.ogg": {
+    "mtime": 1793983630.0042846,
+    "seen": 1794000253.6918423,
+    "ast_hash": "20d347b0c2520d69d159b47385496c39",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_avatar_muerte.ogg": {
+    "mtime": 1793983636.1728866,
+    "seen": 1794000253.6918423,
+    "ast_hash": "d5bf9f36bdc6b578bb6e712102454958",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_boton_cancelar.ogg": {
+    "mtime": 1793983461.5710802,
+    "seen": 1794000253.6918423,
+    "ast_hash": "702a5b82007ea683d7181f478042e974",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_boton_clic.ogg": {
+    "mtime": 1793983460.14586,
+    "seen": 1794000253.6918423,
+    "ast_hash": "994e27d7207bf5fb3f3bcd5f3fcad3f6",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_camara_a_avatar.ogg": {
+    "mtime": 1793983466.2301173,
+    "seen": 1794000253.6918423,
+    "ast_hash": "020e65ece911066b20013a3d6b9e9908",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_camara_a_cenital.ogg": {
+    "mtime": 1793983464.7389548,
+    "seen": 1794000253.6918423,
+    "ast_hash": "a2c07372ff82283dd7b0e97afb250643",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_hotbar_slot.ogg": {
+    "mtime": 1793983467.4746437,
+    "seen": 1794000253.6918423,
+    "ast_hash": "485d61105294b8394c34dd7e9a7794c0",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_hover.ogg": {
+    "mtime": 1793983463.0965374,
+    "seen": 1794000253.6918423,
+    "ast_hash": "a85ecee50bfedcfcdcadb0a5e212b59b",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_investigacion_completada.ogg": {
+    "mtime": 1793983477.9950402,
+    "seen": 1794000253.6918423,
+    "ast_hash": "de02933640c903ebf921de3a1878e5a9",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_notificacion_alerta.ogg": {
+    "mtime": 1793983632.8903458,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8dbdd062a311ae04a7c9e4dc2246ef0b",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_notificacion_info.ogg": {
+    "mtime": 1793983631.4596894,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8f1db96c40532883090f3edfb34632cf",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_reloj_nuevo_dia.ogg": {
+    "mtime": 1793983634.5254152,
+    "seen": 1794000253.6918423,
+    "ast_hash": "b4b0bb6172466c4b6b6d61fa67eaf3a2",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_slider_mover.ogg": {
+    "mtime": 1793983628.7046099,
+    "seen": 1794000253.6918423,
+    "ast_hash": "1fca8bc0b9a163a08b121ad9293b6b8b",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_ventana_abrir.ogg": {
+    "mtime": 1793983468.9637432,
+    "seen": 1794000253.6918423,
+    "ast_hash": "8163c54b4ce98af27d96fb626ef64644",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/ui/sfx_ui_ventana_cerrar.ogg": {
+    "mtime": 1793983627.452736,
+    "seen": 1794000253.6918423,
+    "ast_hash": "02c5a5ea7bf37f4098ed412e0a9c82a0",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_blueprint_estampar.ogg": {
+    "mtime": 1793983833.4074528,
+    "seen": 1794000253.6918423,
+    "ast_hash": "b8cdf9c5f45822ab66ddf28c531856bf",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_blueprint_invalido.ogg": {
+    "mtime": 1793983621.8539605,
+    "seen": 1794000253.6918423,
+    "ast_hash": "a842eb33d2b270f5d84e54d049831b75",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_blueprint_rotar.ogg": {
+    "mtime": 1793983620.3796089,
+    "seen": 1794000253.6918423,
+    "ast_hash": "7df53908321ffa8608cff54dc4ff78dc",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_obra_paso_surtido.ogg": {
+    "mtime": 1793983626.2075853,
+    "seen": 1794000253.6918423,
+    "ast_hash": "f73077dbadd06c5fa73a5abccf76b2c7",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_via_completar_tramo.ogg": {
+    "mtime": 1793983830.5218172,
+    "seen": 1794000253.6918423,
+    "ast_hash": "186f84924a2fa471683bcbc7f24f176c",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_via_demoler_tramo.ogg": {
+    "mtime": 1793983831.968505,
+    "seen": 1794000253.6918423,
+    "ast_hash": "4c1e002aa80e156f43e7b9052735fb2e",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_via_trazar_nodo.ogg": {
+    "mtime": 1793983613.6118574,
+    "seen": 1794000253.6918423,
+    "ast_hash": "ddc0d1b0af366f2cfd6767987c66db5f",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_zona_desmarcar.ogg": {
+    "mtime": 1793983834.8721752,
+    "seen": 1794000253.6918423,
+    "ast_hash": "3106fc64cda13d96aacbcffaa9d1ddf6",
+    "semantic_hash": ""
+  },
+  "godot/assets/sfx/urbanismo/sfx_zona_marcar.ogg": {
+    "mtime": 1793983623.0871704,
+    "seen": 1794000253.6918423,
+    "ast_hash": "4c8d14490bfd3fe98ad061f71484c605",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md": {
+    "mtime": 1794008530.6940284,
+    "seen": 1794089524.436685,
+    "ast_hash": "3a71ae88c63d4dd3b2befaac7f8d3901",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Clockwork_logistics (loop).mp3": {
+    "mtime": 1792325537.1240773,
+    "seen": 1794008498.072474,
+    "ast_hash": "c3e8256efd962e686ed80dcb2a9d1683",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Clockwork_logistics_2 (loop).mp3": {
+    "mtime": 1792325619.1703255,
+    "seen": 1794008498.072474,
+    "ast_hash": "d2521584f62f754ad4639257cc63ed4d",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Cozy_colony (loop).mp3": {
+    "mtime": 1792325537.1346414,
+    "seen": 1794008498.072474,
+    "ast_hash": "4eefd61720ac308f9aae8a53cbcd8d83",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Glitch_drift (loop).mp3": {
+    "mtime": 1792325537.14073,
+    "seen": 1794008498.072474,
+    "ast_hash": "7f045975ecb76d49b5a79e1d73518331",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Glitch_drift_2 (loop).mp3": {
+    "mtime": 1792325628.4785504,
+    "seen": 1794008498.072474,
+    "ast_hash": "c953c711e5cc18dc273966705ed7643f",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Hard_stop (loop).mp3": {
+    "mtime": 1792325537.1507452,
+    "seen": 1794008498.072474,
+    "ast_hash": "6c58349ae8789f334c5cfcbd2ea4524c",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Hard_stop_2 (loop).mp3": {
+    "mtime": 1792325635.2403626,
+    "seen": 1794008498.072474,
+    "ast_hash": "e2e77e6c1f21f73680b1e5ed76296137",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Morning_at_the_Steel_Spire (loop).mp3": {
+    "mtime": 1792325572.6561978,
+    "seen": 1794008498.072474,
+    "ast_hash": "77995fb191ac3b0caa8ab4ce75fde949",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Seamless_loop  (loop).mp3": {
+    "mtime": 1792325537.1627793,
+    "seen": 1794008498.072474,
+    "ast_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/The_Architect_s_Decree (menu).mp3": {
+    "mtime": 1792325602.293656,
+    "seen": 1794008498.072474,
+    "ast_hash": "1642c22e89c7dcf71776aac9f007f1b8",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/citycraft-world.jpg": {
+    "mtime": 1793874263.782512,
+    "seen": 1794089524.436685,
+    "ast_hash": "e20d883b510b8c97491a1a10d63847d1",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/comparison-aerial.jpg": {
+    "mtime": 1793874263.5641043,
+    "seen": 1794089524.436685,
+    "ast_hash": "7c71e2e8a900be867ef9d867d8665e5a",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/concept-era-evolution.png": {
+    "mtime": 1794088974.7686932,
+    "seen": 1794089524.436685,
+    "ast_hash": "145e82d6b4000f4b6ede9bd0b1bd9885",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/fp-building.jpg": {
+    "mtime": 1793874263.619655,
+    "seen": 1794089524.436685,
+    "ast_hash": "a5060ddab219a4e21540d8c514aa50e0",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/fp-defense.jpg": {
+    "mtime": 1793874263.725736,
+    "seen": 1794089524.436685,
+    "ast_hash": "3447f2230ef0d3ce4faaf21ed492be2d",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/fp-industry.jpg": {
+    "mtime": 1793874263.6726604,
+    "seen": 1794089524.436685,
+    "ast_hash": "9ac28bed8a749215227db5291ee02e0e",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/hud-camara-cenital.png": {
+    "mtime": 1790351639.9234354,
+    "seen": 1794089524.436685,
+    "ast_hash": "d22a34f476b28941bb1e1cc193c9473f",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/hud-primera-persona-batalla.png": {
+    "mtime": 1790351495.4654894,
+    "seen": 1794089524.436685,
+    "ast_hash": "305a53b4a635c8589e8421e7f42711d7",
+    "semantic_hash": ""
+  },
+  "arte/slideshow/hud-primera-persona-construccion.png": {
+    "mtime": 1790351378.7984867,
+    "seen": 1794089524.436685,
+    "ast_hash": "fd02b54847fe6457e1efb899ace635a6",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_cargar.svg": {
+    "mtime": 1794070788.6736612,
+    "seen": 1794089524.436685,
+    "ast_hash": "87e7d6de8add0595bf608a77b724ca38",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_cargar_partida.svg": {
+    "mtime": 1794070784.3217556,
+    "seen": 1794089524.436685,
+    "ast_hash": "f8b4c05c3c4b88c79bb473159e25c9b0",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_configuracion.svg": {
+    "mtime": 1794070810.084343,
+    "seen": 1794089524.436685,
+    "ast_hash": "a6a495052386036bcbead9d514cf6344",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_guardar.svg": {
+    "mtime": 1794070796.614825,
+    "seen": 1794089524.436685,
+    "ast_hash": "48e3247a4befedfcb7034085962f509a",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_nueva_partida.svg": {
+    "mtime": 1794070704.133059,
+    "seen": 1794089524.436685,
+    "ast_hash": "e6a7ff6375e8f42ce28c44e2fe073b55",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_quicksave.svg": {
+    "mtime": 1794070804.7200475,
+    "seen": 1794089524.436685,
+    "ast_hash": "64490217d53086f6728c1ca9c87930f2",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_reanudar.svg": {
+    "mtime": 1794070829.8590314,
+    "seen": 1794089524.436685,
+    "ast_hash": "8ffeceaf8384b3c78ab092bdbd186fb2",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_reset.svg": {
+    "mtime": 1794070826.377663,
+    "seen": 1794089524.436685,
+    "ast_hash": "aa502c31f39de56dbe5bb13036229719",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_salir.svg": {
+    "mtime": 1794070800.9612124,
+    "seen": 1794089524.436685,
+    "ast_hash": "10bb249f9f2896991df0d7a82a763c24",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/menu_volver.svg": {
+    "mtime": 1794070792.5752394,
+    "seen": 1794089524.436685,
+    "ast_hash": "af7803c3d8536b341c1b798c1f96a52a",
+    "semantic_hash": ""
+  },
+  "godot/assets/logo/craft-to-nation-logo-splash.png": {
+    "mtime": 1788702154.285517,
+    "seen": 1794089524.436685,
+    "ast_hash": "7750b5715ade2880275d67af1702212c",
+    "semantic_hash": ""
+  },
+  "godot/assets/logo/craft-to-nation-logo.png": {
+    "mtime": 1792158481.8412201,
+    "seen": 1794089524.436685,
+    "ast_hash": "7750b5715ade2880275d67af1702212c",
+    "semantic_hash": ""
+  },
+  "godot/assets/logo/craft-to-nation-mark.png": {
+    "mtime": 1792158481.8433425,
+    "seen": 1794089524.436685,
+    "ast_hash": "bba15c015cd91ffd39312bf6034b9539",
+    "semantic_hash": ""
+  },
+  "godot/assets/logo/craft_to_nation_text.png": {
+    "mtime": 1792158481.8524702,
+    "seen": 1794089524.436685,
+    "ast_hash": "0cf2bda0fed6a60c1d814885b0207d0f",
+    "semantic_hash": ""
+  },
+  "godot/assets/logo/craft_to_nation_text_black.jpg": {
+    "mtime": 1792158481.8554702,
+    "seen": 1794089524.436685,
+    "ast_hash": "af9a460aefda59a6a96d828c52738c7e",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/citycraft-world.jpg": {
+    "mtime": 1793874263.782512,
+    "seen": 1794089524.436685,
+    "ast_hash": "e20d883b510b8c97491a1a10d63847d1",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/comparison-aerial.jpg": {
+    "mtime": 1793874263.5641043,
+    "seen": 1794089524.436685,
+    "ast_hash": "7c71e2e8a900be867ef9d867d8665e5a",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/concept-era-evolution.png": {
+    "mtime": 1794088974.6237166,
+    "seen": 1794089524.436685,
+    "ast_hash": "145e82d6b4000f4b6ede9bd0b1bd9885",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/fp-building.jpg": {
+    "mtime": 1793874263.619655,
+    "seen": 1794089524.436685,
+    "ast_hash": "a5060ddab219a4e21540d8c514aa50e0",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/fp-defense.jpg": {
+    "mtime": 1793874263.725736,
+    "seen": 1794089524.436685,
+    "ast_hash": "3447f2230ef0d3ce4faaf21ed492be2d",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/fp-industry.jpg": {
+    "mtime": 1793874263.6726604,
+    "seen": 1794089524.436685,
+    "ast_hash": "9ac28bed8a749215227db5291ee02e0e",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/hud-camara-cenital.png": {
+    "mtime": 1790351639.9234354,
+    "seen": 1794089524.436685,
+    "ast_hash": "d22a34f476b28941bb1e1cc193c9473f",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/hud-primera-persona-batalla.png": {
+    "mtime": 1790351495.4654894,
+    "seen": 1794089524.436685,
+    "ast_hash": "305a53b4a635c8589e8421e7f42711d7",
+    "semantic_hash": ""
+  },
+  "godot/assets/slideshow/hud-primera-persona-construccion.png": {
+    "mtime": 1790351378.7984867,
+    "seen": 1794089524.436685,
+    "ast_hash": "fd02b54847fe6457e1efb899ace635a6",
     "semantic_hash": ""
   },
   "video_edition/remotion/package-lock.json": {

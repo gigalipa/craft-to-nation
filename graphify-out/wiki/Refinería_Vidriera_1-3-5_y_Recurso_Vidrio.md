@@ -2,7 +2,7 @@
 
 > God node · 24 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md)
+**Community:** [ajustes.gd](ajustes.gd.md)
 
 ## Connections by Relation
 

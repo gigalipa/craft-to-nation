@@ -239,6 +239,7 @@ var _tipo_por_id: Dictionary = {}  # int -> String
 ## (ver Player.gd) nunca puede incluir el suelo del mundo como parte de la
 ## estructura, sin importar su tipo de bloque.
 var colocado_por_jugador: Dictionary = {}
+var modificaciones_terreno: Dictionary = {}
 
 ## Celdas que realmente se cobraron de Ciudad.almacen al colocarse (Vector3i
 ## -> true) — Player._colocar() la marca tras un _cobrar_colocacion() exitoso
@@ -913,6 +914,11 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false, or
 	terreno_modificado.emit(celda)
 	if por_jugador:
 		colocado_por_jugador[celda] = true
+	modificaciones_terreno[celda] = {
+		"tipo": tipo,
+		"orientacion": {"x": orientacion.x, "y": orientacion.y, "z": orientacion.z} if orientacion is Vector3i else null,
+		"por_jugador": por_jugador
+	}
 	if TIPOS_LIQUIDOS.has(tipo_anterior):
 		# Reemplazar líquido (de flujo o fuente) por otra cosa: el líquido de flujo
 		# que dependía de esta celda debe revisar si sigue conectada a una
@@ -967,9 +973,11 @@ func minar_bloque(celda: Vector3i) -> bool:
 ## (_aplicar_paso_cola()), que necesita cavar celdas que YA pertenecen a un
 ## edificio (la losa enterrada) y que minar_bloque() rechazaría.
 func _retirar_bloque(celda: Vector3i) -> void:
+	modificaciones_terreno[celda] = {"tipo": "aire"}
 	var tipo_anterior: String = obtener_tipo(celda)
 	if pareja.has(celda):
 		var otra: Vector3i = pareja[celda]
+		modificaciones_terreno[otra] = {"tipo": "aire"}
 		var tipo_otra: String = obtener_tipo(otra)
 		set_cell_item(otra, GridMap.INVALID_CELL_ITEM)
 		_reembolsar_si_corresponde(otra, tipo_otra)
@@ -1674,6 +1682,7 @@ func talar_bloque_de_arbol(celda: Vector3i, dano: int) -> bool:
 	var talado: bool = arboles.danar(id, dano)
 	if talado:
 		for c in arboles.celdas_de(id):
+			modificaciones_terreno[c] = {"tipo": "aire"}
 			set_cell_item(c, GridMap.INVALID_CELL_ITEM)
 		arboles.eliminar(id)
 	return talado
@@ -1686,6 +1695,7 @@ func talar_bloque_de_arbol(celda: Vector3i, dano: int) -> bool:
 ## ya evita). Usada al confirmar la colocación de un puesto periférico cuya
 ## huella chocó solo con follaje (VoxelWorld.verificar_huella_libre()).
 func eliminar_follaje(celda: Vector3i) -> void:
+	modificaciones_terreno[celda] = {"tipo": "aire"}
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	var id: int = arboles.obtener_arbol_de(celda)
 	if id != -1:
@@ -2550,3 +2560,197 @@ func retirar_tuberia_extraccion(columna: Vector2i, y_sup: int, y_fondo: int, obj
 	if retirados > 0 and c != null and c.almacen.has("hierro"):
 		c.almacen["hierro"].agregar(float(retirados * 5))
 	return retirados
+
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func exportar_estado() -> Dictionary:
+	var modif_exp: Dictionary = {}
+	for c in modificaciones_terreno:
+		modif_exp["%d,%d,%d" % [c.x, c.y, c.z]] = modificaciones_terreno[c]
+
+	var c_edif_exp: Dictionary = {}
+	for c in celda_a_edificio:
+		c_edif_exp["%d,%d,%d" % [c.x, c.y, c.z]] = celda_a_edificio[c]
+
+	var edif_c_exp: Dictionary = {}
+	for id_e in edificio_a_celdas:
+		var arr: Array = []
+		for c in edificio_a_celdas[id_e]:
+			arr.append({"x": c.x, "y": c.y, "z": c.z})
+		edif_c_exp[str(id_e)] = arr
+
+	var edif_ord_exp: Dictionary = {}
+	for id_e in edificio_orden:
+		var arr: Array = []
+		for c in edificio_orden[id_e]:
+			arr.append({"x": c.x, "y": c.y, "z": c.z})
+		edif_ord_exp[str(id_e)] = arr
+
+	var edif_tip_exp: Dictionary = {}
+	for id_e in edificio_tipos:
+		var t_dict: Dictionary = {}
+		for c in edificio_tipos[id_e]:
+			t_dict["%d,%d,%d" % [c.x, c.y, c.z]] = edificio_tipos[id_e][c]
+		edif_tip_exp[str(id_e)] = t_dict
+
+	var edif_ori_exp: Dictionary = {}
+	for id_e in edificio_orientaciones:
+		var o_dict: Dictionary = {}
+		for c in edificio_orientaciones[id_e]:
+			var o = edificio_orientaciones[id_e][c]
+			if o is Vector3i:
+				o_dict["%d,%d,%d" % [c.x, c.y, c.z]] = {"x": o.x, "y": o.y, "z": o.z}
+		edif_ori_exp[str(id_e)] = o_dict
+
+	var edif_prog_exp: Dictionary = {}
+	for id_e in edificio_progreso:
+		edif_prog_exp[str(id_e)] = edificio_progreso[id_e]
+
+	var edif_meta_exp: Dictionary = {}
+	for id_e in edificio_metadata:
+		edif_meta_exp[str(id_e)] = edificio_metadata[id_e]
+
+	var edif_vol_exp: Dictionary = {}
+	for id_e in edificio_volumen:
+		edif_vol_exp[str(id_e)] = edificio_volumen[id_e]
+
+	var pareja_exp: Dictionary = {}
+	for c in pareja:
+		var o: Vector3i = pareja[c]
+		pareja_exp["%d,%d,%d" % [c.x, c.y, c.z]] = {"x": o.x, "y": o.y, "z": o.z}
+
+	var ori_vent_exp: Dictionary = {}
+	for c in orientacion_ventana:
+		var o: Vector3i = orientacion_ventana[c]
+		ori_vent_exp["%d,%d,%d" % [c.x, c.y, c.z]] = {"x": o.x, "y": o.y, "z": o.z}
+
+	return {
+		"modificaciones_terreno": modif_exp,
+		"siguiente_id_edificio": _siguiente_id_edificio,
+		"celda_a_edificio": c_edif_exp,
+		"edificio_a_celdas": edif_c_exp,
+		"edificio_orden": edif_ord_exp,
+		"edificio_tipos": edif_tip_exp,
+		"edificio_orientaciones": edif_ori_exp,
+		"edificio_progreso": edif_prog_exp,
+		"edificio_metadata": edif_meta_exp,
+		"edificio_volumen": edif_vol_exp,
+		"pareja": pareja_exp,
+		"orientacion_ventana": ori_vent_exp,
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	if d.has("siguiente_id_edificio"):
+		_siguiente_id_edificio = int(d["siguiente_id_edificio"])
+
+	# Re-aplicar modificaciones del terreno
+	if d.has("modificaciones_terreno") and d["modificaciones_terreno"] is Dictionary:
+		for k in d["modificaciones_terreno"]:
+			var p := (k as String).split(",")
+			if p.size() < 3:
+				continue
+			var celda := Vector3i(int(p[0]), int(p[1]), int(p[2]))
+			var info: Dictionary = d["modificaciones_terreno"][k]
+			var tipo: String = str(info.get("tipo", ""))
+			var por_jugador: bool = bool(info.get("por_jugador", false))
+			var ori = null
+			if info.has("orientacion") and info["orientacion"] is Dictionary:
+				ori = Vector3i(int(info["orientacion"]["x"]), int(info["orientacion"]["y"]), int(info["orientacion"]["z"]))
+
+			if tipo == "aire" or tipo == "":
+				set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
+				terreno_modificado.emit(celda)
+			else:
+				if _id_por_tipo.has(tipo):
+					set_cell_item(celda, _id_por_tipo[tipo])
+					if por_jugador:
+						colocado_por_jugador[celda] = true
+					if ori != null:
+						orientacion_ventana[celda] = ori
+					if TIPOS_TRANSLUCIDOS.has(tipo):
+						bloque_translucido_cambiado.emit(celda)
+					if TIPOS_PUERTA.has(tipo):
+						puerta_cambiada.emit(celda)
+					terreno_modificado.emit(celda)
+			modificaciones_terreno[celda] = info
+
+	# Restaurar edificios y metadatos
+	if d.has("celda_a_edificio") and d["celda_a_edificio"] is Dictionary:
+		celda_a_edificio.clear()
+		for k in d["celda_a_edificio"]:
+			var p := (k as String).split(",")
+			if p.size() >= 3:
+				celda_a_edificio[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = int(d["celda_a_edificio"][k])
+
+	if d.has("edificio_a_celdas") and d["edificio_a_celdas"] is Dictionary:
+		edificio_a_celdas.clear()
+		for id_str in d["edificio_a_celdas"]:
+			var arr: Array[Vector3i] = []
+			for pt in d["edificio_a_celdas"][id_str]:
+				if pt is Dictionary:
+					arr.append(Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"])))
+			edificio_a_celdas[int(id_str)] = arr
+
+	if d.has("edificio_orden") and d["edificio_orden"] is Dictionary:
+		edificio_orden.clear()
+		for id_str in d["edificio_orden"]:
+			var arr: Array[Vector3i] = []
+			for pt in d["edificio_orden"][id_str]:
+				if pt is Dictionary:
+					arr.append(Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"])))
+			edificio_orden[int(id_str)] = arr
+
+	if d.has("edificio_tipos") and d["edificio_tipos"] is Dictionary:
+		edificio_tipos.clear()
+		for id_str in d["edificio_tipos"]:
+			var t_dict: Dictionary = {}
+			for k in d["edificio_tipos"][id_str]:
+				var p := (k as String).split(",")
+				if p.size() >= 3:
+					t_dict[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = str(d["edificio_tipos"][id_str][k])
+			edificio_tipos[int(id_str)] = t_dict
+
+	if d.has("edificio_orientaciones") and d["edificio_orientaciones"] is Dictionary:
+		edificio_orientaciones.clear()
+		for id_str in d["edificio_orientaciones"]:
+			var o_dict: Dictionary = {}
+			for k in d["edificio_orientaciones"][id_str]:
+				var p := (k as String).split(",")
+				if p.size() >= 3:
+					var pt: Dictionary = d["edificio_orientaciones"][id_str][k]
+					o_dict[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"]))
+			edificio_orientaciones[int(id_str)] = o_dict
+
+	if d.has("edificio_progreso") and d["edificio_progreso"] is Dictionary:
+		edificio_progreso.clear()
+		for id_str in d["edificio_progreso"]:
+			edificio_progreso[int(id_str)] = int(d["edificio_progreso"][id_str])
+
+	if d.has("edificio_metadata") and d["edificio_metadata"] is Dictionary:
+		edificio_metadata.clear()
+		for id_str in d["edificio_metadata"]:
+			edificio_metadata[int(id_str)] = (d["edificio_metadata"][id_str] as Dictionary).duplicate(true)
+
+	if d.has("edificio_volumen") and d["edificio_volumen"] is Dictionary:
+		edificio_volumen.clear()
+		for id_str in d["edificio_volumen"]:
+			edificio_volumen[int(id_str)] = int(d["edificio_volumen"][id_str])
+
+	if d.has("pareja") and d["pareja"] is Dictionary:
+		pareja.clear()
+		for k in d["pareja"]:
+			var p := (k as String).split(",")
+			var pt: Dictionary = d["pareja"][k]
+			if p.size() >= 3:
+				pareja[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"]))
+
+	if d.has("orientacion_ventana") and d["orientacion_ventana"] is Dictionary:
+		for k in d["orientacion_ventana"]:
+			var p := (k as String).split(",")
+			var pt: Dictionary = d["orientacion_ventana"][k]
+			if p.size() >= 3:
+				orientacion_ventana[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"]))

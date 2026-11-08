@@ -14,14 +14,12 @@
 
 ## Relationships
 
-- [ConstructorVias.gd](ConstructorVias.gd.md) (1 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (3 shared connections)
 - [ajustes.gd](ajustes.gd.md) (1 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
-- [TrazadorVias.gd](TrazadorVias.gd.md) (1 shared connections)
-- [ZonaOverlay.gd](ZonaOverlay.gd.md) (1 shared connections)
+- [NiveladorTerreno.gd](NiveladorTerreno.gd.md) (1 shared connections)
+- [ViaPreviewOverlay.gd](ViaPreviewOverlay.gd.md) (1 shared connections)
 - [Vias.gd](Vias.gd.md) (1 shared connections)
-- [ViasTest.gd](ViasTest.gd.md) (1 shared connections)
-- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (1 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (1 shared connections)
 
 ## Source Files
 

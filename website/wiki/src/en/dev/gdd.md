@@ -1,9 +1,9 @@
 ---
-title: "Game Design Document (GDD v3.59)"
-description: "Technical Game Design Document (GDD v3.59) for Craft to Nation: hybrid voxel survival, organic city planning, hourly simulation tick, centralized settings, Glassworks, IDU I-IV, and finite world economics."
+title: "Game Design Document (GDD v3.61)"
+description: "Technical Game Design Document (GDD v3.61) for Craft to Nation: hybrid voxel survival, organic city planning, hourly simulation tick, centralized settings, Glassworks, IDU I-IV, and finite world economics."
 ---
 
-# Game Design Document (GDD v3.59)
+# Game Design Document (GDD v3.61)
 
 **Slogan:** *From first block to living nation.*  
 **Campaign Motto:** *Survive. Craft. Automate. Lead.*  
@@ -62,7 +62,7 @@ description: "Technical Game Design Document (GDD v3.59) for Craft to Nation: hy
 
 ---
 
-## 3. Key Innovations Consolidated in GDD v3.57 – v3.59
+## 3. Key Innovations Consolidated in GDD v3.57 – v3.61
 
 - **Vector HUD Iconography (`IconosHUD.gd`) & Live 3D Thumbnails (`MiniaturaRenderer.gd`):** Centralized catalog of **95+ crisp pixel-art SVG icons** (`shape-rendering="crispEdges"`, including `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg`, and `btn_bajar.svg`), enlarged `104×76 px` build buttons with 3-corner overlays (input stack top-left, electric bolt top-center, output badge top-right), and real-time 3D thumbnails.
 - **Electrical Grid in kW / MW (`BarraSuperior.gd`, `VentanaEnergia.gd`):** Interactive tri-color lightning bolt indicator (gold = surplus, gray = zero demand, red = deficit) with a per-building power breakdown window.
@@ -71,4 +71,6 @@ description: "Technical Game Design Document (GDD v3.59) for Craft to Nation: hy
 - **Era Progression, IDU (`I`–`IV`) & Two-Layer Decentralized Tech Tree (v3.59):** Topbar Era name + icon indicator and right-side Roman numeral **IDU** badge (`I`–`IV`) with a top-right hover tooltip window breaking down Demographic (`D`), Scientific (`C`), and Material Sophistication (`S`) pillars. Two-layer research splits **Theoretical Science** (University) from **Practical Applications** initiated at target buildings via a physical **Itinerant Researcher (`Investigador Itinerante`)**.
 - **Glassworks Refinery (`Vidriera`), Glass (`Vidrio`), Transport Workshop & `1/20` Window Panels (v3.59):** New `5×6` adobe **Glassworks (`1-3-5`)** refining `1 Earth + 1 Coal → 3 Glass`; **Transport Workshop** assembling 6 haulage unit types (`acarreador_pie`, `carreta_mano`, `carro_caballos`, `camion_diesel`, `trolebus_solar`, `dron_carga`, with road requirements and exclusive `vidrio` windshields); `1/20`-thick (`0.05m`) window panels (`TranslucidosRenderer.gd`) in 3 geometric variants (`ventana` straight mid-depth facing the avatar, `ventana_esquina` L-corner, and `ventana_techo` flush against the top face `Y ∈ [0.95, 1.0]` when looking up/down) consuming `1 Glass` first (or `3 Earth`); `VentanaAlmacen` with A–Z raw material dropdowns (`▶`/`▼`) for refined goods and 6 food categories plus an `[Expand All]`/`[Collapse All]` button; percentage-based `Reserva central:` (`0%–50%`); and `PanelEdificio` with `▲`/`▼` priority buttons, automatic panel transition at 100%, and interior water drainage.
 - **Comprehensive QA Issue Resolution & Simulation Polish (2026-11-03):** Resolution of all 9 QA findings and feedback (`docs/reporte_bug_28-10-26.md`): full 3D rotation persistence in blueprints for roof windows, immediate housing/employment reconciliation upon eviction, reactive work crew reassignment on priority adjustments, confirmation countdown for road and building demolitions, and calibrated 10-tier migration curve (+10 colonists/month at 100 morale).
-- **Automated Verification Suite:** **28 independent test scenes** running **100% in green**.
+- **Spatial Audio Engine, 102 SFX Catalog & Windows Standalone Export (v3.60):** Centralized `Sonidos.gd` autoload managing circular pools of 16 2D (`AudioStreamPlayer`) and 16 3D (`AudioStreamPlayer3D`) players with inverse-distance spatial falloff (up to 35m) and pitch modulation (±5%). Full catalog of 102 OGG sounds across 8 domains, reactive wiring across the engine, Windows standalone export presets (`tools/export_windows.ps1`), and dedicated unit test suite `SonidosTest.tscn`.
+- **Main Menu, Atomic Save/Load System, In-Game Pause (F11), Persistent Configuration & Loading Screen (v3.61):** Main startup scene `MenuInicio.tscn` with animated slideshow backdrop (`SlideshowFondo.gd`), looping menu BGM (`The_Architect_s_Decree (menu).mp3`), and interactive subpanels (New Game, Load Game, Settings, Quit). Autoload singleton `GestorPartida.gd` managing atomic JSON serialization and deserialization of all simulation subsystems (`Ciudad`, `Economia`, `Colonos`, modified voxel terrain in `VoxelWorld`, `Vias`, `Canalizaciones`, `Player`, `Zonificacion`) in `user://saves/` with quicksave slot (`quicksave.json`) and save listing with metadata. In-game pause menu `MenuPausa.gd` triggered via <kbd>F11</kbd> with absolute tree pause (`paused = true`) and runtime settings adjustments. Autoload singleton `Configuracion.gd` storing client settings in `user://configuracion.json` (independent SFX and BGM volumes, mouse sensitivity, camera FOV, language) and loading screen `PantallaCarga.gd`.
+- **Automated Verification Suite:** **35 independent test scenes** running **100% in green**.

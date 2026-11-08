@@ -555,6 +555,7 @@ func actualizar_investigacion(horas: float) -> bool:
 		var costos_pago := {"hierro": costo["hierro"], "madera": costo["madera"]}
 		if consumir_costos(costos_pago):
 			nivel_investigado = siguiente
+			Sonidos.reproducir("sfx_ui_investigacion_completada")
 			return true
 	return false
 
@@ -1481,6 +1482,8 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 		"migrantes": migrantes,
 	}
 	horas_juego += 1
+	if horas_juego > 0 and horas_juego % 24 == 6:
+		Sonidos.reproducir("sfx_ui_reloj_nuevo_dia", -3.0)
 	tick_simulado.emit()
 	return resultado
 
@@ -1532,3 +1535,261 @@ func retirar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> bool:
 		return false
 	parque_transporte_disponible[tipo] = actual - cantidad
 	return true
+
+
+# ==============================================================================
+# SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
+# ==============================================================================
+
+func reiniciar() -> void:
+	instalaciones = {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0, "tipo_4": 0}
+	instalaciones_edificio.clear()
+	demografia.clear()
+	for tipo in TIPOS_POBLACION:
+		demografia[tipo] = 0
+	almacen = {
+		"madera": Recurso.new("Madera", 200, LIMITE_BASE),
+		"comida": Recurso.new("Comida", COMIDA_INICIAL, LIMITE_BASE_COMIDA),
+		"hierro": Recurso.new("Hierro", 0, LIMITE_BASE),
+		"tierra": Recurso.new("Tierra", 0, LIMITE_BASE),
+		"piedra": Recurso.new("Piedra", 0, LIMITE_BASE),
+		"cobre": Recurso.new("Cobre", 0, LIMITE_BASE),
+		"carbon": Recurso.new("Carbón", 0, LIMITE_BASE),
+		"tierras_raras": Recurso.new("Tierras raras", 0, LIMITE_BASE),
+		"acero": Recurso.new("Acero", 0, LIMITE_BASE),
+		"mineral_refinado": Recurso.new("Mineral refinado", 0, LIMITE_BASE),
+		"tablas": Recurso.new("Tablas", 0, LIMITE_BASE),
+		"bloques_piedra": Recurso.new("Bloques de piedra", 0, LIMITE_BASE),
+		"agua": Recurso.new("Agua", 0, LIMITE_BASE),
+		"crudo": Recurso.new("Crudo", 0, LIMITE_BASE),
+		"combustible": Recurso.new("Combustible", 0, LIMITE_BASE),
+		"vidrio": Recurso.new("Vidrio", 0, LIMITE_BASE),
+	}
+	sub_almacen_comida = {
+		"recoleccion_caza": COMIDA_INICIAL * 0.5,
+		"pesca": COMIDA_INICIAL * 0.5
+	}
+	parque_transporte_disponible.clear()
+	parque_transporte_asignado.clear()
+	for tipo_v in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:
+		parque_transporte_disponible[tipo_v] = 0
+		parque_transporte_asignado[tipo_v] = 0
+	desahuciados = 0
+	nivel_investigado = 1
+	progreso_investigacion = {2: 0.0, 3: 0.0}
+	era_actual = 1
+	balanza_doctrinal = {"dieselpunk": 0.0, "cyberpunk": 0.0, "solarpunk": 0.0}
+	puntos_ciencia = 0.0
+	ciencias_teoricas_descubiertas.clear()
+	progreso_ciencia_teorica.clear()
+	ciencia_teorica_activa = ""
+	mejoras_practicas_instaladas.clear()
+	bono_moral_variedad = 0.0
+	horas_monocultivo_continuo = 0
+	moral = MORAL_INICIAL
+	tasa_cambio_moral = 0.0
+	recursos_alertados_5pct.clear()
+	cola_desempleo.clear()
+	historial_peligrosidad.clear()
+	bajas_7d = 0
+	heridos_7d = 0
+	robos_7d = 0.0
+	cobertura_energia = 1.0
+	periodo_elecciones_restante = 0
+	edificios_residenciales.clear()
+	baules_por_edificio.clear()
+	almacen_ampliado = false
+	id_nucleo = -1
+	camas_nucleo.clear()
+	baules_nucleo = 0
+	traslado_nucleo.clear()
+	remodelando_nucleo = false
+	primer_residencial_registrado = false
+	colonizable_por_edificio.clear()
+	horas_apertura_colonizacion.clear()
+	sin_techo = 0
+	tiempo_sin_techo = 0
+	horas_juego = 0
+	migracion_activa = true
+	_migrantes_acumulados = 0.0
+	horas_boost_inmigracion = 0
+	decreto_racionamiento_activo = false
+	_cantidad_al_cierre.clear()
+
+
+func exportar_estado() -> Dictionary:
+	var alm_data: Dictionary = {}
+	for k in almacen:
+		var r = almacen[k]
+		alm_data[k] = {
+			"cantidad": r.cantidad,
+			"limite": r.limite,
+			"tasa_neta": r.tasa_neta,
+			"tasa_neta_promedio": r.tasa_neta_promedio,
+		}
+
+	var edif_res_str: Dictionary = {}
+	for id_e in edificios_residenciales:
+		edif_res_str[str(id_e)] = (edificios_residenciales[id_e] as Array).duplicate()
+
+	var inst_edif_str: Dictionary = {}
+	for id_e in instalaciones_edificio:
+		inst_edif_str[str(id_e)] = instalaciones_edificio[id_e]
+
+	var col_edif_str: Dictionary = {}
+	for id_e in colonizable_por_edificio:
+		col_edif_str[str(id_e)] = colonizable_por_edificio[id_e]
+
+	var h_apertura_str: Dictionary = {}
+	for id_e in horas_apertura_colonizacion:
+		h_apertura_str[str(id_e)] = horas_apertura_colonizacion[id_e]
+
+	var baules_edif_str: Dictionary = {}
+	for id_e in baules_por_edificio:
+		baules_edif_str[str(id_e)] = baules_por_edificio[id_e]
+
+	return {
+		"demografia": demografia.duplicate(),
+		"almacen": alm_data,
+		"instalaciones": instalaciones.duplicate(),
+		"instalaciones_edificio": inst_edif_str,
+		"desahuciados": desahuciados,
+		"nivel_investigado": nivel_investigado,
+		"progreso_investigacion": progreso_investigacion.duplicate(),
+		"era_actual": era_actual,
+		"balanza_doctrinal": balanza_doctrinal.duplicate(),
+		"puntos_ciencia": puntos_ciencia,
+		"ciencias_teoricas_descubiertas": ciencias_teoricas_descubiertas.duplicate(),
+		"progreso_ciencia_teorica": progreso_ciencia_teorica.duplicate(),
+		"ciencia_teorica_activa": ciencia_teorica_activa,
+		"mejoras_practicas_instaladas": mejoras_practicas_instaladas.duplicate(),
+		"parque_transporte_disponible": parque_transporte_disponible.duplicate(),
+		"parque_transporte_asignado": parque_transporte_asignado.duplicate(),
+		"sub_almacen_comida": sub_almacen_comida.duplicate(),
+		"bono_moral_variedad": bono_moral_variedad,
+		"horas_monocultivo_continuo": horas_monocultivo_continuo,
+		"moral": moral,
+		"tasa_cambio_moral": tasa_cambio_moral,
+		"edificios_residenciales": edif_res_str,
+		"baules_por_edificio": baules_edif_str,
+		"almacen_ampliado": almacen_ampliado,
+		"id_nucleo": id_nucleo,
+		"camas_nucleo": camas_nucleo.duplicate(),
+		"baules_nucleo": baules_nucleo,
+		"traslado_nucleo": traslado_nucleo.duplicate(),
+		"sin_techo": sin_techo,
+		"tiempo_sin_techo": tiempo_sin_techo,
+		"horas_juego": horas_juego,
+		"migracion_activa": migracion_activa,
+		"horas_boost_inmigracion": horas_boost_inmigracion,
+		"decreto_racionamiento_activo": decreto_racionamiento_activo,
+		"colonizable_por_edificio": col_edif_str,
+		"horas_apertura_colonizacion": h_apertura_str,
+		"cola_desempleo": cola_desempleo.duplicate(),
+	}
+
+
+func importar_estado(d: Dictionary) -> void:
+	reiniciar()
+	if d.has("demografia") and d["demografia"] is Dictionary:
+		for k in d["demografia"]:
+			demografia[str(k)] = int(d["demografia"][k])
+
+	if d.has("almacen") and d["almacen"] is Dictionary:
+		for k in d["almacen"]:
+			var nom_rec := str(k)
+			var item: Dictionary = d["almacen"][k]
+			if almacen.has(nom_rec):
+				almacen[nom_rec].cantidad = float(item.get("cantidad", 0.0))
+				almacen[nom_rec].limite = float(item.get("limite", LIMITE_BASE))
+				almacen[nom_rec].tasa_neta = float(item.get("tasa_neta", 0.0))
+				almacen[nom_rec].tasa_neta_promedio = float(item.get("tasa_neta_promedio", 0.0))
+
+	if d.has("instalaciones") and d["instalaciones"] is Dictionary:
+		for k in d["instalaciones"]:
+			instalaciones[str(k)] = int(d["instalaciones"][k])
+
+	if d.has("instalaciones_edificio") and d["instalaciones_edificio"] is Dictionary:
+		for k in d["instalaciones_edificio"]:
+			instalaciones_edificio[int(k)] = int(d["instalaciones_edificio"][k])
+
+	desahuciados = int(d.get("desahuciados", 0))
+	nivel_investigado = int(d.get("nivel_investigado", 1))
+
+	if d.has("progreso_investigacion") and d["progreso_investigacion"] is Dictionary:
+		progreso_investigacion.clear()
+		for k in d["progreso_investigacion"]:
+			progreso_investigacion[int(k)] = float(d["progreso_investigacion"][k])
+
+	era_actual = int(d.get("era_actual", 1))
+	if d.has("balanza_doctrinal") and d["balanza_doctrinal"] is Dictionary:
+		balanza_doctrinal = d["balanza_doctrinal"].duplicate()
+	puntos_ciencia = float(d.get("puntos_ciencia", 0.0))
+
+	if d.has("ciencias_teoricas_descubiertas") and d["ciencias_teoricas_descubiertas"] is Array:
+		ciencias_teoricas_descubiertas.clear()
+		for c in d["ciencias_teoricas_descubiertas"]:
+			ciencias_teoricas_descubiertas.append(str(c))
+
+	if d.has("progreso_ciencia_teorica") and d["progreso_ciencia_teorica"] is Dictionary:
+		progreso_ciencia_teorica = d["progreso_ciencia_teorica"].duplicate()
+
+	ciencia_teorica_activa = str(d.get("ciencia_teorica_activa", ""))
+
+	if d.has("mejoras_practicas_instaladas") and d["mejoras_practicas_instaladas"] is Array:
+		mejoras_practicas_instaladas.clear()
+		for m in d["mejoras_practicas_instaladas"]:
+			mejoras_practicas_instaladas.append(str(m))
+
+	if d.has("parque_transporte_disponible") and d["parque_transporte_disponible"] is Dictionary:
+		parque_transporte_disponible = d["parque_transporte_disponible"].duplicate()
+	if d.has("parque_transporte_asignado") and d["parque_transporte_asignado"] is Dictionary:
+		parque_transporte_asignado = d["parque_transporte_asignado"].duplicate()
+	if d.has("sub_almacen_comida") and d["sub_almacen_comida"] is Dictionary:
+		sub_almacen_comida = d["sub_almacen_comida"].duplicate()
+
+	bono_moral_variedad = float(d.get("bono_moral_variedad", 0.0))
+	horas_monocultivo_continuo = int(d.get("horas_monocultivo_continuo", 0))
+	moral = float(d.get("moral", MORAL_INICIAL))
+	tasa_cambio_moral = float(d.get("tasa_cambio_moral", 0.0))
+
+	if d.has("edificios_residenciales") and d["edificios_residenciales"] is Dictionary:
+		edificios_residenciales.clear()
+		for k in d["edificios_residenciales"]:
+			var arr: Array = d["edificios_residenciales"][k]
+			edificios_residenciales[int(k)] = arr.duplicate()
+
+	if d.has("baules_por_edificio") and d["baules_por_edificio"] is Dictionary:
+		baules_por_edificio.clear()
+		for k in d["baules_por_edificio"]:
+			baules_por_edificio[int(k)] = int(d["baules_por_edificio"][k])
+
+	almacen_ampliado = bool(d.get("almacen_ampliado", false))
+	id_nucleo = int(d.get("id_nucleo", -1))
+	if d.has("camas_nucleo") and d["camas_nucleo"] is Array:
+		camas_nucleo = d["camas_nucleo"].duplicate()
+	baules_nucleo = int(d.get("baules_nucleo", 0))
+	if d.has("traslado_nucleo") and d["traslado_nucleo"] is Dictionary:
+		traslado_nucleo = d["traslado_nucleo"].duplicate()
+
+	sin_techo = int(d.get("sin_techo", 0))
+	tiempo_sin_techo = int(d.get("tiempo_sin_techo", 0))
+	horas_juego = int(d.get("horas_juego", 0))
+	migracion_activa = bool(d.get("migracion_activa", true))
+	horas_boost_inmigracion = int(d.get("horas_boost_inmigracion", 0))
+	decreto_racionamiento_activo = bool(d.get("decreto_racionamiento_activo", false))
+
+	if d.has("colonizable_por_edificio") and d["colonizable_por_edificio"] is Dictionary:
+		colonizable_por_edificio.clear()
+		for k in d["colonizable_por_edificio"]:
+			colonizable_por_edificio[int(k)] = bool(d["colonizable_por_edificio"][k])
+
+	if d.has("horas_apertura_colonizacion") and d["horas_apertura_colonizacion"] is Dictionary:
+		horas_apertura_colonizacion.clear()
+		for k in d["horas_apertura_colonizacion"]:
+			horas_apertura_colonizacion[int(k)] = int(d["horas_apertura_colonizacion"][k])
+
+	if d.has("cola_desempleo") and d["cola_desempleo"] is Array:
+		cola_desempleo.clear()
+		for c in d["cola_desempleo"]:
+			cola_desempleo.append(int(c))

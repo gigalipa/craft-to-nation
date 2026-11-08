@@ -16,15 +16,14 @@
 ## Relationships
 
 - [ajustes.gd](ajustes.gd.md) (12 shared connections)
+- [json](json.md) (3 shared connections)
+- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (3 shared connections)
 - [dependabot.yml](dependabot.yml.md) (2 shared connections)
-- [json](json.md) (2 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (2 shared connections)
-- [Root.tsx](Root.tsx.md) (2 shared connections)
+- [Root.tsx](Root.tsx.md) (1 shared connections)
 - [config.yml](config.yml.md) (1 shared connections)
-- [VentanaAlmacen.gd / VentanaAlmacen.abrir()](VentanaAlmacen.gd_-_VentanaAlmacen.abrir.md) (1 shared connections)
+- [subprocess](subprocess.md) (1 shared connections)
 - [clip_maker.py](clip_maker.py.md) (1 shared connections)
 - [tsconfig.json](tsconfig.json.md) (1 shared connections)
-- [video_editor_studio.py](video_editor_studio.py.md) (1 shared connections)
 - [Detalle de Entregables y Paquetes de Contenido](Detalle_de_Entregables_y_Paquetes_de_Contenido.md) (1 shared connections)
 - [1. Publicación Principal - Devlog Técnico Multicámara (Martes)](1._Publicación_Principal_-_Devlog_Técnico_Multicámara_Martes.md) (1 shared connections)
 

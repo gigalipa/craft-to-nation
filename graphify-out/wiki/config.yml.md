@@ -15,7 +15,7 @@
 
 ## Relationships
 
-- [2026-10-07-obras-vias-y-prioridades-design.md (Obras por Colonos: Tendido de Vías y Prioridades Configurabl) / Obras.gd](2026-10-07-obras-vias-y-prioridades-design.md_Obras_por_Colonos-_Tendido_de_Vías_y_Prioridades_Configurabl_-_Obras.gd.md) (2 shared connections)
+- [clip_maker.py](clip_maker.py.md) (2 shared connections)
 - [dependabot.yml](dependabot.yml.md) (1 shared connections)
 - [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (1 shared connections)
 

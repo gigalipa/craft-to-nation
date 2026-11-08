@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cnflm7xrqj38d"
+path="res://.godot/imported/Glitch_drift_2 (loop).mp3-6e92eff7ec8750d4b335d7f90c29cea4.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Glitch_drift_2 (loop).mp3"
+dest_files=["res://.godot/imported/Glitch_drift_2 (loop).mp3-6e92eff7ec8750d4b335d7f90c29cea4.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

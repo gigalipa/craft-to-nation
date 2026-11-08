@@ -1824,6 +1824,7 @@ func _salir_de_modo_colocar_puesto(cerrar_menu: bool = true) -> void:
 ## agua/tierra (ver _eje_largo_pesca_es_z()/_celdas_extremo_pesca()), así
 ## que el puesto puede orientarse tanto norte-sur como este-oeste.
 func _rotar_huella_puesto() -> void:
+	Sonidos.reproducir("sfx_blueprint_rotar", -3.0, 0.05)
 	var ancho_previo := _ancho_puesto_activo
 	_ancho_puesto_activo = _alto_puesto_activo
 	_alto_puesto_activo = ancho_previo
@@ -1847,6 +1848,7 @@ func _rotar_huella_puesto() -> void:
 ## ya existente (_offsets_huella_blueprint) en vez de recrearlo — la
 ## cantidad de celdas no cambia, solo sus offsets.
 func _rotar_blueprint() -> void:
+	Sonidos.reproducir("sfx_blueprint_rotar", -3.0, 0.05)
 	var ancho_previo: int = _blueprint_activo["ancho"]
 	var profundidad_previa: int = _blueprint_activo["profundidad"]
 
@@ -2654,6 +2656,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 	if not _hay_tramo_en_curso:
 		_vertice_inicio_tramo = vertice
 		_hay_tramo_en_curso = true
+		Sonidos.reproducir("sfx_via_trazar_nodo")
 		return
 
 	if vertice == _vertice_inicio_tramo:
@@ -2665,6 +2668,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 		if _tramos_fijos.is_empty():
 			_cancelar_tramo_via()
 		else:
+			Sonidos.reproducir("sfx_via_completar_tramo")
 			_confirmar_trazo_via()
 			_hay_tramo_en_curso = false
 			_tramos_fijos.clear()
@@ -2676,6 +2680,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 
 	var ruta: Array[Vector2i] = _trazador_via.buscar_ruta(_vertice_inicio_tramo, vertice)
 	if ruta.is_empty():
+		Sonidos.reproducir("sfx_accion_bloqueada")
 		print("Trazado rechazado: no hay ruta posible hasta ese punto.")
 		hud.notificar("Trazado rechazado: no hay ruta posible hasta ese punto.")
 		return
@@ -2690,6 +2695,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 	_tramos_fijos.append(tramo)
 
 	if cierra_trazo:
+		Sonidos.reproducir("sfx_via_completar_tramo")
 		_confirmar_trazo_via()
 		_hay_tramo_en_curso = false
 		_tramos_fijos.clear()
@@ -2699,6 +2705,7 @@ func _procesar_clic_via(posicion_pantalla: Vector2) -> void:
 		hud.set_extra_contexto(Vias.ficha_tecnica("tierra_pisada", 0))
 		return
 
+	Sonidos.reproducir("sfx_via_trazar_nodo")
 	_vertice_inicio_tramo = vertice
 
 
@@ -3195,6 +3202,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	var ev: Dictionary = _evaluar_puesto(esquina)
 	var rechazo: String = _mensaje_rechazo_puesto(ev)
 	if rechazo != "":
+		Sonidos.reproducir("sfx_blueprint_invalido")
 		print(rechazo)
 		hud.notificar(rechazo)
 		return
@@ -3274,6 +3282,7 @@ func _confirmar_puesto(esquina: Vector2i) -> void:
 	follaje.append_array(ev["resultado_huella"]["follaje_a_eliminar"])
 	follaje.append_array(ev["resultado_fachada"]["follaje_a_eliminar"])
 	mundo.registrar_follaje_pendiente(id_edificio, follaje)
+	Sonidos.reproducir("sfx_blueprint_estampar")
 	print("Construcción fantasma del puesto '%s' iniciada en (%d, %d) — surtir para completarla." % [_tipo_puesto_activo, esquina.x, esquina.y])
 
 	_salir_de_modo_colocar_puesto()
@@ -3307,6 +3316,7 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	var ev: Dictionary = _evaluar_blueprint(esquina)
 	var mensaje: String = _mensaje_rechazo_blueprint(ev)
 	if mensaje != "":
+		Sonidos.reproducir("sfx_blueprint_invalido")
 		print(mensaje)
 		hud.notificar(mensaje)
 		return
@@ -3374,6 +3384,7 @@ func _procesar_clic_blueprint(posicion_pantalla: Vector2) -> void:
 	follaje.append_array(ev["resultado_fachada"]["follaje_a_eliminar"])
 	mundo.registrar_follaje_pendiente(id_edificio, follaje)
 	metadata["id_edificio"] = id_edificio
+	Sonidos.reproducir("sfx_blueprint_estampar")
 	print("Construcción fantasma iniciada en (", esquina.x, ", ", esquina.y, ") — excavación: ", excavacion.size(), " bloques, relleno: ", total_relleno, " (huella + frente de las puertas) — surtir para completarla.")
 
 	_salir_de_modo_colocar_blueprint()

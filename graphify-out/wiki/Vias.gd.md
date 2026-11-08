@@ -1,10 +1,13 @@
 # Vias.gd
 
-> 9 nodes · cohesion 0.22
+> 12 nodes · cohesion 0.17
 
 ## Key Concepts
 
 - **Vias.gd** (32 connections) — `godot/scripts/Vias.gd`
+- **ObrasTest.gd** (10 connections) — `godot/scripts/ObrasTest.gd`
+- **ObrasTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/ObrasTest.gd`
+- **ObrasTest._ready()** (1 connections) — `godot/scripts/ObrasTest.gd`
 - **Vias.bono_en()** (1 connections) — `godot/scripts/Vias.gd`
 - **Vias.columnas()** (1 connections) — `godot/scripts/Vias.gd`
 - **Vias.coste_paso_en()** (1 connections) — `godot/scripts/Vias.gd`
@@ -16,26 +19,27 @@
 
 ## Relationships
 
+- [Ciudad.gd](Ciudad.gd.md) (4 shared connections)
+- [Economia.gd](Economia.gd.md) (4 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (3 shared connections)
+- [Obras.gd](Obras.gd.md) (3 shared connections)
 - [BuscadorRutas.gd](BuscadorRutas.gd.md) (3 shared connections)
-- [Economia.gd](Economia.gd.md) (3 shared connections)
-- [ConstructorVias.gd](ConstructorVias.gd.md) (2 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (2 shared connections)
-- [ZonaOverlay.gd](ZonaOverlay.gd.md) (2 shared connections)
+- [Player.gd](Player.gd.md) (2 shared connections)
+- [ViaPreviewOverlay.gd](ViaPreviewOverlay.gd.md) (2 shared connections)
 - [ajustes.gd](ajustes.gd.md) (2 shared connections)
-- [Zonificacion.gd](Zonificacion.gd.md) (2 shared connections)
-- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) (1 shared connections)
+- [FinalizacionObras.gd](FinalizacionObras.gd.md) (1 shared connections)
+- [HUD.gd](HUD.gd.md) (1 shared connections)
+- [Puertas.gd](Puertas.gd.md) (1 shared connections)
 - [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
-- [Obras.gd](Obras.gd.md) (1 shared connections)
-- [Recoleccion.gd](Recoleccion.gd.md) (1 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
 
 ## Source Files
 
+- `godot/scripts/ObrasTest.gd`
 - `godot/scripts/Vias.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
+- EXTRACTED: 41 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

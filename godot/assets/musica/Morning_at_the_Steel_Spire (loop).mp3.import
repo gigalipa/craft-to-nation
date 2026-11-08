@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dxojamc3ik3nj"
+path="res://.godot/imported/Morning_at_the_Steel_Spire (loop).mp3-163dfb84f9deebe19e1f56adc57728dd.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Morning_at_the_Steel_Spire (loop).mp3"
+dest_files=["res://.godot/imported/Morning_at_the_Steel_Spire (loop).mp3-163dfb84f9deebe19e1f56adc57728dd.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

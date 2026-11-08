@@ -40,7 +40,7 @@ Estimate your colony's hourly and cyclic food and water requirements based on yo
 
 ---
 
-## 3. Dynamic Morale System (GDD v3.59)
+## 3. Dynamic Morale System (GDD v3.61)
 
 Colony productivity and migration are driven by the settlement's **Dynamic Morale** score (`0.0` to `100.0`, accessible from the top bar or by pressing <kbd>M</kbd> to open `VentanaMoral.gd`, where migration status is displayed directly on the line beneath labor productivity):
 
@@ -70,7 +70,7 @@ In `Ciudad.gd`, active modifiers sum into a **daily morale change rate** (`ΔM /
 - **Danger Memory Buffer:** Rolling `168-hour` (`7 in-game days`) memory buffer tracking casualties and raids.
 
 ### Stepped Monthly Migration Table (`Ciudad.calcular_tasa_migracion_mensual()`)
-One simulation month equals `720 in-game hours` (`30 days × 24h`). `VentanaMoral.gd` (<kbd>M</kbd>) displays three primary migration regime statuses (**`<= 20%` `⚠ Brain Drain Exodus`**, **`20% – 50%` `Bed-Gated Immigration`**, and **`> 50%` `Mass Immigration`**), backed by 9 stepped brackets:
+One simulation month equals `720 in-game hours` (`30 days × 24h`). `VentanaMoral.gd` (<kbd>M</kbd>) displays three primary migration regime statuses (**`<= 20%` `⚠ Brain Drain Exodus`**, **`20% – 50%` `Bed-Gated Immigration`**, and **`> 50%` `Mass Immigration`**), backed by 10 stepped brackets:
 
 | Morale Bracket | Monthly Rate (`colonists / month`) | Migration Behavior in `Ciudad.gd` |
 | :--- | :--- | :--- |

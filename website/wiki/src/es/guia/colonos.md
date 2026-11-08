@@ -44,7 +44,7 @@ La demografía de la colonia se organiza en una jerarquía de oficios. Los colon
 
 ---
 
-## 3. Sistema de Moral Dinámica (GDD v3.59)
+## 3. Sistema de Moral Dinámica (GDD v3.61)
 
 El estado anímico colectivo de la colonia se cuantifica en una escala continua de **0 a 100 puntos** (consultable en la barra superior o presionando <kbd>M</kbd> para abrir `VentanaMoral.gd`, donde el estado de migración se muestra directamente en la línea inferior bajo la productividad laboral):
 - **Inicio de Partida:** La colonia inicia con una moral de **75,0** (bono pionero de optimismo).

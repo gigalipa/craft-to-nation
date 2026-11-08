@@ -29,7 +29,7 @@
 - [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
 - Energia.gd `EXTRACTED`
 - [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `EXTRACTED`
-- [SKILL.md (Skill: Craft to Nation - Nodes and Network)](SKILL.md_Skill-_Craft_to_Nation_-_Nodes_and_Network.md) `EXTRACTED`
+- SKILL.md (Skill: Craft to Nation - Nodes and Network) `EXTRACTED`
 - [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) `EXTRACTED`
 - SKILL.md (Skill: Content QA (Control de Calidad)) `EXTRACTED`
 - PanelNotificaciones.gd `EXTRACTED`

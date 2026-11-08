@@ -82,11 +82,18 @@ func tick() -> void:
 	for base: Vector3i in _puertas:
 		var puerta: Dictionary = _puertas[base]
 		var cerca := _hay_colono_cerca(base, colonos)
+		var anterior: bool = puerta["abierta"]
 		if cerca and not puerta["abierta"]:
 			puerta["abierta"] = true
 			puerta["manual"] = false
 		elif not cerca and puerta["abierta"] and not puerta["manual"]:
 			puerta["abierta"] = false
+		if puerta["abierta"] != anterior:
+			var pos_mundo := Vector3(base) + Vector3(0.5, 1.0, 0.5)
+			if puerta["abierta"]:
+				Sonidos.reproducir_3d("sfx_puerta_abrir", pos_mundo, -3.0, 0.05)
+			else:
+				Sonidos.reproducir_3d("sfx_puerta_cerrar", pos_mundo, -3.0, 0.05)
 		actualizar(base)
 
 
@@ -115,10 +122,16 @@ func cuerpo_de(base: Vector3i) -> StaticBody3D:
 ## hasta que se cierre a mano (manual = true); cerrar limpia ese estado.
 func alternar(base: Vector3i) -> bool:
 	if not _puertas.has(base):
+		Sonidos.reproducir("sfx_puerta_trabada")
 		return false
 	var puerta: Dictionary = _puertas[base]
 	puerta["abierta"] = not puerta["abierta"]
 	puerta["manual"] = puerta["abierta"]
+	var pos_mundo := Vector3(base) + Vector3(0.5, 1.0, 0.5)
+	if puerta["abierta"]:
+		Sonidos.reproducir_3d("sfx_puerta_abrir", pos_mundo)
+	else:
+		Sonidos.reproducir_3d("sfx_puerta_cerrar", pos_mundo)
 	actualizar(base)
 	return true
 

@@ -21,6 +21,8 @@
   <meta name="twitter:image" content="https://crafttonation.netlify.app/assets/craft-to-nation-logo.png">
   <title data-en="Craft to Nation — From the first block to a living nation" data-fr="Craft to Nation — Du premier bloc à une nation vivante">Craft to Nation — Del primer bloque a una nación viva</title>
   <link rel="canonical" href="https://crafttonation.netlify.app/">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Context Index">
+  <link rel="alternate" type="text/plain" href="/llms-full.txt" title="Full Semantic Context">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
   <meta name="google-site-verification" content="32314MEFrp3A3-KL8ZCys7EaSrTp3MSi_YeRkKXCOjU">
   <link rel="icon" href="favicon.ico" sizes="any">
@@ -37,7 +39,7 @@
         "url": "https://crafttonation.netlify.app/",
         "name": "Craft to Nation",
         "description": "Sitio oficial de Craft to Nation: juego de supervivencia, construcción voxel y estrategia de colonias.",
-        "inLanguage": ["es-ES", "en-US"]
+        "inLanguage": ["es-ES", "en-US", "fr-FR"]
       },
       {
         "@type": "VideoGame",
@@ -48,7 +50,19 @@
         "description": "Juego indie híbrido que combina supervivencia en primera persona, construcción voxel libre, gestión de ciudades, industrias complejas y estrategia en tiempo real.",
         "genre": ["City Builder", "Survival", "Strategy", "Sandbox", "Voxel"],
         "gamePlatform": ["PC game", "Windows", "Linux"],
+        "operatingSystem": "Windows, Linux",
         "applicationCategory": "Game",
+        "inLanguage": ["es", "en", "fr"],
+        "softwareVersion": "3.61",
+        "author": {
+          "@type": "Person",
+          "name": "Daniel Peraza"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Craft to Nation",
+          "url": "https://crafttonation.netlify.app/"
+        },
         "sameAs": [
           "https://github.com/gigalipa/craft-to-nation",
           "https://www.youtube.com/@crafttonation"
@@ -211,14 +225,14 @@
     <section id="desarrollo" aria-labelledby="titulo-desarrollo">
       <h2 id="titulo-desarrollo" data-en="Development status" data-fr="État du développement">Estado del desarrollo</h2>
       <div class="development-overview">
-        <p class="development-lead" data-en="The playable prototype now connects survival, freeform voxel construction, city management, physical logistics, nine industries, decentralized research, energy, and dynamic morale in one growing economy." data-fr="Le prototype jouable réunit désormais survie, construction voxel libre, gestion urbaine, logistique physique, neuf industries, recherche décentralisée, énergie et moral dynamique au sein d'une même économie en expansion.">El prototipo jugable ya conecta supervivencia, construcción voxel libre, gestión urbana, logística física, nueve industrias, investigación descentralizada, energía y moral dinámica en una misma economía creciente.</p>
+        <p class="development-lead" data-en="The playable prototype now connects survival, freeform voxel construction, city management, physical logistics, nine industries, decentralized research, energy, dynamic morale, interactive start portal with atomic saves, and a spatial audio engine in one growing economy." data-fr="Le prototype jouable réunit désormais survie, construction voxel libre, gestion urbaine, logistique physique, neuf industries, recherche décentralisée, énergie, moral dynamique, portail d'accueil avec sauvegarde atomique et moteur audio spatial au sein d'une même économie en expansion.">El prototipo jugable ya conecta supervivencia, construcción voxel libre, gestión urbana, logística física, nueve industrias, investigación descentralizada, energía, moral dinámica, portal interactivo con guardado atómico y motor de audio espacial en una misma economía creciente.</p>
         <ul class="development-stats" aria-label="Resumen del estado / Development summary">
-          <li class="development-stat"><strong>v3.59</strong><span data-en="Current GDD" data-fr="GDD en vigueur">GDD vigente</span></li>
+          <li class="development-stat"><strong>v3.61</strong><span data-en="Current GDD" data-fr="GDD en vigueur">GDD vigente</span></li>
           <li class="development-stat"><strong>562</strong><span data-en="Test blocks" data-fr="Blocs de test">Bloques de prueba</span></li>
-          <li class="development-stat"><strong>28</strong><span data-en="Test scenes" data-fr="Scènes de test">Escenas de prueba</span></li>
+          <li class="development-stat"><strong>35</strong><span data-en="Test scenes" data-fr="Scènes de test">Escenas de prueba</span></li>
           <li class="development-stat"><strong data-en="In progress" data-fr="En cours">En progreso</strong><span data-en="Phase 3 · Industry" data-fr="Phase 3 · Industrie">Fase 3 · Industria</span></li>
         </ul>
-        <p class="development-summary" data-en="The simulation centralizes its full numerical balance and runtime configuration in ajustes.gd alongside reactive multi-language UI strings (strings.gd), preparing game profile presets and hot-reloading. It incorporates dynamic morale [0 to 100] with continuous labor productivity, calibrated stepped monthly migration with brain drain and a 2.5x immigration boost, full SVG vector HUD iconography (90+ icons catalog with live 3D thumbnails), colonist-built road networks, an elevated pipeline system at Y+6, deep oil drilling with miner's lamp, fluid physics, water pumping, glassworks with 1/20 window panels, block manufacturing, transport workshop with 6 haulage units, 2-layer research with the Itinerant Researcher, percentage stockpile reserves, and organic era progression via IDU." data-fr="La simulation centralise son équilibrage numérique et ses réglages dans ajustes.gd avec textes d'interface réactifs et multilingues (strings.gd), préparant profils de jeu et rechargement à chaud. Elle intègre un moral dynamique [0 à 100] avec productivité continue, migration mensuelle étalonnée avec fuite des cerveaux et boost d'immigration de 2,5×, iconographie vectorielle SVG au HUD (90+ icônes avec vignettes 3D en direct), réseau routier construit par les colons, canalisations aériennes à Y+6, forage pétrolier profond avec lampe de mineur, physique des fluides, station de pompage, vitrière avec panneaux de fenêtre 1/20, usine de blocs, atelier de transport à 6 unités, recherche décentralisée en 2 couches avec chercheur itinérant, réserves de stock en pourcentage et progression organique des ères via l'IDU.">La simulación centraliza todo su balance numérico y parámetros de ejecución en ajustes.gd junto con textos de interfaz reactivos y multi-idioma (strings.gd), sentando las bases para perfiles de partida y ajuste en caliente. Integra el sistema de moral dinámica [0 a 100] con curva continua de productividad laboral, migración mensual escalonada calibrada con fuga de cerebros y boost migratorio de 2.5×, iconografía vectorial SVG completa en el HUD (catálogo de más de 90 íconos con miniaturas 3D vivas), tendido de vías por colonos, canalizaciones aéreas a desnivel en Y+6, pozos de crudo en el subsuelo con lámpara de minero, físicas de fluidos, estación de bombeo, vidriera con paneles de ventana 1/20, fábrica de bloques, taller de transporte con 6 unidades de acarreo, investigación descentralizada en 2 capas con el Investigador Itinerante, reservas porcentuales en el almacén central y progresión orgánica de eras por IDU.</p>
+        <p class="development-summary" data-en="The simulation centralizes its full numerical balance and runtime configuration in ajustes.gd alongside reactive multi-language UI strings (strings.gd), preparing game profile presets and hot-reloading. It incorporates dynamic morale [0 to 100] with continuous labor productivity, calibrated stepped monthly migration (10 tiers up to +10/month at 100 morale) and 2.5x immigration boost, full SVG vector HUD iconography (95+ icons catalog with live 3D thumbnails), colonist-built road networks, an elevated pipeline system at Y+6, deep oil drilling with miner's lamp, fluid physics, water pumping, glassworks with 1/20 window panels, block manufacturing, transport workshop with 6 haulage units, 2-layer research with the Itinerant Researcher, percentage stockpile reserves, organic era progression via IDU (I–IV), interactive main menu (MenuInicio.tscn) with animated background, atomic save/load system (GestorPartida.gd), contextual pause menu (F11), persistent configuration (Configuracion.gd), and a 2D/3D spatial audio engine with 102 OGG sound effects (Sonidos.gd)." data-fr="La simulation centralise son équilibrage numérique et ses réglages dans ajustes.gd avec textes d'interface réactifs et multilingues (strings.gd), préparant profils de jeu et rechargement à chaud. Elle intègre un moral dynamique [0 à 100] avec productivité continue, migration mensuelle étalonnée (10 paliers jusqu'à +10/mois à moral 100) et boost d'immigration de 2,5×, iconographie vectorielle SVG au HUD (95+ icônes avec vignettes 3D en direct), réseau routier construit par les colons, canalisations aériennes à Y+6, forage pétrolier profond avec lampe de mineur, physique des fluides, station de pompage, vitrière avec panneaux de fenêtre 1/20, usine de blocs, atelier de transport à 6 unités, recherche décentralisée en 2 couches avec chercheur itinérant, réserves de stock en pourcentage, progression organique des ères via l'IDU (I–IV), menu d'accueil interactif (MenuInicio.tscn) avec arrière-plan animé, sauvegardes atomiques de parties (GestorPartida.gd), menu de pause contextuel (F11), configuration persistante (Configuracion.gd) et moteur audio spatial 2D/3D avec catalogue de 102 effets OGG (Sonidos.gd).">La simulación centraliza todo su balance numérico y parámetros de ejecución en ajustes.gd junto con textos de interfaz reactivos y multi-idioma (strings.gd), sentando las bases para perfiles de partida y ajuste en caliente. Integra el sistema de moral dinámica [0 a 100] con curva continua de productividad laboral, migración mensual escalonada calibrada (10 tramos con hasta +10/mes a moral 100) y boost migratorio de 2.5×, iconografía vectorial SVG completa en el HUD (catálogo de más de 95 íconos con miniaturas 3D vivas), tendido de vías por colonos, canalizaciones aéreas a desnivel en Y+6, pozos de crudo en el subsuelo con lámpara de minero, físicas de fluidos, estación de bombeo, vidriera con paneles de ventana 1/20, fábrica de bloques, taller de transporte con 6 unidades de acarreo, investigación descentralizada en 2 capas con el Investigador Itinerante, reservas porcentuales en el almacén central, progresión orgánica de eras por IDU (I–IV), portal de inicio (MenuInicio.tscn) con fondo animado, guardado y carga atómica de partidas (GestorPartida.gd), menú de pausa contextual (F11), configuración persistente (Configuracion.gd) y motor de audio espacial 2D/3D con catálogo de 102 efectos OGG (Sonidos.gd).</p>
       </div>
 
       <div class="development-demo">

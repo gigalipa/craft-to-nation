@@ -722,6 +722,52 @@ func ejecutar_pruebas() -> void:
 	assert(not trazador_bajo.vertice_transitable(Vector2i(5, 8)), "Debe rechazar el vértice si el ducto invade los 3 bloques de despeje")
 	Canalizaciones.reiniciar()
 
-	print("\n=== Las 42 pruebas de Vias pasaron correctamente ===")
+	print("\n=== TEST 43: Vias.es_borde_derecho() detecta el carril exterior derecho en pasos ortogonales, diagonales y huellas multi-ancho ===")
+	Vias.reiniciar()
+	# Crear vía N-S en X in [4, 5], Z in [0, 10] a Y=0
+	var celdas_ns: Array = []
+	for z in range(0, 11):
+		celdas_ns.append(Vector3i(4, 0, z))
+		celdas_ns.append(Vector3i(5, 0, z))
+	Vias.agregar(celdas_ns, "tierra_pisada")
+
+	# Avance hacia el Norte (0, -1): la derecha es Este (+X), carril derecho es X=5
+	assert(Vias.es_borde_derecho(Vector3i(5, 0, 5), Vector2i(0, -1), 1), "Norte: X=5 es borde derecho")
+	assert(not Vias.es_borde_derecho(Vector3i(4, 0, 5), Vector2i(0, -1), 1), "Norte: X=4 NO es borde derecho")
+
+	# Avance hacia el Sur (0, 1): la derecha es Oeste (-X), carril derecho es X=4
+	assert(Vias.es_borde_derecho(Vector3i(4, 0, 5), Vector2i(0, 1), 1), "Sur: X=4 es borde derecho")
+	assert(not Vias.es_borde_derecho(Vector3i(5, 0, 5), Vector2i(0, 1), 1), "Sur: X=5 NO es borde derecho")
+
+	# Crear vía E-O en X in [0, 10], Z in [4, 5] a Y=0
+	Vias.reiniciar()
+	var celdas_eo: Array = []
+	for x in range(0, 11):
+		celdas_eo.append(Vector3i(x, 0, 4))
+		celdas_eo.append(Vector3i(x, 0, 5))
+	Vias.agregar(celdas_eo, "tierra_pisada")
+
+	# Avance hacia el Este (1, 0): la derecha es Sur (+Z), carril derecho es Z=5
+	assert(Vias.es_borde_derecho(Vector3i(5, 0, 5), Vector2i(1, 0), 1), "Este: Z=5 es borde derecho")
+	assert(not Vias.es_borde_derecho(Vector3i(5, 0, 4), Vector2i(1, 0), 1), "Este: Z=4 NO es borde derecho")
+
+	# Avance hacia el Oeste (-1, 0): la derecha es Norte (-Z), carril derecho es Z=4
+	assert(Vias.es_borde_derecho(Vector3i(5, 0, 4), Vector2i(-1, 0), 1), "Oeste: Z=4 es borde derecho")
+	assert(not Vias.es_borde_derecho(Vector3i(5, 0, 5), Vector2i(-1, 0), 1), "Oeste: Z=5 NO es borde derecho")
+
+	# Unidad de ancho 2 en carretera de ancho 4: X in [0, 3], Z in [0, 10]
+	Vias.reiniciar()
+	var celdas_ancho4: Array = []
+	for z in range(0, 11):
+		for x in range(0, 4):
+			celdas_ancho4.append(Vector3i(x, 0, z))
+	Vias.agregar(celdas_ancho4, "tierra_pisada")
+
+	# Hacia el Norte (0, -1), unidad ancho 2 anclada en X=2 (ocupa X=2 y X=3): borde derecho toca X=3 y fuera es X=4
+	assert(Vias.es_borde_derecho(Vector3i(2, 0, 5), Vector2i(0, -1), 2), "Ancho 2 en X=2 hacia Norte es carril derecho")
+	assert(not Vias.es_borde_derecho(Vector3i(0, 0, 5), Vector2i(0, -1), 2), "Ancho 2 en X=0 hacia Norte NO es carril derecho (carril izquierdo)")
+
+	Vias.reiniciar()
+	print("\n=== Las 43 pruebas de Vias pasaron correctamente ===")
 
 

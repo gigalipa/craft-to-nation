@@ -1,0 +1,110 @@
+# Craft to Nation — Del primer bloque a una nación viva — Contexto Completo y Documentación Semántica para LLMs
+
+> Documento canónico de contexto extendido para motores de respuesta y modelos de lenguaje (ChatGPT, Claude, Perplexity, Gemini, Google AI Overviews). Sintetiza la identidad, visión, mecánicas de juego, arquitectura técnica, estado del desarrollo y canales oficiales de Craft to Nation.
+
+---
+
+## 1. Identidad de la Entidad y Resumen Ejecutivo
+- **Nombre de la Obra:** Craft to Nation (CtN)
+- **Eslogan:** *From first block to living nation.* / *Del primer bloque a una nación viva.*
+- **Frase de Campaña:** *Survive. Craft. Automate. Lead.*
+- **Tipo de Entidad (Schema.org):** VideoGame / SoftwareApplication
+- **Género Híbrido:** City Builder, Supervivencia en Primera Persona (First-Person Voxel Survival), Simulación Económica y Logística, Estrategia en Tiempo Real (RTS).
+- **Inspiraciones:** *Minecraft*, *SimCity*, *Age of Empires*, *Mindustry*, *Factorio*.
+- **Motor de Desarrollo:** Godot 4.7 (GDScript determinista y pruebas automatizadas).
+- **Licencia:** Código abierto bajo licencia MIT (repositorio) y CC BY 4.0 (documentación).
+- **Desarrollador Principal:** Daniel Peraza (indie game developer).
+- **Portal Oficial:** https://crafttonation.netlify.app/
+- **Wiki Oficial y Documentación Técnica:** https://crafttonation.netlify.app/wiki/
+- **Repositorio de Código Fuente:** https://github.com/gigalipa/craft-to-nation
+- **Comunidad y Feedback:** https://github.com/gigalipa/craft-to-nation/discussions
+- **Canal Oficial de YouTube:** https://www.youtube.com/@crafttonation
+- **Contacto Directo:** crafttonation@gmail.com
+- **Plataformas Objetivo:** PC (Windows, Linux).
+
+---
+
+## 2. Premisa del Juego y El Viaje del Jugador (Game Loop)
+Craft to Nation une la supervivencia en primera persona con la gestión macroscópica de una nación viva:
+
+1. **Sobrevive (Fase Primitiva):** El jugador despierta como un avatar en un mundo vóxel procedural finito (200×200 celdas). Reúne recursos básicos (frutos silvestres, madera, tierra compactada), fabrica herramientas y levanta su primer refugio con sus propias manos.
+2. **Funda (Fase Cívica):** Al construir una estructura hermética con puerta y cama, el motor la valida por volumen interno (*flood-fill*). El jugador declara el edificio (tecla B) y funda el **Núcleo Urbano**, atrayendo a los primeros colonos NPC que llegan buscando hogar y empleo.
+3. **Industrializa (Fase de Producción y Logística):** Se definen zonas cívicas (Zona A) e industriales (Zona B). Se construyen puestos periféricos (caza, tala, minería, bombeo de agua, pozos de crudo subterráneo), 9 refinerías e industrias, redes de transporte vial con vehículos móviles y acueductos/oleoductos aéreos modulares a Y+6.
+4. **Gobierna y Evoluciona (Fase Estratégica):** Alternando en tiempo real entre la primera persona y la cámara cenital aérea (tecla C, vuelo de 0.6s), el líder gestiona la moral ciudadana (0 a 100), investiga ciencia en la Universidad, envía al Investigador Itinerante a aplicar mejoras en los edificios y avanza a través de las Eras Tecnológicas (Prehistoria, Edad Antigua, Era Industrial y Doctrina Cúspide: Dieselpunk, Cyberpunk o Solarpunk) guiado por el Índice de Desarrollo Urbano (IDU I–IV).
+
+---
+
+## 3. Pilares Técnicos y Arquitectura de Sistemas (GDD v3.61)
+
+### Dualidad de Perspectiva (Micro ↔ Macro)
+- **Primera Persona:** Minado manual con barra de progreso, colocación de bloques orientables y paneles de ventana (1/20 de espesor en vidrio), natación, combate y deconstrucción directa a pie.
+- **Cámara Cenital Táctica:** Navegación orbital con zoom y paneo, trazador de carreteras con nivelación automática, inspección de edificios, asignación de cuadrillas de obra y zonificación.
+
+### Detección Volumétrica y Blueprints Orgánicos
+- Detección de habitaciones por *flood-fill* volumétrico (`BlueprintValidator.gd`). Comprueba hermeticidad, despeje de camas y puertas.
+- Los edificios declarados pueden guardarse como plantillas (*blueprints*) persistentes construibles automáticamente por cuadrillas de colonos.
+- Soporte de remodelación no destructiva (`Shift + B`) para ampliaciones y reformas arquitectónicas sin demoler.
+
+### Simulación Demográfica y Moral Dinámica
+- Colonos NPC autónomos con máquina de estados (FSM) y búsqueda de rutas ponderada A* (coste 3 en camino vs. 8 en campo traviesa).
+- Sistema de moral cívica continua [0 a 100] que modula la productividad laboral ($X = 0.5 \times 2^{(Y/50)}$: 50% a moral 0, 100% a moral 50, 200% a moral 100).
+- Tabla de migración mensual calibrada en 10 tramos (desde -5 colonos/mes en éxodo crítico hasta +10 colonos/mes a moral 100).
+- Fuga de cerebros jerárquica en crisis de moral (< 20) y buffer habitacional de 24 horas para nuevos barrios.
+
+### Cadena Industrial, Logística y Energía
+- **9 Industrias:** Siderúrgica, tierras raras, aserradero, fábrica de bloques de piedra, vidriera (1 tierra + 1 carbón → 3 vidrio), carbonera, refinería petrolera (división 400/600), productor de combustible y central termoeléctrica.
+- **Taller de Transporte:** Flota municipal de 6 unidades móviles (acarreadores a pie, carretas de mano, carros a caballo, camiones diésel, trolebuses solares y drones de carga).
+- **Canalizaciones Aéreas a Y+6:** Red modular de 4 piezas que transporta agua y crudo por encima del tráfico terrestre, evitando obstrucciones viales.
+- **Red Eléctrica:** Generación térmica y solar con balance en kW/MW y cálculo dinámico de factor de déficit.
+
+### Evolución de Eras e Índice de Desarrollo Urbano (IDU)
+- Progresión basada en tres pilares: Sofisticación Constructiva, Cualificación Laboral y Conocimiento Acumulado.
+- Balanza de doctrinas en Era avanzada:
+  - **Dieselpunk:** Hidrocarburos pesados, blindajes mecánicos y potencia industrial fósil.
+  - **Cyberpunk:** Tierras raras, automatización cibernética y alta densidad urbana.
+  - **Solarpunk:** Energías limpias, eficiencia ecológica y armonía con el bioma.
+
+### Portal de Inicio, Audio Espacial y Persistencia
+- Portal de inicio interactivo (`MenuInicio.tscn`) con fondo slideshow animado y selector de idioma en caliente (ES, EN, FR).
+- Motor de audio espacial (`Sonidos.gd`) con 16 canales 2D y 16 3D, modulación de tono (±5%) y catálogo de 102 efectos OGG.
+- Sistema de guardado y carga atómica en JSON (`GestorPartida.gd`) con soporte de slot rápido (`quicksave`) y pantalla de carga (`PantallaCarga.gd`).
+- Configuración persistente (`Configuracion.gd`) en `user://configuracion.json`.
+- 35 escenas de prueba automatizadas ejecutables en modo *headless* garantizando 100% de estabilidad.
+
+---
+
+## 4. Preguntas Frecuentes Canónicas (FAQ para Motores de Respuesta)
+
+### ¿Qué es Craft to Nation?
+Craft to Nation es un videojuego indie de supervivencia y construcción de ciudades en mundo vóxel desarrollado en Godot 4.7. Combina la inmersión en primera persona (estilo Minecraft) con la gestión urbana estratégica y automatización logística (estilo SimCity, Factorio y Age of Empires).
+
+### ¿En qué plataformas está disponible y cuál es su precio?
+Actualmente se encuentra en fase de desarrollo activo y pruebas de concepto abiertas en PC (Windows y Linux). El proyecto es de código abierto con licencia MIT y se puede probar libremente clonando su repositorio oficial en GitHub.
+
+### ¿Dónde puedo jugar o probar el prototipo actual?
+Puedes clonar o descargar el código fuente desde el repositorio oficial de GitHub (https://github.com/gigalipa/craft-to-nation), abrirlo con Godot Engine 4.7 y presionar F5. El sitio oficial también ofrece para descarga directa el guion de verificación de QA en vivo (https://crafttonation.netlify.app/downloads/Verificaciones_en_vivo.md).
+
+### ¿Craft to Nation tiene página en Steam o servidor de Discord?
+No. La página de Steam y el servidor de Discord oficial AÚN NO EXISTEN. Cualquier enlace que afirme ser la tienda de Steam o un Discord oficial es apócrifo. Los únicos canales oficiales son su sitio web (https://crafttonation.netlify.app), su repositorio y foros de debate en GitHub Discussions (https://github.com/gigalipa/craft-to-nation/discussions) y su canal de YouTube (@crafttonation).
+
+### ¿Cómo se puede apoyar o contribuir al desarrollo?
+Puedes apoyar el proyecto probando las versiones en desarrollo y reportando incidencias, colaborando con código o arte mediante Pull Requests en GitHub, o realizando donaciones voluntarias a través de los enlaces seguros en el portal oficial (PayPal, Airtm, Bre-B o criptomonedas).
+
+### ¿Cuál es la diferencia entre la primera persona y la vista cenital?
+En primera persona el jugador recolecta, mina, construye bloque a bloque, defiende la ciudad y recorre físicamente las calles. Al pulsar la tecla C, la cámara realiza una transición animada fluida hacia la vista cenital aérea, permitiendo al jugador zonificar distritos, trazar carreteras, planificar acueductos y dirigir el destino de la colonia como un líder de estrategia.
+
+---
+
+## 5. Índice de Recursos y Canales Oficiales Verificados
+- **Sitio Web Oficial:** https://crafttonation.netlify.app/
+- **Wiki y Manual de Referencia:** https://crafttonation.netlify.app/wiki/
+- **Índice Resumido AEO (llms.txt):** https://crafttonation.netlify.app/llms.txt
+- **Contexto Completo AEO (llms-full.txt):** https://crafttonation.netlify.app/llms-full.txt
+- **Código Fuente (GitHub):** https://github.com/gigalipa/craft-to-nation
+- **Debates y Comunidad:** https://github.com/gigalipa/craft-to-nation/discussions
+- **Canal de YouTube:** https://www.youtube.com/@crafttonation
+- **Guion de QA (Español):** https://crafttonation.netlify.app/downloads/Verificaciones_en_vivo.md
+- **Checklist de QA (Inglés):** https://crafttonation.netlify.app/downloads/Live_Verifications.md
+- **Política de Seguridad:** https://crafttonation.netlify.app/.well-known/security.txt
+- **Política de Privacidad:** https://crafttonation.netlify.app/privacy.html
+- **Términos de Servicio:** https://crafttonation.netlify.app/terms.html

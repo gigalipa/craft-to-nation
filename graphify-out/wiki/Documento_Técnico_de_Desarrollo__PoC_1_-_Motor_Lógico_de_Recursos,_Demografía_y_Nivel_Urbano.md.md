@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md (**Documento Técnico de Desarrollo: PoC 1 - Motor Lógico de R)** (0 connections) — `PoC_1/Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_pared_piedra_min/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `PoC_1/Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md`
+- `arte/dae/casa_pared_piedra_min/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

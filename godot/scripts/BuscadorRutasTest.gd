@@ -372,4 +372,52 @@ func ejecutar_pruebas() -> void:
 	Vias._columnas.clear()
 	Vias.notches.clear()
 
-	print("\n=== Las 22 pruebas de BuscadorRutas pasaron correctamente ===")
+	print("\n=== TEST 23: Tránsito por carril derecho en vías (Regla del borde derecho según huella) ===")
+	Vias.reiniciar()
+	var m23 := MundoFalso.new()
+	_llano(m23, 20, 25)
+	var b23 := BuscadorRutas.new(m23)
+
+	# Vía de 2 bloques de ancho en X in [10, 11], Z in [0, 20], soporte a Y=0
+	var celdas_v23: Array = []
+	for z in range(21):
+		celdas_v23.append(Vector3i(10, 0, z))
+		celdas_v23.append(Vector3i(11, 0, z))
+	Vias.agregar(celdas_v23, "tierra_pisada")
+
+	# Ruta hacia el Sur: de (10, 1, 0) a (10, 1, 20)
+	var ruta_sur: Array[Vector3i] = b23.buscar_ruta(Vector3i(10, 1, 0), Vector3i(10, 1, 20), {"tipo_transporte": "acarreador_pie"})
+	assert(not ruta_sur.is_empty(), "Ruta Sur debe encontrar camino")
+	assert(ruta_sur.size() == 20, "Ruta Sur debe tener 20 pasos")
+	for paso in ruta_sur:
+		assert(paso.x == 10, "Ruta hacia el Sur debe ir por el carril derecho (X=10)")
+
+	# Ruta hacia el Norte: de (10, 1, 20) a (10, 1, 0) (ambos extremos en X=10)
+	# Sin la regla del carril derecho, A* se quedaría en X=10 todo el camino chocando de frente con la ruta Sur.
+	# Con la regla del carril derecho, A* se mueve de inmediato al carril derecho (X=11) durante el recorrido.
+	var ruta_norte: Array[Vector3i] = b23.buscar_ruta(Vector3i(10, 1, 20), Vector3i(10, 1, 0), {"tipo_transporte": "acarreador_pie"})
+	assert(not ruta_norte.is_empty(), "Ruta Norte debe encontrar camino")
+	assert(ruta_norte.size() >= 20, "Ruta Norte debe tener al menos 20 pasos")
+	# En el tramo central (z entre 2 y 18), la ruta Norte DEBE ir por el carril derecho X=11
+	var pasos_en_carril_derecho := 0
+	for paso in ruta_norte:
+		if paso.z >= 2 and paso.z <= 18:
+			if paso.x == 11:
+				pasos_en_carril_derecho += 1
+	assert(pasos_en_carril_derecho >= 15, "Ruta Norte debe utilizar el carril derecho X=11 en su trayecto")
+
+	# Las dos rutas en sentidos opuestos tienen 0 celdas compartidas (separación total de carriles)
+	var compartidas := 0
+	for paso in ruta_sur:
+		if ruta_norte.has(paso):
+			compartidas += 1
+	assert(compartidas == 0, "Las rutas en sentidos opuestos no deben compartir ninguna celda (0 colisiones frontales)")
+
+	# Fallback: si el carril derecho X=10 se bloquea en Z=10, usa el carril izquierdo X=11 (coste 7) en vez de tierra (coste 8)
+	var bloqueadas23 := {Vector3i(10, 1, 10): true}
+	var ruta_desvio: Array[Vector3i] = b23.buscar_ruta(Vector3i(10, 1, 0), Vector3i(10, 1, 20), {"tipo_transporte": "acarreador_pie", "bloqueadas": bloqueadas23})
+	assert(not ruta_desvio.is_empty(), "Ruta con desvío debe encontrar camino")
+	assert(ruta_desvio.has(Vector3i(11, 1, 10)), "Debe esquivar por el carril izquierdo en la vía, no por tierra virgen")
+
+	Vias.reiniciar()
+	print("\n=== Las 23 pruebas de BuscadorRutas pasaron correctamente ===")

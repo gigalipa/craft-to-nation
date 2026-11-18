@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **run-single-test.ps1** (0 connections) — `tools/run-single-test.ps1`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/puesto_maderero/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tools/run-single-test.ps1`
+- `arte/dae/puesto_maderero/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

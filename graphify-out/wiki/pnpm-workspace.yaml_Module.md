@@ -1,10 +1,15 @@
 # pnpm-workspace.yaml Module
 
-> 1 nodes · cohesion 1.00
+> 6 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **Asset Visual: kick_banner_preview_test.jpg** (0 connections) — `arte/banners/kick_banner_preview_test.jpg`
+- **contact_links** (4 connections) — `.github/ISSUE_TEMPLATE/config.yml`
+- **config.yml** (2 connections) — `.github/ISSUE_TEMPLATE/config.yml`
+- **blank_issues_enabled** (1 connections) — `.github/ISSUE_TEMPLATE/config.yml`
+- **about** (1 connections) — `.github/ISSUE_TEMPLATE/config.yml`
+- **name** (1 connections) — `.github/ISSUE_TEMPLATE/config.yml`
+- **url** (1 connections) — `.github/ISSUE_TEMPLATE/config.yml`
 
 ## Relationships
 
@@ -12,11 +17,11 @@
 
 ## Source Files
 
-- `arte/banners/kick_banner_preview_test.jpg`
+- `.github/ISSUE_TEMPLATE/config.yml`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

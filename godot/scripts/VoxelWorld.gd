@@ -626,6 +626,7 @@ func _celda_libre_junto_a_cama(celda: Vector3i, celdas_mundo: Dictionary, huella
 func _ready() -> void:
 	cell_size = Vector3.ONE * TAMANO_CELDA
 	_indexar_biblioteca()
+	SEMILLA_MUNDO = Ajustes.SEMILLA
 	generador = GeneradorMundo.new(SEMILLA_MUNDO, ANCHO_MUNDO, LARGO_MUNDO)
 	arboles = GeneradorArbol.new()
 	_generar_terreno()
@@ -1021,7 +1022,10 @@ func _retirar_bloque(celda: Vector3i) -> void:
 				nivel_inundacion = min_nivel + 1
 
 	if inunda_agua:
-		_colocar_agua_flujo(celda, nivel_inundacion)
+		if debe_crear_fuente_agua(celda):
+			_convertir_a_fuente_agua(celda)
+		else:
+			_colocar_agua_flujo(celda, nivel_inundacion)
 		_escurrir_agua_desde([celda])
 	else:
 		var vecinos_agua: Array[Vector3i] = []
@@ -1276,6 +1280,41 @@ func _es_agua_de_flujo(celda: Vector3i) -> bool:
 	return _es_liquido_de_flujo(celda, "agua")
 
 
+## Devuelve true si "celda" es un bloque FUENTE de agua (no es agua de flujo ni aire ni otro bloque).
+func es_fuente_agua(celda: Vector3i) -> bool:
+	return obtener_tipo(celda) == "agua" and not _nivel_agua.has(celda)
+
+
+## Determina si una celda vacía o de flujo debe convertirse en bloque FUENTE de agua.
+## Regla: Tiene bloques fuente de agua a ambos lados en dirección X (x-1 y x+1)
+## o a ambos lados en dirección Z (z-1 y z+1). O tiene 2 o más vecinos horizontales que son fuentes.
+## Solo aplica para agua; nunca para crudo ni combustible.
+func debe_crear_fuente_agua(celda: Vector3i) -> bool:
+	var fuente_x_neg := es_fuente_agua(celda + Vector3i(-1, 0, 0))
+	var fuente_x_pos := es_fuente_agua(celda + Vector3i(1, 0, 0))
+	var fuente_z_neg := es_fuente_agua(celda + Vector3i(0, 0, -1))
+	var fuente_z_pos := es_fuente_agua(celda + Vector3i(0, 0, 1))
+
+	# Fuentes a ambos lados en dirección X o en dirección Z
+	if (fuente_x_neg and fuente_x_pos) or (fuente_z_neg and fuente_z_pos):
+		return true
+
+	# Al menos 2 vecinos horizontales ortogonales que son fuentes de agua
+	var total_fuentes := (1 if fuente_x_neg else 0) + (1 if fuente_x_pos else 0) + (1 if fuente_z_neg else 0) + (1 if fuente_z_pos else 0)
+	return total_fuentes >= 2
+
+
+## Convierte una celda en bloque FUENTE de agua y propaga la comprobación a vecinos de flujo.
+func _convertir_a_fuente_agua(celda: Vector3i) -> void:
+	colocar_bloque(celda, "agua")
+	_nivel_agua.erase(celda)
+	bloque_translucido_cambiado.emit(celda)
+	for dir_h in VECINOS_ORTOGONALES_XZ:
+		var vec_h: Vector3i = celda + Vector3i(dir_h.x, 0, dir_h.y)
+		if _es_agua_de_flujo(vec_h) and debe_crear_fuente_agua(vec_h):
+			_convertir_a_fuente_agua(vec_h)
+
+
 ## Coloca una celda de líquido de flujo con "nivel" (ver NIVEL_CAIDA/
 ## alcances de flujo). colocar_bloque() ya emite bloque_translucido_cambiado;
 ## el nivel se fija justo después, antes de que TranslucidosRenderer
@@ -1368,6 +1407,10 @@ func _procesar_frente_escurrimiento() -> bool:
 	for direccion_xz in VECINOS_ORTOGONALES_XZ:
 		var lateral: Vector3i = fondo + Vector3i(direccion_xz.x, 0, direccion_xz.y)
 		if _es_liquido_de_flujo(lateral, tipo_liquido):
+			if tipo_liquido == "agua" and debe_crear_fuente_agua(lateral):
+				_convertir_a_fuente_agua(lateral)
+				_cola_escurrimiento.append(lateral)
+				continue
 			if _nivel_agua[lateral] > nivel + 1:
 				_cambiar_nivel_agua(lateral, nivel + 1)
 				_cola_escurrimiento.append(lateral)
@@ -1383,9 +1426,13 @@ func _procesar_frente_escurrimiento() -> bool:
 	for lateral in destinos:
 		if _esparcidas_escurrimiento >= _limite_escurrimiento:
 			break
-		_colocar_liquido_flujo(lateral, nivel + 1, tipo_liquido)
-		_esparcidas_escurrimiento += 1
-		_cola_escurrimiento.append(lateral)
+		if tipo_liquido == "agua" and debe_crear_fuente_agua(lateral):
+			_convertir_a_fuente_agua(lateral)
+			_cola_escurrimiento.append(lateral)
+		else:
+			_colocar_liquido_flujo(lateral, nivel + 1, tipo_liquido)
+			_esparcidas_escurrimiento += 1
+			_cola_escurrimiento.append(lateral)
 	return true
 
 

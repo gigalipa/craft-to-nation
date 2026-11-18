@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **calendario_semana_1.md (Calendario Editorial - Semana 1: Craft to Nation)** (0 connections) — `video_edition/workspaces/calendario_semana_1.md`
+- **Asset Visual: IMUQwcomLawGk.png** (0 connections) — `arte/IMUQwcomLawGk.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `video_edition/workspaces/calendario_semana_1.md`
+- `arte/IMUQwcomLawGk.png`
 
 ## Audit Trail
 

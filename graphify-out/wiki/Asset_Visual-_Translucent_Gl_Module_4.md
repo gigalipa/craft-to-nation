@@ -1,23 +1,25 @@
 # Asset Visual: Translucent_Gl Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: craft_to_nation_text_black.jpg** (0 connections) — `arte/logo/craft_to_nation_text_black.jpg`
+- **Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)** (2 connections) — `video_edition/remotion/public/craft-to-nation-logo.png`
+- **Asset Visual: craft-to-nation-logo.png** (1 connections) — `arte/logo/craft-to-nation-logo.png`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/logo/craft_to_nation_text_black.jpg`
+- `arte/logo/craft-to-nation-logo.png`
+- `video_edition/remotion/public/craft-to-nation-logo.png`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 1 (50%)
+- INFERRED: 1 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

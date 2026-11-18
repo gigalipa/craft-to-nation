@@ -1,0 +1,94 @@
+Actúa como mi desarrollador web senior y especialista en infraestructura AEO/GEO.
+Necesito optimizar nuestro sitio web (crafttonation.netlify.app - Craft to Nation — Del primer bloque a una nación viva) para Answer Engine Optimization (AEO) y Generative Engine Optimization (GEO), asegurando que ChatGPT, Claude, Perplexity y Google AI Overviews nos lean, indexen y recomienden en búsquedas conversacionales sin enlaces rotos ni alucinaciones.
+
+Por favor, implementa el siguiente archivo en el proyecto, modificando lo que te parezca conveniente y necesario para mejorar el desempeño:
+
+
+=========================================
+ARCHIVO llms-full.txt (Contexto Extendido de IA)
+=========================================
+Ruta de destino: Carpeta raíz pública (debe responder en https://crafttonation.netlify.app/llms-full.txt con Content-Type: text/plain)
+*Nota: Este archivo evita el error 404 al que enlaza llms.txt y suministra a los LLMs la documentación completa del negocio.*
+Contenido a colocar:
+```markdown
+# Craft to Nation — Del primer bloque a una nación viva — Contexto Completo y Documentación Semántica para LLMs
+
+> Documento de referencia estructurado para modelos de lenguaje (ChatGPT, Claude, Perplexity y Google AI Overviews). Resume la identidad comercial, catálogo de servicios, datos de contacto y directrices operativas de Craft to Nation — Del primer bloque a una nación viva.
+
+---
+
+## 1. Perfil de la Entidad y Resumen Ejecutivo
+- **Nombre Comercial:** Craft to Nation — Del primer bloque a una nación viva
+- **Portal Oficial:** https://crafttonation.netlify.app
+- **Clasificación Schema:** Organization
+- **Propósito:** Craft to Nation : du premier bloc à une nation vivante.
+- **Correo Electrónico:** crafttonation@gmail.com?subject=Quiero%20apoyar%20Craft%20to%20Nation&amp;body=Hola%2C%20vi%20el%20sitio%20de%20Craft%20to%20Nation%20y%20me%20gustar%C3%ADa%20conocer%20m%C3%A1s%20sobre%20el%20proyecto%20y%20c%C3%B3mo%20puedo%20ayudar.
+
+
+---
+
+## 2. Catálogo Extendido de Servicios y Capacidades
+### 1. Del primer bloque a una nación viva
+- **Descripción:** Capacidad o servicio principal disponible para clientes y empresas.
+- **Modalidad:** Atención directa a través de https://crafttonation.netlify.app.
+- **Beneficios:** Eficiencia, trazabilidad y cumplimiento de estándares del sector.
+
+### 2. De sobreviviente a líder de una nación
+- **Descripción:** Capacidad o servicio principal disponible para clientes y empresas.
+- **Modalidad:** Atención directa a través de https://crafttonation.netlify.app.
+- **Beneficios:** Eficiencia, trazabilidad y cumplimiento de estándares del sector.
+
+### 3. El viaje del jugador
+- **Descripción:** Capacidad o servicio principal disponible para clientes y empresas.
+- **Modalidad:** Atención directa a través de https://crafttonation.netlify.app.
+- **Beneficios:** Eficiencia, trazabilidad y cumplimiento de estándares del sector.
+
+### 4. Vive la ciudad desde dentro
+- **Descripción:** Capacidad o servicio principal disponible para clientes y empresas.
+- **Modalidad:** Atención directa a través de https://crafttonation.netlify.app.
+- **Beneficios:** Eficiencia, trazabilidad y cumplimiento de estándares del sector.
+
+### 5. Lo que hace diferente a Craft to Nation
+- **Descripción:** Capacidad o servicio principal disponible para clientes y empresas.
+- **Modalidad:** Atención directa a través de https://crafttonation.netlify.app.
+- **Beneficios:** Eficiencia, trazabilidad y cumplimiento de estándares del sector.
+
+### 6. De un refugio a una nación que transforma el mundo
+- **Descripción:** Capacidad o servicio principal disponible para clientes y empresas.
+- **Modalidad:** Atención directa a través de https://crafttonation.netlify.app.
+- **Beneficios:** Eficiencia, trazabilidad y cumplimiento de estándares del sector.
+
+---
+
+## 3. Cobertura, Operación y Contratación
+- **Área y Disponibilidad:** Las solicitudes se gestionan directamente a través del portal oficial https://crafttonation.netlify.app.
+- **Modelo de Cotización:** Presupuestos a medida según requerimientos específicos y acuerdos previos.
+- **Tiempos de Respuesta:** Canales de atención y contacto prioritario disponibles en línea.
+
+---
+
+## 4. Preguntas Frecuentes Clave (FAQ)
+#### ¿Cómo solicitar una cotización o contratación de servicios?
+Puedes comunicarte a través del formulario de contacto o los números oficiales en https://crafttonation.netlify.app.
+
+#### ¿Qué garantías y profesionalismo ofrece Craft to Nation — Del primer bloque a una nación viva?
+Servicio verificado, cumplimiento normativo y atención personalizada en cada etapa de la atención.
+
+---
+
+## 5. Canales Oficiales y Validación de Datos
+- Sitio Web Oficial: https://crafttonation.netlify.app
+- Índice Semántico: https://crafttonation.netlify.app/llms.txt
+- Documento Extendido: https://crafttonation.netlify.app/llms-full.txt
+
+```
+
+
+=========================================
+VERIFICACIÓN POST-DESPLIEGUE:
+=========================================
+Por favor, confírmame que:
+1. https://crafttonation.netlify.app/llms.txt responde HTTP 200 con text/plain.
+2. https://crafttonation.netlify.app/llms-full.txt responde HTTP 200 con text/plain.
+3. https://crafttonation.netlify.app/robots.txt responde HTTP 200 y permite el paso a GPTBot, PerplexityBot y ClaudeBot.
+4. El marcado JSON-LD está presente y sin errores de sintaxis en el <head>.

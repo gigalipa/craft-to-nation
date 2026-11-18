@@ -1,22 +1,27 @@
 # Asset Visual: Craft_to_Natio Module
 
-> 1 nodes · cohesion 1.00
+> 6 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/bloques/Translucent_Glass_Tinted.jpg`
+- **1. Publicación Principal - Devlog Técnico Multicámara (Martes)** (3 connections) — `video_edition/workspaces/calendario_semana_4.md`
+- **Calendario Editorial - Semana 4: Craft to Nation** (3 connections) — `video_edition/workspaces/calendario_semana_4.md`
+- **Detalle de Entregables y Paquetes de Contenido** (2 connections) — `video_edition/workspaces/calendario_semana_4.md`
+- **Copys para Redes Sociales:** (1 connections) — `video_edition/workspaces/calendario_semana_4.md`
+- **Paquete de Distribución YouTube:** (1 connections) — `video_edition/workspaces/calendario_semana_4.md`
+- **Parrilla de Publicaciones Semanal** (1 connections) — `video_edition/workspaces/calendario_semana_4.md`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [dependabot.yml](dependabot.yml.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/dae/bloques/Translucent_Glass_Tinted.jpg`
+- `video_edition/workspaces/calendario_semana_4.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

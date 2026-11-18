@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **2026-10-15-wiki-craft-to-nation-design.md (Especificación de Diseño: Wiki Híbrida para Craft to Nation)** (0 connections) — `docs/superpowers/specs/2026-10-15-wiki-craft-to-nation-design.md`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_base/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-10-15-wiki-craft-to-nation-design.md`
+- `arte/dae/casa_base/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

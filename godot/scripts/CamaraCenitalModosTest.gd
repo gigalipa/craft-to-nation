@@ -24,6 +24,8 @@ const ViaDemolicionOverlayScript = preload("res://scripts/ViaDemolicionOverlay.g
 
 ## Mundo mínimo: la cámara solo le pide altura_en(x, z).
 class MundoFalso extends Node:
+	var ANCHO_MUNDO: int = 64
+	var LARGO_MUNDO: int = 64
 	func altura_en(_x: int, _z: int) -> int:
 		return 12
 	func id_de_edificio(_celda: Vector3i) -> int:
@@ -351,5 +353,41 @@ func ejecutar_pruebas() -> void:
 	camara20.hud.queue_free()
 	mundo20.free()
 
-	print("\n=== Las 20 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 21: _refinar_foco_por_mira() y órbita/inclinación con foco fuera del mundo o fuera de rango ===")
+	var camara21: Camera3D = _camara()
+	var mundo21 := MundoFalso.new()
+	camara21.mundo = mundo21
+
+	# Fuera del árbol _refinar_foco_por_mira() debe devolver false de forma segura sin lanzar errores
+	assert(not camara21._refinar_foco_por_mira(), "sin viewport ni world3d devuelve false de forma segura")
+
+	# Simular foco fuera del mundo (p. ej. X < 0 o Z < 0 tras paneo)
+	var foco_inicial := Vector3(-20.0, 15.0, -20.0)
+	camara21.foco = foco_inicial
+	camara21.distancia_camara = 25.0
+	camara21.angulo_inclinacion = deg_to_rad(45.0)
+	camara21.angulo_orbital = 0.0
+
+	var pos_antes: Vector3 = camara21._posicion_ideal()
+	# Simular inicio de gesto de órbita (Q/E) con foco apuntando fuera del mundo
+	camara21._refinar_foco_por_mira()
+	var foco_post: Vector3 = camara21.foco
+	var distancia_post: float = camara21.distancia_camara
+
+	assert(foco_post == foco_inicial, "foco no cambia si apunta fuera del mundo o sin impacto")
+	assert(distancia_post == 25.0, "distancia_camara no sufre clamp desfasado")
+
+	# Al orbitar (girar angulo_orbital), la altura Y de la cámara debe mantenerse exactamente constante
+	camara21.angulo_orbital += deg_to_rad(45.0)
+	var pos_despues: Vector3 = camara21._posicion_ideal()
+	assert(is_equal_approx(pos_antes.y, pos_despues.y), "la altura Y de la camara se conserva exactamente al orbitar fuera del mundo")
+
+	# Al inclinar (Ctrl+W/S), el radio de la esfera se mantiene constante sin saltos bruscos
+	var dist_a_foco: float = pos_despues.distance_to(foco_post)
+	assert(is_equal_approx(dist_a_foco, 25.0), "la distancia al foco se mantiene en el radio orbital")
+
+	camara21.hud.queue_free()
+	mundo21.free()
+
+	print("\n=== Las 21 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
 

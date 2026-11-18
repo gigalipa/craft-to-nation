@@ -4,6 +4,8 @@ extends Node
 ## Serializa atómicamente el estado de Ciudad, Economia, Colonos, Zonificacion, Vias,
 ## Canalizaciones, VoxelWorld y Player en user://saves/*.json.
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 signal partida_guardada(nombre_archivo: String)
 signal partida_cargada(nombre_archivo: String)
 
@@ -54,6 +56,7 @@ func guardar_partida(nombre_archivo: String, nombre_legible: String = "") -> boo
 		"nombre_ciudad": "Ciudad Nivel %d" % Ciudad.nivel,
 		"poblacion": Ciudad.censo_total,
 		"oro": Ciudad.almacen["hierro"].cantidad if Ciudad.almacen.has("hierro") else 0.0,
+		"semilla": Ajustes.SEMILLA,
 	}
 
 	var data_ciudad: Dictionary = Ciudad.exportar_estado() if Ciudad != null else {}
@@ -76,6 +79,7 @@ func guardar_partida(nombre_archivo: String, nombre_legible: String = "") -> boo
 	var paquete := {
 		"version": 1,
 		"metadatos": metadatos,
+		"semilla": Ajustes.SEMILLA,
 		"ciudad": data_ciudad,
 		"economia": data_economia,
 		"colonos": data_colonos,
@@ -115,6 +119,13 @@ func cargar_partida(nombre_archivo: String) -> bool:
 		return false
 
 	var data: Dictionary = json
+
+	if data.has("semilla"):
+		Ajustes.SEMILLA = int(data["semilla"])
+		Ajustes.SEMILLA_MUNDO = Ajustes.SEMILLA
+	elif data.has("metadatos") and data["metadatos"] is Dictionary and data["metadatos"].has("semilla"):
+		Ajustes.SEMILLA = int(data["metadatos"]["semilla"])
+		Ajustes.SEMILLA_MUNDO = Ajustes.SEMILLA
 
 	if Ciudad != null and data.has("ciudad") and data["ciudad"] is Dictionary:
 		Ciudad.importar_estado(data["ciudad"])
@@ -158,6 +169,25 @@ func cargar_rapido() -> bool:
 	return cargar_partida(ARCHIVO_QUICKSAVE)
 
 
+func preparar_semilla_para_partida_pendiente() -> void:
+	if partida_pendiente_a_cargar.is_empty():
+		return
+	var ruta := obtener_ruta_partida(partida_pendiente_a_cargar)
+	if not FileAccess.file_exists(ruta):
+		return
+	var arch := FileAccess.open(ruta, FileAccess.READ)
+	if arch == null:
+		return
+	var parsed = JSON.parse_string(arch.get_as_text())
+	if parsed is Dictionary:
+		if parsed.has("semilla"):
+			Ajustes.SEMILLA = int(parsed["semilla"])
+			Ajustes.SEMILLA_MUNDO = Ajustes.SEMILLA
+		elif parsed.has("metadatos") and parsed["metadatos"] is Dictionary and parsed["metadatos"].has("semilla"):
+			Ajustes.SEMILLA = int(parsed["metadatos"]["semilla"])
+			Ajustes.SEMILLA_MUNDO = Ajustes.SEMILLA
+
+
 func precargar_metadatos_partidas() -> void:
 	_asegurar_directorio()
 	_cache_partidas.clear()
@@ -180,6 +210,7 @@ func precargar_metadatos_partidas() -> void:
 							"fecha_guardado": "",
 							"nivel_ciudad": 1,
 							"poblacion": 0,
+							"semilla": Ajustes.SEMILLA_DEF,
 						})
 			arch = dir.get_next()
 		dir.list_dir_end()

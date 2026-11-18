@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **2026-09-28-volumen-interno-edificios-design.md (Declaración de edificios por volumen interno — diseño)** (0 connections) — `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
+- **Asset Visual: Water_Stream.jpg** (0 connections) — `arte/dae/bloques/Water_Stream.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
+- `arte/dae/bloques/Water_Stream.jpg`
 
 ## Audit Trail
 

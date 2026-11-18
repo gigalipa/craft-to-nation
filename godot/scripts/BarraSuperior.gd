@@ -58,7 +58,8 @@ var _lbl_hover_idu_cuerpo: Label = null
 
 
 static func texto_poblacion(censo: int, camas: int, desempleados: int) -> String:
-	return "Población: %d/%d (%d)" % [censo, camas, desempleados]
+	var prefijo: String = Strings.t("BARRA_SUPERIOR_POBLACION", "Población")
+	return "%s: %d/%d (%d)" % [prefijo, censo, camas, desempleados]
 
 
 static func emoji_moral(m: float) -> String:
@@ -76,11 +77,13 @@ static func texto_moral(m: float) -> String:
 
 
 static func texto_comida(cantidad: float, limite: float, tasa: float) -> String:
-	return "Comida: %.0f/%.0f (%s)" % [cantidad, limite, texto_tasa(tasa)]
+	var prefijo: String = Strings.NOMBRES_RECURSO.get("comida", Strings.t("BARRA_SUPERIOR_COMIDA", "Comida"))
+	return "%s: %.0f/%.0f (%s)" % [prefijo, cantidad, limite, texto_tasa(tasa)]
 
 
 static func texto_energia(entregada: float, demanda: float, tasa: float = 0.0) -> String:
-	return "Energía: %.0f/%.0f (%s)" % [entregada, demanda, texto_tasa(tasa)]
+	var prefijo: String = Strings.t("BARRA_SUPERIOR_ENERGIA", "Energía")
+	return "%s: %.0f/%.0f (%s)" % [prefijo, entregada, demanda, texto_tasa(tasa)]
 
 
 static func color_nivel_moral(m: float) -> Color:
@@ -361,7 +364,7 @@ func actualizar() -> void:
 	var desempleados: int = Ciudad.demografia.get("desempleado", 0)
 	var texto_pob := "%d/%d (%d)" % [Ciudad.censo_total, Ciudad.capacidad_camas_construida, desempleados]
 	poblacion.text = ""
-	poblacion.tooltip_text = "Población: " + texto_pob
+	poblacion.tooltip_text = "%s: %s" % [Strings.t("BARRA_SUPERIOR_POBLACION", "Población"), texto_pob]
 	var excede: bool = Ciudad.vivienda_ocupada > Ciudad.capacidad_camas_construida
 	var color_pob := TemaHUD.INVALIDO if excede else TemaHUD.TEXTO
 	if _lbl_pob_censo != null:
@@ -382,7 +385,7 @@ func actualizar() -> void:
 
 	var m: float = Ciudad.moral if ("moral" in Ciudad) else Ajustes.CIUDAD_MORAL_INICIAL
 	moral.text = ""
-	moral.tooltip_text = "Moral: %.0f%%" % m
+	moral.tooltip_text = "%s: %.0f%%" % [Strings.t("BARRA_SUPERIOR_MORAL", "Moral"), m]
 	var clave_moral := IconosHUD.icono_moral(m)
 	moral.icon = IconosHUD.icono(clave_moral)
 	_barra_moral.value = clampf(m / 100.0, 0.0, 1.0)
@@ -431,7 +434,8 @@ func actualizar() -> void:
 	if not urgente.is_empty():
 		var clave_urg: String = urgente["recurso"]
 		var h_urg: int = maxi(1, int(ceil(urgente["horas"])))
-		critico.text = "¡Alerta!: %s (%d h)" % [clave_urg.capitalize(), h_urg]
+		var nom_urg: String = Strings.NOMBRES_RECURSO.get(clave_urg, clave_urg.capitalize())
+		critico.text = "%s: %s (%d h)" % [Strings.t("BARRA_SUPERIOR_ALERTA", "¡Alerta!"), nom_urg, h_urg]
 		_icono_critico.visible = true
 		if _icono_critico_recurso != null:
 			_icono_critico_recurso.texture = IconosHUD.icono(clave_urg)
@@ -440,14 +444,15 @@ func actualizar() -> void:
 	else:
 		var clave := clave_critica(Ciudad.almacen)
 		if clave == "":
-			critico.text = "Crítico —"
+			critico.text = Strings.t("BARRA_SUPERIOR_CRITICO_VACIO", "Crítico —")
 			_icono_critico.visible = false
 			if _icono_critico_recurso != null:
 				_icono_critico_recurso.visible = false
 			_colorear_por_tasa(critico, 0.0)
 		else:
 			var recurso = Ciudad.almacen[clave]
-			critico.text = "Crítico: %s %s" % [clave.capitalize(), texto_tasa(recurso.tasa_neta_promedio)]
+			var nom_rec: String = Strings.NOMBRES_RECURSO.get(clave, clave.capitalize())
+			critico.text = "%s: %s %s" % [Strings.t("BARRA_SUPERIOR_CRITICO", "Crítico"), nom_rec, texto_tasa(recurso.tasa_neta_promedio)]
 			_icono_critico.visible = true
 			if _icono_critico_recurso != null:
 				_icono_critico_recurso.texture = IconosHUD.icono(clave)

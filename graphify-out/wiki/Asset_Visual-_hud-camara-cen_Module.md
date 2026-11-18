@@ -1,22 +1,26 @@
 # Asset Visual: hud-camara-cen Module
 
-> 1 nodes · cohesion 1.00
+> 5 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **Asset Visual: Water_Stream_1.jpg** (0 connections) — `arte/dae/bloques/Water_Stream_1.jpg`
+- **scripts** (5 connections) — `video_edition/remotion/package.json`
+- **build** (1 connections) — `video_edition/remotion/package.json`
+- **dev** (1 connections) — `video_edition/remotion/package.json`
+- **lint** (1 connections) — `video_edition/remotion/package.json`
+- **upgrade** (1 connections) — `video_edition/remotion/package.json`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Estado detallado e historial](Estado_detallado_e_historial.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/dae/bloques/Water_Stream_1.jpg`
+- `video_edition/remotion/package.json`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

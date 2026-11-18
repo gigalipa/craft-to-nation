@@ -1,22 +1,28 @@
 # Asset Visual: hud-primera-pe Module
 
-> 1 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_pared_piedra_2pisos/Translucent_Glass_Tinted.jpg`
+- **ProgresoAccion.gd** (8 connections) — `godot/scripts/ProgresoAccion.gd`
+- **ProgresoAccion.avanzar()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
+- **ProgresoAccion.fraccion()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
+- **ProgresoAccion.soltar()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (2 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (1 shared connections)
+- [GeneradorMundo.gd](GeneradorMundo.gd.md) (1 shared connections)
+- [Player.gd](Player.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/dae/casa_pared_piedra_2pisos/Translucent_Glass_Tinted.jpg`
+- `godot/scripts/ProgresoAccion.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

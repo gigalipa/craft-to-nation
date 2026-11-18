@@ -135,12 +135,15 @@ func cargar_stream_musica(ruta: String, en_bucle: bool = false) -> AudioStream:
 			(cached as AudioStreamMP3).loop = en_bucle
 		return cached
 
-	if not FileAccess.file_exists(ruta):
-		return null
+	var stream: AudioStream = null
+	if ResourceLoader.exists(ruta):
+		stream = load(ruta) as AudioStream
+	elif FileAccess.file_exists(ruta):
+		stream = AudioStreamMP3.load_from_file(ruta)
 
-	var stream := AudioStreamMP3.load_from_file(ruta)
 	if stream != null:
-		stream.loop = en_bucle
+		if stream is AudioStreamMP3:
+			(stream as AudioStreamMP3).loop = en_bucle
 		_cache_streams[ruta] = stream
 	return stream
 
@@ -211,10 +214,12 @@ func obtener_stream(sfx_id: String) -> AudioStream:
 		return _cache_streams[sfx_id]
 
 	var ruta := obtener_ruta(sfx_id)
-	if not FileAccess.file_exists(ruta):
-		return null
+	var stream: AudioStream = null
+	if ResourceLoader.exists(ruta):
+		stream = load(ruta) as AudioStream
+	elif FileAccess.file_exists(ruta):
+		stream = AudioStreamOggVorbis.load_from_file(ruta)
 
-	var stream := AudioStreamOggVorbis.load_from_file(ruta)
 	if stream != null:
 		_cache_streams[sfx_id] = stream
 	return stream

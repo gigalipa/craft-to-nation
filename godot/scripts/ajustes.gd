@@ -233,7 +233,11 @@ static var TAMANO_CELDA: float = 1.0
 static var ANCHO_MUNDO: int = 200
 static var LARGO_MUNDO: int = 200
 static var PROFUNDIDAD_SUBSUELO: int = 24
-static var SEMILLA_MUNDO: int = 12345
+const SEMILLA_DEF: int = 12345
+static var SEMILLA: int = SEMILLA_DEF
+static var SEMILLA_MUNDO: int = SEMILLA_DEF:
+	get: return SEMILLA
+	set(val): SEMILLA = val
 static var UMBRAL_ARBOL: float = 0.5
 static var GAP_MINIMO_TRONCOS: int = 2
 static var SOLAPE_MAXIMO_COPAS: int = 1
@@ -480,6 +484,66 @@ static var CIUDAD_UMBRAL_REARME_RECURSO_BAJO: float = 0.15
 # ==============================================================================
 # ECONOMÍA, ENERGÍA, COLONOS Y RUTAS (Economia, Energia, Colonos, BuscadorRutas)
 # ==============================================================================
+static var ECONOMIA_RECURSOS_INICIALES: String = "bajos"
+
+static var CATEGORIAS_RECURSOS: Dictionary = {
+	"comida": ["comida"],
+	"materias_primas": ["madera", "tierra", "piedra"],
+	"minerales": ["carbon", "hierro", "cobre", "crudo", "tierras_raras", "agua"],
+	"procesados": ["vidrio", "tablas", "bloques_piedra", "acero", "combustible", "mineral_refinado"],
+}
+
+static var PERFILES_RECURSOS_INICIALES: Dictionary = {
+	"supervivencia": {
+		"comida": true,
+		"materias_primas": 0.0,
+		"minerales": 0.0,
+		"procesados": 0.0,
+	},
+	"bajos": {
+		"comida": true,
+		"materias_primas": 300.0,
+		"minerales": 0.0,
+		"procesados": 0.0,
+	},
+	"medios": {
+		"comida": true,
+		"materias_primas": 600.0,
+		"minerales": 300.0,
+		"procesados": 0.0,
+	},
+	"altos": {
+		"comida": true,
+		"materias_primas": 1000.0,
+		"minerales": 600.0,
+		"procesados": 300.0,
+	},
+}
+
+static func cantidades_recursos_iniciales(perfil: String = "") -> Dictionary:
+	var clave := perfil.to_lower().strip_edges()
+	if not PERFILES_RECURSOS_INICIALES.has(clave):
+		clave = ECONOMIA_RECURSOS_INICIALES.to_lower().strip_edges()
+	if not PERFILES_RECURSOS_INICIALES.has(clave):
+		clave = "bajos"
+
+	var p_data: Dictionary = PERFILES_RECURSOS_INICIALES[clave]
+	var res: Dictionary = {}
+
+	for cat in CATEGORIAS_RECURSOS:
+		var items: Array = CATEGORIAS_RECURSOS[cat]
+		if cat == "comida":
+			var tiene_comida: bool = bool(p_data.get("comida", true))
+			var cant_comida: float = CIUDAD_COMIDA_INICIAL if tiene_comida else 0.0
+			for r in items:
+				res[r] = cant_comida
+		else:
+			var cant: float = float(p_data.get(cat, 0.0))
+			for r in items:
+				res[r] = cant
+
+	return res
+
 static var ECONOMIA_CAPACIDAD_CARGA: float = 150.0
 static var ECONOMIA_PORCENTAJES_RESERVA_INSUMO: Array[float] = [0.0, 0.10, 0.20, 0.35, 0.50]
 static var ECONOMIA_VALORES_RESERVA_INSUMO: Array[float] = [0.0, 50.0, 100.0, 250.0, 500.0]
@@ -631,6 +695,7 @@ static var TRAZADOR_VIAS_MAX_NODOS_EXPANDIDOS: int = 5000
 static var VIAS_COSTE_TERRENO_NATURAL: int = 8
 static var VIAS_BONO_VELOCIDAD_TIERRA_PISADA: float = 1.35
 static var VIAS_COSTE_RUTA_TIERRA_PISADA: int = 3
+static var VIAS_PENALIZACION_CARRIL_IZQUIERDO: int = 4
 
 static var CANALIZACIONES_ALTURA_DESPEJE: int = 3
 static var CANALIZACIONES_ALTURA_DUCTO_RELATIVA: int = 4
@@ -835,6 +900,7 @@ static var TRANSPORTE_VELOCIDAD_RALENTIZADA_SIN_INSUMO: float = 1.2  # m/s de ar
 static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 	"acarreador_pie": {
 		"nombre": "Acarreador a Pie",
+		"huella": Vector2i(1, 1),
 		"capacidad": 150.0,
 		"velocidad_base": 2.5,
 		"tripulacion": "obrero",
@@ -850,6 +916,7 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 	},
 	"carreta_mano": {
 		"nombre": "Carreta de Mano",
+		"huella": Vector2i(1, 1),
 		"capacidad": 350.0,
 		"velocidad_base": 3.2,
 		"tripulacion": "obrero",
@@ -865,6 +932,7 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 	},
 	"carro_caballos": {
 		"nombre": "Carro de Tiro (Caballos)",
+		"huella": Vector2i(1, 2),
 		"capacidad": 750.0,
 		"velocidad_base": 4.5,
 		"tripulacion": "obrero",
@@ -881,6 +949,7 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 	},
 	"camion_diesel": {
 		"nombre": "Camión Pesado Diésel",
+		"huella": Vector2i(2, 3),
 		"capacidad": 1800.0,
 		"velocidad_base": 6.5,
 		"tripulacion": "obrero",
@@ -896,6 +965,7 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 	},
 	"dron_carga": {
 		"nombre": "Dron Autónomo de Carga",
+		"huella": Vector2i(1, 1),
 		"capacidad": 400.0,
 		"velocidad_base": 8.0,
 		"tripulacion": "",
@@ -911,6 +981,7 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 	},
 	"trolebus_solar": {
 		"nombre": "Trolebús Eléctrico Bio-Vía",
+		"huella": Vector2i(2, 4),
 		"capacidad": 900.0,
 		"velocidad_base": 5.0,
 		"tripulacion": "obrero",

@@ -117,6 +117,17 @@ func hay_via_en_columna(xz: Vector2i) -> bool:
 	return _columnas.get(xz, 0) > 0
 
 
+## Determina si la posición 'soporte' corresponde al borde derecho de la calzada
+## para una unidad de ancho 'ancho_unidad' avanzando en dirección 'direccion'.
+func es_borde_derecho(soporte: Vector3i, direccion: Vector2i, ancho_unidad: int = 1) -> bool:
+	if direccion == Vector2i.ZERO:
+		return true
+	var r := Vector2i(-direccion.y, direccion.x)
+	var extremo_der := Vector2i(soporte.x, soporte.z) + (ancho_unidad - 1) * r
+	var exterior_der := extremo_der + r
+	return hay_via_en_columna(extremo_der) and not hay_via_en_columna(exterior_der)
+
+
 ## Columnas XZ con al menos una celda de vía.
 func columnas() -> Array[Vector2i]:
 	var resultado: Array[Vector2i] = []

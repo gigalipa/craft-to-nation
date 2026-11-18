@@ -9,10 +9,10 @@
 - **GeneradorMundoTest.gd** (26 connections) — `godot/scripts/GeneradorMundoTest.gd`
 - **Documento Técnico de Desarrollo_ PoC 6 - Mundo Procedural y Puestos de Recolección.md (**Documento Técnico de Desarrollo: PoC 6 - Mundo Procedural )** (13 connections) — `PoC_6/Documento Técnico de Desarrollo_ PoC 6 - Mundo Procedural y Puestos de Recolección.md`
 - **2026-09-09-arboles-procedurales-design.md (Diseño: Árboles Procedurales Talables (PoC 5, sub-proyecto s)** (12 connections) — `docs/superpowers/specs/2026-09-09-arboles-procedurales-design.md`
-- **2026-09-08-puestos-recoleccion-minas.md (Puestos de Recolección (Minas) Implementation Plan)** (11 connections) — `docs/superpowers/plans/2026-09-08-puestos-recoleccion-minas.md`
 - **2026-09-09-arboles-procedurales.md (Árboles Procedurales Talables Implementation Plan)** (8 connections) — `docs/superpowers/plans/2026-09-09-arboles-procedurales.md`
 - **2026-09-13-rios-corriente-cascadas-design.md (Diseño: Ríos con Corriente y Cascadas (PoC 6, sub-proyecto 4)** (8 connections) — `docs/superpowers/specs/2026-09-13-rios-corriente-cascadas-design.md`
 - **GeneradorArbolTest.gd** (8 connections) — `godot/scripts/GeneradorArbolTest.gd`
+- **2026-09-07-mundo-procedural-design.md (Diseño: Mundo Procedural Finito (PoC 5, sub-proyecto 1 de 3))** (7 connections) — `docs/superpowers/specs/2026-09-07-mundo-procedural-design.md`
 - **2026-09-08-cuerpos-de-agua.md (Cuerpos de Agua (PoC 5, sub-proyecto 4) Implementation Plan)** (5 connections) — `docs/superpowers/plans/2026-09-08-cuerpos-de-agua.md`
 - **2026-09-13-rios-corriente-cascadas.md (Ríos con Corriente y Cascadas Implementation Plan)** (5 connections) — `docs/superpowers/plans/2026-09-13-rios-corriente-cascadas.md`
 - **2026-09-09-senales-bioma.md (Señales de Bioma, Fauna y Frutal Implementation Plan)** (3 connections) — `docs/superpowers/plans/2026-09-09-senales-bioma.md`
@@ -33,27 +33,27 @@
 
 ## Relationships
 
-- [VoxelWorld.gd](VoxelWorld.gd.md) (21 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (16 shared connections)
-- [Recoleccion.gd](Recoleccion.gd.md) (15 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (11 shared connections)
-- [Player.gd](Player.gd.md) (6 shared connections)
-- [ajustes.gd](ajustes.gd.md) (6 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (6 shared connections)
-- [NiveladorTerreno.gd](NiveladorTerreno.gd.md) (4 shared connections)
-- [Economia.gd](Economia.gd.md) (3 shared connections)
-- [HUD.gd](HUD.gd.md) (2 shared connections)
-- [Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S](Índice_de_Desarrollo_Urbano_IDU_I-IV_y_Balanza_D-C-S.md) (2 shared connections)
-- [PlantillasPuesto.gd](PlantillasPuesto.gd.md) (1 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (16 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (15 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (12 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (11 shared connections)
+- [HUD.gd](HUD.gd.md) (8 shared connections)
+- [Vias.gd](Vias.gd.md) (6 shared connections)
+- [Código de Conducta de la Comunidad — Craft to Nation](Código_de_Conducta_de_la_Comunidad_—_Craft_to_Nation.md) (4 shared connections)
+- [Hotbar.gd](Hotbar.gd.md) (4 shared connections)
+- [steps](steps.md) (3 shared connections)
+- [Player.gd](Player.gd.md) (3 shared connections)
+- [Root.tsx](Root.tsx.md) (2 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
 
 ## Source Files
 
 - `PoC_6/Documento Técnico de Desarrollo_ PoC 6 - Mundo Procedural y Puestos de Recolección.md`
 - `docs/superpowers/plans/2026-09-08-cuerpos-de-agua.md`
-- `docs/superpowers/plans/2026-09-08-puestos-recoleccion-minas.md`
 - `docs/superpowers/plans/2026-09-09-arboles-procedurales.md`
 - `docs/superpowers/plans/2026-09-09-senales-bioma.md`
 - `docs/superpowers/plans/2026-09-13-rios-corriente-cascadas.md`
+- `docs/superpowers/specs/2026-09-07-mundo-procedural-design.md`
 - `docs/superpowers/specs/2026-09-08-cuerpos-de-agua-design.md`
 - `docs/superpowers/specs/2026-09-09-arboles-procedurales-design.md`
 - `docs/superpowers/specs/2026-09-09-senales-bioma-design.md`
@@ -65,8 +65,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 138 (97%)
-- INFERRED: 5 (3%)
+- EXTRACTED: 134 (96%)
+- INFERRED: 5 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

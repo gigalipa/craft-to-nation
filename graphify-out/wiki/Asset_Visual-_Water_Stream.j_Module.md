@@ -1,10 +1,11 @@
 # Asset Visual: Water_Stream.j Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: IMempbkZbl5q0.png** (0 connections) — `arte/IMempbkZbl5q0.png`
+- **gamedev-copywriter.md** (1 connections) — `.agents/agents/gamedev-copywriter.md`
+- **Agent System Instructions: Gamedev Copywriter (`gamedev-copywriter`)** (1 connections) — `.agents/agents/gamedev-copywriter.md`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/IMempbkZbl5q0.png`
+- `.agents/agents/gamedev-copywriter.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

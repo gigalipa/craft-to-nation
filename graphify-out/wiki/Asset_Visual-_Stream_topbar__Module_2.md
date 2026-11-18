@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **2026-09-05-citycraft-presentation-site-design.md (Diseño del sitio de presentación de CityCraft)** (0 connections) — `docs/superpowers/specs/2026-09-05-citycraft-presentation-site-design.md`
+- **Asset Visual: Water_Sparkling_0.jpg** (0 connections) — `arte/dae/bloques/Water_Sparkling_0.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-09-05-citycraft-presentation-site-design.md`
+- `arte/dae/bloques/Water_Sparkling_0.jpg`
 
 ## Audit Trail
 

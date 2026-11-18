@@ -1,11 +1,10 @@
 # ctn-video-editor.md
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **ctn-video-editor.md** (1 connections) — `.agents/agents/ctn-video-editor.md`
-- **Agent System Instructions: Video Editor Técnico (`ctn-video-editor`)** (1 connections) — `.agents/agents/ctn-video-editor.md`
+- **Asset Visual: Stream_topbar_ag_debug.png** (0 connections) — `arte/stream_art/Stream_topbar_ag_debug.png`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `.agents/agents/ctn-video-editor.md`
+- `arte/stream_art/Stream_topbar_ag_debug.png`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

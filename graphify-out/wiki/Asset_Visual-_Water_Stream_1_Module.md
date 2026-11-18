@@ -1,10 +1,11 @@
 # Asset Visual: Water_Stream_1 Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: IMUQwcomLawGk.png** (0 connections) — `arte/IMUQwcomLawGk.png`
+- **nodes-and-network.md** (1 connections) — `.agents/agents/nodes-and-network.md`
+- **Agent System Instructions: Craft to Nation - Nodes and Network (`nodes-and-network`)** (1 connections) — `.agents/agents/nodes-and-network.md`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/IMUQwcomLawGk.png`
+- `.agents/agents/nodes-and-network.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

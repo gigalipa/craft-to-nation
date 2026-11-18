@@ -259,29 +259,38 @@ var _timer: Timer
 func _init() -> void:
 	for tipo in TIPOS_POBLACION:
 		demografia[tipo] = 0
-	almacen = {
-		"madera": Recurso.new("Madera", 200, LIMITE_BASE),
-		"comida": Recurso.new("Comida", COMIDA_INICIAL, LIMITE_BASE_COMIDA),
-		# Recursos que llegan de los puestos y del avatar: empiezan en 0. El
-		# hierro no es una excepción (Era 1 Prehistórica: nada procesado
-		# todavía) — reportado jugando en vivo, 2026-09-28.
-		"hierro": Recurso.new("Hierro", 0, LIMITE_BASE),
-		"tierra": Recurso.new("Tierra", 0, LIMITE_BASE),
-		"piedra": Recurso.new("Piedra", 0, LIMITE_BASE),
-		"cobre": Recurso.new("Cobre", 0, LIMITE_BASE),
-		"carbon": Recurso.new("Carbón", 0, LIMITE_BASE),
-		"tierras_raras": Recurso.new("Tierras raras", 0, LIMITE_BASE),
-		"acero": Recurso.new("Acero", 0, LIMITE_BASE),  # lo produce la siderúrgica (ver Economia.gd)
-		"mineral_refinado": Recurso.new("Mineral refinado", 0, LIMITE_BASE),  # refinería de tierras raras
-		"tablas": Recurso.new("Tablas", 0, LIMITE_BASE),  # aserradero; cuentan como madera (consumir_costo())
-		"bloques_piedra": Recurso.new("Bloques de piedra", 0, LIMITE_BASE),  # fábrica de bloques; cuentan como piedra
-		"agua": Recurso.new("Agua", 0, LIMITE_BASE),
-		"crudo": Recurso.new("Crudo", 0, LIMITE_BASE),
-		"combustible": Recurso.new("Combustible", 0, LIMITE_BASE),
-		"vidrio": Recurso.new("Vidrio", 0, LIMITE_BASE),
+	_inicializar_almacen_por_defecto()
+
+	for tipo_v in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:
+		parque_transporte_disponible[tipo_v] = 0
+		parque_transporte_asignado[tipo_v] = 0
+
+
+func _inicializar_almacen_por_defecto() -> void:
+	var stock_ini: Dictionary = Ajustes.cantidades_recursos_iniciales()
+	var cant_comida: float = float(stock_ini.get("comida", COMIDA_INICIAL))
+	var lista_claves := [
+		"madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon",
+		"tierras_raras", "acero", "mineral_refinado", "tablas", "bloques_piedra",
+		"agua", "crudo", "combustible", "vidrio"
+	]
+	for cat_items in Ajustes.CATEGORIAS_RECURSOS.values():
+		for item in cat_items:
+			if not lista_claves.has(item):
+				lista_claves.append(item)
+
+	almacen = {}
+	for k in lista_claves:
+		var nom: String = Strings.NOMBRES_RECURSO.get(k, k.capitalize())
+		var cant: float = float(stock_ini.get(k, 0.0))
+		var lim: float = LIMITE_BASE_COMIDA if k == "comida" else LIMITE_BASE
+		almacen[k] = Recurso.new(nom, cant, lim)
+
+	actualizar_nombres_recursos()
+	sub_almacen_comida = {
+		"recoleccion_caza": cant_comida * 0.5,
+		"pesca": cant_comida * 0.5
 	}
-	sub_almacen_comida["recoleccion_caza"] = COMIDA_INICIAL * 0.5
-	sub_almacen_comida["pesca"] = COMIDA_INICIAL * 0.5
 
 	for tipo_v in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:
 		parque_transporte_disponible[tipo_v] = 0
@@ -386,6 +395,20 @@ func _ready() -> void:
 	_timer.timeout.connect(_on_tick_timeout)
 	add_child(_timer)
 	_timer.start()
+	if Configuracion != null:
+		Configuracion.configuracion_cambiada.connect(_on_configuracion_cambiada)
+	actualizar_nombres_recursos()
+
+
+func _on_configuracion_cambiada(clave: String, _valor: Variant) -> void:
+	if clave == "idioma":
+		actualizar_nombres_recursos()
+
+
+func actualizar_nombres_recursos() -> void:
+	for clave in almacen:
+		if Strings.NOMBRES_RECURSO.has(clave):
+			(almacen[clave] as Recurso).nombre = Strings.NOMBRES_RECURSO[clave]
 
 
 func _on_tick_timeout() -> void:
@@ -1547,28 +1570,7 @@ func reiniciar() -> void:
 	demografia.clear()
 	for tipo in TIPOS_POBLACION:
 		demografia[tipo] = 0
-	almacen = {
-		"madera": Recurso.new("Madera", 200, LIMITE_BASE),
-		"comida": Recurso.new("Comida", COMIDA_INICIAL, LIMITE_BASE_COMIDA),
-		"hierro": Recurso.new("Hierro", 0, LIMITE_BASE),
-		"tierra": Recurso.new("Tierra", 0, LIMITE_BASE),
-		"piedra": Recurso.new("Piedra", 0, LIMITE_BASE),
-		"cobre": Recurso.new("Cobre", 0, LIMITE_BASE),
-		"carbon": Recurso.new("Carbón", 0, LIMITE_BASE),
-		"tierras_raras": Recurso.new("Tierras raras", 0, LIMITE_BASE),
-		"acero": Recurso.new("Acero", 0, LIMITE_BASE),
-		"mineral_refinado": Recurso.new("Mineral refinado", 0, LIMITE_BASE),
-		"tablas": Recurso.new("Tablas", 0, LIMITE_BASE),
-		"bloques_piedra": Recurso.new("Bloques de piedra", 0, LIMITE_BASE),
-		"agua": Recurso.new("Agua", 0, LIMITE_BASE),
-		"crudo": Recurso.new("Crudo", 0, LIMITE_BASE),
-		"combustible": Recurso.new("Combustible", 0, LIMITE_BASE),
-		"vidrio": Recurso.new("Vidrio", 0, LIMITE_BASE),
-	}
-	sub_almacen_comida = {
-		"recoleccion_caza": COMIDA_INICIAL * 0.5,
-		"pesca": COMIDA_INICIAL * 0.5
-	}
+	_inicializar_almacen_por_defecto()
 	parque_transporte_disponible.clear()
 	parque_transporte_asignado.clear()
 	for tipo_v in Ajustes.TRANSPORTE_CATALOGO_UNIDADES:

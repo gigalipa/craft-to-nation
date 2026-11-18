@@ -1,11 +1,10 @@
 # social-strategist.md
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **social-strategist.md** (1 connections) — `.agents/agents/social-strategist.md`
-- **Agent System Instructions: Social Media Strategist (`social-strategist`)** (1 connections) — `.agents/agents/social-strategist.md`
+- **index.md: Wiki Officiel Craft to Nation (Français)** (0 connections) — `website/wiki/src/fr/index.md`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `.agents/agents/social-strategist.md`
+- `website/wiki/src/fr/index.md`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

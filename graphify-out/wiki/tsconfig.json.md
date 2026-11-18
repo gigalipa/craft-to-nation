@@ -1,41 +1,50 @@
 # tsconfig.json
 
-> 15 nodes · cohesion 0.21
+> 14 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **subtitle_generator.py** (15 connections) — `video_edition/tools/subtitle_generator.py`
-- **main()** (8 connections) — `video_edition/tools/subtitle_generator.py`
-- **burn_subtitles()** (4 connections) — `video_edition/tools/subtitle_generator.py`
-- **create_ass_content()** (4 connections) — `video_edition/tools/subtitle_generator.py`
-- **create_srt_content()** (4 connections) — `video_edition/tools/subtitle_generator.py`
-- **transcribe_video()** (4 connections) — `video_edition/tools/subtitle_generator.py`
-- **format_timestamp_ass()** (3 connections) — `video_edition/tools/subtitle_generator.py`
-- **format_timestamp_srt()** (3 connections) — `video_edition/tools/subtitle_generator.py`
-- **Path** (2 connections)
-- **whisper** (2 connections)
-- **torch** (1 connections)
-- **Convierte segundos flotantes al formato H:MM:SS.cc de ASS.** (1 connections) — `video_edition/tools/subtitle_generator.py`
-- **Convierte segundos flotantes al formato HH:MM:SS,mmm de SRT.** (1 connections) — `video_edition/tools/subtitle_generator.py`
-- **Genera archivo de subtítulos .ass con estilo optimizado para video vertical…** (1 connections) — `video_edition/tools/subtitle_generator.py`
-- **Genera archivo de subtítulos estándar .srt.** (1 connections) — `video_edition/tools/subtitle_generator.py`
+- **Puertas.gd** (21 connections) — `godot/scripts/Puertas.gd`
+- **PuertasTest.gd** (9 connections) — `godot/scripts/PuertasTest.gd`
+- **2026-09-25-puertas-interactivas.md (Puertas interactivas Implementation Plan)** (8 connections) — `docs/superpowers/plans/2026-09-25-puertas-interactivas.md`
+- **Documento Técnico de Desarrollo_ PoC 3 - Prototipo Visual Mínimo en Godot.md (**Documento Técnico de Desarrollo: PoC 3 - Prototipo Visual )** (6 connections) — `PoC_3/Documento Técnico de Desarrollo_ PoC 3 - Prototipo Visual Mínimo en Godot.md`
+- **Puertas.actualizar()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.alternar()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.celda_de_colisionador()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.cuerpo_de()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.esta_abierta()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.existe()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas._process()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.tick()** (1 connections) — `godot/scripts/Puertas.gd`
+- **PuertasTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/PuertasTest.gd`
+- **PuertasTest._ready()** (1 connections) — `godot/scripts/PuertasTest.gd`
 
 ## Relationships
 
-- [json](json.md) (4 shared connections)
-- [clip_maker.py](clip_maker.py.md) (2 shared connections)
-- [subprocess](subprocess.md) (2 shared connections)
-- [dependabot.yml](dependabot.yml.md) (1 shared connections)
-- [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (1 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (4 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (4 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (4 shared connections)
+- [HUD.gd](HUD.gd.md) (3 shared connections)
+- [Hotbar.gd](Hotbar.gd.md) (2 shared connections)
+- [Player.gd](Player.gd.md) (2 shared connections)
+- [2026-09-24-edificios-recoleccion-plantillas.md (Edificios de recolección jugables reales (plantillas) Implem)](2026-09-24-edificios-recoleccion-plantillas.md_Edificios_de_recolección_jugables_reales_plantillas_Implem.md) (1 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
+- [argparse](argparse.md) (1 shared connections)
+- [Código de Conducta de la Comunidad — Craft to Nation](Código_de_Conducta_de_la_Comunidad_—_Craft_to_Nation.md) (1 shared connections)
+- [Root.tsx](Root.tsx.md) (1 shared connections)
+- [Vias.gd](Vias.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `video_edition/tools/subtitle_generator.py`
+- `PoC_3/Documento Técnico de Desarrollo_ PoC 3 - Prototipo Visual Mínimo en Godot.md`
+- `docs/superpowers/plans/2026-09-25-puertas-interactivas.md`
+- `godot/scripts/Puertas.gd`
+- `godot/scripts/PuertasTest.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 37 (92%)
+- INFERRED: 3 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -38,6 +38,20 @@ const NOMBRES := {
 	"mesa_estudio": "Mesa de estudio",
 }
 
+const NOMBRES_EN := {
+	"tierra": "Dirt",
+	"adobe": "Adobe block",
+	"bloque_madera": "Wood block",
+	"bloque_piedra": "Stone block",
+	"estructura_hierro": "Iron structure",
+	"bloque_acero": "Steel block",
+	"vidrio": "Glass",
+	"puerta": "Door",
+	"cama": "Bed",
+	"baul": "Chest",
+	"mesa_estudio": "Study table",
+}
+
 ## Título corto de cada casilla de la hotbar (decisión del usuario
 ## 2026-09-30: la casilla usa una palabra corta aunque no sea el nombre real
 ## del bloque, p. ej. "bloque_madera" se ve "Madera" — el nombre completo
@@ -105,11 +119,14 @@ var _cache_iconos := {}
 
 
 static func nombre_de(tipo: String) -> String:
+	var ajustes = preload("res://scripts/ajustes.gd")
+	if ajustes.idioma == "en":
+		return NOMBRES_EN.get(tipo, NOMBRES.get(tipo, tipo.capitalize()))
 	return NOMBRES.get(tipo, tipo.capitalize())
 
 
 static func nombre_hotbar_de(tipo: String) -> String:
-	return NOMBRES_HOTBAR.get(tipo, nombre_de(tipo))
+	return Strings.HOTBAR_NOMBRES.get(tipo, nombre_de(tipo))
 
 
 static func descripcion_de(tipo: String) -> Array:
@@ -196,6 +213,22 @@ func _ready() -> void:
 	_fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fila.add_theme_constant_override("separation", 6)
 	add_child(_fila)
+	if Configuracion != null:
+		Configuracion.configuracion_cambiada.connect(_on_configuracion_cambiada)
+
+
+func _on_configuracion_cambiada(clave: String, _valor: Variant) -> void:
+	if clave == "idioma":
+		actualizar_textos()
+
+
+func actualizar_textos() -> void:
+	for i in range(_casillas.size()):
+		if i < _tipos.size():
+			var tipo: String = _tipos[i]
+			var lbl: Label = _casillas[i]["nombre"]
+			if lbl != null:
+				lbl.text = nombre_hotbar_de(tipo)
 
 
 func configurar(tipos: Array) -> void:

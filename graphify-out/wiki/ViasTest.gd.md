@@ -1,41 +1,32 @@
 # ViasTest.gd
 
-> 8 nodes · cohesion 0.25
+> 11 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **CamaraCenitalModosTest.gd** (16 connections) — `godot/scripts/CamaraCenitalModosTest.gd`
-- **ViaDemolicionOverlay.gd** (10 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
-- **CamaraCenitalModosTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/CamaraCenitalModosTest.gd`
-- **CamaraCenitalModosTest._ready()** (1 connections) — `godot/scripts/CamaraCenitalModosTest.gd`
-- **ViaDemolicionOverlay.limpiar()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
-- **ViaDemolicionOverlay.mostrar_tramo()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
-- **ViaDemolicionOverlay._ready()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
-- **ViaDemolicionOverlay.reconstruir_outline()** (1 connections) — `godot/scripts/ViaDemolicionOverlay.gd`
+- **Detailed Tasks** (6 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Menú de Inicio, Guardado de Partida, Menú de Pausa (F11) y Configuración — Plan de Implementación** (5 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **2026-11-06-menu-guardado-configuracion.md** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Execution Lines & Dependency Matrix** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Global Constraints** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Review Focus** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Task 1: Subsistema de Configuración y Música BGM** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Task 2: Subsistema de Serialización y Guardado (`GestorPartida.gd`)** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Task 3: Menú Contextual de Pausa en Juego (Tecla F11)** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Task 4: Menú de Inicio (`MenuInicio.tscn` / `MenuInicio.gd`)** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Task 5: Validación Global de Pruebas y Grafo de Conocimiento** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
 
 ## Relationships
 
-- [CamaraCenital.gd](CamaraCenital.gd.md) (2 shared connections)
-- [Economia.gd](Economia.gd.md) (2 shared connections)
-- [HUD.gd](HUD.gd.md) (2 shared connections)
-- [BuscadorRutas.gd](BuscadorRutas.gd.md) (2 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
-- [FinalizacionObras.gd](FinalizacionObras.gd.md) (1 shared connections)
-- [PlantillasPuestoTest.gd](PlantillasPuestoTest.gd.md) (1 shared connections)
-- [ViaPreviewOverlay.gd](ViaPreviewOverlay.gd.md) (1 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
-- [PlantillasPuesto.gd](PlantillasPuesto.gd.md) (1 shared connections)
-- [ajustes.gd](ajustes.gd.md) (1 shared connections)
-- [Obras.gd](Obras.gd.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `godot/scripts/CamaraCenitalModosTest.gd`
-- `godot/scripts/ViaDemolicionOverlay.gd`
+- `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
 
 ## Audit Trail
 
-- EXTRACTED: 25 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

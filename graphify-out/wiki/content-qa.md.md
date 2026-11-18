@@ -1,11 +1,10 @@
 # content-qa.md
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **content-qa.md** (1 connections) — `.agents/agents/content-qa.md`
-- **Agent System Instructions: Content QA (`content-qa`)** (1 connections) — `.agents/agents/content-qa.md`
+- **Asset Visual: Stream_debug.png** (0 connections) — `arte/stream_art/Stream_debug.png`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `.agents/agents/content-qa.md`
+- `arte/stream_art/Stream_debug.png`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

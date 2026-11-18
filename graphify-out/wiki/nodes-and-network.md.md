@@ -1,11 +1,10 @@
 # nodes-and-network.md
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **nodes-and-network.md** (1 connections) — `.agents/agents/nodes-and-network.md`
-- **Agent System Instructions: Craft to Nation - Nodes and Network (`nodes-and-network`)** (1 connections) — `.agents/agents/nodes-and-network.md`
+- **calendario_semana_1.md (Calendario Editorial - Semana 1: Craft to Nation)** (0 connections) — `video_edition/workspaces/calendario_semana_1.md`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `.agents/agents/nodes-and-network.md`
+- `video_edition/workspaces/calendario_semana_1.md`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

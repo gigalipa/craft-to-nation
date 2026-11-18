@@ -1,20 +1,35 @@
 # Detailed Tasks
 
-> 11 nodes · cohesion 0.18
+> 28 nodes · cohesion 0.07
 
 ## Key Concepts
 
-- **Detailed Tasks** (6 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Menú de Inicio, Guardado de Partida, Menú de Pausa (F11) y Configuración — Plan de Implementación** (5 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **2026-11-06-menu-guardado-configuracion.md** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Execution Lines & Dependency Matrix** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Global Constraints** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Review Focus** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Task 1: Subsistema de Configuración y Música BGM** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Task 2: Subsistema de Serialización y Guardado (`GestorPartida.gd`)** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Task 3: Menú Contextual de Pausa en Juego (Tecla F11)** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Task 4: Menú de Inicio (`MenuInicio.tscn` / `MenuInicio.gd`)** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
-- **Task 5: Validación Global de Pruebas y Grafo de Conocimiento** (1 connections) — `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- **Estado detallado e historial** (24 connections) — `docs/Pendientes y próximos pasos.md`
+- **Pendientes y próximos pasos según el roadmap (GDD Sección 11)** (4 connections) — `docs/Pendientes y próximos pasos.md`
+- **Pendientes y próximos pasos.md** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **10. Fábrica de bloques y control de reservas en refinerías — ✅ completo (2026-10-14)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **11. Sistema de Moral Dinámica, Productividad Continua y Demografía — ✅ completo (2026-10-15)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **11b. Evolución de Eras, IDU (`I`–`IV`), Investigación en 2 Capas, Vidriera, Transporte y Ventanas `1/20` — ✅ completo (2026-10-27)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **11c. Infraestructura comunitaria, CI/CD y estilización moderna de subtítulos en Remotion — ✅ hecho (2026-10-31)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **11d. Resolución integral de incidencias de QA y pulido de simulación — ✅ hecho (2026-11-03)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **12. Cola de pendientes menores de la Fase 3 — no bloqueantes** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **1. HUD visual interactivo — ✅ actualizado, responsivo e iconografía integrada (2026-10-16)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **1b. Centralización de variables (`ajustes.gd`) y textos UI con reactividad (`strings.gd`) — ✅ hecho (2026-10-21)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **1c. Motor de audio espacial, catálogo integral de SFX y exportación standalone de Windows — ✅ hecho (2026-11-06)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **1d. Menú de inicio, guardado y carga de partidas, menú de pausa (F11) y configuración persistente — ✅ hecho (2026-11-07)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **1e. Sistema dinámico de localización multilingüe (ES/EN) y reactividad de traducción — ✅ hecho (2026-11-09)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **1f. Tránsito vial por carril derecho según huella, video intro cinemático y perfiles de recursos — ✅ hecho (2026-11-10)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **2. Ventana de interacción del baúl — ✅ hecho (2026-09-28, cierre con E 2026-10-05)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **3. Declaración de edificios por volumen interno — ✅ hecho (2026-09-28)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **4. PoC 5, sub-proyecto 2C — transformación — parte 1 (costo de colocación) ✅ hecho (2026-09-29)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **4b. Logística, jerarquía de transporte y niveles de puesto — ✅ completo (2026-10-05)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **5. Gestión de obras y blueprints — ✅ completo (2026-10-05)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **5b. Remodelación de edificaciones y sistema de colonizabilidad — ✅ implementado y verificado (2026-10-06)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **6. Construcción/deconstrucción asistida por NPCs — ✅ tendido de vías y prioridades completadas (2026-10-07)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **7. Red de tuberías y acueductos (Canalizaciones) — ✅ completo (2026-10-12)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **8. Subsuelo, pozos de crudo, físicas de fluidos y lámpara — ✅ completo (2026-10-12)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **9. Ajustes de industria, logística, energía y pathfinding — ✅ completo (2026-10-12)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- *... and 3 more nodes in this community*
 
 ## Relationships
 
@@ -22,11 +37,11 @@
 
 ## Source Files
 
-- `docs/superpowers/plans/2026-11-06-menu-guardado-configuracion.md`
+- `docs/Pendientes y próximos pasos.md`
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
+- EXTRACTED: 27 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: citycraft-world.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-world.webp`
+- **Asset Visual: live 2 AB test_B.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_B.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/citycraft-world.webp`
+- `arte/YT thumbnails/live 2 AB test_B.png`
 
 ## Audit Trail
 

@@ -86,6 +86,10 @@ func test_controles_configuracion_en_pausa() -> void:
 
 	assert(menu._panel_configuracion != null, "MenuPausa debe contener PanelConfiguracionAjustes.")
 	assert(menu._panel_configuracion._slider_sfx != null, "Debe existir slider SFX.")
+	assert(menu._panel_configuracion.solo_audio_y_camara == true, "Panel de configuración en pausa debe tener solo_audio_y_camara activo.")
+	assert(menu._panel_configuracion._tabs.get_child_count() == 2, "En pausa solo deben existir 2 pestañas: Audio y Controles, y Cámara Cenital.")
+	assert(menu._panel_configuracion._tabs.get_child(0).get_meta("clave_i18n") == "CONFIG_TAB_AUDIO", "Pestaña 0 debe ser Audio y Controles.")
+	assert(menu._panel_configuracion._tabs.get_child(1).get_meta("clave_i18n") == "CONFIG_TAB_CENITAL", "Pestaña 1 debe ser Cámara Cenital.")
 
 	menu._panel_configuracion._slider_sfx.value = 50.0
 	menu._panel_configuracion._slider_musica.value = 40.0

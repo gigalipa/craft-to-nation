@@ -5,9 +5,12 @@ class_name PantallaCarga
 ## Carga Main.tscn en segundo plano usando ResourceLoader.load_threaded_request sin congelar la ventana.
 
 const ESCENA_OBJETIVO := "res://scenes/Main.tscn"
+const Strings = preload("res://scripts/strings.gd")
 
 @export var auto_iniciar_carga: bool = true
 
+var _canvas_layer: CanvasLayer
+var _contenedor_raiz: Control
 var _slideshow: SlideshowFondo
 var _panel_inferior: PanelContainer
 var _lbl_estado: Label
@@ -24,10 +27,18 @@ const TIEMPO_MINIMO_PANTALLA: float = 1.0
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	_canvas_layer = CanvasLayer.new()
+	_canvas_layer.layer = 125
+	add_child(_canvas_layer)
+
+	_contenedor_raiz = Control.new()
+	_contenedor_raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_canvas_layer.add_child(_contenedor_raiz)
+
 	# 1. Fondo Slideshow
 	_slideshow = SlideshowFondo.new()
 	_slideshow.intervalo_segundos = 6.0
-	add_child(_slideshow)
+	_contenedor_raiz.add_child(_slideshow)
 
 	# 2. Contenedor inferior estilizado
 	_construir_interfaz_carga()
@@ -38,6 +49,8 @@ func _ready() -> void:
 
 
 func iniciar_carga() -> void:
+	if GestorPartida != null and GestorPartida.has_method("preparar_semilla_para_partida_pendiente"):
+		GestorPartida.preparar_semilla_para_partida_pendiente()
 	ResourceLoader.load_threaded_request(ESCENA_OBJETIVO)
 
 
@@ -47,7 +60,7 @@ func _construir_interfaz_carga() -> void:
 	margen.add_theme_constant_override("margin_left", 60)
 	margen.add_theme_constant_override("margin_right", 60)
 	margen.add_theme_constant_override("margin_bottom", 40)
-	add_child(margen)
+	_contenedor_raiz.add_child(margen)
 
 	_panel_inferior = PanelContainer.new()
 	var style_box := StyleBoxFlat.new()
@@ -70,7 +83,7 @@ func _construir_interfaz_carga() -> void:
 	vbox.add_child(hbox_header)
 
 	_lbl_estado = Label.new()
-	_lbl_estado.text = "Iniciando mundo..."
+	_lbl_estado.text = Strings.t("CARGA_ESTADO_INICIANDO", "Iniciando mundo...")
 	_lbl_estado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lbl_estado.add_theme_color_override("font_color", Color(0.96, 0.94, 0.90, 1.0))
 	_lbl_estado.add_theme_font_size_override("font_size", 16)
@@ -126,15 +139,15 @@ func _process(delta: float) -> void:
 
 	# Mensajes dinámicos contextuales
 	if _progreso_visual < 25.0:
-		_lbl_estado.text = "Cargando sistemas y recursos..."
+		_lbl_estado.text = Strings.t("CARGA_ESTADO_SISTEMAS", "Cargando sistemas y recursos...")
 	elif _progreso_visual < 50.0:
-		_lbl_estado.text = "Generando terreno procedural y biomas..."
+		_lbl_estado.text = Strings.t("CARGA_ESTADO_TERRENO", "Generando terreno procedural y biomas...")
 	elif _progreso_visual < 75.0:
-		_lbl_estado.text = "Trazando redes viales y canalizaciones..."
+		_lbl_estado.text = Strings.t("CARGA_ESTADO_VIAS", "Trazando redes viales y canalizaciones...")
 	elif _progreso_visual < 95.0:
-		_lbl_estado.text = "Inicializando colonos y economía..."
+		_lbl_estado.text = Strings.t("CARGA_ESTADO_COLONOS", "Inicializando colonos y economía...")
 	else:
-		_lbl_estado.text = "¡Mundo listo!"
+		_lbl_estado.text = Strings.t("CARGA_ESTADO_LISTO", "¡Mundo listo!")
 
 	# Verificar culminación
 	if status == ResourceLoader.THREAD_LOAD_LOADED and _progreso_visual >= 99.0 and _tiempo_minimo_transcurrido >= TIEMPO_MINIMO_PANTALLA:
@@ -146,10 +159,22 @@ func _process(delta: float) -> void:
 
 func _finalizar_transicion() -> void:
 	var escena_packed := ResourceLoader.load_threaded_get(ESCENA_OBJETIVO) as PackedScene
-	if escena_packed != null:
-		var tw := create_tween()
-		tw.tween_property(self, "modulate:a", 0.0, 0.35)
-		await tw.finished
-		get_tree().change_scene_to_packed(escena_packed)
-	else:
+	if escena_packed == null:
 		get_tree().change_scene_to_file(ESCENA_OBJETIVO)
+		return
+
+	# Instanciar el mundo mientras la pantalla de carga (layer 125) se mantiene completamente visible y encima
+	var main_instance = escena_packed.instantiate()
+	get_tree().root.add_child(main_instance)
+	get_tree().current_scene = main_instance
+
+	# Esperar a que VoxelWorld y shaders completen su inicialización y primer frame dibujado
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	# Desvanecer suavemente para revelar el mundo 3D ya generado sin pantalla gris
+	var anim_target: CanvasItem = _contenedor_raiz if _contenedor_raiz != null else self
+	var tw := create_tween()
+	tw.tween_property(anim_target, "modulate:a", 0.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await tw.finished
+	queue_free()

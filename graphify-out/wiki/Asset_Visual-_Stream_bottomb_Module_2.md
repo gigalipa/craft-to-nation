@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-logo.png** (0 connections) — `docs/assets/craft-to-nation-logo.png`
+- **Asset Visual: hud-primera-persona-construccion.png** (0 connections) — `arte/conceptos-hud/hud-primera-persona-construccion.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/assets/craft-to-nation-logo.png`
+- `arte/conceptos-hud/hud-primera-persona-construccion.png`
 
 ## Audit Trail
 

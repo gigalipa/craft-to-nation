@@ -1,22 +1,26 @@
 # Asset Visual: hud-primera-pe Module
 
-> 1 nodes · cohesion 1.00
+> 5 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_base/Translucent_Glass_Tinted.jpg`
+- **Composition.tsx** (5 connections) — `video_edition/remotion/src/Composition.tsx`
+- **calculateMetadata()** (1 connections) — `video_edition/remotion/src/Composition.tsx`
+- **MyComponent()** (1 connections) — `video_edition/remotion/src/Composition.tsx`
+- **MyComposition()** (1 connections) — `video_edition/remotion/src/Composition.tsx`
+- **Props** (1 connections) — `video_edition/remotion/src/Composition.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/dae/casa_base/Translucent_Glass_Tinted.jpg`
+- `video_edition/remotion/src/Composition.tsx`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

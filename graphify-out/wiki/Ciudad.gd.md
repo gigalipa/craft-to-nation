@@ -1,71 +1,63 @@
 # Ciudad.gd
 
-> 31 nodes · cohesion 0.10
+> 18 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **Zonificacion.gd** (54 connections) — `godot/scripts/Zonificacion.gd`
-- **Main.gd** (39 connections) — `godot/scripts/Main.gd`
-- **ZonaOverlay.gd** (25 connections) — `godot/scripts/ZonaOverlay.gd`
-- **ZonificacionTest.gd** (16 connections) — `godot/scripts/ZonificacionTest.gd`
-- **2026-09-20-colonos-pathfinding.md (Colonos NPC y Pathfinding a Pie (Plan 2 de 3) Implementation)** (14 connections) — `docs/superpowers/plans/2026-09-20-colonos-pathfinding.md`
-- **2026-09-22-vias-tierra-pisada-design.md (Vías de tierra pisada (sub-proyecto 6, primer tramo))** (12 connections) — `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
-- **2026-09-07-mundo-procedural.md (Mundo Procedural Finito — Plan de Implementación)** (10 connections) — `docs/superpowers/plans/2026-09-07-mundo-procedural.md`
-- **2026-09-10-huellas-irregulares.md (Huellas Irregulares Implementation Plan)** (10 connections) — `docs/superpowers/plans/2026-09-10-huellas-irregulares.md`
-- **Documento Técnico de Desarrollo_ PoC 4 - Integración de Ciudad y Avatar como Autoload.md (**Documento Técnico de Desarrollo: PoC 4 - Integración de Ci)** (10 connections) — `PoC_4/Documento Técnico de Desarrollo_ PoC 4 - Integración de Ciudad y Avatar como Autoload.md`
-- **2026-09-07-zonificacion.md (Zonificación Pintada sobre el Grid — Plan de Implementación)** (9 connections) — `docs/superpowers/plans/2026-09-07-zonificacion.md`
-- **2026-09-07-zonificacion-design.md (Diseño: Zonificación Pintada sobre el Grid (PoC 4, sub-proye)** (9 connections) — `docs/superpowers/specs/2026-09-07-zonificacion-design.md`
-- **2026-09-20-nivelacion-frente-y-overlays.md (Nivelación del Frente y Overlays de Previsualización Impleme)** (8 connections) — `docs/superpowers/plans/2026-09-20-nivelacion-frente-y-overlays.md`
-- **2026-09-07-mundo-procedural-design.md (Diseño: Mundo Procedural Finito (PoC 5, sub-proyecto 1 de 3))** (7 connections) — `docs/superpowers/specs/2026-09-07-mundo-procedural-design.md`
-- **Main._ready()** (1 connections) — `godot/scripts/Main.gd`
-- **ZonaOverlay.limpiar_previsualizacion()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
-- **ZonaOverlay.marcar_sucio()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
-- **ZonaOverlay.previsualizar()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
-- **ZonaOverlay._process()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
-- **ZonaOverlay._ready()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
-- **ZonaOverlay.reconstruir()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
-- **ZonaOverlay.set_mostrar_zonas()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
-- **Zonificacion.ampliar_influencia()** (1 connections) — `godot/scripts/Zonificacion.gd`
-- **Zonificacion.celda_es_del_nucleo()** (1 connections) — `godot/scripts/Zonificacion.gd`
-- **Zonificacion.declarar_nucleo()** (1 connections) — `godot/scripts/Zonificacion.gd`
-- **Zonificacion.dentro_de_influencia()** (1 connections) — `godot/scripts/Zonificacion.gd`
-- *... and 6 more nodes in this community*
+- **Energia.gd** (25 connections) — `godot/scripts/Energia.gd`
+- **Refinería Vidriera (1-3-5) y Recurso Vidrio** (24 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%)** (23 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **godot.md: Arquitectura Técnica en Godot & PoCs** (22 connections) — `website/wiki/src/es/dev/godot.md`
+- **ideas-backlog.md (Backlog de Ideas — Craft to Nation)** (21 connections) — `docs/ideas-backlog.md`
+- **godot.md: Godot Technical Architecture & Simulation Engine** (21 connections) — `website/wiki/src/en/dev/godot.md`
+- **gdd.md: Pilares de Diseño y GDD (v3.59)** (20 connections) — `website/wiki/src/es/dev/gdd.md`
+- **Taller de Transporte y 6 Unidades Móviles de Acarreo** (19 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **gdd.md: Game Design Document (GDD v3.59)** (18 connections) — `website/wiki/src/en/dev/gdd.md`
+- **recursos.md: Recursos, Industrias y Energía** (11 connections) — `website/wiki/src/es/guia/recursos.md`
+- **resources.md: Resource Economy, Industries & Power Grid** (9 connections) — `website/wiki/src/en/guide/resources.md`
+- **buildings.md: Buildings, Urban Levels & Storage Infrastructure** (8 connections) — `website/wiki/src/en/guide/buildings.md`
+- **logistica.md: Logística, Red Vial y Canalizaciones Elevadas** (8 connections) — `website/wiki/src/es/dev/logistica.md`
+- **VideoIntroTest.gd** (5 connections) — `godot/scripts/VideoIntroTest.gd`
+- **run-godot-tests.ps1** (2 connections) — `tools/run-godot-tests.ps1`
+- **Energia.calcular()** (1 connections) — `godot/scripts/Energia.gd`
+- **VideoIntroTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/VideoIntroTest.gd`
+- **Resolve-GodotExecutable()** (1 connections) — `tools/run-godot-tests.ps1`
 
 ## Relationships
 
-- [Recoleccion.gd](Recoleccion.gd.md) (20 shared connections)
-- [Economia.gd](Economia.gd.md) (19 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (13 shared connections)
-- [GeneradorMundo.gd](GeneradorMundo.gd.md) (13 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (13 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (10 shared connections)
-- [Player.gd](Player.gd.md) (10 shared connections)
-- [HUD.gd](HUD.gd.md) (9 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (7 shared connections)
-- [FinalizacionObras.gd](FinalizacionObras.gd.md) (6 shared connections)
-- [ajustes.gd](ajustes.gd.md) (5 shared connections)
-- [NiveladorTerreno.gd](NiveladorTerreno.gd.md) (3 shared connections)
+- [Hotbar.gd](Hotbar.gd.md) (34 shared connections)
+- [Vias.gd](Vias.gd.md) (17 shared connections)
+- [dependabot.yml](dependabot.yml.md) (16 shared connections)
+- [steps](steps.md) (15 shared connections)
+- [Player.gd](Player.gd.md) (12 shared connections)
+- [2026-09-20-fantasmas-permeables.md (Fantasmas de Obra Permeables hacia Afuera (Plan 3 de 3) Impl)](2026-09-20-fantasmas-permeables.md_Fantasmas_de_Obra_Permeables_hacia_Afuera_Plan_3_de_3_Impl.md) (10 shared connections)
+- [Root.tsx](Root.tsx.md) (10 shared connections)
+- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (8 shared connections)
+- [HUD.gd](HUD.gd.md) (7 shared connections)
+- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (5 shared connections)
+- [react-dom / @remotion/captions](react-dom_-_@remotion-captions.md) (4 shared connections)
+- [Asset Visual: hud-camara-cenital.png](Asset_Visual-_hud-camara-cenital.png.md) (4 shared connections)
 
 ## Source Files
 
-- `PoC_4/Documento Técnico de Desarrollo_ PoC 4 - Integración de Ciudad y Avatar como Autoload.md`
-- `docs/superpowers/plans/2026-09-07-mundo-procedural.md`
-- `docs/superpowers/plans/2026-09-07-zonificacion.md`
-- `docs/superpowers/plans/2026-09-10-huellas-irregulares.md`
-- `docs/superpowers/plans/2026-09-20-colonos-pathfinding.md`
-- `docs/superpowers/plans/2026-09-20-nivelacion-frente-y-overlays.md`
-- `docs/superpowers/specs/2026-09-07-mundo-procedural-design.md`
-- `docs/superpowers/specs/2026-09-07-zonificacion-design.md`
-- `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
-- `godot/scripts/Main.gd`
-- `godot/scripts/ZonaOverlay.gd`
-- `godot/scripts/Zonificacion.gd`
-- `godot/scripts/ZonificacionTest.gd`
+- `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- `docs/ideas-backlog.md`
+- `godot/scripts/Energia.gd`
+- `godot/scripts/VideoIntroTest.gd`
+- `tools/run-godot-tests.ps1`
+- `website/wiki/src/en/dev/gdd.md`
+- `website/wiki/src/en/dev/godot.md`
+- `website/wiki/src/en/guide/buildings.md`
+- `website/wiki/src/en/guide/resources.md`
+- `website/wiki/src/es/dev/gdd.md`
+- `website/wiki/src/es/dev/godot.md`
+- `website/wiki/src/es/dev/logistica.md`
+- `website/wiki/src/es/guia/recursos.md`
 
 ## Audit Trail
 
-- EXTRACTED: 190 (98%)
-- INFERRED: 3 (2%)
+- EXTRACTED: 121 (60%)
+- INFERRED: 80 (40%)
 - AMBIGUOUS: 0 (0%)
 
 ---

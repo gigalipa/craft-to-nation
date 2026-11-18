@@ -1,6 +1,6 @@
 ---
 title: "Godot Technical Architecture & Simulation Engine"
-description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar autoloads, 3D GridMap, procedural terrain, fluid physics, and 35 automated test suites."
+description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar autoloads, 3D GridMap, procedural terrain, fluid physics, and 36 automated test suites."
 ---
 
 # Godot 4.7 Technical Architecture & Simulation Engine
@@ -53,12 +53,12 @@ description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar
 
 ---
 
-## 3. CC0 3D Asset Packs & 35 Automated Test Scenes (`godot/scenes/*Test.tscn`)
+## 3. CC0 3D Asset Packs & 36 Automated Test Scenes (`godot/scenes/*Test.tscn`)
 
 The project integrates CC0 low-poly 3D asset packs:
 - **KayKit Block Bits & Medieval Hexagon Pack:** Voxel terrain blocks, props, and structural elements.
 - **Quaternius Modular Men:** Articulated colonist and worker character meshes.
 - **Poly Haven:** Environmental materials and textures.
 
-> [!IMPORTANT] 35 Automated Test Scenes (100% Green)
-> Every subsystem is verified by dedicated headless test scenes (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `SonidosTest.tscn`, etc.), maintaining **35 complete test suites passing 100% in green**.
+> [!IMPORTANT] 36 Automated Test Scenes (100% Green)
+> Every subsystem is verified by dedicated headless test scenes (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `SonidosTest.tscn`, `VideoIntroTest.tscn`, etc.), maintaining **36 complete test suites passing 100% in green**.

@@ -1,11 +1,10 @@
 # social.md
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **social.md** (1 connections) — `.agents/agents/social.md`
-- **Agent System Instructions: Social Orchestrator (`social`)** (1 connections) — `.agents/agents/social.md`
+- **index.md: Official Craft to Nation Wiki (English)** (0 connections) — `website/wiki/src/en/index.md`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `.agents/agents/social.md`
+- `website/wiki/src/en/index.md`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

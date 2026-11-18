@@ -1,10 +1,11 @@
 # Asset Visual: craft-to-natio Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_debug.png** (0 connections) — `arte/stream_art/Stream_debug.png`
+- **test_ocr.ps1** (1 connections) — `video_edition/tools/test_ocr.ps1`
+- **Await()** (1 connections) — `video_edition/tools/test_ocr.ps1`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_debug.png`
+- `video_edition/tools/test_ocr.ps1`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: live 2 AB test_B.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_B.png`
+- **Asset Visual: hud-camara-cenital.png** (0 connections) — `arte/conceptos-hud/hud-camara-cenital.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/YT thumbnails/live 2 AB test_B.png`
+- `arte/conceptos-hud/hud-camara-cenital.png`
 
 ## Audit Trail
 

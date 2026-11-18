@@ -1,10 +1,11 @@
 # Asset Visual: Translucent_Gl Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_back_soon.png** (0 connections) — `arte/stream_art/Stream_back_soon.png`
+- **assets/sfx/ATTRIBUTIONS.md** (1 connections) — `godot/assets/sfx/ATTRIBUTIONS.md`
+- **Craft to Nation - Atribución de Efectos de Sonido (Freesound)** (1 connections) — `godot/assets/sfx/ATTRIBUTIONS.md`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_back_soon.png`
+- `godot/assets/sfx/ATTRIBUTIONS.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,44 +1,47 @@
 # Código de Conducta de la Comunidad — Craft to Nation
 
-> 21 nodes · cohesion 0.10
+> 12 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **Código de Conducta de la Comunidad — Craft to Nation** (8 connections) — `CODE_OF_CONDUCT.md`
-- **Directrices de Moderación** (5 connections) — `CODE_OF_CONDUCT.md`
-- **Cómo Reportar una Vulnerabilidad / Reporting a Vulnerability** (4 connections) — `SECURITY.md`
-- **CODE_OF_CONDUCT.md** (3 connections) — `CODE_OF_CONDUCT.md`
-- **CONTRIBUTING.md (Contribuir a Craft to Nation)** (3 connections) — `CONTRIBUTING.md`
-- **SECURITY.md** (3 connections) — `SECURITY.md`
-- **Política de Seguridad / Security Policy** (3 connections) — `SECURITY.md`
-- **1. Corrección** (1 connections) — `CODE_OF_CONDUCT.md`
-- **2. Advertencia** (1 connections) — `CODE_OF_CONDUCT.md`
-- **3. Suspensión Temporal** (1 connections) — `CODE_OF_CONDUCT.md`
-- **4. Expulsión Permanente** (1 connections) — `CODE_OF_CONDUCT.md`
-- **Alcance** (1 connections) — `CODE_OF_CONDUCT.md`
-- **Aplicación y Reporte** (1 connections) — `CODE_OF_CONDUCT.md`
-- **Atribución** (1 connections) — `CODE_OF_CONDUCT.md`
-- **Nuestro Compromiso** (1 connections) — `CODE_OF_CONDUCT.md`
-- **Nuestros Estándares** (1 connections) — `CODE_OF_CONDUCT.md`
-- **Responsabilidades de Moderación** (1 connections) — `CODE_OF_CONDUCT.md`
-- **Compromiso de Respuesta y Divulgación Coordinada** (1 connections) — `SECURITY.md`
-- **Información a Incluir en el Reporte** (1 connections) — `SECURITY.md`
-- **Procedimiento de Reporte Responsable** (1 connections) — `SECURITY.md`
-- **Versiones con Soporte / Supported Versions** (1 connections) — `SECURITY.md`
+- **NiveladorTerreno.gd** (45 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **2026-09-20-nivelacion-frente-y-overlays.md (Nivelación del Frente y Overlays de Previsualización Impleme)** (8 connections) — `docs/superpowers/plans/2026-09-20-nivelacion-frente-y-overlays.md`
+- **2026-09-20-puertas-a-nivel-de-suelo.md (Puertas a Nivel de Suelo Implementation Plan)** (7 connections) — `docs/superpowers/plans/2026-09-20-puertas-a-nivel-de-suelo.md`
+- **2026-09-20-puertas-a-nivel-de-suelo-design.md (Puertas a Nivel de Suelo — Diseño)** (5 connections) — `docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md`
+- **NiveladorTerreno.altura_objetivo()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **NiveladorTerreno.calcular_base_y()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **NiveladorTerreno.calcular_excavacion()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **NiveladorTerreno.calcular_nivelacion_fachada()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **NiveladorTerreno.calcular_relleno()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **NiveladorTerreno.calcular_relleno_hasta()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **NiveladorTerreno.resumen_materiales()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
+- **NiveladorTerreno.verificar_pendiente()** (1 connections) — `godot/scripts/NiveladorTerreno.gd`
 
 ## Relationships
 
-- [ajustes.gd](ajustes.gd.md) (3 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (9 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (8 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (7 shared connections)
+- [Player.gd](Player.gd.md) (5 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (4 shared connections)
+- [GeneradorMundo.gd](GeneradorMundo.gd.md) (4 shared connections)
+- [Asset Visual: Craft_to_Nation_Kick_profile_banner.png](Asset_Visual-_Craft_to_Nation_Kick_profile_banner.png.md) (2 shared connections)
+- [attributes](attributes.md) (1 shared connections)
+- [Asset Visual](Asset_Visual.md) (1 shared connections)
+- [argparse](argparse.md) (1 shared connections)
+- [Root.tsx](Root.tsx.md) (1 shared connections)
+- [steps](steps.md) (1 shared connections)
 
 ## Source Files
 
-- `CODE_OF_CONDUCT.md`
-- `CONTRIBUTING.md`
-- `SECURITY.md`
+- `docs/superpowers/plans/2026-09-20-nivelacion-frente-y-overlays.md`
+- `docs/superpowers/plans/2026-09-20-puertas-a-nivel-de-suelo.md`
+- `docs/superpowers/specs/2026-09-20-puertas-a-nivel-de-suelo-design.md`
+- `godot/scripts/NiveladorTerreno.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 23 (100%)
+- EXTRACTED: 62 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

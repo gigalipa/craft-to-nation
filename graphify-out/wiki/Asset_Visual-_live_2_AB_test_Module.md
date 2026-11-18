@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md (Niveles de puesto y empleo por tipo — Especificación de dise)** (0 connections) — `docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md`
+- **Asset Visual: Water_Stream_1.jpg** (0 connections) — `arte/dae/bloques/Water_Stream_1.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/specs/2026-10-02-niveles-de-puesto-empleo-por-tipo-design.md`
+- `arte/dae/bloques/Water_Stream_1.jpg`
 
 ## Audit Trail
 

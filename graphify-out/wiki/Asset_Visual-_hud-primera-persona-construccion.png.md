@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: hud-primera-persona-construccion.png** (0 connections) — `website/wiki/src/public/assets/hud-primera-persona-construccion.png`
+- **run-single-test.ps1** (0 connections) — `tools/run-single-test.ps1`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/hud-primera-persona-construccion.png`
+- `tools/run-single-test.ps1`
 
 ## Audit Trail
 

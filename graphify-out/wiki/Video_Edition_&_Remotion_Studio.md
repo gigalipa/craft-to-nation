@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **index.md: Official Craft to Nation Wiki (English)** (0 connections) — `website/wiki/src/en/index.md`
+- **Asset Visual: Stream_topbar_debug.png** (0 connections) — `arte/stream_art/Stream_topbar_debug.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/en/index.md`
+- `arte/stream_art/Stream_topbar_debug.png`
 
 ## Audit Trail
 

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
 	[string]$GodotPath = "",
 	[string]$ProjectPath = ""
@@ -70,6 +70,7 @@ $expectedScenes = @(
 	"Test.tscn",
 	"TranslucidosRendererTest.tscn",
 	"ViasTest.tscn",
+	"VideoIntroTest.tscn",
 	"ZonificacionTest.tscn"
 )
 $foundNames = @($scenes | ForEach-Object { $_.Name })

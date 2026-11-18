@@ -1,22 +1,33 @@
 # Asset Visual: kick_banner_preview_test.jpg
 
-> 1 nodes · cohesion 1.00
+> 7 nodes · cohesion 0.29
 
 ## Key Concepts
 
-- **Asset Visual: Craft_to_Nation_Twitch_offline_banner.png** (0 connections) — `arte/banners/Craft_to_Nation_Twitch_offline_banner.png`
+- **NiveladorVia.gd** (13 connections) — `godot/scripts/NiveladorVia.gd`
+- **NiveladorVia.bloque_de_vertice()** (1 connections) — `godot/scripts/NiveladorVia.gd`
+- **NiveladorVia.columnas_solape()** (1 connections) — `godot/scripts/NiveladorVia.gd`
+- **NiveladorVia.nivel_de_bloque()** (1 connections) — `godot/scripts/NiveladorVia.gd`
+- **NiveladorVia.niveles_efectivos()** (1 connections) — `godot/scripts/NiveladorVia.gd`
+- **NiveladorVia.notches_de_paso()** (1 connections) — `godot/scripts/NiveladorVia.gd`
+- **NiveladorVia.plan_transicion()** (1 connections) — `godot/scripts/NiveladorVia.gd`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Asset Visual](Asset_Visual.md) (2 shared connections)
+- [Root.tsx](Root.tsx.md) (1 shared connections)
+- [Código de Conducta de la Comunidad — Craft to Nation](Código_de_Conducta_de_la_Comunidad_—_Craft_to_Nation.md) (1 shared connections)
+- [attributes](attributes.md) (1 shared connections)
+- [run-godot-tests.ps1 Module](run-godot-tests.ps1_Module.md) (1 shared connections)
+- [HUD.gd](HUD.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/banners/Craft_to_Nation_Twitch_offline_banner.png`
+- `godot/scripts/NiveladorVia.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 13 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

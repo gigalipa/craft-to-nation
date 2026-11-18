@@ -1,10 +1,11 @@
 # Asset Visual: Translucent_Gl Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: craft_to_nation_text.png** (0 connections) — `arte/logo/craft_to_nation_text.png`
+- **social-strategist.md** (1 connections) — `.agents/agents/social-strategist.md`
+- **Agent System Instructions: Social Media Strategist (`social-strategist`)** (1 connections) — `.agents/agents/social-strategist.md`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/logo/craft_to_nation_text.png`
+- `.agents/agents/social-strategist.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

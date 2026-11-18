@@ -1,11 +1,10 @@
 # gamedev-copywriter.md
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **gamedev-copywriter.md** (1 connections) — `.agents/agents/gamedev-copywriter.md`
-- **Agent System Instructions: Gamedev Copywriter (`gamedev-copywriter`)** (1 connections) — `.agents/agents/gamedev-copywriter.md`
+- **README.md (Remotion video)** (0 connections) — `video_edition/remotion/README.md`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `.agents/agents/gamedev-copywriter.md`
+- `video_edition/remotion/README.md`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

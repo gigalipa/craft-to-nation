@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-logo.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-logo.png`
+- **2026-10-15-wiki-craft-to-nation.md (Wiki Híbrida para Craft to Nation - Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/craft-to-nation-logo.png`
+- `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
 
 ## Audit Trail
 

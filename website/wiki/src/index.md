@@ -29,7 +29,7 @@ features:
     link: /es/guide/start
   - icon: ⚙️
     title: Arquitectura Técnica y GDD v3.61
-    details: Conoce los sistemas en Godot 4.7, bucle de ticks (2.0s = 1h), IDU I-IV e investigación en 2 capas, Vidriera, Taller de Transporte, motor de audio espacial (SFX), iconografía vectorial HUD y 35 suites de pruebas.
+    details: Conoce los sistemas en Godot 4.7, bucle de ticks (2.0s = 1h), IDU I-IV e investigación en 2 capas, Vidriera, Taller de Transporte, motor de audio espacial (SFX), iconografía vectorial HUD y 36 suites de pruebas.
     link: /es/dev/gdd
   - icon: 🌐
     title: Documentación Multilingüe

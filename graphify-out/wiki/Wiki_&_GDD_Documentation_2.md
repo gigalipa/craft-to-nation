@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **README.md (Remotion video)** (0 connections) — `video_edition/remotion/README.md`
+- **Asset Visual: IMempbkZbl5q0.png** (0 connections) — `arte/IMempbkZbl5q0.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `video_edition/remotion/README.md`
+- `arte/IMempbkZbl5q0.png`
 
 ## Audit Trail
 

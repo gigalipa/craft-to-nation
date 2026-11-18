@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: hud-camara-cenital.png** (0 connections) — `website/wiki/src/public/assets/hud-camara-cenital.png`
+- **Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md (**Documento Técnico de Desarrollo: PoC 1 - Motor Lógico de R)** (0 connections) — `PoC_1/Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/hud-camara-cenital.png`
+- `PoC_1/Documento Técnico de Desarrollo_ PoC 1 - Motor Lógico de Recursos, Demografía y Nivel Urbano.md`
 
 ## Audit Trail
 

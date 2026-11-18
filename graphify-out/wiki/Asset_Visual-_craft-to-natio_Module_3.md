@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **deploy_wiki.ps1** (0 connections) — `tools/deploy_wiki.ps1`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tools/deploy_wiki.ps1`
+- `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

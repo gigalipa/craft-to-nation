@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: citycraft-hero.webp** (0 connections) — `website/wiki/src/public/assets/citycraft-hero.webp`
+- **Asset Visual: live 2 AB test_A.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_A.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/citycraft-hero.webp`
+- `arte/YT thumbnails/live 2 AB test_A.png`
 
 ## Audit Trail
 

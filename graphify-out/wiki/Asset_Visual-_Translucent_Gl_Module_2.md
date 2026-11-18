@@ -1,10 +1,11 @@
 # Asset Visual: Translucent_Gl Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-mark.png** (0 connections) — `arte/logo/craft-to-nation-mark.png`
+- **social.md** (1 connections) — `.agents/agents/social.md`
+- **Agent System Instructions: Social Orchestrator (`social`)** (1 connections) — `.agents/agents/social.md`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/logo/craft-to-nation-mark.png`
+- `.agents/agents/social.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

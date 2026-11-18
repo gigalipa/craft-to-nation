@@ -29,6 +29,24 @@ const MAPA_ICONOS := {
 	"vidrio": "vidrio.svg",
 	"vidriera": "vidrio.svg",
 
+	# Recursos (Alias en Inglés)
+	"food": "comida.svg",
+	"wood": "madera.svg",
+	"planks": "tablas.svg",
+	"dirt": "tierra.svg",
+	"stone": "piedra.svg",
+	"stone_blocks": "bloques_piedra.svg",
+	"iron": "hierro.svg",
+	"copper": "cobre.svg",
+	"coal": "carbon.svg",
+	"rare_earths": "tierras_raras.svg",
+	"steel": "acero.svg",
+	"refined_ore": "mineral_refinado.svg",
+	"water": "agua.svg",
+	"crude_oil": "crudo.svg",
+	"fuel": "combustible.svg",
+	"glass": "vidrio.svg",
+
 	# Demografía y Oficios
 	"censo": "censo.svg",
 	"ciudadano": "ciudadano.svg",
@@ -44,6 +62,27 @@ const MAPA_ICONOS := {
 	"sin_techo": "sin_techo.svg",
 	"cama": "cama.svg",
 	"baul": "baul.svg",
+
+	# Demografía y Oficios (Alias en Inglés)
+	"census": "censo.svg",
+	"citizen": "ciudadano.svg",
+	"citizens": "ciudadano.svg",
+	"unemployed": "desempleado.svg",
+	"laborer": "obrero.svg",
+	"laborers": "obrero.svg",
+	"worker": "obrero.svg",
+	"technician": "tecnico.svg",
+	"technicians": "tecnico.svg",
+	"specialist": "especialista.svg",
+	"specialists": "especialista.svg",
+	"researcher": "investigador.svg",
+	"researchers": "investigador.svg",
+	"military": "militar.svg",
+	"apprentice": "aprendiz.svg",
+	"hauler": "acarreador.svg",
+	"homeless": "sin_techo.svg",
+	"bed": "cama.svg",
+	"chest": "baul.svg",
 
 	# Barra superior y estados
 	"almacen": "almacen.svg",
@@ -157,35 +196,54 @@ const MAPA_ICONOS := {
 
 
 static func ruta(clave: String) -> String:
-	if MAPA_ICONOS.has(clave):
-		return RUTA_BASE + MAPA_ICONOS[clave]
-	if clave.ends_with(".svg"):
-		return RUTA_BASE + clave
+	var c := clave.to_lower().strip_edges()
+	if MAPA_ICONOS.has(c):
+		return RUTA_BASE + MAPA_ICONOS[c]
+	if c.ends_with(".svg"):
+		return RUTA_BASE + c
 	return ""
 
 
 static func icono(clave: String) -> Texture2D:
 	if clave == "":
 		return null
-	if _cache.has(clave):
-		return _cache[clave]
+	var c := clave.to_lower().strip_edges()
+	if _cache.has(c):
+		return _cache[c]
 
-	var r := ruta(clave)
-	if r == "" or not FileAccess.file_exists(r):
+	var r := ruta(c)
+	if r == "":
 		return null
 
 	var tex: Texture2D = null
-	if FileAccess.file_exists(r + ".import"):
+
+	# 1. Cargar como recurso Godot (resuelve remaps de .ctex en editor y en build exportada)
+	if ResourceLoader.has_cached(r):
+		tex = ResourceLoader.get_cached_ref(r) as Texture2D
+	if tex == null and ResourceLoader.exists(r):
+		tex = load(r) as Texture2D
+	if tex == null:
+		# En ciertas builds exportadas con PCK, ResourceLoader.exists() puede fallar con remaps de SVG, pero load() resuelve directamente
 		tex = load(r) as Texture2D
 
-	if tex == null:
+	# 2. Carga directa de bytes SVG vía FileAccess (funciona tanto en PCK virtual como en disco físico)
+	if tex == null and FileAccess.file_exists(r):
+		var buffer := FileAccess.get_file_as_bytes(r)
+		if not buffer.is_empty():
+			var img := Image.new()
+			if img.load_svg_from_buffer(buffer) == OK:
+				tex = ImageTexture.create_from_image(img)
+
+	# 3. Fallback en disco suelto para desarrollo si fuera necesario
+	if tex == null and FileAccess.file_exists(r):
 		var ruta_global := ProjectSettings.globalize_path(r)
-		var img := Image.load_from_file(ruta_global)
-		if img != null:
-			tex = ImageTexture.create_from_image(img)
+		if FileAccess.file_exists(ruta_global):
+			var img := Image.load_from_file(ruta_global)
+			if img != null:
+				tex = ImageTexture.create_from_image(img)
 
 	if tex != null:
-		_cache[clave] = tex
+		_cache[c] = tex
 	return tex
 
 
@@ -218,20 +276,29 @@ static func crear_rect(clave_o_tex: Variant, tamano: Variant = 16) -> TextureRec
 
 
 static func icono_recurso(recurso: String) -> String:
-	return recurso.to_lower()
+	var c := recurso.to_lower().strip_edges()
+	if MAPA_ICONOS.has(c):
+		return c
+	var strings = preload("res://scripts/strings.gd")
+	for k in strings.NOMBRES_RECURSO:
+		if (strings.NOMBRES_RECURSO[k] as String).to_lower() == c:
+			return k
+	return c
 
 
 static func icono_demografia(tipo: String) -> String:
-	match tipo.to_lower():
-		"ciudadano": return "ciudadano"
-		"desempleado": return "desempleado"
-		"obrero", "recolector": return "obrero"
-		"tecnico": return "tecnico"
-		"especialista": return "especialista"
-		"investigador": return "investigador"
-		"militar": return "militar"
-		"aprendiz": return "aprendiz"
-		"acarreador": return "acarreador"
+	match tipo.to_lower().strip_edges():
+		"ciudadano", "citizen", "citizens": return "ciudadano"
+		"desempleado", "unemployed": return "desempleado"
+		"obrero", "recolector", "laborer", "laborers", "worker": return "obrero"
+		"tecnico", "technician", "technicians": return "tecnico"
+		"especialista", "specialist", "specialists": return "especialista"
+		"investigador", "researcher", "researchers": return "investigador"
+		"militar", "military": return "militar"
+		"aprendiz", "apprentice": return "aprendiz"
+		"acarreador", "hauler": return "acarreador"
+		"cama", "bed": return "cama"
+		"baul", "chest": return "baul"
 		_: return "ciudadano"
 
 

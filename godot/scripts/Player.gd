@@ -217,15 +217,6 @@ func _ready() -> void:
 	hud.configurar_hotbar(tipos_disponibles)
 	hud.set_tipo_hotbar(tipo_seleccionado)
 
-	# Inventario inicial para pruebas: 1000 de cada recurso y 5000 de comida
-	if Ciudad != null and Ciudad.almacen != null:
-		for r in Ciudad.almacen:
-			Ciudad.almacen[r].limite = maxf(Ciudad.almacen[r].limite, Ajustes.PLAYER_LIMITE_INICIAL_DEBUG)
-			Ciudad.almacen[r].cantidad = Ajustes.PLAYER_STOCK_INICIAL_DEBUG
-		if Ciudad.almacen.has("comida"):
-			Ciudad.almacen["comida"].limite = maxf(Ciudad.almacen["comida"].limite, Ajustes.PLAYER_COMIDA_INICIAL_DEBUG)
-			Ciudad.almacen["comida"].cantidad = Ajustes.PLAYER_COMIDA_INICIAL_DEBUG
-
 	# Inicializar luz difusa de la lámpara
 	_luz_lampara = OmniLight3D.new()
 	_luz_lampara.name = "LuzLampara"

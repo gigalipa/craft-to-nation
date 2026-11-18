@@ -1,26 +1,30 @@
 # pnpm-workspace.yaml
 
-> 5 nodes · cohesion 0.40
+> 8 nodes · cohesion 0.29
 
 ## Key Concepts
 
-- **scripts** (5 connections) — `video_edition/remotion/package.json`
-- **build** (1 connections) — `video_edition/remotion/package.json`
-- **dev** (1 connections) — `video_edition/remotion/package.json`
-- **lint** (1 connections) — `video_edition/remotion/package.json`
-- **upgrade** (1 connections) — `video_edition/remotion/package.json`
+- **VerticalShort.tsx** (9 connections) — `video_edition/remotion/src/VerticalShort.tsx`
+- **data.ts** (5 connections) — `video_edition/remotion/src/data.ts`
+- **CaptionSegment** (2 connections) — `video_edition/remotion/src/VerticalShort.tsx`
+- **VerticalShort()** (2 connections) — `video_edition/remotion/src/VerticalShort.tsx`
+- **SHORT_01_SEGMENTS** (1 connections) — `video_edition/remotion/src/data.ts`
+- **SHORT_02_SEGMENTS** (1 connections) — `video_edition/remotion/src/data.ts`
+- **SHORT_03_SEGMENTS** (1 connections) — `video_edition/remotion/src/data.ts`
+- **VerticalShortProps** (1 connections) — `video_edition/remotion/src/VerticalShort.tsx`
 
 ## Relationships
 
-- [Hotbar.gd](Hotbar.gd.md) (1 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (6 shared connections)
 
 ## Source Files
 
-- `video_edition/remotion/package.json`
+- `video_edition/remotion/src/VerticalShort.tsx`
+- `video_edition/remotion/src/data.ts`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 14 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

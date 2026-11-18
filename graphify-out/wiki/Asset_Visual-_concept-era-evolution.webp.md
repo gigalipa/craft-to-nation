@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: concept-era-evolution.webp** (0 connections) — `website/wiki/src/public/assets/concept-era-evolution.webp`
+- **Asset Visual: craft-to-nation-logo.png** (0 connections) — `docs/assets/craft-to-nation-logo.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/concept-era-evolution.webp`
+- `docs/assets/craft-to-nation-logo.png`
 
 ## Audit Trail
 

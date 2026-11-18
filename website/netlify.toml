@@ -156,3 +156,19 @@
   from = "/wiki/*"
   to = "/wiki/dist/:splat"
   status = 200
+
+# --- AEO / GEO Headers for LLMs & AI Search Engines ---
+[[headers]]
+  for = "/llms.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=UTF-8"
+    Access-Control-Allow-Origin = "*"
+    X-Robots-Tag = "all"
+
+[[headers]]
+  for = "/llms-full.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=UTF-8"
+    Access-Control-Allow-Origin = "*"
+    X-Robots-Tag = "all"
+

@@ -1006,14 +1006,451 @@ static var TRANSPORTE_AVISO_BLOQUEO_VIA: String = "Ruta bloqueada: el vehículo 
 # DICCIONARIO MULTI-IDIOMA Y RESOLUCIÓN DINÁMICA POR `Ajustes.idioma`
 # ==============================================================================
 static var TRADUCCIONES: Dictionary = {
-	"es": {},
+	"es": {
+		"MENU_NUEVA_PARTIDA": "Nueva Partida",
+		"MENU_NUEVA_PARTIDA_TITULO": "Nueva Partida",
+		"MENU_NUEVA_PARTIDA_DESC": "Elige cómo deseas generar tu mundo:",
+		"MENU_GENERAR_ALEATORIO": "Generar mundo aleatorio",
+		"MENU_AGREGAR_SEMILLA": "Agregar semilla",
+		"MENU_SEMILLA_LABEL": "Semilla del Mundo:",
+		"MENU_SEMILLA_PLACEHOLDER": "Escribe o pega una semilla...",
+		"MENU_INICIAR_PARTIDA": "Iniciar Partida",
+		"MENU_SEMILLA_TAG": "Semilla: %s",
+		"MENU_CARGAR_PARTIDA": "Cargar Partida",
+		"MENU_CONFIGURACION": "Configuración",
+		"MENU_SALIR": "Salir",
+		"MENU_VOLVER": "Volver",
+		"MENU_GUARDAR": "Guardar",
+		"MENU_CARGAR": "Cargar",
+		"MENU_ELIMINAR": "X",
+		"MENU_REGRESAR_PARTIDA": "Regresar a la partida",
+		"MENU_GUARDADO_RAPIDO": "Guardado Rápido (F12)",
+		"MENU_GUARDAR_PARTIDA_MODAL": "Guardar Partida...",
+		"MENU_CARGAR_PARTIDA_MODAL": "Cargar Partida...",
+		"MENU_SALIR_PRINCIPAL": "Salir al Menú Principal",
+		"MENU_RESTABLECER": "Restablecer Valores",
+		"MENU_GUARDADO_EXITO": "¡Configuración guardada exitosamente!",
+		"MENU_RESTABLECIDO_EXITO": "Valores restablecidos a fábrica.",
+		"MENU_SUBTITULO": "Voxel Colony Sim & Industrial Automation",
+		"MENU_SELECCIONAR_PARTIDA": "Seleccionar Partida",
+		"MENU_SIN_PARTIDAS": "No se encontraron partidas guardadas.",
+		"MENU_NOMBRE_GUARDADO_PLACEHOLDER": "Nombre del guardado...",
+		"MENU_PARTIDA_GUARDADA_EXITO": "¡Partida guardada con éxito!",
+		"MENU_PARTIDA_ERROR_GUARDAR": "Error al guardar la partida.",
+		"MENU_QUICKSAVE_NOTIF": "¡Guardado rápido realizado (F12)!",
+		"MENU_QUICKSAVE_ERROR": "Error al realizar guardado rápido.",
+		"CARGA_ESTADO_INICIANDO": "Iniciando mundo...",
+		"CARGA_ESTADO_SISTEMAS": "Cargando sistemas y recursos...",
+		"CARGA_ESTADO_TERRENO": "Generando terreno procedural y biomas...",
+		"CARGA_ESTADO_VIAS": "Trazando redes viales y canalizaciones...",
+		"CARGA_ESTADO_COLONOS": "Inicializando colonos y economía...",
+		"CARGA_ESTADO_LISTO": "¡Mundo listo!",
+		"CONFIG_TITULO": "Configuración y Balance",
+		"CONFIG_TAB_AUDIO": "Audio y Controles",
+		"CONFIG_TAB_JUGADOR": "Jugador",
+		"CONFIG_TAB_CENITAL": "Cámara Cenital",
+		"CONFIG_TAB_CIUDAD": "Ciudad y Simulación",
+		"CONFIG_TAB_ECONOMIA": "Economía y Logística",
+		"CONFIG_LBL_IDIOMA": "Idioma:",
+		"CONFIG_LBL_SFX": "Volumen Efectos (SFX):",
+		"CONFIG_LBL_BGM": "Volumen Música (BGM):",
+		"CONFIG_LBL_MOUSE": "Sensibilidad Ratón:",
+		"CONFIG_LBL_FOV": "FOV Cámara Avatar:",
+		"AJUSTE_PLAYER_VELOCIDAD": "Velocidad Jugador",
+		"AJUSTE_PLAYER_VELOCIDAD_SALTO": "Fuerza de Salto",
+		"AJUSTE_PLAYER_ALCANCE_RAYCAST": "Alcance de Interacción",
+		"AJUSTE_PLAYER_OXIGENO_MAXIMO": "Oxígeno Máximo",
+		"AJUSTE_PLAYER_BATERIA_LAMPARA_MAX": "Batería Lámpara",
+		"AJUSTE_CAMARA_CENITAL_VELOCIDAD_PANEO": "Velocidad Paneo",
+		"AJUSTE_CAMARA_CENITAL_VELOCIDAD_ZOOM": "Velocidad Zoom",
+		"AJUSTE_CAMARA_CENITAL_FOV": "FOV Cámara Cenital",
+		"AJUSTE_CIUDAD_SEGUNDOS_POR_TICK": "Segundos por Tick",
+		"AJUSTE_CIUDAD_LIMITE_BASE": "Capacidad Base Almacén",
+		"AJUSTE_CIUDAD_COMIDA_INICIAL": "Comida Inicial",
+		"AJUSTE_CIUDAD_MORAL_INICIAL": "Moral Inicial",
+		"AJUSTE_ECONOMIA_CAPACIDAD_CARGA": "Capacidad de Carga",
+		"AJUSTE_ECONOMIA_HORAS_FORMACION": "Horas Formación Técnico",
+		"AJUSTE_ECONOMIA_RECURSOS_INICIALES": "Recursos Iniciales",
+		"RECURSOS_PERFIL_SUPERVIVENCIA": "Supervivencia",
+		"RECURSOS_PERFIL_BAJOS": "Bajos",
+		"RECURSOS_PERFIL_MEDIOS": "Medios",
+		"RECURSOS_PERFIL_ALTOS": "Altos",
+		"BARRA_SUPERIOR_POBLACION": "Población",
+		"BARRA_SUPERIOR_MORAL": "Moral",
+		"BARRA_SUPERIOR_COMIDA": "Comida",
+		"BARRA_SUPERIOR_ENERGIA": "Energía",
+		"BARRA_SUPERIOR_CRITICO": "Crítico",
+		"BARRA_SUPERIOR_CRITICO_VACIO": "Crítico —",
+		"BARRA_SUPERIOR_ALERTA": "¡Alerta!",
+		"HUD_OXIGENO": "Oxígeno",
+	},
+	"en": {
+		"MENU_NUEVA_PARTIDA": "New Game",
+		"MENU_NUEVA_PARTIDA_TITULO": "New Game",
+		"MENU_NUEVA_PARTIDA_DESC": "Choose how you want to generate your world:",
+		"MENU_GENERAR_ALEATORIO": "Generate Random World",
+		"MENU_AGREGAR_SEMILLA": "Enter Custom Seed",
+		"MENU_SEMILLA_LABEL": "World Seed:",
+		"MENU_SEMILLA_PLACEHOLDER": "Type or paste a seed...",
+		"MENU_INICIAR_PARTIDA": "Start Game",
+		"MENU_SEMILLA_TAG": "Seed: %s",
+		"MENU_CARGAR_PARTIDA": "Load Game",
+		"MENU_CONFIGURACION": "Settings",
+		"MENU_SALIR": "Quit",
+		"MENU_VOLVER": "Back",
+		"MENU_GUARDAR": "Save",
+		"MENU_CARGAR": "Load",
+		"MENU_ELIMINAR": "X",
+		"MENU_REGRESAR_PARTIDA": "Resume Game",
+		"MENU_GUARDADO_RAPIDO": "Quick Save (F12)",
+		"MENU_GUARDAR_PARTIDA_MODAL": "Save Game...",
+		"MENU_CARGAR_PARTIDA_MODAL": "Load Game...",
+		"MENU_SALIR_PRINCIPAL": "Exit to Main Menu",
+		"MENU_RESTABLECER": "Reset Defaults",
+		"MENU_GUARDADO_EXITO": "Settings saved successfully!",
+		"MENU_RESTABLECIDO_EXITO": "Values reset to factory defaults.",
+		"MENU_SUBTITULO": "Voxel Colony Sim & Industrial Automation",
+		"MENU_SELECCIONAR_PARTIDA": "Select Save Game",
+		"MENU_SIN_PARTIDAS": "No saved games found.",
+		"MENU_NOMBRE_GUARDADO_PLACEHOLDER": "Save game name...",
+		"MENU_PARTIDA_GUARDADA_EXITO": "Game saved successfully!",
+		"MENU_PARTIDA_ERROR_GUARDAR": "Error saving game.",
+		"MENU_QUICKSAVE_NOTIF": "Quick save performed (F12)!",
+		"MENU_QUICKSAVE_ERROR": "Error performing quick save.",
+		"CARGA_ESTADO_INICIANDO": "Starting world...",
+		"CARGA_ESTADO_SISTEMAS": "Loading systems and resources...",
+		"CARGA_ESTADO_TERRENO": "Generating procedural terrain and biomes...",
+		"CARGA_ESTADO_VIAS": "Tracing road networks and conduits...",
+		"CARGA_ESTADO_COLONOS": "Initializing colonists and economy...",
+		"CARGA_ESTADO_LISTO": "World ready!",
+		"CONFIG_TITULO": "Settings & Balance",
+		"CONFIG_TAB_AUDIO": "Audio & Controls",
+		"CONFIG_TAB_JUGADOR": "Player",
+		"CONFIG_TAB_CENITAL": "Overhead Camera",
+		"CONFIG_TAB_CIUDAD": "City & Simulation",
+		"CONFIG_TAB_ECONOMIA": "Economy & Logistics",
+		"CONFIG_LBL_IDIOMA": "Language:",
+		"CONFIG_LBL_SFX": "Sound Effects (SFX):",
+		"CONFIG_LBL_BGM": "Music Volume (BGM):",
+		"CONFIG_LBL_MOUSE": "Mouse Sensitivity:",
+		"CONFIG_LBL_FOV": "Avatar Camera FOV:",
+		"AJUSTE_PLAYER_VELOCIDAD": "Player Speed",
+		"AJUSTE_PLAYER_VELOCIDAD_SALTO": "Jump Force",
+		"AJUSTE_PLAYER_ALCANCE_RAYCAST": "Interaction Range",
+		"AJUSTE_PLAYER_OXIGENO_MAXIMO": "Max Oxygen",
+		"AJUSTE_PLAYER_BATERIA_LAMPARA_MAX": "Lamp Battery",
+		"AJUSTE_CAMARA_CENITAL_VELOCIDAD_PANEO": "Pan Speed",
+		"AJUSTE_CAMARA_CENITAL_VELOCIDAD_ZOOM": "Zoom Speed",
+		"AJUSTE_CAMARA_CENITAL_FOV": "Overhead Camera FOV",
+		"AJUSTE_CIUDAD_SEGUNDOS_POR_TICK": "Seconds per Tick",
+		"AJUSTE_CIUDAD_LIMITE_BASE": "Base Storage Capacity",
+		"AJUSTE_CIUDAD_COMIDA_INICIAL": "Starting Food",
+		"AJUSTE_CIUDAD_MORAL_INICIAL": "Starting Morale",
+		"AJUSTE_ECONOMIA_CAPACIDAD_CARGA": "Carrying Capacity",
+		"AJUSTE_ECONOMIA_HORAS_FORMACION": "Technician Training Hours",
+		"AJUSTE_ECONOMIA_RECURSOS_INICIALES": "Starting Resources",
+		"RECURSOS_PERFIL_SUPERVIVENCIA": "Survival",
+		"RECURSOS_PERFIL_BAJOS": "Low",
+		"RECURSOS_PERFIL_MEDIOS": "Medium",
+		"RECURSOS_PERFIL_ALTOS": "High",
+		"BARRA_SUPERIOR_POBLACION": "Population",
+		"BARRA_SUPERIOR_MORAL": "Morale",
+		"BARRA_SUPERIOR_COMIDA": "Food",
+		"BARRA_SUPERIOR_ENERGIA": "Power",
+		"BARRA_SUPERIOR_CRITICO": "Critical",
+		"BARRA_SUPERIOR_CRITICO_VACIO": "Critical —",
+		"BARRA_SUPERIOR_ALERTA": "Alert!",
+		"HUD_OXIGENO": "Oxygen",
+	}
+}
+
+static var _DATOS_ES := {
+	"NOMBRES_RECURSO": {
+		"madera": "Madera", "tablas": "Tablas", "comida": "Comida", "tierra": "Tierra",
+		"piedra": "Piedra", "bloques_piedra": "Bloques de piedra", "hierro": "Hierro",
+		"cobre": "Cobre", "carbon": "Carbón", "tierras_raras": "Tierras raras",
+		"acero": "Acero", "mineral_refinado": "Mineral refinado", "agua": "Agua",
+		"crudo": "Crudo", "combustible": "Combustible", "vidrio": "Vidrio",
+		"caza": "Comida (caza)", "recoleccion": "Comida (frutos)", "pesca": "Comida (pesca)",
+		"frutos_mar": "Comida (algas)"
+	},
+	"NOMBRES_SUB_COMIDA": {
+		"pesca": "Pesca y frutos del mar", "recoleccion_caza": "Caza y recolección",
+		"sembradios": "Sembradíos y agricultura", "granjas_animales": "Granjas animales",
+		"hidroponia": "Cultivo hidropónico", "sintetico": "Alimentos sintéticos"
+	},
+	"NOMBRES_FLUIDO": {
+		"agua": "Agua", "crudo": "Crudo", "combustible": "Combustible", "": "Sin fluido (vacío)"
+	},
+	"NOMBRES_ZONA": {
+		"residencial_investigacion": "Residencial / Investigación",
+		"fabricacion_militar": "Fabricación / Militar",
+		"periferia": "Periferia", "borrar": "Borrar zona"
+	},
+	"NOMBRES_MORAL": {
+		"euforica": "Eufórica", "estable": "Estable", "baja": "Baja", "critica": "Crítica"
+	},
+	"NOMBRES_PUESTO": {
+		"mina": "Mina", "caza_recoleccion": "Puesto de caza y recolección", "maderero": "Puesto maderero",
+		"pesca_frutos_mar": "Puesto de pesca y frutos del mar", "siderurgica": "Siderúrgica",
+		"refineria_tierras_raras": "Refinería de tierras raras", "aserradero": "Aserradero",
+		"fabrica_bloques": "Fábrica de bloques", "vidriera": "Vidriera", "carbonera": "Carbonera",
+		"refineria_petrolera": "Refinería petrolera", "productor_combustible": "Productor de combustible",
+		"central_termoelectrica": "Central termoeléctrica", "escuela_tecnica": "Escuela técnica",
+		"escuela_especialistas": "Escuela de especialistas", "universidad": "Universidad",
+		"estacion_bombeo": "Estación de bombeo", "centro_extraccion": "Centro de extracción",
+		"almacen": "Almacén"
+	},
+	"SUBTITULOS_PUESTO": {
+		"mina": "Puesto de extracción", "caza_recoleccion": "Puesto de recolección",
+		"maderero": "Puesto de recolección", "pesca_frutos_mar": "Puesto costero",
+		"siderurgica": "Refinería", "refineria_tierras_raras": "Refinería",
+		"aserradero": "Taller de aserrado", "fabrica_bloques": "Taller de cantería",
+		"vidriera": "Taller de vidriería", "carbonera": "Horno de carbón",
+		"refineria_petrolera": "Destilería industrial", "productor_combustible": "Planta sintética",
+		"central_termoelectrica": "Generación eléctrica", "escuela_tecnica": "Centro de formación",
+		"escuela_especialistas": "Centro de formación", "universidad": "Centro de investigación",
+		"estacion_bombeo": "Extracción superficial de agua",
+		"centro_extraccion": "Extracción subterránea por pozo",
+		"almacen": "Depósito logístico e industrial"
+	},
+	"NOMBRES_OFICIO": {
+		"desempleado": "Desempleados", "obrero": "Obreros", "tecnico": "Técnicos",
+		"especialista": "Especialistas", "investigador": "Investigadores"
+	},
+	"NOMBRES_ROL_EDIFICIO": {
+		"ciudadano": "Ciudadanos", "desempleado": "Desempleados", "obrero": "Obreros",
+		"tecnico": "Técnicos", "especialista": "Especialistas", "investigador": "Investigadores",
+		"militar": "Militares"
+	},
+	"HOTBAR_NOMBRES": {
+		"mano": "Mano", "tierra": "Tierra", "adobe": "Adobe", "bloque_madera": "Madera",
+		"bloque_piedra": "Piedra", "estructura_hierro": "Hierro", "bloque_acero": "Acero",
+		"vidrio": "Vidrio", "puerta": "Puerta", "cama": "Cama", "baul": "Baúl", "lampara": "Lámpara"
+	},
+	"ERA_NOMBRES": {
+		1: "Era 1: Asentamiento Pionero", 2: "Era 2: Manufactura Temprana",
+		3: "Era 3: Industrialización Plena", 4: "Era 4: Doctrina Cúspide"
+	},
+	"ERA_TITULOS": {
+		1: "Asentamiento Pionero", 2: "Manufactura Temprana",
+		3: "Industrialización Plena", 4: "Doctrina Cúspide"
+	},
+	"DOCTRINA_NOMBRES": {
+		"dieselpunk": "Dieselpunk", "cyberpunk": "Cyberpunk",
+		"solarpunk": "Solarpunk", "polivalente": "Polivalente"
+	},
+	"TRANSPORTE_NOMBRES": {
+		"acarreador_pie": "Acarreador a Pie", "carreta_mano": "Carreta de Mano",
+		"carro_caballos": "Carro de Tiro (Caballos)", "camion_diesel": "Camión Pesado Diésel",
+		"dron_carga": "Dron Autónomo de Carga", "trolebus_solar": "Trolebús Eléctrico Bio-Vía"
+	},
+	"VENTANA_ALMACEN_TITULO": "Almacén",
+	"VENTANA_BAUL_TITULO_DEFECTO": "Baúl",
+	"VENTANA_ENERGIA_TITULO": "Red Eléctrica",
+	"VENTANA_MORAL_TITULO": "Moral Ciudadana",
+	"VENTANA_OCUPACIONES_TITULO": "Ocupaciones y Puestos",
+	"VENTANA_POBLACION_TITULO": "Población",
+	"HUD_TEXTO_OXIGENO": "Oxígeno  %d%%",
+	"NOTIF_NUEVO_COLONO": "Nuevo colono en la ciudad.",
+	"NOTIF_TECNICOS_FORMADOS": "Se formaron %d técnicos.",
+	"NOTIF_RECURSO_MENOS_5_PCT": "Queda menos del 5%% de %s.",
+	"HOTBAR_CONTROLES_AVATAR": "WASD: mover · Espacio: saltar · Clic izq (mantener): minar / talar / cosechar · Clic der: colocar / usar · C: cámara cenital",
+	"HOTBAR_PAGINA_TOOLTIP": "Cambiar página de bloques (Tab)",
+	"HOTBAR_BTN_MODOS_TEXTO": "M\nModos",
+	"HOTBAR_BTN_MODOS_TOOLTIP": "Mostrar/ocultar modos de cámara cenital"
+}
+
+static var _DATOS_EN := {
+	"NOMBRES_RECURSO": {
+		"madera": "Wood", "tablas": "Planks", "comida": "Food", "tierra": "Dirt",
+		"piedra": "Stone", "bloques_piedra": "Stone blocks", "hierro": "Iron",
+		"cobre": "Copper", "carbon": "Coal", "tierras_raras": "Rare earths",
+		"acero": "Steel", "mineral_refinado": "Refined ore", "agua": "Water",
+		"crudo": "Crude oil", "combustible": "Fuel", "vidrio": "Glass",
+		"caza": "Food (game)", "recoleccion": "Food (berries)", "pesca": "Food (fish)",
+		"frutos_mar": "Food (algae)"
+	},
+	"NOMBRES_SUB_COMIDA": {
+		"pesca": "Fishing & seafood", "recoleccion_caza": "Hunting & foraging",
+		"sembradios": "Crops & agriculture", "granjas_animales": "Animal farms",
+		"hidroponia": "Hydroponic farming", "sintetico": "Synthetic food"
+	},
+	"NOMBRES_FLUIDO": {
+		"agua": "Water", "crudo": "Crude oil", "combustible": "Fuel", "": "No fluid (empty)"
+	},
+	"NOMBRES_ZONA": {
+		"residencial_investigacion": "Residential / Research",
+		"fabricacion_militar": "Manufacturing / Military",
+		"periferia": "Periphery", "borrar": "Clear zone"
+	},
+	"NOMBRES_MORAL": {
+		"euforica": "Euphoric", "estable": "Stable", "baja": "Low", "critica": "Critical"
+	},
+	"NOMBRES_PUESTO": {
+		"mina": "Mine", "caza_recoleccion": "Hunting & Foraging Post", "maderero": "Logging Post",
+		"pesca_frutos_mar": "Fishing & Seafood Pier", "siderurgica": "Steel Mill",
+		"refineria_tierras_raras": "Rare Earths Refinery", "aserradero": "Sawmill",
+		"fabrica_bloques": "Block Factory", "vidriera": "Glassworks", "carbonera": "Charcoal Kiln",
+		"refineria_petrolera": "Oil Refinery", "productor_combustible": "Fuel Plant",
+		"central_termoelectrica": "Thermal Power Plant", "escuela_tecnica": "Technical School",
+		"escuela_especialistas": "Specialist Academy", "universidad": "University",
+		"estacion_bombeo": "Pumping Station", "centro_extraccion": "Extraction Facility",
+		"almacen": "Warehouse"
+	},
+	"SUBTITULOS_PUESTO": {
+		"mina": "Extraction post", "caza_recoleccion": "Gathering post",
+		"maderero": "Logging post", "pesca_frutos_mar": "Coastal pier",
+		"siderurgica": "Refinery", "refineria_tierras_raras": "Refinery",
+		"aserradero": "Sawmill workshop", "fabrica_bloques": "Masonry workshop",
+		"vidriera": "Glassworks workshop", "carbonera": "Charcoal oven",
+		"refineria_petrolera": "Industrial distillery", "productor_combustible": "Synthetic plant",
+		"central_termoelectrica": "Power generation", "escuela_tecnica": "Training center",
+		"escuela_especialistas": "Training center", "universidad": "Research center",
+		"estacion_bombeo": "Surface water extraction",
+		"centro_extraccion": "Subterranean well extraction",
+		"almacen": "Industrial logistics depot"
+	},
+	"NOMBRES_OFICIO": {
+		"desempleado": "Unemployed", "obrero": "Laborers", "tecnico": "Technicians",
+		"especialista": "Specialists", "investigador": "Researchers"
+	},
+	"NOMBRES_ROL_EDIFICIO": {
+		"ciudadano": "Citizens", "desempleado": "Unemployed", "obrero": "Laborers",
+		"tecnico": "Technicians", "especialista": "Specialists", "investigador": "Researchers",
+		"militar": "Military"
+	},
+	"HOTBAR_NOMBRES": {
+		"mano": "Hand", "tierra": "Dirt", "adobe": "Adobe", "bloque_madera": "Wood",
+		"bloque_piedra": "Stone", "estructura_hierro": "Iron", "bloque_acero": "Steel",
+		"vidrio": "Glass", "puerta": "Door", "cama": "Bed", "baul": "Chest", "lampara": "Lamp"
+	},
+	"ERA_NOMBRES": {
+		1: "Era 1: Pioneer Settlement", 2: "Era 2: Early Manufacturing",
+		3: "Era 3: Full Industrialization", 4: "Era 4: Pinnacle Doctrine"
+	},
+	"ERA_TITULOS": {
+		1: "Pioneer Settlement", 2: "Early Manufacturing",
+		3: "Full Industrialization", 4: "Pinnacle Doctrine"
+	},
+	"DOCTRINA_NOMBRES": {
+		"dieselpunk": "Dieselpunk", "cyberpunk": "Cyberpunk",
+		"solarpunk": "Solarpunk", "polivalente": "Polyvalent"
+	},
+	"TRANSPORTE_NOMBRES": {
+		"acarreador_pie": "Foot Hauler", "carreta_mano": "Handcart",
+		"carro_caballos": "Horse Cart", "camion_diesel": "Heavy Diesel Truck",
+		"dron_carga": "Autonomous Cargo Drone", "trolebus_solar": "Bio-Track Electric Trolley"
+	},
+	"VENTANA_ALMACEN_TITULO": "Warehouse",
+	"VENTANA_BAUL_TITULO_DEFECTO": "Chest",
+	"VENTANA_ENERGIA_TITULO": "Power Grid",
+	"VENTANA_MORAL_TITULO": "Citizen Morale",
+	"VENTANA_OCUPACIONES_TITULO": "Occupations & Workposts",
+	"VENTANA_POBLACION_TITULO": "Population",
+	"HUD_TEXTO_OXIGENO": "Oxygen  %d%%",
+	"NOTIF_NUEVO_COLONO": "New colonist in the city.",
+	"NOTIF_TECNICOS_FORMADOS": "%d technicians graduated.",
+	"NOTIF_RECURSO_MENOS_5_PCT": "Less than 5%% of %s remaining.",
+	"HOTBAR_CONTROLES_AVATAR": "WASD: move · Space: jump · Left-click (hold): mine / chop / gather · Right-click: place / use · C: overhead camera",
+	"HOTBAR_PAGINA_TOOLTIP": "Change block page (Tab)",
+	"HOTBAR_BTN_MODOS_TEXTO": "M\nModes",
+	"HOTBAR_BTN_MODOS_TOOLTIP": "Show/hide overhead camera modes"
 }
 
 
-## Obtiene un valor de texto para el idioma activo en `Ajustes.idioma`,
-## cayendo al valor estático en español si aún no existe traducción.
-static func t(clave: String) -> Variant:
-	var lang: String = Ajustes.idioma
-	if TRADUCCIONES.has(lang) and (TRADUCCIONES[lang] as Dictionary).has(clave):
+## Cambia dinámicamente el idioma activo de todos los textos estáticos del juego.
+static func actualizar_idioma(nuevo_idioma: String) -> void:
+	var lang := nuevo_idioma.to_lower()
+	if lang != "en":
+		lang = "es"
+
+	var fuente: Dictionary = _DATOS_EN if lang == "en" else _DATOS_ES
+
+	Ajustes.idioma = lang
+
+	NOMBRES_RECURSO.clear()
+	for k in fuente["NOMBRES_RECURSO"]:
+		NOMBRES_RECURSO[k] = fuente["NOMBRES_RECURSO"][k]
+		NOMBRES_RECURSO_ALMACEN_INICIAL[k] = fuente["NOMBRES_RECURSO"][k]
+
+	NOMBRES_SUB_COMIDA.clear()
+	for k in fuente["NOMBRES_SUB_COMIDA"]:
+		NOMBRES_SUB_COMIDA[k] = fuente["NOMBRES_SUB_COMIDA"][k]
+
+	NOMBRES_FLUIDO.clear()
+	for k in fuente["NOMBRES_FLUIDO"]:
+		NOMBRES_FLUIDO[k] = fuente["NOMBRES_FLUIDO"][k]
+
+	NOMBRES_ZONA.clear()
+	for k in fuente["NOMBRES_ZONA"]:
+		NOMBRES_ZONA[k] = fuente["NOMBRES_ZONA"][k]
+
+	NOMBRES_MORAL.clear()
+	for k in fuente["NOMBRES_MORAL"]:
+		NOMBRES_MORAL[k] = fuente["NOMBRES_MORAL"][k]
+
+	NOMBRES_PUESTO.clear()
+	for k in fuente["NOMBRES_PUESTO"]:
+		NOMBRES_PUESTO[k] = fuente["NOMBRES_PUESTO"][k]
+
+	SUBTITULOS_PUESTO.clear()
+	for k in fuente["SUBTITULOS_PUESTO"]:
+		SUBTITULOS_PUESTO[k] = fuente["SUBTITULOS_PUESTO"][k]
+
+	NOMBRES_OFICIO.clear()
+	for k in fuente["NOMBRES_OFICIO"]:
+		NOMBRES_OFICIO[k] = fuente["NOMBRES_OFICIO"][k]
+
+	NOMBRES_ROL_EDIFICIO.clear()
+	for k in fuente["NOMBRES_ROL_EDIFICIO"]:
+		NOMBRES_ROL_EDIFICIO[k] = fuente["NOMBRES_ROL_EDIFICIO"][k]
+
+	HOTBAR_NOMBRES.clear()
+	for k in fuente["HOTBAR_NOMBRES"]:
+		HOTBAR_NOMBRES[k] = fuente["HOTBAR_NOMBRES"][k]
+
+	ERA_NOMBRES.clear()
+	for k in fuente["ERA_NOMBRES"]:
+		ERA_NOMBRES[k] = fuente["ERA_NOMBRES"][k]
+
+	ERA_TITULOS.clear()
+	for k in fuente["ERA_TITULOS"]:
+		ERA_TITULOS[k] = fuente["ERA_TITULOS"][k]
+
+	DOCTRINA_NOMBRES.clear()
+	for k in fuente["DOCTRINA_NOMBRES"]:
+		DOCTRINA_NOMBRES[k] = fuente["DOCTRINA_NOMBRES"][k]
+
+	TRANSPORTE_NOMBRES.clear()
+	for k in fuente["TRANSPORTE_NOMBRES"]:
+		TRANSPORTE_NOMBRES[k] = fuente["TRANSPORTE_NOMBRES"][k]
+
+	VENTANA_ALMACEN_TITULO = fuente["VENTANA_ALMACEN_TITULO"]
+	VENTANA_BAUL_TITULO_DEFECTO = fuente["VENTANA_BAUL_TITULO_DEFECTO"]
+	VENTANA_ENERGIA_TITULO = fuente["VENTANA_ENERGIA_TITULO"]
+	VENTANA_MORAL_TITULO = fuente["VENTANA_MORAL_TITULO"]
+	VENTANA_OCUPACIONES_TITULO = fuente["VENTANA_OCUPACIONES_TITULO"]
+	VENTANA_POBLACION_TITULO = fuente["VENTANA_POBLACION_TITULO"]
+	HUD_TEXTO_OXIGENO = fuente["HUD_TEXTO_OXIGENO"]
+	NOTIF_NUEVO_COLONO = fuente["NOTIF_NUEVO_COLONO"]
+	NOTIF_TECNICOS_FORMADOS = fuente["NOTIF_TECNICOS_FORMADOS"]
+	NOTIF_RECURSO_MENOS_5_PCT = fuente["NOTIF_RECURSO_MENOS_5_PCT"]
+	HOTBAR_CONTROLES_AVATAR = fuente["HOTBAR_CONTROLES_AVATAR"]
+	HOTBAR_PAGINA_TOOLTIP = fuente["HOTBAR_PAGINA_TOOLTIP"]
+	HOTBAR_BTN_MODOS_TEXTO = fuente["HOTBAR_BTN_MODOS_TEXTO"]
+	HOTBAR_BTN_MODOS_TOOLTIP = fuente["HOTBAR_BTN_MODOS_TOOLTIP"]
+
+
+## Obtiene un valor de texto traducido para el idioma activo en `Ajustes.idioma`.
+static func t(clave: String, default_str: String = "") -> String:
+	var lang: String = Ajustes.idioma.to_lower()
+	if not TRADUCCIONES.has(lang):
+		lang = "es"
+
+	if (TRADUCCIONES[lang] as Dictionary).has(clave):
 		return TRADUCCIONES[lang][clave]
-	return null
+	if (TRADUCCIONES["es"] as Dictionary).has(clave):
+		return TRADUCCIONES["es"][clave]
+	return default_str if not default_str.is_empty() else clave
+

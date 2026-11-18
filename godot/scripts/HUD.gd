@@ -161,6 +161,9 @@ func _ready() -> void:
 		oxigeno_label.visible = false
 	set_vista(true)  # la partida empieza en 1ª persona
 
+	if Configuracion != null:
+		Configuracion.configuracion_cambiada.connect(_on_configuracion_cambiada)
+
 	# Contenedor centrado para barra de progreso e ícono de herramienta contextual bajo la mira.
 	var cont_progreso := HBoxContainer.new()
 	cont_progreso.name = "ContenedorProgreso"
@@ -386,9 +389,29 @@ static func texto_tasas(tipo: String, tasas: Dictionary) -> String:
 	return "Recolección prevista por ciudadano:\n  " + "\n  ".join(lineas_comida)
 
 
+func _on_configuracion_cambiada(clave: String, _valor: Variant) -> void:
+	if clave == "idioma":
+		NOMBRES_RECURSO = Strings.NOMBRES_RECURSO
+		if _barra_superior != null and _barra_superior.has_method("actualizar"):
+			_barra_superior.actualizar()
+		if _hotbar != null and _hotbar.has_method("actualizar_textos"):
+			_hotbar.actualizar_textos()
+		if _ventana_almacen != null and _ventana_almacen.has_method("actualizar"):
+			_ventana_almacen.actualizar()
+		if _ventana_energia != null and _ventana_energia.has_method("actualizar"):
+			_ventana_energia.actualizar()
+		if _ventana_moral != null and _ventana_moral.has_method("actualizar"):
+			_ventana_moral.actualizar()
+		if _ventana_ocupaciones != null and _ventana_ocupaciones.has_method("actualizar"):
+			_ventana_ocupaciones.actualizar()
+		if _ventana_poblacion != null and _ventana_poblacion.has_method("actualizar"):
+			_ventana_poblacion.actualizar()
+
+
 static func texto_oxigeno(pct: int, sumergido: bool) -> String:
 	var signo := "-" if sumergido else "+"
-	return "Oxígeno: %s%d%%" % [signo, pct]
+	var prefijo: String = Strings.t("HUD_OXIGENO", "Oxígeno")
+	return "%s: %s%d%%" % [prefijo, signo, pct]
 
 
 ## Llamada cada física por Player._procesar_oxigeno() mientras el jugador

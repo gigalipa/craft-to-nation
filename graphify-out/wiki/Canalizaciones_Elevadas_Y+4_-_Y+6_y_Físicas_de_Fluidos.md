@@ -2,15 +2,15 @@
 
 > God node · 28 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [BuscadorRutas.gd](BuscadorRutas.gd.md)
+**Community:** [Hotbar.gd](Hotbar.gd.md)
 
 ## Connections by Relation
 
 ### conceptually_related_to
 - [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `INFERRED`
 - [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `INFERRED`
-- ideas-backlog.md (Backlog de Ideas — Craft to Nation) `INFERRED`
 - godot.md: Arquitectura Técnica en Godot & PoCs `INFERRED`
+- ideas-backlog.md (Backlog de Ideas — Craft to Nation) `INFERRED`
 - godot.md: Godot Technical Architecture & Simulation Engine `INFERRED`
 - gdd.md: Pilares de Diseño y GDD (v3.59) `INFERRED`
 - Propuesta_Iconos_UI.md (Propuesta de Iconografía Completa para la Interfaz de Usuari) `INFERRED`
@@ -32,7 +32,7 @@
 ### implements
 - [Obras.gd](Obras.gd.md) `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
+- FinalizacionObras.gd `EXTRACTED`
 
 ---
 

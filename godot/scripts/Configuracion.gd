@@ -41,6 +41,7 @@ const AJUSTES_DEFINICIONES := {
 	"economia": [
 		{"clave": "ECONOMIA_CAPACIDAD_CARGA", "etiqueta": "Capacidad de Carga", "tipo": "float", "min": 20.0, "max": 1000.0, "paso": 10.0, "default": 150.0, "unidad": " kg"},
 		{"clave": "ECONOMIA_HORAS_FORMACION", "etiqueta": "Horas Formación Técnico", "tipo": "int", "min": 2, "max": 100, "paso": 1, "default": 24, "unidad": " h"},
+		{"clave": "ECONOMIA_RECURSOS_INICIALES", "etiqueta": "Recursos Iniciales", "tipo": "opcion", "opciones": ["supervivencia", "bajos", "medios", "altos"], "opciones_textos": ["RECURSOS_PERFIL_SUPERVIVENCIA", "RECURSOS_PERFIL_BAJOS", "RECURSOS_PERFIL_MEDIOS", "RECURSOS_PERFIL_ALTOS"], "default": "bajos"},
 	],
 }
 
@@ -117,6 +118,8 @@ func guardar() -> bool:
 func aplicar() -> void:
 	# Sincroniza idioma
 	Ajustes.idioma = idioma
+	var strings = preload("res://scripts/strings.gd")
+	strings.actualizar_idioma(idioma)
 
 	# Sincroniza sensibilidad del mouse en Ajustes y Player
 	Ajustes.PLAYER_SENSIBILIDAD_MOUSE = sensibilidad_mouse
@@ -179,6 +182,8 @@ func _aplicar_variable_ajuste(clave: String, val: Variant) -> void:
 			Ajustes.ECONOMIA_CAPACIDAD_CARGA = float(val)
 		"ECONOMIA_HORAS_FORMACION":
 			Ajustes.ECONOMIA_HORAS_FORMACION = int(val)
+		"ECONOMIA_RECURSOS_INICIALES":
+			Ajustes.ECONOMIA_RECURSOS_INICIALES = str(val).to_lower().strip_edges()
 
 
 func obtener_valor_ajuste(clave: String, default_val: Variant = null) -> Variant:
@@ -245,4 +250,6 @@ func establecer_fov_camara(valor: float) -> void:
 func establecer_idioma(valor: String) -> void:
 	idioma = valor
 	Ajustes.idioma = idioma
+	var strings = preload("res://scripts/strings.gd")
+	strings.actualizar_idioma(idioma)
 	configuracion_cambiada.emit("idioma", idioma)

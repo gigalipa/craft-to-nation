@@ -591,24 +591,43 @@ func _posicion_libre(posicion: Vector3) -> bool:
 ## pantalla, ya que _actualizar_transform() siempre apunta la cámara hacia
 ## "foco" con look_at(). Requiere que la cámara YA esté posicionada con el
 ## "foco" previo (llamar _actualizar_transform() antes); si el rayo no
-## golpea nada (mira al cielo), conserva el "foco" anterior sin cambios.
+## golpea nada (mira al cielo o fuera del mundo), o el impacto queda fuera
+## de [DISTANCIA_MIN, DISTANCIA_MAX], conserva el "foco" y "distancia_camara"
+## anteriores sin cambios para evitar discontinuidades o saltos bruscos de altura.
 ## Se usa SOLO para órbita (Q/E) e inclinación (Ctrl+W/S) — el paneo y la
 ## altura mueven "foco" directamente, nunca a través de este raycast (ver
 ## _process()), para que esos dos controles se sientan como un
 ## desplazamiento totalmente liso, jamás "enganchado" al relieve.
-func _refinar_foco_por_mira() -> void:
+func _refinar_foco_por_mira() -> bool:
+	if not is_inside_tree() or get_viewport() == null or get_world_3d() == null:
+		return false
 	var centro := get_viewport().get_visible_rect().size / 2.0
 	var origen := project_ray_origin(centro)
 	var direccion := project_ray_normal(centro)
-	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
+	var alcance: float = minf(ALCANCE_RAYCAST, DISTANCIA_MAX)
+	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * alcance)
 	consulta.collision_mask = MASCARA_MUNDO
 	# Igual que _evitar_colision_en_activacion(): el jugador comparte la capa
 	# 1 con el terreno, y con la cámara cerca de él (p. ej. tras esquivar una
 	# montaña) este rayo puede golpearlo a él en vez de al relieve.
-	consulta.exclude = [jugador.get_rid()]
+	if jugador != null and is_instance_valid(jugador):
+		consulta.exclude = [jugador.get_rid()]
 	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
-	if not resultado.is_empty():
-		foco = resultado["position"]
+	if resultado.is_empty():
+		return false
+
+	var punto: Vector3 = resultado["position"]
+	var distancia: float = origen.distance_to(punto)
+	if distancia < DISTANCIA_MIN or distancia > DISTANCIA_MAX:
+		return false
+
+	if mundo != null and "ANCHO_MUNDO" in mundo and "LARGO_MUNDO" in mundo:
+		if punto.x < 0.0 or punto.x >= float(mundo.ANCHO_MUNDO) or punto.z < 0.0 or punto.z >= float(mundo.LARGO_MUNDO):
+			return false
+
+	foco = punto
+	distancia_camara = distancia
+	return true
 
 
 ## Raycast físico vertical (de arriba hacia abajo) en la posición X/Z ACTUAL
@@ -719,16 +738,18 @@ func _process(delta: float) -> void:
 	var angulo_inclinacion_nuevo := angulo_inclinacion
 	var distancia_camara_nueva := distancia_camara
 
-	# Solo en el PRIMER fotograma del gesto: fija "foco" al bloque real bajo
-	# la mira (raycast) y la distancia real actual entre la cámara y ese
-	# punto como radio del giro. Mientras el gesto continúe (tecla
-	# mantenida), NO se vuelve a hacer raycast — foco/distancia quedan fijos
+	# Solo en el PRIMER fotograma del gesto: intenta fijar "foco" al bloque real bajo
+	# la mira (raycast) dentro de los límites del mundo y de [DISTANCIA_MIN, DISTANCIA_MAX].
+	# Si la mira apunta fuera del mundo, al cielo o a una distancia fuera de rango,
+	# foco y distancia_camara se conservan tal cual para garantizar que la cámara
+	# no sufra saltos bruscos de altura o posición. Mientras el gesto continúe
+	# (tecla mantenida), NO se vuelve a hacer raycast — foco/distancia quedan fijos
 	# como centro/radio, así la órbita/inclinación no tiembla ni salta,
 	# aunque el paneo siga moviendo foco.x/z simultáneamente.
 	if inicia_gesto:
 		_refinar_foco_por_mira()
 		foco_nuevo = foco
-		distancia_camara_nueva = clampf(global_position.distance_to(foco), DISTANCIA_MIN, DISTANCIA_MAX)
+		distancia_camara_nueva = distancia_camara
 
 	if paneo != Vector2.ZERO:
 		# El paneo es relativo a la orientación actual de la cámara: "adelante"

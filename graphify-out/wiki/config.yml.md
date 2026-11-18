@@ -1,31 +1,41 @@
 # config.yml
 
-> 8 nodes · cohesion 0.43
+> 9 nodes · cohesion 0.22
 
 ## Key Concepts
 
-- **asset_packager.py** (7 connections) — `video_edition/tools/asset_packager.py`
-- **mark_raw_as_done()** (5 connections) — `video_edition/tools/asset_packager.py`
-- **package_processed_video()** (5 connections) — `video_edition/tools/asset_packager.py`
-- **main()** (4 connections) — `video_edition/tools/asset_packager.py`
-- **shutil** (3 connections)
-- **Path** (2 connections)
-- **Mueve el archivo original desde video_edition/media/raw/ hacia…** (1 connections) — `video_edition/tools/asset_packager.py`
-- **Empaqueta un video maestro y todos sus archivos relacionados en su propia…** (1 connections) — `video_edition/tools/asset_packager.py`
+- **Obras.gd** (36 connections) — `godot/scripts/Obras.gd`
+- **Obras.alternar_marca()** (1 connections) — `godot/scripts/Obras.gd`
+- **Obras.cancelar_demolicion()** (1 connections) — `godot/scripts/Obras.gd`
+- **Obras.esta_marcado()** (1 connections) — `godot/scripts/Obras.gd`
+- **Obras.esta_programada()** (1 connections) — `godot/scripts/Obras.gd`
+- **Obras.horas_programadas()** (1 connections) — `godot/scripts/Obras.gd`
+- **Obras.programar_demolicion()** (1 connections) — `godot/scripts/Obras.gd`
+- **Obras._ready()** (1 connections) — `godot/scripts/Obras.gd`
+- **Obras.simular_hora()** (1 connections) — `godot/scripts/Obras.gd`
 
 ## Relationships
 
-- [clip_maker.py](clip_maker.py.md) (2 shared connections)
-- [dependabot.yml](dependabot.yml.md) (1 shared connections)
-- [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (1 shared connections)
+- [Player.gd](Player.gd.md) (5 shared connections)
+- [Vias.gd](Vias.gd.md) (3 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (2 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (2 shared connections)
+- [Asset Visual: Craft_to_Nation_Kick_profile_banner.png](Asset_Visual-_Craft_to_Nation_Kick_profile_banner.png.md) (2 shared connections)
+- [Asset Visual](Asset_Visual.md) (2 shared connections)
+- [Hotbar.gd](Hotbar.gd.md) (2 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
+- [Root.tsx](Root.tsx.md) (1 shared connections)
+- [steps](steps.md) (1 shared connections)
+- [Código de Conducta de la Comunidad — Craft to Nation](Código_de_Conducta_de_la_Comunidad_—_Craft_to_Nation.md) (1 shared connections)
+- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (1 shared connections)
 
 ## Source Files
 
-- `video_edition/tools/asset_packager.py`
+- `godot/scripts/Obras.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
+- EXTRACTED: 36 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

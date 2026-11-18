@@ -20,6 +20,9 @@ var _transicionando: bool = false
 
 
 func _ready() -> void:
+	if not OS.has_feature("dedicated_server") and DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# Fondo temático verde noche
@@ -95,6 +98,11 @@ func _iniciar_pulso() -> void:
 
 
 func _cargar_textura(ruta: String) -> Texture2D:
+	if ResourceLoader.exists(ruta):
+		var t = load(ruta) as Texture2D
+		if t != null:
+			return t
+
 	if FileAccess.file_exists(ruta + ".import"):
 		var t = load(ruta) as Texture2D
 		if t != null:

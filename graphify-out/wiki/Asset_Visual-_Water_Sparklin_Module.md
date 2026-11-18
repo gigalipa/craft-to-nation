@@ -1,10 +1,11 @@
 # Asset Visual: Water_Sparklin Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
+- **content-qa.md** (1 connections) — `.agents/agents/content-qa.md`
+- **Agent System Instructions: Content QA (`content-qa`)** (1 connections) — `.agents/agents/content-qa.md`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/dae/casa_prehistoria_min/Translucent_Glass_Tinted.jpg`
+- `.agents/agents/content-qa.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -15,9 +15,18 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Craft to Nation"
-run/main_scene="res://scenes/Bienvenida.tscn"
+run/main_scene="res://scenes/VideoIntro.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
+boot_splash/show_image=false
+boot_splash/minimum_display_time=0
+boot_splash/bg_color=Color(0.043, 0.086, 0.071, 1)
 config/icon="res://icon.png"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode="fullscreen"
 
 [autoload]
 

@@ -231,6 +231,7 @@ class Busqueda extends RefCounted:
 	var _ignorar: Array
 	var _bloqueadas: Dictionary
 	var _tipo_transporte: String = ""
+	var _ancho_unidad: int = 1
 	var _tope: int
 	var _costo: Dictionary
 	var _padre: Dictionary = {}
@@ -248,6 +249,9 @@ class Busqueda extends RefCounted:
 		_ignorar = opciones.get("ignorar_fantasmas", [])
 		_tope = opciones.get("max_nodos", buscador.max_nodos)
 		_tipo_transporte = str(opciones.get("tipo_transporte", ""))
+		var datos_t: Dictionary = Ajustes.TRANSPORTE_CATALOGO_UNIDADES.get(_tipo_transporte, {})
+		var huella: Vector2i = datos_t.get("huella", Vector2i(1, 1))
+		_ancho_unidad = huella.x
 		if not buscador.es_transitable_para_transporte(origen, _tipo_transporte, _ignorar):
 			terminada = true
 			return
@@ -285,7 +289,14 @@ class Busqueda extends RefCounted:
 				if _cerrados.has(vecino) or _bloqueadas.has(vecino):
 					continue
 				var soporte: Vector3i = vecino - ARRIBA
-				var coste_superficie: int = Vias.coste_paso_en(soporte) if Vias != null else 1
+				var coste_superficie: int = 1
+				if Vias != null:
+					if Vias.es_via(soporte):
+						var dir_paso := Vector2i(vecino.x - actual.x, vecino.z - actual.z)
+						var es_der: bool = Vias.es_borde_derecho(soporte, dir_paso, _ancho_unidad)
+						coste_superficie = Vias.coste_paso_en(soporte) if es_der else (Vias.coste_paso_en(soporte) + Ajustes.VIAS_PENALIZACION_CARRIL_IZQUIERDO)
+					else:
+						coste_superficie = Vias.coste_paso_en(soporte)
 				var nuevo_costo: int = _costo[actual] + coste_superficie + absi(vecino.y - actual.y)
 				if not _costo.has(vecino) or nuevo_costo < _costo[vecino]:
 					_costo[vecino] = nuevo_costo

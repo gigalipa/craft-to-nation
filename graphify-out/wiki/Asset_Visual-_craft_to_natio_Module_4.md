@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: Stream_topbar_debug.png** (0 connections) — `arte/stream_art/Stream_topbar_debug.png`
+- **Asset Visual: Craft_to_Nation_Twitch_offline_banner.png** (0 connections) — `arte/banners/Craft_to_Nation_Twitch_offline_banner.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_topbar_debug.png`
+- `arte/banners/Craft_to_Nation_Twitch_offline_banner.png`
 
 ## Audit Trail
 

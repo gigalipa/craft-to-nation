@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: hud-primera-persona-batalla.png** (0 connections) — `website/wiki/src/public/assets/hud-primera-persona-batalla.png`
+- **deploy_wiki.ps1** (0 connections) — `tools/deploy_wiki.ps1`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/hud-primera-persona-batalla.png`
+- `tools/deploy_wiki.ps1`
 
 ## Audit Trail
 

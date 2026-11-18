@@ -1,11 +1,25 @@
 # arte/sfx/ATTRIBUTIONS.md
 
-> 2 nodes · cohesion 1.00
+> 16 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **arte/sfx/ATTRIBUTIONS.md** (1 connections) — `arte/sfx/ATTRIBUTIONS.md`
-- **Craft to Nation - Atribución de Efectos de Sonido (Freesound)** (1 connections) — `arte/sfx/ATTRIBUTIONS.md`
+- **attributes** (6 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **feature_request.yml** (5 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **body** (5 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **validations** (2 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **description** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **label** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **options** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **placeholder** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **value** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **id** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **type** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **description** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **labels** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **name** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **title** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
+- **required** (1 connections) — `.github/ISSUE_TEMPLATE/feature_request.yml`
 
 ## Relationships
 
@@ -13,11 +27,11 @@
 
 ## Source Files
 
-- `arte/sfx/ATTRIBUTIONS.md`
+- `.github/ISSUE_TEMPLATE/feature_request.yml`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 15 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

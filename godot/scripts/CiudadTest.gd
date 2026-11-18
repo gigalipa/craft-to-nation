@@ -259,9 +259,10 @@ func ejecutar_pruebas() -> void:
 	for clave in ["madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon", "tierras_raras", "acero", "mineral_refinado", "tablas", "bloques_piedra", "agua", "crudo", "combustible", "vidrio"]:
 		assert(ocho.almacen.has(clave), "falta el recurso " + clave)
 	assert(ocho.almacen.size() == 16)
-	assert(ocho.almacen["acero"].cantidad == 0.0 and ocho.almacen["acero"].limite == 500.0, "el acero empieza en 0 con el tope inicial")
-	assert(ocho.almacen["tierra"].cantidad == 0.0 and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
-	assert(ocho.almacen["bloques_piedra"].cantidad == 0.0 and ocho.almacen["bloques_piedra"].limite == 500.0)
+	var stock_esp18: Dictionary = Ajustes.cantidades_recursos_iniciales()
+	assert(ocho.almacen["acero"].cantidad == stock_esp18.get("acero", 0.0) and ocho.almacen["acero"].limite == 500.0, "el acero empieza con stock de perfil y tope inicial")
+	assert(ocho.almacen["tierra"].cantidad == stock_esp18.get("tierra", 0.0) and ocho.almacen["tierras_raras"].limite == 500.0, "el tope inicial de un recurso es 500")
+	assert(ocho.almacen["bloques_piedra"].cantidad == stock_esp18.get("bloques_piedra", 0.0) and ocho.almacen["bloques_piedra"].limite == 500.0)
 	assert(ocho.almacen["comida"].cantidad == ocho.COMIDA_INICIAL, "la comida inicial es COMIDA_INICIAL")
 	assert(ocho.almacen["comida"].limite == 5000.0, "el tope inicial de comida es 5000")
 
@@ -278,6 +279,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 20: tasa_neta se mide entre cierres de tick consecutivos ===")
 	var neta: Node = CiudadScript.new()
 	neta.migracion_activa = false
+	neta.almacen["madera"].cantidad = 0.0
 	neta.simular_tick(0.0)  # primer tick: sin consumo, todas las tasas en 0
 	assert(neta.almacen["madera"].tasa_neta == 0.0)
 	# Una entrega ENTRE ticks (la de un acarreador) debe verse en la tasa del siguiente.
@@ -290,6 +292,7 @@ func ejecutar_pruebas() -> void:
 	print("\n=== TEST 21: tasa_neta_promedio promedia las últimas VENTANA_TASA_PROMEDIO horas ===")
 	var prom: Node = CiudadScript.new()
 	prom.migracion_activa = false
+	prom.almacen["madera"].cantidad = 0.0
 	prom.simular_tick(0.0)  # primer tick: tasa 0 (1 muestra)
 	assert(prom.almacen["madera"].tasa_neta_promedio == 0.0)
 	# Una entrega de 30 cada 3 horas (a tirones, como los acarreadores): media 10/h.
@@ -443,9 +446,10 @@ func ejecutar_pruebas() -> void:
 
 	print("\n=== TEST 25: recursos fluidos agua, crudo y combustible ===")
 	var ciu25: Node = CiudadScript.new()
-	assert(ciu25.almacen.has("agua") and ciu25.almacen["agua"].cantidad == 0.0 and ciu25.almacen["agua"].limite == Ciudad.LIMITE_BASE)
-	assert(ciu25.almacen.has("crudo") and ciu25.almacen["crudo"].cantidad == 0.0 and ciu25.almacen["crudo"].limite == Ciudad.LIMITE_BASE)
-	assert(ciu25.almacen.has("combustible") and ciu25.almacen["combustible"].cantidad == 0.0 and ciu25.almacen["combustible"].limite == Ciudad.LIMITE_BASE)
+	var stock_esp25: Dictionary = Ajustes.cantidades_recursos_iniciales()
+	assert(ciu25.almacen.has("agua") and ciu25.almacen["agua"].cantidad == stock_esp25.get("agua", 0.0) and ciu25.almacen["agua"].limite == Ciudad.LIMITE_BASE)
+	assert(ciu25.almacen.has("crudo") and ciu25.almacen["crudo"].cantidad == stock_esp25.get("crudo", 0.0) and ciu25.almacen["crudo"].limite == Ciudad.LIMITE_BASE)
+	assert(ciu25.almacen.has("combustible") and ciu25.almacen["combustible"].cantidad == stock_esp25.get("combustible", 0.0) and ciu25.almacen["combustible"].limite == Ciudad.LIMITE_BASE)
 
 	print("\n=== TEST 26: traslado de núcleo urbano y desahucio priorizado ===")
 	var ciu26: Node = CiudadScript.new()

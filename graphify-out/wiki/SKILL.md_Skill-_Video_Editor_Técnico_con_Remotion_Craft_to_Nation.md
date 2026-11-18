@@ -1,46 +1,44 @@
 # SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))
 
-> 8 nodes · cohesion 0.57
+> 21 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))** (17 connections) — `.agents/skills/video-editor/SKILL.md`
-- **SKILL.md (Skill: Content QA (Control de Calidad))** (11 connections) — `.agents/skills/content-qa/SKILL.md`
-- **AGENTS.md (Orquestación de Agentes: Estudio de Redes Sociales y Graphify)** (7 connections) — `AGENTS.md`
-- **Skill: Social Media Strategist (Craft to Nation)** (7 connections) — `.agents/skills/social-strategist/SKILL.md`
-- **Skill: Social (Orquestador del Estudio de Redes Sociales)** (6 connections) — `.agents/skills/social/SKILL.md`
-- **Skill: Gamedev Copywriter (Craft to Nation)** (5 connections) — `.agents/skills/gamedev-copywriter/SKILL.md`
-- **calendario_semana_3.md** (3 connections) — `video_edition/workspaces/calendario_semana_3.md`
-- **calendario_semana_4.md** (3 connections) — `video_edition/workspaces/calendario_semana_4.md`
+- **Código de Conducta de la Comunidad — Craft to Nation** (8 connections) — `CODE_OF_CONDUCT.md`
+- **Directrices de Moderación** (5 connections) — `CODE_OF_CONDUCT.md`
+- **Cómo Reportar una Vulnerabilidad / Reporting a Vulnerability** (4 connections) — `SECURITY.md`
+- **CODE_OF_CONDUCT.md** (3 connections) — `CODE_OF_CONDUCT.md`
+- **CONTRIBUTING.md (Contribuir a Craft to Nation)** (3 connections) — `CONTRIBUTING.md`
+- **SECURITY.md** (3 connections) — `SECURITY.md`
+- **Política de Seguridad / Security Policy** (3 connections) — `SECURITY.md`
+- **1. Corrección** (1 connections) — `CODE_OF_CONDUCT.md`
+- **2. Advertencia** (1 connections) — `CODE_OF_CONDUCT.md`
+- **3. Suspensión Temporal** (1 connections) — `CODE_OF_CONDUCT.md`
+- **4. Expulsión Permanente** (1 connections) — `CODE_OF_CONDUCT.md`
+- **Alcance** (1 connections) — `CODE_OF_CONDUCT.md`
+- **Aplicación y Reporte** (1 connections) — `CODE_OF_CONDUCT.md`
+- **Atribución** (1 connections) — `CODE_OF_CONDUCT.md`
+- **Nuestro Compromiso** (1 connections) — `CODE_OF_CONDUCT.md`
+- **Nuestros Estándares** (1 connections) — `CODE_OF_CONDUCT.md`
+- **Responsabilidades de Moderación** (1 connections) — `CODE_OF_CONDUCT.md`
+- **Compromiso de Respuesta y Divulgación Coordinada** (1 connections) — `SECURITY.md`
+- **Información a Incluir en el Reporte** (1 connections) — `SECURITY.md`
+- **Procedimiento de Reporte Responsable** (1 connections) — `SECURITY.md`
+- **Versiones con Soporte / Supported Versions** (1 connections) — `SECURITY.md`
 
 ## Relationships
 
-- [ajustes.gd](ajustes.gd.md) (12 shared connections)
-- [json](json.md) (3 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (3 shared connections)
-- [dependabot.yml](dependabot.yml.md) (2 shared connections)
-- [Root.tsx](Root.tsx.md) (1 shared connections)
-- [config.yml](config.yml.md) (1 shared connections)
-- [subprocess](subprocess.md) (1 shared connections)
-- [clip_maker.py](clip_maker.py.md) (1 shared connections)
-- [tsconfig.json](tsconfig.json.md) (1 shared connections)
-- [Detalle de Entregables y Paquetes de Contenido](Detalle_de_Entregables_y_Paquetes_de_Contenido.md) (1 shared connections)
-- [1. Publicación Principal - Devlog Técnico Multicámara (Martes)](1._Publicación_Principal_-_Devlog_Técnico_Multicámara_Martes.md) (1 shared connections)
+- [dependabot.yml](dependabot.yml.md) (3 shared connections)
 
 ## Source Files
 
-- `.agents/skills/content-qa/SKILL.md`
-- `.agents/skills/gamedev-copywriter/SKILL.md`
-- `.agents/skills/social-strategist/SKILL.md`
-- `.agents/skills/social/SKILL.md`
-- `.agents/skills/video-editor/SKILL.md`
-- `AGENTS.md`
-- `video_edition/workspaces/calendario_semana_3.md`
-- `video_edition/workspaces/calendario_semana_4.md`
+- `CODE_OF_CONDUCT.md`
+- `CONTRIBUTING.md`
+- `SECURITY.md`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (100%)
+- EXTRACTED: 23 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

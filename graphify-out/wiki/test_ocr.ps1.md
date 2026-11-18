@@ -1,11 +1,10 @@
 # test_ocr.ps1
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **test_ocr.ps1** (1 connections) — `video_edition/tools/test_ocr.ps1`
-- **Await()** (1 connections) — `video_edition/tools/test_ocr.ps1`
+- **Asset Visual: craft-to-nation-mark.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-mark.png`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `video_edition/tools/test_ocr.ps1`
+- `website/wiki/src/public/assets/craft-to-nation-mark.png`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **2026-09-05-citycraft-presentation-site.md (CityCraft Presentation Site Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/bloques/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
+- `arte/dae/bloques/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

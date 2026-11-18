@@ -2,15 +2,15 @@
 
 > God node · 24 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [ajustes.gd](ajustes.gd.md)
+**Community:** [Ciudad.gd](Ciudad.gd.md)
 
 ## Connections by Relation
 
 ### conceptually_related_to
 - [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `INFERRED`
 - [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `INFERRED`
-- ideas-backlog.md (Backlog de Ideas — Craft to Nation) `INFERRED`
 - godot.md: Arquitectura Técnica en Godot & PoCs `INFERRED`
+- ideas-backlog.md (Backlog de Ideas — Craft to Nation) `INFERRED`
 - godot.md: Godot Technical Architecture & Simulation Engine `INFERRED`
 - gdd.md: Pilares de Diseño y GDD (v3.59) `INFERRED`
 - gdd.md: Game Design Document (GDD v3.59) `INFERRED`
@@ -18,9 +18,9 @@
 - Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation) `INFERRED`
 - recursos.md: Recursos, Industrias y Energía `INFERRED`
 - resources.md: Resource Economy, Industries & Power Grid `INFERRED`
-- logistica.md: Logística, Red Vial y Canalizaciones Elevadas `INFERRED`
 - edificios.md: Edificios, Niveles Urbanos y Almacenamiento `INFERRED`
 - buildings.md: Buildings, Urban Levels & Storage Infrastructure `INFERRED`
+- logistica.md: Logística, Red Vial y Canalizaciones Elevadas `INFERRED`
 - index.html `INFERRED`
 - inicio.md: Guía de Primeros Pasos `INFERRED`
 - start.md: Beginner's Survival & Settlement Guide `INFERRED`

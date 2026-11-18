@@ -1,22 +1,29 @@
 # Asset Visual
 
-> 1 nodes · cohesion 1.00
+> 6 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **Asset Visual: hud-primera-persona-construccion.png** (0 connections) — `arte/conceptos-hud/hud-primera-persona-construccion.png`
+- **fcpxml_generator.py** (6 connections) — `video_edition/tools/fcpxml_generator.py`
+- **create_fcpxml_timeline()** (5 connections) — `video_edition/tools/fcpxml_generator.py`
+- **main()** (4 connections) — `video_edition/tools/fcpxml_generator.py`
+- **xml_etree_elementtree** (2 connections)
+- **Path** (1 connections)
+- **Genera un archivo FCPXML estándar compatible con DaVinci Resolve (versión Free…** (1 connections) — `video_edition/tools/fcpxml_generator.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [PanelLampara.gd](PanelLampara.gd.md) (2 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (2 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/conceptos-hud/hud-primera-persona-construccion.png`
+- `video_edition/tools/fcpxml_generator.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 12 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

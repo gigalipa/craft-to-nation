@@ -36,7 +36,7 @@ features:
     link: /fr/guide/colonists
     linkText: Gestion des Colons
   - title: Architecture Moteur Godot 4.7
-    details: Conception technique, simulation déterministe à ticks horaires (2,0s = 1h), moteur audio spatial SFX, iconographie vectorielle HUD SVG et 35 scènes de tests automatisés.
+    details: Conception technique, simulation déterministe à ticks horaires (2,0s = 1h), moteur audio spatial SFX, iconographie vectorielle HUD SVG et 36 scènes de tests automatisés.
     link: /fr/dev/godot
     linkText: Architecture Godot
 ---

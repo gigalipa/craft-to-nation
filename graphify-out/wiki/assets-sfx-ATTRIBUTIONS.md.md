@@ -1,11 +1,10 @@
 # assets/sfx/ATTRIBUTIONS.md
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **assets/sfx/ATTRIBUTIONS.md** (1 connections) — `godot/assets/sfx/ATTRIBUTIONS.md`
-- **Craft to Nation - Atribución de Efectos de Sonido (Freesound)** (1 connections) — `godot/assets/sfx/ATTRIBUTIONS.md`
+- **Asset Visual: hud-camara-cenital.png** (0 connections) — `website/wiki/src/public/assets/hud-camara-cenital.png`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `godot/assets/sfx/ATTRIBUTIONS.md`
+- `website/wiki/src/public/assets/hud-camara-cenital.png`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

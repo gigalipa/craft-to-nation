@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: concept-planet-network.webp** (0 connections) — `website/wiki/src/public/assets/concept-planet-network.webp`
+- **2026-09-05-citycraft-presentation-site.md (CityCraft Presentation Site Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/concept-planet-network.webp`
+- `docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md`
 
 ## Audit Trail
 

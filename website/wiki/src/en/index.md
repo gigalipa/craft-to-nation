@@ -36,7 +36,7 @@ features:
     link: /en/guide/colonists
     linkText: View Demographics
   - title: Engineering & Godot 4.7 Architecture
-    details: Dive into the game's simulation engine, discrete 2.0s tick cycles, central configuration & reactive strings, spatial audio SFX engine, SVG HUD iconography, modular fluid pipelines, and 35 automated test scenes.
+    details: Dive into the game's simulation engine, discrete 2.0s tick cycles, central configuration & reactive strings, spatial audio SFX engine, SVG HUD iconography, modular fluid pipelines, and 36 automated test scenes.
     link: /en/dev/godot
     linkText: Inspect Engine Specs
 ---

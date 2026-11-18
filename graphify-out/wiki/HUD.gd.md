@@ -1,72 +1,73 @@
 # HUD.gd
 
-> 58 nodes · cohesion 0.05
+> 26 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **HUD.gd** (95 connections) — `godot/scripts/HUD.gd`
-- **HUDTest.gd** (54 connections) — `godot/scripts/HUDTest.gd`
-- **PanelEdificio.gd** (36 connections) — `godot/scripts/PanelEdificio.gd`
-- **TemaHUD.gd** (29 connections) — `godot/scripts/TemaHUD.gd`
-- **PanelContextual.gd** (23 connections) — `godot/scripts/PanelContextual.gd`
-- **VentanaPoblacion.gd** (18 connections) — `godot/scripts/VentanaPoblacion.gd`
-- **VentanaBaul.gd** (17 connections) — `godot/scripts/VentanaBaul.gd`
-- **2026-10-07-obras-vias-y-prioridades.md (Obras por Colonos: Tendido de Vías y Prioridades Configurabl)** (14 connections) — `docs/superpowers/plans/2026-10-07-obras-vias-y-prioridades.md`
-- **2026-09-25-hud-por-modos.md (HUD por modos Implementation Plan)** (12 connections) — `docs/superpowers/plans/2026-09-25-hud-por-modos.md`
-- **2026-10-26-investigacion-descentralizada-eras-spec.md (Especificación Técnica: Investigación Descentralizada, Pacin)** (11 connections) — `docs/superpowers/specs/2026-10-26-investigacion-descentralizada-eras-spec.md`
-- **2026-09-25-hud-por-modos-design.md (HUD por modos — diseño)** (10 connections) — `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`
-- **2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md (Especificación Técnica: Sistema Militar, Doctrinas Asimétric)** (10 connections) — `docs/superpowers/specs/2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md`
-- **CaraApuntada.gd** (9 connections) — `godot/scripts/CaraApuntada.gd`
-- **Propuesta_Remodelacion_y_Colonizabilidad.md (Propuesta de Diseño Técnico: Remodelación de Edificaciones y)** (7 connections) — `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`
-- **CaraApuntada.mostrar_en()** (1 connections) — `godot/scripts/CaraApuntada.gd`
-- **CaraApuntada.ocultar()** (1 connections) — `godot/scripts/CaraApuntada.gd`
-- **CaraApuntada._process()** (1 connections) — `godot/scripts/CaraApuntada.gd`
-- **HUD.configurar_hotbar()** (1 connections) — `godot/scripts/HUD.gd`
-- **HUD.iniciar_transicion()** (1 connections) — `godot/scripts/HUD.gd`
-- **HUD.pagina_actual()** (1 connections) — `godot/scripts/HUD.gd`
-- **HUD._ready()** (1 connections) — `godot/scripts/HUD.gd`
-- **HUD.set_giros_construccion()** (1 connections) — `godot/scripts/HUD.gd`
-- **HUD.set_modo()** (1 connections) — `godot/scripts/HUD.gd`
-- **HUD.set_tipo_hotbar()** (1 connections) — `godot/scripts/HUD.gd`
-- **HUD.set_vista()** (1 connections) — `godot/scripts/HUD.gd`
-- *... and 33 more nodes in this community*
+- **Paneles de Ventana 1/20 (Recta, Esquina y Techo)** (35 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- **TranslucidosRenderer.gd** (27 connections) — `godot/scripts/TranslucidosRenderer.gd`
+- **TranslucidosRendererTest.gd** (15 connections) — `godot/scripts/TranslucidosRendererTest.gd`
+- **2026-10-08-red-tuberias-acueductos.md (Red de Tuberías y Acueductos Implementation Plan)** (14 connections) — `docs/superpowers/plans/2026-10-08-red-tuberias-acueductos.md`
+- **2026-09-22-vias-tierra-pisada.md (Vías de Tierra Pisada Implementation Plan)** (13 connections) — `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
+- **2026-10-08-red-tuberias-acueductos-design.md (Especificación de Diseño: Red de Tuberías y Acueductos (Etap)** (12 connections) — `docs/superpowers/specs/2026-10-08-red-tuberias-acueductos-design.md`
+- **2026-09-22-vias-tierra-pisada-design.md (Vías de tierra pisada (sub-proyecto 6, primer tramo))** (11 connections) — `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
+- **2026-10-08-subsuelo-pozos-y-bloques-design.md (Especificación de Diseño: Etapa 9.1 - Subsuelo, Pozos de Líq)** (11 connections) — `docs/superpowers/specs/2026-10-08-subsuelo-pozos-y-bloques-design.md`
+- **2026-10-08-subsuelo-pozos-y-bloques.md (Plan de Implementación: Etapa 9.1 - Subsuelo, Pozos de Líqui)** (9 connections) — `docs/superpowers/plans/2026-10-08-subsuelo-pozos-y-bloques.md`
+- **CanalizacionesTest.gd** (9 connections) — `godot/scripts/CanalizacionesTest.gd`
+- **PlayerNatacionTest.gd** (9 connections) — `godot/scripts/PlayerNatacionTest.gd`
+- **2026-09-13-culling-caras-translucidas.md (Culling de Caras Translúcidas (agua/ventana) Implementation )** (6 connections) — `docs/superpowers/plans/2026-09-13-culling-caras-translucidas.md`
+- **2026-09-13-culling-caras-translucidas-design.md (Diseño: Culling de caras internas entre bloques translúcidos)** (5 connections) — `docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md`
+- **reporte_bug_28-10-26.md (Corrección de Estado de Herramientas al Cambiar de Cámara)** (3 connections) — `docs/reporte_bug_28-10-26.md`
+- **2026-09-25-puertas-interactivas-design.md (Puertas interactivas — diseño)** (2 connections) — `docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md`
+- **CanalizacionesTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/CanalizacionesTest.gd`
+- **CanalizacionesTest._ready()** (1 connections) — `godot/scripts/CanalizacionesTest.gd`
+- **PlayerNatacionTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/PlayerNatacionTest.gd`
+- **PlayerNatacionTest._ready()** (1 connections) — `godot/scripts/PlayerNatacionTest.gd`
+- **TranslucidosRenderer._agregar_ventana()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
+- **TranslucidosRenderer._agregar_ventana_techo()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
+- **TranslucidosRenderer.flush_pendientes()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
+- **TranslucidosRenderer._process()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
+- **TranslucidosRenderer.reconstruir_todo()** (1 connections) — `godot/scripts/TranslucidosRenderer.gd`
+- **TranslucidosRendererTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/TranslucidosRendererTest.gd`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Economia.gd](Economia.gd.md) (44 shared connections)
-- [ajustes.gd](ajustes.gd.md) (38 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (27 shared connections)
-- [BuscadorRutas.gd](BuscadorRutas.gd.md) (16 shared connections)
-- [BarraSuperior.gd](BarraSuperior.gd.md) (14 shared connections)
-- [Player.gd](Player.gd.md) (13 shared connections)
-- [Recoleccion.gd](Recoleccion.gd.md) (12 shared connections)
-- [PlantillasPuesto.gd](PlantillasPuesto.gd.md) (10 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (7 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (7 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (6 shared connections)
-- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (6 shared connections)
+- [Zonificacion.gd](Zonificacion.gd.md) (15 shared connections)
+- [HUDTest.gd](HUDTest.gd.md) (14 shared connections)
+- [Hotbar.gd](Hotbar.gd.md) (12 shared connections)
+- [Vias.gd](Vias.gd.md) (9 shared connections)
+- [GeneradorMundo.gd](GeneradorMundo.gd.md) (8 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (7 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (6 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (6 shared connections)
+- [Player.gd](Player.gd.md) (5 shared connections)
+- [2026-09-24-edificios-recoleccion-plantillas.md (Edificios de recolección jugables reales (plantillas) Implem)](2026-09-24-edificios-recoleccion-plantillas.md_Edificios_de_recolección_jugables_reales_plantillas_Implem.md) (4 shared connections)
+- [tsconfig.json](tsconfig.json.md) (3 shared connections)
+- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (3 shared connections)
 
 ## Source Files
 
-- `docs/Propuesta_Remodelacion_y_Colonizabilidad.md`
-- `docs/superpowers/plans/2026-09-25-hud-por-modos.md`
-- `docs/superpowers/plans/2026-10-07-obras-vias-y-prioridades.md`
-- `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`
-- `docs/superpowers/specs/2026-10-26-investigacion-descentralizada-eras-spec.md`
-- `docs/superpowers/specs/2026-10-26-sistema-militar-doctrinas-asimetricas-spec.md`
-- `godot/scripts/CaraApuntada.gd`
-- `godot/scripts/HUD.gd`
-- `godot/scripts/HUDTest.gd`
-- `godot/scripts/PanelContextual.gd`
-- `godot/scripts/PanelEdificio.gd`
-- `godot/scripts/TemaHUD.gd`
-- `godot/scripts/VentanaBaul.gd`
-- `godot/scripts/VentanaPoblacion.gd`
+- `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
+- `docs/reporte_bug_28-10-26.md`
+- `docs/superpowers/plans/2026-09-13-culling-caras-translucidas.md`
+- `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
+- `docs/superpowers/plans/2026-10-08-red-tuberias-acueductos.md`
+- `docs/superpowers/plans/2026-10-08-subsuelo-pozos-y-bloques.md`
+- `docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md`
+- `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
+- `docs/superpowers/specs/2026-09-25-puertas-interactivas-design.md`
+- `docs/superpowers/specs/2026-10-08-red-tuberias-acueductos-design.md`
+- `docs/superpowers/specs/2026-10-08-subsuelo-pozos-y-bloques-design.md`
+- `godot/scripts/CanalizacionesTest.gd`
+- `godot/scripts/PlayerNatacionTest.gd`
+- `godot/scripts/TranslucidosRenderer.gd`
+- `godot/scripts/TranslucidosRendererTest.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 301 (97%)
-- INFERRED: 10 (3%)
+- EXTRACTED: 113 (75%)
+- INFERRED: 37 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

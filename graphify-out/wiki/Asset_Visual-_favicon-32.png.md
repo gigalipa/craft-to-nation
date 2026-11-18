@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: favicon-32.png** (0 connections) — `website/wiki/src/public/assets/favicon-32.png`
+- **2026-09-28-volumen-interno-edificios-design.md (Declaración de edificios por volumen interno — diseño)** (0 connections) — `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/favicon-32.png`
+- `docs/superpowers/specs/2026-09-28-volumen-interno-edificios-design.md`
 
 ## Audit Trail
 

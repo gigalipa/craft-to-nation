@@ -1,11 +1,10 @@
 # export_windows.ps1
 
-> 2 nodes · cohesion 1.00
+> 1 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **export_windows.ps1** (1 connections) — `tools/export_windows.ps1`
-- **Resolve-GodotExecutable()** (1 connections) — `tools/export_windows.ps1`
+- **Asset Visual: fp-building.webp** (0 connections) — `website/wiki/src/public/assets/fp-building.webp`
 
 ## Relationships
 
@@ -13,11 +12,11 @@
 
 ## Source Files
 
-- `tools/export_windows.ps1`
+- `website/wiki/src/public/assets/fp-building.webp`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

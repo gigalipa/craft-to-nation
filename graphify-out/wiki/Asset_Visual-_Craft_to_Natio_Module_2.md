@@ -1,22 +1,27 @@
 # Asset Visual: Craft_to_Natio Module
 
-> 1 nodes · cohesion 1.00
+> 5 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **Asset Visual: Water_Sparkling.jpg** (0 connections) — `arte/dae/bloques/Water_Sparkling.jpg`
+- **VideoIntro.gd** (5 connections) — `godot/scripts/VideoIntro.gd`
+- **27. Tránsito vial por carril derecho, Video Intro y Suite 36 Escenas — ✅ (2026-11-10)** (1 connections) — `docs/Pendientes y próximos pasos.md`
+- **VideoIntro._ready()** (1 connections) — `godot/scripts/VideoIntro.gd`
+- **VideoIntro.saltar()** (1 connections) — `godot/scripts/VideoIntro.gd`
+- **VideoIntro._transicionar_a_siguiente()** (1 connections) — `godot/scripts/VideoIntro.gd`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `arte/dae/bloques/Water_Sparkling.jpg`
+- `docs/Pendientes y próximos pasos.md`
+- `godot/scripts/VideoIntro.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

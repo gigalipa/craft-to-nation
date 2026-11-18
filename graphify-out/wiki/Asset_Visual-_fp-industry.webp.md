@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: fp-industry.webp** (0 connections) — `website/wiki/src/public/assets/fp-industry.webp`
+- **Asset Visual: tex_ventana.png** (0 connections) — `godot/assets/tex_ventana.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/fp-industry.webp`
+- `godot/assets/tex_ventana.png`
 
 ## Audit Trail
 

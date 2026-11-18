@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: tex_ventana.png** (0 connections) — `godot/assets/tex_ventana.png`
+- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_pared_piedra_2pisos/Translucent_Glass_Tinted.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `godot/assets/tex_ventana.png`
+- `arte/dae/casa_pared_piedra_2pisos/Translucent_Glass_Tinted.jpg`
 
 ## Audit Trail
 

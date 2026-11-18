@@ -1,41 +1,40 @@
 # BarraModos.gd / BarraModos.pagina_actual()
 
-> 14 nodes · cohesion 0.23
+> 15 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **os** (10 connections)
-- **generate_ui_icons.py** (6 connections) — `tools/generate_ui_icons.py`
-- **generate_icons()** (4 connections) — `tools/generate_ui_icons.py`
-- **sync_checker.py** (4 connections) — `video_edition/tools/sync_checker.py`
-- **verify_offset_dir.py** (4 connections) — `video_edition/tools/verify_offset_dir.py`
-- **numpy** (3 connections)
-- **pil** (3 connections)
-- **ensure_dir()** (3 connections) — `tools/generate_ui_icons.py`
-- **scipy_signal** (2 connections)
-- **svg_wrap()** (2 connections) — `tools/generate_ui_icons.py`
-- **write_svg()** (2 connections) — `tools/generate_ui_icons.py`
-- **find_cam_crop.py** (2 connections) — `video_edition/tools/find_cam_crop.py`
-- **generate_antigravity_popups.py** (2 connections) — `video_edition/tools/generate_antigravity_popups.py`
-- **generate_debugging_popups.py** (2 connections) — `video_edition/tools/generate_debugging_popups.py`
+- **subtitle_generator.py** (15 connections) — `video_edition/tools/subtitle_generator.py`
+- **main()** (8 connections) — `video_edition/tools/subtitle_generator.py`
+- **burn_subtitles()** (4 connections) — `video_edition/tools/subtitle_generator.py`
+- **create_ass_content()** (4 connections) — `video_edition/tools/subtitle_generator.py`
+- **create_srt_content()** (4 connections) — `video_edition/tools/subtitle_generator.py`
+- **transcribe_video()** (4 connections) — `video_edition/tools/subtitle_generator.py`
+- **format_timestamp_ass()** (3 connections) — `video_edition/tools/subtitle_generator.py`
+- **format_timestamp_srt()** (3 connections) — `video_edition/tools/subtitle_generator.py`
+- **Path** (2 connections)
+- **whisper** (2 connections)
+- **torch** (1 connections)
+- **Convierte segundos flotantes al formato H:MM:SS.cc de ASS.** (1 connections) — `video_edition/tools/subtitle_generator.py`
+- **Convierte segundos flotantes al formato HH:MM:SS,mmm de SRT.** (1 connections) — `video_edition/tools/subtitle_generator.py`
+- **Genera archivo de subtítulos .ass con estilo optimizado para video vertical…** (1 connections) — `video_edition/tools/subtitle_generator.py`
+- **Genera archivo de subtítulos estándar .srt.** (1 connections) — `video_edition/tools/subtitle_generator.py`
 
 ## Relationships
 
-- [subprocess](subprocess.md) (6 shared connections)
-- [json](json.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (4 shared connections)
+- [PanelLampara.gd](PanelLampara.gd.md) (2 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (2 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (1 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/generate_ui_icons.py`
-- `video_edition/tools/find_cam_crop.py`
-- `video_edition/tools/generate_antigravity_popups.py`
-- `video_edition/tools/generate_debugging_popups.py`
-- `video_edition/tools/sync_checker.py`
-- `video_edition/tools/verify_offset_dir.py`
+- `video_edition/tools/subtitle_generator.py`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
+- EXTRACTED: 32 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

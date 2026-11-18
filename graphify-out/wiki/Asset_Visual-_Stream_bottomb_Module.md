@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **CLAUDE.md (Guía para Claude Code)** (0 connections) — `CLAUDE.md`
+- **Asset Visual: hud-primera-persona-batalla.png** (0 connections) — `arte/conceptos-hud/hud-primera-persona-batalla.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `CLAUDE.md`
+- `arte/conceptos-hud/hud-primera-persona-batalla.png`
 
 ## Audit Trail
 

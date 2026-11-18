@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-mark.png** (0 connections) — `website/wiki/src/public/assets/craft-to-nation-mark.png`
+- **2026-09-05-citycraft-presentation-site-design.md (Diseño del sitio de presentación de CityCraft)** (0 connections) — `docs/superpowers/specs/2026-09-05-citycraft-presentation-site-design.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/craft-to-nation-mark.png`
+- `docs/superpowers/specs/2026-09-05-citycraft-presentation-site-design.md`
 
 ## Audit Trail
 

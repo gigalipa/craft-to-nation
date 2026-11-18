@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: live 2 AB test_A.png** (0 connections) — `arte/YT thumbnails/live 2 AB test_A.png`
+- **Asset Visual: kick_banner_preview_test.jpg** (0 connections) — `arte/banners/kick_banner_preview_test.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/YT thumbnails/live 2 AB test_A.png`
+- `arte/banners/kick_banner_preview_test.jpg`
 
 ## Audit Trail
 

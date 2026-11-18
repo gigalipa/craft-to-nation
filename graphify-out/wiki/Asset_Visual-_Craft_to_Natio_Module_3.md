@@ -1,10 +1,14 @@
 # Asset Visual: Craft_to_Natio Module
 
-> 1 nodes · cohesion 1.00
+> 5 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **Asset Visual: Water_Sparkling_0.jpg** (0 connections) — `arte/dae/bloques/Water_Sparkling_0.jpg`
+- **pull_request_template.md** (4 connections) — `.github/pull_request_template.md`
+- **Descripción del Cambio** (1 connections) — `.github/pull_request_template.md`
+- **Issues o Discusiones Relacionadas** (1 connections) — `.github/pull_request_template.md`
+- **Lista de Verificación (Checklist)** (1 connections) — `.github/pull_request_template.md`
+- **Tipo de Cambio** (1 connections) — `.github/pull_request_template.md`
 
 ## Relationships
 
@@ -12,11 +16,11 @@
 
 ## Source Files
 
-- `arte/dae/bloques/Water_Sparkling_0.jpg`
+- `.github/pull_request_template.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,10 +1,11 @@
 # Asset Visual: Water_Sparklin Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/puesto_maderero/Translucent_Glass_Tinted.jpg`
+- **ctn-video-editor.md** (1 connections) — `.agents/agents/ctn-video-editor.md`
+- **Agent System Instructions: Video Editor Técnico (`ctn-video-editor`)** (1 connections) — `.agents/agents/ctn-video-editor.md`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/dae/puesto_maderero/Translucent_Glass_Tinted.jpg`
+- `.agents/agents/ctn-video-editor.md`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

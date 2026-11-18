@@ -1,10 +1,11 @@
 # Asset Visual: IMUQwcomLawGk. Module
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **Asset Visual: Stream_bottombar_debug.png** (0 connections) — `arte/stream_art/Stream_bottombar_debug.png`
+- **scan_debug_timeline.ps1** (1 connections) — `video_edition/tools/scan_debug_timeline.ps1`
+- **Await()** (1 connections) — `video_edition/tools/scan_debug_timeline.ps1`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_bottombar_debug.png`
+- `video_edition/tools/scan_debug_timeline.ps1`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **2026-10-15-wiki-craft-to-nation.md (Wiki Híbrida para Craft to Nation - Implementation Plan)** (0 connections) — `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
+- **Asset Visual: Water_Sparkling.jpg** (0 connections) — `arte/dae/bloques/Water_Sparkling.jpg`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `docs/superpowers/plans/2026-10-15-wiki-craft-to-nation.md`
+- `arte/dae/bloques/Water_Sparkling.jpg`
 
 ## Audit Trail
 

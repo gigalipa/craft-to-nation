@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: comparison-aerial.webp** (0 connections) — `website/wiki/src/public/assets/comparison-aerial.webp`
+- **CLAUDE.md (Guía para Claude Code)** (0 connections) — `CLAUDE.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/public/assets/comparison-aerial.webp`
+- `CLAUDE.md`
 
 ## Audit Trail
 

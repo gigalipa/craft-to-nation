@@ -1,10 +1,12 @@
 # Asset Visual: Translucent_Gl Module
 
-> 1 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **Asset Visual: Translucent_Glass_Tinted.jpg** (0 connections) — `arte/dae/casa_pared_piedra_min/Translucent_Glass_Tinted.jpg`
+- **allowBuilds** (2 connections) — `website/wiki/pnpm-workspace.yaml`
+- **pnpm-workspace.yaml** (1 connections) — `website/wiki/pnpm-workspace.yaml`
+- **esbuild** (1 connections) — `website/wiki/pnpm-workspace.yaml`
 
 ## Relationships
 
@@ -12,11 +14,11 @@
 
 ## Source Files
 
-- `arte/dae/casa_pared_piedra_min/Translucent_Glass_Tinted.jpg`
+- `website/wiki/pnpm-workspace.yaml`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

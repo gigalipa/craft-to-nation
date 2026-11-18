@@ -221,7 +221,7 @@ export default defineConfig({
             {
               text: 'Conception Technique',
               items: [
-                { text: 'Piliers du GDD v3.59', link: '/fr/dev/gdd' },
+                { text: 'Piliers du GDD', link: '/fr/dev/gdd' },
                 { text: 'Architecture Godot 4.7', link: '/fr/dev/godot' },
                 { text: 'Logistique, Voirie & Conduits', link: '/fr/dev/logistics' },
                 { text: 'Feuille de Route (Roadmap)', link: '/fr/dev/roadmap' }

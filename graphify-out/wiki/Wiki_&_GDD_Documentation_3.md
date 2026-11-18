@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **index.md: Wiki Officiel Craft to Nation (Français)** (0 connections) — `website/wiki/src/fr/index.md`
+- **Asset Visual: Stream_website.png** (0 connections) — `arte/stream_art/Stream_website.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `website/wiki/src/fr/index.md`
+- `arte/stream_art/Stream_website.png`
 
 ## Audit Trail
 

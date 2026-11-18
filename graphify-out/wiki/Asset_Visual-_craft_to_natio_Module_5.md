@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Asset Visual: Stream_website.png** (0 connections) — `arte/stream_art/Stream_website.png`
+- **Asset Visual: Craft_to_Nation_Twitch_profile_banner.png** (0 connections) — `arte/banners/Craft_to_Nation_Twitch_profile_banner.png`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `arte/stream_art/Stream_website.png`
+- `arte/banners/Craft_to_Nation_Twitch_profile_banner.png`
 
 ## Audit Trail
 

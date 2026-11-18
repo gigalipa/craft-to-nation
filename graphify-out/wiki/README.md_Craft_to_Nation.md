@@ -2,7 +2,7 @@
 
 > God node · 23 connections · `README.md`
 
-**Community:** [ajustes.gd](ajustes.gd.md)
+**Community:** [dependabot.yml](dependabot.yml.md)
 
 ## Connections by Relation
 
@@ -19,10 +19,10 @@
 ### references
 - IconosHUD.gd `EXTRACTED`
 - [HUD.gd](HUD.gd.md) `EXTRACTED`
-- [ajustes.gd](ajustes.gd.md) `EXTRACTED`
+- ajustes.gd `EXTRACTED`
 - strings.gd `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- VentanaAlmacen.gd `EXTRACTED`
+- [VentanaAlmacen.gd](VentanaAlmacen.gd.md) `EXTRACTED`
 - [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) `EXTRACTED`
 - SKILL.md (Skill: Craft to Nation - Nodes and Network) `EXTRACTED`
 - VentanaMoral.gd `EXTRACTED`

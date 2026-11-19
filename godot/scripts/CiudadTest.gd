@@ -160,14 +160,15 @@ func ejecutar_pruebas() -> void:
 	var orden_test: Node = CiudadScript.new()
 	orden_test.registrar_edificio_residencial(1, [2, 2])  # 4 camas
 	orden_test.demografia["desempleado"] = 8  # 2.0
-	orden_test.demografia["ciudadano"] = 4  # 0.8 (x_cama 5 desde el balance 2026-09-28)
+	orden_test.demografia["ciudadano"] = 4  # 1.0 (x_cama 4)
 	orden_test.demografia["obrero"] = 4  # 1.0
 	orden_test.demografia["tecnico"] = 3  # 1.0
-	orden_test.demografia["militar"] = 4  # 1.33..  -> total 6.13.., sobran 2.13..
+	orden_test.demografia["especialista"] = 3  # 1.5 -> total residencial 6.5, sobran 2.5
+	orden_test.demografia["militar"] = 4  # no ocupa camas residenciales (usa camas de cuartel)
 	orden_test.regular_densidad_vertical()
 	assert(orden_test.demografia["desempleado"] == 0, "los desempleados se desahucian primero")
 	assert(orden_test.demografia["ciudadano"] == 2, "luego los ciudadanos con x_cama 4, solo los necesarios")
-	assert(orden_test.demografia["obrero"] == 4 and orden_test.demografia["tecnico"] == 3 and orden_test.demografia["militar"] == 4)
+	assert(orden_test.demografia["obrero"] == 4 and orden_test.demografia["tecnico"] == 3 and orden_test.demografia["especialista"] == 3 and orden_test.demografia["militar"] == 4)
 	assert(orden_test.desahuciados == 10)
 
 	print("\n=== TEST 14: Migración de colonos ===")
@@ -984,6 +985,31 @@ func ejecutar_pruebas() -> void:
 	assert(ciu40.parque_transporte_disponible["camion_diesel"] == 1)
 	assert(not ciu40.retirar_vehiculo_disponible("vehiculo_falso", 1))
 
+	print("\n=== TEST 41: Vivienda Militar Acuartelada (Fase 4) ===")
+	assert(CiudadScript.TIPOS_POBLACION["militar"]["x_cama"] == 4, "militar de bajo rango debe ocupar 1/4 de cama")
+	var ciu41: Node = CiudadScript.new()
+	ciu41.registrar_edificio_residencial(1, [2])  # 2 camas residenciales = 8 civiles
+	ciu41.demografia["obrero"] = 4  # 1.0 cama residencial
+	ciu41.registrar_cuartel(100, 4)  # 4 camas militares = 16 plazas
+	assert(ciu41.capacidad_camas_cuartel == 4)
+	assert(ciu41.capacidad_militares == 16)
+	assert(ciu41.plazas_militares_libres == 16)
+	ciu41.demografia["militar"] = 10
+	assert(is_equal_approx(ciu41.vivienda_ocupada, 1.0), "los militares no deben ocupar vivienda residencial")
+	assert(ciu41.plazas_militares_libres == 6)
+
+	var snap41: Dictionary = ciu41.exportar_estado()
+	var ciu41_load: Node = CiudadScript.new()
+	ciu41_load.importar_estado(snap41)
+	assert(ciu41_load.capacidad_militares == 16 and ciu41_load.demografia["militar"] == 10)
+
+	# Review Focus #1: Al demoler el cuartel con 10 militares:
+	# 4 caben en la cama residencial libre -> pasan a desempleado, 6 pasan a sin_techo
+	ciu41.retirar_cuartel(100)
+	assert(ciu41.capacidad_militares == 0)
+	assert(ciu41.demografia["militar"] == 0, "el exceso militar se licencia al destruir cuarteles")
+	assert(ciu41.demografia["desempleado"] == 4, "hasta llenar camas residenciales libres pasan a desempleado")
+	assert(ciu41.sin_techo == 6, "el resto pasa a sin_techo")
 
 	print("\n=== Las pruebas de Ciudad pasaron correctamente ===")
 

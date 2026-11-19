@@ -111,6 +111,7 @@ static var NOMBRES_PUESTO: Dictionary = {
 	"estacion_bombeo": "Estación de bombeo",
 	"centro_extraccion": "Centro de extracción",
 	"almacen": "Almacén",
+	"cuartel": "Cuartel militar",
 }
 
 static var SUBTITULOS_PUESTO: Dictionary = {
@@ -133,6 +134,7 @@ static var SUBTITULOS_PUESTO: Dictionary = {
 	"estacion_bombeo": "Extracción superficial de agua",
 	"centro_extraccion": "Extracción subterránea por pozo",
 	"almacen": "Depósito logístico e industrial",
+	"cuartel": "Centro de adiestramiento y alojamiento militar",
 }
 
 static var NOMBRES_OFICIO: Dictionary = {
@@ -1083,6 +1085,32 @@ static var TRADUCCIONES: Dictionary = {
 		"BARRA_SUPERIOR_CRITICO_VACIO": "Crítico —",
 		"BARRA_SUPERIOR_ALERTA": "¡Alerta!",
 		"HUD_OXIGENO": "Oxígeno",
+		"RANGO_SOLDADO_RASO": "Soldado raso",
+		"POSTURA_PASIVO": "Pasivo",
+		"POSTURA_DEFENSIVO": "Defensivo",
+		"POSTURA_AGRESIVO": "Agresivo",
+		"ORDEN_ATACAR": "Atacar",
+		"ORDEN_DEFENDER": "Proteger / Defender",
+		"ORDEN_SEGUIR": "Seguir",
+		"ORDEN_MOVERSE": "Moverse",
+		"ORDEN_PATRULLAR": "Patrullar",
+		"ORDEN_MANTENER": "Mantener posición",
+		"ARMA_ESPADA": "Espada",
+		"ARMA_RIFLE": "Rifle",
+		"MODO_CONSTRUCCION": "Construcción",
+		"MODO_BATALLA": "Batalla",
+		"MODO_COMANDANTE": "Comandante",
+		"UNIDAD_TITULO_ESCUADRA": "Escuadra (%d)",
+		"UNIDAD_SALUD": "Salud: %.0f / %.0f",
+		"UNIDAD_RANGO": "Rango: %s",
+		"UNIDAD_TRABAJO": "Trabajo: %s",
+		"UNIDAD_EDIFICIO": "Edificio: %s",
+		"UNIDAD_OCIOSO": "Ocioso",
+		"UNIDAD_POSTURA": "Comportamiento:",
+		"UNIDAD_COMANDOS": "Comandos:",
+		"UNIDAD_GRUPOS_TITULO": "Escuadras (Shift + N):",
+		"UNIDAD_MODO_ORDEN": "Selecciona objetivo en el mapa para: %s (Esc para cancelar)",
+		"UNIDAD_CUARTEL_LLENO": "Sin camas militares libres en cuarteles.",
 	},
 	"en": {
 		"MENU_NUEVA_PARTIDA": "New Game",
@@ -1161,6 +1189,32 @@ static var TRADUCCIONES: Dictionary = {
 		"BARRA_SUPERIOR_CRITICO_VACIO": "Critical —",
 		"BARRA_SUPERIOR_ALERTA": "Alert!",
 		"HUD_OXIGENO": "Oxygen",
+		"RANGO_SOLDADO_RASO": "Private",
+		"POSTURA_PASIVO": "Passive",
+		"POSTURA_DEFENSIVO": "Defensive",
+		"POSTURA_AGRESIVO": "Aggressive",
+		"ORDEN_ATACAR": "Attack",
+		"ORDEN_DEFENDER": "Protect / Defend",
+		"ORDEN_SEGUIR": "Follow",
+		"ORDEN_MOVERSE": "Move",
+		"ORDEN_PATRULLAR": "Patrol",
+		"ORDEN_MANTENER": "Hold position",
+		"ARMA_ESPADA": "Sword",
+		"ARMA_RIFLE": "Rifle",
+		"MODO_CONSTRUCCION": "Build Mode",
+		"MODO_BATALLA": "Battle Mode",
+		"MODO_COMANDANTE": "Commander Mode",
+		"UNIDAD_TITULO_ESCUADRA": "Squad (%d)",
+		"UNIDAD_SALUD": "Health: %.0f / %.0f",
+		"UNIDAD_RANGO": "Rank: %s",
+		"UNIDAD_TRABAJO": "Role: %s",
+		"UNIDAD_EDIFICIO": "Building: %s",
+		"UNIDAD_OCIOSO": "Idle",
+		"UNIDAD_POSTURA": "Behavior:",
+		"UNIDAD_COMANDOS": "Commands:",
+		"UNIDAD_GRUPOS_TITULO": "Squads (Shift + N):",
+		"UNIDAD_MODO_ORDEN": "Select target on map for: %s (Esc to cancel)",
+		"UNIDAD_CUARTEL_LLENO": "No free military bunks in barracks.",
 	}
 }
 
@@ -1199,7 +1253,7 @@ static var _DATOS_ES := {
 		"central_termoelectrica": "Central termoeléctrica", "escuela_tecnica": "Escuela técnica",
 		"escuela_especialistas": "Escuela de especialistas", "universidad": "Universidad",
 		"estacion_bombeo": "Estación de bombeo", "centro_extraccion": "Centro de extracción",
-		"almacen": "Almacén"
+		"almacen": "Almacén", "cuartel": "Cuartel militar"
 	},
 	"SUBTITULOS_PUESTO": {
 		"mina": "Puesto de extracción", "caza_recoleccion": "Puesto de recolección",
@@ -1212,7 +1266,8 @@ static var _DATOS_ES := {
 		"escuela_especialistas": "Centro de formación", "universidad": "Centro de investigación",
 		"estacion_bombeo": "Extracción superficial de agua",
 		"centro_extraccion": "Extracción subterránea por pozo",
-		"almacen": "Depósito logístico e industrial"
+		"almacen": "Depósito logístico e industrial",
+		"cuartel": "Centro de adiestramiento y alojamiento militar"
 	},
 	"NOMBRES_OFICIO": {
 		"desempleado": "Desempleados", "obrero": "Obreros", "tecnico": "Técnicos",
@@ -1296,7 +1351,7 @@ static var _DATOS_EN := {
 		"central_termoelectrica": "Thermal Power Plant", "escuela_tecnica": "Technical School",
 		"escuela_especialistas": "Specialist Academy", "universidad": "University",
 		"estacion_bombeo": "Pumping Station", "centro_extraccion": "Extraction Facility",
-		"almacen": "Warehouse"
+		"almacen": "Warehouse", "cuartel": "Military Barracks"
 	},
 	"SUBTITULOS_PUESTO": {
 		"mina": "Extraction post", "caza_recoleccion": "Gathering post",
@@ -1309,7 +1364,8 @@ static var _DATOS_EN := {
 		"escuela_especialistas": "Training center", "universidad": "Research center",
 		"estacion_bombeo": "Surface water extraction",
 		"centro_extraccion": "Subterranean well extraction",
-		"almacen": "Industrial logistics depot"
+		"almacen": "Industrial logistics depot",
+		"cuartel": "Military training & quarters"
 	},
 	"NOMBRES_OFICIO": {
 		"desempleado": "Unemployed", "obrero": "Laborers", "tecnico": "Technicians",

@@ -222,6 +222,8 @@ var periodo_elecciones_restante := 0
 ## VoxelWorld) -> Array[int] con las camas de CADA piso. Ver
 ## registrar_edificio_residencial().
 var edificios_residenciales: Dictionary = {}
+## Cuarteles militares registrados: id de edificio/cuartel -> camas militares (por defecto 4 = 16 plazas).
+var cuarteles_registrados: Dictionary = {}
 ## id de edificio residencial -> cantidad de baúles (cada uno suma al tope del
 ## almacén, ver recalcular_limites()).
 var baules_por_edificio: Dictionary = {}
@@ -482,11 +484,13 @@ var capacidad_camas_colonizable: int:
 					total += mini(camas_por_piso[i], limites["camas_por_piso"])
 		return total
 
-## Suma de 1 / x_cama de cada habitante: la vivienda que ocupa la población.
+## Suma de 1 / x_cama de cada habitante civil: los militares ocupan camas de cuartel, no residenciales.
 var vivienda_ocupada: float:
 	get:
 		var total := 0.0
 		for tipo in demografia:
+			if tipo == "militar":
+				continue
 			total += float(demografia[tipo]) / float(TIPOS_POBLACION[tipo]["x_cama"])
 		return total
 
@@ -495,6 +499,46 @@ var vivienda_libre: float:
 
 var vivienda_colonizable_libre: float:
 	get: return maxf(0.0, float(capacidad_camas_colonizable) - vivienda_ocupada)
+
+## Capacidad total de camas militares en todos los cuarteles registrados.
+var capacidad_camas_cuartel: int:
+	get:
+		var total := 0
+		for camas in cuarteles_registrados.values():
+			total += int(camas)
+		return total
+
+## Cupo máximo total de militares de bajo rango acuartelados (camas * x_cama).
+var capacidad_militares: int:
+	get:
+		var x_cama_militar := int(TIPOS_POBLACION.get("militar", {}).get("x_cama", 4))
+		return capacidad_camas_cuartel * x_cama_militar
+
+## Plazas militares libres disponibles para graduar o reclutar nuevos militares.
+var plazas_militares_libres: int:
+	get:
+		return maxi(0, capacidad_militares - demografia.get("militar", 0))
+
+## Registra un cuartel militar con su cantidad de camas (por defecto 4 = 16 plazas). Idempotente.
+func registrar_cuartel(id: int, camas: int = Ajustes.CUARTEL_CAMAS_POR_EDIFICIO) -> void:
+	if id == -1:
+		return
+	cuarteles_registrados[id] = maxi(0, camas)
+
+## Retira un cuartel; si la demografía militar excede la capacidad restante, licencia el exceso a desempleado/sin_techo.
+func retirar_cuartel(id: int) -> void:
+	if not cuarteles_registrados.erase(id):
+		return
+	var exceso: int = maxi(0, demografia.get("militar", 0) - capacidad_militares)
+	var espacio_min: float = 1.0 / float(TIPOS_POBLACION["desempleado"]["x_cama"])
+	while exceso > 0 and demografia.get("militar", 0) > 0:
+		demografia["militar"] -= 1
+		exceso -= 1
+		if vivienda_libre >= espacio_min - 1e-6:
+			demografia["desempleado"] += 1
+			cola_desempleo.append(0)
+		else:
+			sin_techo += 1
 
 
 ## Registra una instalación física completada (tipo 2 o 3) identificada por id_edificio. Idempotente.
@@ -909,6 +953,8 @@ func regular_densidad_vertical() -> void:
 	while vivienda_ocupada > capacidad + 1e-6:
 		var desahuciado := false
 		for tipo in ORDEN_DESAHUCIO:
+			if tipo == "militar":
+				continue
 			if demografia[tipo] > 0:
 				demografia[tipo] -= 1
 				desahuciados += 1
@@ -1018,6 +1064,8 @@ func calcular_sin_techo_al_remodelar(id: int) -> int:
 	while occ > nueva_capacidad + 1e-6:
 		var quitado := false
 		for tipo in ORDEN_DESAHUCIO:
+			if tipo == "militar":
+				continue
 			if demo_temp[tipo] > 0:
 				demo_temp[tipo] -= 1
 				occ -= 1.0 / float(TIPOS_POBLACION[tipo]["x_cama"])
@@ -1052,6 +1100,8 @@ func iniciar_remodelacion_residencial(id: int) -> Dictionary:
 	while vivienda_ocupada > nueva_capacidad + 1e-6:
 		var desahuciado := false
 		for tipo in ORDEN_DESAHUCIO:
+			if tipo == "militar":
+				continue
 			if demografia[tipo] > 0:
 				demografia[tipo] -= 1
 				sin_techo += 1
@@ -1599,6 +1649,7 @@ func reiniciar() -> void:
 	cobertura_energia = 1.0
 	periodo_elecciones_restante = 0
 	edificios_residenciales.clear()
+	cuarteles_registrados.clear()
 	baules_por_edificio.clear()
 	almacen_ampliado = false
 	id_nucleo = -1
@@ -1633,6 +1684,10 @@ func exportar_estado() -> Dictionary:
 	var edif_res_str: Dictionary = {}
 	for id_e in edificios_residenciales:
 		edif_res_str[str(id_e)] = (edificios_residenciales[id_e] as Array).duplicate()
+
+	var cuarteles_str: Dictionary = {}
+	for id_e in cuarteles_registrados:
+		cuarteles_str[str(id_e)] = int(cuarteles_registrados[id_e])
 
 	var inst_edif_str: Dictionary = {}
 	for id_e in instalaciones_edificio:
@@ -1673,6 +1728,7 @@ func exportar_estado() -> Dictionary:
 		"moral": moral,
 		"tasa_cambio_moral": tasa_cambio_moral,
 		"edificios_residenciales": edif_res_str,
+		"cuarteles_registrados": cuarteles_str,
 		"baules_por_edificio": baules_edif_str,
 		"almacen_ampliado": almacen_ampliado,
 		"id_nucleo": id_nucleo,
@@ -1760,6 +1816,11 @@ func importar_estado(d: Dictionary) -> void:
 		for k in d["edificios_residenciales"]:
 			var arr: Array = d["edificios_residenciales"][k]
 			edificios_residenciales[int(k)] = arr.duplicate()
+
+	if d.has("cuarteles_registrados") and d["cuarteles_registrados"] is Dictionary:
+		cuarteles_registrados.clear()
+		for k in d["cuarteles_registrados"]:
+			cuarteles_registrados[int(k)] = int(d["cuarteles_registrados"][k])
 
 	if d.has("baules_por_edificio") and d["baules_por_edificio"] is Dictionary:
 		baules_por_edificio.clear()

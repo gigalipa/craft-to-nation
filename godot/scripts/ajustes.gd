@@ -373,7 +373,7 @@ static var CIUDAD_TIPOS_POBLACION: Dictionary = {
 	"tecnico": {"comida": 3.0, "combustible": 0.0, "energia": 0.5, "x_cama": 3},
 	"especialista": {"comida": 2.0, "combustible": 1.0, "energia": 1.0, "x_cama": 2},
 	"investigador": {"comida": 2.0, "combustible": 0.0, "energia": 2.0, "x_cama": 1},
-	"militar": {"comida": 3.0, "combustible": 1.0, "energia": 0.0, "x_cama": 3},
+	"militar": {"comida": 3.0, "combustible": 1.0, "energia": 0.0, "x_cama": 4},
 }
 
 ## Gasto adicional para militares desplegados en el exterior
@@ -588,6 +588,7 @@ static var RECOLECCION_UMBRAL_AGOTADO_MADERERO: float = 0.5
 static var RECOLECCION_ESCUELAS: Dictionary = {
 	"escuela_tecnica": {"origen": "obrero", "destino": "tecnico", "horas": 24},
 	"escuela_especialistas": {"origen": "tecnico", "destino": "especialista", "horas": 48},
+	"cuartel": {"origen": "obrero", "destino": "militar", "horas": 24},
 }
 static var RECOLECCION_ANCHO_HUELLA_MINA: int = 5
 static var RECOLECCION_ALTO_HUELLA_MINA: int = 5
@@ -996,3 +997,18 @@ static var TRANSPORTE_CATALOGO_UNIDADES: Dictionary = {
 		"tiempo_fabricacion": 35.0,
 	},
 }
+
+# ==============================================================================
+# FASE 4: CUARTEL, COMBATE, SALUD Y COMANDO HÍBRIDO
+# ==============================================================================
+static var CUARTEL_CAMAS_POR_EDIFICIO: int = 4
+static var SALUD_CIVIL: float = 100.0
+static var SALUD_MILITAR: float = 150.0
+static var MILITAR_ALCANCE_ATAQUE: float = 2.5
+static var MILITAR_DANO_ATAQUE: float = 25.0
+static var MILITAR_COOLDOWN_ATAQUE: float = 1.0
+static var COMANDANTE_ALCANCE_RAYCAST: float = 60.0
+static var ARMAS_AVATAR: Array = [
+	{"id": "espada", "nombre_key": "ARMA_ESPADA", "alcance": 3.0, "dano": 35.0, "cooldown": 0.5, "tipo": "melee"},
+	{"id": "rifle", "nombre_key": "ARMA_RIFLE", "alcance": 45.0, "dano": 25.0, "cooldown": 0.6, "tipo": "ranged"},
+]

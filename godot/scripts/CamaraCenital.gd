@@ -329,7 +329,12 @@ var distancia_camara := DISTANCIA_INICIAL
 var _gesto_orbital_activo := false
 
 static var DURACION_CENTRADO: float = Ajustes.CAMARA_CENITAL_DURACION_CENTRADO
+const UMBRAL_ARRASTRE_SELECCION := 8.0
+const MASCARA_UNIDADES := 2
 var _tween_centrado: Tween
+var _arrastrando_seleccion := false
+var _inicio_arrastre_seleccion := Vector2.ZERO
+var _submodo_orden_cenital: String = ""
 
 
 func _ready() -> void:
@@ -352,6 +357,8 @@ func _ready() -> void:
 		centrar_en_edificio(esquina)
 		hud.abrir_panel_puesto(esquina)
 	)
+	if hud.has_method("panel_unidad") and hud.panel_unidad() != null:
+		hud.panel_unidad().modo_orden_pedido.connect(_activar_submodo_orden_cenital)
 
 
 ## Precalcula los offsets (dx, dz) dentro del círculo de radio
@@ -1471,7 +1478,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		var tecla := event as InputEventKey
 		if tecla.pressed and not tecla.echo:
 			if tecla.keycode == KEY_ESCAPE:
-				salir_de_todos_los_modos()
+				_manejar_tecla_escape()
+			elif tecla.keycode == KEY_K:
+				_manejar_tecla_k()
+			elif tecla.keycode == KEY_H:
+				_manejar_tecla_h()
 			elif tecla.keycode == KEY_Z:
 				_manejar_tecla_z()
 			elif tecla.keycode == KEY_X:
@@ -1485,24 +1496,47 @@ func _unhandled_input(event: InputEvent) -> void:
 				if digito != -1:
 					_manejar_tecla_numerica(digito)
 
+	if event is InputEventMouseMotion and _arrastrando_seleccion:
+		if _en_modo_ver():
+			var mov := event as InputEventMouseMotion
+			if _inicio_arrastre_seleccion.distance_to(mov.position) > UMBRAL_ARRASTRE_SELECCION:
+				if hud != null and hud.has_method("actualizar_recuadro_seleccion"):
+					hud.actualizar_recuadro_seleccion(_rect_desde_puntos(_inicio_arrastre_seleccion, mov.position), true)
+		else:
+			_cancelar_arrastre_seleccion()
+
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
-		if boton.pressed and boton.button_index == MOUSE_BUTTON_LEFT:
-			if modo_colocar_blueprint:
-				_procesar_clic_blueprint(boton.position)
-			elif modo_colocar_puesto:
-				_procesar_clic_puesto(boton.position)
-			elif modo_zonificar:
-				_procesar_clic(boton.position)
-			elif modo_trazar_via:
-				_procesar_clic_via(boton.position)
-			elif modo_trazar_ducto:
-				_procesar_clic_ducto(boton.position, boton.double_click)
-			elif modo_demoler:
-				_procesar_clic_demoler(boton.position, boton.double_click)
-			else:
-				_procesar_clic_interaccion(boton.position)
+		if boton.button_index == MOUSE_BUTTON_LEFT:
+			if boton.pressed:
+				if modo_colocar_blueprint:
+					_procesar_clic_blueprint(boton.position)
+				elif modo_colocar_puesto:
+					_procesar_clic_puesto(boton.position)
+				elif modo_zonificar:
+					_procesar_clic(boton.position)
+				elif modo_trazar_via:
+					_procesar_clic_via(boton.position)
+				elif modo_trazar_ducto:
+					_procesar_clic_ducto(boton.position, boton.double_click)
+				elif modo_demoler:
+					_procesar_clic_demoler(boton.position, boton.double_click)
+				else:
+					_arrastrando_seleccion = true
+					_inicio_arrastre_seleccion = boton.position
+			elif _arrastrando_seleccion:
+				var dist := _inicio_arrastre_seleccion.distance_to(boton.position)
+				var inicio := _inicio_arrastre_seleccion
+				_cancelar_arrastre_seleccion()
+				if _en_modo_ver():
+					var con_shift: bool = boton.shift_pressed or Input.is_key_pressed(KEY_SHIFT)
+					if dist > UMBRAL_ARRASTRE_SELECCION:
+						_seleccionar_militares_en_recuadro(_rect_desde_puntos(inicio, boton.position), con_shift)
+					else:
+						_procesar_clic_interaccion(boton.position, con_shift)
 		elif boton.pressed and boton.button_index == MOUSE_BUTTON_RIGHT:
+			if _en_modo_ver() and Colonos != null and not Colonos.militares_seleccionados().is_empty():
+				_procesar_clic_derecho_militar(boton.position, boton.shift_pressed or Input.is_key_pressed(KEY_SHIFT))
 			if modo_trazar_via:
 				_cancelar_tramo_via()
 			if modo_trazar_ducto:
@@ -2014,6 +2048,8 @@ func salir_de_todos_los_modos() -> void:
 	# (reporte de revisión, 2026-09-30).
 	_menu_construir_abierto = false
 	_categoria_construir = ""
+	_cancelar_arrastre_seleccion()
+	_submodo_orden_cenital = ""
 	hud.set_modo("")
 	hud.cerrar_panel_puesto()
 	hud.ocultar_contexto()
@@ -2496,16 +2532,25 @@ func _categorias_permitidas_zona() -> String:
 	return ""
 
 
-## Clic sin ningún modo activo: sobre un puesto de trabajo abre su panel; en
-## cualquier otro sitio lo cierra.
-func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
+## Clic sin ningún modo activo: primero intenta seleccionar una unidad física
+## (capa 2), luego un puesto/edificio/canalización; en terreno vacío cierra paneles
+## y limpia la selección de unidades.
+func _procesar_clic_interaccion(posicion_pantalla: Vector2, con_shift: bool = false) -> void:
+	var id_unidad := _unidad_bajo_mouse(posicion_pantalla)
+	if id_unidad != -1 and Colonos != null:
+		Colonos.seleccionar_unidades([id_unidad], con_shift)
+		return
 	var columna := _celda_bajo_mouse(posicion_pantalla)
 	var esquina_puesto := Recoleccion.esquina_de_puesto_en(columna)
 	if esquina_puesto != Recoleccion.SIN_PUESTO:
+		if Colonos != null:
+			Colonos.limpiar_seleccion()
 		hud.abrir_panel_puesto(esquina_puesto)
 		return
 	var id: int = Obras.id_en_columna(columna)
 	if id != -1:
+		if Colonos != null:
+			Colonos.limpiar_seleccion()
 		hud.abrir_panel_edificio(id)
 		return
 	if Canalizaciones != null:
@@ -2514,9 +2559,127 @@ func _procesar_clic_interaccion(posicion_pantalla: Vector2) -> void:
 		if id_red == -1:
 			id_red = Canalizaciones.red_en_columna(columna)
 		if id_red != -1:
+			if Colonos != null:
+				Colonos.limpiar_seleccion()
 			hud.abrir_panel_canalizacion(id_red)
 			return
+	if Colonos != null:
+		Colonos.limpiar_seleccion()
 	hud.cerrar_panel_puesto()
+
+
+func _en_modo_ver() -> bool:
+	return not (modo_colocar_blueprint or modo_colocar_puesto or modo_zonificar or modo_trazar_via or modo_trazar_ducto or modo_demoler)
+
+
+func _cancelar_arrastre_seleccion() -> void:
+	_arrastrando_seleccion = false
+	if hud != null and hud.has_method("actualizar_recuadro_seleccion"):
+		hud.actualizar_recuadro_seleccion(Rect2(), false)
+
+
+func _rect_desde_puntos(a: Vector2, b: Vector2) -> Rect2:
+	var origen := Vector2(minf(a.x, b.x), minf(a.y, b.y))
+	var tam := Vector2(absf(b.x - a.x), absf(b.y - a.y))
+	return Rect2(origen, tam)
+
+
+func _unidad_bajo_mouse(posicion_pantalla: Vector2) -> int:
+	if not is_inside_tree() or get_world_3d() == null:
+		return -1
+	var origen := project_ray_origin(posicion_pantalla)
+	var direccion := project_ray_normal(posicion_pantalla)
+	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
+	consulta.collision_mask = MASCARA_UNIDADES
+	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
+	if resultado.has("collider") and resultado["collider"] != null:
+		var col: Object = resultado["collider"]
+		if col.has_meta("colono_id"):
+			return int(col.get_meta("colono_id"))
+	return -1
+
+
+func _seleccionar_militares_en_recuadro(rect: Rect2, con_shift: bool) -> void:
+	if Colonos == null or not is_inside_tree():
+		return
+	var ids: Array[int] = []
+	for cid in Colonos.colonos:
+		var c: Dictionary = Colonos.colonos[cid]
+		if str(c.get("tipo", "")) != "militar":
+			continue
+		var pos: Vector3 = c.get("posicion", Vector3.ZERO)
+		if is_position_behind(pos):
+			continue
+		if rect.has_point(unproject_position(pos)):
+			ids.append(int(cid))
+	Colonos.seleccionar_unidades(ids, con_shift)
+
+
+func _manejar_tecla_escape() -> void:
+	if _submodo_orden_cenital != "":
+		_submodo_orden_cenital = ""
+		if hud != null:
+			hud.ocultar_contexto()
+		return
+	if _en_modo_ver() and not _menu_construir_abierto and Colonos != null and not Colonos.unidades_seleccionadas.is_empty():
+		Colonos.limpiar_seleccion()
+		if hud != null and hud.has_method("cerrar_panel_unidad"):
+			hud.cerrar_panel_unidad()
+		return
+	salir_de_todos_los_modos()
+
+
+func _manejar_tecla_k() -> void:
+	if _en_modo_ver() and Colonos != null and not Colonos.militares_seleccionados().is_empty():
+		_activar_submodo_orden_cenital("atacar")
+
+
+func _manejar_tecla_h() -> void:
+	if _en_modo_ver() and Colonos != null and not Colonos.militares_seleccionados().is_empty():
+		_submodo_orden_cenital = ""
+		Colonos.ordenar_mantener()
+
+
+func _activar_submodo_orden_cenital(orden: String) -> void:
+	if Colonos == null or Colonos.militares_seleccionados().is_empty():
+		return
+	_submodo_orden_cenital = orden
+	var clave: String = str({
+		"atacar": "ORDEN_ATACAR",
+		"proteger": "ORDEN_DEFENDER",
+		"mover": "ORDEN_MOVERSE",
+		"patrullar": "ORDEN_PATRULLAR",
+	}.get(orden, ""))
+	var etiqueta: String = Strings.t(clave) if clave != "" else orden.capitalize()
+	if hud != null:
+		hud.notificar(Strings.t("UNIDAD_MODO_ORDEN") % etiqueta)
+
+
+func _procesar_clic_derecho_militar(posicion_pantalla: Vector2, con_shift: bool) -> void:
+	var celda3d: Vector3i = Vector3i.ZERO
+	if is_inside_tree() and get_world_3d() != null:
+		celda3d = _celda_3d_bajo_mouse(posicion_pantalla)
+	var col2d := Vector2i(celda3d.x, celda3d.z)
+	var id_ed: int = Obras.id_en_columna(col2d) if Obras != null else -1
+	match _submodo_orden_cenital:
+		"atacar":
+			var uid := _unidad_bajo_mouse(posicion_pantalla)
+			if uid != -1:
+				Colonos.ordenar_atacar("colono", uid, celda3d)
+			else:
+				Colonos.ordenar_atacar("edificio", id_ed, celda3d)
+		"proteger":
+			Colonos.ordenar_proteger(celda3d, id_ed)
+		"patrullar":
+			Colonos.ordenar_patrullar(celda3d, false)
+		_:
+			if con_shift:
+				Colonos.ordenar_patrullar(celda3d, false)
+			else:
+				Colonos.ordenar_mover(celda3d, false)
+	_submodo_orden_cenital = ""
+	if hud != null:
+		hud.ocultar_contexto()
 
 
 ## Clic con el modo demoler:

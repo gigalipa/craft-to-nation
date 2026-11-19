@@ -389,5 +389,85 @@ func ejecutar_pruebas() -> void:
 	camara21.hud.queue_free()
 	mundo21.free()
 
-	print("\n=== Las 21 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 22: Selección por recuadro 2D (solo militares), K+clic der. atacar, H mantener y Esc ===")
+	var raiz22 := Node.new()
+	add_child(raiz22)
+	var mundo22 := MundoFalso.new()
+	mundo22.name = "VoxelWorld"
+	raiz22.add_child(mundo22)
+	var ov_zona22: Node3D = ZonaOverlayScript.new()
+	ov_zona22.name = "ZonaOverlay"
+	raiz22.add_child(ov_zona22)
+	var ov_via22: Node3D = ViaPreviewOverlayScript.new()
+	ov_via22.name = "ViaPreviewOverlay"
+	raiz22.add_child(ov_via22)
+	var hud22: CanvasLayer = HUDScript.new()
+	hud22.name = "HUDLayer"
+	raiz22.add_child(hud22)
+	var player_falso := CharacterBody3D.new()
+	player_falso.name = "Player"
+	raiz22.add_child(player_falso)
+	var camara22: Camera3D = CamaraCenitalScript.new()
+	raiz22.add_child(camara22)
+	camara22.current = true
+	camara22.hud.set_vista(false)
+	camara22.global_position = Vector3(2.0, 18.0, 10.0)
+	camara22.look_at(Vector3(2.0, 1.5, 2.0), Vector3.UP)
+
+	var id_civ22: int = Colonos.agregar_colono("obrero", Vector3i(1, 1, 2), -1)
+	var id_m1_22: int = Colonos.agregar_colono("militar", Vector3i(2, 1, 2), -1)
+	var id_m2_22: int = Colonos.agregar_colono("militar", Vector3i(30, 1, -20), -1)
+
+	var p_m1: Vector2 = camara22.unproject_position(Colonos.colonos[id_m1_22]["posicion"])
+	var rect_sel := Rect2(p_m1 - Vector2(20, 20), Vector2(40, 40))
+	camara22._seleccionar_militares_en_recuadro(rect_sel, false)
+	assert(Colonos.unidades_seleccionadas == [id_m1_22], "recuadro 2D selecciona solo militar dentro del rectángulo (excluye civil y militar lejano): %s" % str(Colonos.unidades_seleccionadas))
+
+	# Shift + recuadro añade/conserva sin perder id_m1_22
+	var p_m2: Vector2 = camara22.unproject_position(Colonos.colonos[id_m2_22]["posicion"])
+	camara22._seleccionar_militares_en_recuadro(Rect2(p_m2 - Vector2(20, 20), Vector2(40, 40)), true)
+	assert(Colonos.unidades_seleccionadas.has(id_m1_22) and Colonos.unidades_seleccionadas.has(id_m2_22), "Shift+recuadro añade segundo militar a la selección")
+
+	# Tecla K activa submodo atacar; primer Esc cancela K pero conserva tropa
+	var ev_k := InputEventKey.new()
+	ev_k.keycode = KEY_K
+	ev_k.pressed = true
+	camara22._unhandled_input(ev_k)
+	assert(camara22._submodo_orden_cenital == "atacar", "tecla K activa submodo atacar en Modo Ver")
+
+	var ev_esc := InputEventKey.new()
+	ev_esc.keycode = KEY_ESCAPE
+	ev_esc.pressed = true
+	camara22._unhandled_input(ev_esc)
+	assert(camara22._submodo_orden_cenital == "", "primer Esc cancela submodo K")
+	assert(Colonos.unidades_seleccionadas.size() == 2, "primer Esc conserva selección militar")
+
+	# K + clic derecho sobre celda ejecuta orden atacar incluso hacia coordenada/edificio propio
+	camara22._unhandled_input(ev_k)
+	var ev_rclick := InputEventMouseButton.new()
+	ev_rclick.button_index = MOUSE_BUTTON_RIGHT
+	ev_rclick.pressed = true
+	ev_rclick.position = p_m1
+	camara22._unhandled_input(ev_rclick)
+	assert(Colonos.colonos[id_m1_22]["orden_militar"].get("tipo", "") == "atacar", "K + clic der. ordena atacar")
+	assert(camara22._submodo_orden_cenital == "", "submodo K se limpia tras ejecutar ataque")
+
+	# Tecla H ordena mantener posición
+	var ev_h := InputEventKey.new()
+	ev_h.keycode = KEY_H
+	ev_h.pressed = true
+	camara22._unhandled_input(ev_h)
+	assert(Colonos.colonos[id_m1_22]["orden_militar"].get("tipo", "") == "mantener", "tecla H ordena mantener posición")
+
+	# Esc en Modo Ver con selección la limpia
+	camara22._unhandled_input(ev_esc)
+	assert(Colonos.unidades_seleccionadas.is_empty(), "Esc limpia selección de unidades en Modo Ver")
+
+	for cid in [id_civ22, id_m1_22, id_m2_22]:
+		var cel: Vector3i = Colonos.colonos[cid]["celda"]
+		Colonos.ocupadas.erase(cel)
+		Colonos.colonos.erase(cid)
+	raiz22.queue_free()
+
+	print("\n=== Las 22 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
 

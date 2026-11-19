@@ -11,6 +11,7 @@ const Strings = preload("res://scripts/strings.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
 const PanelCanalizacionScript = preload("res://scripts/PanelCanalizacion.gd")
+const PanelUnidadScript = preload("res://scripts/PanelUnidad.gd")
 
 ## Pedidos de la barra de modos (clic): CamaraCenital los traduce a sus
 ## funciones _alternar_modo_*.
@@ -57,6 +58,8 @@ const NOMBRES_TASA := {
 var _panel_puesto: PanelContainer
 var _panel_edificio: PanelContainer
 var _panel_canalizacion: PanelContainer
+var _panel_unidad: PanelContainer
+var _recuadro_seleccion: Panel
 var _barra_progreso: ProgressBar
 var _barra_superior: PanelContainer
 var _contexto: PanelContainer
@@ -123,6 +126,21 @@ func _init() -> void:
 	_panel_canalizacion = PanelCanalizacionScript.new()
 	add_child(_panel_canalizacion)
 	_panel_canalizacion.aviso.connect(notificar)
+	_panel_unidad = PanelUnidadScript.new()
+	add_child(_panel_unidad)
+
+	_recuadro_seleccion = Panel.new()
+	_recuadro_seleccion.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_recuadro_seleccion.visible = false
+	var estilo_recuadro := StyleBoxFlat.new()
+	estilo_recuadro.bg_color = Color(0.25, 0.65, 0.40, 0.18)
+	estilo_recuadro.border_color = Color(0.95, 0.80, 0.25, 0.95)
+	estilo_recuadro.set_border_width_all(2)
+	_recuadro_seleccion.add_theme_stylebox_override("panel", estilo_recuadro)
+	add_child(_recuadro_seleccion)
+
+	if Colonos != null and Colonos.has_signal("seleccion_unidades_cambiada"):
+		Colonos.seleccion_unidades_cambiada.connect(_on_seleccion_unidades_cambiada)
 	Economia.investigacion_finalizada.connect(func(nombre: String) -> void:
 		notificar("Investigación finalizada: %s" % nombre)
 	)
@@ -208,12 +226,18 @@ func set_vista(primera_persona: bool) -> void:
 		_ventana_almacen.ocultar_temporalmente()
 		_ventana_energia.ocultar_temporalmente()
 		_ventana_moral.ocultar_temporalmente()
+		if Colonos != null and Colonos.has_method("limpiar_seleccion_civil"):
+			Colonos.limpiar_seleccion_civil()
+		_panel_unidad.cerrar()
+		_recuadro_seleccion.visible = false
 	else:
 		_ventana_poblacion.restaurar()
 		_ventana_ocupaciones.restaurar()
 		_ventana_almacen.restaurar()
 		_ventana_energia.restaurar()
 		_ventana_moral.restaurar()
+		if Colonos != null and not Colonos.unidades_seleccionadas.is_empty():
+			abrir_panel_unidad(Colonos.unidades_seleccionadas)
 	# La ventana del baúl solo tiene sentido junto al baúl que la abrió: al
 	# cambiar de vista se cierra del todo (no se restaura, a diferencia de
 	# Población/Almacén).
@@ -508,6 +532,7 @@ func abrir_panel_puesto(esquina: Vector2i) -> void:
 	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	_panel_edificio.cerrar()
 	_panel_canalizacion.cerrar()
+	_panel_unidad.cerrar()
 	_panel_puesto.abrir(esquina)
 
 
@@ -516,6 +541,7 @@ func cerrar_panel_puesto() -> void:
 	_panel_puesto.cerrar()
 	_panel_edificio.cerrar()
 	_panel_canalizacion.cerrar()
+	_panel_unidad.cerrar()
 
 
 ## Ventana de un edificio u obra (ver PanelEdificio).
@@ -523,6 +549,7 @@ func abrir_panel_edificio(id: int) -> void:
 	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	_panel_puesto.cerrar()
 	_panel_canalizacion.cerrar()
+	_panel_unidad.cerrar()
 	_panel_edificio.abrir(id)
 
 
@@ -531,12 +558,49 @@ func abrir_panel_canalizacion(id_red: int) -> void:
 	Sonidos.reproducir("sfx_ui_ventana_abrir")
 	_panel_puesto.cerrar()
 	_panel_edificio.cerrar()
+	_panel_unidad.cerrar()
 	_panel_canalizacion.abrir(id_red)
 
 
 func cerrar_panel_canalizacion() -> void:
 	Sonidos.reproducir("sfx_ui_ventana_cerrar")
 	_panel_canalizacion.cerrar()
+
+
+func panel_unidad() -> PanelContainer:
+	return _panel_unidad
+
+
+func abrir_panel_unidad(ids: Array) -> void:
+	var estaba_abierto: bool = _panel_unidad.visible
+	_panel_puesto.cerrar()
+	_panel_edificio.cerrar()
+	_panel_canalizacion.cerrar()
+	_panel_unidad.mostrar_unidades(ids)
+	if not estaba_abierto and _panel_unidad.visible:
+		Sonidos.reproducir("sfx_ui_ventana_abrir")
+
+
+func cerrar_panel_unidad() -> void:
+	_panel_unidad.cerrar()
+
+
+func actualizar_recuadro_seleccion(rect: Rect2, mostrar: bool) -> void:
+	if _recuadro_seleccion == null:
+		return
+	_recuadro_seleccion.position = rect.position
+	_recuadro_seleccion.size = rect.size
+	_recuadro_seleccion.visible = mostrar
+
+
+func _on_seleccion_unidades_cambiada(ids: Array) -> void:
+	if _hotbar != null and not _hotbar.visible:
+		if ids.is_empty():
+			_panel_unidad.cerrar()
+		else:
+			abrir_panel_unidad(ids)
+	else:
+		_panel_unidad.cerrar()
 
 
 ## Ventana de interacción del baúl (E apuntando al depósito de un puesto,

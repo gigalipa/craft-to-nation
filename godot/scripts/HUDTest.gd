@@ -16,6 +16,7 @@ const VentanaAlmacenScript = preload("res://scripts/VentanaAlmacen.gd")
 const VentanaOcupacionesScript = preload("res://scripts/VentanaOcupaciones.gd")
 const PanelPuestoScript = preload("res://scripts/PanelPuesto.gd")
 const PanelEdificioScript = preload("res://scripts/PanelEdificio.gd")
+const PanelUnidadScript = preload("res://scripts/PanelUnidad.gd")
 const Strings = preload("res://scripts/strings.gd")
 
 
@@ -1646,4 +1647,49 @@ func probar_transporte_ui() -> void:
 	Economia.puestos.erase(esq_puesto_test)
 	panel_trans.queue_free()
 	print("OK: Hotbar y auto-transición a PanelPuesto verificados correctamente.")
+
+	print("\n=== TEST 17: PanelUnidad (civil vs militar) y recuadro de selección en HUD ===")
+	var hud_u: CanvasLayer = HUDScript.new()
+	add_child(hud_u)
+	hud_u.set_vista(false)
+	var esq_mina_u := Vector2i(9910, 9910)
+	Economia.puestos[esq_mina_u] = {"tipo": "mina", "esquina": esq_mina_u}
+	var id_civ_u: int = Colonos.agregar_colono("obrero", Vector3i(9910, 2, 9910), -1)
+	Colonos.colonos[id_civ_u]["trabajo"] = {"puesto": esq_mina_u, "rol": "obrero"}
+	Colonos.colonos[id_civ_u]["salud"] = 80.0
+	Colonos.colonos[id_civ_u]["salud_max"] = 100.0
+	Colonos.seleccionar_unidades([id_civ_u])
+	var pu: PanelContainer = hud_u.panel_unidad()
+	assert(pu != null and pu.visible, "PanelUnidad debe abrirse al seleccionar un civil en cenital")
+	assert(pu._caja_civil.visible and not pu._caja_militar.visible, "civil muestra solo datos civiles")
+	assert("80" in pu._lbl_salud.text and "100" in pu._lbl_salud.text, "salud civil visible: %s" % pu._lbl_salud.text)
+	assert("Mina" in pu._lbl_edificio.text or "Mine" in pu._lbl_edificio.text, "edificio civil visible: %s" % pu._lbl_edificio.text)
+
+	var id_mil1_u: int = Colonos.agregar_colono("militar", Vector3i(9911, 2, 9910), -1)
+	var id_mil2_u: int = Colonos.agregar_colono("militar", Vector3i(9912, 2, 9910), -1)
+	Colonos.seleccionar_unidades([id_mil1_u, id_mil2_u])
+	assert(pu.visible and pu._caja_militar.visible and not pu._caja_civil.visible, "militares muestran postura y comandos")
+	pu._botones_postura["agresivo"].pressed.emit()
+	assert(Colonos.colonos[id_mil1_u]["postura"] == "agresivo" and Colonos.colonos[id_mil2_u]["postura"] == "agresivo", "botón agresivo actualiza postura")
+	var orden_pedida_u := [""]
+	pu.modo_orden_pedido.connect(func(o: String) -> void: orden_pedida_u[0] = o)
+	pu._botones_comando["atacar"].pressed.emit()
+	assert(orden_pedida_u[0] == "atacar", "botón atacar emite modo_orden_pedido")
+	pu._botones_comando["mantener"].pressed.emit()
+	assert(Colonos.colonos[id_mil1_u]["orden_militar"].get("tipo", "") == "mantener", "botón mantener ordena mantener")
+
+	hud_u.actualizar_recuadro_seleccion(Rect2(10, 20, 120, 90), true)
+	assert(hud_u._recuadro_seleccion.visible and hud_u._recuadro_seleccion.size == Vector2(120, 90), "recuadro de selección visible")
+	hud_u.actualizar_recuadro_seleccion(Rect2(), false)
+	assert(not hud_u._recuadro_seleccion.visible, "recuadro oculto tras finalizar arrastre")
+
+	Colonos.limpiar_seleccion()
+	assert(not pu.visible, "limpiar selección cierra PanelUnidad")
+	for cid in [id_civ_u, id_mil1_u, id_mil2_u]:
+		var cel: Vector3i = Colonos.colonos[cid]["celda"]
+		Colonos.ocupadas.erase(cel)
+		Colonos.colonos.erase(cid)
+	Economia.puestos.erase(esq_mina_u)
+	hud_u.queue_free()
+	print("OK: TEST 17 PanelUnidad y recuadro de selección verificados.")
 

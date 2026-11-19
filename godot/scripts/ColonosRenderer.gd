@@ -54,6 +54,7 @@ func _on_colono_creado(id: int) -> void:
 
 	add_child(cuerpo)
 	_cuerpos[id] = cuerpo
+	cuerpo.set_meta("colono_id", id)
 	cuerpo.global_position = Colonos.colonos[id]["posicion"]
 
 

@@ -8,6 +8,7 @@ extends Node
 const PlayerScript = preload("res://scripts/Player.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const Ajustes = preload("res://scripts/ajustes.gd")
+const ColonosRendererScript = preload("res://scripts/ColonosRenderer.gd")
 
 
 func _crear_escena_jugador() -> Dictionary:
@@ -158,7 +159,24 @@ func ejecutar_pruebas() -> void:
 	player._input(_tecla(KEY_0, true))  # Shift+0 limpia filtro
 	assert(Colonos.subgrupo_activo == "", "Shift+0 vuelve a seleccionar todos los subgrupos")
 
+	print("=== TEST 5: Visuales procedurales de tropas y marcadores tacticos en ColonosRenderer ===")
+	Colonos.seleccionar_unidades([id_m1])
+	Colonos.ordenar_patrullar(Vector3i(9, 1, 9), true)
+	var rend: Node3D = ColonosRendererScript.new()
+	raiz.add_child(rend)
+	rend._physics_process(0.016)
+	var cuerpo_m: AnimatableBody3D = rend._cuerpos.get(id_m1, null)
+	var cuerpo_c: AnimatableBody3D = rend._cuerpos.get(id_obj, null)
+	assert(cuerpo_m != null and cuerpo_c != null, "renderer instancia cuerpos militar y civil")
+	assert(cuerpo_m.get_node_or_null("CascoMilitar") != null and cuerpo_m.get_node_or_null("CascoMilitar").visible, "militar tiene casco visible")
+	assert(cuerpo_m.get_node_or_null("EscudoMilitar") != null and cuerpo_m.get_node_or_null("EscudoMilitar").visible, "militar tiene escudo visible")
+	assert(cuerpo_c.get_node_or_null("CascoMilitar") == null or not cuerpo_c.get_node_or_null("CascoMilitar").visible, "civil no muestra casco militar")
+	assert(cuerpo_m.get_node_or_null("AroSeleccion").visible and not cuerpo_c.get_node_or_null("AroSeleccion").visible, "aro visible solo en unidad seleccionada")
+	assert(rend._marcadores_ordenes.get_child_count() >= 2, "marcadores tacticos de patrulla visibles para tropa seleccionada")
+
 	Colonos.limpiar_seleccion()
+	rend._physics_process(0.016)
+	assert(not cuerpo_m.get_node_or_null("AroSeleccion").visible, "aro se oculta al deseleccionar")
 	assert(not hud.panel_grupos_tropas().visible, "panel de grupos se oculta sin seleccion militar")
 	for cid in [id_obj, id_m1, id_m2]:
 		var cel: Vector3i = Colonos.colonos[cid]["celda"]
@@ -166,4 +184,4 @@ func ejecutar_pruebas() -> void:
 		Colonos.colonos.erase(cid)
 	raiz.queue_free()
 
-	print("\n=== Las 4 pruebas de PlayerCombateComandanteTest pasaron correctamente ===")
+	print("\n=== Las 5 pruebas de PlayerCombateComandanteTest pasaron correctamente ===")

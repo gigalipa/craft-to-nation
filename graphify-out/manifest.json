@@ -12,9 +12,9 @@
     "semantic_hash": "e24a0109ad49d93c83d24f248e600583"
   },
   "tools/run-godot-tests.ps1": {
-    "mtime": 1794308759.306358,
-    "seen": 1794308800.5430818,
-    "ast_hash": "9ffb5dc29a5678cb4b81a6fbb7ea1a0a",
+    "mtime": 1795053555.550068,
+    "seen": 1795054115.8415928,
+    "ast_hash": "f61d12a9ca3212c8b6ecba17228a8c2c",
     "semantic_hash": ""
   },
   "tools/run-single-test.ps1": {
@@ -5457,6 +5457,18 @@
     "mtime": 1794313827.8913567,
     "seen": 1794315491.8467262,
     "ast_hash": "3238a6b4a90b17ba602a5463edd8df30",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-11-18-fase4-camara-dual-tropas.md": {
+    "mtime": 1795051637.9285898,
+    "seen": 1795054115.8415928,
+    "ast_hash": "0cf85d1411bab5b4ca18fe69911d377b",
+    "semantic_hash": ""
+  },
+  "arte/dae/cuartel/Translucent_Glass_Tinted.jpg": {
+    "mtime": 1795046894.5618176,
+    "seen": 1795054115.8415928,
+    "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
     "semantic_hash": ""
   },
   "video_edition/remotion/package-lock.json": {

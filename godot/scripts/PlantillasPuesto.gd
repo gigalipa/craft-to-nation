@@ -24,6 +24,7 @@ const Strings = preload("res://scripts/strings.gd")
 ## de cada plantilla (ver MATERIAL más abajo), no con un tipo fijo.
 const BLOQUES := {
 	"V": "vidrio", "B": "baul", "M": "mesa_estudio",
+	"P": "bloque_piedra", "W": "bloque_madera", "C": "cama_cabecera", "c": "cama_pies",
 	"d": "puerta_inferior", "D": "puerta_superior",
 	# Edificios con entrada y salida separadas (refinerías y, más adelante, fábricas): las
 	# cintas y tuberías futuras necesitan dos puertas. Mismo bloque que "d"/"D"; la letra
@@ -60,6 +61,7 @@ const MATERIAL := {
 	"centro_extraccion": "estructura_hierro",
 	"almacen": "bloque_piedra",
 	"taller_transporte": "bloque_piedra",
+	"cuartel": "bloque_piedra",
 }
 
 const PLANTILLAS := {
@@ -236,6 +238,19 @@ const PLANTILLAS := {
 		["##d##", "#...#", "#..B#", "#...#", "#####"],
 		["##D##", "V...V", "#...#", "V...V", "##V##"],
 		["#####", "#####", "#####", "#####", "#####"],
+	]},
+	# Cuartel militar (9x7x8 sobre losa base): modelo cuartel.dae de 2 pisos en madera y piedra.
+	# 1er piso: entrenamiento de 4 reclutas + escalera interior al fondo; 2do piso: 4 camas (16 plazas).
+	"cuartel": {"capas": [
+		["WWWWWWWWW", "WWWWWWWWW", "WWWWWWWWW", "WWWWWWWWW", "WWWWWWWWW", "WWWWWWWWW", "WWWWWWWWW"],
+		["PWWPdPWWP", "W.......W", "W.......W", "W.......W", "W.......W", "W.....W.W", "PWWWWWWWP"],
+		["PVWPDPWVP", "W.......W", "W.......W", "W.......W", "W.......W", "W....W..W", "PWWWWWWWP"],
+		["PWWPPPWWP", "W.......W", "W.......W", "W.......W", "W.......W", "W...W...W", "PWWWWWWWP"],
+		["PPPPPPPPP", "PWWWWWWWP", "PWWWWWWWP", "PWWWWWWWP", "PWWWWWWWP", "PWWW....P", "PPPPPPPPP"],
+		["PWWWWWWWP", "WC.C.C.CW", "Wc.c.c.cW", "WW.W.W.WW", "W.......W", "W.......W", "PWWWWWWWP"],
+		["PWVWVWVWP", "W.......W", "W.......W", "W.......W", "W.......W", "W.......W", "PWWWWWWWP"],
+		["PWWWWWWWP", "W.......W", "W.......W", "W.......W", "W.......W", "W.......W", "PWWWWWWWP"],
+		["PPPPPPPPP", "PWWWWWWWP", "PWWWWWWWP", "PPPPPPPPP", "PWWWWWWWP", "PWWWWWWWP", "PPPPPPPPP"],
 	]},
 }
 

@@ -86,6 +86,15 @@ const MAPA_ICONOS := {
 
 	# Barra superior y estados
 	"almacen": "almacen.svg",
+	"cuartel": "militar.svg",
+	"espada": "militar.svg",
+	"rifle": "militar.svg",
+	"orden_atacar": "militar.svg",
+	"orden_defender": "escudo_agrietado.svg",
+	"orden_seguir": "ciudadano.svg",
+	"orden_moverse": "brujula.svg",
+	"orden_patrullar": "brujula.svg",
+	"orden_mantener": "candado.svg",
 	"moral_critica": "moral_critica.svg",
 	"moral_baja": "moral_baja.svg",
 	"moral_neutra": "moral_neutra.svg",

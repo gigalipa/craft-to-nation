@@ -1458,7 +1458,7 @@ func _actualizar_previsualizacion_blueprint() -> void:
 ## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
 const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias", "ductos"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar", "estacion_bombeo", "centro_extraccion"]
-const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen", "taller_transporte"]
+const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen", "taller_transporte", "cuartel"]
 const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas", "universidad"]
 const PUESTOS_DUCTOS := ["acueducto", "tuberia"]
 
@@ -1778,7 +1778,7 @@ func _alternar_puesto_por_tipo(tipo: String) -> void:
 		"caza_recoleccion": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_CAZA_RECOLECCION, Recoleccion.ALTO_HUELLA_CAZA_RECOLECCION)
 		"maderero": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_MADERERO, Recoleccion.ALTO_HUELLA_MADERERO)
 		"pesca_frutos_mar": _alternar_modo_colocar_puesto(tipo, Recoleccion.ANCHO_HUELLA_PESCA_FRUTOS_MAR, Recoleccion.ALTO_HUELLA_PESCA_FRUTOS_MAR)
-		"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte":
+		"siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "escuela_tecnica", "escuela_especialistas", "universidad", "estacion_bombeo", "centro_extraccion", "almacen", "taller_transporte", "cuartel":
 			var huella_ref: Vector2i = PlantillasPuesto.dimensiones(tipo)
 			_alternar_modo_colocar_puesto(tipo, huella_ref.x, huella_ref.y)
 		"acueducto", "tuberia":
@@ -2979,8 +2979,8 @@ func _evaluar_puesto(esquina: Vector2i) -> Dictionary:
 			}
 
 	var es_refineria: bool = CadenaMinerales.REFINERIAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "central_termoelectrica" or _tipo_puesto_activo == "almacen"
-	var es_residencial: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo) or _tipo_puesto_activo == "universidad"
-	var es_urbano: bool = es_refineria or es_residencial  # se construyen dentro de la zona de influencia, los demás puestos fuera
+	var es_residencial: bool = (Recoleccion.ESCUELAS.has(_tipo_puesto_activo) and _tipo_puesto_activo != "cuartel") or _tipo_puesto_activo == "universidad"
+	var es_urbano: bool = es_refineria or es_residencial or _tipo_puesto_activo == "cuartel"  # se construyen dentro de la zona de influencia, los demás puestos fuera
 	var dentro_de_influencia: bool = Zonificacion.dentro_de_influencia(centro)
 	var objetivo: int = nivelador_puesto.altura_objetivo(esquina, columnas)
 	# Fachada, como en los edificios declarados: las 2 columnas delante de todo el lado
@@ -3044,9 +3044,9 @@ func _mensaje_rechazo_puesto(ev: Dictionary) -> String:
 		return Strings.CAMARA_RECHAZO_PUESTO_SIN_POZO
 	if ev["en_influencia"]:
 		return Strings.CAMARA_RECHAZO_PUESTO_EN_INFLUENCIA
-	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo)
+	var es_escuela: bool = Recoleccion.ESCUELAS.has(_tipo_puesto_activo) and _tipo_puesto_activo != "cuartel"
 	var es_universidad: bool = _tipo_puesto_activo == "universidad"
-	var nombre_rechazo: String = Strings.CAMARA_NOMBRE_UNA_UNIVERSIDAD if es_universidad else (Strings.CAMARA_NOMBRE_UNA_ESCUELA if es_escuela else (Strings.CAMARA_NOMBRE_UN_ALMACEN if _tipo_puesto_activo == "almacen" else (Strings.CAMARA_NOMBRE_UNA_CENTRAL if _tipo_puesto_activo == "central_termoelectrica" else Strings.CAMARA_NOMBRE_UNA_REFINERIA)))
+	var nombre_rechazo: String = Strings.NOMBRES_PUESTO.get("cuartel", "Un cuartel militar") if _tipo_puesto_activo == "cuartel" else (Strings.CAMARA_NOMBRE_UNA_UNIVERSIDAD if es_universidad else (Strings.CAMARA_NOMBRE_UNA_ESCUELA if es_escuela else (Strings.CAMARA_NOMBRE_UN_ALMACEN if _tipo_puesto_activo == "almacen" else (Strings.CAMARA_NOMBRE_UNA_CENTRAL if _tipo_puesto_activo == "central_termoelectrica" else Strings.CAMARA_NOMBRE_UNA_REFINERIA))))
 	if ev["fuera_de_influencia"]:
 		return Strings.CAMARA_RECHAZO_PUESTO_SOLO_EN_INFLUENCIA % nombre_rechazo
 	if not ev["zona_correcta"]:

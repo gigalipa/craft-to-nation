@@ -259,6 +259,10 @@ func registrar_puesto(esquina: Vector2i, tipo: String, ancho: int, alto: int, ta
 	}
 	if tipo == "taller_transporte":
 		puestos[esquina]["cola_fabricacion"] = []
+	if tipo == "cuartel":
+		puestos[esquina]["id_cuartel"] = _contador_orden
+		if ciudad != null and ciudad.has_method("registrar_cuartel"):
+			ciudad.registrar_cuartel(_contador_orden, Ajustes.CUARTEL_CAMAS_POR_EDIFICIO)
 
 
 ## Quita el puesto (se deconstruyó): lo que quepa de su almacén local pasa al núcleo
@@ -305,7 +309,11 @@ func quitar_puesto(esquina: Vector2i) -> void:
 	var ids: Array = p["recolectores"] + p["acarreadores"]
 	for id in ids:
 		_puesto_de.erase(id)
+	var tipo_quitado: String = str(p.get("tipo", ""))
+	var id_cuartel: int = int(p.get("id_cuartel", p.get("orden_construccion", -1)))
 	puestos.erase(esquina)
+	if tipo_quitado == "cuartel" and ciudad != null and ciudad.has_method("retirar_cuartel"):
+		ciudad.retirar_cuartel(id_cuartel)
 	puesto_quitado.emit(ids)
 
 
@@ -342,6 +350,9 @@ func asignar(esquina: Vector2i, rol: String, colono_id: int) -> bool:
 		return false  # inactivo (se está deconstruyendo), su nivel no admite ese oficio o está agotado sin niveles
 	if cupo_libre(esquina) <= 0:
 		return false
+	if p["tipo"] == "cuartel" and ciudad != null and "plazas_militares_libres" in ciudad:
+		if p["recolectores"].size() >= ciudad.plazas_militares_libres:
+			return false
 	p[_lista_de(rol)].append(colono_id)
 	_puesto_de[colono_id] = esquina
 	if tiene_niveles(esquina) and RANGO_DE_ROL.has(rol):

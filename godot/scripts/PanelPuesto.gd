@@ -666,6 +666,7 @@ func abrir(nueva_esquina: Vector2i) -> void:
 		"centro_extraccion": "sfx_ind_centro_extraccion",
 		"almacen": "sfx_ind_almacen_industrial",
 		"taller_transporte": "sfx_ind_taller_transporte",
+		"cuartel": "sfx_ind_escuela_tecnica",
 	}
 	if sfx_map.has(tipo_p):
 		Sonidos.reproducir(sfx_map[tipo_p], -4.0)
@@ -705,7 +706,7 @@ func _actualizar() -> void:
 	_icono_nivel.visible = con_niveles
 	var sin_cupo: bool = Economia.cupo_libre(esquina) <= 0
 	var origen_escuela: String = Recoleccion.ESCUELAS[puesto["tipo"]]["origen"] if es_escuela else ""
-	var nombre_aprendiz: String = "Técnicos en formación" if origen_escuela == "tecnico" else Strings.PANEL_PUESTO_ROL_APRENDICES
+	var nombre_aprendiz: String = "Reclutas" if puesto["tipo"] == "cuartel" else ("Técnicos en formación" if origen_escuela == "tecnico" else Strings.PANEL_PUESTO_ROL_APRENDICES)
 	_filas["aprendiz"]["nombre"].text = nombre_aprendiz
 	for rol in ["recolector", "tecnico", "especialista", "aprendiz", "investigador"]:
 		var fila: Dictionary = _filas[rol]
@@ -718,7 +719,8 @@ func _actualizar() -> void:
 		fila["libres"].text = "(%d libres)" % libres
 		fila["menos"].disabled = empleados == 0
 		var limite_inv: bool = (rol == "investigador" and not Ciudad.COSTOS_INVESTIGACION.has(Ciudad.nivel_investigado + 1))
-		fila["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or not Economia.admite_rol(esquina, rol) or limite_inv
+		var sin_plaza_militar: bool = (puesto["tipo"] == "cuartel" and rol == "aprendiz" and "plazas_militares_libres" in Ciudad and Ciudad.plazas_militares_libres <= t["recolectores"])
+		fila["mas"].disabled = sin_cupo or libres <= 0 or not puesto["activo"] or not Economia.admite_rol(esquina, rol) or limite_inv or sin_plaza_militar
 	var acarreadores: Dictionary = _filas["acarreador"]
 	acarreadores["fila"].visible = Economia.roles_de(esquina).has("acarreador")
 	acarreadores["cantidad"].text = str(t["acarreadores"])

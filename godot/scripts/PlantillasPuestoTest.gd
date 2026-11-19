@@ -405,4 +405,37 @@ func ejecutar_pruebas() -> void:
 	assert(tiene_baul_tt, "taller_transporte debe tener baul")
 	assert(tiene_ventana_tt, "taller_transporte debe tener ventanas")
 
-	print("\n=== Las 18 pruebas de PlantillasPuesto pasaron correctamente ===")
+	print("\n=== TEST 19: plantilla de cuartel (9x7x8, madera y piedra, puerta, ventanas y 4 camas en 2do piso) ===")
+	assert(PlantillasPuesto.PLANTILLAS.has("cuartel"), "debe estar registrada la plantilla cuartel")
+	assert(PlantillasPuesto.dimensiones("cuartel") == Vector2i(9, 7), "dimensiones del cuartel deben ser 9x7")
+	assert(PlantillasPuesto.altura("cuartel") == 9, "9 capas totales: losa base + 8 de edificio")
+	var celdas_ct: Dictionary = PlantillasPuesto.celdas("cuartel", 0)
+	var cnt_madera_ct := 0
+	var cnt_piedra_ct := 0
+	var cnt_camas_ct := 0
+	var cnt_pies_ct := 0
+	var cnt_vidrio_ct := 0
+	var cnt_puertas_ct := 0
+	for c_pos in celdas_ct:
+		var blk: String = celdas_ct[c_pos]
+		assert(mundo7._id_por_tipo.has(blk), "bloque existente en mundo: " + blk)
+		match blk:
+			"bloque_madera": cnt_madera_ct += 1
+			"bloque_piedra": cnt_piedra_ct += 1
+			"cama_cabecera":
+				cnt_camas_ct += 1
+				assert(c_pos.y >= 5, "las camas deben estar en el 2do piso")
+			"cama_pies":
+				cnt_pies_ct += 1
+				assert(c_pos.y >= 5, "los pies de cama deben estar en el 2do piso")
+			"vidrio": cnt_vidrio_ct += 1
+			"puerta_inferior":
+				cnt_puertas_ct += 1
+				assert(c_pos.y == 1 and c_pos.z == 0, "puerta centrada frente a -Z")
+	assert(cnt_madera_ct > 0 and cnt_piedra_ct > 0, "el cuartel usa madera y piedra")
+	assert(cnt_camas_ct == 4 and cnt_pies_ct == 4, "el cuartel debe tener exactamente 4 camas (cabecera+pies) en el 2do piso")
+	assert(mundo7.despeje_camas_invalido(celdas_ct) == "", "el cuartel debe cumplir el despeje de camas")
+	assert(cnt_vidrio_ct >= 2, "el cuartel tiene ventanas")
+	assert(cnt_puertas_ct == 1, "el cuartel tiene una puerta frontal")
+
+	print("\n=== Las 19 pruebas de PlantillasPuesto pasaron correctamente ===")

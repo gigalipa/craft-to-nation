@@ -1471,5 +1471,27 @@ func ejecutar_pruebas() -> void:
 	assert(e50.puestos[esq_mina50]["tipo_transporte"] == "acarreador_pie")
 	assert(e50.roles_de(esq_mina50).has("acarreador"), "Al volver a pie se reactiva el rol de acarreador")
 
-	print("\n=== Las 50 pruebas de Economia pasaron correctamente ===")
+	print("\n=== TEST 51: Cuartel militar — registro de 4 camas (16 plazas), cohorte 24h y bloqueo sin cupo ===")
+	var c51: Node = _ciudad_nueva()
+	var e51: Node = _nueva(c51)
+	var esq_c51 := Vector2i(80, 80)
+	e51.registrar_puesto(esq_c51, "cuartel", 9, 7, {})
+	assert(e51.es_escuela(esq_c51), "cuartel usa la mecánica de cohorte")
+	assert(c51.capacidad_camas_cuartel == 4 and c51.capacidad_militares == 16)
+	assert(e51.puestos[esq_c51]["cupo"] == 4)
+	for i_rec in range(4):
+		assert(e51.asignar(esq_c51, "aprendiz", 900 + i_rec))
+		e51.marcar_presente(900 + i_rec, true)
+	var grad51 := []
+	e51.cohorte_graduada.connect(func(_esq: Vector2i, ids: Array) -> void: grad51.append_array(ids))
+	for _h in range(24):
+		e51.simular_hora()
+	assert(grad51.size() == 4, "los 4 reclutas completan cohorte a las 24h")
+	# Llenar las 16 plazas del cuartel y comprobar bloqueo de contratación
+	c51.demografia["militar"] = 16
+	assert(not e51.asignar(esq_c51, "aprendiz", 950), "sin plazas militares libres no admite más reclutas")
+	e51.quitar_puesto(esq_c51)
+	assert(c51.capacidad_militares == 0 and c51.demografia["militar"] == 0, "quitar cuartel retira capacidad y licencia militares")
+
+	print("\n=== Las 51 pruebas de Economia pasaron correctamente ===")
 

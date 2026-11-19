@@ -115,6 +115,14 @@ var _cara_apuntada: MeshInstance3D = CaraApuntadaScript.new()
 
 var modo_deconstruccion := false
 var modo_vias := false
+const MASCARA_MUNDO_COMBATE := 1
+const MASCARA_UNIDADES := 2
+const ORDENES_COMANDANTE := ["atacar", "defender", "seguir", "moverse", "patrullar", "mantener"]
+
+var modo_primera_persona: String = "construccion"
+var arma_seleccionada: int = 0
+var orden_comandante_seleccionada: int = 0
+var _cooldown_ataque_avatar: float = 0.0
 static var INTERVALO_AVISO_DECONSTRUCCION_MS: int = Ajustes.PLAYER_INTERVALO_AVISO_DECONSTRUCCION_MS
 
 var _ultimo_aviso_deconstruccion_ms := -INTERVALO_AVISO_DECONSTRUCCION_MS
@@ -248,14 +256,23 @@ func _input(event: InputEvent) -> void:
 				_alternar_modo_vias()
 			else:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		if tecla.pressed and tecla.keycode == KEY_B:
+		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_T:
+			establecer_modo_primera_persona("construccion")
+			return
+		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_R:
+			establecer_modo_primera_persona("batalla")
+			return
+		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_F:
+			establecer_modo_primera_persona("comandante")
+			return
+		if tecla.pressed and tecla.keycode == KEY_B and modo_primera_persona == "construccion":
 			if tecla.shift_pressed:
 				_iniciar_remodelacion()
 			else:
 				_declarar_edificio()
-		if tecla.pressed and tecla.keycode == KEY_G:
+		if tecla.pressed and tecla.keycode == KEY_G and modo_primera_persona == "construccion":
 			_alternar_modo_deconstruccion()
-		if tecla.pressed and tecla.keycode == KEY_V:
+		if tecla.pressed and tecla.keycode == KEY_V and modo_primera_persona == "construccion":
 			_alternar_modo_vias()
 		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_E:
 			if hud != null and hud.ventana_baul_abierta():
@@ -269,9 +286,29 @@ func _input(event: InputEvent) -> void:
 			alternar_lampara()
 		if tecla.pressed and tecla.keycode == KEY_K:
 			_morir_jugador()
-		if tecla.pressed:
+		if tecla.pressed and not tecla.echo:
 			var indice: int = 9 if tecla.keycode == KEY_0 else tecla.keycode - KEY_1
-			if indice >= 0 and indice < tipos_disponibles.size():
+			if modo_primera_persona == "batalla":
+				if indice >= 0 and indice < Ajustes.ARMAS_AVATAR.size():
+					arma_seleccionada = indice
+					if hud != null:
+						hud.set_tipo_hotbar(arma_seleccionada)
+			elif modo_primera_persona == "comandante":
+				if tecla.shift_pressed:
+					if tecla.keycode == KEY_0:
+						if Colonos != null:
+							Colonos.establecer_subgrupo_activo("")
+					elif indice >= 0 and indice < 9 and Colonos != null:
+						var grupos: Array[Dictionary] = Colonos.grupos_militares_seleccionados()
+						if indice < grupos.size():
+							Colonos.establecer_subgrupo_activo(str(grupos[indice].get("rango", "")))
+					if hud != null and hud.has_method("actualizar_panel_grupos_tropas"):
+						hud.actualizar_panel_grupos_tropas()
+				elif indice >= 0 and indice < ORDENES_COMANDANTE.size():
+					orden_comandante_seleccionada = indice
+					if hud != null:
+						hud.set_tipo_hotbar(orden_comandante_seleccionada)
+			elif indice >= 0 and indice < tipos_disponibles.size():
 				tipo_seleccionado = indice
 				hud.set_tipo_hotbar(indice)
 				Sonidos.reproducir("sfx_ui_hotbar_slot", -4.0, 0.05)
@@ -287,6 +324,14 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
+		if modo_primera_persona == "batalla":
+			if boton.button_index == MOUSE_BUTTON_LEFT and boton.pressed:
+				atacar_en_primera_persona()
+			return
+		if modo_primera_persona == "comandante":
+			if boton.pressed and (boton.button_index == MOUSE_BUTTON_LEFT or boton.button_index == MOUSE_BUTTON_RIGHT):
+				_procesar_clic_comandante(boton.button_index == MOUSE_BUTTON_RIGHT)
+			return
 		if boton.button_index == MOUSE_BUTTON_LEFT:
 			if modo_vias:
 				_minando = boton.pressed
@@ -333,6 +378,11 @@ func _procesar_accion_repetida(delta: float) -> void:
 	if not camara.current or (hud != null and hud.ventana_baul_abierta()):
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
+		return
+	if modo_primera_persona != "construccion":
+		_progreso_accion.soltar()
+		if hud != null:
+			hud.ocultar_progreso()
 		return
 	if modo_vias:
 		_progreso_accion.soltar()
@@ -545,6 +595,7 @@ func _procesar_frutos(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_cooldown_ataque_avatar = maxf(0.0, _cooldown_ataque_avatar - delta)
 	_procesar_accion_repetida(delta)
 	_actualizar_cara_apuntada()
 	var direccion := Vector3.ZERO
@@ -688,7 +739,7 @@ func mostrar_contexto_vias() -> void:
 ## Overlay verde sobre la cara apuntada, solo si el raycast golpea algo (su largo
 ## es el alcance de colocar y minar).
 func _actualizar_cara_apuntada() -> void:
-	if not camara.current or mundo == null or not raycast.is_colliding():
+	if not camara.current or modo_primera_persona != "construccion" or mundo == null or not raycast.is_colliding():
 		_cara_apuntada.ocultar()
 		return
 	var normal := raycast.get_collision_normal()
@@ -981,8 +1032,185 @@ func salir_de_todas_las_herramientas() -> void:
 	_minando = false
 	_colocando = false
 	_temporizador_accion = 0.0
+	establecer_modo_primera_persona("construccion", false)
 	if hud != null:
 		hud.ocultar_contexto()
+
+
+func establecer_modo_primera_persona(nuevo_modo: String, notificar_cambio: bool = true) -> void:
+	if nuevo_modo not in ["construccion", "batalla", "comandante"]:
+		return
+	var cambio: bool = (modo_primera_persona != nuevo_modo)
+	modo_primera_persona = nuevo_modo
+	_minando = false
+	_colocando = false
+	_progreso_accion.soltar()
+	if modo_primera_persona != "construccion":
+		modo_deconstruccion = false
+		modo_vias = false
+		_id_listo_para_remocion = -1
+		_ticks_listo_para_remocion = 0
+		_cara_apuntada.ocultar()
+	if hud == null:
+		return
+	hud.ocultar_progreso()
+	hud.ocultar_contexto()
+	match modo_primera_persona:
+		"construccion":
+			hud.restaurar_hotbar_bloques()
+			hud.set_tipo_hotbar(tipo_seleccionado)
+			hud.set_crosshair_combate(false)
+			if notificar_cambio and cambio:
+				hud.notificar(Strings.t("MODO_CONSTRUCCION"))
+		"batalla":
+			var items_armas: Array = []
+			for arma in Ajustes.ARMAS_AVATAR:
+				var a: Dictionary = arma
+				items_armas.append({
+					"id": str(a.get("id", "espada")),
+					"nombre": Strings.t(str(a.get("nombre_key", "ARMA_ESPADA"))),
+					"nombre_key": str(a.get("nombre_key", "ARMA_ESPADA")),
+					"icono": IconosHUD.icono(str(a.get("id", "espada"))),
+				})
+			hud.configurar_hotbar_modo_especial(items_armas)
+			arma_seleccionada = clampi(arma_seleccionada, 0, maxi(0, items_armas.size() - 1))
+			hud.set_tipo_hotbar(arma_seleccionada)
+			hud.set_crosshair_combate(true)
+			if notificar_cambio and cambio:
+				hud.notificar(Strings.t("MODO_BATALLA"))
+		"comandante":
+			var items_ord: Array = [
+				{"id": "atacar", "nombre": Strings.t("ORDEN_ATACAR"), "nombre_key": "ORDEN_ATACAR", "icono": IconosHUD.icono("orden_atacar")},
+				{"id": "defender", "nombre": Strings.t("ORDEN_DEFENDER"), "nombre_key": "ORDEN_DEFENDER", "icono": IconosHUD.icono("orden_defender")},
+				{"id": "seguir", "nombre": Strings.t("ORDEN_SEGUIR"), "nombre_key": "ORDEN_SEGUIR", "icono": IconosHUD.icono("orden_seguir")},
+				{"id": "moverse", "nombre": Strings.t("ORDEN_MOVERSE"), "nombre_key": "ORDEN_MOVERSE", "icono": IconosHUD.icono("orden_moverse")},
+				{"id": "patrullar", "nombre": Strings.t("ORDEN_PATRULLAR"), "nombre_key": "ORDEN_PATRULLAR", "icono": IconosHUD.icono("orden_patrullar")},
+				{"id": "mantener", "nombre": Strings.t("ORDEN_MANTENER"), "nombre_key": "ORDEN_MANTENER", "icono": IconosHUD.icono("orden_mantener")},
+			]
+			hud.configurar_hotbar_modo_especial(items_ord)
+			orden_comandante_seleccionada = clampi(orden_comandante_seleccionada, 0, items_ord.size() - 1)
+			hud.set_tipo_hotbar(orden_comandante_seleccionada)
+			hud.set_crosshair_combate(false)
+			hud.actualizar_panel_grupos_tropas()
+			if notificar_cambio and cambio:
+				hud.notificar(Strings.t("MODO_COMANDANTE"))
+
+
+func atacar_en_primera_persona() -> bool:
+	if _cooldown_ataque_avatar > 0.0:
+		return false
+	if camara == null or not is_inside_tree() or get_world_3d() == null:
+		return false
+	var idx: int = clampi(arma_seleccionada, 0, Ajustes.ARMAS_AVATAR.size() - 1)
+	var arma: Dictionary = Ajustes.ARMAS_AVATAR[idx]
+	var alcance: float = float(arma.get("alcance", 3.0))
+	var origen: Vector3 = camara.global_position
+	var destino: Vector3 = origen + (-camara.global_transform.basis.z) * alcance
+	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+
+	var q_uni := PhysicsRayQueryParameters3D.create(origen, destino)
+	q_uni.collision_mask = MASCARA_UNIDADES
+	var hit_uni: Dictionary = space.intersect_ray(q_uni)
+	if hit_uni.has("collider") and hit_uni["collider"] != null:
+		var col: Object = hit_uni["collider"]
+		if col.has_meta("colono_id"):
+			return ejecutar_ataque_en_objetivo("unidad", int(col.get_meta("colono_id")), _celda_en(hit_uni["position"]))
+
+	var q_mundo := PhysicsRayQueryParameters3D.create(origen, destino)
+	q_mundo.collision_mask = MASCARA_MUNDO_COMBATE
+	var hit_m: Dictionary = space.intersect_ray(q_mundo)
+	if not hit_m.is_empty():
+		var p: Vector3 = hit_m["position"]
+		var n: Vector3 = hit_m["normal"]
+		var celda: Vector3i = mundo.local_to_map(mundo.to_local(p - n * 0.5)) if (mundo != null and mundo.has_method("local_to_map")) else _celda_en(p - n * 0.5)
+		var id_ed: int = Obras.id_en_columna(Vector2i(celda.x, celda.z)) if Obras != null else -1
+		if id_ed != -1:
+			return ejecutar_ataque_en_objetivo("edificio", id_ed, celda)
+
+	_cooldown_ataque_avatar = float(arma.get("cooldown", 0.5))
+	return false
+
+
+func ejecutar_ataque_en_objetivo(tipo_obj: String, id_obj: int, celda: Vector3i = Vector3i.ZERO) -> bool:
+	if _cooldown_ataque_avatar > 0.0:
+		return false
+	var idx: int = clampi(arma_seleccionada, 0, Ajustes.ARMAS_AVATAR.size() - 1)
+	var arma: Dictionary = Ajustes.ARMAS_AVATAR[idx]
+	var dano: float = float(arma.get("dano", 25.0))
+	if Colonos == null:
+		return false
+	if tipo_obj == "unidad" or tipo_obj == "colono":
+		if not Colonos.colonos.has(id_obj):
+			return false
+		_cooldown_ataque_avatar = float(arma.get("cooldown", 0.5))
+		Colonos.aplicar_dano_unidad(id_obj, dano)
+		return true
+	elif tipo_obj == "edificio":
+		_cooldown_ataque_avatar = float(arma.get("cooldown", 0.5))
+		Colonos.aplicar_dano_edificio(id_obj, dano, celda)
+		return true
+	return false
+
+
+func _procesar_clic_comandante(clic_derecho: bool) -> void:
+	var uid: int = -1
+	var id_ed: int = -1
+	var celda: Vector3i = _celda_en(global_position)
+	if camara != null and is_inside_tree() and get_world_3d() != null:
+		var origen: Vector3 = camara.global_position
+		var dir: Vector3 = -camara.global_transform.basis.z
+		var dest: Vector3 = origen + dir * Ajustes.COMANDANTE_ALCANCE_RAYCAST
+		var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+		var hit_uni: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(origen, dest, MASCARA_UNIDADES))
+		if hit_uni.has("collider") and hit_uni["collider"] != null:
+			var col: Object = hit_uni["collider"]
+			if col.has_meta("colono_id"):
+				uid = int(col.get_meta("colono_id"))
+				celda = _celda_en(hit_uni.get("position", origen))
+		else:
+			var hit_m: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(origen, dest, MASCARA_MUNDO_COMBATE))
+			if not hit_m.is_empty():
+				var p: Vector3 = hit_m["position"]
+				var n: Vector3 = hit_m["normal"]
+				celda = mundo.local_to_map(mundo.to_local(p - n * 0.5)) if (mundo != null and mundo.has_method("local_to_map")) else _celda_en(p - n * 0.5)
+			else:
+				celda = _celda_en(dest)
+		if Obras != null:
+			id_ed = Obras.id_en_columna(Vector2i(celda.x, celda.z))
+	ejecutar_orden_comandante(clic_derecho, celda, uid, id_ed)
+
+
+func ejecutar_orden_comandante(clic_derecho: bool, celda: Vector3i, unidad_id: int = -1, edificio_id: int = -1) -> void:
+	if Colonos == null or Colonos.militares_seleccionados().is_empty():
+		return
+	var ord_idx: int = clampi(orden_comandante_seleccionada, 0, ORDENES_COMANDANTE.size() - 1)
+	match ORDENES_COMANDANTE[ord_idx]:
+		"atacar":
+			if clic_derecho:
+				Colonos.establecer_postura_seleccion("agresivo")
+			elif unidad_id != -1:
+				Colonos.ordenar_atacar("unidad", unidad_id, celda)
+			else:
+				Colonos.ordenar_atacar("edificio", edificio_id, celda)
+		"defender":
+			if clic_derecho:
+				Colonos.establecer_postura_seleccion("defensivo")
+			else:
+				Colonos.ordenar_proteger(celda, edificio_id)
+		"seguir":
+			if clic_derecho or unidad_id == -1:
+				Colonos.ordenar_seguir("avatar", -1)
+			else:
+				Colonos.ordenar_seguir("unidad", unidad_id)
+		"moverse":
+			Colonos.ordenar_mover(celda, clic_derecho)
+		"patrullar":
+			Colonos.ordenar_patrullar(celda, clic_derecho)
+		"mantener":
+			if clic_derecho:
+				Colonos.establecer_postura_seleccion("pasivo")
+			else:
+				Colonos.ordenar_mantener()
 
 
 func _trabajar_via_manual() -> void:

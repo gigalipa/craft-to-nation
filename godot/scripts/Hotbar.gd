@@ -107,6 +107,9 @@ var _fila := HBoxContainer.new()
 var _casillas: Array = []  # de {"contenedor", "caja", "nombre", "cantidad", "valor": int}
 var _seleccionada := 0
 var _tipos: Array = []
+var _tipos_bloques_guardados: Array = []
+var _modo_especial := false
+var _items_especiales: Array = []
 
 ## Copia propia (CACHE_MODE_IGNORE) de la MeshLibrary, independiente de la
 ## que usa VoxelWorld en el mundo: VoxelWorld._indexar_biblioteca() vacía en
@@ -223,6 +226,15 @@ func _on_configuracion_cambiada(clave: String, _valor: Variant) -> void:
 
 
 func actualizar_textos() -> void:
+	if _modo_especial:
+		for i in range(_casillas.size()):
+			if i < _items_especiales.size():
+				var item: Dictionary = _items_especiales[i]
+				var lbl_esp: Label = _casillas[i]["nombre"]
+				if lbl_esp != null:
+					var nk: String = str(item.get("nombre_key", ""))
+					lbl_esp.text = Strings.t(nk) if nk != "" else str(item.get("nombre", ""))
+		return
 	for i in range(_casillas.size()):
 		if i < _tipos.size():
 			var tipo: String = _tipos[i]
@@ -233,20 +245,45 @@ func actualizar_textos() -> void:
 
 func configurar(tipos: Array) -> void:
 	_tipos = tipos
+	_tipos_bloques_guardados = tipos.duplicate()
+	_modo_especial = false
+	_items_especiales.clear()
+	var entradas: Array = []
+	for t in tipos:
+		var tipo: String = str(t)
+		entradas.append({"nombre": nombre_hotbar_de(tipo), "icono": icono_de(tipo)})
+	_reconstruir_casillas(entradas)
+
+
+func configurar_modo_especial(items: Array) -> void:
+	_modo_especial = true
+	_items_especiales = items.duplicate()
+	_tipos = []
+	var entradas: Array = []
+	for item in items:
+		var d: Dictionary = item
+		var nk: String = str(d.get("nombre_key", ""))
+		var txt: String = Strings.t(nk) if nk != "" else str(d.get("nombre", ""))
+		entradas.append({"nombre": txt, "icono": d.get("icono", null)})
+	_reconstruir_casillas(entradas)
+
+
+func restaurar_bloques() -> void:
+	if not _tipos_bloques_guardados.is_empty():
+		configurar(_tipos_bloques_guardados.duplicate())
+
+
+func _reconstruir_casillas(entradas: Array) -> void:
 	for casilla in _casillas:
 		casilla["contenedor"].queue_free()
 	_casillas.clear()
-	for i in range(tipos.size()):
-		var tipo: String = tipos[i]
+	for i in range(entradas.size()):
+		var entrada: Dictionary = entradas[i]
 		var contenedor := VBoxContainer.new()
 		contenedor.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		contenedor.add_theme_constant_override("separation", 2)
 
-		# Título corto (nombre_hotbar_de(), no el real): envuelve en 2 líneas
-		# si hace falta, ya no desincroniza el margen del panel contextual
-		# porque HUD.set_vista() lo calcula del alto real de la hotbar, no de
-		# una constante fija.
-		var nombre := TemaHUD.etiqueta(nombre_hotbar_de(tipo))
+		var nombre := TemaHUD.etiqueta(str(entrada.get("nombre", "")))
 		nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		nombre.autowrap_mode = TextServer.AUTOWRAP_WORD
 		nombre.custom_minimum_size.x = TAMANO_ICONO
@@ -257,30 +294,22 @@ func configurar(tipos: Array) -> void:
 		caja.custom_minimum_size = Vector2(TAMANO_ICONO, TAMANO_ICONO)
 
 		var icono := TextureRect.new()
-		icono.texture = icono_de(tipo)
+		icono.texture = entrada.get("icono", null)
 		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		caja.add_child(icono)
 
-		# PanelContainer fuerza a TODOS sus hijos directos a ocupar su rect
-		# completo en cada sort (fit_child_in_rect), pisando cualquier ancla
-		# propia — por eso tecla/cantidad NO quedaban ancladas a las esquinas
-		# (se veían centradas verticalmente, reporte 2026-09-30). Un Control
-		# simple (no un Container) sí respeta las anclas de SUS hijos, así
-		# que tecla/cantidad van dentro de este en vez de directo en "caja".
 		var esquinas := Control.new()
 		esquinas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		caja.add_child(esquinas)
 
-		# Acceso directo, esquina inferior izquierda, color del borde (dorado).
 		var tecla := TemaHUD.etiqueta(str((i + 1) % 10))
 		tecla.add_theme_font_size_override("font_size", 12)
 		tecla.add_theme_color_override("font_color", TemaHUD.DORADO)
 		esquinas.add_child(tecla)
-		TemaHUD.poner_en_esquina_inferior(tecla, false, TemaHUD.MARGEN_CONTENIDO)  # "esquinas" queda dentro del margen interno de la caja
+		TemaHUD.poner_en_esquina_inferior(tecla, false, TemaHUD.MARGEN_CONTENIDO)
 
-		# Disponibilidad, esquina inferior derecha (color según selección, ver _resaltar()).
 		var cantidad := TemaHUD.etiqueta()
 		cantidad.visible = false
 		esquinas.add_child(cantidad)
@@ -294,7 +323,7 @@ func configurar(tipos: Array) -> void:
 
 
 func _process(_delta: float) -> void:
-	if visible:
+	if visible and not _modo_especial:
 		actualizar_cantidades()
 
 
@@ -302,6 +331,8 @@ func _process(_delta: float) -> void:
 ## el número (cantidad -1) en los tipos sin costo definido en
 ## NiveladorTerreno.COSTO_POR_CELDA.
 func actualizar_cantidades() -> void:
+	if _modo_especial:
+		return
 	for i in range(_tipos.size()):
 		var costo: Dictionary = NiveladorTerrenoScript.COSTO_POR_CELDA.get(_tipos[i], {})
 		if costo.is_empty():

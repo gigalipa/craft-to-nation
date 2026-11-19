@@ -63,6 +63,7 @@ $expectedScenes = @(
 	"PlayerLamparaTest.tscn",
 	"PlayerNatacionTest.tscn",
 	"PlayerOxigenoTest.tscn",
+	"PlayerCombateComandanteTest.tscn",
 	"PuertasTest.tscn",
 	"PuestosPrevisualizacionTest.tscn",
 	"RecoleccionTest.tscn",

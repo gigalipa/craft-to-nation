@@ -60,6 +60,9 @@ var _panel_edificio: PanelContainer
 var _panel_canalizacion: PanelContainer
 var _panel_unidad: PanelContainer
 var _recuadro_seleccion: Panel
+var _crosshair_combate: Control
+var _panel_grupos_tropas: PanelContainer
+var _caja_grupos_tropas: VBoxContainer
 var _barra_progreso: ProgressBar
 var _barra_superior: PanelContainer
 var _contexto: PanelContainer
@@ -138,6 +141,37 @@ func _init() -> void:
 	estilo_recuadro.set_border_width_all(2)
 	_recuadro_seleccion.add_theme_stylebox_override("panel", estilo_recuadro)
 	add_child(_recuadro_seleccion)
+
+	_crosshair_combate = Control.new()
+	_crosshair_combate.name = "CrosshairCombate"
+	_crosshair_combate.set_anchors_preset(Control.PRESET_CENTER)
+	_crosshair_combate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_crosshair_combate.visible = false
+	for bar in [Rect2(-14, -1, 8, 2), Rect2(6, -1, 8, 2), Rect2(-1, -14, 2, 8), Rect2(-1, 6, 2, 8)]:
+		var linea := ColorRect.new()
+		linea.color = Color(1.0, 0.35, 0.25, 0.92)
+		linea.position = bar.position
+		linea.size = bar.size
+		linea.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_crosshair_combate.add_child(linea)
+	add_child(_crosshair_combate)
+
+	_panel_grupos_tropas = PanelContainer.new()
+	_panel_grupos_tropas.name = "PanelGruposTropas"
+	TemaHUD.aplicar_panel(_panel_grupos_tropas)
+	_panel_grupos_tropas.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	_panel_grupos_tropas.offset_left = 12.0
+	_panel_grupos_tropas.offset_top = -120.0
+	_panel_grupos_tropas.offset_right = 232.0
+	_panel_grupos_tropas.offset_bottom = 120.0
+	_panel_grupos_tropas.custom_minimum_size = Vector2(200.0, 0.0)
+	_panel_grupos_tropas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_grupos_tropas.visible = false
+	_caja_grupos_tropas = VBoxContainer.new()
+	_caja_grupos_tropas.add_theme_constant_override("separation", 4)
+	_caja_grupos_tropas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_grupos_tropas.add_child(_caja_grupos_tropas)
+	add_child(_panel_grupos_tropas)
 
 	if Colonos != null and Colonos.has_signal("seleccion_unidades_cambiada"):
 		Colonos.seleccion_unidades_cambiada.connect(_on_seleccion_unidades_cambiada)
@@ -230,12 +264,16 @@ func set_vista(primera_persona: bool) -> void:
 			Colonos.limpiar_seleccion_civil()
 		_panel_unidad.cerrar()
 		_recuadro_seleccion.visible = false
+		actualizar_panel_grupos_tropas()
 	else:
 		_ventana_poblacion.restaurar()
 		_ventana_ocupaciones.restaurar()
 		_ventana_almacen.restaurar()
 		_ventana_energia.restaurar()
 		_ventana_moral.restaurar()
+		set_crosshair_combate(false)
+		if _panel_grupos_tropas != null:
+			_panel_grupos_tropas.visible = false
 		if Colonos != null and not Colonos.unidades_seleccionadas.is_empty():
 			abrir_panel_unidad(Colonos.unidades_seleccionadas)
 	# La ventana del baúl solo tiene sentido junto al baúl que la abrió: al
@@ -599,8 +637,66 @@ func _on_seleccion_unidades_cambiada(ids: Array) -> void:
 			_panel_unidad.cerrar()
 		else:
 			abrir_panel_unidad(ids)
+		if _panel_grupos_tropas != null:
+			_panel_grupos_tropas.visible = false
 	else:
 		_panel_unidad.cerrar()
+		actualizar_panel_grupos_tropas()
+
+
+func configurar_hotbar_modo_especial(items: Array) -> void:
+	if _hotbar != null and _hotbar.has_method("configurar_modo_especial"):
+		_hotbar.configurar_modo_especial(items)
+
+
+func restaurar_hotbar_bloques() -> void:
+	if _hotbar != null and _hotbar.has_method("restaurar_bloques"):
+		_hotbar.restaurar_bloques()
+
+
+func set_crosshair_combate(activo: bool) -> void:
+	if _crosshair_combate != null:
+		_crosshair_combate.visible = activo and (_hotbar == null or _hotbar.visible)
+
+
+func crosshair_combate() -> Control:
+	return _crosshair_combate
+
+
+func panel_grupos_tropas() -> PanelContainer:
+	return _panel_grupos_tropas
+
+
+func actualizar_panel_grupos_tropas() -> void:
+	if _panel_grupos_tropas == null or _caja_grupos_tropas == null:
+		return
+	if _hotbar == null or not _hotbar.visible or Colonos == null:
+		_panel_grupos_tropas.visible = false
+		return
+	var grupos: Array[Dictionary] = Colonos.grupos_militares_seleccionados()
+	if grupos.is_empty():
+		_panel_grupos_tropas.visible = false
+		return
+	for hijo in _caja_grupos_tropas.get_children():
+		hijo.queue_free()
+	var tit := TemaHUD.etiqueta(Strings.t("UNIDAD_GRUPOS_TITULO"))
+	tit.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+	_caja_grupos_tropas.add_child(tit)
+	for i in range(mini(grupos.size(), 9)):
+		var g: Dictionary = grupos[i]
+		var rango: String = str(g.get("rango", "soldado_raso"))
+		var cant: int = int(g.get("cantidad", 0))
+		var nom_rango: String = Strings.t("RANGO_SOLDADO_RASO") if rango == "soldado_raso" else rango.replace("_", " ").capitalize()
+		var activo: bool = (Colonos.subgrupo_activo == rango)
+		var lbl := TemaHUD.etiqueta("[Shift+%d] %s x%d" % [i + 1, nom_rango, cant])
+		if activo:
+			lbl.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DORADO_SUAVE)
+		_caja_grupos_tropas.add_child(lbl)
+	if Colonos.subgrupo_activo != "":
+		var lbl_reset := TemaHUD.etiqueta("[Shift+0] *")
+		lbl_reset.add_theme_font_size_override("font_size", 11)
+		_caja_grupos_tropas.add_child(lbl_reset)
+	_panel_grupos_tropas.visible = true
 
 
 ## Ventana de interacción del baúl (E apuntando al depósito de un puesto,

@@ -2665,7 +2665,7 @@ func _procesar_clic_derecho_militar(posicion_pantalla: Vector2, con_shift: bool)
 		"atacar":
 			var uid := _unidad_bajo_mouse(posicion_pantalla)
 			if uid != -1:
-				Colonos.ordenar_atacar("colono", uid, celda3d)
+				Colonos.ordenar_atacar("unidad", uid, celda3d)
 			else:
 				Colonos.ordenar_atacar("edificio", id_ed, celda3d)
 		"proteger":

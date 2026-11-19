@@ -2217,7 +2217,9 @@ func ordenar_seguir(objetivo_tipo: String = "avatar", objetivo_id: int = -1) -> 
 	if mil.is_empty():
 		return
 	var celda_obj := _resolver_celda_objetivo(objetivo_tipo, objetivo_id)
-	var destinos := _destinos_formacion(celda_obj, mil.size(), {celda_obj: true}) if celda_obj != INVALIDA else []
+	var destinos: Array[Vector3i] = []
+	if celda_obj != INVALIDA:
+		destinos = _destinos_formacion(celda_obj, mil.size(), {celda_obj: true})
 	for i in range(mil.size()):
 		if objetivo_tipo == "unidad" and mil[i] == objetivo_id:
 			continue

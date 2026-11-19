@@ -1708,5 +1708,87 @@ func ejecutar_pruebas() -> void:
 	obras_f.prioridad_obra_cambiada.emit(20, 2)
 	assert(c_libre["tarea"].is_empty(), "obrero libera tarea de menor prioridad al subir otra a Alta")
 
-	print("\n=== Las 59 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 57: Cuartel (4->4 sin merodear), selección, órdenes y fuego amigo (Fase 4) ===")
+	var ciu57: Node = CiudadScript.new()
+	ciu57.registrar_edificio_residencial(1, [2])
+	ciu57.alternar_colonizable(1)
+	var col57: Node = _nuevo_con_puesto(ciu57)
+	var esq_c57 := Vector2i(2, 2)
+	col57.economia.registrar_puesto(esq_c57, "cuartel", 4, 4, {}, {}, Vector2i(3, 1))
+	assert(ciu57.capacidad_militares == 16)
+	ciu57.demografia["desempleado"] = 4
+	col57.reconciliar()
+	for _i in range(4):
+		assert(col57.contratar(esq_c57, "aprendiz"))
+	col57.economia.cohorte_graduada.emit(esq_c57, [1, 2, 3, 4])
+	assert(ciu57.demografia["militar"] == 4, "los 4 reclutas se gradúan como 4 militares sin pérdida")
+	assert(is_equal_approx(ciu57.vivienda_ocupada, 0.0), "militares no ocupan camas residenciales")
+	assert(col57.colonos.size() == 4)
+	for cid in col57.colonos:
+		assert(col57.colonos[cid]["tipo"] == "militar" and col57.colonos[cid]["rango"] == "soldado_raso")
+		assert(col57.colonos[cid]["salud"] == col57.Ajustes.SALUD_MILITAR)
+		assert(col57.colonos[cid]["cuartel_origen"] == esq_c57)
+
+	# Sin orden, los militares ya en el exterior no merodean
+	for cid in col57.colonos:
+		col57.ocupadas.erase(col57.colonos[cid]["celda"])
+		col57.colonos[cid]["celda"] = Vector3i(cid, 1, 0)
+		col57.ocupadas[col57.colonos[cid]["celda"]] = cid
+	for _step in range(30):
+		col57.avanzar(0.1)
+	for cid in col57.colonos:
+		assert(col57.colonos[cid]["ruta"].is_empty() and not col57.colonos[cid]["moviendo"], "militares graduados no merodean")
+
+	# Selección, subgrupos y órdenes
+	col57.seleccionar_unidades([1, 2, 3])
+	assert(col57.militares_seleccionados().size() == 3)
+	assert(col57.grupos_militares_seleccionados().size() == 1 and col57.grupos_militares_seleccionados()[0]["cantidad"] == 3)
+	col57.ordenar_mover(Vector3i(7, 1, 7), false)
+	for cid in [1, 2, 3]:
+		assert(col57.colonos[cid]["orden_militar"].get("tipo") == "mover")
+	# Review Focus #4: ordenar mover solo_uno deja intactos a los demás
+	col57.ordenar_mantener()
+	col57.ordenar_mover(Vector3i(8, 1, 8), true)
+	var movidos_57 := 0
+	var mantenidos_57 := 0
+	for cid in [1, 2, 3]:
+		if col57.colonos[cid]["orden_militar"].get("tipo") == "mover":
+			movidos_57 += 1
+		elif col57.colonos[cid]["orden_militar"].get("tipo") == "mantener":
+			mantenidos_57 += 1
+	assert(movidos_57 == 1 and mantenidos_57 == 2, "solo_uno mueve exactamente 1 soldado y deja el resto en su estado")
+
+	# Patrullar (añadir y reiniciar) y postura
+	col57.ordenar_patrullar(Vector3i(6, 1, 6), true)
+	assert(col57.colonos[1]["orden_militar"]["waypoints"].size() == 2)
+	col57.ordenar_patrullar(Vector3i(7, 1, 7), false)
+	assert(col57.colonos[1]["orden_militar"]["waypoints"].size() == 3)
+	col57.ordenar_patrullar(Vector3i(5, 1, 5), true)
+	assert(col57.colonos[1]["orden_militar"]["waypoints"].size() == 2, "reiniciar patrulla crea ruta de 2 waypoints desde posición actual")
+	col57.establecer_postura_seleccion("agresivo")
+	assert(col57.colonos[1]["postura"] == "agresivo")
+
+	# Seguir avatar y limpiar selección civil
+	col57.actualizar_avatar(Vector3i(5, 1, 5), Vector3.ZERO)
+	col57.ordenar_seguir("avatar", -1)
+	assert(col57.colonos[1]["orden_militar"]["tipo"] == "seguir")
+	var id_civil: int = col57.agregar_colono("desempleado", Vector3i(8, 1, 1), 1)
+	col57.seleccionar_unidades([id_civil])
+	col57.limpiar_seleccion_civil()
+	assert(col57.unidades_seleccionadas.is_empty(), "limpiar_seleccion_civil debe quitar civiles")
+
+	# Review Focus #3: Ataque fuego amigo hasta baja purga selección y órdenes
+	col57.seleccionar_unidades([1])
+	col57.ordenar_atacar("unidad", 4, col57.colonos[4]["celda"])
+	col57.ocupadas.erase(col57.colonos[1]["celda"])
+	col57.colonos[1]["celda"] = col57.colonos[4]["celda"] + Vector3i(1, 0, 0)
+	col57.ocupadas[col57.colonos[1]["celda"]] = 1
+	col57.colonos[1]["ruta"].clear()
+	col57.colonos[1]["busqueda"] = {}
+	for _t in range(7):
+		col57.avanzar(1.0)
+	assert(not col57.colonos.has(4), "unidad 4 debe morir tras recibir suficiente daño")
+	assert(col57.colonos[1]["orden_militar"].is_empty(), "orden atacar se limpia al morir el objetivo")
+
+	print("\n=== Las 60 pruebas de Colonos pasaron correctamente ===")
 

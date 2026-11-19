@@ -14,6 +14,7 @@ func ejecutar_pruebas() -> void:
 	test_cache_metadatos_partidas()
 	test_guardado_rapido()
 	test_guardar_modificar_y_cargar()
+	test_persistencia_militar_fase4()
 	test_eliminar_partida()
 
 
@@ -86,6 +87,42 @@ func test_guardar_modificar_y_cargar() -> void:
 	assert(abs(Ciudad.moral - 85.0) < 0.1, "moral debe restaurarse a 85.0.")
 
 	print("OK: Serialización, exportación y restauración completa.")
+
+
+func test_persistencia_militar_fase4() -> void:
+	Ciudad.reiniciar()
+	Colonos.reiniciar()
+	Ciudad.registrar_cuartel(55, 4)
+	Ciudad.demografia["militar"] = 2
+	var m1: int = Colonos.agregar_colono("militar", Vector3i(10, 1, 10), -1)
+	var m2: int = Colonos.agregar_colono("militar", Vector3i(12, 1, 12), -1)
+	Colonos.seleccionar_unidades([m1, m2])
+	Colonos.establecer_subgrupo_activo("soldado_raso")
+	Colonos.establecer_postura_seleccion("agresivo")
+	Colonos.colonos[m1]["salud"] = 90.0
+	Colonos.colonos[m1]["cuartel_origen"] = Vector2i(10, 10)
+	Colonos.colonos[m1]["orden_militar"] = {
+		"tipo": "patrullar",
+		"waypoints": [Vector3i(10, 1, 10), Vector3i(20, 1, 20)],
+		"waypoint_idx": 1,
+		"waypoint_dir": 1,
+	}
+
+	var guardado := GestorPartida.guardar_partida("prueba_militar_f4.json", "F4 Test")
+	assert(guardado, "Debe guardar partida con estado militar Fase 4.")
+
+	Colonos.reiniciar()
+	Ciudad.reiniciar()
+	assert(GestorPartida.cargar_partida("prueba_militar_f4.json"), "Debe cargar partida Fase 4.")
+	assert(Ciudad.cuarteles_registrados.has(55) and Ciudad.capacidad_militares == 16)
+	assert(Colonos.unidades_seleccionadas == [m1, m2], "La selección de unidades debe persistir.")
+	assert(Colonos.subgrupo_activo == "soldado_raso")
+	assert(is_equal_approx(Colonos.colonos[m1]["salud"], 90.0))
+	assert(Colonos.colonos[m1]["postura"] == "agresivo")
+	assert(Colonos.colonos[m1]["cuartel_origen"] == Vector2i(10, 10))
+	assert(Colonos.colonos[m1]["orden_militar"]["waypoints"][1] == Vector3i(20, 1, 20))
+	GestorPartida.eliminar_partida("prueba_militar_f4.json")
+	print("OK: Persistencia militar de Fase 4 (cuarteles, salud, órdenes, selección).")
 
 
 func test_eliminar_partida() -> void:

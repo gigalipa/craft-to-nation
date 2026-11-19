@@ -18,6 +18,8 @@ signal colono_retirado(id: int)
 ## Una escuela graduó a una cohorte: "cantidad" colonos pasaron a técnico (el que sobraba se fue).
 ## ponytail: solo existe la escuela técnica; con la de especialistas se añadirá el tipo destino.
 signal tecnicos_formados(cantidad: int)
+signal seleccion_unidades_cambiada(ids: Array[int])
+signal edificio_danado(id_edificio: int, salud_restante: float)
 
 ## Valor centinela de "no hay celda": una celda imposible.
 const INVALIDA := Vector3i(999999, 999999, 999999)
@@ -123,6 +125,11 @@ var celdas_avatar: Dictionary = {}
 ## id_proyecto -> {"destino": Vector3i, "requeridos": int, "edificio_id": String, "miembros": Array[int]}
 var comisiones_activas: Dictionary = {}
 
+## Selección persistente entre cámara cenital y 1ª persona, subgrupo activo en modo comandante y salud de edificios atacados.
+var unidades_seleccionadas: Array[int] = []
+var subgrupo_activo: String = ""
+var salud_edificios: Dictionary = {}
+
 var _siguiente_id := 1
 var _buscador: RefCounted = null
 var _nodos_libres := 0  # lo que queda del presupuesto NODOS_POR_FRAME en esta llamada a avanzar()
@@ -161,13 +168,20 @@ func agregar_colono(tipo: String, celda: Vector3i, hogar: int = -1) -> int:
 	var id := _siguiente_id
 	_siguiente_id += 1
 	var ruta: Array[Vector3i] = []
+	var es_militar: bool = (tipo == "militar")
+	var salud_base: float = Ajustes.SALUD_MILITAR if es_militar else Ajustes.SALUD_CIVIL
 	colonos[id] = {
-		"id": id, "tipo": tipo, "hogar": hogar,
+		"id": id, "tipo": tipo, "hogar": -1 if es_militar else hogar,
 		"celda": celda, "posicion": _centro_de(celda),
 		"ruta": ruta, "progreso": 0.0, "moviendo": false,
 		"espera": 0.0, "bloqueo": 0.0,
 		"evacuando": -1, "ruta_de_evacuacion": false,
 		"trabajo": {}, "tarea": {}, "carga": {}, "fase": "", "fallos_servicio": 0,
+		"salud_max": salud_base, "salud": salud_base,
+		"rango": "soldado_raso" if es_militar else "",
+		"cuartel_origen": Vector2i(-1, -1),
+		"postura": "defensivo",
+		"orden_militar": {},
 	}
 	ocupadas[celda] = id
 	colono_creado.emit(id)
@@ -197,9 +211,14 @@ func reconciliar() -> void:
 				if _ids_de_tipo(otro_tipo).size() < metas[otro_tipo]:
 					var id_a_mover: int = existentes.pop_back()
 					colonos[id_a_mover]["tipo"] = otro_tipo
-					if colonos[id_a_mover].get("hogar", -1) != -1 and not ciudad.edificios_residenciales.has(colonos[id_a_mover]["hogar"]):
+					if otro_tipo == "militar":
 						colonos[id_a_mover]["hogar"] = -1
-					if otro_tipo == "desempleado" or colonos[id_a_mover].get("hogar", -1) == -1:
+						colonos[id_a_mover]["salud_max"] = Ajustes.SALUD_MILITAR
+						colonos[id_a_mover]["salud"] = Ajustes.SALUD_MILITAR
+						colonos[id_a_mover]["rango"] = "soldado_raso"
+					elif colonos[id_a_mover].get("hogar", -1) != -1 and not ciudad.edificios_residenciales.has(colonos[id_a_mover]["hogar"]):
+						colonos[id_a_mover]["hogar"] = -1
+					if otro_tipo == "desempleado" or (otro_tipo != "militar" and colonos[id_a_mover].get("hogar", -1) == -1):
 						if not colonos[id_a_mover]["trabajo"].is_empty():
 							economia.liberar(id_a_mover)
 							colonos[id_a_mover]["trabajo"] = {}
@@ -262,6 +281,18 @@ func _retirar(id: int) -> void:
 	if colono["moviendo"] and not colono["ruta"].is_empty():
 		ocupadas.erase(colono["ruta"][0])
 	colonos.erase(id)
+	# Review Focus #3: purgar de selección y de órdenes activas que lo tuvieran como objetivo
+	var cambio_sel := false
+	if unidades_seleccionadas.has(id):
+		unidades_seleccionadas.erase(id)
+		cambio_sel = true
+	for otro in colonos.values():
+		var ord: Dictionary = otro.get("orden_militar", {})
+		if not ord.is_empty() and ord.get("objetivo_tipo", "") == "unidad" and int(ord.get("objetivo_id", -1)) == id:
+			otro["orden_militar"] = {}
+			_dejar_lo_que_hacia(otro)
+	if cambio_sel:
+		seleccion_unidades_cambiada.emit(unidades_seleccionadas.duplicate())
 	colono_retirado.emit(id)
 
 
@@ -321,12 +352,12 @@ func _elegir_hogar(tipo: String = "desempleado") -> int:
 
 func _reasignar_hogares() -> void:
 	for c in colonos.values():
-		if c["hogar"] == -1 or not ciudad.edificios_residenciales.has(c["hogar"]):
+		if c["tipo"] == "militar" or c["hogar"] == -1 or not ciudad.edificios_residenciales.has(c["hogar"]):
 			c["hogar"] = -1
 	var sin_techo_tope: int = ciudad.sin_techo if ciudad != null and ciudad.get("sin_techo") != null else 0
 	var candidatos_sin_hogar: Array[Dictionary] = []
 	for c in colonos.values():
-		if c["hogar"] == -1:
+		if c["tipo"] != "militar" and c["hogar"] == -1:
 			candidatos_sin_hogar.append(c)
 	var con_cama: int = max(0, candidatos_sin_hogar.size() - sin_techo_tope)
 	for i in range(candidatos_sin_hogar.size()):
@@ -389,6 +420,8 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 		c["busqueda"] = {}  # la búsqueda en curso partió de una celda que dejará de ser la suya
 		_avanzar_evacuacion(c, delta)
 		return
+	if c["tipo"] == "militar" and _procesar_combate_y_seguimiento_militar(c, delta):
+		return
 	if c["espera"] > 0.0:
 		if c["trabajo"].is_empty() and c["tarea"].is_empty() and not _es_sin_techo(c) and (c["tipo"] == "desempleado" or c["tipo"] == "obrero" or c["tipo"] == "tecnico"):
 			if obras != null and obras.has_method("hay_obras_pendientes") and obras.hay_obras_pendientes():
@@ -409,7 +442,9 @@ func _avanzar_colono(c: Dictionary, delta: float) -> void:
 			_iniciar_busqueda_comision(c, c["tarea"]["destino"])
 			return
 	if c["ruta"].is_empty():
-		if c["trabajo"].is_empty():
+		if c["tipo"] == "militar":
+			_decidir_militar(c)
+		elif c["trabajo"].is_empty():
 			_decidir_ocioso(c)
 		else:
 			_decidir_trabajo(c)
@@ -990,6 +1025,8 @@ func _celda_aparicion() -> Vector3i:
 
 
 func _es_sin_techo(c: Dictionary) -> bool:
+	if c.get("tipo", "") == "militar":
+		return false
 	return ciudad != null and ciudad.get("sin_techo") != null and ciudad.sin_techo > 0 and c.get("hogar", -1) == -1
 
 
@@ -1112,6 +1149,7 @@ func _on_trabajadores_liberados(ids: Array) -> void:
 func _on_cohorte_graduada(esquina: Vector2i, ids: Array) -> void:
 	var escuela: Dictionary = Recoleccion.ESCUELAS[economia.puestos[esquina]["tipo"]]
 	var salen: int = ciudad.TIPOS_POBLACION[escuela["destino"]]["x_cama"]
+	var es_militar: bool = (escuela["destino"] == "militar")
 	var graduados := 0
 	var ordenados: Array = ids.duplicate()
 	ordenados.sort()
@@ -1126,13 +1164,21 @@ func _on_cohorte_graduada(esquina: Vector2i, ids: Array) -> void:
 			c["carga"] = {}
 			c["fase"] = ""
 			c["fallos_servicio"] = 0
+			if es_militar:
+				c["hogar"] = -1
+				c["salud_max"] = Ajustes.SALUD_MILITAR
+				c["salud"] = Ajustes.SALUD_MILITAR
+				c["rango"] = "soldado_raso"
+				c["cuartel_origen"] = esquina
+				c["postura"] = "defensivo"
+				c["orden_militar"] = {}
 			_dejar_lo_que_hacia(c)
 			graduados += 1
 		else:
 			if graduados >= salen and ciudad.demografia[escuela["origen"]] > 0:
 				ciudad.demografia[escuela["origen"]] -= 1
 			_retirar(id)
-	if graduados > 0:
+	if graduados > 0 and not es_militar:
 		tecnicos_formados.emit(graduados)
 
 
@@ -1910,6 +1956,472 @@ func reconciliar_tripulacion_puesto(esquina: Vector2i) -> void:
 
 
 # ==============================================================================
+# FASE 4: SELECCIÓN, SUBGRUPOS, ÓRDENES MILITARES Y COMBATE
+# ==============================================================================
+
+func seleccionar_unidades(ids: Array, anadir: bool = false) -> void:
+	var validos: Array[int] = []
+	for id_raw in ids:
+		var cid := int(id_raw)
+		if colonos.has(cid) and not validos.has(cid):
+			validos.append(cid)
+
+	if anadir:
+		for cid in validos:
+			if unidades_seleccionadas.has(cid):
+				unidades_seleccionadas.erase(cid)
+			else:
+				unidades_seleccionadas.append(cid)
+	else:
+		unidades_seleccionadas = validos
+
+	# Si hay militares y civiles mezclados con >1 unidad, conservar solo los militares
+	if unidades_seleccionadas.size() > 1:
+		var solo_mil: Array[int] = []
+		for cid in unidades_seleccionadas:
+			if colonos.has(cid) and colonos[cid].get("tipo", "") == "militar":
+				solo_mil.append(cid)
+		if not solo_mil.is_empty():
+			unidades_seleccionadas = solo_mil
+
+	if subgrupo_activo != "":
+		var sigue := false
+		for cid in militares_seleccionados(false):
+			if colonos[cid].get("rango", "") == subgrupo_activo:
+				sigue = true
+				break
+		if not sigue:
+			subgrupo_activo = ""
+
+	seleccion_unidades_cambiada.emit(unidades_seleccionadas.duplicate())
+
+
+func limpiar_seleccion() -> void:
+	if unidades_seleccionadas.is_empty() and subgrupo_activo == "":
+		return
+	unidades_seleccionadas.clear()
+	subgrupo_activo = ""
+	seleccion_unidades_cambiada.emit(unidades_seleccionadas.duplicate())
+
+
+func limpiar_seleccion_civil() -> void:
+	var nueva: Array[int] = []
+	var cambio := false
+	for cid in unidades_seleccionadas:
+		if colonos.has(cid) and colonos[cid].get("tipo", "") == "militar":
+			nueva.append(cid)
+		else:
+			cambio = true
+	if cambio:
+		unidades_seleccionadas = nueva
+		seleccion_unidades_cambiada.emit(unidades_seleccionadas.duplicate())
+
+
+func militares_seleccionados(aplicar_subgrupo: bool = true) -> Array[int]:
+	var res: Array[int] = []
+	for cid in unidades_seleccionadas:
+		if not colonos.has(cid):
+			continue
+		var c: Dictionary = colonos[cid]
+		if c.get("tipo", "") != "militar":
+			continue
+		if aplicar_subgrupo and subgrupo_activo != "" and c.get("rango", "") != subgrupo_activo:
+			continue
+		res.append(cid)
+	return res
+
+
+func grupos_militares_seleccionados() -> Array[Dictionary]:
+	var por_rango: Dictionary = {}
+	var orden_rangos: Array[String] = []
+	for cid in militares_seleccionados(false):
+		var r: String = str(colonos[cid].get("rango", "soldado_raso"))
+		if r == "":
+			r = "soldado_raso"
+		if not por_rango.has(r):
+			por_rango[r] = []
+			orden_rangos.append(r)
+		(por_rango[r] as Array).append(cid)
+	var grupos: Array[Dictionary] = []
+	for r in orden_rangos:
+		var ids_r: Array = por_rango[r]
+		grupos.append({"rango": r, "cantidad": ids_r.size(), "ids": ids_r})
+	return grupos
+
+
+func establecer_subgrupo_activo(rango: String) -> void:
+	if rango == "" or subgrupo_activo == rango:
+		subgrupo_activo = ""
+	else:
+		subgrupo_activo = rango
+	seleccion_unidades_cambiada.emit(unidades_seleccionadas.duplicate())
+
+
+func establecer_postura_seleccion(postura: String) -> void:
+	if not ["pasivo", "defensivo", "agresivo"].has(postura):
+		return
+	for cid in militares_seleccionados():
+		colonos[cid]["postura"] = postura
+	seleccion_unidades_cambiada.emit(unidades_seleccionadas.duplicate())
+
+
+func _altura_superficie_transitable(x: int, z: int, y_ref: int) -> Vector3i:
+	if mundo != null and mundo.has_method("altura_en"):
+		var y_sup: int = mundo.altura_en(x, z)
+		if y_sup >= 0:
+			var c_sup := Vector3i(x, y_sup + 1, z)
+			if _buscador == null or _buscador.es_transitable(c_sup):
+				return c_sup
+	var c_ref := Vector3i(x, y_ref, z)
+	if _buscador != null and _buscador.es_transitable(c_ref):
+		return c_ref
+	return INVALIDA
+
+
+func _destinos_formacion(centro: Vector3i, cantidad: int, evitar: Dictionary = {}) -> Array[Vector3i]:
+	var res: Array[Vector3i] = []
+	if cantidad <= 0 or centro == INVALIDA:
+		return res
+	var vistos := {}
+	var max_radio := maxi(3, int(ceil(sqrt(float(cantidad)))) + 2)
+	for radio in range(0, max_radio + 1):
+		for dx in range(-radio, radio + 1):
+			for dz in range(-radio, radio + 1):
+				if maxi(absi(dx), absi(dz)) != radio:
+					continue
+				var cand := _altura_superficie_transitable(centro.x + dx, centro.z + dz, centro.y)
+				if cand == INVALIDA or vistos.has(cand) or evitar.has(cand):
+					continue
+				vistos[cand] = true
+				res.append(cand)
+				if res.size() >= cantidad:
+					return res
+	while res.size() < cantidad:
+		res.append(centro)
+	return res
+
+
+func _mover_militar_a(c: Dictionary, objetivo: Vector3i) -> void:
+	if objetivo == INVALIDA or _buscador == null:
+		return
+	if _buscador.has_method("terminar_en_curso"):
+		_buscador.terminar_en_curso(c["id"])
+	var vacia: Array[Vector3i] = []
+	c["ruta"] = vacia
+	c["espera"] = 0.0
+	if c["celda"] == objetivo:
+		c["busqueda"] = {}
+		return
+	c["busqueda"] = {"grupos": [[objetivo]], "actual": null, "tope": BuscadorRutas.MAX_NODOS_EXPANDIDOS, "deambular": true}
+	var prev_libres := _nodos_libres
+	_nodos_libres = maxi(_nodos_libres, NODOS_POR_FRAME)
+	_avanzar_busqueda(c)
+	if prev_libres == 0:
+		_nodos_libres = 0
+
+
+func ordenar_mover(celda: Vector3i, solo_uno: bool = false) -> void:
+	var mil := militares_seleccionados()
+	if mil.is_empty() or celda == INVALIDA:
+		return
+	var destino_base := _altura_superficie_transitable(celda.x, celda.z, celda.y)
+	if destino_base == INVALIDA:
+		destino_base = celda
+	if solo_uno:
+		var elegido: int = mil[0]
+		var mejor_dist := INF
+		for cid in mil:
+			var d: float = Vector3(colonos[cid]["celda"]).distance_to(Vector3(destino_base))
+			if d < mejor_dist:
+				mejor_dist = d
+				elegido = cid
+		var c: Dictionary = colonos[elegido]
+		c["orden_militar"] = {"tipo": "mover", "destino": destino_base}
+		_mover_militar_a(c, destino_base)
+		return
+	var destinos := _destinos_formacion(destino_base, mil.size())
+	for i in range(mil.size()):
+		var c: Dictionary = colonos[mil[i]]
+		c["orden_militar"] = {"tipo": "mover", "destino": destinos[i]}
+		_mover_militar_a(c, destinos[i])
+
+
+func ordenar_patrullar(celda: Vector3i, reiniciar: bool = false) -> void:
+	var mil := militares_seleccionados()
+	if mil.is_empty() or celda == INVALIDA:
+		return
+	var destino_base := _altura_superficie_transitable(celda.x, celda.z, celda.y)
+	if destino_base == INVALIDA:
+		destino_base = celda
+	var destinos := _destinos_formacion(destino_base, mil.size())
+	for i in range(mil.size()):
+		var c: Dictionary = colonos[mil[i]]
+		var ord: Dictionary = c.get("orden_militar", {})
+		var wp_dest: Vector3i = destinos[i]
+		if reiniciar or str(ord.get("tipo", "")) != "patrullar" or (ord.get("waypoints", []) as Array).size() < 2:
+			var origen_wp: Vector3i = c["celda"]
+			c["orden_militar"] = {
+				"tipo": "patrullar",
+				"waypoints": [origen_wp, wp_dest],
+				"waypoint_idx": 1,
+				"waypoint_dir": 1,
+			}
+			_mover_militar_a(c, wp_dest)
+		else:
+			var wps: Array = ord["waypoints"]
+			wps.append(wp_dest)
+
+
+func ordenar_atacar(objetivo_tipo: String, objetivo_id: int, celda: Vector3i) -> void:
+	var mil := militares_seleccionados()
+	if mil.is_empty():
+		return
+	for cid in mil:
+		if objetivo_tipo == "unidad" and cid == objetivo_id:
+			continue  # una unidad no se ataca a sí misma
+		var c: Dictionary = colonos[cid]
+		c["orden_militar"] = {
+			"tipo": "atacar",
+			"objetivo_tipo": objetivo_tipo,
+			"objetivo_id": objetivo_id,
+			"destino": celda,
+			"cooldown_ataque": 0.0,
+		}
+		var cercanos := _destinos_formacion(celda, 1, {celda: true})
+		if not cercanos.is_empty():
+			_mover_militar_a(c, cercanos[0])
+
+
+func ordenar_proteger(celda: Vector3i, edificio_id: int = -1) -> void:
+	var mil := militares_seleccionados()
+	if mil.is_empty() or celda == INVALIDA:
+		return
+	var destino_base := _altura_superficie_transitable(celda.x, celda.z, celda.y)
+	if destino_base == INVALIDA:
+		destino_base = celda
+	var destinos := _destinos_formacion(destino_base, mil.size())
+	for i in range(mil.size()):
+		var c: Dictionary = colonos[mil[i]]
+		c["postura"] = "defensivo"
+		c["orden_militar"] = {
+			"tipo": "proteger",
+			"destino": destinos[i],
+			"objetivo_tipo": "edificio" if edificio_id != -1 else "",
+			"objetivo_id": edificio_id,
+		}
+		_mover_militar_a(c, destinos[i])
+
+
+func ordenar_seguir(objetivo_tipo: String = "avatar", objetivo_id: int = -1) -> void:
+	var mil := militares_seleccionados()
+	if mil.is_empty():
+		return
+	var celda_obj := _resolver_celda_objetivo(objetivo_tipo, objetivo_id)
+	var destinos := _destinos_formacion(celda_obj, mil.size(), {celda_obj: true}) if celda_obj != INVALIDA else []
+	for i in range(mil.size()):
+		if objetivo_tipo == "unidad" and mil[i] == objetivo_id:
+			continue
+		var c: Dictionary = colonos[mil[i]]
+		var dest_i: Vector3i = destinos[i] if i < destinos.size() else c["celda"]
+		c["orden_militar"] = {
+			"tipo": "seguir",
+			"objetivo_tipo": objetivo_tipo,
+			"objetivo_id": objetivo_id,
+			"destino": dest_i,
+		}
+		if celda_obj != INVALIDA:
+			_mover_militar_a(c, dest_i)
+
+
+func ordenar_mantener() -> void:
+	for cid in militares_seleccionados():
+		var c: Dictionary = colonos[cid]
+		c["orden_militar"] = {"tipo": "mantener", "destino": c["celda"]}
+		if _buscador != null and _buscador.has_method("terminar_en_curso"):
+			_buscador.terminar_en_curso(cid)
+		c["busqueda"] = {}
+		if not c["moviendo"]:
+			var vacia: Array[Vector3i] = []
+			c["ruta"] = vacia
+
+
+func _resolver_celda_objetivo(objetivo_tipo: String, objetivo_id: int, desde: Vector3i = Vector3i.ZERO) -> Vector3i:
+	if objetivo_tipo == "avatar":
+		if not celdas_avatar.is_empty():
+			return celdas_avatar.keys()[0]
+		return INVALIDA
+	if objetivo_tipo == "unidad":
+		if colonos.has(objetivo_id):
+			return colonos[objetivo_id]["celda"]
+		return INVALIDA
+	if objetivo_tipo == "edificio" and objetivo_id != -1 and mundo != null and "edificio_a_celdas" in mundo:
+		var lista: Array = mundo.edificio_a_celdas.get(objetivo_id, [])
+		if not lista.is_empty():
+			var mejor: Vector3i = lista[0]
+			var mejor_d := INF
+			for ce: Vector3i in lista:
+				var d := Vector3(desde).distance_squared_to(Vector3(ce))
+				if d < mejor_d:
+					mejor_d = d
+					mejor = ce
+			return mejor
+	return INVALIDA
+
+
+func _procesar_combate_y_seguimiento_militar(c: Dictionary, delta: float) -> bool:
+	var ord: Dictionary = c.get("orden_militar", {})
+	if ord.is_empty():
+		return false
+	var tipo_ord: String = str(ord.get("tipo", ""))
+	if tipo_ord == "atacar":
+		var obj_tipo: String = str(ord.get("objetivo_tipo", ""))
+		var obj_id: int = int(ord.get("objetivo_id", -1))
+		var celda_obj: Vector3i = ord.get("destino", INVALIDA)
+		if obj_tipo == "unidad":
+			if not colonos.has(obj_id):
+				c["orden_militar"] = {}
+				_dejar_lo_que_hacia(c)
+				return false
+			celda_obj = colonos[obj_id]["celda"]
+			ord["destino"] = celda_obj
+		elif obj_tipo == "edificio" and obj_id != -1:
+			var celda_ed := _resolver_celda_objetivo("edificio", obj_id, c["celda"])
+			if celda_ed != INVALIDA:
+				celda_obj = celda_ed
+				ord["destino"] = celda_obj
+			elif salud_edificios.has(obj_id) and salud_edificios[obj_id] <= 0.0:
+				c["orden_militar"] = {}
+				_dejar_lo_que_hacia(c)
+				return false
+
+		if celda_obj != INVALIDA and Vector3(c["celda"]).distance_to(Vector3(celda_obj)) <= Ajustes.MILITAR_ALCANCE_ATAQUE + 0.05:
+			var vacia: Array[Vector3i] = []
+			c["ruta"] = vacia
+			c["busqueda"] = {}
+			c["espera"] = 0.0
+			ord["cooldown_ataque"] = float(ord.get("cooldown_ataque", 0.0)) - delta
+			if ord["cooldown_ataque"] <= 0.0:
+				ord["cooldown_ataque"] = Ajustes.MILITAR_COOLDOWN_ATAQUE
+				if obj_tipo == "unidad":
+					aplicar_dano_unidad(obj_id, Ajustes.MILITAR_DANO_ATAQUE)
+				elif obj_tipo == "edificio":
+					aplicar_dano_edificio(obj_id, Ajustes.MILITAR_DANO_ATAQUE, celda_obj)
+			return true
+		elif c["ruta"].is_empty() and c.get("busqueda", {}).is_empty():
+			c["espera"] = 0.0
+	elif tipo_ord == "seguir":
+		var celda_seg := _resolver_celda_objetivo(str(ord.get("objetivo_tipo", "avatar")), int(ord.get("objetivo_id", -1)))
+		if str(ord.get("objetivo_tipo", "")) == "unidad" and not colonos.has(int(ord.get("objetivo_id", -1))):
+			c["orden_militar"] = {}
+			_dejar_lo_que_hacia(c)
+			return false
+		if celda_seg != INVALIDA:
+			var dist_man: int = absi(c["celda"].x - celda_seg.x) + absi(c["celda"].z - celda_seg.z)
+			if dist_man > 3 and c["ruta"].is_empty() and c.get("busqueda", {}).is_empty():
+				c["espera"] = 0.0
+				var cands := _destinos_formacion(celda_seg, 1, {celda_seg: true})
+				if not cands.is_empty():
+					ord["destino"] = cands[0]
+					_mover_militar_a(c, cands[0])
+	return false
+
+
+func _decidir_militar(c: Dictionary) -> void:
+	if not _recuperar_si_atrapado(c):
+		return
+	var ord: Dictionary = c.get("orden_militar", {})
+	var tipo_ord: String = str(ord.get("tipo", ""))
+	if tipo_ord == "":
+		var cuartel_esq: Vector2i = c.get("cuartel_origen", Vector2i(-1, -1))
+		if cuartel_esq != Vector2i(-1, -1) and economia != null and economia.puestos.has(cuartel_esq):
+			var huella_c: Array = economia.huella_de(cuartel_esq)
+			if huella_c.has(Vector2i(c["celda"].x, c["celda"].z)):
+				var serv: Vector2i = economia.puestos[cuartel_esq].get("servicio", cuartel_esq)
+				var exteriores := _celdas_de_servicio(serv, huella_c)
+				for cand in exteriores:
+					if not _ocupada_por_otro(cand, c["id"]):
+						_mover_militar_a(c, cand)
+						return
+		return  # Los militares graduados no merodean
+	match tipo_ord:
+		"mover", "proteger":
+			var dest: Vector3i = ord.get("destino", INVALIDA)
+			if dest == INVALIDA or c["celda"] == dest:
+				if tipo_ord == "mover":
+					c["orden_militar"] = {}
+				return
+			_mover_militar_a(c, dest)
+		"patrullar":
+			var wps: Array = ord.get("waypoints", [])
+			if wps.size() < 2:
+				return
+			var idx: int = clampi(int(ord.get("waypoint_idx", 0)), 0, wps.size() - 1)
+			if c["celda"] == wps[idx]:
+				var dir: int = int(ord.get("waypoint_dir", 1))
+				if idx + dir >= wps.size() or idx + dir < 0:
+					dir = -dir
+				ord["waypoint_dir"] = dir
+				idx = clampi(idx + dir, 0, wps.size() - 1)
+				ord["waypoint_idx"] = idx
+			_mover_militar_a(c, wps[idx])
+		"atacar":
+			var dest_at: Vector3i = ord.get("destino", INVALIDA)
+			if dest_at != INVALIDA:
+				var cands_at := _destinos_formacion(dest_at, 1, {dest_at: true})
+				if not cands_at.is_empty() and c["celda"] != cands_at[0]:
+					_mover_militar_a(c, cands_at[0])
+		"seguir":
+			var dest_seg: Vector3i = ord.get("destino", INVALIDA)
+			if dest_seg != INVALIDA and c["celda"] != dest_seg:
+				_mover_militar_a(c, dest_seg)
+		"mantener":
+			return
+
+
+func aplicar_dano_unidad(id: int, dano: float) -> bool:
+	if not colonos.has(id) or dano <= 0.0:
+		return false
+	var c: Dictionary = colonos[id]
+	var nueva_salud: float = maxf(0.0, float(c.get("salud", Ajustes.SALUD_CIVIL)) - dano)
+	c["salud"] = nueva_salud
+	if nueva_salud <= 0.0:
+		var tipo_u: String = str(c.get("tipo", ""))
+		if ciudad != null and ciudad.demografia.has(tipo_u) and ciudad.demografia[tipo_u] > 0:
+			ciudad.demografia[tipo_u] -= 1
+		_retirar(id)
+		return true
+	return false
+
+
+func aplicar_dano_edificio(id_ed: int, dano: float, celda: Vector3i = INVALIDA) -> bool:
+	if dano <= 0.0:
+		return false
+	if id_ed == -1:
+		if celda != INVALIDA and mundo != null and mundo.has_method("minar_bloque"):
+			return mundo.minar_bloque(celda)
+		return false
+	if not salud_edificios.has(id_ed):
+		var salud_ini := 200.0
+		if mundo != null and "edificio_a_celdas" in mundo and mundo.edificio_a_celdas.has(id_ed):
+			salud_ini = maxf(100.0, float((mundo.edificio_a_celdas[id_ed] as Array).size()) * 2.0)
+		salud_edificios[id_ed] = salud_ini
+	salud_edificios[id_ed] = maxf(0.0, float(salud_edificios[id_ed]) - dano)
+	edificio_danado.emit(id_ed, salud_edificios[id_ed])
+	if salud_edificios[id_ed] <= 0.0:
+		if ciudad != null:
+			ciudad.retirar_edificio_residencial(id_ed)
+			ciudad.desregistrar_instalacion(id_ed)
+		if mundo != null and mundo.has_method("desdeclarar_edificio") and "edificio_a_celdas" in mundo and mundo.edificio_a_celdas.has(id_ed):
+			var celdas_ed: Array = mundo.edificio_a_celdas[id_ed].duplicate()
+			mundo.desdeclarar_edificio(id_ed)
+			for c_b: Vector3i in celdas_ed:
+				if mundo.has_method("set_cell_item"):
+					mundo.set_cell_item(c_b, GridMap.INVALID_CELL_ITEM)
+		return true
+	return false
+
+
+# ==============================================================================
 # SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
 # ==============================================================================
 
@@ -1918,6 +2430,9 @@ func reiniciar() -> void:
 	ocupadas.clear()
 	celdas_avatar.clear()
 	comisiones_activas.clear()
+	unidades_seleccionadas.clear()
+	subgrupo_activo = ""
+	salud_edificios.clear()
 	_siguiente_id = 1
 	if _buscador != null and _buscador.has_method("cancelar_todas"):
 		_buscador.cancelar_todas()
@@ -1936,6 +2451,19 @@ func exportar_estado() -> Dictionary:
 			c_dict["posicion"] = {"x": c_dict["posicion"].x, "y": c_dict["posicion"].y, "z": c_dict["posicion"].z}
 		if c_dict.has("trabajo") and c_dict["trabajo"] is Vector2i:
 			c_dict["trabajo"] = {"x": c_dict["trabajo"].x, "y": c_dict["trabajo"].y}
+		if c_dict.has("cuartel_origen") and c_dict["cuartel_origen"] is Vector2i:
+			c_dict["cuartel_origen"] = {"x": c_dict["cuartel_origen"].x, "y": c_dict["cuartel_origen"].y}
+		if c_dict.has("orden_militar") and c_dict["orden_militar"] is Dictionary:
+			var ord_e: Dictionary = (c_dict["orden_militar"] as Dictionary).duplicate(true)
+			if ord_e.has("destino") and ord_e["destino"] is Vector3i:
+				ord_e["destino"] = {"x": ord_e["destino"].x, "y": ord_e["destino"].y, "z": ord_e["destino"].z}
+			if ord_e.has("waypoints") and ord_e["waypoints"] is Array:
+				var wps_e: Array = []
+				for wp in ord_e["waypoints"]:
+					if wp is Vector3i:
+						wps_e.append({"x": wp.x, "y": wp.y, "z": wp.z})
+				ord_e["waypoints"] = wps_e
+			c_dict["orden_militar"] = ord_e
 		if c_dict.has("ruta") and c_dict["ruta"] is Array:
 			var r_arr: Array = []
 			for pt in c_dict["ruta"]:
@@ -1948,6 +2476,8 @@ func exportar_estado() -> Dictionary:
 		"siguiente_id": _siguiente_id,
 		"colonos": col_export,
 		"comisiones_activas": comisiones_activas.duplicate(true),
+		"unidades_seleccionadas": unidades_seleccionadas.duplicate(),
+		"subgrupo_activo": subgrupo_activo,
 	}
 
 
@@ -1959,14 +2489,38 @@ func importar_estado(d: Dictionary) -> void:
 		for cid_str in d["colonos"]:
 			var cid := int(cid_str)
 			var c_dict: Dictionary = (d["colonos"][cid_str] as Dictionary).duplicate(true)
-			if c_dict.has("hogar") and c_dict["hogar"] is Dictionary:
+			if c_dict.has("hogar") and c_dict["hogar"] is Dictionary and c_dict["hogar"].has("x"):
 				c_dict["hogar"] = Vector3i(int(c_dict["hogar"]["x"]), int(c_dict["hogar"]["y"]), int(c_dict["hogar"]["z"]))
-			if c_dict.has("celda") and c_dict["celda"] is Dictionary:
+			if c_dict.has("celda") and c_dict["celda"] is Dictionary and c_dict["celda"].has("x"):
 				c_dict["celda"] = Vector3i(int(c_dict["celda"]["x"]), int(c_dict["celda"]["y"]), int(c_dict["celda"]["z"]))
-			if c_dict.has("posicion") and c_dict["posicion"] is Dictionary:
+			if c_dict.has("posicion") and c_dict["posicion"] is Dictionary and c_dict["posicion"].has("x"):
 				c_dict["posicion"] = Vector3(float(c_dict["posicion"]["x"]), float(c_dict["posicion"]["y"]), float(c_dict["posicion"]["z"]))
-			if c_dict.has("trabajo") and c_dict["trabajo"] is Dictionary:
+			if c_dict.has("trabajo") and c_dict["trabajo"] is Dictionary and c_dict["trabajo"].has("x"):
 				c_dict["trabajo"] = Vector2i(int(c_dict["trabajo"]["x"]), int(c_dict["trabajo"]["y"]))
+			if c_dict.has("cuartel_origen") and c_dict["cuartel_origen"] is Dictionary and c_dict["cuartel_origen"].has("x"):
+				c_dict["cuartel_origen"] = Vector2i(int(c_dict["cuartel_origen"]["x"]), int(c_dict["cuartel_origen"]["y"]))
+			elif not c_dict.has("cuartel_origen"):
+				c_dict["cuartel_origen"] = Vector2i(-1, -1)
+			if c_dict.has("orden_militar") and c_dict["orden_militar"] is Dictionary:
+				var ord_i: Dictionary = c_dict["orden_militar"]
+				if ord_i.has("destino") and ord_i["destino"] is Dictionary and ord_i["destino"].has("x"):
+					ord_i["destino"] = Vector3i(int(ord_i["destino"]["x"]), int(ord_i["destino"]["y"]), int(ord_i["destino"]["z"]))
+				if ord_i.has("waypoints") and ord_i["waypoints"] is Array:
+					var wps_i: Array[Vector3i] = []
+					for wp in ord_i["waypoints"]:
+						if wp is Dictionary and wp.has("x"):
+							wps_i.append(Vector3i(int(wp["x"]), int(wp["y"]), int(wp["z"])))
+					ord_i["waypoints"] = wps_i
+			else:
+				c_dict["orden_militar"] = {}
+			if not c_dict.has("salud_max"):
+				var sal_def := Ajustes.SALUD_MILITAR if c_dict.get("tipo", "") == "militar" else Ajustes.SALUD_CIVIL
+				c_dict["salud_max"] = sal_def
+				c_dict["salud"] = sal_def
+			if not c_dict.has("postura"):
+				c_dict["postura"] = "defensivo"
+			if not c_dict.has("rango"):
+				c_dict["rango"] = "soldado_raso" if c_dict.get("tipo", "") == "militar" else ""
 			if c_dict.has("ruta") and c_dict["ruta"] is Array:
 				var r_arr: Array[Vector3i] = []
 				for pt in c_dict["ruta"]:
@@ -1979,4 +2533,10 @@ func importar_estado(d: Dictionary) -> void:
 
 	if d.has("comisiones_activas") and d["comisiones_activas"] is Dictionary:
 		comisiones_activas = d["comisiones_activas"].duplicate(true)
+
+	if d.has("unidades_seleccionadas") and d["unidades_seleccionadas"] is Array:
+		for raw_id in d["unidades_seleccionadas"]:
+			if colonos.has(int(raw_id)):
+				unidades_seleccionadas.append(int(raw_id))
+	subgrupo_activo = str(d.get("subgrupo_activo", ""))
 

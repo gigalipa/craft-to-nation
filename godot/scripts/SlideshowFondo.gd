@@ -59,12 +59,12 @@ func _ready() -> void:
 
 
 func _crear_texture_rect() -> TextureRect:
-	var tr := TextureRect.new()
-	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	return tr
+	var tex_rect := TextureRect.new()
+	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	return tex_rect
 
 
 func _cargar_imagenes() -> void:

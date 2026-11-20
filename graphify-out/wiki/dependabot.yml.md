@@ -1,12 +1,11 @@
 # dependabot.yml
 
-> 12 nodes · cohesion 0.44
+> 11 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)** (26 connections) — `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
-- **README.md (Craft to Nation)** (23 connections) — `README.md`
 - **SKILL.md (Skill: Craft to Nation - Nodes and Network)** (22 connections) — `.agents/skills/nodes-and-network/SKILL.md`
+- **SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))** (17 connections) — `.agents/skills/video-editor/SKILL.md`
 - **SKILL.md (Skill: Content QA (Control de Calidad))** (11 connections) — `.agents/skills/content-qa/SKILL.md`
 - **AGENTS.md (Orquestación de Agentes: Estudio de Redes Sociales y Graphify)** (7 connections) — `AGENTS.md`
 - **Skill: Social Media Strategist (Craft to Nation)** (7 connections) — `.agents/skills/social-strategist/SKILL.md`
@@ -14,23 +13,23 @@
 - **Skill: Gamedev Copywriter (Craft to Nation)** (5 connections) — `.agents/skills/gamedev-copywriter/SKILL.md`
 - **roadmap.md: Hoja de Ruta y Estado del Desarrollo (GDD v3.59)** (5 connections) — `website/wiki/src/es/dev/roadmap.md`
 - **roadmap.md: Development Roadmap & Milestone Progress (GDD v3.59)** (4 connections) — `website/wiki/src/en/dev/roadmap.md`
+- **calendario_semana_3.md** (3 connections) — `video_edition/workspaces/calendario_semana_3.md`
 - **calendario_semana_4.md** (3 connections) — `video_edition/workspaces/calendario_semana_4.md`
-- **LICENSE-CONTENT.md (Licencia del contenido)** (1 connections) — `LICENSE-CONTENT.md`
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (16 shared connections)
-- [Hotbar.gd](Hotbar.gd.md) (10 shared connections)
-- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (5 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (4 shared connections)
-- [Root.tsx](Root.tsx.md) (4 shared connections)
-- [Player.gd](Player.gd.md) (3 shared connections)
-- [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (3 shared connections)
-- [VentanaBaul.gd](VentanaBaul.gd.md) (2 shared connections)
-- [2026-09-20-fantasmas-permeables.md (Fantasmas de Obra Permeables hacia Afuera (Plan 3 de 3) Impl)](2026-09-20-fantasmas-permeables.md_Fantasmas_de_Obra_Permeables_hacia_Afuera_Plan_3_de_3_Impl.md) (2 shared connections)
-- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (2 shared connections)
-- [HUD.gd](HUD.gd.md) (2 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (17 shared connections)
+- [ajustes.gd](ajustes.gd.md) (4 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (3 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (3 shared connections)
+- [qa_checker.py](qa_checker.py.md) (2 shared connections)
+- [TemaHUD.gd](TemaHUD.gd.md) (1 shared connections)
+- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (1 shared connections)
+- [2. Shorts Virales (Formato Vertical 9:16 - 1080x1920)](2._Shorts_Virales_Formato_Vertical_9-16_-_1080x1920.md) (1 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
+- [PanelLampara.gd](PanelLampara.gd.md) (1 shared connections)
+- [BarraModos.gd / BarraModos.pagina_actual()](BarraModos.gd_-_BarraModos.pagina_actual.md) (1 shared connections)
+- [video_editor_studio.py](video_editor_studio.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -39,18 +38,17 @@
 - `.agents/skills/nodes-and-network/SKILL.md`
 - `.agents/skills/social-strategist/SKILL.md`
 - `.agents/skills/social/SKILL.md`
+- `.agents/skills/video-editor/SKILL.md`
 - `AGENTS.md`
-- `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
-- `LICENSE-CONTENT.md`
-- `README.md`
+- `video_edition/workspaces/calendario_semana_3.md`
 - `video_edition/workspaces/calendario_semana_4.md`
 - `website/wiki/src/en/dev/roadmap.md`
 - `website/wiki/src/es/dev/roadmap.md`
 
 ## Audit Trail
 
-- EXTRACTED: 74 (81%)
-- INFERRED: 17 (19%)
+- EXTRACTED: 63 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

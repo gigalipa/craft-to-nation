@@ -1,13 +1,13 @@
 ---
-title: "Hoja de Ruta y Estado del Desarrollo (GDD v3.61)"
+title: "Hoja de Ruta y Estado del Desarrollo (GDD v3.62)"
 description: "Estado técnico del desarrollo de Craft to Nation: fases 0 a 7, progreso detallado de la Fase 3 (Industria y Recursos) e hitos verificados."
 ---
 
-# Hoja de Ruta (Roadmap) y Estado del Desarrollo (GDD v3.61)
+# Hoja de Ruta (Roadmap) y Estado del Desarrollo (GDD v3.62)
 
 ![Vista táctica de defensa y expansión urbana](/assets/comparison-aerial.webp)
 
-La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido en la **Sección 11 del GDD v3.61** y el protocolo de verificación en vivo ([`docs/Live_Verifications.md`](https://github.com/gigalipa/craft-to-nation)), sustentado en **35 escenas de prueba automatizadas al 100 % en verde**.
+La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido en la **Sección 11 del GDD v3.62** y el protocolo de verificación en vivo ([`docs/Live_Verifications.md`](https://github.com/gigalipa/craft-to-nation)), sustentado en **37 escenas de prueba automatizadas al 100 % en verde**.
 
 ---
 
@@ -17,16 +17,16 @@ La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido 
 [Fase 0: Lógica Pura (PoC 1 & PoC 2)] ──────────────────────────────────> COMPLETADA ✅
 [Fase 1: Prototipo Visual 1ra Persona y Validación de Volumen (PoC 3)] ─> VERIFICADA ✅
 [Fase 2: Ciudad, Demografía, Zonificación y Colonos NPC (PoC 4 & 8)] ───> COMPLETA ✅
-[Fase 3: Mundo 200×200, Industrias, Fluidos, Moral, HUD y Audio SFX] ──> EN CIERRE FINAL 🟢 (99%)
-[Fase 4: Cámara Dual de Combate y Selección de Tropas (PoC 7)] ─────────> PLANIFICADA ⏳
-[Fase 5: Logística Avanzada, Carretas, Ferrocarril y Puentes (PoC 8–10)]> PLANIFICADA ⏳
+[Fase 3: Mundo 200×200, Industrias, Fluidos, Moral, HUD y Audio SFX] ──> COMPLETADA ✅
+[Fase 4: Cámara Dual, Cuartel Militar y Comando Híbrido (PoC 7)] ───────> COMPLETADA ✅
+[Fase 5: Logística Avanzada, Carretas, Ferrocarril y Puentes (PoC 8–10)]> SIGUIENTE HITO ⏳
 [Fase 6: Combate, Asedios, IA Enemiga y Sucesión de Avatar] ────────────> PLANIFICADA ⏳
 [Fase 7: Multijugador LAN y Soberanía Portátil de Núcleos] ─────────────> HORIZONTE FUTURO 🚀
 ```
 
 ---
 
-## 2. Hitos Completados (Fases 0 a 3 — GDD v3.61)
+## 2. Hitos Completados (Fases 0 a 3 — GDD v3.62)
 
 ### Fase 0 y Fase 1: Motor Vóxel, Avatar en Primera Persona y Validación Volumétrica
 - [x] Mundo procedural finito de **200×200 celdas** (`GeneradorMundo.gd`) con altura máxima `y = 130`, **24 capas de subsuelo** hasta la roca madre (`bedrock`), 2 picos montañosos, ríos con corriente y cascadas, lagos y mares.
@@ -53,16 +53,28 @@ La evolución técnica de **Craft to Nation** sigue el plan de 7 fases definido 
 - [x] **Motor de Audio Espacial, Catálogo Integral de SFX y Exportación Windows (2026-11-06 — v3.60):** Integración del autoload singleton `Sonidos.gd` con pools circulares de 16 reproductores 2D y 16 reproductores 3D con atenuación inversa hasta 35m y pitch modulation de ±5%; catálogo de 102 efectos de sonido en 8 familias funcionales (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`); pipeline de exportación standalone de Windows (`tools/export_windows.ps1` con icono oficial `godot/icon.png`); y suite de pruebas unitarias `SonidosTest.tscn`. Las 35 escenas de prueba de Godot se mantienen al 100% en verde.
 - [x] **Menú de Inicio, Guardado Atómico de Partidas, Menú de Pausa (F11), BGM y Configuración Persistente (2026-11-07 — v3.61):** Escena principal de inicio `MenuInicio.tscn` con fondo dinámico tipo slideshow (`SlideshowFondo.gd`) y música de menú (`The_Architect_s_Decree`), singleton autoload `GestorPartida.gd` para serialización y carga atómica en `user://saves/` con ranura de guardado rápido (`quicksave.json`) y metadatos, menú de pausa contextual en juego `MenuPausa.gd` con tecla <kbd>F11</kbd> y ajuste en caliente, singleton `Configuracion.gd` con persistencia de preferencias (SFX, BGM, sensibilidad, FOV, idioma) en `user://configuracion.json`, pantalla de carga `PantallaCarga.gd` y suite de pruebas unitarias extendida a 35 escenas limpias al 100% en verde.
 - [x] **Sistema Dinámico de Localización Multilingüe (ES/EN) y Reactividad de Traducción (2026-11-09 — v3.61):** Integración completa del catálogo de traducción al inglés `_DATOS_EN` en `strings.gd`, resolución de claves y cadenas estáticas con fallback dinámico a español mediante `Strings.t(clave, default)`, conmutación de idioma en caliente vía `Strings.actualizar_idioma("es"|"en")` vinculado reactivamente a `Configuracion.establecer_idioma()`, actualización sincronizada de nombres de recursos en el almacén central de `Ciudad`, alias en inglés para el catálogo vectorial de `IconosHUD.gd` (`wood`, `food`, `census`), actualización bilingüe de textos en `BarraSuperior.gd`, `Hotbar.gd`, `PantallaCarga.gd`, `MenuInicio.gd`, `MenuPausa.gd` y `PanelConfiguracionAjustes.gd`, y cobertura de pruebas automatizadas en `ConfiguracionTest.gd`. Las 35 escenas de prueba se ejecutan al 100% en verde.
-- [x] **Tránsito por Carril Derecho en Vías según Huella, Video Intro Cinemático, Perfiles de Recursos y Suite de 36 Escenas (2026-11-10 — v3.61):** Regla geométrica de borde derecho $\vec{r} = (-d_z, d_x)$ en vías (`Vias.es_borde_derecho()`) y penalización de carril izquierdo en A* (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4` en `BuscadorRutas.gd`) que asigna carriles independientes según sentido de marcha y huella física (`Vector2i` en `TRANSPORTE_CATALOGO_UNIDADES`), eliminando colisiones frontales y permitiendo esquivas si el carril derecho se bloquea; escena cinemática de arranque `VideoIntro.tscn` con reproducción de logo animado, salto con tecla/clic y paso a `MenuInicio.tscn`; selector y perfiles de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`) por categorías en `Configuracion.gd` y `ajustes.gd`; y suite ampliada a 36 escenas de prueba automatizadas con `VideoIntroTest.tscn` ejecutándose al 100% en verde.
+- [x] **Tránsito por Carril Derecho en Vías según Huella, Video Intro Cinemático, Perfiles de Recursos y Suite de 36 Escenas (2026-11-10 — v3.61):** Regla geométrica de borde derecho $\vec{r} = (-d_z, d_x)$ en vías (`Vias.es_borde_derecho()`) y penalización de carril izquierdo en A* (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4` en `BuscadorRutas.gd`) que asigna carriles independientes según sentido de marcha y huella física (`Vector2i` en `TRANSPORTE_CATALOGO_UNIDADES`), eliminando colisiones frontales y permitiendo esquivas si el carril derecho se bloquea; escena cinemática de arranque `VideoIntro.tscn` con reproducción de logo animado, salto con tecla/clic y paso a `MenuInicio.tscn`; selector y perfiles de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`) por categorías en `Configuracion.gd` y `ajustes.gd`; y suite ampliada a 37 escenas de prueba automatizadas con `VideoIntroTest.tscn` ejecutándose al 100% en verde.
 
 
 ---
 
-## 3. Próximas Fases (Fases 4 a 7)
+
+### Fase 4: Cámara Dual, Cuartel Militar, Selección Táctica Universal, Modos T/R/F y Comando Híbrido (v3.62)
+- [x] **Edificio Militar Cuartel (`9×7×8`, Zona B, tecla `7`) y Cohorte Militar 4→4:** Estructura de 2 pisos con piedra, madera, vidrio y 4 camas que recluta atómicamente 16 soldados (4 por cama) en `Economia.gd`/`Recoleccion.gd` sin restar camas ni colonos a la vivienda civil.
+- [x] **Vivienda Militar Acuartelada (`x_cama = 4`):** Gestión segregada de vivienda militar en `Ciudad.gd` y `ajustes.gd` con censo militar propio para evitar desahucios civiles.
+- [x] **Selección Universal en Cámara Cenital (`CamaraCenital.gd`):** Recuadro de arrastre 2D con selección individual o grupal tanto de soldados como de colonos, filtrado cívico/militar y memoria de selección persistente entre cámaras.
+- [x] **Panel de Unidad y Órdenes Tácticas (`PanelUnidad.gd` y `Colonos.gd`):** Inspección de salud, oficio y posturas (`Pasivo`, `Defensivo`, `Agresivo`). Emisión de órdenes (`Moverse`, `Atacar` con <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` con <kbd>H</kbd>) con clic derecho y waypoints con <kbd>Shift</kbd>.
+- [x] **Modos Especializados de Primera Persona (`Player.gd`):** Modo Construcción (<kbd>T</kbd>), Modo Batalla (<kbd>R</kbd> con espada, arco y retícula crosshair) y Modo Comandante (<kbd>F</kbd> con hotbar 1–6 de órdenes y subgrupos tácticos <kbd>Shift</kbd> + <kbd>1..9</kbd>).
+- [x] **Visuales Procedurales de Tropas (`ColonosRenderer.gd`):** Cascos, escudos, aros de selección en base y waypoints tácticos.
+- [x] **Selector Persistente de Modo Pantalla (`Configuracion.gd`):** Modo pantalla completa y modo ventana (1280×720) persistente en `user://configuracion.json`.
+- [x] **Suite Automatizada Extendida a 37 Escenas:** Nueva suite `PlayerCombateComandanteTest.tscn` elevando la cobertura a 37 escenas automatizadas ejecutándose al 100% en verde.
+
+---
+
+## 3. Próximas Fases (Fases 5 a 7)
 
 | Fase | Enfoque del Hito | Sistemas Clave |
 | :--- | :--- | :--- |
-| **Fase 4 (PoC 7)** | **Cámara Dual de Combate y Selección de Tropas** | Selección por recuadro y órdenes tácticas de escuadras militares (`militar`) desde la vista cenital combinadas con combate en 1ra persona. |
 | **Fase 5 (PoC 8–10)** | **Logística Avanzada y Sistema de Puentes** | Carretas de carga terrestre, puentes modulares sobre ríos/cañones y líneas ferroviarias. |
 | **Fase 6** | **Combate, Asedios, IA y Sucesión de Avatar** | Campamentos enemigos procedurales, incursiones a puestos periféricos, murallas y sucesión del avatar tras baja (`K` o ahogamiento). |
 | **Fase 7** | **Multijugador LAN y Núcleos Portátiles** | Exportación del Núcleo Urbano y catálogo de *blueprints* hacia partidas multijugador competitivas y cooperativas. |

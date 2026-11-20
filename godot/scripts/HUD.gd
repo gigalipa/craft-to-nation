@@ -358,12 +358,26 @@ func mostrar_contexto_temporal(nombre: String, costo: Dictionary, acciones: Arra
 	_contexto.mostrar_temporal(nombre, costo, acciones, segundos)
 
 
+func _actualizar_margen_contexto_hotbar() -> void:
+	if _contexto == null or _hotbar == null:
+		return
+	_contexto.set_margen_inferior(-_hotbar.offset_bottom + _hotbar.get_combined_minimum_size().y + 8.0 if _hotbar.visible else 12.0)
+
+
 ## Tarjeta completa (ícono, tipo/uso/obtención, disponibilidad) del bloque
 ## de la hotbar en "indice" (Player, al seleccionar con 1-9): la fuente de
 ## verdad del ícono y la disponibilidad es la propia hotbar, ya que ambos
 ## dependen de su estado (caché de íconos, stock actual del almacén).
 func mostrar_contexto_bloque(indice: int, tipo: String) -> void:
+	_actualizar_margen_contexto_hotbar()
 	_contexto.mostrar_bloque_temporal(indice, tipo, _hotbar.icono_de(tipo), _hotbar.cantidad_de(indice))
+
+
+## Tarjeta informativa para modos especiales de hotbar (armas en Batalla u
+## órdenes en Comandante): muestra título, ícono, descripción y acciones de clic.
+func mostrar_contexto_item_hotbar(indice: int, titulo_item: String, icono_textura: Texture2D, texto_descripcion: String, lista_acciones: Array, segundos: float = 3.5) -> void:
+	_actualizar_margen_contexto_hotbar()
+	_contexto.mostrar_item_hotbar_temporal(indice, titulo_item, icono_textura, texto_descripcion, lista_acciones, segundos)
 
 
 func ocultar_contexto() -> void:

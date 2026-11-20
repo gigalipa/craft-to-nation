@@ -1463,11 +1463,12 @@ func _actualizar_previsualizacion_blueprint() -> void:
 ## Categorías de Construir y sus edificios, en el mismo orden que
 ## BarraModos.CATEGORIAS/CONSTRUCCIONES_POR_CATEGORIA — deben coincidir para
 ## que la tecla numérica N seleccione el botón N (ver _manejar_tecla_construir()).
-const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias", "ductos"]
+const CATEGORIAS_CONSTRUIR := ["residencial", "periferico", "industrial", "investigacion", "vias", "ductos", "militar"]
 const PUESTOS_PERIFERICO := ["caza_recoleccion", "maderero", "mina", "pesca_frutos_mar", "estacion_bombeo", "centro_extraccion"]
-const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen", "taller_transporte", "cuartel"]
+const PUESTOS_INDUSTRIAL := ["siderurgica", "refineria_tierras_raras", "aserradero", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "almacen", "taller_transporte"]
 const PUESTOS_INVESTIGACION := ["escuela_tecnica", "escuela_especialistas", "universidad"]
 const PUESTOS_DUCTOS := ["acueducto", "tuberia"]
+const PUESTOS_MILITAR := ["cuartel"]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1639,6 +1640,9 @@ func _manejar_tecla_construir(n: int) -> void:
 				_alternar_modo_trazar_ducto("acueducto")
 			elif idx == 1:
 				_alternar_modo_trazar_ducto("tuberia")
+		"militar":
+			if idx >= 0 and idx < PUESTOS_MILITAR.size():
+				_alternar_puesto_por_tipo(PUESTOS_MILITAR[idx])
 
 
 ## Abre el panel de edificios de "categoria" dentro de Construir (tecla
@@ -1789,6 +1793,8 @@ func _categoria_de_puesto(tipo: String) -> String:
 		return "industrial"
 	if PUESTOS_INVESTIGACION.has(tipo):
 		return "investigacion"
+	if PUESTOS_MILITAR.has(tipo):
+		return "militar"
 	return "periferico"
 
 
@@ -2528,7 +2534,7 @@ func _categorias_permitidas_zona() -> String:
 	if tipo_zona_seleccionada == Zonificacion.ZONAS_PINTABLES[0]:
 		return "Categorías permitidas: Residencial, Investigación"
 	elif tipo_zona_seleccionada == Zonificacion.ZONAS_PINTABLES[1]:
-		return "Categorías permitidas: Industrial"
+		return "Categorías permitidas: Industrial, Militar"
 	return ""
 
 
@@ -2590,7 +2596,7 @@ func _unidad_bajo_mouse(posicion_pantalla: Vector2) -> int:
 	var origen := project_ray_origin(posicion_pantalla)
 	var direccion := project_ray_normal(posicion_pantalla)
 	var consulta := PhysicsRayQueryParameters3D.create(origen, origen + direccion * ALCANCE_RAYCAST)
-	consulta.collision_mask = MASCARA_UNIDADES
+	consulta.collision_mask = MASCARA_MUNDO | MASCARA_UNIDADES
 	var resultado: Dictionary = get_world_3d().direct_space_state.intersect_ray(consulta)
 	if resultado.has("collider") and resultado["collider"] != null:
 		var col: Object = resultado["collider"]

@@ -1,6 +1,6 @@
 # subprocess
 
-> 11 nodes · cohesion 0.18
+> 10 nodes · cohesion 0.20
 
 ## Key Concepts
 
@@ -13,13 +13,13 @@
 - **remotion@4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **@remotion/captions@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **@remotion/cli@4.0.537** (2 connections) — `video_edition/remotion/package.json`
-- **@remotion/media@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
 - **remotion.config.ts** (1 connections) — `video_edition/remotion/remotion.config.ts`
 
 ## Relationships
 
 - [Estado detallado e historial](Estado_detallado_e_historial.md) (4 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (4 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (3 shared connections)
+- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (1 shared connections)
 
 ## Source Files
 
@@ -28,7 +28,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 18 (100%)
+- EXTRACTED: 17 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

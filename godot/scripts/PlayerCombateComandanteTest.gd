@@ -84,10 +84,10 @@ func ejecutar_pruebas() -> void:
 	var hit_spam: bool = player.ejecutar_ataque_en_objetivo("unidad", id_obj, Vector3i(4, 1, 4))
 	assert(not hit_spam, "cooldown bloquea ataque inmediato")
 	player._cooldown_ataque_avatar = 0.0
-	player._input(_tecla(KEY_2))  # rifle (dano 25)
+	player._input(_tecla(KEY_2))  # arco (dano a distancia)
 	assert(player.arma_seleccionada == 1)
 	var hit2: bool = player.ejecutar_ataque_en_objetivo("unidad", id_obj, Vector3i(4, 1, 4))
-	assert(hit2, "rifle impacta tras enfriar cooldown")
+	assert(hit2, "arco impacta tras enfriar cooldown")
 
 	print("=== TEST 3: Matriz de 6 ordenes (Clic Izq vs Clic Der) en Modo Comandante ===")
 	var id_m1: int = Colonos.agregar_colono("militar", Vector3i(5, 1, 5), -1)
@@ -178,10 +178,55 @@ func ejecutar_pruebas() -> void:
 	rend._physics_process(0.016)
 	assert(not cuerpo_m.get_node_or_null("AroSeleccion").visible, "aro se oculta al deseleccionar")
 	assert(not hud.panel_grupos_tropas().visible, "panel de grupos se oculta sin seleccion militar")
+
+	print("=== TEST 6: Armas iniciales (espada/arco), iconos 64px, alineacion hotbar y PanelContextual ===")
+	assert(Ajustes.ARMAS_AVATAR.size() == 2, "solo 2 armas iniciales")
+	assert(Ajustes.ARMAS_AVATAR[0]["id"] == "espada" and Ajustes.ARMAS_AVATAR[1]["id"] == "arco", "armas iniciales son espada y arco")
+	var tex_soldado: Texture2D = IconosHUD.icono("militar")
+	var tex_cuartel: Texture2D = IconosHUD.icono("cuartel")
+	assert(tex_soldado != null and tex_cuartel == tex_soldado, "soldado y cuartel conservan icono militar.svg")
+	for clave_nueva in ["cat_militar", "espada", "arco", "orden_atacar", "orden_defender", "orden_seguir", "orden_moverse", "orden_patrullar", "orden_mantener"]:
+		var tex: Texture2D = IconosHUD.icono(clave_nueva)
+		assert(tex != null, "icono nuevo %s carga" % clave_nueva)
+		assert(tex != tex_soldado, "icono nuevo %s no reutiliza militar.svg" % clave_nueva)
+		assert(tex.get_width() >= 64 and tex.get_height() >= 64, "icono %s tiene alta definicion >= 64x64" % clave_nueva)
+	assert(IconosHUD.icono("orden_patrullar") != IconosHUD.icono("orden_moverse"), "patrullar y moverse tienen iconos distintos")
+
+	# Tarjeta informativa en Batalla (Espada y Arco)
+	player._input(_tecla(KEY_R))
+	assert(hud._contexto.visible, "PanelContextual visible al entrar en modo batalla")
+	assert(not hud._contexto.descripcion.text.is_empty(), "tarjeta batalla muestra descripcion")
+	assert(hud._contexto.acciones.visible and hud._contexto.acciones.text.contains("[img="), "tarjeta batalla muestra accion de clic con icono")
+	player._input(_tecla(KEY_1))
+	assert(hud._contexto.icono.texture == IconosHUD.icono("espada"), "pulsar 1 actualiza tarjeta batalla a espada")
+	player._input(_tecla(KEY_2))
+	assert(hud._contexto.icono.texture == IconosHUD.icono("arco"), "pulsar 2 actualiza tarjeta a arco")
+
+	# Tarjeta informativa y alineacion uniforme en Comandante
+	player._input(_tecla(KEY_F))
+	assert(hud._contexto.visible, "PanelContextual visible al entrar en modo comandante")
+	assert(hud._contexto.acciones.visible and hud._contexto.acciones.text.count("[img=") == 2, "tarjeta comandante muestra iconos clic izq y der")
+	var alto_ref: float = -1.0
+	for c in hud._hotbar._casillas:
+		var lbl: Label = c["nombre"]
+		assert(lbl.autowrap_mode == TextServer.AUTOWRAP_OFF, "etiqueta comandante no hace wrap")
+		assert(not lbl.text.contains(" ") and not lbl.text.contains("\n"), "titulo comandante corto en 1 palabra: %s" % lbl.text)
+		var alto_cont: float = c["contenedor"].get_combined_minimum_size().y
+		if alto_ref < 0.0:
+			alto_ref = alto_cont
+		else:
+			assert(is_equal_approx(alto_cont, alto_ref), "todas las casillas comandante tienen misma altura (%f vs %f)" % [alto_cont, alto_ref])
+	player._input(_tecla(KEY_1))
+	assert(hud._contexto.icono.texture == IconosHUD.icono("orden_atacar"), "pulsar 1 en comandante actualiza tarjeta a atacar")
+	player._input(_tecla(KEY_2))
+	assert(hud._contexto.icono.texture == IconosHUD.icono("orden_defender"), "pulsar 2 en comandante actualiza tarjeta a defender")
+	player._input(_tecla(KEY_6))
+	assert(hud._contexto.icono.texture == IconosHUD.icono("orden_mantener"), "pulsar 6 en comandante actualiza tarjeta a mantener")
+
 	for cid in [id_obj, id_m1, id_m2]:
 		var cel: Vector3i = Colonos.colonos[cid]["celda"]
 		Colonos.ocupadas.erase(cel)
 		Colonos.colonos.erase(cid)
 	raiz.queue_free()
 
-	print("\n=== Las 5 pruebas de PlayerCombateComandanteTest pasaron correctamente ===")
+	print("\n=== Las 6 pruebas de PlayerCombateComandanteTest pasaron correctamente ===")

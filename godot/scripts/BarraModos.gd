@@ -58,6 +58,7 @@ const CATEGORIAS := [
 	["investigacion", "Investigación", "4", "cat_investigacion"],
 	["vias", "Vías", "5", "cat_vias"],
 	["ductos", "Ductos", "6", "cat_ductos"],
+	["militar", "Militar", "7", "cat_militar"],
 ]
 
 ## categoría -> [tipo, nombre, tecla] de sus edificios, en el orden en que
@@ -91,7 +92,9 @@ const CONSTRUCCIONES_POR_CATEGORIA := {
 		["central_termoelectrica", "Central termoeléctrica", "9"],
 		["almacen", "Almacén", "0"],
 		["taller_transporte", "Taller de transporte", "1"],
-		["cuartel", "Cuartel militar", "2"],
+	],
+	"militar": [
+		["cuartel", "Cuartel militar", "1"],
 	],
 	"investigacion": [
 		["escuela_tecnica", "Escuela técnica", "1"],
@@ -735,7 +738,7 @@ func _refrescar() -> void:
 				else:
 					btn.visible = false
 
-	if _modo == "construir" and (_categoria == "residencial" or _categoria == "periferico" or _categoria == "investigacion"):
+	if _modo == "construir" and (_categoria == "residencial" or _categoria == "periferico" or _categoria == "investigacion" or _categoria == "militar"):
 		_actualizar_miniaturas()
 
 	_panel_zonas.visible = _modo == "zonificar"

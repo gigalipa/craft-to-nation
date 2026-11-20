@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Plataforma / punto de destino en el terreno -->
+  <ellipse cx="44" cy="49" rx="14" ry="6" fill="#263238" stroke="#FFE082" stroke-width="2.5"/>
+  <ellipse cx="44" cy="49" rx="6" ry="2.5" fill="#81C784"/>
+  <!-- Flecha dinámica de desplazamiento hacia el destino -->
+  <path d="M11,28 L29,28 L29,18 L51,33 L29,48 L29,38 L11,38 Z" fill="#81C784" stroke="#1E272C" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M13,30 L31,30 L31,21 L47,33 L31,33 L13,33 Z" fill="#A5D6A7" opacity="0.65"/>
+  <!-- Estela de velocidad -->
+  <line x1="7" y1="22" x2="17" y2="22" stroke="#FFE082" stroke-width="3" stroke-linecap="round"/>
+  <line x1="6" y1="43" x2="15" y2="43" stroke="#FFE082" stroke-width="3" stroke-linecap="round"/>
+</svg>

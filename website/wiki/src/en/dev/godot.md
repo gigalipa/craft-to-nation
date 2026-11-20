@@ -1,6 +1,6 @@
 ---
 title: "Godot Technical Architecture & Simulation Engine"
-description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar autoloads, 3D GridMap, procedural terrain, fluid physics, and 36 automated test suites."
+description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar autoloads, 3D GridMap, procedural terrain, fluid physics, and 37 automated test suites."
 ---
 
 # Godot 4.7 Technical Architecture & Simulation Engine
@@ -43,7 +43,7 @@ description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar
 - **`GestorPartida.gd`:** Autoload singleton for atomic serialization and loading of complete game state (`Ciudad`, `Economia`, `Colonos`, `VoxelWorld`, `Vias`, `Canalizaciones`, `Player`, `Zonificacion`) in `user://saves/*.json` with quicksave support and metadata.
 - **`Sonidos.gd`:** Master audio manager autoload singleton. Maintains circular pools of 16 2D (`AudioStreamPlayer` for UI/avatar) and 16 3D (`AudioStreamPlayer3D` for spatial world audio with inverse distance attenuation up to 35m) players, random micro-pitch modulation (±5%), and cached lazy-loading of 102 OGG sound effects across 8 functional domains (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`).
 
-### Voxel World, Agents, Configuration & HUD Iconography (v3.57 – v3.61)
+### Voxel World, Agents, Configuration & HUD Iconography (v3.57 – v3.62)
 - **`Ajustes.gd` & `Strings.gd`:** Centralized balance parameters and reactive localization. `Ajustes.gd` houses all numerical constants, movement speeds, demographic ratios, and economic rates designed for hot-reloading and modular "New Game" presets. `Strings.gd` manages multi-language catalogs (`Ajustes.idioma`) with static reactive getters dynamically reflecting current `Ajustes.*` variables without scene reloads.
 - **`VoxelWorld.gd`, `GeneradorMundo.gd` & `TranslucidosRenderer.gd`:** Manages the **200×200** 3D `GridMap` (`y = 130` max height, 24 subsurface layers down to unmineable `bedrock`, 2 mountain peaks, 6 minerals, deep oil reservoirs, rivers with waterfalls, lakes, and seas), and `1/20`-thick (`0.05m`) transparent window panels (`vidrio`) in 3 geometric variants (`ventana` straight mid-depth facing the avatar, `ventana_esquina` L-corner rotated 90° on Y, and `ventana_techo` flush against the top face `Y ∈ [0.95, 1.0]` when placed while looking up or down).
 - **`BlueprintValidator.gd` & `PlantillasPuesto.gd`:** Flood-fill airtight room detection, doorway/bed clearance audits, and rotatable (`90°`) facility templates (including `vidriera` `5×6` adobe and `taller_transporte`).
@@ -53,12 +53,12 @@ description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar
 
 ---
 
-## 3. CC0 3D Asset Packs & 36 Automated Test Scenes (`godot/scenes/*Test.tscn`)
+## 3. CC0 3D Asset Packs & 37 Automated Test Scenes (`godot/scenes/*Test.tscn`)
 
 The project integrates CC0 low-poly 3D asset packs:
 - **KayKit Block Bits & Medieval Hexagon Pack:** Voxel terrain blocks, props, and structural elements.
 - **Quaternius Modular Men:** Articulated colonist and worker character meshes.
 - **Poly Haven:** Environmental materials and textures.
 
-> [!IMPORTANT] 36 Automated Test Scenes (100% Green)
+> [!IMPORTANT] 37 Automated Test Scenes (100% Green)
 > Every subsystem is verified by dedicated headless test scenes (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `SonidosTest.tscn`, `VideoIntroTest.tscn`, etc.), maintaining **36 complete test suites passing 100% in green**.

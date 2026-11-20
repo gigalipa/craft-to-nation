@@ -33,7 +33,8 @@
 ## Relationships
 
 - [subprocess](subprocess.md) (4 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (4 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (3 shared connections)
+- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (1 shared connections)
 - [Asset Visual: hud-camara-cen Module](Asset_Visual-_hud-camara-cen_Module.md) (1 shared connections)
 
 ## Source Files

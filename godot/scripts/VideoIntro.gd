@@ -18,8 +18,8 @@ var _transicionando: bool = false
 
 
 func _ready() -> void:
-	if not OS.has_feature("dedicated_server") and DisplayServer.get_name() != "headless":
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	if Configuracion != null and Configuracion.has_method("aplicar_modo_pantalla"):
+		Configuracion.aplicar_modo_pantalla()
 
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 

@@ -1,45 +1,45 @@
 # BlueprintValidator.gd
 
-> 16 nodes · cohesion 0.24
+> 14 nodes · cohesion 0.25
 
 ## Key Concepts
 
 - **subprocess** (18 connections)
 - **audio_mixer.py** (10 connections) — `video_edition/tools/audio_mixer.py`
 - **main()** (6 connections) — `video_edition/tools/audio_mixer.py`
-- **build_debugging_shorts.py** (6 connections) — `video_edition/tools/build_debugging_shorts.py`
 - **get_auto_gain()** (5 connections) — `video_edition/tools/audio_mixer.py`
 - **mix_background_music()** (5 connections) — `video_edition/tools/audio_mixer.py`
-- **build_short()** (5 connections) — `video_edition/tools/build_debugging_shorts.py`
-- **time** (4 connections)
+- **sync_checker.py** (4 connections) — `video_edition/tools/sync_checker.py`
+- **verify_offset_dir.py** (4 connections) — `video_edition/tools/verify_offset_dir.py`
+- **numpy** (3 connections)
 - **get_music_tracks()** (3 connections) — `video_edition/tools/audio_mixer.py`
 - **Path** (3 connections)
-- **build_antigravity_master.py** (3 connections) — `video_edition/tools/build_antigravity_master.py`
-- **build_debugging_devlog.py** (3 connections) — `video_edition/tools/build_debugging_devlog.py`
-- **create_ass_file()** (3 connections) — `video_edition/tools/build_debugging_shorts.py`
 - **random** (2 connections)
-- **format_ass_time()** (2 connections) — `video_edition/tools/build_debugging_shorts.py`
+- **scipy_signal** (2 connections)
+- **find_cam_crop.py** (2 connections) — `video_edition/tools/find_cam_crop.py`
 - **Detecta el pico máximo y calcula la ganancia exacta para alcanzar -1.5 dB de…** (1 connections) — `video_edition/tools/audio_mixer.py`
 
 ## Relationships
 
-- [CamaraCenital.gd](CamaraCenital.gd.md) (7 shared connections)
-- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (6 shared connections)
+- [Logistics, Roads & Elevated Conduits](Logistics,_Roads_&_Elevated_Conduits.md) (7 shared connections)
 - [PanelLampara.gd](PanelLampara.gd.md) (4 shared connections)
+- [video_editor_studio.py](video_editor_studio.py.md) (3 shared connections)
+- [qa_checker.py](qa_checker.py.md) (2 shared connections)
 - [BarraModos.gd / BarraModos.pagina_actual()](BarraModos.gd_-_BarraModos.pagina_actual.md) (2 shared connections)
+- [argparse](argparse.md) (2 shared connections)
 - [VentanaBaul.gd](VentanaBaul.gd.md) (1 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
+- [dependabot.yml](dependabot.yml.md) (1 shared connections)
 
 ## Source Files
 
 - `video_edition/tools/audio_mixer.py`
-- `video_edition/tools/build_antigravity_master.py`
-- `video_edition/tools/build_debugging_devlog.py`
-- `video_edition/tools/build_debugging_shorts.py`
+- `video_edition/tools/find_cam_crop.py`
+- `video_edition/tools/sync_checker.py`
+- `video_edition/tools/verify_offset_dir.py`
 
 ## Audit Trail
 
-- EXTRACTED: 50 (100%)
+- EXTRACTED: 45 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -469,5 +469,79 @@ func ejecutar_pruebas() -> void:
 		Colonos.colonos.erase(cid)
 	raiz22.queue_free()
 
-	print("\n=== Las 22 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
+	print("\n=== TEST 23: Categoría Militar (7) separada de Industrial, cuartel (7-1) y zona industrial/militar ===")
+	var camara23: Camera3D = _camara()
+	var mundo23 := MundoFalso.new()
+	camara23.mundo = mundo23
+	assert(not CamaraCenitalScript.PUESTOS_INDUSTRIAL.has("cuartel"), "cuartel no está en PUESTOS_INDUSTRIAL")
+	assert(camara23._categoria_de_puesto("cuartel") == "militar", "cuartel pertenece a la categoría militar")
+	camara23._alternar_modo_menu_construir()
+	camara23._manejar_tecla_construir(7)
+	assert(camara23._categoria_construir == "militar", "tecla 7 abre la categoría militar")
+	assert(camara23.hud._barra_modos.categoria_activa() == "militar", "HUD refleja categoría militar activa")
+	assert(camara23.overlay.mostrar_zonas, "las zonas pintadas son visibles en categoría Militar (se construye en Zona Industrial)")
+	camara23._manejar_tecla_construir(1)
+	assert(camara23.modo_colocar_puesto and camara23._tipo_puesto_activo == "cuartel", "tecla 1 dentro de militar activa colocación de cuartel")
+	assert(camara23.hud._barra_modos.categoria_activa() == "militar", "HUD conserva categoría militar al elegir cuartel")
+	camara23._alternar_modo_zonificar()
+	camara23._elegir_zona(Zonificacion.ZONAS_PINTABLES[1])
+	assert("Militar" in camara23._categorias_permitidas_zona(), "Zona Industrial indica que también permite categoría Militar")
+	camara23.hud.queue_free()
+	mundo23.free()
+
+	print("\n=== TEST 24: Techo/pared en capa 1 impide seleccionar unidad interior en capa 2 ===")
+	var raiz24 := Node3D.new()
+	add_child(raiz24)
+	var mundo24 := MundoFalso.new()
+	mundo24.name = "VoxelWorld"
+	raiz24.add_child(mundo24)
+	var ov_zona24: Node3D = ZonaOverlayScript.new()
+	ov_zona24.name = "ZonaOverlay"
+	raiz24.add_child(ov_zona24)
+	var ov_via24: Node3D = ViaPreviewOverlayScript.new()
+	ov_via24.name = "ViaPreviewOverlay"
+	raiz24.add_child(ov_via24)
+	var hud24: CanvasLayer = HUDScript.new()
+	hud24.name = "HUDLayer"
+	raiz24.add_child(hud24)
+	var player24 := CharacterBody3D.new()
+	player24.name = "Player"
+	raiz24.add_child(player24)
+	var camara24: Camera3D = CamaraCenitalScript.new()
+	raiz24.add_child(camara24)
+	camara24.current = true
+	camara24.global_position = Vector3(5.0, 12.0, 12.0)
+	camara24.look_at(Vector3(5.0, 1.5, 5.0), Vector3.UP)
+
+	var cuerpo_trab := AnimatableBody3D.new()
+	cuerpo_trab.collision_layer = 2
+	cuerpo_trab.collision_mask = 0
+	cuerpo_trab.set_meta("colono_id", 999)
+	var cs_trab := CollisionShape3D.new()
+	cs_trab.shape = BoxShape3D.new()
+	cuerpo_trab.add_child(cs_trab)
+	cuerpo_trab.position = Vector3(5.0, 1.5, 5.0)
+	raiz24.add_child(cuerpo_trab)
+
+	var cuerpo_techo := StaticBody3D.new()
+	cuerpo_techo.collision_layer = 1
+	cuerpo_techo.collision_mask = 0
+	var cs_techo := CollisionShape3D.new()
+	var box_techo := BoxShape3D.new()
+	box_techo.size = Vector3(4.0, 0.5, 4.0)
+	cs_techo.shape = box_techo
+	cuerpo_techo.add_child(cs_techo)
+	cuerpo_techo.position = Vector3(5.0, 4.0, 5.0)
+	raiz24.add_child(cuerpo_techo)
+
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var punto_pantalla: Vector2 = camara24.unproject_position(Vector3(5.0, 1.5, 5.0))
+	assert(camara24._unidad_bajo_mouse(punto_pantalla) == -1, "el techo en capa 1 debe bloquear el raycast antes del trabajador en capa 2")
+	cuerpo_techo.collision_layer = 0
+	await get_tree().physics_frame
+	assert(camara24._unidad_bajo_mouse(punto_pantalla) == 999, "sin techo delante, el raycast sí selecciona al trabajador")
+	raiz24.queue_free()
+
+	print("\n=== Las 24 pruebas de CamaraCenitalModosTest pasaron correctamente ===")
 

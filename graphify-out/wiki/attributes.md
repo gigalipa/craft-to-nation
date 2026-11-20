@@ -1,47 +1,46 @@
 # attributes
 
-> 16 nodes · cohesion 0.12
+> 11 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **VentanaOcupaciones.gd** (19 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaPoblacion.gd** (18 connections) — `godot/scripts/VentanaPoblacion.gd`
-- **VentanaOcupaciones.abrir()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaOcupaciones.categoria_de()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaOcupaciones.cerrar()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaOcupaciones.ocultar_temporalmente()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaOcupaciones.orden_de()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaOcupaciones._process()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaOcupaciones._ready()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaOcupaciones.restaurar()** (1 connections) — `godot/scripts/VentanaOcupaciones.gd`
-- **VentanaPoblacion.abrir()** (1 connections) — `godot/scripts/VentanaPoblacion.gd`
-- **VentanaPoblacion.cerrar()** (1 connections) — `godot/scripts/VentanaPoblacion.gd`
-- **VentanaPoblacion.ocultar_temporalmente()** (1 connections) — `godot/scripts/VentanaPoblacion.gd`
-- **VentanaPoblacion._process()** (1 connections) — `godot/scripts/VentanaPoblacion.gd`
-- **VentanaPoblacion._ready()** (1 connections) — `godot/scripts/VentanaPoblacion.gd`
-- **VentanaPoblacion.restaurar()** (1 connections) — `godot/scripts/VentanaPoblacion.gd`
+- **ZonaOverlay.gd** (25 connections) — `godot/scripts/ZonaOverlay.gd`
+- **MarcasDemolicionOverlay.gd** (9 connections) — `godot/scripts/MarcasDemolicionOverlay.gd`
+- **2026-10-02-obras-por-colonos-design.md (Construcción y demolición por colonos — Especificación de di)** (7 connections) — `docs/superpowers/specs/2026-10-02-obras-por-colonos-design.md`
+- **MarcasDemolicionOverlay.reconstruir()** (1 connections) — `godot/scripts/MarcasDemolicionOverlay.gd`
+- **ZonaOverlay.limpiar_previsualizacion()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
+- **ZonaOverlay.marcar_sucio()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
+- **ZonaOverlay.previsualizar()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
+- **ZonaOverlay._process()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
+- **ZonaOverlay._ready()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
+- **ZonaOverlay.reconstruir()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
+- **ZonaOverlay.set_mostrar_zonas()** (1 connections) — `godot/scripts/ZonaOverlay.gd`
 
 ## Relationships
 
-- [Player.gd](Player.gd.md) (6 shared connections)
-- [Vias.gd](Vias.gd.md) (3 shared connections)
-- [Root.tsx](Root.tsx.md) (2 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (2 shared connections)
-- [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (2 shared connections)
-- [1. Publicación Principal - Devlog Técnico Multicámara (Martes)](1._Publicación_Principal_-_Devlog_Técnico_Multicámara_Martes.md) (2 shared connections)
-- [Hotbar.gd](Hotbar.gd.md) (2 shared connections)
-- [steps](steps.md) (1 shared connections)
-- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (1 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (7 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (5 shared connections)
+- [config.yml](config.yml.md) (2 shared connections)
+- [Vias.gd](Vias.gd.md) (2 shared connections)
+- [ajustes.gd](ajustes.gd.md) (2 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (2 shared connections)
+- [ViaPreviewOverlay.gd](ViaPreviewOverlay.gd.md) (2 shared connections)
+- [Colonos.gd](Colonos.gd.md) (1 shared connections)
+- [FinalizacionObras.gd](FinalizacionObras.gd.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
+- [contact_links](contact_links.md) (1 shared connections)
+- [GeneradorMundo.gd](GeneradorMundo.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `godot/scripts/VentanaOcupaciones.gd`
-- `godot/scripts/VentanaPoblacion.gd`
+- `docs/superpowers/specs/2026-10-02-obras-por-colonos-design.md`
+- `godot/scripts/MarcasDemolicionOverlay.gd`
+- `godot/scripts/ZonaOverlay.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 36 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 37 (97%)
+- INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

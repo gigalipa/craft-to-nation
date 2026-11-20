@@ -9,12 +9,14 @@ const Ajustes = preload("res://scripts/ajustes.gd")
 signal configuracion_cambiada(clave: String, valor: Variant)
 
 const RUTA_CONFIG := "user://configuracion.json"
+const TAMANO_VENTANA_DEFAULT := Vector2i(1280, 720)
 
 var volumen_sfx: float = 1.0: set = establecer_volumen_sfx
 var volumen_musica: float = 0.8: set = establecer_volumen_musica
 var sensibilidad_mouse: float = 0.003: set = establecer_sensibilidad_mouse
 var fov_camara: float = 70.0: set = establecer_fov_camara
 var idioma: String = "es": set = establecer_idioma
+var modo_pantalla: String = "pantalla_completa": set = establecer_modo_pantalla
 
 var variables_ajustes: Dictionary = {}
 
@@ -50,6 +52,7 @@ func _ready() -> void:
 	_inicializar_defaults_ajustes()
 	cargar()
 	aplicar()
+	call_deferred("aplicar_modo_pantalla")
 
 
 func _inicializar_defaults_ajustes() -> void:
@@ -90,6 +93,8 @@ func cargar_configuracion() -> void:
 		fov_camara = clampf(float(datos["fov_camara"]), 50.0, 100.0)
 	if datos.has("idioma"):
 		idioma = str(datos["idioma"])
+	if datos.has("modo_pantalla"):
+		modo_pantalla = _normalizar_modo_pantalla(str(datos["modo_pantalla"]))
 
 	if datos.has("variables_ajustes") and datos["variables_ajustes"] is Dictionary:
 		var v_guardadas: Dictionary = datos["variables_ajustes"]
@@ -109,6 +114,7 @@ func guardar() -> bool:
 		"sensibilidad_mouse": sensibilidad_mouse,
 		"fov_camara": fov_camara,
 		"idioma": idioma,
+		"modo_pantalla": modo_pantalla,
 		"variables_ajustes": variables_ajustes,
 	}
 	arch.store_string(JSON.stringify(datos, "\t"))
@@ -120,6 +126,9 @@ func aplicar() -> void:
 	Ajustes.idioma = idioma
 	var strings = preload("res://scripts/strings.gd")
 	strings.actualizar_idioma(idioma)
+
+	# Sincroniza modo de pantalla
+	aplicar_modo_pantalla()
 
 	# Sincroniza sensibilidad del mouse en Ajustes y Player
 	Ajustes.PLAYER_SENSIBILIDAD_MOUSE = sensibilidad_mouse
@@ -203,6 +212,7 @@ func restablecer_valores_defecto() -> void:
 	sensibilidad_mouse = 0.003
 	fov_camara = 70.0
 	idioma = "es"
+	modo_pantalla = "pantalla_completa"
 
 	for cat in AJUSTES_DEFINICIONES.values():
 		for item in cat:
@@ -253,3 +263,45 @@ func establecer_idioma(valor: String) -> void:
 	var strings = preload("res://scripts/strings.gd")
 	strings.actualizar_idioma(idioma)
 	configuracion_cambiada.emit("idioma", idioma)
+
+
+func _normalizar_modo_pantalla(valor: String) -> String:
+	var v: String = valor.to_lower().strip_edges()
+	if v == "ventana" or v == "windowed":
+		return "ventana"
+	return "pantalla_completa"
+
+
+func establecer_modo_pantalla(valor: String) -> void:
+	modo_pantalla = _normalizar_modo_pantalla(valor)
+	aplicar_modo_pantalla()
+	configuracion_cambiada.emit("modo_pantalla", modo_pantalla)
+
+
+func aplicar_modo_pantalla() -> void:
+	if OS.has_feature("dedicated_server") or DisplayServer.get_name() == "headless":
+		return
+	var tree: SceneTree = get_tree() if is_inside_tree() else null
+	var win: Window = tree.root if tree != null else null
+	var embebido: bool = Engine.has_method("is_embedded_in_editor") and bool(Engine.call("is_embedded_in_editor"))
+	if modo_pantalla == "ventana":
+		var usable: Rect2i = DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+		var tam_win: Vector2i = TAMANO_VENTANA_DEFAULT
+		if usable.size != Vector2i.ZERO:
+			tam_win = Vector2i(mini(TAMANO_VENTANA_DEFAULT.x, usable.size.x), mini(TAMANO_VENTANA_DEFAULT.y, usable.size.y))
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_size(tam_win)
+		if win != null:
+			win.borderless = false
+			win.mode = Window.MODE_WINDOWED
+			win.size = tam_win
+		if not embebido and usable.size != Vector2i.ZERO:
+			var pos := usable.position + (usable.size - tam_win) / 2
+			DisplayServer.window_set_position(pos)
+			if win != null:
+				win.position = pos
+	else:
+		if win != null:
+			win.mode = Window.MODE_FULLSCREEN
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)

@@ -193,17 +193,17 @@ func _actualizar_marcadores_ordenes() -> void:
 	var firmas: Array[String] = []
 	var entradas: Array = []
 	for cid in Colonos.militares_seleccionados(false):
-		var ord: Dictionary = Colonos.colonos[cid].get("orden_militar", {})
-		if ord.is_empty():
+		var orden_m: Dictionary = Colonos.colonos[cid].get("orden_militar", {})
+		if orden_m.is_empty():
 			continue
-		var tipo_o: String = str(ord.get("tipo", ""))
+		var tipo_o: String = str(orden_m.get("tipo", ""))
 		if tipo_o == "patrullar":
-			var wps: Array = ord.get("waypoints", [])
+			var wps: Array = orden_m.get("waypoints", [])
 			if not wps.is_empty():
 				firmas.append("%d:pat:%s" % [cid, str(wps)])
 				entradas.append({"tipo": "patrullar", "waypoints": wps})
-		elif ord.has("destino") and ord["destino"] is Vector3i and ord["destino"] != Colonos.INVALIDA:
-			var dest: Vector3i = ord["destino"]
+		elif orden_m.has("destino") and orden_m["destino"] is Vector3i and orden_m["destino"] != Colonos.INVALIDA:
+			var dest: Vector3i = orden_m["destino"]
 			firmas.append("%d:%s:%s" % [cid, tipo_o, str(dest)])
 			entradas.append({"tipo": tipo_o, "destino": dest})
 

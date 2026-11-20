@@ -252,9 +252,9 @@
     "semantic_hash": "0e783ab665ad24669f0c35ebca0a45c6"
   },
   "Documento de Dise\u00f1o de Juego (GDD)_ Craft to Nation.md": {
-    "mtime": 1794348480.7324247,
-    "seen": 1794348642.4698787,
-    "ast_hash": "c0ba4878ad1852d3326f298580826378",
+    "mtime": 1795136867.7957528,
+    "seen": 1795137241.752632,
+    "ast_hash": "27ad67eff6d58d00769ffc434922d084",
     "semantic_hash": ""
   },
   "LICENSE-CONTENT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": "acdcbe4b78768a9aa5df06f3be52b082"
   },
   "README.md": {
-    "mtime": 1794348592.8984854,
-    "seen": 1794348642.4698787,
-    "ast_hash": "b807d2f86766fc280a64c103304addd9",
+    "mtime": 1795136927.5725965,
+    "seen": 1795137241.752632,
+    "ast_hash": "88a1ec2f5d21f657980321ff160dae89",
     "semantic_hash": ""
   },
   "docs/Fichas_Consumo_Produccion.md": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "docs/Pendientes y pr\u00f3ximos pasos.md": {
-    "mtime": 1794434677.0572374,
-    "seen": 1794434779.6677976,
-    "ast_hash": "ef0b84ccf35bd2ee8a0c0c123be9bb43",
+    "mtime": 1795136995.3818934,
+    "seen": 1795137241.752632,
+    "ast_hash": "c2215b188aeff631147f122decbd116c",
     "semantic_hash": ""
   },
   "docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md": {
@@ -378,9 +378,9 @@
     "semantic_hash": ""
   },
   "docs/ideas-backlog.md": {
-    "mtime": 1794348592.901628,
-    "seen": 1794348642.4698787,
-    "ast_hash": "6e896236d07dfcc1c1dfd194edb7b27e",
+    "mtime": 1795137006.826927,
+    "seen": 1795137241.752632,
+    "ast_hash": "21fc9abfcd8c3fc33ac5e17da03d7855",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md": {
@@ -1050,15 +1050,15 @@
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/gdd.md": {
-    "mtime": 1794348592.9044974,
-    "seen": 1794348642.4698787,
-    "ast_hash": "f2fafef66a0a4a0d826f9f83c1f8ff23",
+    "mtime": 1795137074.6071556,
+    "seen": 1795137241.752632,
+    "ast_hash": "4314d71da12f6226ba22bb864b1d86a4",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/godot.md": {
-    "mtime": 1794434702.5417423,
-    "seen": 1794434779.6677976,
-    "ast_hash": "0fcbd2590ebb89f4bf8744db146f358a",
+    "mtime": 1795137074.6076846,
+    "seen": 1795137241.752632,
+    "ast_hash": "a395be975cfd54c03a8c341cc85696f6",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/logistics.md": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": "91e99385f33fb5523c156915732aaacf"
   },
   "website/wiki/src/en/dev/roadmap.md": {
-    "mtime": 1794348592.9024074,
-    "seen": 1794348642.4698787,
-    "ast_hash": "98ed6b63ec5ab28bb57a4f9268062c42",
+    "mtime": 1795137059.6892142,
+    "seen": 1795137241.752632,
+    "ast_hash": "8344eb227e9eb9d01880a52e9964a064",
     "semantic_hash": ""
   },
   "website/wiki/src/en/guide/buildings.md": {
@@ -1098,21 +1098,21 @@
     "semantic_hash": "e75e8b323763da49ce44b23ffcdce197"
   },
   "website/wiki/src/en/index.md": {
-    "mtime": 1794348592.913682,
-    "seen": 1794348642.4698787,
-    "ast_hash": "6f135c4659ee14c2faaa307a3c997960",
+    "mtime": 1795137074.603184,
+    "seen": 1795137241.752632,
+    "ast_hash": "b8efcb057c26dacfb769087ad214bb8d",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/gdd.md": {
-    "mtime": 1794348592.9044974,
-    "seen": 1794348642.4698787,
-    "ast_hash": "fd4f2731839c7773bad5c9c8d861b0b5",
+    "mtime": 1795137074.605499,
+    "seen": 1795137241.752632,
+    "ast_hash": "dd970c1a59810835ed2c09c2ccb96f27",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/godot.md": {
-    "mtime": 1794434696.7339914,
-    "seen": 1794434779.6677976,
-    "ast_hash": "88e7590369d92274de5e94e87c2121b4",
+    "mtime": 1795137074.606639,
+    "seen": 1795137241.752632,
+    "ast_hash": "b79dca6956a1f674199ac565875d1a59",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/logistica.md": {
@@ -1122,9 +1122,9 @@
     "semantic_hash": "2618a433cfcaca942aed59c0c67031fd"
   },
   "website/wiki/src/es/dev/roadmap.md": {
-    "mtime": 1794348592.9024074,
-    "seen": 1794348642.4698787,
-    "ast_hash": "100478d4b68f9c4e5ba4f39708a148ab",
+    "mtime": 1795137059.6892142,
+    "seen": 1795137241.752632,
+    "ast_hash": "77787816d38eaba2e3437c62a19b76a6",
     "semantic_hash": ""
   },
   "website/wiki/src/es/guia/colonos.md": {
@@ -1158,15 +1158,15 @@
     "semantic_hash": ""
   },
   "website/wiki/src/fr/index.md": {
-    "mtime": 1794348592.9146807,
-    "seen": 1794348642.4698787,
-    "ast_hash": "c9578fc4ce7c4f1630acdb3fe1c937a1",
+    "mtime": 1795137074.603743,
+    "seen": 1795137241.752632,
+    "ast_hash": "2e68a5066ce054d3822b8d07f95953a3",
     "semantic_hash": ""
   },
   "website/wiki/src/index.md": {
-    "mtime": 1794348592.9126909,
-    "seen": 1794348642.4698787,
-    "ast_hash": "a88aa4d27e9e1679042190a7ed584394",
+    "mtime": 1795137074.6025562,
+    "seen": 1795137241.752632,
+    "ast_hash": "591549db17ff05a096e66f902c7832a1",
     "semantic_hash": ""
   },
   "arte/IMUQwcomLawGk.png": {
@@ -5448,9 +5448,9 @@
     "semantic_hash": ""
   },
   "docs/llms-full.txt": {
-    "mtime": 1794253147.632763,
-    "seen": 1794262030.4662907,
-    "ast_hash": "097c087826309a225c13fa3a80b72b58",
+    "mtime": 1795137074.6537535,
+    "seen": 1795137241.752632,
+    "ast_hash": "2f1786ab0ff581608e4e8a0b81604455",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md": {
@@ -5469,6 +5469,60 @@
     "mtime": 1795046894.5618176,
     "seen": 1795054115.8415928,
     "ast_hash": "4210ebc2689e8fee55983fecaff4812d",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/arma_arco.svg": {
+    "mtime": 1795113106.084568,
+    "seen": 1795137241.752632,
+    "ast_hash": "3fa4f925d0954cb428ded3c792a86931",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/arma_espada.svg": {
+    "mtime": 1795113104.4116993,
+    "seen": 1795137241.752632,
+    "ast_hash": "88c8ada2d34720d751c27249912093a2",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/cat_militar.svg": {
+    "mtime": 1795113102.7085326,
+    "seen": 1795137241.752632,
+    "ast_hash": "43f7311a5851c574b030a5fea58bf78b",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/orden_atacar.svg": {
+    "mtime": 1795113107.7852962,
+    "seen": 1795137241.752632,
+    "ast_hash": "9873da42f253b028ff93f297d3bf54f8",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/orden_defender.svg": {
+    "mtime": 1795113109.453664,
+    "seen": 1795137241.752632,
+    "ast_hash": "de30c95371da8ac47374583398def649",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/orden_mantener.svg": {
+    "mtime": 1795113116.7800622,
+    "seen": 1795137241.752632,
+    "ast_hash": "cb727cae4488f97bb2a3aa1992a3090d",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/orden_moverse.svg": {
+    "mtime": 1795113113.1974142,
+    "seen": 1795137241.752632,
+    "ast_hash": "44ea7fb9cb90557c47de2c56b29feb67",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/orden_patrullar.svg": {
+    "mtime": 1795113114.9673703,
+    "seen": 1795137241.752632,
+    "ast_hash": "47d272888c6e41101bb0a220fef09d6c",
+    "semantic_hash": ""
+  },
+  "godot/assets/icons/orden_seguir.svg": {
+    "mtime": 1795113111.4324205,
+    "seen": 1795137241.752632,
+    "ast_hash": "46312a343aa62bf66650d02161f5bc24",
     "semantic_hash": ""
   },
   "video_edition/remotion/package-lock.json": {

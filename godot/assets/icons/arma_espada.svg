@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g stroke="#1E272C" stroke-width="2.2" stroke-linejoin="round">
+    <!-- Hoja principal -->
+    <polygon points="56,8 54,20 28,46 18,36 44,10" fill="#ECEFF1"/>
+    <!-- Mitad sombreada de la hoja -->
+    <polygon points="56,8 54,20 28,46 23,41" fill="#90A4AE"/>
+    <!-- Acanaladura central -->
+    <line x1="25" y1="39" x2="49" y2="15" stroke="#546E7A" stroke-width="2" stroke-linecap="round"/>
+    <!-- Guarda en cruz -->
+    <path d="M13,31 L33,51 L29,55 L9,35 Z" fill="#FFE082"/>
+    <path d="M23,41 L33,51 L29,55 L19,45 Z" fill="#C79E40"/>
+    <!-- Empuñadura -->
+    <polygon points="18,41 23,46 14,55 9,50" fill="#6D4C41"/>
+    <line x1="12" y1="47" x2="17" y2="52" stroke="#4E342E" stroke-width="1.5"/>
+    <!-- Pomo -->
+    <circle cx="10" cy="54" r="4.5" fill="#FFE082"/>
+    <circle cx="10" cy="54" r="1.8" fill="#FF5959" stroke="none"/>
+  </g>
+</svg>

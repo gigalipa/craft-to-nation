@@ -82,6 +82,7 @@ static func texto_acciones(lista_acciones: Array) -> String:
 			parte = parte.replace("(click der.)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
 			parte = parte.replace("(clic derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
 			parte = parte.replace("(click derecho)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
+			parte = parte.replace("(right click)", "[img=12x17]%s[/img]" % ICONO_CLIC_DERECHO)
 
 			parte = parte.replace("(doble clic izq.)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_IZQUIERDO)
 			parte = parte.replace("(doble click izq.)", "[img=12x17]%s[/img]x2" % ICONO_CLIC_IZQUIERDO)
@@ -94,6 +95,7 @@ static func texto_acciones(lista_acciones: Array) -> String:
 			parte = parte.replace("(click izq.)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 			parte = parte.replace("(clic izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 			parte = parte.replace("(click izquierdo)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
+			parte = parte.replace("(left click)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 			parte = parte.replace("(clic)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 			parte = parte.replace("(click)", "[img=12x17]%s[/img]" % ICONO_CLIC_IZQUIERDO)
 
@@ -368,6 +370,18 @@ func mostrar_temporal(nombre: String, costo_dic: Dictionary, lista_acciones: Arr
 	)
 
 
+## Tarjeta informativa temporal para modos especiales de hotbar (armas de batalla u órdenes).
+func mostrar_item_hotbar_temporal(indice: int, titulo_item: String, icono_textura: Texture2D, texto_descripcion: String, lista_acciones: Array, segundos: float = 3.5) -> void:
+	mostrar_temporal(titulo_item, {}, lista_acciones, segundos)
+	numero.text = str(indice + 1)
+	numero.visible = indice >= 0
+	icono.texture = icono_textura
+	icono.visible = icono_textura != null
+	descripcion.text = texto_descripcion.strip_edges()
+	descripcion.visible = not descripcion.text.is_empty()
+	disponible.visible = false
+
+
 ## Tarjeta completa de un bloque de la hotbar (Player, al seleccionar con
 ## 1-9/rueda): índice y nombre en dorado, ícono en miniatura (mismo render
 ## que MiniaturaRenderer.renderizar()), tipo/uso ideal/método de obtención
@@ -380,13 +394,14 @@ func mostrar_bloque_temporal(indice: int, tipo: String, icono_textura: Texture2D
 	var lista_acciones: Array = ["(clic der.) COLOCAR"]
 	if HotbarScript.TIPOS_INTERACTIVOS.has(tipo):
 		lista_acciones.append("[E] INTERACTUAR")
-	mostrar_temporal(HotbarScript.nombre_de(tipo), {}, lista_acciones, segundos)
-	numero.text = str(indice + 1)
-	numero.visible = true
-	icono.texture = icono_textura
-	icono.visible = icono_textura != null
-	descripcion.text = "\n".join(HotbarScript.descripcion_de(tipo))
-	descripcion.visible = true
+	mostrar_item_hotbar_temporal(
+		indice,
+		HotbarScript.nombre_de(tipo),
+		icono_textura,
+		"\n".join(HotbarScript.descripcion_de(tipo)),
+		lista_acciones,
+		segundos
+	)
 	disponible.visible = disponibilidad >= 0
 	if disponible.visible:
 		disponible.text = "Disponible: %d" % disponibilidad

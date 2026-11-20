@@ -35,6 +35,7 @@ var _arrastrando := false
 var _offset_arrastre := Vector2.ZERO
 var _desplegados: Dictionary = {}
 
+@warning_ignore("unused_private_class_variable")
 var _desplegado_comida: bool:
 	get: return _desplegados.get("comida", false)
 	set(v):

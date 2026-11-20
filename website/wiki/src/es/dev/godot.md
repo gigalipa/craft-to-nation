@@ -1,6 +1,6 @@
 ---
 title: "Arquitectura Técnica en Godot & PoCs"
-description: "Arquitectura técnica en Godot: autoloads de Ciudad, Sonidos y Avatar, GridMap 3D, generador procedural de terreno, físicas de fluidos y 36 suites de pruebas automatizadas."
+description: "Arquitectura técnica en Godot: autoloads de Ciudad, Sonidos y Avatar, GridMap 3D, generador procedural de terreno, físicas de fluidos y 37 suites de pruebas automatizadas."
 ---
 
 # Arquitectura Técnica en Godot 4.7 & PoCs
@@ -46,7 +46,7 @@ El motor divide su ejecución en dos capas temporales simultáneas:
 - **`GestorPartida.gd`:** Singleton Autoload para serialización y carga atómica del estado completo del juego (`Ciudad`, `Economia`, `Colonos`, `VoxelWorld`, `Vias`, `Canalizaciones`, `Player`, `Zonificacion`) en `user://saves/*.json` con soporte para slot rápido y metadatos.
 - **`Sonidos.gd`:** Singleton Autoload para gestión y reproducción de efectos de sonido (SFX). Dispone de un doble pool circular de 16 reproductores 2D (`AudioStreamPlayer` para UI y avatar) y 16 reproductores 3D (`AudioStreamPlayer3D` para mundo espacial con atenuación inversa hasta 35 m), microvariación aleatoria de tono (pitch modulation ±5%) y carga diferida con caché de memoria de 102 efectos OGG en 8 familias funcionales (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`).
 
-### Subsistemas Espaciales, Agentes, Configuración e Interfaz HUD (v3.57 – v3.61)
+### Subsistemas Espaciales, Agentes, Configuración e Interfaz HUD (v3.57 – v3.62)
 - **`Ajustes.gd` y `Strings.gd`:** Centralización de balance y textos dinámicos. `Ajustes.gd` almacena todas las constantes numéricas, configuraciones de velocidad, demografía, moral y parámetros de simulación preparados para personalización en caliente («Nueva partida» y opciones globales). `Strings.gd` provee catálogo multi-idioma (`Ajustes.idioma`) y getters estáticos reactivos que inyectan los valores en vivo sin reiniciar escenas ni recargar scripts.
 - **`VoxelWorld.gd`, `GeneradorMundo.gd` y `TranslucidosRenderer.gd`:** Gestión del `GridMap` 3D, colocación/extracción de bloques, agua estilo *Minecraft* y renderizado de bloques de ventana (`vidrio`) como paneles transparentes de `1/20` (`0,05 m`) en 3 variantes geométricas (`ventana` recta a media profundidad orientada hacia el avatar, `ventana_esquina` en L rotada 90° en Y, y `ventana_techo` horizontal al ras de la cara superior `Y ∈ [0,95, 1,0]` al colocar mirando hacia arriba o hacia abajo).
 - **`BlueprintValidator.gd` y `PlantillasPuesto.gd`:** Reconocimiento volumétrico por *flood-fill* de edificios herméticos, validación de despeje de puertas/camas y plantillas predefinidas con rotación de `90°` (incluyendo `vidriera` `5×6` en adobe y `taller_transporte`).
@@ -64,4 +64,4 @@ El proyecto integra paquetes de modelos 3D *low-poly* bajo licencia **CC0**:
 - **Poly Haven:** Texturas ambientales y materiales.
 
 > [!IMPORTANT] Verificación Automatizada (36 Escenas al 100 % en Verde)
-> Cada sistema cuenta con su propia escena de prueba ejecutable en modo *headless* (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `SonidosTest.tscn`, `ConfiguracionTest.tscn`, `GestorPartidaTest.tscn`, `MenuInicioTest.tscn`, `MenuPausaTest.tscn`, `PantallaCargaTest.tscn`, `BienvenidaTest.tscn`, `VideoIntroTest.tscn`, entre otras), sumando **36 suites completas en verde**.
+> Cada sistema cuenta con su propia escena de prueba ejecutable en modo *headless* (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `SonidosTest.tscn`, `ConfiguracionTest.tscn`, `GestorPartidaTest.tscn`, `MenuInicioTest.tscn`, `MenuPausaTest.tscn`, `PantallaCargaTest.tscn`, `BienvenidaTest.tscn`, `VideoIntroTest.tscn`, entre otras), sumando **37 suites completas en verde**.

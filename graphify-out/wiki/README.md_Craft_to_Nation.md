@@ -2,7 +2,7 @@
 
 > God node · 23 connections · `README.md`
 
-**Community:** [dependabot.yml](dependabot.yml.md)
+**Community:** [Ciudad.gd](Ciudad.gd.md)
 
 ## Connections by Relation
 
@@ -19,7 +19,7 @@
 ### references
 - IconosHUD.gd `EXTRACTED`
 - [HUD.gd](HUD.gd.md) `EXTRACTED`
-- ajustes.gd `EXTRACTED`
+- [ajustes.gd](ajustes.gd.md) `EXTRACTED`
 - strings.gd `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
 - [VentanaAlmacen.gd](VentanaAlmacen.gd.md) `EXTRACTED`

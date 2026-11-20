@@ -1555,7 +1555,7 @@ func simular_tick(avatar_consumo: float) -> Dictionary:
 		"migrantes": migrantes,
 	}
 	horas_juego += 1
-	if horas_juego > 0 and horas_juego % 24 == 6:
+	if horas_juego > 0 and horas_juego % int(HORAS_POR_MES) == 0:
 		Sonidos.reproducir("sfx_ui_reloj_nuevo_dia", -3.0)
 	tick_simulado.emit()
 	return resultado

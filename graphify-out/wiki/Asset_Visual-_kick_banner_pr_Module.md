@@ -12,11 +12,11 @@
 
 ## Relationships
 
-- [Vias.gd](Vias.gd.md) (3 shared connections)
-- [Root.tsx](Root.tsx.md) (1 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (1 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (3 shared connections)
+- [ajustes.gd](ajustes.gd.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
 - [tsconfig.json](tsconfig.json.md) (1 shared connections)
+- [Colonos.gd](Colonos.gd.md) (1 shared connections)
 
 ## Source Files
 

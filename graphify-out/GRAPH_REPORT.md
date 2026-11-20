@@ -1,9 +1,7 @@
-# Graph Report - CityCraft  (2026-11-18)
+# Graph Report - CityCraft  (2026-11-19)
 
 ## Corpus Check
-- 236 files · ~573,961 words
-- Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 562 file(s) not represented in the graph (top: .import 254, .gd 111, .uid 110)
+- cluster-only mode — file stats not available
 
 ## Summary
 - 1399 nodes · 3177 edges · 143 communities (47 shown, 96 thin omitted)
@@ -153,8 +151,8 @@
 6. `Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)` - 26 edges
 7. `Estado detallado e historial` - 24 edges
 8. `Refinería Vidriera (1-3-5) y Recurso Vidrio` - 24 edges
-9. `VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%)` - 23 edges
-10. `README.md (Craft to Nation)` - 23 edges
+9. `README.md (Craft to Nation)` - 23 edges
+10. `VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%)` - 23 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Icono SVG: vidrio` --conceptually_related_to--> `Refinería Vidriera (1-3-5) y Recurso Vidrio`  [INFERRED]
@@ -370,7 +368,7 @@ Nodes (5): scripts, build, dev, lint, upgrade
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))` connect `dependabot.yml` to `ajustes.gd`, `BarraModos.gd`, `Ciudad.gd`, `qa_checker.py`, `2. Shorts Virales (Formato Vertical 9:16 - 1080x1920)`, `pnpm-workspace.yaml`, `video_editor_studio.py`, `VentanaBaul.gd`, `BlueprintValidator.gd`, `PanelLampara.gd`, `BarraModos.gd / BarraModos.pagina_actual()`?**
-  _High betweenness centrality (0.170) - this node is a cross-community bridge._
+  _High betweenness centrality (0.173) - this node is a cross-community bridge._
 - **Are the 52 inferred relationships involving `Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S` (e.g. with `ideas-backlog.md (Backlog de Ideas — Craft to Nation)` and `Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation)`) actually correct?**
   _`Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S` has 52 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Icono SVG: click_der`, `Icono SVG: click_izq`, `Icono SVG: scroll` to the rest of the system?**
@@ -378,7 +376,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `HUD Vector Iconography & UI` be split into smaller, more focused modules?**
   _Cohesion score 0.009174311926605505 - nodes in this community are weakly interconnected._
 - **Why does `Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)` connect `Ciudad.gd` to `HUD Vector Iconography & UI`, `Vias.gd`, `ajustes.gd`, `dependabot.yml`, `HUD.gd`, `Ciudad.gd`, `config.yml`, `Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S`, `Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)`, `Colonos.gd`, `FinalizacionObras.gd`?**
-  _High betweenness centrality (0.081) - this node is a cross-community bridge._
+  _High betweenness centrality (0.080) - this node is a cross-community bridge._
 - **Are the 36 inferred relationships involving `Investigación Descentralizada en 2 Capas e Investigador Itinerante` (e.g. with `ideas-backlog.md (Backlog de Ideas — Craft to Nation)` and `Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation)`) actually correct?**
   _`Investigación Descentralizada en 2 Capas e Investigador Itinerante` has 36 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Vias.gd` be split into smaller, more focused modules?**

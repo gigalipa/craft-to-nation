@@ -19,6 +19,7 @@ func ejecutar_pruebas() -> void:
 	test_integracion_bgm_sonidos()
 	test_catalogo_transporte_huellas_y_vias()
 	test_selector_recursos_iniciales()
+	test_selector_modo_pantalla()
 
 
 func test_catalogo_transporte_huellas_y_vias() -> void:
@@ -247,3 +248,43 @@ func test_selector_recursos_iniciales() -> void:
 	Configuracion.aplicar()
 	Ciudad.reiniciar()
 	print("OK: Selector y perfiles de recursos iniciales por categorías verificado.")
+
+
+func test_selector_modo_pantalla() -> void:
+	var panel_script = preload("res://scripts/PanelConfiguracionAjustes.gd")
+	var modo_prev: String = Configuracion.modo_pantalla
+	var cambios_modo := []
+	var cb := func(clave: String, val: Variant) -> void:
+		if clave == "modo_pantalla":
+			cambios_modo.append(val)
+	Configuracion.configuracion_cambiada.connect(cb)
+
+	Configuracion.establecer_modo_pantalla("ventana")
+	assert(Configuracion.modo_pantalla == "ventana", "Modo de pantalla debe cambiar a 'ventana'.")
+	assert(cambios_modo.has("ventana"), "Debe emitir configuracion_cambiada para modo_pantalla.")
+	assert(Configuracion.guardar(), "Debe guardar modo_pantalla en configuracion.json.")
+
+	Configuracion.modo_pantalla = "pantalla_completa"
+	Configuracion.cargar_configuracion()
+	assert(Configuracion.modo_pantalla == "ventana", "Al recargar desde disco debe conservar 'ventana'.")
+
+	var panel := PanelConfiguracionAjustes.new() if panel_script != null else null
+	add_child(panel)
+	assert(panel._opt_modo_pantalla != null, "Panel debe incluir selector de modo de pantalla.")
+	assert(panel._opt_modo_pantalla.item_count == 2, "Selector debe tener Pantalla completa y Ventana.")
+	assert(panel._opt_modo_pantalla.selected == 1, "Debe sincronizar a 'Ventana' (idx 1).")
+
+	panel._opt_modo_pantalla.select(0)
+	panel._on_guardar_pressed()
+	assert(Configuracion.modo_pantalla == "pantalla_completa", "Guardar debe actualizar a 'pantalla_completa'.")
+
+	panel.solo_audio_y_camara = true
+	Configuracion.establecer_modo_pantalla("ventana")
+	panel._on_reset_pressed()
+	assert(Configuracion.modo_pantalla == "pantalla_completa", "Restablecer en pausa también debe volver a 'pantalla_completa'.")
+
+	Configuracion.configuracion_cambiada.disconnect(cb)
+	panel.queue_free()
+	Configuracion.establecer_modo_pantalla(modo_prev)
+	Configuracion.guardar()
+	print("OK: Selector y persistencia de Modo de Pantalla (Pantalla completa / Ventana) verificado.")

@@ -1,11 +1,10 @@
 # VentanaAlmacen.gd
 
-> 10 nodes · cohesion 0.20
+> 9 nodes · cohesion 0.22
 
 ## Key Concepts
 
 - **Detalle de Entregables y Paquetes de Contenido** (7 connections) — `video_edition/workspaces/calendario_semana_3.md`
-- **calendario_semana_3.md** (3 connections) — `video_edition/workspaces/calendario_semana_3.md`
 - **Calendario Editorial - Semana 3: Craft to Nation** (3 connections) — `video_edition/workspaces/calendario_semana_3.md`
 - **1. Short #1 (Lunes/Martes) - Física de Agua, Corrientes y Oxígeno** (1 connections) — `video_edition/workspaces/calendario_semana_3.md`
 - **2. Publicación Principal - Devlog Recap (Miércoles)** (1 connections) — `video_edition/workspaces/calendario_semana_3.md`
@@ -18,7 +17,6 @@
 ## Relationships
 
 - [dependabot.yml](dependabot.yml.md) (1 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
 
 ## Source Files
 
@@ -26,7 +24,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 11 (100%)
+- EXTRACTED: 9 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

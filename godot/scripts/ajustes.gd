@@ -1010,5 +1010,5 @@ static var MILITAR_COOLDOWN_ATAQUE: float = 1.0
 static var COMANDANTE_ALCANCE_RAYCAST: float = 60.0
 static var ARMAS_AVATAR: Array = [
 	{"id": "espada", "nombre_key": "ARMA_ESPADA", "alcance": 3.0, "dano": 35.0, "cooldown": 0.5, "tipo": "melee"},
-	{"id": "rifle", "nombre_key": "ARMA_RIFLE", "alcance": 45.0, "dano": 25.0, "cooldown": 0.6, "tipo": "ranged"},
+	{"id": "arco", "nombre_key": "ARMA_ARCO", "alcance": 35.0, "dano": 22.0, "cooldown": 0.7, "tipo": "ranged"},
 ]

@@ -903,6 +903,13 @@ func probar_barra_modos() -> void:
 	assert(barra._botones_construccion.has("productor_combustible"))
 	assert(barra._botones_construccion.has("central_termoelectrica"))
 	assert(not barra._botones_construccion.has("industrial"), "no hay ningún tipo de edificio con id 'industrial'")
+	var ids_ind := []
+	for ed_ind in BarraModosScript.CONSTRUCCIONES_POR_CATEGORIA["industrial"]:
+		ids_ind.append(ed_ind[0])
+	assert(not ids_ind.has("cuartel"), "cuartel ya no pertenece a la categoría industrial")
+	assert(barra._paneles_construccion.has("militar"), "existe la categoría militar en BarraModos")
+	barra.set_modo("construir", "", "militar")
+	assert(barra._paneles_construccion["militar"].visible and barra._botones_construccion.has("cuartel"), "categoría militar contiene cuartel")
 	barra.set_modo("")
 
 	print("=== TEST 3b: Residencial atenuado sin blueprint, normal con uno declarado ===")

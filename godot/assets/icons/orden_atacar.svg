@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Destello de choque/ataque carmesí -->
+  <polygon points="32,4 37,16 49,13 43,24 56,28 44,34 49,44 37,40 32,52 27,40 15,44 20,34 8,28 21,24 15,13 27,16" fill="#D32F2F" opacity="0.9"/>
+  <polygon points="32,10 35,19 44,17 39,25 48,28 39,32 42,40 34,37 32,45 30,37 22,40 25,32 16,28 25,25 20,17 29,19" fill="#FF5959"/>
+  <g stroke="#1E272C" stroke-width="2" stroke-linejoin="round">
+    <!-- Espada izq -> der -->
+    <polygon points="10,10 18,10 47,39 41,45 10,16" fill="#CFD8DC"/>
+    <polygon points="44,35 50,41 47,44 41,38" fill="#FFE082"/>
+    <polygon points="46,42 54,50 50,54 42,46" fill="#6D4C41"/>
+    <circle cx="53" cy="53" r="3.5" fill="#C79E40"/>
+    <!-- Espada der -> izq (encima) -->
+    <polygon points="54,10 54,16 23,45 17,39 46,10" fill="#ECEFF1"/>
+    <polygon points="54,10 54,16 23,45 20,42" fill="#90A4AE"/>
+    <polygon points="14,41 20,35 23,38 17,44" fill="#FFE082"/>
+    <polygon points="18,42 10,50 14,54 22,46" fill="#6D4C41"/>
+    <circle cx="11" cy="53" r="3.5" fill="#C79E40"/>
+  </g>
+</svg>

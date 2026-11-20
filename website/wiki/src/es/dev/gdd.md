@@ -1,11 +1,11 @@
 ---
-title: "Pilares de Diseño y GDD (v3.61)"
-description: "Documento de Diseño de Juego (GDD v3.61) de Craft to Nation: visión de supervivencia híbrida, city building orgánico, evolución de eras por IDU, investigación en 2 capas, logística de transporte, refinería Vidriera y paneles de ventana."
+title: "Pilares de Diseño y GDD (v3.62)"
+description: "Documento de Diseño de Juego (GDD v3.62) de Craft to Nation: visión de supervivencia híbrida, city building orgánico, evolución de eras por IDU, investigación en 2 capas, logística de transporte, refinería Vidriera y paneles de ventana."
 ---
 
-# Pilares de Diseño y GDD (v3.61)
+# Pilares de Diseño y GDD (v3.62)
 
-El **Documento de Diseño de Juego (GDD)** de **Craft to Nation** establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el marco evolutivo de eras tecnológicas, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.61**.
+El **Documento de Diseño de Juego (GDD)** de **Craft to Nation** establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el marco evolutivo de eras tecnológicas, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.62**.
 
 ---
 
@@ -56,7 +56,7 @@ La civilización progresa desde la supervivencia primitiva hasta un horizonte te
 
 ---
 
-## 3. Novedades Consolidadas en GDD v3.57 – v3.61
+## 3. Novedades Consolidadas en GDD v3.57 – v3.62
 
 - **Iconografía Vectorial HUD (`IconosHUD.gd`) y Miniaturas 3D (`MiniaturaRenderer.gd`):** Catálogo centralizado de **más de 90 iconos SVG pixel-art** (`shape-rendering="crispEdges"`), botones de construcción ampliados a `104×76 px` con insignias en 3 esquinas (insumos a la izquierda, rayo eléctrico al centro, producto a la derecha) y miniaturas 3D renderizadas en vivo.
 - **Red Eléctrica en kW / MW (`BarraSuperior.gd`, `VentanaEnergia.gd`):** Indicador interactivo de rayo tricolor (dorado = superávit, gris = sin demanda, rojo = déficit) con desglose detallado de generación y consumo por instalación.
@@ -69,5 +69,5 @@ La civilización progresa desde la supervivencia primitiva hasta un horizonte te
 - **Almacén Jerárquico, Reservas Porcentuales y Mejoras de Construcción (v3.59):** `VentanaAlmacen.gd` agrupa materias primas A–Z con desplegables para sus productos refinados y las 6 categorías de comida, más botón *"Expandir todo / Contraer todo"*; reservas centrales porcentuales (`0%..50%`) y prioridades de obra con botones subir/bajar (`btn_subir.svg`/`btn_bajar.svg`); transición automática de ventana al terminar obras; y **drenaje automático de agua interior** al completar construcciones.
 - **Resolución Integral de Incidencias de QA y Pulido de Simulación (2026-11-03):** Corrección completa de los 9 bugs y sugerencias de QA (`docs/reporte_bug_28-10-26.md`): soporte 3D rotacional en blueprints para ventanas de techo, reconciliación inmediata de empleo/alojamiento de colonos, reasignación dinámica de cuadrillas de obra ante cambios de prioridad, confirmación temporal en demoliciones y calibración de 10 tramos migratorios (+10/mes a moral 100).
 - **Motor de Audio Espacial y Efectos Sonoros (SFX) y Exportación Windows (v3.60):** Singleton Autoload `Sonidos.gd` con pools circulares de 16 reproductores 2D (`AudioStreamPlayer`) y 16 reproductores 3D (`AudioStreamPlayer3D`) espaciales para el mundo vóxel (atenuación inversa de distancia hasta 35m, pitch modulation aleatorio de ±5%). Catálogo de 102 efectos OGG categorizados en 8 familias temáticas (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`), cableado reactivo en todo el motor e infraestructura de compilación standalone para Windows (`tools/export_windows.ps1` e icono `godot/icon.png`).
-- **Menú de Inicio, Guardado Atómico de Partidas, Pausa F11, Configuración Persistente y Pantalla de Carga (v3.61):** Escena principal `MenuInicio.tscn` como portal de inicio con fondo animado (`SlideshowFondo.gd`), música BGM de menú en bucle (`The_Architect_s_Decree (menu).mp3`) y subpaneles interactivos (Nueva Partida, Cargar Partida, Configuración y Salir). Singleton autoload `GestorPartida.gd` con serialización/carga atómica en JSON (`user://saves/`) del estado completo del mundo vóxel y singletons, slot de guardado rápido (`quicksave.json`) y listado de partidas con metadatos. Menú contextual de pausa en juego `MenuPausa.gd` accesible con <kbd>F11</kbd> con pausa absoluta (`paused = true`) y ajustes en caliente. Singleton `Configuracion.gd` con persistencia en `user://configuracion.json` (volúmenes SFX/BGM, sensibilidad, FOV, idioma) y pantalla de carga `PantallaCarga.gd`.
-- **Cobertura de Verificación Continua:** **36 escenas de prueba automatizadas** pasando al **100 % en verde**.
+- **Menú de Inicio, Guardado Atómico de Partidas, Pausa F11, Configuración Persistente y Pantalla de Carga (v3.62):** Escena principal `MenuInicio.tscn` como portal de inicio con fondo animado (`SlideshowFondo.gd`), música BGM de menú en bucle (`The_Architect_s_Decree (menu).mp3`) y subpaneles interactivos (Nueva Partida, Cargar Partida, Configuración y Salir). Singleton autoload `GestorPartida.gd` con serialización/carga atómica en JSON (`user://saves/`) del estado completo del mundo vóxel y singletons, slot de guardado rápido (`quicksave.json`) y listado de partidas con metadatos. Menú contextual de pausa en juego `MenuPausa.gd` accesible con <kbd>F11</kbd> con pausa absoluta (`paused = true`) y ajustes en caliente. Singleton `Configuracion.gd` con persistencia en `user://configuracion.json` (volúmenes SFX/BGM, sensibilidad, FOV, idioma) y pantalla de carga `PantallaCarga.gd`.
+- **Cobertura de Verificación Continua:** **37 escenas de prueba automatizadas** pasando al **100 % en verde**.

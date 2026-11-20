@@ -28,7 +28,7 @@
 
 ## Relationships
 
-- [dependabot.yml](dependabot.yml.md) (3 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (3 shared connections)
 
 ## Source Files
 

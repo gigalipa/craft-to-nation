@@ -31,7 +31,7 @@
 ### implements
 - [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
 - [PlantillasPuesto.gd](PlantillasPuesto.gd.md) `EXTRACTED`
-- CadenaMinerales.gd `EXTRACTED`
+- [CadenaMinerales.gd](CadenaMinerales.gd.md) `EXTRACTED`
 - HumoRefinerias.gd `EXTRACTED`
 
 ---

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Base sólida / anclaje al suelo -->
+  <rect x="10" y="50" width="44" height="6" rx="2.5" fill="#C79E40" stroke="#1E272C" stroke-width="2"/>
+  <!-- Ancla táctica de mantener posición -->
+  <g stroke="#1E272C" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Argolla superior -->
+    <circle cx="32" cy="14" r="5.5" fill="none" stroke="#1E272C" stroke-width="7"/>
+    <circle cx="32" cy="14" r="5.5" fill="none" stroke="#FFE082" stroke-width="3.5"/>
+    <!-- Vástago vertical -->
+    <rect x="29" y="19" width="6" height="27" rx="2" fill="#B0BEC5"/>
+    <!-- Travesaño superior -->
+    <rect x="20" y="23" width="24" height="5" rx="2" fill="#FFE082"/>
+    <!-- Brazos curvos inferiores -->
+    <path d="M15,34 C15,45 23,48 32,48 C41,48 49,45 49,34" fill="none" stroke="#1E272C" stroke-width="8"/>
+    <path d="M15,34 C15,45 23,48 32,48 C41,48 49,45 49,34" fill="none" stroke="#B0BEC5" stroke-width="4.2"/>
+    <!-- Puntas de ancla -->
+    <polygon points="10,37 15,27 21,36" fill="#FFE082"/>
+    <polygon points="54,37 49,27 43,36" fill="#FFE082"/>
+  </g>
+</svg>

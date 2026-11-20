@@ -2,7 +2,7 @@
 
 ## Ruta vigente
 
-1. Mantener las 36 escenas de prueba limpias mediante `tools/run-godot-tests.ps1`, que también detecta errores de ejecución y escenas incompletas.
+1. Mantener las 37 escenas de prueba limpias mediante `tools/run-godot-tests.ps1`, que también detecta errores de ejecución y escenas incompletas.
 2. ✅ (2026-10-04) Formación de especialistas (`escuela_especialistas`), universidad e investigaciones de activación (Metalurgia Aplicada y Automatización Industrial).
 3. ✅ (2026-10-04) Fluidos (`agua`, `crudo`, `combustible`), recetas de refinería (`refineria_petrolera`, `productor_combustible`), central termoeléctrica y transmisión energética por vías e influencia con déficit horario.
 4. ✅ (2026-10-05) Gestión de obras y blueprints: autoasignación inmediata de ociosos, tope de cuadrilla (máx. 4 obreros por obra), hasta 5 blueprints guardados con miniaturas y nombrado automático `Residencia [camas]x[baules]`, nivelación compartida por cota de puerta guía, traslado del núcleo urbano desde el panel del edificio, y flexibilización de aberturas (puertas obligatorias únicamente en el 1er piso; pisos superiores no necesitan puertas).
@@ -79,6 +79,21 @@ Hecho: Circulación vehicular/peatonal ordenada y arranque cinemático con confi
 4. **Escena Cinemática de Video Intro (`VideoIntro.tscn` / `VideoIntro.gd`):** Escena inicial de arranque configurada como `run/main_scene` en `project.godot` con reproducción fluida de logo cinemático, salto inmediato con cualquier tecla o clic del ratón y traspaso limpio al portal principal `MenuInicio.tscn`.
 5. **Selector y Perfiles de Recursos Iniciales (`ajustes.gd` / `Configuracion.gd`):** Integración de perfiles (`supervivencia`, `bajos`, `medios`, `altos`) aplicados modularmente a cuatro familias de recursos (`comida`, `materias_primas`, `minerales`, `procesados`) persistentes en `Configuracion.gd` y aplicados atómicamente en `Ciudad.reiniciar()` y `GestorPartida.reiniciar_partida()`.
 6. **Cobertura Automatizada Extendida a 36 Escenas:** Escena de prueba `VideoIntroTest.tscn` validando el ciclo de reproducción de video, salto de escena y transición al menú de inicio. Las 36 escenas de prueba de Godot pasan al 100% en verde.
+
+### 1g. Fase 4: Cámara Dual, Cuartel Militar y Comando Híbrido — ✅ hecho (2026-11-19)
+
+Hecho: Consolidación integral de la Fase 4 (PoC 7) del roadmap del GDD v3.62:
+1. **Edificio Militar Cuartel y Cohorte 4→4:** Plantilla arquitectónica de 2 pisos (`9×7×8`, `cat_militar`, tecla `7` en `BarraModos.gd`) con piedra, madera, vidrio, puerta y 4 camas. Al completar su construcción, recluta de forma atómica una cohorte militar de 4 soldados por cama (16 tropas) en `Economia.gd`/`Recoleccion.gd` sin pérdida de materias primas ni desahucios.
+2. **Vivienda Militar Acuartelada (`x_cama = 4` en `Ciudad.gd` y `ajustes.gd`):** Las 4 camas del cuartel alojan 16 tropas militares con censo habitacional propio segregado de la vivienda civil (`camas_residenciales`), evitando que el reclutamiento militar deje sin techo a los colonos civiles.
+3. **Selección Universal de Tropas y Unidades en Cámara Cenital (`CamaraCenital.gd`):** Recuadro 2D arrastrado con detección geométrica por frustum, soporte de selección individual o grupal tanto para militares como para colonos civiles, y memoria de selección persistente al alternar entre la cámara cenital y la primera persona (`C`).
+4. **Panel de Unidad y Órdenes Tácticas (`PanelUnidad.gd` y `Colonos.gd`):** Inspección de vida, oficio y posturas tácticas (`Pasivo`, `Defensivo`, `Agresivo`). Emisión de órdenes militares (`Moverse`, `Atacar`, `Defender`, `Patrullar`, `Mantener`) con clic derecho sobre terreno/unidades, encadenamiento de waypoints con `Shift`, ataque guiado con tecla `K` y parada con tecla `H`.
+5. **Modos Especializados de 1ª Persona en Avatar (`Player.gd`, `HUD.gd`, `Hotbar.gd`):**
+   - **Modo Construcción (`T`):** Minado y colocación de bloques estándar.
+   - **Modo Batalla (`R`):** Empuñe de armas (espada cuerpo a cuerpo y arco a distancia) con retícula táctica crosshair.
+   - **Modo Comandante (`F`):** Hotbar contextual 1–6 de órdenes militares directas apuntando con la mirada, y control rápido de subgrupos tácticos (`Shift + 1..9`).
+6. **Visuales Procedurales de Tropas (`ColonosRenderer.gd`):** Cascos y escudos renderizados proceduralmente sobre los colonos según su rol militar, aros de selección en base y marcadores tácticos de waypoints.
+7. **Selector Persistente de Pantalla (`Configuracion.gd` y `PanelConfiguracionAjustes.gd`):** Soporte en cliente para pantalla completa y ventana (1280×720) persistente en `user://configuracion.json`.
+8. **Cobertura Automatizada Extendida a 37 Escenas:** Nueva suite `PlayerCombateComandanteTest.tscn` validando modos T/R/F, selección y hotbar táctica. Las 37 escenas de prueba se ejecutan al 100% en verde.
 
 ### 2. Ventana de interacción del baúl — ✅ hecho (2026-09-28, cierre con E 2026-10-05)
 
@@ -352,6 +367,8 @@ Pueden intercalarse en cualquier momento.
 ---
 
 ## Hecho
+
+- ~~**Fase 4: Cámara Dual, Cuartel Militar, Selección Táctica Universal, Modos T/R/F de Primera Persona y 37 Escenas de Prueba** (2026-11-19).~~ Implementación del edificio militar Cuartel en Zona B (`9×7×8`, 2 pisos, 4 camas) y cohorte militar 4→4 sin pérdida en `Economia.gd`/`Recoleccion.gd`, vivienda militar acuartelada en `Ciudad.gd` (`x_cama = 4`, 4 camas = 16 soldados sin consumir vivienda civil), selección universal 2D en cámara cenital con recuadro arrastrado y persistencia al alternar cámaras, panel de unidad (`PanelUnidad.gd`) para inspección y órdenes militares (`Moverse`, `Atacar` con `K`, `Defender`, `Patrullar`, `Mantener` con `H`), modos especializados de 1ª persona en `Player.gd` (`T` Construcción, `R` Batalla con espada/arco/crosshair, `F` Comandante con hotbar 1–6 y subgrupos `Shift + 1..9`), visuales procedurales de tropas con cascos, escudos, aros y marcadores de patrulla en `ColonosRenderer.gd`, selector persistente de modo pantalla (completa vs ventana 1280×720) en configuración y ajustes, y nueva suite automatizada `PlayerCombateComandanteTest.tscn` elevando la suite a 37 escenas ejecutándose al 100% en verde.
 
 - ~~**Tránsito vial por carril derecho según huella, video intro cinemático, perfiles de recursos y suite de 36 escenas** (2026-11-10).~~ Regla geométrica de borde derecho $\vec{r} = (-d_z, d_x)$ en `Vias.es_borde_derecho()`, modulación de coste en `BuscadorRutas.gd` (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`) que asigna carriles independientes por sentido de circulación según huella física (`Vector2i`), eliminando encuentros frontales y habilitando esquivas; escena cinemática de arranque `VideoIntro.tscn` configurada como `run/main_scene` en `project.godot` con reproducción de logo animado, salto por tecla/clic y paso a `MenuInicio.tscn`; perfiles configurables de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`) por categorías en `Configuracion.gd` y `ajustes.gd`; y suite ampliada a 36 escenas de prueba automatizadas con `VideoIntroTest.tscn` ejecutándose al 100% en verde.
 

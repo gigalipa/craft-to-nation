@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Espada diagonal trasera -->
+  <g stroke="#1E272C" stroke-width="2" stroke-linejoin="round">
+    <polygon points="49,7 57,7 57,15 31,41 23,33" fill="#CFD8DC"/>
+    <polygon points="57,7 57,15 31,41 27,37" fill="#90A4AE"/>
+    <line x1="27" y1="37" x2="53" y2="11" stroke="#ECEFF1" stroke-width="1.5"/>
+    <rect x="18" y="34" width="16" height="5" rx="2" transform="rotate(45 26 36.5)" fill="#FFE082"/>
+    <rect x="10" y="42" width="12" height="5" rx="1.5" transform="rotate(-45 16 44.5)" fill="#6D4C41"/>
+    <circle cx="11" cy="53" r="4" fill="#C79E40"/>
+  </g>
+  <!-- Escudo heráldico frontal -->
+  <path d="M18,14 L46,14 L46,34 C46,47 32,56 32,56 C32,56 18,47 18,34 Z" fill="#37474F" stroke="#1E272C" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M21,17 L43,17 L43,34 C43,44.5 32,52 32,52 C32,52 21,44.5 21,34 Z" fill="#546E7A" stroke="#C79E40" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M32,17 L43,17 L43,34 C43,44.5 32,52 32,52 Z" fill="#455A64"/>
+  <!-- Emblema de espada corta / cruz dorada sobre el escudo -->
+  <polygon points="32,22 36,27 34,27 34,43 30,43 30,27 28,27" fill="#FFE082" stroke="#1E272C" stroke-width="1.2"/>
+  <rect x="26" y="36" width="12" height="3.5" rx="1" fill="#FFE082" stroke="#1E272C" stroke-width="1.2"/>
+</svg>

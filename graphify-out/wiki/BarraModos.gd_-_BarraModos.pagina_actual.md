@@ -22,11 +22,11 @@
 
 ## Relationships
 
-- [CamaraCenital.gd](CamaraCenital.gd.md) (4 shared connections)
-- [PanelLampara.gd](PanelLampara.gd.md) (2 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (3 shared connections)
+- [argparse](argparse.md) (2 shared connections)
 - [BlueprintValidator.gd](BlueprintValidator.gd.md) (2 shared connections)
-- [VentanaBaul.gd](VentanaBaul.gd.md) (1 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
+- [PanelLampara.gd](PanelLampara.gd.md) (2 shared connections)
+- [dependabot.yml](dependabot.yml.md) (1 shared connections)
 
 ## Source Files
 

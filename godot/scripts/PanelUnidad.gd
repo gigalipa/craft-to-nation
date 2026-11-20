@@ -6,7 +6,6 @@ extends PanelContainer
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 const Ajustes = preload("res://scripts/ajustes.gd")
 const Strings = preload("res://scripts/strings.gd")
-const IconosHUD = preload("res://scripts/IconosHUD.gd")
 
 signal modo_orden_pedido(orden: String)
 

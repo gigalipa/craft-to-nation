@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Escudo exterior -->
+  <path d="M12,11 L32,6 L52,11 L52,32 C52,47 32,58 32,58 C32,58 12,47 12,32 Z" fill="#C79E40" stroke="#1E272C" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Interior biselado -->
+  <path d="M16,14.5 L32,10.5 L48,14.5 L48,32 C48,44 32,53 32,53 C32,53 16,44 16,32 Z" fill="#455A64" stroke="#1E272C" stroke-width="2"/>
+  <path d="M32,10.5 L48,14.5 L48,32 C48,44 32,53 32,53 Z" fill="#37474F"/>
+  <!-- Núcleo / emblema protector azul y dorado -->
+  <polygon points="32,18 41,25 32,45 23,25" fill="#4FC3F7" stroke="#1E272C" stroke-width="1.8" stroke-linejoin="round"/>
+  <polygon points="32,18 41,25 32,45" fill="#0288D1"/>
+  <path d="M21,29 L32,37 L43,29" fill="none" stroke="#FFE082" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

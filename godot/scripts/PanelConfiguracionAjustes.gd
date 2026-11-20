@@ -25,9 +25,11 @@ var solo_audio_y_camara: bool = false:
 		if is_inside_tree() and _tabs != null:
 			_reconstruir_tabs()
 
-# Selector de idioma
+# Selector de idioma y modo de pantalla
 var _lbl_idioma: Label
 var _opt_idioma: OptionButton
+var _lbl_modo_pantalla: Label
+var _opt_modo_pantalla: OptionButton
 
 # Controles de audio y controles
 var _lbl_sfx: Label
@@ -176,6 +178,23 @@ func _construir_tab_audio_controles() -> void:
 	hbox_idioma.add_child(_opt_idioma)
 	vbox.add_child(hbox_idioma)
 
+	# Selector de Modo de Pantalla
+	var hbox_pantalla := HBoxContainer.new()
+	_lbl_modo_pantalla = Label.new()
+	_lbl_modo_pantalla.text = Strings.t("CONFIG_LBL_MODO_PANTALLA", "Modo de Pantalla:")
+	_lbl_modo_pantalla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lbl_modo_pantalla.add_theme_color_override("font_color", TemaHUD.TEXTO)
+	hbox_pantalla.add_child(_lbl_modo_pantalla)
+
+	_opt_modo_pantalla = OptionButton.new()
+	_opt_modo_pantalla.add_item(Strings.t("CONFIG_PANTALLA_COMPLETA", "Pantalla completa"), 0)
+	_opt_modo_pantalla.add_item(Strings.t("CONFIG_PANTALLA_VENTANA", "Ventana"), 1)
+	_opt_modo_pantalla.custom_minimum_size = Vector2(160, 30)
+	_opt_modo_pantalla.selected = 1 if Configuracion.modo_pantalla == "ventana" else 0
+	_opt_modo_pantalla.item_selected.connect(_on_modo_pantalla_seleccionado)
+	hbox_pantalla.add_child(_opt_modo_pantalla)
+	vbox.add_child(hbox_pantalla)
+
 	var sep := HSeparator.new()
 	vbox.add_child(sep)
 
@@ -319,12 +338,24 @@ func _on_idioma_seleccionado(idx: int) -> void:
 	_actualizar_textos_idioma()
 
 
+func _on_modo_pantalla_seleccionado(idx: int) -> void:
+	var nuevo_modo: String = "ventana" if idx == 1 else "pantalla_completa"
+	Configuracion.establecer_modo_pantalla(nuevo_modo)
+
+
 func _actualizar_textos_idioma() -> void:
 	if _lbl_titulo != null:
 		_lbl_titulo.text = Strings.t("MENU_CONFIGURACION", "Configuración") if solo_audio_y_camara else Strings.t("CONFIG_TITULO", "Configuración y Balance")
 
 	if _lbl_idioma != null:
 		_lbl_idioma.text = Strings.t("CONFIG_LBL_IDIOMA", "Idioma:")
+
+	if _lbl_modo_pantalla != null:
+		_lbl_modo_pantalla.text = Strings.t("CONFIG_LBL_MODO_PANTALLA", "Modo de Pantalla:")
+
+	if _opt_modo_pantalla != null and _opt_modo_pantalla.item_count >= 2:
+		_opt_modo_pantalla.set_item_text(0, Strings.t("CONFIG_PANTALLA_COMPLETA", "Pantalla completa"))
+		_opt_modo_pantalla.set_item_text(1, Strings.t("CONFIG_PANTALLA_VENTANA", "Ventana"))
 
 	if _lbl_sfx != null:
 		_lbl_sfx.text = Strings.t("CONFIG_LBL_SFX", "Volumen Efectos (SFX):")
@@ -385,6 +416,8 @@ func _obtener_def_ajuste(clave: String) -> Dictionary:
 func sincronizar_desde_configuracion() -> void:
 	if _opt_idioma != null:
 		_opt_idioma.selected = 1 if Configuracion.idioma.to_lower() == "en" else 0
+	if _opt_modo_pantalla != null:
+		_opt_modo_pantalla.selected = 1 if Configuracion.modo_pantalla == "ventana" else 0
 
 	if _slider_sfx != null:
 		_slider_sfx.value = Configuracion.volumen_sfx * 100.0
@@ -423,9 +456,11 @@ func _on_guardar_pressed() -> void:
 	Configuracion.sensibilidad_mouse = _slider_sensibilidad.value / 1000.0
 	Configuracion.fov_camara = _slider_fov.value
 
-	# Guardar idioma
+	# Guardar idioma y modo de pantalla
 	var nuevo_lang: String = "en" if _opt_idioma.selected == 1 else "es"
 	Configuracion.establecer_idioma(nuevo_lang)
+	if _opt_modo_pantalla != null:
+		Configuracion.establecer_modo_pantalla("ventana" if _opt_modo_pantalla.selected == 1 else "pantalla_completa")
 
 	# Guardar variables de balance
 	for clave in _controles_ajustes.keys():
@@ -460,6 +495,7 @@ func _on_reset_pressed() -> void:
 		Configuracion.sensibilidad_mouse = 0.003
 		Configuracion.fov_camara = 70.0
 		Configuracion.idioma = "es"
+		Configuracion.modo_pantalla = "pantalla_completa"
 		for item in Configuracion.AJUSTES_DEFINICIONES.get("cenital", []):
 			Configuracion.variables_ajustes[item["clave"]] = item["default"]
 		Configuracion.aplicar()

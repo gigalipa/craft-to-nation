@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Cuerda tensa -->
+  <polyline points="17,11 10,43 53,47" fill="none" stroke="#F2EBD1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Cuerpo del arco recurvo -->
+  <path d="M16,10 C32,12 52,32 54,48" fill="none" stroke="#1E272C" stroke-width="9" stroke-linecap="round"/>
+  <path d="M16,10 C32,12 52,32 54,48" fill="none" stroke="#8D6E63" stroke-width="5.5" stroke-linecap="round"/>
+  <!-- Empuñadura y puntas doradas del arco -->
+  <path d="M31,19 C36,23 41,28 45,33" fill="none" stroke="#FFE082" stroke-width="6.5" stroke-linecap="round"/>
+  <circle cx="16" cy="10" r="3" fill="#C79E40" stroke="#1E272C" stroke-width="1.5"/>
+  <circle cx="54" cy="48" r="3" fill="#C79E40" stroke="#1E272C" stroke-width="1.5"/>
+  <!-- Flecha cargada -->
+  <g stroke="#1E272C" stroke-width="1.8" stroke-linejoin="round">
+    <line x1="12" y1="52" x2="48" y2="16" stroke="#1E272C" stroke-width="5.5" stroke-linecap="round"/>
+    <line x1="12" y1="52" x2="48" y2="16" stroke="#F2EBD1" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Plumas -->
+    <polygon points="10,47 16,45 14,51 8,53" fill="#FF5959"/>
+    <polygon points="17,54 19,48 13,50 11,56" fill="#D32F2F"/>
+    <!-- Punta metálica -->
+    <polygon points="55,9 49,23 41,15" fill="#ECEFF1"/>
+    <polygon points="55,9 49,23 45,19" fill="#90A4AE"/>
+  </g>
+</svg>

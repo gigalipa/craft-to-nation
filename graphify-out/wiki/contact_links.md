@@ -15,18 +15,18 @@
 
 ## Relationships
 
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (3 shared connections)
-- [Vias.gd](Vias.gd.md) (2 shared connections)
-- [Player.gd](Player.gd.md) (2 shared connections)
-- [attributes](attributes.md) (2 shared connections)
+- [Vias.gd](Vias.gd.md) (4 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (3 shared connections)
+- [ajustes.gd](ajustes.gd.md) (2 shared connections)
 - [2026-09-24-edificios-recoleccion-plantillas.md (Edificios de recolección jugables reales (plantillas) Implem)](2026-09-24-edificios-recoleccion-plantillas.md_Edificios_de_recolección_jugables_reales_plantillas_Implem.md) (1 shared connections)
-- [Asset Visual: Craft_to_Nation_Kick_profile_banner.png](Asset_Visual-_Craft_to_Nation_Kick_profile_banner.png.md) (1 shared connections)
-- [os / generate_ui_icons.py](os_-_generate_ui_icons.py.md) (1 shared connections)
 - [HUD.gd](HUD.gd.md) (1 shared connections)
-- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (1 shared connections)
-- [Root.tsx](Root.tsx.md) (1 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
+- [ViaPreviewOverlay.gd](ViaPreviewOverlay.gd.md) (1 shared connections)
+- [attributes](attributes.md) (1 shared connections)
+- [Blueprints.gd](Blueprints.gd.md) (1 shared connections)
 - [config.yml](config.yml.md) (1 shared connections)
-- [HUDTest.gd](HUDTest.gd.md) (1 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (1 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (1 shared connections)
 
 ## Source Files
 

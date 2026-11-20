@@ -2,7 +2,7 @@
 
 > God node · 35 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [HUD.gd](HUD.gd.md)
+**Community:** [Ciudad.gd](Ciudad.gd.md)
 
 ## Connections by Relation
 
@@ -31,7 +31,7 @@
 
 ### implements
 - [VoxelWorld.gd](VoxelWorld.gd.md) `EXTRACTED`
-- [Player.gd](Player.gd.md) `EXTRACTED`
+- Player.gd `EXTRACTED`
 - TranslucidosRenderer.gd `EXTRACTED`
 
 ---

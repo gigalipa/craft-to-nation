@@ -16,18 +16,16 @@
 
 ## Relationships
 
-- [Player.gd](Player.gd.md) (4 shared connections)
+- [ajustes.gd](ajustes.gd.md) (4 shared connections)
+- [Vias.gd](Vias.gd.md) (2 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (2 shared connections)
 - [argparse](argparse.md) (1 shared connections)
-- [Root.tsx](Root.tsx.md) (1 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
+- [HUD.gd](HUD.gd.md) (1 shared connections)
 - [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (1 shared connections)
 - [Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)](Documento_de_Diseño_de_Juego_GDD__Craft_to_Nation.md___Documento_de_Diseño_de_Juego_GDD-_Craft_to_Nation__.md) (1 shared connections)
-- [Código de Conducta de la Comunidad — Craft to Nation](Código_de_Conducta_de_la_Comunidad_—_Craft_to_Nation.md) (1 shared connections)
 - [Zonificacion.gd](Zonificacion.gd.md) (1 shared connections)
-- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (1 shared connections)
-- [1. Publicación Principal - Devlog Técnico Multicámara (Martes)](1._Publicación_Principal_-_Devlog_Técnico_Multicámara_Martes.md) (1 shared connections)
-- [Hotbar.gd](Hotbar.gd.md) (1 shared connections)
-- [2026-09-20-fantasmas-permeables.md (Fantasmas de Obra Permeables hacia Afuera (Plan 3 de 3) Impl)](2026-09-20-fantasmas-permeables.md_Fantasmas_de_Obra_Permeables_hacia_Afuera_Plan_3_de_3_Impl.md) (1 shared connections)
+- [TemaHUD.gd](TemaHUD.gd.md) (1 shared connections)
+- [tsconfig.json](tsconfig.json.md) (1 shared connections)
 
 ## Source Files
 

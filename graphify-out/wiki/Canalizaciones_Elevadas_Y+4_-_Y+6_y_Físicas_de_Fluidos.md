@@ -2,7 +2,7 @@
 
 > God node · 28 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [Hotbar.gd](Hotbar.gd.md)
+**Community:** [Ciudad.gd](Ciudad.gd.md)
 
 ## Connections by Relation
 
@@ -32,7 +32,7 @@
 ### implements
 - [Obras.gd](Obras.gd.md) `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- FinalizacionObras.gd `EXTRACTED`
+- [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
 
 ---
 

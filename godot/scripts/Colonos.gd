@@ -287,8 +287,8 @@ func _retirar(id: int) -> void:
 		unidades_seleccionadas.erase(id)
 		cambio_sel = true
 	for otro in colonos.values():
-		var ord: Dictionary = otro.get("orden_militar", {})
-		if not ord.is_empty() and ord.get("objetivo_tipo", "") == "unidad" and int(ord.get("objetivo_id", -1)) == id:
+		var orden_m: Dictionary = otro.get("orden_militar", {})
+		if not orden_m.is_empty() and orden_m.get("objetivo_tipo", "") == "unidad" and int(orden_m.get("objetivo_id", -1)) == id:
 			otro["orden_militar"] = {}
 			_dejar_lo_que_hacia(otro)
 	if cambio_sel:
@@ -568,6 +568,10 @@ func velocidad_efectiva_colono(colono_id: int) -> float:
 
 
 func _completar_paso(c: Dictionary, delta: float) -> void:
+	if c["ruta"].is_empty():
+		c["moviendo"] = false
+		c["progreso"] = 0.0
+		return
 	var vel: float = velocidad_efectiva_colono(c["id"])
 	c["progreso"] += delta * vel
 
@@ -2078,8 +2082,9 @@ func _altura_superficie_transitable(x: int, z: int, y_ref: int) -> Vector3i:
 	return INVALIDA
 
 
-func _destinos_formacion(centro: Vector3i, cantidad: int, evitar: Dictionary = {}) -> Array[Vector3i]:
+func _destinos_formacion(centro: Vector3i, cantidad: int, evitar: Dictionary = {}, ids_propios: Array = []) -> Array[Vector3i]:
 	var res: Array[Vector3i] = []
+	var respaldos: Array[Vector3i] = []
 	if cantidad <= 0 or centro == INVALIDA:
 		return res
 	var vistos := {}
@@ -2093,9 +2098,16 @@ func _destinos_formacion(centro: Vector3i, cantidad: int, evitar: Dictionary = {
 				if cand == INVALIDA or vistos.has(cand) or evitar.has(cand):
 					continue
 				vistos[cand] = true
+				if ocupadas.has(cand) and not ids_propios.has(ocupadas[cand]):
+					respaldos.append(cand)
+					continue
 				res.append(cand)
 				if res.size() >= cantidad:
 					return res
+	for r_cel in respaldos:
+		res.append(r_cel)
+		if res.size() >= cantidad:
+			return res
 	while res.size() < cantidad:
 		res.append(centro)
 	return res
@@ -2106,13 +2118,27 @@ func _mover_militar_a(c: Dictionary, objetivo: Vector3i) -> void:
 		return
 	if _buscador.has_method("terminar_en_curso"):
 		_buscador.terminar_en_curso(c["id"])
+	c["busqueda"] = {}
+	c["espera"] = 0.0
+	if c["moviendo"]:
+		if not c["ruta"].is_empty():
+			var paso_actual: Vector3i = c["ruta"][0]
+			var en_curso: Array[Vector3i] = [paso_actual]
+			c["ruta"] = en_curso
+			return
+		c["moviendo"] = false
+		c["progreso"] = 0.0
 	var vacia: Array[Vector3i] = []
 	c["ruta"] = vacia
-	c["espera"] = 0.0
 	if c["celda"] == objetivo:
-		c["busqueda"] = {}
 		return
-	c["busqueda"] = {"grupos": [[objetivo]], "actual": null, "tope": BuscadorRutas.MAX_NODOS_EXPANDIDOS, "deambular": true}
+	c["busqueda"] = {
+		"grupos": [[objetivo]],
+		"todos_grupos": [[objetivo]],
+		"actual": null,
+		"tope": BuscadorRutas.MAX_NODOS_EXPANDIDOS,
+		"deambular": true,
+	}
 	var prev_libres := _nodos_libres
 	_nodos_libres = maxi(_nodos_libres, NODOS_POR_FRAME)
 	_avanzar_busqueda(c)
@@ -2135,41 +2161,73 @@ func ordenar_mover(celda: Vector3i, solo_uno: bool = false) -> void:
 			if d < mejor_dist:
 				mejor_dist = d
 				elegido = cid
+		var cands_uno := _destinos_formacion(destino_base, 1, {}, [elegido])
+		var dest_uno: Vector3i = cands_uno[0] if not cands_uno.is_empty() else destino_base
 		var c: Dictionary = colonos[elegido]
-		c["orden_militar"] = {"tipo": "mover", "destino": destino_base}
-		_mover_militar_a(c, destino_base)
+		c["orden_militar"] = {"tipo": "mover", "destino": dest_uno}
+		_mover_militar_a(c, dest_uno)
 		return
-	var destinos := _destinos_formacion(destino_base, mil.size())
+	var destinos := _destinos_formacion(destino_base, mil.size(), {}, mil)
 	for i in range(mil.size()):
 		var c: Dictionary = colonos[mil[i]]
 		c["orden_militar"] = {"tipo": "mover", "destino": destinos[i]}
 		_mover_militar_a(c, destinos[i])
 
 
-func ordenar_patrullar(celda: Vector3i, reiniciar: bool = false) -> void:
+func _es_mismo_vertice_patrulla(a: Vector3i, b: Vector3i) -> bool:
+	return maxi(absi(a.x - b.x), absi(a.z - b.z)) <= 1
+
+
+func ordenar_patrullar(celda: Vector3i, limpiar_ruta: bool = false) -> void:
 	var mil := militares_seleccionados()
 	if mil.is_empty() or celda == INVALIDA:
 		return
 	var destino_base := _altura_superficie_transitable(celda.x, celda.z, celda.y)
 	if destino_base == INVALIDA:
 		destino_base = celda
-	var destinos := _destinos_formacion(destino_base, mil.size())
+	var destinos := _destinos_formacion(destino_base, mil.size(), {}, mil)
 	for i in range(mil.size()):
 		var c: Dictionary = colonos[mil[i]]
-		var ord: Dictionary = c.get("orden_militar", {})
+		var orden_m: Dictionary = c.get("orden_militar", {})
 		var wp_dest: Vector3i = destinos[i]
-		if reiniciar or str(ord.get("tipo", "")) != "patrullar" or (ord.get("waypoints", []) as Array).size() < 2:
+		if limpiar_ruta or str(orden_m.get("tipo", "")) != "patrullar" or (orden_m.get("waypoints", []) as Array).size() < 2:
 			var origen_wp: Vector3i = c["celda"]
 			c["orden_militar"] = {
 				"tipo": "patrullar",
 				"waypoints": [origen_wp, wp_dest],
+				"waypoints_base": [origen_wp, destino_base],
+				"modo_patrulla": "vaiven",
 				"waypoint_idx": 1,
 				"waypoint_dir": 1,
 			}
 			_mover_militar_a(c, wp_dest)
 		else:
-			var wps: Array = ord["waypoints"]
-			wps.append(wp_dest)
+			var wps: Array = orden_m["waypoints"]
+			var wps_base: Array = orden_m.get("waypoints_base", [])
+			if wps_base.size() >= 3 and _es_mismo_vertice_patrulla(destino_base, wps_base[0]):
+				if wps[wps.size() - 1] != wps[0]:
+					wps.append(wps[0])
+					wps_base.append(wps_base[0])
+				orden_m["modo_patrulla"] = "circuito"
+				orden_m["waypoint_dir"] = 1
+			elif wps_base.size() >= 4 and _es_mismo_vertice_patrulla(destino_base, wps_base[1]):
+				wps.remove_at(0)
+				wps_base.remove_at(0)
+				if wps[wps.size() - 1] != wps[0]:
+					wps.append(wps[0])
+					wps_base.append(wps_base[0])
+				orden_m["waypoint_idx"] = clampi(int(orden_m.get("waypoint_idx", 1)) - 1, 0, wps.size() - 1)
+				orden_m["modo_patrulla"] = "circuito"
+				orden_m["waypoint_dir"] = 1
+			else:
+				if str(orden_m.get("modo_patrulla", "")) == "circuito" and wps.size() >= 3 and wps[wps.size() - 1] == wps[0]:
+					wps.pop_back()
+					if wps_base.size() >= 3:
+						wps_base.pop_back()
+				wps.append(wp_dest)
+				if not wps_base.is_empty():
+					wps_base.append(destino_base)
+				orden_m["modo_patrulla"] = "vaiven"
 
 
 func ordenar_atacar(objetivo_tipo: String, objetivo_id: int, celda: Vector3i) -> void:
@@ -2271,39 +2329,44 @@ func _resolver_celda_objetivo(objetivo_tipo: String, objetivo_id: int, desde: Ve
 
 
 func _procesar_combate_y_seguimiento_militar(c: Dictionary, delta: float) -> bool:
-	var ord: Dictionary = c.get("orden_militar", {})
-	if ord.is_empty():
+	var orden_m: Dictionary = c.get("orden_militar", {})
+	if orden_m.is_empty():
 		return false
-	var tipo_ord: String = str(ord.get("tipo", ""))
+	var tipo_ord: String = str(orden_m.get("tipo", ""))
 	if tipo_ord == "atacar":
-		var obj_tipo: String = str(ord.get("objetivo_tipo", ""))
-		var obj_id: int = int(ord.get("objetivo_id", -1))
-		var celda_obj: Vector3i = ord.get("destino", INVALIDA)
+		var obj_tipo: String = str(orden_m.get("objetivo_tipo", ""))
+		var obj_id: int = int(orden_m.get("objetivo_id", -1))
+		var celda_obj: Vector3i = orden_m.get("destino", INVALIDA)
 		if obj_tipo == "unidad":
 			if not colonos.has(obj_id):
 				c["orden_militar"] = {}
 				_dejar_lo_que_hacia(c)
 				return false
 			celda_obj = colonos[obj_id]["celda"]
-			ord["destino"] = celda_obj
+			orden_m["destino"] = celda_obj
 		elif obj_tipo == "edificio" and obj_id != -1:
 			var celda_ed := _resolver_celda_objetivo("edificio", obj_id, c["celda"])
 			if celda_ed != INVALIDA:
 				celda_obj = celda_ed
-				ord["destino"] = celda_obj
+				orden_m["destino"] = celda_obj
 			elif salud_edificios.has(obj_id) and salud_edificios[obj_id] <= 0.0:
 				c["orden_militar"] = {}
 				_dejar_lo_que_hacia(c)
 				return false
 
 		if celda_obj != INVALIDA and Vector3(c["celda"]).distance_to(Vector3(celda_obj)) <= Ajustes.MILITAR_ALCANCE_ATAQUE + 0.05:
-			var vacia: Array[Vector3i] = []
-			c["ruta"] = vacia
+			if c["moviendo"] and not c["ruta"].is_empty():
+				var paso_actual: Vector3i = c["ruta"][0]
+				var en_curso: Array[Vector3i] = [paso_actual]
+				c["ruta"] = en_curso
+			else:
+				var vacia: Array[Vector3i] = []
+				c["ruta"] = vacia
 			c["busqueda"] = {}
 			c["espera"] = 0.0
-			ord["cooldown_ataque"] = float(ord.get("cooldown_ataque", 0.0)) - delta
-			if ord["cooldown_ataque"] <= 0.0:
-				ord["cooldown_ataque"] = Ajustes.MILITAR_COOLDOWN_ATAQUE
+			orden_m["cooldown_ataque"] = float(orden_m.get("cooldown_ataque", 0.0)) - delta
+			if orden_m["cooldown_ataque"] <= 0.0:
+				orden_m["cooldown_ataque"] = Ajustes.MILITAR_COOLDOWN_ATAQUE
 				if obj_tipo == "unidad":
 					aplicar_dano_unidad(obj_id, Ajustes.MILITAR_DANO_ATAQUE)
 				elif obj_tipo == "edificio":
@@ -2312,8 +2375,8 @@ func _procesar_combate_y_seguimiento_militar(c: Dictionary, delta: float) -> boo
 		elif c["ruta"].is_empty() and c.get("busqueda", {}).is_empty():
 			c["espera"] = 0.0
 	elif tipo_ord == "seguir":
-		var celda_seg := _resolver_celda_objetivo(str(ord.get("objetivo_tipo", "avatar")), int(ord.get("objetivo_id", -1)))
-		if str(ord.get("objetivo_tipo", "")) == "unidad" and not colonos.has(int(ord.get("objetivo_id", -1))):
+		var celda_seg := _resolver_celda_objetivo(str(orden_m.get("objetivo_tipo", "avatar")), int(orden_m.get("objetivo_id", -1)))
+		if str(orden_m.get("objetivo_tipo", "")) == "unidad" and not colonos.has(int(orden_m.get("objetivo_id", -1))):
 			c["orden_militar"] = {}
 			_dejar_lo_que_hacia(c)
 			return false
@@ -2321,9 +2384,9 @@ func _procesar_combate_y_seguimiento_militar(c: Dictionary, delta: float) -> boo
 			var dist_man: int = absi(c["celda"].x - celda_seg.x) + absi(c["celda"].z - celda_seg.z)
 			if dist_man > 3 and c["ruta"].is_empty() and c.get("busqueda", {}).is_empty():
 				c["espera"] = 0.0
-				var cands := _destinos_formacion(celda_seg, 1, {celda_seg: true})
+				var cands := _destinos_formacion(celda_seg, 1, {celda_seg: true}, [c["id"]])
 				if not cands.is_empty():
-					ord["destino"] = cands[0]
+					orden_m["destino"] = cands[0]
 					_mover_militar_a(c, cands[0])
 	return false
 
@@ -2331,8 +2394,8 @@ func _procesar_combate_y_seguimiento_militar(c: Dictionary, delta: float) -> boo
 func _decidir_militar(c: Dictionary) -> void:
 	if not _recuperar_si_atrapado(c):
 		return
-	var ord: Dictionary = c.get("orden_militar", {})
-	var tipo_ord: String = str(ord.get("tipo", ""))
+	var orden_m: Dictionary = c.get("orden_militar", {})
+	var tipo_ord: String = str(orden_m.get("tipo", ""))
 	if tipo_ord == "":
 		var cuartel_esq: Vector2i = c.get("cuartel_origen", Vector2i(-1, -1))
 		if cuartel_esq != Vector2i(-1, -1) and economia != null and economia.puestos.has(cuartel_esq):
@@ -2347,33 +2410,46 @@ func _decidir_militar(c: Dictionary) -> void:
 		return  # Los militares graduados no merodean
 	match tipo_ord:
 		"mover", "proteger":
-			var dest: Vector3i = ord.get("destino", INVALIDA)
-			if dest == INVALIDA or c["celda"] == dest:
+			var dest: Vector3i = orden_m.get("destino", INVALIDA)
+			var ocupado_en_dest: bool = (dest != INVALIDA and ocupadas.has(dest) and int(ocupadas[dest]) != int(c["id"]))
+			var ya_adyacente_inmovil: bool = false
+			if ocupado_en_dest and maxi(absi(c["celda"].x - dest.x), absi(c["celda"].z - dest.z)) <= 1:
+				var otro_dest: Dictionary = colonos.get(int(ocupadas[dest]), {})
+				ya_adyacente_inmovil = not bool(otro_dest.get("moviendo", false))
+			if dest == INVALIDA or c["celda"] == dest or (tipo_ord == "mover" and ya_adyacente_inmovil):
 				if tipo_ord == "mover":
 					c["orden_militar"] = {}
 				return
 			_mover_militar_a(c, dest)
 		"patrullar":
-			var wps: Array = ord.get("waypoints", [])
+			var wps: Array = orden_m.get("waypoints", [])
 			if wps.size() < 2:
 				return
-			var idx: int = clampi(int(ord.get("waypoint_idx", 0)), 0, wps.size() - 1)
+			var idx: int = clampi(int(orden_m.get("waypoint_idx", 0)), 0, wps.size() - 1)
+			var es_circuito: bool = (str(orden_m.get("modo_patrulla", "")) == "circuito") or (wps.size() >= 4 and wps[0] == wps[wps.size() - 1])
 			if c["celda"] == wps[idx]:
-				var dir: int = int(ord.get("waypoint_dir", 1))
-				if idx + dir >= wps.size() or idx + dir < 0:
-					dir = -dir
-				ord["waypoint_dir"] = dir
-				idx = clampi(idx + dir, 0, wps.size() - 1)
-				ord["waypoint_idx"] = idx
+				if es_circuito:
+					idx += 1
+					if idx >= wps.size():
+						idx = 1 if (wps.size() >= 2 and wps[wps.size() - 1] == wps[0]) else 0
+					orden_m["waypoint_dir"] = 1
+					orden_m["waypoint_idx"] = idx
+				else:
+					var dir: int = int(orden_m.get("waypoint_dir", 1))
+					if idx + dir >= wps.size() or idx + dir < 0:
+						dir = -dir
+					orden_m["waypoint_dir"] = dir
+					idx = clampi(idx + dir, 0, wps.size() - 1)
+					orden_m["waypoint_idx"] = idx
 			_mover_militar_a(c, wps[idx])
 		"atacar":
-			var dest_at: Vector3i = ord.get("destino", INVALIDA)
+			var dest_at: Vector3i = orden_m.get("destino", INVALIDA)
 			if dest_at != INVALIDA:
-				var cands_at := _destinos_formacion(dest_at, 1, {dest_at: true})
+				var cands_at := _destinos_formacion(dest_at, 1, {dest_at: true}, [c["id"]])
 				if not cands_at.is_empty() and c["celda"] != cands_at[0]:
 					_mover_militar_a(c, cands_at[0])
 		"seguir":
-			var dest_seg: Vector3i = ord.get("destino", INVALIDA)
+			var dest_seg: Vector3i = orden_m.get("destino", INVALIDA)
 			if dest_seg != INVALIDA and c["celda"] != dest_seg:
 				_mover_militar_a(c, dest_seg)
 		"mantener":
@@ -2541,4 +2617,3 @@ func importar_estado(d: Dictionary) -> void:
 			if colonos.has(int(raw_id)):
 				unidades_seleccionadas.append(int(raw_id))
 	subgrupo_activo = str(d.get("subgrupo_activo", ""))
-

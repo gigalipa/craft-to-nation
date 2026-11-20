@@ -293,6 +293,7 @@ func _input(event: InputEvent) -> void:
 					arma_seleccionada = indice
 					if hud != null:
 						hud.set_tipo_hotbar(arma_seleccionada)
+						_mostrar_contexto_arma_actual()
 			elif modo_primera_persona == "comandante":
 				if tecla.shift_pressed:
 					if tecla.keycode == KEY_0:
@@ -308,6 +309,7 @@ func _input(event: InputEvent) -> void:
 					orden_comandante_seleccionada = indice
 					if hud != null:
 						hud.set_tipo_hotbar(orden_comandante_seleccionada)
+						_mostrar_contexto_orden_actual()
 			elif indice >= 0 and indice < tipos_disponibles.size():
 				tipo_seleccionado = indice
 				hud.set_tipo_hotbar(indice)
@@ -1076,24 +1078,58 @@ func establecer_modo_primera_persona(nuevo_modo: String, notificar_cambio: bool 
 			arma_seleccionada = clampi(arma_seleccionada, 0, maxi(0, items_armas.size() - 1))
 			hud.set_tipo_hotbar(arma_seleccionada)
 			hud.set_crosshair_combate(true)
+			_mostrar_contexto_arma_actual()
 			if notificar_cambio and cambio:
 				hud.notificar(Strings.t("MODO_BATALLA"))
 		"comandante":
-			var items_ord: Array = [
-				{"id": "atacar", "nombre": Strings.t("ORDEN_ATACAR"), "nombre_key": "ORDEN_ATACAR", "icono": IconosHUD.icono("orden_atacar")},
-				{"id": "defender", "nombre": Strings.t("ORDEN_DEFENDER"), "nombre_key": "ORDEN_DEFENDER", "icono": IconosHUD.icono("orden_defender")},
-				{"id": "seguir", "nombre": Strings.t("ORDEN_SEGUIR"), "nombre_key": "ORDEN_SEGUIR", "icono": IconosHUD.icono("orden_seguir")},
-				{"id": "moverse", "nombre": Strings.t("ORDEN_MOVERSE"), "nombre_key": "ORDEN_MOVERSE", "icono": IconosHUD.icono("orden_moverse")},
-				{"id": "patrullar", "nombre": Strings.t("ORDEN_PATRULLAR"), "nombre_key": "ORDEN_PATRULLAR", "icono": IconosHUD.icono("orden_patrullar")},
-				{"id": "mantener", "nombre": Strings.t("ORDEN_MANTENER"), "nombre_key": "ORDEN_MANTENER", "icono": IconosHUD.icono("orden_mantener")},
-			]
+			var items_ord: Array = []
+			for ord_id in ORDENES_COMANDANTE:
+				var nk: String = "ORDEN_" + ord_id.to_upper()
+				items_ord.append({
+					"id": ord_id,
+					"nombre": Strings.t(nk),
+					"nombre_key": nk,
+					"icono": IconosHUD.icono("orden_" + ord_id),
+				})
 			hud.configurar_hotbar_modo_especial(items_ord)
 			orden_comandante_seleccionada = clampi(orden_comandante_seleccionada, 0, items_ord.size() - 1)
 			hud.set_tipo_hotbar(orden_comandante_seleccionada)
 			hud.set_crosshair_combate(false)
 			hud.actualizar_panel_grupos_tropas()
+			_mostrar_contexto_orden_actual()
 			if notificar_cambio and cambio:
 				hud.notificar(Strings.t("MODO_COMANDANTE"))
+
+
+func _mostrar_contexto_especial(indice: int, id_icono: String, prefijo_clave: String, incluye_derecho: bool) -> void:
+	if hud == null or not hud.has_method("mostrar_contexto_item_hotbar"):
+		return
+	var acciones: Array = [Strings.t(prefijo_clave + "_ACC_IZQ")]
+	if incluye_derecho:
+		acciones.append(Strings.t(prefijo_clave + "_ACC_DER"))
+	hud.mostrar_contexto_item_hotbar(
+		indice,
+		Strings.t(prefijo_clave + "_TITULO"),
+		IconosHUD.icono(id_icono),
+		Strings.t(prefijo_clave + "_DESC"),
+		acciones
+	)
+
+
+func _mostrar_contexto_arma_actual() -> void:
+	if Ajustes.ARMAS_AVATAR.is_empty():
+		return
+	var idx: int = clampi(arma_seleccionada, 0, Ajustes.ARMAS_AVATAR.size() - 1)
+	var arma: Dictionary = Ajustes.ARMAS_AVATAR[idx]
+	_mostrar_contexto_especial(idx, str(arma.get("id", "espada")), str(arma.get("nombre_key", "ARMA_ESPADA")), false)
+
+
+func _mostrar_contexto_orden_actual() -> void:
+	if ORDENES_COMANDANTE.is_empty():
+		return
+	var idx: int = clampi(orden_comandante_seleccionada, 0, ORDENES_COMANDANTE.size() - 1)
+	var ord_id: String = ORDENES_COMANDANTE[idx]
+	_mostrar_contexto_especial(idx, "orden_" + ord_id, "ORDEN_" + ord_id.to_upper(), true)
 
 
 func atacar_en_primera_persona() -> bool:
@@ -1108,20 +1144,14 @@ func atacar_en_primera_persona() -> bool:
 	var destino: Vector3 = origen + (-camara.global_transform.basis.z) * alcance
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 
-	var q_uni := PhysicsRayQueryParameters3D.create(origen, destino)
-	q_uni.collision_mask = MASCARA_UNIDADES
-	var hit_uni: Dictionary = space.intersect_ray(q_uni)
-	if hit_uni.has("collider") and hit_uni["collider"] != null:
-		var col: Object = hit_uni["collider"]
+	var q_hit := PhysicsRayQueryParameters3D.create(origen, destino, MASCARA_MUNDO_COMBATE | MASCARA_UNIDADES)
+	var hit: Dictionary = space.intersect_ray(q_hit)
+	if hit.has("collider") and hit["collider"] != null:
+		var col: Object = hit["collider"]
 		if col.has_meta("colono_id"):
-			return ejecutar_ataque_en_objetivo("unidad", int(col.get_meta("colono_id")), _celda_en(hit_uni["position"]))
-
-	var q_mundo := PhysicsRayQueryParameters3D.create(origen, destino)
-	q_mundo.collision_mask = MASCARA_MUNDO_COMBATE
-	var hit_m: Dictionary = space.intersect_ray(q_mundo)
-	if not hit_m.is_empty():
-		var p: Vector3 = hit_m["position"]
-		var n: Vector3 = hit_m["normal"]
+			return ejecutar_ataque_en_objetivo("unidad", int(col.get_meta("colono_id")), _celda_en(hit["position"]))
+		var p: Vector3 = hit["position"]
+		var n: Vector3 = hit["normal"]
 		var celda: Vector3i = mundo.local_to_map(mundo.to_local(p - n * 0.5)) if (mundo != null and mundo.has_method("local_to_map")) else _celda_en(p - n * 0.5)
 		var id_ed: int = Obras.id_en_columna(Vector2i(celda.x, celda.z)) if Obras != null else -1
 		if id_ed != -1:
@@ -1161,20 +1191,18 @@ func _procesar_clic_comandante(clic_derecho: bool) -> void:
 		var dir: Vector3 = -camara.global_transform.basis.z
 		var dest: Vector3 = origen + dir * Ajustes.COMANDANTE_ALCANCE_RAYCAST
 		var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-		var hit_uni: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(origen, dest, MASCARA_UNIDADES))
-		if hit_uni.has("collider") and hit_uni["collider"] != null:
-			var col: Object = hit_uni["collider"]
+		var hit: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(origen, dest, MASCARA_MUNDO_COMBATE | MASCARA_UNIDADES))
+		if hit.has("collider") and hit["collider"] != null:
+			var col: Object = hit["collider"]
 			if col.has_meta("colono_id"):
 				uid = int(col.get_meta("colono_id"))
-				celda = _celda_en(hit_uni.get("position", origen))
-		else:
-			var hit_m: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(origen, dest, MASCARA_MUNDO_COMBATE))
-			if not hit_m.is_empty():
-				var p: Vector3 = hit_m["position"]
-				var n: Vector3 = hit_m["normal"]
-				celda = mundo.local_to_map(mundo.to_local(p - n * 0.5)) if (mundo != null and mundo.has_method("local_to_map")) else _celda_en(p - n * 0.5)
+				celda = _celda_en(hit.get("position", origen))
 			else:
-				celda = _celda_en(dest)
+				var p: Vector3 = hit["position"]
+				var n: Vector3 = hit["normal"]
+				celda = mundo.local_to_map(mundo.to_local(p - n * 0.5)) if (mundo != null and mundo.has_method("local_to_map")) else _celda_en(p - n * 0.5)
+		else:
+			celda = _celda_en(dest)
 		if Obras != null:
 			id_ed = Obras.id_en_columna(Vector2i(celda.x, celda.z))
 	ejecutar_orden_comandante(clic_derecho, celda, uid, id_ed)

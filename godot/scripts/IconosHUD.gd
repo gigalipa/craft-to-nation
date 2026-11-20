@@ -87,14 +87,15 @@ const MAPA_ICONOS := {
 	# Barra superior y estados
 	"almacen": "almacen.svg",
 	"cuartel": "militar.svg",
-	"espada": "militar.svg",
-	"rifle": "militar.svg",
-	"orden_atacar": "militar.svg",
-	"orden_defender": "escudo_agrietado.svg",
-	"orden_seguir": "ciudadano.svg",
-	"orden_moverse": "brujula.svg",
-	"orden_patrullar": "brujula.svg",
-	"orden_mantener": "candado.svg",
+	"espada": "arma_espada.svg",
+	"arco": "arma_arco.svg",
+	"rifle": "arma_arco.svg",
+	"orden_atacar": "orden_atacar.svg",
+	"orden_defender": "orden_defender.svg",
+	"orden_seguir": "orden_seguir.svg",
+	"orden_moverse": "orden_moverse.svg",
+	"orden_patrullar": "orden_patrullar.svg",
+	"orden_mantener": "orden_mantener.svg",
 	"moral_critica": "moral_critica.svg",
 	"moral_baja": "moral_baja.svg",
 	"moral_neutra": "moral_neutra.svg",
@@ -123,6 +124,7 @@ const MAPA_ICONOS := {
 	"cat_investigacion": "cat_investigacion.svg",
 	"cat_vias": "cat_vias.svg",
 	"cat_ductos": "cat_ductos.svg",
+	"cat_militar": "cat_militar.svg",
 	"zona_residencial": "zona_residencial.svg",
 	"zona_industrial": "zona_industrial.svg",
 	"zona_borrar": "zona_borrar.svg",
@@ -231,17 +233,18 @@ static func icono(clave: String) -> Texture2D:
 		tex = ResourceLoader.get_cached_ref(r) as Texture2D
 	if tex == null and ResourceLoader.exists(r):
 		tex = load(r) as Texture2D
-	if tex == null:
-		# En ciertas builds exportadas con PCK, ResourceLoader.exists() puede fallar con remaps de SVG, pero load() resuelve directamente
-		tex = load(r) as Texture2D
 
-	# 2. Carga directa de bytes SVG vía FileAccess (funciona tanto en PCK virtual como en disco físico)
+	# 2. Carga directa de bytes SVG vía FileAccess (evita fallos de ResourceLoader en SVG sin .import previo)
 	if tex == null and FileAccess.file_exists(r):
 		var buffer := FileAccess.get_file_as_bytes(r)
 		if not buffer.is_empty():
 			var img := Image.new()
 			if img.load_svg_from_buffer(buffer) == OK:
 				tex = ImageTexture.create_from_image(img)
+
+	# 3. Fallback adicional en builds con remap donde ResourceLoader.exists(r) o FileAccess no resuelvan
+	if tex == null:
+		tex = load(r) as Texture2D
 
 	# 3. Fallback en disco suelto para desarrollo si fuera necesario
 	if tex == null and FileAccess.file_exists(r):

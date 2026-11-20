@@ -14,12 +14,10 @@
 
 ## Relationships
 
-- [Asset Visual](Asset_Visual.md) (2 shared connections)
-- [Root.tsx](Root.tsx.md) (1 shared connections)
-- [Código de Conducta de la Comunidad — Craft to Nation](Código_de_Conducta_de_la_Comunidad_—_Craft_to_Nation.md) (1 shared connections)
-- [attributes](attributes.md) (1 shared connections)
-- [run-godot-tests.ps1 Module](run-godot-tests.ps1_Module.md) (1 shared connections)
-- [HUD.gd](HUD.gd.md) (1 shared connections)
+- [ConstructorVias.gd](ConstructorVias.gd.md) (3 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (2 shared connections)
+- [ajustes.gd](ajustes.gd.md) (1 shared connections)
+- [ViaPreviewOverlay.gd](ViaPreviewOverlay.gd.md) (1 shared connections)
 
 ## Source Files
 

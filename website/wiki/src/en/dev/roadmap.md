@@ -1,13 +1,13 @@
 ---
-title: "Development Roadmap & Milestone Progress (GDD v3.61)"
+title: "Development Roadmap & Milestone Progress (GDD v3.62)"
 description: "Current development status and technical roadmap: Phases 0 through 7, active Phase 3 industrial milestones, and upcoming dual camera tactical warfare."
 ---
 
-# Development Roadmap & Milestone Progress (GDD v3.61)
+# Development Roadmap & Milestone Progress (GDD v3.62)
 
 ![Tactical aerial view of city defense and expansion](/assets/comparison-aerial.webp)
 
-This roadmap tracks the past, current, and upcoming development milestones for **Craft to Nation** across the 7 official phases defined in **Section 11 of GDD v3.61** and the live QA verification protocol (`docs/Live_Verifications.md`), backed by **35 automated test scenes running 100% in green**.
+This roadmap tracks the past, current, and upcoming development milestones for **Craft to Nation** across the 7 official phases defined in **Section 11 of GDD v3.62** and the live QA verification protocol (`docs/Live_Verifications.md`), backed by **37 automated test scenes running 100% in green**.
 
 ---
 
@@ -17,16 +17,16 @@ This roadmap tracks the past, current, and upcoming development milestones for *
   Phase 0: Pure Simulation Logic (PoC 1 & 2)         [████████████████████] 100% (Completed)
   Phase 1: 1st-Person Voxel & Volume Audit (PoC 3)   [████████████████████] 100% (Verified)
   Phase 2: City, Demography, Zoning & NPCs (PoC 4/8) [████████████████████] 100% (Completed)
-  Phase 3: 200×200 World, Industry, Fluids, HUD & SFX v3.61 [███████████████████░]  99% (Final Polish)
-  Phase 4: Dual Combat Camera & Squad RTS (PoC 7)    [████░░░░░░░░░░░░░░░░]  Planned
-  Phase 5: Advanced Logistics & Bridges (PoC 8–10)   [██░░░░░░░░░░░░░░░░░░]  Planned
+  Phase 3: 200×200 World, Industry, Fluids, HUD & SFX v3.62 [████████████████████] 100% (Completed)
+  Phase 4: Dual Camera, Barracks & Hybrid RTS (PoC 7) [████████████████████] 100% (Completed)
+  Phase 5: Advanced Logistics & Bridges (PoC 8–10)   [██░░░░░░░░░░░░░░░░░░]  Next Milestone
   Phase 6: Warfare, Sieges, AI & Avatar Succession   [██░░░░░░░░░░░░░░░░░░]  Planned
   Phase 7: LAN Multiplayer & Portable Urban Cores    [█░░░░░░░░░░░░░░░░░░░]  Future Horizon
 ```
 
 ---
 
-## 2. Completed Milestones (Phases 0 to 3 — GDD v3.61)
+## 2. Completed Milestones (Phases 0 to 3 — GDD v3.62)
 
 ### Phase 0 & Phase 1: Voxel Substrate, First-Person Avatar & Volumetric Validation
 - [x] Finite procedural **200×200 voxel world** (`GeneradorMundo.gd`) with max height `y = 130`, **24 subsurface layers** down to unmineable `bedrock`, 2 mountain peaks, rivers with water currents and waterfalls, lakes, and seas.
@@ -53,16 +53,28 @@ This roadmap tracks the past, current, and upcoming development milestones for *
 - [x] **Spatial Audio Engine, 102 SFX Catalog & Windows Standalone Export (2026-11-06 — v3.60):** Master audio autoload `Sonidos.gd` managing circular pools of 16 2D and 16 3D players with inverse-distance spatial falloff (up to 35m) and pitch modulation (±5%); full catalog of 102 OGG sounds across 8 functional domains (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`); Windows standalone export pipeline (`tools/export_windows.ps1` with official `godot/icon.png`); and automated unit test suite `SonidosTest.tscn`. All 35 test suites remain at 100% green.
 - [x] **Main Menu, Atomic Save/Load System, In-Game Pause (F11), Persistent Configuration & Loading Screen (2026-11-07 — v3.61):** Main startup scene `MenuInicio.tscn` with animated slideshow backdrop (`SlideshowFondo.gd`) and looping menu BGM (`The_Architect_s_Decree`), `GestorPartida.gd` atomic saves in `user://saves/` with quicksave slot and save metadata, in-game pause menu `MenuPausa.gd` with <kbd>F11</kbd> runtime tweaks, client preference persistence in `user://configuracion.json` via `Configuracion.gd`, and loading screen `PantallaCarga.gd`. All 35 automated Godot test suites remain at 100% green.
 - [x] **Dynamic Multi-Language Localization System (ES/EN) & Reactive Translation (2026-11-09 — v3.61):** Full implementation of English translation catalog `_DATOS_EN` in `strings.gd`, dynamic string resolution with automatic Spanish fallback via `Strings.t(clave, default)`, runtime hot-switching via `Strings.actualizar_idioma("es"|"en")` reactively tied to `Configuracion.establecer_idioma()`, live synchronization of central warehouse resource labels in `Ciudad`, English aliases in `IconosHUD.gd` (`wood`, `food`, `census`), bilingual text updates across `BarraSuperior.gd`, `Hotbar.gd`, `PantallaCarga.gd`, `MenuInicio.gd`, `MenuPausa.gd`, and `PanelConfiguracionAjustes.gd`, and automated test coverage in `ConfiguracionTest.gd`. All 35 automated Godot test suites remain at 100% green.
-- [x] **Right-Lane Traffic Transit on Roads by Vehicle Footprint, Cinematic Video Intro, Starting Resource Profiles & 36 Test Suites (2026-11-10 — v3.61):** Geometric right-edge road detection $\vec{r} = (-d_z, d_x)$ via `Vias.es_borde_derecho()` paired with directional left-lane cost penalization in A* (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4` in `BuscadorRutas.gd`) ensuring distinct non-colliding lanes based on heading direction and vehicle footprint (`Vector2i` in `TRANSPORTE_CATALOGO_UNIDADES`) with clean detour fallback; cinematic startup splash `VideoIntro.tscn` with animated logo playback, instant key/click skip, and handoff to `MenuInicio.tscn`; categorized starting resource profiles (`supervivencia`, `bajos`, `medios`, `altos`) in `Configuracion.gd` and `ajustes.gd`; and automated test suite expanded to 36 clean scenes with `VideoIntroTest.tscn` running 100% green.
+- [x] **Right-Lane Traffic Transit on Roads by Vehicle Footprint, Cinematic Video Intro, Starting Resource Profiles & 36 Test Suites (2026-11-10 — v3.61):** Geometric right-edge road detection $\vec{r} = (-d_z, d_x)$ via `Vias.es_borde_derecho()` paired with directional left-lane cost penalization in A* (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4` in `BuscadorRutas.gd`) ensuring distinct non-colliding lanes based on heading direction and vehicle footprint (`Vector2i` in `TRANSPORTE_CATALOGO_UNIDADES`) with clean detour fallback; cinematic startup splash `VideoIntro.tscn` with animated logo playback, instant key/click skip, and handoff to `MenuInicio.tscn`; categorized starting resource profiles (`supervivencia`, `bajos`, `medios`, `altos`) in `Configuracion.gd` and `ajustes.gd`; and automated test suite expanded to 37 clean scenes with `VideoIntroTest.tscn` running 100% green.
 
 
 ---
 
-## 3. Upcoming Phases (Phases 4 to 7)
+
+### Phase 4: Dual Combat Camera, Military Barracks, Universal RTS Selection & Hybrid Command (v3.62)
+- [x] **Military Barracks Building (`9×7×8`, Zone B, key `7`) & 4→4 Cohort:** 2-story building with stone, wood, glass, door, and 4 beds that atomically recruits 16 soldiers (4 per bed) in `Economia.gd`/`Recoleccion.gd` without displacing civilian housing.
+- [x] **Barracked Military Housing (`x_cama = 4`):** Segregated military housing calculation in `Ciudad.gd` and `ajustes.gd` preventing civilian evictions.
+- [x] **Universal Overhead Camera Selection (`CamaraCenital.gd`):** 2D drag-selection box supporting individual and group selection of soldiers and civilians, with persistent selection across camera switches (<kbd>C</kbd>).
+- [x] **Unit Inspection Panel & Tactical Orders (`PanelUnidad.gd` & `Colonos.gd`):** Health, occupation, and stance inspection (`Pasivo`, `Defensivo`, `Agresivo`). Order dispatch (`Moverse`, `Atacar` with <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` with <kbd>H</kbd>) via right-click and waypoints via <kbd>Shift</kbd>.
+- [x] **Specialized 1st-Person Avatar Modes (`Player.gd`):** Construction Mode (<kbd>T</kbd>), Battle Mode (<kbd>R</kbd> with sword, bow, and crosshair reticle), and Commander Mode (<kbd>F</kbd> with 1–6 tactical order hotbar and <kbd>Shift</kbd> + <kbd>1..9</kbd> squad assignment).
+- [x] **Procedural Troop Visuals (`ColonosRenderer.gd`):** Procedural helmets, shields, base selection rings, and tactical waypoints.
+- [x] **Persistent Window/Fullscreen Mode (`Configuracion.gd`):** Fullscreen vs windowed (1280×720) toggle saved in `user://configuracion.json`.
+- [x] **Automated Test Suite Expanded to 37 Scenes:** New test suite `PlayerCombateComandanteTest.tscn` bringing total coverage to 37 scenes running 100% green.
+
+---
+
+## 3. Upcoming Phases (Phases 5 to 7)
 
 | Phase / Version | Milestone Focus | Key Systems |
 | :--- | :--- | :--- |
-| **Phase 4 (PoC 7)** | **Dual Camera & Squad RTS Selection** | Box-selection and tactical squad orders (`militar`) from overhead view seamlessly paired with 1st-person combat. |
 | **Phase 5 (PoC 8–10)** | **Advanced Logistics & Bridge Engineering** | High-capacity land wagons, modular bridges over rivers/canyons, and freight railway networks. |
 | **Phase 6** | **Warfare, Sieges, AI & Avatar Succession** | Procedural AI bandit camps, outpost raids, defensive walls/turrets, and avatar succession upon death (`K` key or drowning). |
 | **Phase 7** | **LAN Multiplayer & Portable Urban Cores** | Exporting the validated Urban Core and blueprints into competitive and cooperative LAN/dedicated multiplayer worlds. |

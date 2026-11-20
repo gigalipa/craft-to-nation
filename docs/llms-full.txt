@@ -34,7 +34,7 @@ Craft to Nation une la supervivencia en primera persona con la gestión macrosc�
 
 ---
 
-## 3. Pilares Técnicos y Arquitectura de Sistemas (GDD v3.61)
+## 3. Pilares Técnicos y Arquitectura de Sistemas (GDD v3.62)
 
 ### Dualidad de Perspectiva (Micro ↔ Macro)
 - **Primera Persona:** Minado manual con barra de progreso, colocación de bloques orientables y paneles de ventana (1/20 de espesor en vidrio), natación, combate y deconstrucción directa a pie.

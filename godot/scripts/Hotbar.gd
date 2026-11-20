@@ -275,7 +275,10 @@ func restaurar_bloques() -> void:
 
 func _reconstruir_casillas(entradas: Array) -> void:
 	for casilla in _casillas:
-		casilla["contenedor"].queue_free()
+		var cont: Control = casilla["contenedor"]
+		if cont.get_parent() == _fila:
+			_fila.remove_child(cont)
+		cont.queue_free()
 	_casillas.clear()
 	for i in range(entradas.size()):
 		var entrada: Dictionary = entradas[i]
@@ -285,13 +288,14 @@ func _reconstruir_casillas(entradas: Array) -> void:
 
 		var nombre := TemaHUD.etiqueta(str(entrada.get("nombre", "")))
 		nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		nombre.autowrap_mode = TextServer.AUTOWRAP_WORD
-		nombre.custom_minimum_size.x = TAMANO_ICONO
+		nombre.autowrap_mode = TextServer.AUTOWRAP_OFF if _modo_especial else TextServer.AUTOWRAP_WORD
+		nombre.custom_minimum_size.x = maxf(TAMANO_ICONO, 68.0) if _modo_especial else TAMANO_ICONO
 		contenedor.add_child(nombre)
 
 		var caja := PanelContainer.new()
 		caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		caja.custom_minimum_size = Vector2(TAMANO_ICONO, TAMANO_ICONO)
+		caja.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 		var icono := TextureRect.new()
 		icono.texture = entrada.get("icono", null)

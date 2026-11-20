@@ -8,6 +8,7 @@ const ColonosScript = preload("res://scripts/Colonos.gd")
 const CiudadScript = preload("res://scripts/Ciudad.gd")
 const EconomiaScript = preload("res://scripts/Economia.gd")
 const PlantillasPuesto = preload("res://scripts/PlantillasPuesto.gd")
+const Ajustes = preload("res://scripts/ajustes.gd")
 
 
 class MundoFalso extends RefCounted:
@@ -196,6 +197,8 @@ func _contar(colonos: Node, tipo: String) -> int:
 
 
 func ejecutar_pruebas() -> void:
+	var rec_ini_prev: String = Ajustes.ECONOMIA_RECURSOS_INICIALES
+	Ajustes.ECONOMIA_RECURSOS_INICIALES = "bajos"
 	print("=== TEST 1: reconciliar() crea y retira colonos hasta igualar demografia ===")
 	var ciudad1: Node = CiudadScript.new()
 	var colonos1: Node = _nuevo(_mundo_llano(), ciudad1)
@@ -1790,5 +1793,65 @@ func ejecutar_pruebas() -> void:
 	assert(not col57.colonos.has(4), "unidad 4 debe morir tras recibir suficiente daño")
 	assert(col57.colonos[1]["orden_militar"].is_empty(), "orden atacar se limpia al morir el objetivo")
 
-	print("\n=== Las 60 pruebas de Colonos pasaron correctamente ===")
+	print("\n=== TEST 58: Mover en mitad de un paso hacia los pies de otro soldado no falla por ruta vacía ===")
+	var ciu58: Node = CiudadScript.new()
+	var col58: Node = _nuevo_con_puesto(ciu58)
+	var m_camina: int = col58.agregar_colono("militar", Vector3i(1, 1, 1), -1)
+	var m_parado: int = col58.agregar_colono("militar", Vector3i(6, 1, 6), -1)
+	col58.seleccionar_unidades([m_camina])
+	col58.ordenar_patrullar(Vector3i(4, 1, 1), true)
+	# Avanzar hasta que m_camina esté exactamente a mitad de un paso (moviendo == true)
+	for _s in range(40):
+		col58.avanzar(0.05)
+		if col58.colonos[m_camina]["moviendo"]:
+			break
+	assert(col58.colonos[m_camina]["moviendo"] and not col58.colonos[m_camina]["ruta"].is_empty(), "m_camina en pleno paso antes de interrupción")
+	# Ordenar mover justo sobre la celda donde está m_parado mientras m_camina va a mitad de paso
+	col58.ordenar_mover(Vector3i(6, 1, 6), false)
+	for _s in range(180):
+		col58.avanzar(0.1)
+	assert(col58.colonos[m_camina]["celda"] != col58.colonos[m_parado]["celda"], "no solapa a m_parado")
+	assert(maxi(absi(col58.colonos[m_camina]["celda"].x - 6), absi(col58.colonos[m_camina]["celda"].z - 6)) <= 1, "m_camina llega junto a los pies de m_parado sin error")
+
+	print("\n=== TEST 59: Patrulla abierta (Vaivén) vs polígono cerrado (Circuito) ===")
+	var ciu59: Node = CiudadScript.new()
+	var col59: Node = _nuevo_con_puesto(ciu59)
+	var m_pat: int = col59.agregar_colono("militar", Vector3i(1, 1, 1), -1)
+	col59.seleccionar_unidades([m_pat])
+	# 1. Polígono abierto -> Vaivén: (1,1,1) -> (3,1,1) -> (5,1,1) -> regresa a (3,1,1) -> (1,1,1)
+	col59.ordenar_patrullar(Vector3i(3, 1, 1), true)
+	col59.ordenar_patrullar(Vector3i(5, 1, 1), false)
+	assert(col59.colonos[m_pat]["orden_militar"]["modo_patrulla"] == "vaiven")
+	col59.ocupadas.erase(col59.colonos[m_pat]["celda"])
+	col59.colonos[m_pat]["celda"] = Vector3i(5, 1, 1)
+	col59.ocupadas[Vector3i(5, 1, 1)] = m_pat
+	col59.colonos[m_pat]["moviendo"] = false
+	col59.colonos[m_pat]["ruta"].clear()
+	col59.colonos[m_pat]["orden_militar"]["waypoint_idx"] = 2
+	col59._decidir_militar(col59.colonos[m_pat])
+	assert(col59.colonos[m_pat]["orden_militar"]["waypoint_idx"] == 1 and col59.colonos[m_pat]["orden_militar"]["waypoint_dir"] == -1, "en vaivén invierte sentido al final")
+
+	# 2. Polígono cerrado -> Circuito: P1(2,1,2) -> P2(6,1,2) -> P3(6,1,6) -> cierre en P1(2,1,2)
+	col59.ocupadas.erase(col59.colonos[m_pat]["celda"])
+	col59.colonos[m_pat]["celda"] = Vector3i(2, 1, 2)
+	col59.ocupadas[Vector3i(2, 1, 2)] = m_pat
+	col59.colonos[m_pat]["orden_militar"] = {}
+	col59.ordenar_patrullar(Vector3i(6, 1, 2), true)
+	col59.ordenar_patrullar(Vector3i(6, 1, 6), false)
+	col59.ordenar_patrullar(Vector3i(2, 1, 2), false)
+	var om59: Dictionary = col59.colonos[m_pat]["orden_militar"]
+	assert(om59["modo_patrulla"] == "circuito", "polígono cerrado activa modo circuito")
+	assert(om59["waypoints"][0] == om59["waypoints"][om59["waypoints"].size() - 1], "último vértice coincide con el primero")
+	# Al llegar al último punto (cierre == P0), continúa hacia idx 1 (P2) en el mismo sentido (dir=1)
+	om59["waypoint_idx"] = om59["waypoints"].size() - 1
+	col59.ocupadas.erase(col59.colonos[m_pat]["celda"])
+	col59.colonos[m_pat]["celda"] = om59["waypoints"][0]
+	col59.ocupadas[col59.colonos[m_pat]["celda"]] = m_pat
+	col59.colonos[m_pat]["ruta"].clear()
+	col59.colonos[m_pat]["busqueda"] = {}
+	col59._decidir_militar(col59.colonos[m_pat])
+	assert(om59["waypoint_idx"] == 1 and om59["waypoint_dir"] == 1, "circuito reinicia al vértice 1 manteniendo el mismo sentido")
+
+	Ajustes.ECONOMIA_RECURSOS_INICIALES = rec_ini_prev
+	print("\n=== Las 62 pruebas de Colonos pasaron correctamente ===")
 

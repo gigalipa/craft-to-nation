@@ -129,7 +129,6 @@ func test_assets_y_constantes_musica() -> void:
 
 	var pistas_esperadas: Array[String] = [
 		"Menu & Loading Theme (menu).mp3",
-		"The_Architect_s_Decree (menu).mp3",
 		"Untamed Horizons (exploration).mp3",
 		"Wilderness & Discovery (exploration).mp3",
 		"Cozy_colony (building).mp3",
@@ -152,7 +151,8 @@ func test_assets_y_constantes_musica() -> void:
 		var stream := Sonidos.cargar_stream_musica(ruta, false)
 		assert(stream != null and stream.get_length() > 0.0, "La pista OST debe cargar con duración > 0: %s" % ruta)
 	assert(not FileAccess.file_exists("res://assets/musica/Cozy_colony (loop).mp3"), "No deben quedar duplicados (loop).mp3 antiguos.")
-	print("OK: 17 pistas OST y 7 constantes en Ajustes verificadas.")
+	assert(not FileAccess.file_exists("res://assets/musica/The_Architect_s_Decree (menu).mp3"), "The_Architect_s_Decree (menu).mp3 debe haber sido eliminada.")
+	print("OK: 16 pistas OST y 7 constantes en Ajustes verificadas.")
 
 
 func test_clasificacion_y_catalogo_contextos() -> void:
@@ -164,7 +164,7 @@ func test_clasificacion_y_catalogo_contextos() -> void:
 	assert(Sonidos.extraer_contexto_musical("archivo_sin_etiqueta.mp3") == "")
 	assert(Sonidos.extraer_contexto_musical("tema_raro (desconocido).mp3") == "")
 
-	assert(Sonidos.obtener_pistas_contexto("menu").size() == 2, "menu debe tener 2 pistas")
+	assert(Sonidos.obtener_pistas_contexto("menu").size() == 1, "menu debe tener 1 pista (Menu & Loading Theme)")
 	assert(Sonidos.obtener_pistas_contexto("exploration").size() == 2, "exploration debe tener 2 pistas")
 	assert(Sonidos.obtener_pistas_contexto("building").size() == 4, "building debe tener 4 pistas")
 	assert(Sonidos.obtener_pistas_contexto("industry").size() == 6, "industry debe tener 6 pistas")
@@ -174,7 +174,7 @@ func test_clasificacion_y_catalogo_contextos() -> void:
 
 func test_shuffle_bag_sin_repeticion_consecutiva() -> void:
 	Sonidos.reiniciar_director_musica()
-	for ctx in ["menu", "exploration", "building", "industry", "battle"]:
+	for ctx in ["exploration", "building", "industry", "battle"]:
 		var previa := ""
 		for i in range(10):
 			var pista := Sonidos.obtener_siguiente_pista_contexto(ctx)

@@ -16,7 +16,6 @@ const CONTEXTOS_MUSICA_VALIDOS: Array[String] = ["menu", "exploration", "buildin
 const CATALOGO_MUSICA_POR_CONTEXTO: Dictionary = {
 	"menu": [
 		"res://assets/musica/Menu & Loading Theme (menu).mp3",
-		"res://assets/musica/The_Architect_s_Decree (menu).mp3",
 	],
 	"exploration": [
 		"res://assets/musica/Untamed Horizons (exploration).mp3",

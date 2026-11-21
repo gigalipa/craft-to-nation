@@ -26,6 +26,8 @@ const TIEMPO_MINIMO_PANTALLA: float = 1.0
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if Sonidos != null and Sonidos.has_method("reproducir_musica_menu"):
+		Sonidos.reproducir_musica_menu()
 
 	_canvas_layer = CanvasLayer.new()
 	_canvas_layer.layer = 125

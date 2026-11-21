@@ -107,6 +107,7 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_rng.randomize()
 	_cargar_catalogo()
 	_inicializar_pools()
@@ -261,16 +262,17 @@ func actualizar_volumen_musica(lineal: float) -> void:
 		volumen_musica_db = linear_to_db(clampf(lineal, 0.0001, 1.0))
 	else:
 		volumen_musica_db = -80.0
-		_cancelar_tween_musica()
+	_cancelar_tween_musica()
+	if _player_musica_secundario != null:
+		_player_musica_secundario.volume_db = -80.0
+		if _player_musica_secundario.playing:
+			_player_musica_secundario.stop()
 	if _player_musica != null:
 		_player_musica.volume_db = volumen_musica_db
-	if _player_musica_secundario != null:
-		if not musica_habilitada:
-			_player_musica_secundario.volume_db = -80.0
-			if _player_musica_secundario.playing:
-				_player_musica_secundario.stop()
-		else:
-			_player_musica_secundario.volume_db = minf(_player_musica_secundario.volume_db, volumen_musica_db)
+		if musica_habilitada and not _player_musica.playing and _contexto_musica_actual != "":
+			var pista := obtener_siguiente_pista_contexto(_contexto_musica_actual)
+			if pista != "":
+				_transicionar_a_pista(pista, 0.0)
 
 
 func cargar_stream_musica(ruta: String, en_bucle: bool = false) -> AudioStream:
@@ -379,7 +381,7 @@ func establecer_contexto_musica(nuevo_contexto: String, forzar_inmediato: bool =
 
 func notificar_evento_combate() -> void:
 	_cooldown_batalla_restante_s = Ajustes.MUSICA_COOLDOWN_BATALLA_S
-	if _contexto_musica_actual != "battle":
+	if _contexto_musica_actual != "battle" or (_player_musica != null and not _player_musica.playing):
 		establecer_contexto_musica("battle", false)
 
 
@@ -463,6 +465,9 @@ func reproducir_musica_menu() -> void:
 
 
 func reproducir_musica_juego() -> void:
+	_cooldown_batalla_restante_s = 0.0
+	_contexto_candidato = ""
+	_tiempo_candidato_s = 0.0
 	var ctx_inicial := "exploration"
 	if Ciudad != null and "id_nucleo" in Ciudad and Ciudad.id_nucleo != -1:
 		ctx_inicial = "building"
@@ -480,6 +485,9 @@ func detener_musica() -> void:
 
 func _on_player_musica_terminado(player: AudioStreamPlayer) -> void:
 	if player != _player_musica or not musica_habilitada:
+		return
+	if _contexto_candidato != "" and _contexto_candidato != _contexto_musica_actual and _tiempo_candidato_s >= Ajustes.MUSICA_HISTERESIS_AMBIENTAL_S:
+		establecer_contexto_musica(_contexto_candidato, true)
 		return
 	if _contexto_musica_actual != "":
 		var siguiente := obtener_siguiente_pista_contexto(_contexto_musica_actual)

@@ -30,6 +30,7 @@ const TIPOS_PUESTOS_INDUSTRIALES: Array[String] = [
 	"fabrica_bloques", "siderurgica", "refineria_cobre", "refineria_tierras_raras",
 	"refineria_petrolera", "productor_combustible", "planta_concreto",
 	"fabrica_componentes", "central_termoelectrica",
+	"vidriera", "estacion_bombeo", "centro_extraccion", "taller_transporte",
 ]
 var _acumulador_eval_musica: float = 0.0
 
@@ -66,14 +67,16 @@ func _ready() -> void:
 		menu_pausa.reanudar_solicitado.connect(_alternar_menu_pausa)
 		menu_pausa.salir_al_menu_solicitado.connect(_salir_al_menu_principal)
 
-	Sonidos.reproducir_musica_juego()
-
 	if GestorPartida != null and not GestorPartida.partida_pendiente_a_cargar.is_empty():
 		var archivo_a_cargar := GestorPartida.partida_pendiente_a_cargar
 		GestorPartida.partida_pendiente_a_cargar = ""
 		GestorPartida.cargar_partida(archivo_a_cargar)
-		if Sonidos != null and Sonidos.has_method("evaluar_contexto_musical"):
-			Sonidos.evaluar_contexto_musical(construir_estado_musical(), 0.0)
+
+	if Sonidos != null and Sonidos.has_method("reiniciar_director_musica"):
+		Sonidos.reiniciar_director_musica()
+		Sonidos.evaluar_contexto_musical(construir_estado_musical(), 0.0)
+	else:
+		Sonidos.reproducir_musica_juego()
 
 
 func _process(delta: float) -> void:
@@ -116,11 +119,11 @@ func construir_estado_musical() -> Dictionary:
 					en_industria = true
 					break
 
-	var tiene_nucleo := Ciudad != null and Ciudad.id_nucleo != -1
-	var en_influencia := tiene_nucleo and Zonificacion != null and Zonificacion.dentro_de_influencia(celda_foco)
-	var modo_constr := hud != null and hud.has_method("modo_construccion_cenital_activo") and hud.modo_construccion_cenital_activo()
-	var panel_ind := hud != null and hud.has_method("panel_industrial_o_energia_abierto") and hud.panel_industrial_o_energia_abierto(TIPOS_PUESTOS_INDUSTRIALES)
-	var constr_reciente := (not cenital_activa) and jugador != null and jugador.construccion_reciente_activa(10.0)
+	var tiene_nucleo: bool = Ciudad != null and Ciudad.id_nucleo != -1
+	var en_influencia: bool = tiene_nucleo and Zonificacion != null and Zonificacion.dentro_de_influencia(celda_foco)
+	var modo_constr: bool = hud != null and hud.has_method("modo_construccion_cenital_activo") and bool(hud.modo_construccion_cenital_activo())
+	var panel_ind: bool = hud != null and hud.has_method("panel_industrial_o_energia_abierto") and bool(hud.panel_industrial_o_energia_abierto(TIPOS_PUESTOS_INDUSTRIALES))
+	var constr_reciente: bool = (not cenital_activa) and jugador != null and jugador.construccion_reciente_activa(10.0)
 
 	return {
 		"tiene_nucleo": tiene_nucleo,

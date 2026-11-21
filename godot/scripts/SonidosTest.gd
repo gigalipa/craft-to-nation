@@ -31,6 +31,11 @@ func ejecutar_pruebas() -> void:
 	test_tolerancia_contextos_invalidos_y_un_elemento()
 	test_menu_limpia_estado_combate()
 	test_integracion_combate_y_construccion()
+	test_volumen_no_cero_y_process_mode_en_crossfade()
+	test_desmutear_reanuda_musica_activa()
+	test_fin_natural_pista_promueve_candidato_histeresis()
+	test_reproducir_musica_juego_limpia_combate()
+	test_tipos_industriales_reales_en_main()
 
 
 func test_inicializacion() -> void:
@@ -319,3 +324,64 @@ func test_integracion_combate_y_construccion() -> void:
 
 	Sonidos.detener_musica()
 	print("OK: Integración de combate (Colonos) y construcción reciente (Player) verificada.")
+
+
+func test_volumen_no_cero_y_process_mode_en_crossfade() -> void:
+	assert(Sonidos.process_mode == Node.PROCESS_MODE_ALWAYS, "Sonidos debe usar PROCESS_MODE_ALWAYS para no congelar tweens en pausa")
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.establecer_contexto_musica("building", true)
+	Sonidos.establecer_contexto_musica("industry", false)
+	Sonidos.actualizar_volumen_musica(0.25)
+	assert(Sonidos._tween_musica == null, "Cambiar volumen > 0 en medio de un crossfade debe cancelar el tween antiguo")
+	assert(is_equal_approx(Sonidos._player_musica.volume_db, linear_to_db(0.25)), "El canal activo debe adoptar el nuevo volumen de inmediato")
+	assert(not Sonidos._player_musica_secundario.playing, "El canal saliente debe detenerse al cancelar crossfade por cambio de volumen")
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.detener_musica()
+	print("OK: Volumen no-cero durante crossfade y PROCESS_MODE_ALWAYS verificados.")
+
+
+func test_desmutear_reanuda_musica_activa() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.0)
+	Sonidos.reproducir_musica_menu()
+	assert(Sonidos.obtener_contexto_musica_actual() == "menu")
+	assert(not Sonidos._player_musica.playing, "En silencio no debe reproducir")
+	Sonidos.actualizar_volumen_musica(0.75)
+	assert(Sonidos._player_musica.playing and Sonidos._player_musica.stream != null, "Al desmutear debe reanudar el contexto activo")
+	Sonidos.detener_musica()
+	print("OK: Desmutear reanuda el contexto musical activo.")
+
+
+func test_fin_natural_pista_promueve_candidato_histeresis() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.establecer_contexto_musica("building", true)
+	Sonidos._tiempo_en_pista_actual_s = 2.0
+	# Acumular 4.5s de candidato industry sin cumplir aún los 15s de permanencia
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": true}, 4.5)
+	assert(Sonidos.obtener_contexto_musica_actual() == "building", "Aún no cumple 15s de permanencia")
+	# La pista termina naturalmente -> debe promover al candidato en histéresis inmediatamente
+	Sonidos._on_player_musica_terminado(Sonidos._player_musica)
+	assert(Sonidos.obtener_contexto_musica_actual() == "industry", "Al terminar la pista naturalmente debe promover el candidato que ya cumplió histéresis")
+	Sonidos.detener_musica()
+	print("OK: Fin natural de pista promueve candidato en histéresis.")
+
+
+func test_reproducir_musica_juego_limpia_combate() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.notificar_evento_combate()
+	assert(Sonidos.obtener_contexto_musica_actual() == "battle")
+	Sonidos.reproducir_musica_juego()
+	assert(Sonidos._cooldown_batalla_restante_s <= 0.0, "reproducir_musica_juego debe limpiar el cooldown de batalla previo")
+	assert(Sonidos.obtener_contexto_musica_actual() != "battle", "reproducir_musica_juego no debe heredar estado battle")
+	Sonidos.detener_musica()
+	print("OK: reproducir_musica_juego limpia estado de combate.")
+
+
+func test_tipos_industriales_reales_en_main() -> void:
+	var main_script = preload("res://scripts/Main.gd")
+	for tipo_real in ["vidriera", "estacion_bombeo", "centro_extraccion", "taller_transporte", "mina", "siderurgica", "central_termoelectrica"]:
+		assert(main_script.TIPOS_PUESTOS_INDUSTRIALES.has(tipo_real), "Main.TIPOS_PUESTOS_INDUSTRIALES debe incluir el edificio real: %s" % tipo_real)
+	print("OK: Tipos industriales reales en Main.gd verificados.")

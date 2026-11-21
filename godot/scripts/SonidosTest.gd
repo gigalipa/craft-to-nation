@@ -30,6 +30,7 @@ func ejecutar_pruebas() -> void:
 	test_combate_continuo_no_reinicia_pista()
 	test_tolerancia_contextos_invalidos_y_un_elemento()
 	test_menu_limpia_estado_combate()
+	test_integracion_combate_y_construccion()
 
 
 func test_inicializacion() -> void:
@@ -294,3 +295,27 @@ func test_menu_limpia_estado_combate() -> void:
 	assert(Sonidos._cooldown_batalla_restante_s <= 0.0, "Volver al menú debe limpiar cooldown de batalla")
 	Sonidos.detener_musica()
 	print("OK: Transición a menú limpia estado de combate.")
+
+
+func test_integracion_combate_y_construccion() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.establecer_contexto_musica("building", true)
+
+	var id_u: int = Colonos.agregar_colono("obrero", Vector3i(2, 1, 2), -1)
+	Colonos.aplicar_dano_unidad(id_u, 10.0)
+	assert(Sonidos.obtener_contexto_musica_actual() == "battle", "Colonos.aplicar_dano_unidad debe disparar contexto battle")
+
+	var cel: Vector3i = Colonos.colonos[id_u]["celda"]
+	Colonos.ocupadas.erase(cel)
+	Colonos.colonos.erase(id_u)
+
+	var player_script = preload("res://scripts/Player.gd")
+	var p = player_script.new()
+	assert(not p.construccion_reciente_activa(10.0), "Sin actividad reciente debe devolver false")
+	p.registrar_actividad_construccion()
+	assert(p.construccion_reciente_activa(10.0), "Tras registrar actividad de construcción debe devolver true")
+	p.free()
+
+	Sonidos.detener_musica()
+	print("OK: Integración de combate (Colonos) y construcción reciente (Player) verificada.")

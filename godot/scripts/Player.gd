@@ -123,6 +123,7 @@ var modo_primera_persona: String = "construccion"
 var arma_seleccionada: int = 0
 var orden_comandante_seleccionada: int = 0
 var _cooldown_ataque_avatar: float = 0.0
+var _ultimo_ms_construccion: int = -100000
 static var INTERVALO_AVISO_DECONSTRUCCION_MS: int = Ajustes.PLAYER_INTERVALO_AVISO_DECONSTRUCCION_MS
 
 var _ultimo_aviso_deconstruccion_ms := -INTERVALO_AVISO_DECONSTRUCCION_MS
@@ -1385,6 +1386,16 @@ func _avisar_modo_deconstruccion(accion: String) -> void:
 
 ## Un intento de deconstrucción sobre el bloque bajo la mira (modo G). Minar y
 ## talar ahora van por tiempo (ver _procesar_minado()).
+func registrar_actividad_construccion() -> void:
+	_ultimo_ms_construccion = Time.get_ticks_msec()
+
+
+func construccion_reciente_activa(ventana_s: float = 10.0) -> bool:
+	if _ultimo_ms_construccion < 0:
+		return false
+	return float(Time.get_ticks_msec() - _ultimo_ms_construccion) / 1000.0 <= ventana_s
+
+
 func _deconstruir() -> void:
 	if not raycast.is_colliding() or mundo == null:
 		return
@@ -1414,6 +1425,7 @@ func _procesar_deconstruccion(celda: Vector3i) -> void:
 		return
 
 	FinalizacionObras.al_deconstruir(mundo, resultado)
+	registrar_actividad_construccion()
 	Obras.abandonar(resultado["id"])  # lo que se deconstruye a mano no lo reconstruyen los colonos
 	Obras.reclamar(resultado["id"])  # y mientras el jugador actúa, los colonos le ceden el edificio
 
@@ -1480,6 +1492,7 @@ func _colocar() -> void:
 			_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_FALTA_MATERIAL_OBRA % _nombre_recurso(resultado["recurso"]))
 		elif resultado.get("completa", false):
 			Sonidos.reproducir_3d("sfx_obra_paso_surtido", mundo.to_global(mundo.map_to_local(celda)))
+			registrar_actividad_construccion()
 			_completar_construccion(resultado["metadata"])
 			# La construcción se completó con este mismo clic sostenido: no
 			# seguir colocando bloques nuevos contra la fachada recién
@@ -1487,6 +1500,7 @@ func _colocar() -> void:
 			_colocacion_bloqueada_tras_completar = true
 		else:
 			Sonidos.reproducir_3d("sfx_obra_paso_surtido", mundo.to_global(mundo.map_to_local(celda)), -3.0, 0.05)
+			registrar_actividad_construccion()
 		return
 	var normal := raycast.get_collision_normal()
 	var celda_destino := celda + Vector3i(round(normal.x), round(normal.y), round(normal.z))
@@ -1522,6 +1536,7 @@ func _colocar() -> void:
 		_reembolsar_colocacion(tipo)
 		_avisar_colocacion_rechazada(Strings.PLAYER_NOTIF_SIN_ESPACIO_COLOCAR % _nombre_bloque(tipo))
 		return
+	registrar_actividad_construccion()
 	var sfx_coloc := "sfx_colocar_tierra"
 	match tipo:
 		"bloque_piedra":

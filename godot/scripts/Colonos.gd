@@ -2462,6 +2462,8 @@ func aplicar_dano_unidad(id: int, dano: float) -> bool:
 	var c: Dictionary = colonos[id]
 	var nueva_salud: float = maxf(0.0, float(c.get("salud", Ajustes.SALUD_CIVIL)) - dano)
 	c["salud"] = nueva_salud
+	if Sonidos != null and Sonidos.has_method("notificar_evento_combate"):
+		Sonidos.notificar_evento_combate()
 	if nueva_salud <= 0.0:
 		var tipo_u: String = str(c.get("tipo", ""))
 		if ciudad != null and ciudad.demografia.has(tipo_u) and ciudad.demografia[tipo_u] > 0:
@@ -2485,6 +2487,8 @@ func aplicar_dano_edificio(id_ed: int, dano: float, celda: Vector3i = INVALIDA) 
 		salud_edificios[id_ed] = salud_ini
 	salud_edificios[id_ed] = maxf(0.0, float(salud_edificios[id_ed]) - dano)
 	edificio_danado.emit(id_ed, salud_edificios[id_ed])
+	if Sonidos != null and Sonidos.has_method("notificar_evento_combate"):
+		Sonidos.notificar_evento_combate()
 	if salud_edificios[id_ed] <= 0.0:
 		if ciudad != null:
 			ciudad.retirar_edificio_residencial(id_ed)

@@ -25,6 +25,14 @@ static var DURACION_TRANSICION: float = Ajustes.MAIN_DURACION_TRANSICION_CAMARA
 var _camara_transicion := Camera3D.new()
 var _en_transicion := false
 
+const TIPOS_PUESTOS_INDUSTRIALES: Array[String] = [
+	"mina", "pozo_agua", "extractor_crudo", "aserradero", "carbonera",
+	"fabrica_bloques", "siderurgica", "refineria_cobre", "refineria_tierras_raras",
+	"refineria_petrolera", "productor_combustible", "planta_concreto",
+	"fabrica_componentes", "central_termoelectrica",
+]
+var _acumulador_eval_musica: float = 0.0
+
 
 func _ready() -> void:
 	_camara_transicion.current = false
@@ -64,6 +72,65 @@ func _ready() -> void:
 		var archivo_a_cargar := GestorPartida.partida_pendiente_a_cargar
 		GestorPartida.partida_pendiente_a_cargar = ""
 		GestorPartida.cargar_partida(archivo_a_cargar)
+		if Sonidos != null and Sonidos.has_method("evaluar_contexto_musical"):
+			Sonidos.evaluar_contexto_musical(construir_estado_musical(), 0.0)
+
+
+func _process(delta: float) -> void:
+	if get_tree().paused:
+		return
+	_acumulador_eval_musica += delta
+	if _acumulador_eval_musica < Ajustes.MUSICA_INTERVALO_EVALUACION_S:
+		return
+	var dt := _acumulador_eval_musica
+	_acumulador_eval_musica = 0.0
+	if Sonidos != null and Sonidos.has_method("evaluar_contexto_musical"):
+		Sonidos.evaluar_contexto_musical(construir_estado_musical(), dt)
+
+
+func construir_estado_musical() -> Dictionary:
+	var punto_foco: Vector3 = camara_cenital.foco if cenital_activa else jugador.global_position
+	var pos_2d := Vector2(punto_foco.x, punto_foco.z)
+	var celda_foco := Vector2i(int(floor(punto_foco.x)), int(floor(punto_foco.z)))
+	var radio := Ajustes.MUSICA_RADIO_DETECCION_INDUSTRIA
+	var radio_sq := radio * radio
+
+	var en_industria := false
+	if Zonificacion != null:
+		if str(Zonificacion.zonas.get(celda_foco, "")) == "fabricacion_militar":
+			en_industria = true
+		else:
+			for c_zona in Zonificacion.zonas:
+				if Zonificacion.zonas[c_zona] == "fabricacion_militar":
+					var dz := Vector2(c_zona.x, c_zona.y) - pos_2d
+					if dz.length_squared() <= radio_sq:
+						en_industria = true
+						break
+
+	if not en_industria and Economia != null:
+		for esquina in Economia.puestos:
+			var p: Dictionary = Economia.puestos[esquina]
+			if TIPOS_PUESTOS_INDUSTRIALES.has(str(p.get("tipo", ""))):
+				var centro := Vector2(esquina.x + float(p.get("ancho", 1)) * 0.5, esquina.y + float(p.get("alto", 1)) * 0.5)
+				if pos_2d.distance_squared_to(centro) <= radio_sq:
+					en_industria = true
+					break
+
+	var tiene_nucleo := Ciudad != null and Ciudad.id_nucleo != -1
+	var en_influencia := tiene_nucleo and Zonificacion != null and Zonificacion.dentro_de_influencia(celda_foco)
+	var modo_constr := hud != null and hud.has_method("modo_construccion_cenital_activo") and hud.modo_construccion_cenital_activo()
+	var panel_ind := hud != null and hud.has_method("panel_industrial_o_energia_abierto") and hud.panel_industrial_o_energia_abierto(TIPOS_PUESTOS_INDUSTRIALES)
+	var constr_reciente := (not cenital_activa) and jugador != null and jugador.construccion_reciente_activa(10.0)
+
+	return {
+		"tiene_nucleo": tiene_nucleo,
+		"en_influencia": en_influencia,
+		"modo_construccion_activo": modo_constr,
+		"construccion_reciente": constr_reciente,
+		"en_industria": en_industria,
+		"panel_industria_abierto": panel_ind,
+		"en_combate": false,
+	}
 
 
 func _input(event: InputEvent) -> void:

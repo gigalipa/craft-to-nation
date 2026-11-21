@@ -681,6 +681,22 @@ func panel_grupos_tropas() -> PanelContainer:
 	return _panel_grupos_tropas
 
 
+func modo_construccion_cenital_activo() -> bool:
+	if _barra_modos == null or not _barra_modos.visible:
+		return false
+	return _barra_modos._modo != ""
+
+
+func panel_industrial_o_energia_abierto(tipos_industriales: Array) -> bool:
+	if _ventana_energia != null and _ventana_energia.visible:
+		return true
+	if _panel_puesto != null and _panel_puesto.visible and Economia != null:
+		var p: Dictionary = Economia.puestos.get(_panel_puesto.esquina, {})
+		if tipos_industriales.has(str(p.get("tipo", ""))):
+			return true
+	return false
+
+
 func actualizar_panel_grupos_tropas() -> void:
 	if _panel_grupos_tropas == null or _caja_grupos_tropas == null:
 		return

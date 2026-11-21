@@ -22,6 +22,14 @@ func ejecutar_pruebas() -> void:
 	test_tolerancia_fallos()
 	test_modulacion_volumen_y_pitch()
 	test_assets_y_constantes_musica()
+	test_clasificacion_y_catalogo_contextos()
+	test_shuffle_bag_sin_repeticion_consecutiva()
+	test_prioridad_maquina_estados_y_cooldown_batalla()
+	test_histeresis_y_fin_de_pista()
+	test_volumen_y_silencio_durante_crossfade()
+	test_combate_continuo_no_reinicia_pista()
+	test_tolerancia_contextos_invalidos_y_un_elemento()
+	test_menu_limpia_estado_combate()
 
 
 func test_inicializacion() -> void:
@@ -139,3 +147,150 @@ func test_assets_y_constantes_musica() -> void:
 		assert(stream != null and stream.get_length() > 0.0, "La pista OST debe cargar con duración > 0: %s" % ruta)
 	assert(not FileAccess.file_exists("res://assets/musica/Cozy_colony (loop).mp3"), "No deben quedar duplicados (loop).mp3 antiguos.")
 	print("OK: 17 pistas OST y 7 constantes en Ajustes verificadas.")
+
+
+func test_clasificacion_y_catalogo_contextos() -> void:
+	assert(Sonidos.extraer_contexto_musical("Menu & Loading Theme (menu).mp3") == "menu")
+	assert(Sonidos.extraer_contexto_musical("Untamed Horizons (exploration).mp3") == "exploration")
+	assert(Sonidos.extraer_contexto_musical("Seamless_loop  (building).mp3") == "building")
+	assert(Sonidos.extraer_contexto_musical("Automated Pulse (industry).mp3") == "industry")
+	assert(Sonidos.extraer_contexto_musical("Siege Protocols (battle).mp3") == "battle")
+	assert(Sonidos.extraer_contexto_musical("archivo_sin_etiqueta.mp3") == "")
+	assert(Sonidos.extraer_contexto_musical("tema_raro (desconocido).mp3") == "")
+
+	assert(Sonidos.obtener_pistas_contexto("menu").size() == 2, "menu debe tener 2 pistas")
+	assert(Sonidos.obtener_pistas_contexto("exploration").size() == 2, "exploration debe tener 2 pistas")
+	assert(Sonidos.obtener_pistas_contexto("building").size() == 4, "building debe tener 4 pistas")
+	assert(Sonidos.obtener_pistas_contexto("industry").size() == 6, "industry debe tener 6 pistas")
+	assert(Sonidos.obtener_pistas_contexto("battle").size() == 3, "battle debe tener 3 pistas")
+	print("OK: Clasificación y catálogo por los 5 contextos verificados.")
+
+
+func test_shuffle_bag_sin_repeticion_consecutiva() -> void:
+	Sonidos.reiniciar_director_musica()
+	for ctx in ["menu", "exploration", "building", "industry", "battle"]:
+		var previa := ""
+		for i in range(10):
+			var pista := Sonidos.obtener_siguiente_pista_contexto(ctx)
+			assert(pista != "", "Debe entregar una pista válida para %s" % ctx)
+			assert(pista != previa, "Shuffle bag no debe repetir consecutivamente en %s (iter %d: %s)" % [ctx, i, pista])
+			previa = pista
+	print("OK: Shuffle bag sin repetición consecutiva verificado.")
+
+
+func test_prioridad_maquina_estados_y_cooldown_batalla() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+
+	var c1 := Sonidos.evaluar_contexto_musical({
+		"tiene_nucleo": false,
+		"en_influencia": false,
+		"modo_construccion_activo": false,
+		"construccion_reciente": false,
+		"en_industria": false,
+		"panel_industria_abierto": false,
+		"en_combate": false,
+	}, 1.0)
+	assert(c1 == "exploration", "Sin núcleo ni influencia debe ser exploration, obtuvo: %s" % c1)
+
+	Sonidos._tiempo_en_pista_actual_s = Ajustes.MUSICA_PERMANENCIA_MINIMA_PISTA_S
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true}, 2.0)
+	assert(Sonidos.obtener_contexto_musica_actual() == "exploration", "2.0s no debe bastar para vencer histéresis de 4.0s")
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true}, 2.5)
+	assert(Sonidos.obtener_contexto_musica_actual() == "building", "4.5s continuos debe transicionar a building")
+
+	Sonidos._tiempo_en_pista_actual_s = Ajustes.MUSICA_PERMANENCIA_MINIMA_PISTA_S
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": true}, 4.5)
+	assert(Sonidos.obtener_contexto_musica_actual() == "industry", "industry debe prevalecer sobre building")
+
+	Sonidos._tiempo_en_pista_actual_s = 0.0
+	Sonidos.notificar_evento_combate()
+	assert(Sonidos.obtener_contexto_musica_actual() == "battle", "notificar_evento_combate debe activar battle inmediatamente")
+
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": false}, 10.0)
+	assert(Sonidos.obtener_contexto_musica_actual() == "battle", "Debe mantenerse en battle durante el cooldown")
+
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": false}, 6.0)
+	assert(Sonidos.obtener_contexto_musica_actual() == "building", "Al expirar cooldown de batalla debe regresar a building")
+	Sonidos.detener_musica()
+	print("OK: Prioridad de máquina de estados y cooldown de batalla verificados.")
+
+
+func test_histeresis_y_fin_de_pista() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.establecer_contexto_musica("building", true)
+	Sonidos._tiempo_en_pista_actual_s = Ajustes.MUSICA_PERMANENCIA_MINIMA_PISTA_S
+
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": true}, 2.0)
+	assert(Sonidos.obtener_contexto_musica_actual() == "building", "No debe cambiar tras solo 2.0 s")
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": false}, 1.0)
+	assert(Sonidos.obtener_contexto_musica_actual() == "building", "Al volver a building el candidato industry se reinicia")
+
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": true}, 4.5)
+	assert(Sonidos.obtener_contexto_musica_actual() == "industry", "4.5 s continuos con permanencia cumplida debe pasar a industry")
+
+	Sonidos._tiempo_en_pista_actual_s = 1.0
+	Sonidos._player_musica.stop()
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true, "en_industria": false}, 4.5)
+	assert(Sonidos.obtener_contexto_musica_actual() == "building", "Si la pista ya terminó, la histéresis de 4.5s permite cambiar sin esperar 15s")
+	Sonidos.detener_musica()
+	print("OK: Histéresis anti-rebote y fin de pista verificados.")
+
+
+func test_volumen_y_silencio_durante_crossfade() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.establecer_contexto_musica("building", true)
+	Sonidos.establecer_contexto_musica("industry", false)
+	Sonidos.actualizar_volumen_musica(0.0)
+	assert(not Sonidos.musica_habilitada, "La música debe quedar deshabilitada")
+	assert(Sonidos._player_musica.volume_db <= -79.0, "El reproductor activo debe silenciarse de inmediato")
+	assert(Sonidos._player_musica_secundario.volume_db <= -79.0, "El reproductor saliente debe silenciarse de inmediato")
+	Sonidos.actualizar_volumen_musica(0.75)
+	Sonidos.detener_musica()
+	print("OK: Silencio y volumen durante crossfade verificados.")
+
+
+func test_combate_continuo_no_reinicia_pista() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.notificar_evento_combate()
+	var stream_inicial := Sonidos._player_musica.stream
+	Sonidos.evaluar_contexto_musical({"tiene_nucleo": true, "en_influencia": true}, 5.0)
+	Sonidos.notificar_evento_combate()
+	assert(Sonidos._player_musica.stream == stream_inicial, "Re-notificar combate en battle no debe reiniciar ni cambiar la pista actual")
+	assert(is_equal_approx(Sonidos._cooldown_batalla_restante_s, Ajustes.MUSICA_COOLDOWN_BATALLA_S), "El cooldown debe reiniciarse a 15s")
+	Sonidos.detener_musica()
+	print("OK: Re-notificación de combate mantiene pista actual y reinicia cooldown.")
+
+
+func test_tolerancia_contextos_invalidos_y_un_elemento() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.establecer_contexto_musica("building", true)
+	Sonidos.establecer_contexto_musica("contexto_inexistente", true)
+	assert(Sonidos.obtener_contexto_musica_actual() == "building", "Contexto inválido debe ignorarse sin alterar el estado actual")
+
+	var respaldo: Array[String] = Sonidos._pistas_por_contexto["menu"].duplicate()
+	Sonidos._pistas_por_contexto["menu"] = [respaldo[0]]
+	Sonidos._colas_contexto["menu"] = []
+	var p1 := Sonidos.obtener_siguiente_pista_contexto("menu")
+	var p2 := Sonidos.obtener_siguiente_pista_contexto("menu")
+	assert(p1 == respaldo[0] and p2 == respaldo[0], "Contexto de 1 pista debe devolver esa pista sin bloquearse")
+	Sonidos._pistas_por_contexto["menu"] = respaldo
+	Sonidos._colas_contexto["menu"] = []
+	Sonidos.detener_musica()
+	print("OK: Tolerancia a contextos inválidos y pool de 1 pista verificada.")
+
+
+func test_menu_limpia_estado_combate() -> void:
+	Sonidos.reiniciar_director_musica()
+	Sonidos.actualizar_volumen_musica(0.8)
+	Sonidos.notificar_evento_combate()
+	assert(Sonidos.obtener_contexto_musica_actual() == "battle")
+	Sonidos.reproducir_musica_menu()
+	assert(Sonidos.obtener_contexto_musica_actual() == "menu", "reproducir_musica_menu debe pasar inmediatamente a menu")
+	assert(Sonidos._cooldown_batalla_restante_s <= 0.0, "Volver al menú debe limpiar cooldown de batalla")
+	Sonidos.detener_musica()
+	print("OK: Transición a menú limpia estado de combate.")

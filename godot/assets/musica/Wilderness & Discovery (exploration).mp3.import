@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ciss4l2owydgk"
+path="res://.godot/imported/Wilderness & Discovery (exploration).mp3-88ac8ac14efe8c86b9ffd958fe3795b5.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Wilderness & Discovery (exploration).mp3"
+dest_files=["res://.godot/imported/Wilderness & Discovery (exploration).mp3-88ac8ac14efe8c86b9ffd958fe3795b5.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

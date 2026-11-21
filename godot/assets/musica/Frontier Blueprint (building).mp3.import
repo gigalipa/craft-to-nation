@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://blllvmxg5ny3m"
+path="res://.godot/imported/Frontier Blueprint (building).mp3-9dcfa95baa6acd606cf7773196110939.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Frontier Blueprint (building).mp3"
+dest_files=["res://.godot/imported/Frontier Blueprint (building).mp3-9dcfa95baa6acd606cf7773196110939.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1012,3 +1012,14 @@ static var ARMAS_AVATAR: Array = [
 	{"id": "espada", "nombre_key": "ARMA_ESPADA", "alcance": 3.0, "dano": 35.0, "cooldown": 0.5, "tipo": "melee"},
 	{"id": "arco", "nombre_key": "ARMA_ARCO", "alcance": 35.0, "dano": 22.0, "cooldown": 0.7, "tipo": "ranged"},
 ]
+
+# ==============================================================================
+# MÚSICA ADAPTATIVA CONTEXTUAL (Sonidos)
+# ==============================================================================
+static var MUSICA_CROSSFADE_AMBIENTAL_S: float = 3.0
+static var MUSICA_CROSSFADE_BATALLA_S: float = 0.8
+static var MUSICA_HISTERESIS_AMBIENTAL_S: float = 4.0
+static var MUSICA_PERMANENCIA_MINIMA_PISTA_S: float = 15.0
+static var MUSICA_COOLDOWN_BATALLA_S: float = 15.0
+static var MUSICA_RADIO_DETECCION_INDUSTRIA: float = 12.0
+static var MUSICA_INTERVALO_EVALUACION_S: float = 1.0

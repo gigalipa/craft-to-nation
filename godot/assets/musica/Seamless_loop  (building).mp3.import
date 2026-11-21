@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dmn6l131ci1et"
+path="res://.godot/imported/Seamless_loop  (building).mp3-f9dab83888cad152a2298b848704d0c8.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Seamless_loop  (building).mp3"
+dest_files=["res://.godot/imported/Seamless_loop  (building).mp3-f9dab83888cad152a2298b848704d0c8.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

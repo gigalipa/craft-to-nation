@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://rpcr76256vh0"
+path="res://.godot/imported/Morning_at_the_Steel_Spire (industry).mp3-d7c8bd9e766864e9abd4477bc3b7e00f.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Morning_at_the_Steel_Spire (industry).mp3"
+dest_files=["res://.godot/imported/Morning_at_the_Steel_Spire (industry).mp3-d7c8bd9e766864e9abd4477bc3b7e00f.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

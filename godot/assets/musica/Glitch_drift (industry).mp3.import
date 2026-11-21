@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://duxtijna5g6i7"
+path="res://.godot/imported/Glitch_drift (industry).mp3-87cead5a8d3278f7aa5a55ec104ee61e.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Glitch_drift (industry).mp3"
+dest_files=["res://.godot/imported/Glitch_drift (industry).mp3-87cead5a8d3278f7aa5a55ec104ee61e.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

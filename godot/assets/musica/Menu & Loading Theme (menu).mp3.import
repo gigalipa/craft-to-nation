@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dm1p3xi5ndweg"
+path="res://.godot/imported/Menu & Loading Theme (menu).mp3-61c5e20ca22f65545707e0a4c6117583.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Menu & Loading Theme (menu).mp3"
+dest_files=["res://.godot/imported/Menu & Loading Theme (menu).mp3-61c5e20ca22f65545707e0a4c6117583.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

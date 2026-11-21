@@ -1,8 +1,10 @@
 extends Node
 
+const Ajustes = preload("res://scripts/ajustes.gd")
+
 ## Suite de pruebas unitarias para Sonidos.gd
 ## Verifica la inicialización del singleton, los pools de reproductores,
-## la carga de los 102 efectos de sonido y la tolerancia a fallos.
+## la carga de los 102 efectos de sonido, el director de música adaptativa y la tolerancia a fallos.
 
 func _ready() -> void:
 	ejecutar_pruebas()
@@ -19,6 +21,7 @@ func ejecutar_pruebas() -> void:
 	test_reproduccion_3d()
 	test_tolerancia_fallos()
 	test_modulacion_volumen_y_pitch()
+	test_assets_y_constantes_musica()
 
 
 func test_inicializacion() -> void:
@@ -99,3 +102,40 @@ func test_deshabilitar_sfx() -> void:
 	assert(p == null, "Con sfx deshabilitado, reproducir debe retornar null.")
 	Sonidos.sfx_habilitado = true
 	print("OK: Deshabilitación y silencio global.")
+
+
+func test_assets_y_constantes_musica() -> void:
+	assert(is_equal_approx(Ajustes.MUSICA_CROSSFADE_AMBIENTAL_S, 3.0), "MUSICA_CROSSFADE_AMBIENTAL_S debe ser 3.0")
+	assert(is_equal_approx(Ajustes.MUSICA_CROSSFADE_BATALLA_S, 0.8), "MUSICA_CROSSFADE_BATALLA_S debe ser 0.8")
+	assert(is_equal_approx(Ajustes.MUSICA_HISTERESIS_AMBIENTAL_S, 4.0), "MUSICA_HISTERESIS_AMBIENTAL_S debe ser 4.0")
+	assert(is_equal_approx(Ajustes.MUSICA_PERMANENCIA_MINIMA_PISTA_S, 15.0), "MUSICA_PERMANENCIA_MINIMA_PISTA_S debe ser 15.0")
+	assert(is_equal_approx(Ajustes.MUSICA_COOLDOWN_BATALLA_S, 15.0), "MUSICA_COOLDOWN_BATALLA_S debe ser 15.0")
+	assert(is_equal_approx(Ajustes.MUSICA_RADIO_DETECCION_INDUSTRIA, 12.0), "MUSICA_RADIO_DETECCION_INDUSTRIA debe ser 12.0")
+	assert(is_equal_approx(Ajustes.MUSICA_INTERVALO_EVALUACION_S, 1.0), "MUSICA_INTERVALO_EVALUACION_S debe ser 1.0")
+
+	var pistas_esperadas: Array[String] = [
+		"Menu & Loading Theme (menu).mp3",
+		"The_Architect_s_Decree (menu).mp3",
+		"Untamed Horizons (exploration).mp3",
+		"Wilderness & Discovery (exploration).mp3",
+		"Cozy_colony (building).mp3",
+		"Foundations & Frameworks (building).mp3",
+		"Frontier Blueprint (building).mp3",
+		"Seamless_loop  (building).mp3",
+		"Automated Pulse (industry).mp3",
+		"Clockwork_logistics (industry).mp3",
+		"Clockwork_logistics_2 (industry).mp3",
+		"Glitch_drift (industry).mp3",
+		"Glitch_drift_2 (industry).mp3",
+		"Morning_at_the_Steel_Spire (industry).mp3",
+		"Hard_stop (battle).mp3",
+		"Hard_stop_2 (battle).mp3",
+		"Siege Protocols (battle).mp3",
+	]
+	for nombre in pistas_esperadas:
+		var ruta := "res://assets/musica/" + nombre
+		assert(FileAccess.file_exists(ruta), "Debe existir la pista OST: %s" % ruta)
+		var stream := Sonidos.cargar_stream_musica(ruta, false)
+		assert(stream != null and stream.get_length() > 0.0, "La pista OST debe cargar con duración > 0: %s" % ruta)
+	assert(not FileAccess.file_exists("res://assets/musica/Cozy_colony (loop).mp3"), "No deben quedar duplicados (loop).mp3 antiguos.")
+	print("OK: 17 pistas OST y 7 constantes en Ajustes verificadas.")

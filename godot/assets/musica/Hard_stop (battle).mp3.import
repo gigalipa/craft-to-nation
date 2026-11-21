@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bmt83mc7f1r2t"
+path="res://.godot/imported/Hard_stop (battle).mp3-95d2f28dd6d047cda43042a8c6371cd6.mp3str"
+
+[deps]
+
+source_file="res://assets/musica/Hard_stop (battle).mp3"
+dest_files=["res://.godot/imported/Hard_stop (battle).mp3-95d2f28dd6d047cda43042a8c6371cd6.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

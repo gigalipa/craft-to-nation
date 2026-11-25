@@ -15,7 +15,7 @@
 - **allowScripts** (2 connections) — `video_edition/remotion/package.json`
 - **eslint@10.12.0** (2 connections) — `video_edition/remotion/package.json`
 - **prettier@3.8.1** (2 connections) — `video_edition/remotion/package.json`
-- **@remotion/eslint-config-flat@4.0.537** (2 connections) — `video_edition/remotion/package.json`
+- **@remotion/eslint-config-flat@4.0.545** (2 connections) — `video_edition/remotion/package.json`
 - **@types/react@19.2.7** (2 connections) — `video_edition/remotion/package.json`
 - **@types/web@0.0.166** (2 connections) — `video_edition/remotion/package.json`
 - **typescript@5.9.3** (2 connections) — `video_edition/remotion/package.json`
@@ -33,8 +33,7 @@
 ## Relationships
 
 - [subprocess](subprocess.md) (4 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (3 shared connections)
-- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (1 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (4 shared connections)
 - [Asset Visual: hud-camara-cen Module](Asset_Visual-_hud-camara-cen_Module.md) (1 shared connections)
 
 ## Source Files

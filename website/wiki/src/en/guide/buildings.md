@@ -70,3 +70,13 @@ Free laborers (up to **4 builders per site**) are dispatched strictly following 
 3. **Building and Road Demolitions** (Mode `3`)
 4. **Road Laying** (`1 -> 5 -> 1`)
 5. **Low Priority Construction** (`Prioridad Baja ▲`)
+
+---
+
+## 6. Military Building: Barracks (`9×7×8`, Zone B, Key `7`)
+
+Since **Phase 4 (GDD v3.62)**, the build menu includes category **<kbd>7</kbd> Military (`cat_militar.svg`)** featuring the **Barracks (`Cuartel`)**:
+- **Architecture & Zoning:** A **2-story (`9×7×8`)** stone, wood, and glass template with a service door and **4 military beds**, placed in **Zone B (Industrial / Strategic)**.
+- **Garrisoned Military Housing (`x_cama = 4`):** Each barracks bed houses **4 soldiers**, providing capacity for **16 garrisoned soldiers** in a dedicated military census that **never consumes civilian beds or causes residential evictions**.
+- **Lossless `4 → 4` Cohort Recruitment:** Military training atomically converts batches of 4 laborers into 4 soldiers in `Economia.gd`/`Recoleccion.gd`.
+

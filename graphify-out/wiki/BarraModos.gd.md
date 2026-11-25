@@ -1,6 +1,6 @@
 # BarraModos.gd
 
-> 19 nodes · cohesion 0.22
+> 21 nodes · cohesion 0.20
 
 ## Key Concepts
 
@@ -11,14 +11,16 @@
 - **react** (8 connections) — `video_edition/remotion/package.json`
 - **LowerThird.tsx** (7 connections) — `video_edition/remotion/src/LowerThird.tsx`
 - **ReelTrendNoPlanB.tsx** (7 connections) — `video_edition/remotion/src/ReelTrendNoPlanB.tsx`
+- **@remotion/media** (6 connections) — `video_edition/remotion/package.json`
 - **@remotion/transitions** (5 connections) — `video_edition/remotion/package.json`
 - **LowerThird()** (5 connections) — `video_edition/remotion/src/LowerThird.tsx`
 - **DevlogRecap()** (3 connections) — `video_edition/remotion/src/DevlogRecap.tsx`
 - **src/index.ts** (3 connections) — `video_edition/remotion/src/index.ts`
 - **QASessionRecap()** (3 connections) — `video_edition/remotion/src/QASessionRecap.tsx`
-- **@remotion/transitions@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
+- **Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)** (2 connections) — `video_edition/remotion/public/craft-to-nation-logo.png`
 - **ReelTrendNoPlanB()** (2 connections) — `video_edition/remotion/src/ReelTrendNoPlanB.tsx`
 - **RemotionRoot()** (2 connections) — `video_edition/remotion/src/Root.tsx`
+- **Asset Visual: craft-to-nation-logo.png** (1 connections) — `arte/logo/craft-to-nation-logo.png`
 - **RECAP_CUTS** (1 connections) — `video_edition/remotion/src/DevlogRecap.tsx`
 - **LowerThirdProps** (1 connections) — `video_edition/remotion/src/LowerThird.tsx`
 - **video_edition_remotion_src_qa_shorts_data** (1 connections)
@@ -26,16 +28,17 @@
 
 ## Relationships
 
-- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (7 shared connections)
-- [Estado detallado e historial](Estado_detallado_e_historial.md) (3 shared connections)
-- [subprocess](subprocess.md) (3 shared connections)
-- [dependabot.yml](dependabot.yml.md) (3 shared connections)
+- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (5 shared connections)
+- [Estado detallado e historial](Estado_detallado_e_historial.md) (4 shared connections)
+- [subprocess](subprocess.md) (4 shared connections)
+- [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (3 shared connections)
 - [Asset Visual: hud-primera-pe Module](Asset_Visual-_hud-primera-pe_Module.md) (1 shared connections)
-- [Asset Visual: Translucent_Gl Module](Asset_Visual-_Translucent_Gl_Module.md) (1 shared connections)
 
 ## Source Files
 
+- `arte/logo/craft-to-nation-logo.png`
 - `video_edition/remotion/package.json`
+- `video_edition/remotion/public/craft-to-nation-logo.png`
 - `video_edition/remotion/src/DevlogRecap.tsx`
 - `video_edition/remotion/src/LowerThird.tsx`
 - `video_edition/remotion/src/QASessionRecap.tsx`
@@ -45,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 55 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 57 (97%)
+- INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

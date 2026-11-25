@@ -12,9 +12,9 @@
     "semantic_hash": "e24a0109ad49d93c83d24f248e600583"
   },
   "tools/run-godot-tests.ps1": {
-    "mtime": 1795053555.550068,
-    "seen": 1795054115.8415928,
-    "ast_hash": "f61d12a9ca3212c8b6ecba17228a8c2c",
+    "mtime": 1795622774.7936063,
+    "seen": 1795640327.75379,
+    "ast_hash": "03d5324e6b614bf4029f6abd5399e746",
     "semantic_hash": ""
   },
   "tools/run-single-test.ps1": {
@@ -42,10 +42,10 @@
     "semantic_hash": "e20d59bb6b64567da14d80c3da2c6b15"
   },
   "video_edition/remotion/package.json": {
-    "mtime": 1792591845.9964266,
-    "seen": 1793184571.597345,
-    "ast_hash": "bf5e8e549ef2e746da4cec075aa43764",
-    "semantic_hash": "bf5e8e549ef2e746da4cec075aa43764"
+    "mtime": 1795348256.44303,
+    "seen": 1795348994.557361,
+    "ast_hash": "7cb74b67b477a7a2fb9864f2ce868cd6",
+    "semantic_hash": ""
   },
   "video_edition/remotion/remotion.config.ts": {
     "mtime": 1792138160.0,
@@ -252,9 +252,9 @@
     "semantic_hash": "0e783ab665ad24669f0c35ebca0a45c6"
   },
   "Documento de Dise\u00f1o de Juego (GDD)_ Craft to Nation.md": {
-    "mtime": 1795136867.7957528,
-    "seen": 1795137241.752632,
-    "ast_hash": "27ad67eff6d58d00769ffc434922d084",
+    "mtime": 1795640245.762729,
+    "seen": 1795640327.7547948,
+    "ast_hash": "6a6a1feaeca74d51909432660a6811cd",
     "semantic_hash": ""
   },
   "LICENSE-CONTENT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": "acdcbe4b78768a9aa5df06f3be52b082"
   },
   "README.md": {
-    "mtime": 1795136927.5725965,
-    "seen": 1795137241.752632,
-    "ast_hash": "88a1ec2f5d21f657980321ff160dae89",
+    "mtime": 1795640283.2171564,
+    "seen": 1795640327.7547948,
+    "ast_hash": "55b7dce6f4c5cd630211734fe10578ff",
     "semantic_hash": ""
   },
   "docs/Fichas_Consumo_Produccion.md": {
@@ -342,15 +342,15 @@
     "semantic_hash": "b7fff2b4e855f9d8376b577bfa146baf"
   },
   "docs/Live_Verifications.md": {
-    "mtime": 1793806565.859503,
-    "seen": 1793810601.0871043,
-    "ast_hash": "69da7aae70685c45e4ece294442130d0",
+    "mtime": 1795168931.0163999,
+    "seen": 1795348994.557361,
+    "ast_hash": "a87540f4d58363d57b9e1ec05c7e0f1f",
     "semantic_hash": ""
   },
   "docs/Pendientes y pr\u00f3ximos pasos.md": {
-    "mtime": 1795136995.3818934,
-    "seen": 1795137241.752632,
-    "ast_hash": "c2215b188aeff631147f122decbd116c",
+    "mtime": 1795640288.0953982,
+    "seen": 1795640327.7547948,
+    "ast_hash": "3f1fd5f030034822f33d160e0830e2e6",
     "semantic_hash": ""
   },
   "docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md": {
@@ -372,15 +372,15 @@
     "semantic_hash": "73636d0cee88c3bdfb36b18448073a77"
   },
   "docs/Verificaciones_en_vivo.md": {
-    "mtime": 1793806248.5834498,
-    "seen": 1793810601.0871043,
-    "ast_hash": "a232c0a1d563d49ef711652f1f36a9b9",
+    "mtime": 1795168792.692081,
+    "seen": 1795348994.557361,
+    "ast_hash": "a4f076d90844ba46dc81f1026b2d1b4d",
     "semantic_hash": ""
   },
   "docs/ideas-backlog.md": {
-    "mtime": 1795137006.826927,
-    "seen": 1795137241.752632,
-    "ast_hash": "21fc9abfcd8c3fc33ac5e17da03d7855",
+    "mtime": 1795640249.6919985,
+    "seen": 1795640327.7547948,
+    "ast_hash": "a3d2dc456347f42049cd65f4cce7f676",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md": {
@@ -1044,45 +1044,45 @@
     "semantic_hash": "ad42c557a417d1cf0c3def94b319a57a"
   },
   "website/index.html": {
-    "mtime": 1794253309.6695962,
-    "seen": 1794262030.467282,
-    "ast_hash": "68f579e98f6590f4ef78f80e8623fecc",
+    "mtime": 1795303954.8789215,
+    "seen": 1795348994.557361,
+    "ast_hash": "55f394f99e71a28ba818f7000be07892",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/gdd.md": {
-    "mtime": 1795137074.6071556,
-    "seen": 1795137241.752632,
-    "ast_hash": "4314d71da12f6226ba22bb864b1d86a4",
+    "mtime": 1795640303.7262237,
+    "seen": 1795640327.7547948,
+    "ast_hash": "68379b442beb7ecbdc876e7b683196dd",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/godot.md": {
-    "mtime": 1795137074.6076846,
-    "seen": 1795137241.752632,
-    "ast_hash": "a395be975cfd54c03a8c341cc85696f6",
+    "mtime": 1795640303.9460745,
+    "seen": 1795640327.7547948,
+    "ast_hash": "7d834808c2691c8540ee6a7776250d57",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/logistics.md": {
-    "mtime": 1794348592.9126909,
-    "seen": 1794348642.4698787,
-    "ast_hash": "91e99385f33fb5523c156915732aaacf",
-    "semantic_hash": "91e99385f33fb5523c156915732aaacf"
+    "mtime": 1795179963.0608115,
+    "seen": 1795348994.557361,
+    "ast_hash": "38c649bff8ec8efeebab84ff5f2a40ec",
+    "semantic_hash": ""
   },
   "website/wiki/src/en/dev/roadmap.md": {
-    "mtime": 1795137059.6892142,
-    "seen": 1795137241.752632,
-    "ast_hash": "8344eb227e9eb9d01880a52e9964a064",
+    "mtime": 1795640304.1503396,
+    "seen": 1795640327.7547948,
+    "ast_hash": "9ef9b54c7a60cffc85a9f909637757c2",
     "semantic_hash": ""
   },
   "website/wiki/src/en/guide/buildings.md": {
-    "mtime": 1793313348.440106,
-    "seen": 1793484453.84455,
-    "ast_hash": "b92a61245a5cc4add2def1b8e044c492",
-    "semantic_hash": "b92a61245a5cc4add2def1b8e044c492"
+    "mtime": 1795180131.4074612,
+    "seen": 1795348994.557361,
+    "ast_hash": "5fc5a338d234ba152973dc0d0f22e852",
+    "semantic_hash": ""
   },
   "website/wiki/src/en/guide/colonists.md": {
-    "mtime": 1794175588.8623173,
-    "seen": 1794175678.4522777,
-    "ast_hash": "547559a1b897b418b5b287ab3c260785",
+    "mtime": 1795180283.397863,
+    "seen": 1795348994.557361,
+    "ast_hash": "4080901d9eaaeeb535310342ec05ce18",
     "semantic_hash": ""
   },
   "website/wiki/src/en/guide/resources.md": {
@@ -1092,81 +1092,81 @@
     "semantic_hash": "3da2122cd22bfca98710bd650ec24ba2"
   },
   "website/wiki/src/en/guide/start.md": {
-    "mtime": 1793154934.9166903,
-    "seen": 1793184571.597345,
-    "ast_hash": "e75e8b323763da49ce44b23ffcdce197",
-    "semantic_hash": "e75e8b323763da49ce44b23ffcdce197"
+    "mtime": 1795180049.439623,
+    "seen": 1795348994.557361,
+    "ast_hash": "078c0d47e01008647346f81c6999520a",
+    "semantic_hash": ""
   },
   "website/wiki/src/en/index.md": {
-    "mtime": 1795137074.603184,
-    "seen": 1795137241.752632,
-    "ast_hash": "b8efcb057c26dacfb769087ad214bb8d",
+    "mtime": 1795640303.6473336,
+    "seen": 1795640327.7547948,
+    "ast_hash": "00e63ffd4987d41dd3d594a0fe881ba0",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/gdd.md": {
-    "mtime": 1795137074.605499,
-    "seen": 1795137241.752632,
-    "ast_hash": "dd970c1a59810835ed2c09c2ccb96f27",
+    "mtime": 1795640303.6863687,
+    "seen": 1795640327.7547948,
+    "ast_hash": "9baf70a0286fe7fef57a295da902ec5e",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/godot.md": {
-    "mtime": 1795137074.606639,
-    "seen": 1795137241.752632,
-    "ast_hash": "b79dca6956a1f674199ac565875d1a59",
+    "mtime": 1795640303.6999435,
+    "seen": 1795640327.7547948,
+    "ast_hash": "83f1d9be650fcff0e794851d3f6387a4",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/logistica.md": {
-    "mtime": 1793313376.6270742,
-    "seen": 1793484453.84455,
-    "ast_hash": "2618a433cfcaca942aed59c0c67031fd",
-    "semantic_hash": "2618a433cfcaca942aed59c0c67031fd"
+    "mtime": 1795180332.4713244,
+    "seen": 1795348994.557361,
+    "ast_hash": "640782f7e74173dd0e9b9f4b14d696ee",
+    "semantic_hash": ""
   },
   "website/wiki/src/es/dev/roadmap.md": {
-    "mtime": 1795137059.6892142,
-    "seen": 1795137241.752632,
-    "ast_hash": "77787816d38eaba2e3437c62a19b76a6",
+    "mtime": 1795640304.129223,
+    "seen": 1795640327.7547948,
+    "ast_hash": "6a4f16971133a184064d103317f1a7d6",
     "semantic_hash": ""
   },
   "website/wiki/src/es/guia/colonos.md": {
-    "mtime": 1794175584.899019,
-    "seen": 1794175678.4522777,
-    "ast_hash": "3234ad681911f905fd6c49e1c61bd49f",
+    "mtime": 1795180332.4703243,
+    "seen": 1795348994.557361,
+    "ast_hash": "c85031f07b2f11d3b79c84af29d0e809",
     "semantic_hash": ""
   },
   "website/wiki/src/es/guia/edificios.md": {
-    "mtime": 1793313297.6706955,
-    "seen": 1793484453.84455,
-    "ast_hash": "34b58e7a83c104a909a8ad5627c0afac",
-    "semantic_hash": "34b58e7a83c104a909a8ad5627c0afac"
+    "mtime": 1795180332.469319,
+    "seen": 1795348994.557361,
+    "ast_hash": "16bb33573d950e9ddaca3e8fa744495e",
+    "semantic_hash": ""
   },
   "website/wiki/src/es/guia/inicio.md": {
-    "mtime": 1793154736.2082193,
-    "seen": 1793184571.597345,
-    "ast_hash": "8de151a3ed8140359b24fc77594b19e4",
-    "semantic_hash": "8de151a3ed8140359b24fc77594b19e4"
+    "mtime": 1795180332.4683194,
+    "seen": 1795348994.557361,
+    "ast_hash": "8c16ac6b008ce642950b958caaeefdc2",
+    "semantic_hash": ""
   },
   "website/wiki/src/es/guia/recursos.md": {
-    "mtime": 1793154674.4799595,
-    "seen": 1793184571.597345,
+    "mtime": 1795180332.4703243,
+    "seen": 1795348994.557361,
     "ast_hash": "ec4a92e345a0dcc11d9de43a48d420a3",
     "semantic_hash": "ec4a92e345a0dcc11d9de43a48d420a3"
   },
   "website/wiki/src/es/index.md": {
-    "mtime": 1794348592.913682,
-    "seen": 1794348642.4698787,
-    "ast_hash": "3b478825d100805cd9edb8c211411f49",
+    "mtime": 1795640303.6732998,
+    "seen": 1795640327.7547948,
+    "ast_hash": "54b63f162e17de23a8cfd570acf5efc3",
     "semantic_hash": ""
   },
   "website/wiki/src/fr/index.md": {
-    "mtime": 1795137074.603743,
-    "seen": 1795137241.752632,
-    "ast_hash": "2e68a5066ce054d3822b8d07f95953a3",
+    "mtime": 1795640303.6610756,
+    "seen": 1795640327.7547948,
+    "ast_hash": "a9af55a3ad68666d5a6d62c4ba271bb7",
     "semantic_hash": ""
   },
   "website/wiki/src/index.md": {
-    "mtime": 1795137074.6025562,
-    "seen": 1795137241.752632,
-    "ast_hash": "591549db17ff05a096e66f902c7832a1",
+    "mtime": 1795640303.634196,
+    "seen": 1795640327.7547948,
+    "ast_hash": "3ea58c60c79176adf1dadcbe1beba22c",
     "semantic_hash": ""
   },
   "arte/IMUQwcomLawGk.png": {
@@ -2812,66 +2812,6 @@
     "seen": 1793184571.597345,
     "ast_hash": "294d3b02d918a146d790de91a1292feb",
     "semantic_hash": "294d3b02d918a146d790de91a1292feb"
-  },
-  "arte/mp3/Clockwork_logistics (loop).mp3": {
-    "mtime": 1792325537.1240773,
-    "seen": 1793184571.597345,
-    "ast_hash": "c3e8256efd962e686ed80dcb2a9d1683",
-    "semantic_hash": "c3e8256efd962e686ed80dcb2a9d1683"
-  },
-  "arte/mp3/Clockwork_logistics_2 (loop).mp3": {
-    "mtime": 1792325619.1703255,
-    "seen": 1793184571.597345,
-    "ast_hash": "d2521584f62f754ad4639257cc63ed4d",
-    "semantic_hash": "d2521584f62f754ad4639257cc63ed4d"
-  },
-  "arte/mp3/Cozy_colony (loop).mp3": {
-    "mtime": 1792325537.1346414,
-    "seen": 1793184571.597345,
-    "ast_hash": "4eefd61720ac308f9aae8a53cbcd8d83",
-    "semantic_hash": "4eefd61720ac308f9aae8a53cbcd8d83"
-  },
-  "arte/mp3/Glitch_drift (loop).mp3": {
-    "mtime": 1792325537.14073,
-    "seen": 1793184571.597345,
-    "ast_hash": "7f045975ecb76d49b5a79e1d73518331",
-    "semantic_hash": "7f045975ecb76d49b5a79e1d73518331"
-  },
-  "arte/mp3/Glitch_drift_2 (loop).mp3": {
-    "mtime": 1792325628.4785504,
-    "seen": 1793184571.597345,
-    "ast_hash": "c953c711e5cc18dc273966705ed7643f",
-    "semantic_hash": "c953c711e5cc18dc273966705ed7643f"
-  },
-  "arte/mp3/Hard_stop (loop).mp3": {
-    "mtime": 1792325537.1507452,
-    "seen": 1793184571.597345,
-    "ast_hash": "6c58349ae8789f334c5cfcbd2ea4524c",
-    "semantic_hash": "6c58349ae8789f334c5cfcbd2ea4524c"
-  },
-  "arte/mp3/Hard_stop_2 (loop).mp3": {
-    "mtime": 1792325635.2403626,
-    "seen": 1793184571.597345,
-    "ast_hash": "e2e77e6c1f21f73680b1e5ed76296137",
-    "semantic_hash": "e2e77e6c1f21f73680b1e5ed76296137"
-  },
-  "arte/mp3/Morning_at_the_Steel_Spire (loop).mp3": {
-    "mtime": 1792325572.6561978,
-    "seen": 1793184571.597345,
-    "ast_hash": "77995fb191ac3b0caa8ab4ce75fde949",
-    "semantic_hash": "77995fb191ac3b0caa8ab4ce75fde949"
-  },
-  "arte/mp3/Seamless_loop  (loop).mp3": {
-    "mtime": 1792325537.1627793,
-    "seen": 1793184571.597345,
-    "ast_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9",
-    "semantic_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9"
-  },
-  "arte/mp3/The_Architect_s_Decree (menu).mp3": {
-    "mtime": 1792325602.293656,
-    "seen": 1793184571.597345,
-    "ast_hash": "1642c22e89c7dcf71776aac9f007f1b8",
-    "semantic_hash": "1642c22e89c7dcf71776aac9f007f1b8"
   },
   "arte/sfx/cierre_puerta_baul.mp3": {
     "mtime": 1791196851.0427594,
@@ -5183,66 +5123,6 @@
     "ast_hash": "3a71ae88c63d4dd3b2befaac7f8d3901",
     "semantic_hash": ""
   },
-  "godot/assets/musica/Clockwork_logistics (loop).mp3": {
-    "mtime": 1792325537.1240773,
-    "seen": 1794008498.072474,
-    "ast_hash": "c3e8256efd962e686ed80dcb2a9d1683",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Clockwork_logistics_2 (loop).mp3": {
-    "mtime": 1792325619.1703255,
-    "seen": 1794008498.072474,
-    "ast_hash": "d2521584f62f754ad4639257cc63ed4d",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Cozy_colony (loop).mp3": {
-    "mtime": 1792325537.1346414,
-    "seen": 1794008498.072474,
-    "ast_hash": "4eefd61720ac308f9aae8a53cbcd8d83",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Glitch_drift (loop).mp3": {
-    "mtime": 1792325537.14073,
-    "seen": 1794008498.072474,
-    "ast_hash": "7f045975ecb76d49b5a79e1d73518331",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Glitch_drift_2 (loop).mp3": {
-    "mtime": 1792325628.4785504,
-    "seen": 1794008498.072474,
-    "ast_hash": "c953c711e5cc18dc273966705ed7643f",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Hard_stop (loop).mp3": {
-    "mtime": 1792325537.1507452,
-    "seen": 1794008498.072474,
-    "ast_hash": "6c58349ae8789f334c5cfcbd2ea4524c",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Hard_stop_2 (loop).mp3": {
-    "mtime": 1792325635.2403626,
-    "seen": 1794008498.072474,
-    "ast_hash": "e2e77e6c1f21f73680b1e5ed76296137",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Morning_at_the_Steel_Spire (loop).mp3": {
-    "mtime": 1792325572.6561978,
-    "seen": 1794008498.072474,
-    "ast_hash": "77995fb191ac3b0caa8ab4ce75fde949",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/Seamless_loop  (loop).mp3": {
-    "mtime": 1792325537.1627793,
-    "seen": 1794008498.072474,
-    "ast_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9",
-    "semantic_hash": ""
-  },
-  "godot/assets/musica/The_Architect_s_Decree (menu).mp3": {
-    "mtime": 1792325602.293656,
-    "seen": 1794008498.072474,
-    "ast_hash": "1642c22e89c7dcf71776aac9f007f1b8",
-    "semantic_hash": ""
-  },
   "arte/slideshow/citycraft-world.jpg": {
     "mtime": 1793874263.782512,
     "seen": 1794089524.436685,
@@ -5448,9 +5328,9 @@
     "semantic_hash": ""
   },
   "docs/llms-full.txt": {
-    "mtime": 1795137074.6537535,
-    "seen": 1795137241.752632,
-    "ast_hash": "2f1786ab0ff581608e4e8a0b81604455",
+    "mtime": 1795640304.0746083,
+    "seen": 1795640327.7547948,
+    "ast_hash": "8383ae82d637f0b03ae92278fada7d2d",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md": {
@@ -5525,10 +5405,466 @@
     "ast_hash": "46312a343aa62bf66650d02161f5bc24",
     "semantic_hash": ""
   },
+  "docs/superpowers/plans/2026-11-20-musica-adaptativa-contextual-ost.md": {
+    "mtime": 1795229270.0004296,
+    "seen": 1795348994.557361,
+    "ast_hash": "0371efbe69e0d34529d26445305e87b6",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-11-20-musica-adaptativa-contextual-ost-design.md": {
+    "mtime": 1795228839.7468169,
+    "seen": 1795348994.557361,
+    "ast_hash": "43b25e060f951735b499c9895d3b2ac2",
+    "semantic_hash": ""
+  },
+  "arte/ost/Automated Pulse (industry).mp3": {
+    "mtime": 1795223309.1054995,
+    "seen": 1795348994.5585294,
+    "ast_hash": "4852ee8dcb483d7a6cd8c97f1c0c9428",
+    "semantic_hash": ""
+  },
+  "arte/ost/Clockwork_logistics (industry).mp3": {
+    "mtime": 1792325537.1240773,
+    "seen": 1795348994.5585294,
+    "ast_hash": "c3e8256efd962e686ed80dcb2a9d1683",
+    "semantic_hash": ""
+  },
+  "arte/ost/Clockwork_logistics_2 (industry).mp3": {
+    "mtime": 1792325619.1703255,
+    "seen": 1795348994.5585294,
+    "ast_hash": "d2521584f62f754ad4639257cc63ed4d",
+    "semantic_hash": ""
+  },
+  "arte/ost/Cozy_colony (building).mp3": {
+    "mtime": 1792325537.1346414,
+    "seen": 1795348994.5585294,
+    "ast_hash": "4eefd61720ac308f9aae8a53cbcd8d83",
+    "semantic_hash": ""
+  },
+  "arte/ost/Foundations & Frameworks (building).m4a": {
+    "mtime": 1795223327.8257973,
+    "seen": 1795348994.5585294,
+    "ast_hash": "9a9d77d6332f3764cfb4b9f773598947",
+    "semantic_hash": ""
+  },
+  "arte/ost/Frontier Blueprint (building).m4a": {
+    "mtime": 1795222938.8807716,
+    "seen": 1795348994.5585294,
+    "ast_hash": "b06aa002cf2ea9c54774758cae6e8568",
+    "semantic_hash": ""
+  },
+  "arte/ost/Glitch_drift (industry).mp3": {
+    "mtime": 1792325537.14073,
+    "seen": 1795348994.5585294,
+    "ast_hash": "7f045975ecb76d49b5a79e1d73518331",
+    "semantic_hash": ""
+  },
+  "arte/ost/Glitch_drift_2 (industry).mp3": {
+    "mtime": 1792325628.4785504,
+    "seen": 1795348994.5585294,
+    "ast_hash": "c953c711e5cc18dc273966705ed7643f",
+    "semantic_hash": ""
+  },
+  "arte/ost/Hard_stop (battle).mp3": {
+    "mtime": 1792325537.1507452,
+    "seen": 1795348994.5585294,
+    "ast_hash": "6c58349ae8789f334c5cfcbd2ea4524c",
+    "semantic_hash": ""
+  },
+  "arte/ost/Hard_stop_2 (battle).mp3": {
+    "mtime": 1792325635.2403626,
+    "seen": 1795348994.5585294,
+    "ast_hash": "e2e77e6c1f21f73680b1e5ed76296137",
+    "semantic_hash": ""
+  },
+  "arte/ost/Menu & Loading Theme (menu).mp3": {
+    "mtime": 1795223366.818007,
+    "seen": 1795348994.5585294,
+    "ast_hash": "eb7da933ac1e36c5e88065dad6441da9",
+    "semantic_hash": ""
+  },
+  "arte/ost/Morning_at_the_Steel_Spire (industry).mp3": {
+    "mtime": 1792325572.6561978,
+    "seen": 1795348994.5585294,
+    "ast_hash": "77995fb191ac3b0caa8ab4ce75fde949",
+    "semantic_hash": ""
+  },
+  "arte/ost/Seamless_loop  (building).mp3": {
+    "mtime": 1792325537.1627793,
+    "seen": 1795348994.5585294,
+    "ast_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9",
+    "semantic_hash": ""
+  },
+  "arte/ost/Siege Protocols (battle).mp3": {
+    "mtime": 1795223309.1165936,
+    "seen": 1795348994.5585294,
+    "ast_hash": "c4e2bff879ceea0e322e710709d97a5d",
+    "semantic_hash": ""
+  },
+  "arte/ost/Untamed Horizons (exploration).m4a": {
+    "mtime": 1795222938.8666735,
+    "seen": 1795348994.5585294,
+    "ast_hash": "9d52ad5ff801f316d96561b522b4269a",
+    "semantic_hash": ""
+  },
+  "arte/ost/Wilderness & Discovery (exploration).m4a": {
+    "mtime": 1795223345.580344,
+    "seen": 1795348994.5585294,
+    "ast_hash": "4a2b6d6e2165e32d25e483aa60c02782",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Automated Pulse (industry).mp3": {
+    "mtime": 1795223309.1054995,
+    "seen": 1795348994.5585294,
+    "ast_hash": "4852ee8dcb483d7a6cd8c97f1c0c9428",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Clockwork_logistics (industry).mp3": {
+    "mtime": 1792325537.1240773,
+    "seen": 1795348994.5585294,
+    "ast_hash": "c3e8256efd962e686ed80dcb2a9d1683",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Clockwork_logistics_2 (industry).mp3": {
+    "mtime": 1792325619.1703255,
+    "seen": 1795348994.5585294,
+    "ast_hash": "d2521584f62f754ad4639257cc63ed4d",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Cozy_colony (building).mp3": {
+    "mtime": 1792325537.1346414,
+    "seen": 1795348994.5585294,
+    "ast_hash": "4eefd61720ac308f9aae8a53cbcd8d83",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Foundations & Frameworks (building).mp3": {
+    "mtime": 1795229618.9501789,
+    "seen": 1795348994.5585294,
+    "ast_hash": "c0fd1ac83a18198bc1c57a7b38f3bfd9",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Frontier Blueprint (building).mp3": {
+    "mtime": 1795229620.3242807,
+    "seen": 1795348994.5585294,
+    "ast_hash": "cc062e015eb7b4663dc5f05c4c6cd24c",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Glitch_drift (industry).mp3": {
+    "mtime": 1792325537.14073,
+    "seen": 1795348994.5585294,
+    "ast_hash": "7f045975ecb76d49b5a79e1d73518331",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Glitch_drift_2 (industry).mp3": {
+    "mtime": 1792325628.4785504,
+    "seen": 1795348994.5585294,
+    "ast_hash": "c953c711e5cc18dc273966705ed7643f",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Hard_stop (battle).mp3": {
+    "mtime": 1792325537.1507452,
+    "seen": 1795348994.5585294,
+    "ast_hash": "6c58349ae8789f334c5cfcbd2ea4524c",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Hard_stop_2 (battle).mp3": {
+    "mtime": 1792325635.2403626,
+    "seen": 1795348994.5585294,
+    "ast_hash": "e2e77e6c1f21f73680b1e5ed76296137",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Menu & Loading Theme (menu).mp3": {
+    "mtime": 1795223366.818007,
+    "seen": 1795348994.5585294,
+    "ast_hash": "eb7da933ac1e36c5e88065dad6441da9",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Morning_at_the_Steel_Spire (industry).mp3": {
+    "mtime": 1792325572.6561978,
+    "seen": 1795348994.5585294,
+    "ast_hash": "77995fb191ac3b0caa8ab4ce75fde949",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Seamless_loop  (building).mp3": {
+    "mtime": 1792325537.1627793,
+    "seen": 1795348994.5585294,
+    "ast_hash": "33d6c7459fbb1aa3ddb4707bcb6acac9",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Siege Protocols (battle).mp3": {
+    "mtime": 1795223309.1165936,
+    "seen": 1795348994.5585294,
+    "ast_hash": "c4e2bff879ceea0e322e710709d97a5d",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Untamed Horizons (exploration).mp3": {
+    "mtime": 1795229621.6466305,
+    "seen": 1795348994.5585294,
+    "ast_hash": "7ee5ab3506db84d65179b730e8ac31e7",
+    "semantic_hash": ""
+  },
+  "godot/assets/musica/Wilderness & Discovery (exploration).mp3": {
+    "mtime": 1795229623.014816,
+    "seen": 1795348994.5585294,
+    "ast_hash": "05da2b5defa918021a0df7e66589a86a",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/blender_arkit_blendshapes.py": {
+    "mtime": 1795519873.8311095,
+    "seen": 1795640327.75379,
+    "ast_hash": "eceae2e2812b2a13b2bd45b400c93803",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/blender_character_edit.py": {
+    "mtime": 1795623812.7445076,
+    "seen": 1795640327.75379,
+    "ast_hash": "9b23bf285912783b90d97c68d9d07ad6",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/blender_godot_prepare.py": {
+    "mtime": 1795606417.0025132,
+    "seen": 1795640327.75379,
+    "ast_hash": "4c1fa7a228993d8077a08d37624dc997",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/blender_mixamo_retarget.py": {
+    "mtime": 1795519760.3812926,
+    "seen": 1795640327.75379,
+    "ast_hash": "a59e5b2dd2e8b8b152aa479a9626751e",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/blender_prop_prepare.py": {
+    "mtime": 1795623755.9373908,
+    "seen": 1795640327.75379,
+    "ast_hash": "d50cc4c430705a089a67e8f721674cab",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/blender_retarget_mixamo.py": {
+    "mtime": 1795623757.0818129,
+    "seen": 1795640327.75379,
+    "ast_hash": "df2b70e4dedd04d74486ff45d170166e",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/modal_hunyuan_rig.py": {
+    "mtime": 1795488492.6296525,
+    "seen": 1795640327.75379,
+    "ast_hash": "4a8c3cc1fe9e1cb6d19164a81fdce1ba",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/split_turnaround.py": {
+    "mtime": 1795487048.256269,
+    "seen": 1795640327.75379,
+    "ast_hash": "ac4fc7f10dce0c1a7cb3b0cfe46ec4c5",
+    "semantic_hash": ""
+  },
+  "video_edition/tools/build_character_animation_short.py": {
+    "mtime": 1795573321.5544536,
+    "seen": 1795640327.7547948,
+    "ast_hash": "fa1da73c6a74645c24317fd050e1d65e",
+    "semantic_hash": ""
+  },
+  "video_edition/tools/build_characters_teaser.py": {
+    "mtime": 1795492826.0999537,
+    "seen": 1795640327.7547948,
+    "ast_hash": "ffda3e76dd973c11154c89428a3e0066",
+    "semantic_hash": ""
+  },
+  ".agents/agents/ctn-img-2-character.md": {
+    "mtime": 1795623817.4287918,
+    "seen": 1795640327.7547948,
+    "ast_hash": "e101aa7c6ce753513308b7766062fd3b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/craft-character-3d/SKILL.md": {
+    "mtime": 1795623814.6771467,
+    "seen": 1795640327.7547948,
+    "ast_hash": "564fa2ec96466b0e899b7b5c21bb37a5",
+    "semantic_hash": ""
+  },
+  "docs/historia_narrativa_campana.md": {
+    "mtime": 1795526800.741031,
+    "seen": 1795640327.7547948,
+    "ast_hash": "d0538354ea0a531dfa20ff3c1a9a65f2",
+    "semantic_hash": ""
+  },
+  "docs/prompt_img-2-3D.md": {
+    "mtime": 1795442978.7662292,
+    "seen": 1795640327.7547948,
+    "ast_hash": "23c45b751ed68adeda0f592bde1be058",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-11-25-sistema-modular-personajes-3d.md": {
+    "mtime": 1795622514.7049122,
+    "seen": 1795640327.7547948,
+    "ast_hash": "744a3824f7fcf4b6e49d1be3c8bb6a65",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-11-25-sistema-modular-personajes-3d-design.md": {
+    "mtime": 1795622512.5102813,
+    "seen": 1795640327.7547948,
+    "ast_hash": "bd7c7212a4e334a06d2905224c67f994",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/README.md": {
+    "mtime": 1795622516.7270844,
+    "seen": 1795640327.7547948,
+    "ast_hash": "583bf30ca8a34106494d881967bbb61b",
+    "semantic_hash": ""
+  },
+  "tools/3d_pipeline/mixamo_library/README.md": {
+    "mtime": 1795519762.879493,
+    "seen": 1795640327.7547948,
+    "ast_hash": "8d79054cb6977f573349efa7b2cb6a3f",
+    "semantic_hash": ""
+  },
+  "video_edition/workspaces/calendario_semana_6.md": {
+    "mtime": 1795573228.442485,
+    "seen": 1795640327.7547948,
+    "ast_hash": "5d18d4811927b2268f01ee37547789bb",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/avatar/avatar_Image_0.png": {
+    "mtime": 1795617904.1522748,
+    "seen": 1795640327.7557995,
+    "ast_hash": "d54d3c387c71659221d6306d8c1fc1dd",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Bow_Aim_Hold.png": {
+    "mtime": 1795613079.6684127,
+    "seen": 1795640327.7557995,
+    "ast_hash": "f633a2d2991a21656b2edbd10b3bb65e",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Cenital_Kneel_Idle.png": {
+    "mtime": 1795606286.9137776,
+    "seen": 1795640327.7557995,
+    "ast_hash": "e5e9968e9f4d3ad480fc01ffb348713f",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Cenital_Kneel_Idle_fixed.png": {
+    "mtime": 1795606363.4744532,
+    "seen": 1795640327.7557995,
+    "ast_hash": "a310777edbb393189186112a00d58275",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Cenital_Kneel_Idle_fixed2.png": {
+    "mtime": 1795606423.0064456,
+    "seen": 1795640327.7557995,
+    "ast_hash": "ffc20254238299cd6f524dbfece8ec36",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Command_Point.png": {
+    "mtime": 1795613079.780995,
+    "seen": 1795640327.7557995,
+    "ast_hash": "32e4708aafdbc7370cbdb012ea502fdd",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Death.png": {
+    "mtime": 1795606287.0033956,
+    "seen": 1795640327.7557995,
+    "ast_hash": "3196bc61185cf3527de0ca9a2da030d0",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Death_fixed.png": {
+    "mtime": 1795606363.3846304,
+    "seen": 1795640327.7557995,
+    "ast_hash": "5e867d14880e2673bbdf9622d012e622",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Death_fixed2.png": {
+    "mtime": 1795606422.9177175,
+    "seen": 1795640327.7557995,
+    "ast_hash": "46b1f842a56ef5c4eefd7f4a79df7161",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Idle.png": {
+    "mtime": 1795606286.6310737,
+    "seen": 1795640327.7557995,
+    "ast_hash": "ae1aebc92aa6ff055ea4bcd0dfe99dc4",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Jump_Start.png": {
+    "mtime": 1795606286.8228457,
+    "seen": 1795640327.7557995,
+    "ast_hash": "136c6ca42b8fa09cad20c21b3de1efe7",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Mining_Swing.png": {
+    "mtime": 1795613079.4614298,
+    "seen": 1795640327.7557995,
+    "ast_hash": "9489ef451ff8dffa9634fb4c1a578c1f",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Running.png": {
+    "mtime": 1795606286.7284873,
+    "seen": 1795640327.7557995,
+    "ast_hash": "e30982da96d04486df6004a657eca413",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Swimming.png": {
+    "mtime": 1795613079.3444352,
+    "seen": 1795640327.7557995,
+    "ast_hash": "d5b7fd4af759e330e87f95ba1c234fd3",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/anim_samples/sample_Sword_Slash.png": {
+    "mtime": 1795613079.5649767,
+    "seen": 1795640327.7557995,
+    "ast_hash": "623806ac8f36d9711b802323e9a9e9a4",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/preview_hiface.png": {
+    "mtime": 1795492678.301951,
+    "seen": 1795640327.7557995,
+    "ast_hash": "6cfb684f727487a5a352c69090234c22",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/preview_v2.png": {
+    "mtime": 1795488827.9945424,
+    "seen": 1795640327.7557995,
+    "ast_hash": "df98e6f9db27b77d33c7c7aeaef9f9c9",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/turnaround.jpg": {
+    "mtime": 1795486953.7921057,
+    "seen": 1795640327.7557995,
+    "ast_hash": "24a65f914bb53a2e3a3e70d85ac16439",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/views/back.png": {
+    "mtime": 1795487066.717853,
+    "seen": 1795640327.7557995,
+    "ast_hash": "26ed9c39ac11c9d783e8d27536162476",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/views/front.png": {
+    "mtime": 1795487066.4840906,
+    "seen": 1795640327.7557995,
+    "ast_hash": "eeaf3c9868823e2f85a951f17dffbff9",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/views/side.png": {
+    "mtime": 1795487066.563899,
+    "seen": 1795640327.7557995,
+    "ast_hash": "7fa8237da21a74121dca95ba1bd461e5",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/walk_preview_f08.png": {
+    "mtime": 1795545155.432048,
+    "seen": 1795640327.7557995,
+    "ast_hash": "fce8a4d24152516517e5e8da3d090dd3",
+    "semantic_hash": ""
+  },
+  "scratch/3d_jobs/avatar/walk_preview_f16.png": {
+    "mtime": 1795545155.5012984,
+    "seen": 1795640327.7557995,
+    "ast_hash": "f9a63f80c7818778075f07adca3b5030",
+    "semantic_hash": ""
+  },
   "video_edition/remotion/package-lock.json": {
-    "mtime": 1792591846.082358,
-    "seen": 1793657016.7790637,
-    "ast_hash": "0eead1ba58dd40c31145ed4b1bbbb6cb",
+    "mtime": 1795348256.5367446,
+    "seen": 1795348994.5585294,
+    "ast_hash": "287049606cc4e6f0e9806f55ee746a20",
     "semantic_hash": ""
   },
   "website/wiki/pnpm-lock.yaml": {

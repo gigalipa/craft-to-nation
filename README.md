@@ -6,7 +6,7 @@
 
 **Sitio web:** [crafttonation.netlify.app](https://crafttonation.netlify.app)
 
-El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.62](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
+El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.64](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
 
 ## Estado actual
 
@@ -18,7 +18,7 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 - **Fases 5–7 — planeadas:** logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
-El proyecto Godot cuenta actualmente con **37 escenas** `*Test.tscn` ejecutables en suite automatizada: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, rutas, vías, minerales, translúcidos, puertas, canalizaciones, lámpara del jugador, HUD, energía, sonidos (SFX), configuración, gestor de partidas, menú de pausa, menú de inicio, pantalla de carga, video intro, bienvenida y combate/comandante en primera persona.
+El proyecto Godot cuenta actualmente con **39 escenas** `*Test.tscn` ejecutables en suite automatizada: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, personajes modulares 3D, rutas, vías, minerales, translúcidos, puertas, canalizaciones, animador y lámpara del jugador, HUD, energía, sonidos (SFX), configuración, gestor de partidas, menú de pausa, menú de inicio, pantalla de carga, video intro, bienvenida y combate/comandante en primera persona.
 
 ## Ideas incorporadas al roadmap
 
@@ -29,7 +29,7 @@ El proyecto Godot cuenta actualmente con **37 escenas** `*Test.tscn` ejecutables
 - **Puertas, ventanas de $1/20$ y baúles interactivos:** las puertas se abren con `E` y reaccionan a los colonos; las ventanas se renderizan como paneles transparentes de $1/20$ de espesor (`ventana` recta a media profundidad, `ventana_esquina` en L y `ventana_techo` contra la cara superior al mirar arriba/abajo); `VentanaBaul` permite consultar y transferir cantidades parciales entre el inventario del avatar y un baúl físico, cerrándose también con `E`.
 - **Bioma y vegetación:** implementadas las señales de fauna, frutales y árboles; el mundo genera árboles procedurales talables y el jugador puede talarlos mediante acciones repetidas.
 - **Catálogo de recursos, cadenas de producción, logística móvil e investigación en 2 capas:** minerales, materiales reales de construcción, nueve industrias (siderúrgica, tierras raras, aserradero, fábrica de bloques, vidriera, carbonera, refinería petrolera, productor de combustible y central termoeléctrica) con control individual de reservas porcentuales (`0%..50%`) en el almacén central, taller de transporte y parque móvil de 6 unidades de acarreo (con restricción vial y arrastre lento), fluidos (agua, crudo y combustible), red de energía por influencia y vías con déficit, y formación e investigación descentralizada en 2 capas (Universidad + Aplicaciones con Investigador Itinerante) conectadas al IDU y a la balanza de doctrinas (`Dieselpunk / Cyberpunk / Solarpunk`).
-- **Audio espacial, configuración y gestión de partidas:** singleton de sonido `Sonidos.gd` con pools 2D/3D y catálogo de 102 efectos OGG con pitch modulation, reproductor BGM ambiental en bucle, portal de inicio `MenuInicio.tscn` con fondo animado tipo slideshow (`SlideshowFondo.gd`), menú contextual de pausa (`MenuPausa.gd` con F11), singleton de configuración persistente (`Configuracion.gd` en `user://configuracion.json`), guardado y carga atómica de partidas (`GestorPartida.gd` en `user://saves/`) con ranura rápida y metadatos, pantalla de carga (`PantallaCarga.gd`) y pipeline de compilación standalone para Windows (`tools/export_windows.ps1` con icono oficial `godot/icon.png`).
+- **Audio espacial, música adaptativa contextual (OST), configuración y gestión de partidas:** singleton de sonido `Sonidos.gd` con pools 2D/3D y catálogo de 102 efectos OGG con pitch modulation; **director de música adaptativa contextual sobre 16 pistas OST** (`menu`, `exploration`, `building`, `industry`, `battle`) con crossfade de doble reproductor, histéresis anti-rebote, shuffle bag y `Menu & Loading Theme` unificado en menú y carga; portal de inicio `MenuInicio.tscn` con fondo animado tipo slideshow (`SlideshowFondo.gd`) y botón **«¿Cómo jugar?»** a la Wiki oficial; menú contextual de pausa (`MenuPausa.gd` con F11); singleton de configuración persistente (`Configuracion.gd` en `user://configuracion.json` con registro de log en `user://logs/craft_to_nation.log`); guardado y carga atómica de partidas (`GestorPartida.gd` en `user://saves/`) con parseo robusto de vectores, reconstrucción visual de colonos (`ColonosRenderer.reconstruir()`), ranura rápida y metadatos; pantalla de carga (`PantallaCarga.gd`) y pipeline de compilación standalone para Windows (`tools/export_windows.ps1` / `export_presets.cfg` con icono oficial `godot/icon.png`).
 - **Cuerpos de agua:** implementados (mares, lagos y ríos con corriente y cascadas, agua transparente y no sólida, natación con oxígeno, escurrimiento con niveles y secado). Cauces sinuosos y un nivel de mar que dependa del tipo de mundo siguen pendientes.
 - **Puentes:** previstos como PoC 10 en la Fase 5, reutilizando el trazado de las redes de transporte.
 - **Tallado cosmético por celda:** previsto como pulido visual, sin fase propia.
@@ -59,6 +59,7 @@ docs/      Especificaciones, planes e ideas del backlog
 
 Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 
+- `godot/scenes/AvatarAnimadorTest.tscn`
 - `godot/scenes/BienvenidaTest.tscn`
 - `godot/scenes/BlueprintsTest.tscn`
 - `godot/scenes/BuscadorRutasTest.tscn`
@@ -82,6 +83,7 @@ Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 - `godot/scenes/NiveladorTerrenoTest.tscn`
 - `godot/scenes/ObrasTest.tscn`
 - `godot/scenes/PantallaCargaTest.tscn`
+- `godot/scenes/PersonajeModularTest.tscn`
 - `godot/scenes/PlantillasPuestoTest.tscn`
 - `godot/scenes/PlayerCombateComandanteTest.tscn`
 - `godot/scenes/PlayerLamparaTest.tscn`
@@ -97,7 +99,7 @@ Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 - `godot/scenes/VideoIntroTest.tscn`
 - `godot/scenes/ZonificacionTest.tscn`
 
-En Windows también puedes ejecutar las 37 escenas en modo headless. El script falla si Godot devuelve un código distinto de cero, registra `ERROR:`/`SCRIPT ERROR` o una escena no llega a su mensaje final:
+En Windows también puedes ejecutar las 39 escenas en modo headless. El script falla si Godot devuelve un código distinto de cero, registra `ERROR:`/`SCRIPT ERROR` o una escena no llega a su mensaje final:
 
 ```powershell
 .\tools\run-godot-tests.ps1 -GodotPath "C:\ruta\a\godot.exe"

@@ -9,6 +9,7 @@ const NiveladorTerrenoScript = preload("res://scripts/NiveladorTerreno.gd")
 const HotbarScript = preload("res://scripts/Hotbar.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const FinalizacionObras = preload("res://scripts/FinalizacionObras.gd")
+const AvatarAnimadorScript = preload("res://scripts/AvatarAnimador.gd")
 
 ## Avatar en 1ra persona: movimiento WASD + mouse look, y minado/colocación
 ## de bloques por raycast contra las celdas de VoxelWorld.
@@ -123,7 +124,9 @@ var modo_primera_persona: String = "construccion"
 var arma_seleccionada: int = 0
 var orden_comandante_seleccionada: int = 0
 var _cooldown_ataque_avatar: float = 0.0
+var _cooldown_dano_cenital_s: float = 0.0
 var _ultimo_ms_construccion: int = -100000
+var _animador: AvatarAnimadorScript = null
 static var INTERVALO_AVISO_DECONSTRUCCION_MS: int = Ajustes.PLAYER_INTERVALO_AVISO_DECONSTRUCCION_MS
 
 var _ultimo_aviso_deconstruccion_ms := -INTERVALO_AVISO_DECONSTRUCCION_MS
@@ -238,6 +241,36 @@ func _ready() -> void:
 	if Ciudad != null and not Ciudad.tick_simulado.is_connected(simular_hora_lampara):
 		Ciudad.tick_simulado.connect(simular_hora_lampara)
 
+	var modelo_avatar: Node3D = get_node_or_null("ModeloAvatar") as Node3D
+	if modelo_avatar != null:
+		_animador = AvatarAnimadorScript.new()
+		_animador.name = "AvatarAnimador"
+		add_child(_animador)
+		_animador.configurar(modelo_avatar)
+		_animador.establecer_vista_primera_persona(true)
+		if Ciudad != null:
+			_animador.aplicar_identidad_visual(Ciudad.tono_piel_avatar, Ciudad.color_equipo)
+		_sincronizar_equipamiento_avatar()
+
+
+func animador_avatar() -> AvatarAnimadorScript:
+	return _animador
+
+
+func iniciar_animacion_cenital() -> void:
+	if _animador != null:
+		_animador.iniciar_cenital()
+
+
+func salir_animacion_cenital(duracion: float) -> void:
+	if _animador != null:
+		_animador.salir_cenital(duracion)
+
+
+func finalizar_salida_cenital() -> void:
+	if _animador != null:
+		_animador.finalizar_salida_cenital()
+
 
 func _input(event: InputEvent) -> void:
 	if not camara.current:
@@ -289,35 +322,18 @@ func _input(event: InputEvent) -> void:
 			_morir_jugador()
 		if tecla.pressed and not tecla.echo:
 			var indice: int = 9 if tecla.keycode == KEY_0 else tecla.keycode - KEY_1
-			if modo_primera_persona == "batalla":
-				if indice >= 0 and indice < Ajustes.ARMAS_AVATAR.size():
-					arma_seleccionada = indice
-					if hud != null:
-						hud.set_tipo_hotbar(arma_seleccionada)
-						_mostrar_contexto_arma_actual()
-			elif modo_primera_persona == "comandante":
-				if tecla.shift_pressed:
-					if tecla.keycode == KEY_0:
-						if Colonos != null:
-							Colonos.establecer_subgrupo_activo("")
-					elif indice >= 0 and indice < 9 and Colonos != null:
-						var grupos: Array[Dictionary] = Colonos.grupos_militares_seleccionados()
-						if indice < grupos.size():
-							Colonos.establecer_subgrupo_activo(str(grupos[indice].get("rango", "")))
-					if hud != null and hud.has_method("actualizar_panel_grupos_tropas"):
-						hud.actualizar_panel_grupos_tropas()
-				elif indice >= 0 and indice < ORDENES_COMANDANTE.size():
-					orden_comandante_seleccionada = indice
-					if hud != null:
-						hud.set_tipo_hotbar(orden_comandante_seleccionada)
-						_mostrar_contexto_orden_actual()
-			elif indice >= 0 and indice < tipos_disponibles.size():
-				tipo_seleccionado = indice
-				hud.set_tipo_hotbar(indice)
-				Sonidos.reproducir("sfx_ui_hotbar_slot", -4.0, 0.05)
-				if not modo_deconstruccion and not modo_vias:
-					hud.mostrar_contexto_bloque(indice, tipos_disponibles[indice])
-				print("Tipo de bloque seleccionado: ", tipos_disponibles[tipo_seleccionado])
+			if modo_primera_persona == "comandante" and tecla.shift_pressed:
+				if tecla.keycode == KEY_0:
+					if Colonos != null:
+						Colonos.establecer_subgrupo_activo("")
+				elif indice >= 0 and indice < 9 and Colonos != null:
+					var grupos: Array[Dictionary] = Colonos.grupos_militares_seleccionados()
+					if indice < grupos.size():
+						Colonos.establecer_subgrupo_activo(str(grupos[indice].get("rango", "")))
+				if hud != null and hud.has_method("actualizar_panel_grupos_tropas"):
+					hud.actualizar_panel_grupos_tropas()
+			else:
+				_seleccionar_slot_hotbar(indice)
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var movimiento := event as InputEventMouseMotion
@@ -327,6 +343,9 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton:
 		var boton := event as InputEventMouseButton
+		if boton.pressed and (boton.button_index == MOUSE_BUTTON_WHEEL_UP or boton.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+			_ciclar_hotbar(-1 if boton.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+			return
 		if modo_primera_persona == "batalla":
 			if boton.button_index == MOUSE_BUTTON_LEFT and boton.pressed:
 				atacar_en_primera_persona()
@@ -599,6 +618,8 @@ func _procesar_frutos(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_cooldown_ataque_avatar = maxf(0.0, _cooldown_ataque_avatar - delta)
+	if _cooldown_dano_cenital_s > 0.0:
+		_cooldown_dano_cenital_s = maxf(0.0, _cooldown_dano_cenital_s - delta)
 	_procesar_accion_repetida(delta)
 	_actualizar_cara_apuntada()
 	var direccion := Vector3.ZERO
@@ -648,6 +669,8 @@ func _physics_process(delta: float) -> void:
 	elif movimiento_habilitado and Input.is_key_pressed(KEY_SPACE):
 		velocity.y = VELOCIDAD_SALTO * factor_viscosidad
 		Sonidos.reproducir("sfx_avatar_salto", -3.0, 0.06)
+		if _animador != null:
+			_animador.notificar_salto()
 	else:
 		velocity.y = 0.0
 	if mundo != null:
@@ -662,6 +685,8 @@ func _physics_process(delta: float) -> void:
 			Sonidos.reproducir("sfx_avatar_aterrizaje_fuerte", 0.0, 0.04)
 		else:
 			Sonidos.reproducir("sfx_avatar_aterrizaje_suave", -4.0, 0.04)
+		if _animador != null:
+			_animador.notificar_aterrizaje(_velocidad_y_previa < -8.0)
 	_estaba_en_piso = en_piso
 	_velocidad_y_previa = velocity.y
 
@@ -702,6 +727,11 @@ func _physics_process(delta: float) -> void:
 	_procesar_oxigeno(delta)
 	_procesar_flotacion(delta, nadando)
 	_procesar_zona_lampara()
+	if _animador != null:
+		var vel_local := transform.basis.inverse() * velocity
+		var accion_herr := modo_primera_persona == "construccion" and (_minando or (_colocando and not _colocacion_bloqueada_tras_completar))
+		var arma_id := _arma_actual_id()
+		_animador.actualizar_locomocion(vel_local, en_piso, nadando, accion_herr, modo_primera_persona, arma_id, VELOCIDAD * 1.15)
 
 
 func _reproducir_sonido_paso() -> void:
@@ -776,6 +806,66 @@ func _profundidad_agua_en(posicion: Vector3) -> int:
 		profundidad += 1
 		celda += Vector3i(0, 1, 0)
 	return profundidad
+
+
+## Profundidad total de la columna continua de líquido ("agua"/"crudo") en la
+## que están los pies del avatar (hacia arriba y hacia abajo). Devuelve 0 si los
+## pies no están en líquido, 1 en charcos de 1 bloque y >= 2 en cuerpos profundos
+## incluso flotando en la superficie.
+func _profundidad_columna_agua_en(posicion: Vector3) -> int:
+	if mundo == null:
+		return 0
+	var origen: Vector3i = _celda_en(posicion)
+	var tipo: String = mundo.obtener_tipo(origen)
+	if tipo != "agua" and tipo != "crudo":
+		return 0
+	var total := 1
+	var c := origen + Vector3i(0, 1, 0)
+	while mundo.obtener_tipo(c) == "agua" or mundo.obtener_tipo(c) == "crudo":
+		total += 1
+		c += Vector3i(0, 1, 0)
+	c = origen + Vector3i(0, -1, 0)
+	while mundo.obtener_tipo(c) == "agua" or mundo.obtener_tipo(c) == "crudo":
+		total += 1
+		c += Vector3i(0, -1, 0)
+	return total
+
+
+func esta_nadando() -> bool:
+	if mundo != null:
+		var pos: Vector3 = global_position if is_inside_tree() else position
+		return _profundidad_columna_agua_en(pos) >= 2
+	return _estaba_nadando
+
+
+func esta_cayendo() -> bool:
+	return (not is_on_floor()) and velocity.y < -0.05 and not esta_nadando()
+
+
+func registrar_dano_recibido() -> void:
+	_cooldown_dano_cenital_s = Ajustes.PLAYER_COOLDOWN_DANO_CENITAL_S
+	if _animador != null:
+		_animador.notificar_dano()
+
+
+func recibir_dano(cantidad: float) -> void:
+	if cantidad > 0.0:
+		registrar_dano_recibido()
+
+
+func en_cooldown_dano_cenital() -> bool:
+	return _cooldown_dano_cenital_s > 0.0
+
+
+## Devuelve "" si el avatar puede pasar a cámara cenital, o el motivo localizado si está bloqueado.
+func motivo_bloqueo_cenital() -> String:
+	if en_cooldown_dano_cenital():
+		return Strings.t("BLOQUEO_CENITAL_DANO", "No puedes cambiar a vista cenital mientras recibes daño (%d s).") % int(ceil(_cooldown_dano_cenital_s))
+	if esta_nadando():
+		return Strings.t("BLOQUEO_CENITAL_AGUA", "No puedes cambiar a vista cenital mientras nadas.")
+	if esta_cayendo():
+		return Strings.t("BLOQUEO_CENITAL_CAIDA", "No puedes cambiar a vista cenital mientras caes.")
+	return ""
 
 
 ## Celda de grilla (VoxelWorld) bajo "posicion" — o piso matemático si mundo es null.
@@ -1040,9 +1130,18 @@ func salir_de_todas_las_herramientas() -> void:
 		hud.ocultar_contexto()
 
 
+func _arma_actual_id() -> String:
+	if Ajustes.ARMAS_AVATAR.is_empty():
+		return "espada"
+	var idx: int = clampi(arma_seleccionada, 0, Ajustes.ARMAS_AVATAR.size() - 1)
+	return str(Ajustes.ARMAS_AVATAR[idx].get("id", "espada"))
+
+
 func establecer_modo_primera_persona(nuevo_modo: String, notificar_cambio: bool = true) -> void:
 	if nuevo_modo not in ["construccion", "batalla", "comandante"]:
 		return
+	var modo_previo: String = modo_primera_persona
+	var arma_previa: String = _arma_actual_id()
 	var cambio: bool = (modo_primera_persona != nuevo_modo)
 	modo_primera_persona = nuevo_modo
 	_minando = false
@@ -1054,6 +1153,11 @@ func establecer_modo_primera_persona(nuevo_modo: String, notificar_cambio: bool 
 		_id_listo_para_remocion = -1
 		_ticks_listo_para_remocion = 0
 		_cara_apuntada.ocultar()
+	if _animador != null and cambio:
+		if modo_primera_persona == "batalla" and not Ajustes.ARMAS_AVATAR.is_empty():
+			arma_seleccionada = clampi(arma_seleccionada, 0, Ajustes.ARMAS_AVATAR.size() - 1)
+		_animador.notificar_cambio_modo_o_arma(modo_primera_persona, _arma_actual_id(), modo_previo, arma_previa)
+		_sincronizar_equipamiento_avatar()
 	if hud == null:
 		return
 	hud.ocultar_progreso()
@@ -1133,6 +1237,52 @@ func _mostrar_contexto_orden_actual() -> void:
 	_mostrar_contexto_especial(idx, "orden_" + ord_id, "ORDEN_" + ord_id.to_upper(), true)
 
 
+func _seleccionar_slot_hotbar(indice: int) -> void:
+	match modo_primera_persona:
+		"batalla":
+			if indice < 0 or indice >= Ajustes.ARMAS_AVATAR.size():
+				return
+			var arma_previa := _arma_actual_id()
+			arma_seleccionada = indice
+			Sonidos.reproducir("sfx_ui_hotbar_slot", -4.0, 0.05)
+			if _animador != null and _arma_actual_id() != arma_previa:
+				_animador.notificar_cambio_modo_o_arma("batalla", _arma_actual_id(), "batalla", arma_previa)
+				_sincronizar_equipamiento_avatar()
+			if hud != null:
+				hud.set_tipo_hotbar(arma_seleccionada)
+				_mostrar_contexto_arma_actual()
+		"comandante":
+			if indice < 0 or indice >= ORDENES_COMANDANTE.size():
+				return
+			orden_comandante_seleccionada = indice
+			Sonidos.reproducir("sfx_ui_hotbar_slot", -4.0, 0.05)
+			if hud != null:
+				hud.set_tipo_hotbar(orden_comandante_seleccionada)
+				_mostrar_contexto_orden_actual()
+		_:
+			if indice < 0 or indice >= tipos_disponibles.size():
+				return
+			tipo_seleccionado = indice
+			if hud != null:
+				hud.set_tipo_hotbar(indice)
+				if not modo_deconstruccion and not modo_vias:
+					hud.mostrar_contexto_bloque(indice, tipos_disponibles[indice])
+			Sonidos.reproducir("sfx_ui_hotbar_slot", -4.0, 0.05)
+
+
+func _ciclar_hotbar(paso: int) -> void:
+	match modo_primera_persona:
+		"batalla":
+			if Ajustes.ARMAS_AVATAR.size() > 1:
+				_seleccionar_slot_hotbar(posmod(arma_seleccionada + paso, Ajustes.ARMAS_AVATAR.size()))
+		"comandante":
+			if ORDENES_COMANDANTE.size() > 1:
+				_seleccionar_slot_hotbar(posmod(orden_comandante_seleccionada + paso, ORDENES_COMANDANTE.size()))
+		_:
+			if tipos_disponibles.size() > 1:
+				_seleccionar_slot_hotbar(posmod(tipo_seleccionado + paso, tipos_disponibles.size()))
+
+
 func atacar_en_primera_persona() -> bool:
 	if _cooldown_ataque_avatar > 0.0:
 		return false
@@ -1159,6 +1309,8 @@ func atacar_en_primera_persona() -> bool:
 			return ejecutar_ataque_en_objetivo("edificio", id_ed, celda)
 
 	_cooldown_ataque_avatar = float(arma.get("cooldown", 0.5))
+	if _animador != null:
+		_animador.notificar_ataque(str(arma.get("id", "espada")))
 	return false
 
 
@@ -1175,10 +1327,14 @@ func ejecutar_ataque_en_objetivo(tipo_obj: String, id_obj: int, celda: Vector3i 
 			return false
 		_cooldown_ataque_avatar = float(arma.get("cooldown", 0.5))
 		Colonos.aplicar_dano_unidad(id_obj, dano)
+		if _animador != null:
+			_animador.notificar_ataque(str(arma.get("id", "espada")))
 		return true
 	elif tipo_obj == "edificio":
 		_cooldown_ataque_avatar = float(arma.get("cooldown", 0.5))
 		Colonos.aplicar_dano_edificio(id_obj, dano, celda)
+		if _animador != null:
+			_animador.notificar_ataque(str(arma.get("id", "espada")))
 		return true
 	return false
 
@@ -1213,6 +1369,8 @@ func ejecutar_orden_comandante(clic_derecho: bool, celda: Vector3i, unidad_id: i
 	if Colonos == null or Colonos.militares_seleccionados().is_empty():
 		return
 	var ord_idx: int = clampi(orden_comandante_seleccionada, 0, ORDENES_COMANDANTE.size() - 1)
+	if _animador != null:
+		_animador.notificar_orden_comandante(ORDENES_COMANDANTE[ord_idx])
 	match ORDENES_COMANDANTE[ord_idx]:
 		"atacar":
 			if clic_derecho:
@@ -1839,13 +1997,38 @@ func _morir_jugador() -> void:
 ## salud/combate todavía, toda muerte pasa por la misma sucesión de Ciudad.
 func _ejecutar_sucesion(motivo: String) -> void:
 	Sonidos.reproducir("sfx_ui_avatar_muerte")
-	var resultado: String = Ciudad.suceder_avatar()
+	var resultado: String = Ciudad.suceder_avatar(Colonos)
 	print("Muerte del jugador (", motivo, ") -> Sucesión: ", resultado)
 	if resultado == "sucesion_exitosa":
 		global_position = Vector3(0, 1, 0)
 		velocity = Vector3.ZERO
 		oxigeno_actual = OXIGENO_MAXIMO
+		_cooldown_dano_cenital_s = 0.0
+		if _animador != null:
+			_animador.reiniciar()
+			_animador.aplicar_identidad_visual(Ciudad.tono_piel_avatar, Ciudad.color_equipo)
+			_sincronizar_equipamiento_avatar()
 		print("Sucesor al mando. Jugador reaparece en el punto de partida.")
+	elif _animador != null:
+		_animador.notificar_muerte()
+
+
+func _sincronizar_equipamiento_avatar() -> void:
+	if _animador == null:
+		return
+	var tono: int = int(Ciudad.tono_piel_avatar) if Ciudad != null else 1
+	var color_eq: Color = Ciudad.color_equipo if Ciudad != null else Ajustes.COLOR_EQUIPO_DEFECTO
+	if modo_primera_persona == "batalla":
+		var arma_id := _arma_actual_id()
+		if arma_id == "arco":
+			_animador.equipar_en_mano("derecha", "", tono, color_eq)
+			_animador.equipar_en_mano("izquierda", "arco", tono, color_eq)
+		else:
+			_animador.equipar_en_mano("derecha", arma_id, tono, color_eq)
+			_animador.equipar_en_mano("izquierda", "", tono, color_eq)
+	else:
+		_animador.equipar_en_mano("derecha", "", tono, color_eq)
+		_animador.equipar_en_mano("izquierda", "", tono, color_eq)
 
 
 ## Se llama cuando VoxelWorld.surtir_construccion() indica que una
@@ -2108,3 +2291,6 @@ func importar_estado(d: Dictionary) -> void:
 		_aplicar_luz_lampara(fuente_lampara_actual)
 	else:
 		apagar_lampara()
+	if _animador != null and Ciudad != null:
+		_animador.aplicar_identidad_visual(Ciudad.tono_piel_avatar, Ciudad.color_equipo)
+		_sincronizar_equipamiento_avatar()

@@ -2018,6 +2018,23 @@ func exportar_estado() -> Dictionary:
 			p_dict["deposito"] = {"x": p_dict["deposito"].x, "y": p_dict["deposito"].y, "z": p_dict["deposito"].z}
 		if p_dict.has("chimenea") and p_dict["chimenea"] is Vector3i:
 			p_dict["chimenea"] = {"x": p_dict["chimenea"].x, "y": p_dict["chimenea"].y, "z": p_dict["chimenea"].z}
+		if p_dict.has("en_curso") and p_dict["en_curso"] is Dictionary:
+			for rec_k in p_dict["en_curso"]:
+				var act: Variant = p_dict["en_curso"][rec_k]
+				if act is Dictionary and act.has("celda") and act["celda"] is Vector3i:
+					var cv: Vector3i = act["celda"]
+					act["celda"] = {"x": cv.x, "y": cv.y, "z": cv.z}
+		if p_dict.has("entorno") and p_dict["entorno"] is Dictionary:
+			var ent_e: Dictionary = p_dict["entorno"]
+			for k_v2 in ["centro", "centro_agua"]:
+				if ent_e.has(k_v2) and ent_e[k_v2] is Vector2i:
+					var v2: Vector2i = ent_e[k_v2]
+					ent_e[k_v2] = {"x": v2.x, "y": v2.y}
+			if ent_e.has("datos_perforacion") and ent_e["datos_perforacion"] is Dictionary:
+				var dp_e: Dictionary = ent_e["datos_perforacion"]
+				if dp_e.has("perforacion") and dp_e["perforacion"] is Vector2i:
+					var vp: Vector2i = dp_e["perforacion"]
+					dp_e["perforacion"] = {"x": vp.x, "y": vp.y}
 		puestos_export["%d,%d" % [esq.x, esq.y]] = p_dict
 
 	var puesto_de_export: Dictionary = {}
@@ -2045,12 +2062,33 @@ func importar_estado(d: Dictionary) -> void:
 		_factores_energia = d["factores_energia"].duplicate()
 
 	if d.has("puestos") and d["puestos"] is Dictionary:
+		if Recoleccion != null:
+			Recoleccion.puestos.clear()
 		for k in d["puestos"]:
 			var parts := (k as String).split(",")
 			if parts.size() < 2:
 				continue
 			var esq := Vector2i(int(parts[0]), int(parts[1]))
 			var p_dict: Dictionary = (d["puestos"][k] as Dictionary).duplicate(true)
+			for campo_int in ["ancho", "alto", "orden_construccion", "cupo", "capacidad", "suelo", "nivel", "crudo_restante", "investigacion_activa", "id_cuartel"]:
+				if p_dict.has(campo_int):
+					p_dict[campo_int] = int(p_dict[campo_int])
+			for campo_lista in ["recolectores", "acarreadores"]:
+				if p_dict.has(campo_lista) and p_dict[campo_lista] is Array:
+					var ids_int: Array = []
+					for raw_cid in p_dict[campo_lista]:
+						ids_int.append(int(raw_cid))
+					p_dict[campo_lista] = ids_int
+			if p_dict.has("presentes") and p_dict["presentes"] is Dictionary:
+				var pres_int: Dictionary = {}
+				for pk in p_dict["presentes"]:
+					pres_int[int(pk)] = bool(p_dict["presentes"][pk])
+				p_dict["presentes"] = pres_int
+			if p_dict.has("rangos") and p_dict["rangos"] is Dictionary:
+				var rang_int: Dictionary = {}
+				for rk in p_dict["rangos"]:
+					rang_int[int(rk)] = int(p_dict["rangos"][rk])
+				p_dict["rangos"] = rang_int
 			if p_dict.has("servicio") and p_dict["servicio"] is Dictionary:
 				p_dict["servicio"] = Vector2i(int(p_dict["servicio"]["x"]), int(p_dict["servicio"]["y"]))
 			if p_dict.has("salida") and p_dict["salida"] is Dictionary:
@@ -2059,10 +2097,70 @@ func importar_estado(d: Dictionary) -> void:
 				p_dict["deposito"] = Vector3i(int(p_dict["deposito"]["x"]), int(p_dict["deposito"]["y"]), int(p_dict["deposito"]["z"]))
 			if p_dict.has("chimenea") and p_dict["chimenea"] is Dictionary:
 				p_dict["chimenea"] = Vector3i(int(p_dict["chimenea"]["x"]), int(p_dict["chimenea"]["y"]), int(p_dict["chimenea"]["z"]))
+			if p_dict.has("en_curso") and p_dict["en_curso"] is Dictionary:
+				for rec_k in p_dict["en_curso"]:
+					var act: Variant = p_dict["en_curso"][rec_k]
+					if act is Dictionary:
+						if act.has("celda"):
+							var c_v3: Variant = _parsear_vector3i_json(act["celda"])
+							if c_v3 is Vector3i:
+								act["celda"] = c_v3
+						if act.has("id"):
+							act["id"] = int(act["id"])
+			if p_dict.has("entorno") and p_dict["entorno"] is Dictionary:
+				var ent_i: Dictionary = p_dict["entorno"]
+				for k_v2 in ["centro", "centro_agua"]:
+					if ent_i.has(k_v2):
+						var v2_i: Variant = _parsear_vector2i_json(ent_i[k_v2])
+						if v2_i is Vector2i:
+							ent_i[k_v2] = v2_i
+				for k_int in ["altura", "radio_arboles", "arboles_ref"]:
+					if ent_i.has(k_int):
+						ent_i[k_int] = int(ent_i[k_int])
+				if ent_i.has("datos_perforacion") and ent_i["datos_perforacion"] is Dictionary:
+					var dp_i: Dictionary = ent_i["datos_perforacion"]
+					if dp_i.has("perforacion"):
+						var vp_i: Variant = _parsear_vector2i_json(dp_i["perforacion"])
+						if vp_i is Vector2i:
+							dp_i["perforacion"] = vp_i
+					for k_dp in ["y_superficie", "y_fondo", "bloques_hierro"]:
+						if dp_i.has(k_dp):
+							dp_i[k_dp] = int(dp_i[k_dp])
 			puestos[esq] = p_dict
+			if Recoleccion != null:
+				Recoleccion.puestos[esq] = {
+					"tipo": str(p_dict.get("tipo", "")),
+					"ancho": int(p_dict.get("ancho", 1)),
+					"alto": int(p_dict.get("alto", 1)),
+					"nivel": int(p_dict.get("nivel", 1)),
+				}
 
 	if d.has("puesto_de") and d["puesto_de"] is Dictionary:
 		for cid in d["puesto_de"]:
 			var parts := (d["puesto_de"][cid] as String).split(",")
 			if parts.size() >= 2:
 				_puesto_de[int(cid)] = Vector2i(int(parts[0]), int(parts[1]))
+
+
+static func _parsear_vector2i_json(valor: Variant) -> Variant:
+	if valor is Vector2i:
+		return valor
+	if valor is Dictionary and valor.has("x") and valor.has("y"):
+		return Vector2i(int(valor["x"]), int(valor["y"]))
+	if valor is String:
+		var partes := (valor as String).strip_edges().trim_prefix("(").trim_suffix(")").split(",")
+		if partes.size() >= 2:
+			return Vector2i(int(partes[0].strip_edges()), int(partes[1].strip_edges()))
+	return null
+
+
+static func _parsear_vector3i_json(valor: Variant) -> Variant:
+	if valor is Vector3i:
+		return valor
+	if valor is Dictionary and valor.has("x") and valor.has("y") and valor.has("z"):
+		return Vector3i(int(valor["x"]), int(valor["y"]), int(valor["z"]))
+	if valor is String:
+		var partes := (valor as String).strip_edges().trim_prefix("(").trim_suffix(")").split(",")
+		if partes.size() >= 3:
+			return Vector3i(int(partes[0].strip_edges()), int(partes[1].strip_edges()), int(partes[2].strip_edges()))
+	return null

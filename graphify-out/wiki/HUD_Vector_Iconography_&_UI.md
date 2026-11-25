@@ -34,15 +34,16 @@
 ## Relationships
 
 - [Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S](Índice_de_Desarrollo_Urbano_IDU_I-IV_y_Balanza_D-C-S.md) (16 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (9 shared connections)
-- [ajustes.gd](ajustes.gd.md) (6 shared connections)
-- [TemaHUD.gd](TemaHUD.gd.md) (4 shared connections)
-- [PanelPuesto.gd](PanelPuesto.gd.md) (2 shared connections)
-- [2026-09-24-edificios-recoleccion-plantillas.md (Edificios de recolección jugables reales (plantillas) Implem)](2026-09-24-edificios-recoleccion-plantillas.md_Edificios_de_recolección_jugables_reales_plantillas_Implem.md) (1 shared connections)
-- [HUD.gd](HUD.gd.md) (1 shared connections)
-- [2026-09-25-hud-por-modos-design.md (HUD por modos — diseño)](2026-09-25-hud-por-modos-design.md_HUD_por_modos_—_diseño.md) (1 shared connections)
-- [Zonificacion.gd](Zonificacion.gd.md) (1 shared connections)
+- [ajustes.gd](ajustes.gd.md) (8 shared connections)
+- [HUD.gd](HUD.gd.md) (8 shared connections)
+- [Economia.gd](Economia.gd.md) (2 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
+- [PanelLampara.gd](PanelLampara.gd.md) (1 shared connections)
+- [Player.gd](Player.gd.md) (1 shared connections)
+- [VentanaAlmacen.gd](VentanaAlmacen.gd.md) (1 shared connections)
 - [VentanaEnergia.gd](VentanaEnergia.gd.md) (1 shared connections)
+- [VentanaOcupaciones.gd](VentanaOcupaciones.gd.md) (1 shared connections)
 
 ## Source Files
 

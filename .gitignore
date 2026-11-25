@@ -71,3 +71,6 @@ video_edition/remotion/out/
 video_edition/remotion/node_modules/
 video_edition/**/*.mp4
 *.mp4
+
+# Archivos temporales de pruebas y pipeline 3D
+scratch/

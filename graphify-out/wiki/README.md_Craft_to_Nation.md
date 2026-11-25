@@ -2,7 +2,7 @@
 
 > God node · 23 connections · `README.md`
 
-**Community:** [Ciudad.gd](Ciudad.gd.md)
+**Community:** [ajustes.gd](ajustes.gd.md)
 
 ## Connections by Relation
 

@@ -15,6 +15,9 @@ func ejecutar_pruebas() -> void:
 	test_guardado_rapido()
 	test_guardar_modificar_y_cargar()
 	test_persistencia_militar_fase4()
+	test_persistencia_identidad_personajes_y_equipo()
+	test_voxelworld_edificio_volumen_roundtrip()
+	test_puestos_recoleccion_y_colonos_renderer_tras_carga()
 	test_eliminar_partida()
 
 
@@ -125,6 +128,110 @@ func test_persistencia_militar_fase4() -> void:
 	print("OK: Persistencia militar de Fase 4 (cuarteles, salud, órdenes, selección).")
 
 
+func test_voxelworld_edificio_volumen_roundtrip() -> void:
+	var vw_script = preload("res://scripts/VoxelWorld.gd")
+	var vw = vw_script.new()
+	vw.edificio_volumen[7] = {"min": Vector3i(10, 1, 10), "max": Vector3i(18, 8, 16)}
+	var json_txt := JSON.stringify(vw.exportar_estado())
+	var parsed: Dictionary = JSON.parse_string(json_txt)
+	vw.edificio_volumen.clear()
+	vw.importar_estado(parsed)
+	assert(vw.edificio_volumen.has(7), "edificio_volumen[7] debe restaurarse tras exportar/importar JSON")
+	assert(vw.edificio_volumen[7]["min"] == Vector3i(10, 1, 10), "min de edificio_volumen debe restaurarse como Vector3i")
+	assert(vw.edificio_volumen[7]["max"] == Vector3i(18, 8, 16), "max de edificio_volumen debe restaurarse como Vector3i")
+
+	# Compatibilidad retroactiva con partidas guardadas previamente donde Vector3i se serializó como "(x, y, z)"
+	vw.edificio_volumen.clear()
+	vw.importar_estado({"edificio_volumen": {"9": {"min": "(2, 1, 3)", "max": "(8, 6, 9)"}}})
+	assert(vw.edificio_volumen.has(9) and vw.edificio_volumen[9]["min"] == Vector3i(2, 1, 3) and vw.edificio_volumen[9]["max"] == Vector3i(8, 6, 9), "Debe cargar partidas legacy con edificio_volumen como string '(x, y, z)'")
+	vw.free()
+	print("OK: Serialización y carga retroactiva de VoxelWorld.edificio_volumen verificada.")
+
+
+func test_puestos_recoleccion_y_colonos_renderer_tras_carga() -> void:
+	Ciudad.reiniciar()
+	Economia.reiniciar()
+	Colonos.reiniciar()
+	Recoleccion.puestos.clear()
+
+	# Instanciar ColonosRenderer ANTES de cargar (igual que en Main.tscn)
+	var rend_script = preload("res://scripts/ColonosRenderer.gd")
+	var rend = rend_script.new()
+	rend.name = "ColonosRenderer"
+	add_child(rend)
+
+	var esq_mina := Vector2i(30, 30)
+	var esq_sid := Vector2i(42, 30)
+	Economia.registrar_puesto(esq_mina, "mina", 5, 5, {"piedra": 10.0}, {"centro": Vector2i(32, 32), "altura": 2, "radio_arboles": 8, "arboles_ref": 4})
+	Economia.puestos[esq_mina]["en_curso"]["piedra"] = {"tipo": "bloque", "celda": Vector3i(31, 1, 31), "recurso": "piedra", "restante": 10.0}
+	Economia.registrar_puesto(esq_sid, "siderurgica", 7, 5, {})
+	var id_c: int = Colonos.agregar_colono("obrero", Vector3i(32, 1, 32), 1)
+	Colonos.colonos[id_c]["trabajo"] = {"puesto": esq_mina, "rol": "recolector"}
+	Economia.puestos[esq_mina]["recolectores"].append(id_c)
+	Economia.puestos[esq_mina]["presentes"][id_c] = true
+
+	assert(GestorPartida.guardar_partida("prueba_puestos_colonos.json", "Puestos y Colonos"))
+
+	# Limpiar estado completo y renderer como al iniciar nueva escena Main
+	Economia.reiniciar()
+	Colonos.reiniciar()
+	Recoleccion.puestos.clear()
+	rend.reconstruir()
+	assert(rend._cuerpos.is_empty(), "Renderer debe estar vacío antes de cargar")
+	assert(Recoleccion.puestos.is_empty(), "Recoleccion.puestos debe estar vacío antes de cargar")
+
+	assert(GestorPartida.cargar_partida("prueba_puestos_colonos.json"))
+
+	# Verificar que Recoleccion.puestos se sincronizó y reconoce la huella de cada puesto
+	assert(Recoleccion.puestos.has(esq_mina) and Recoleccion.puestos[esq_mina]["tipo"] == "mina", "Recoleccion debe restaurar mina")
+	assert(Recoleccion.puestos.has(esq_sid) and Recoleccion.puestos[esq_sid]["tipo"] == "siderurgica", "Recoleccion debe restaurar siderurgica")
+	assert(Recoleccion.esquina_de_puesto_en(Vector2i(32, 32)) == esq_mina, "esquina_de_puesto_en debe localizar la mina restaurada")
+	assert(Economia.puestos[esq_mina]["recolectores"].has(id_c), "IDs de recolectores deben restaurarse como int")
+	assert(Economia.puestos[esq_mina]["presentes"].has(id_c), "Claves de presentes deben restaurarse como int")
+	assert(Economia.puestos[esq_mina]["en_curso"]["piedra"]["celda"] is Vector3i and Economia.puestos[esq_mina]["en_curso"]["piedra"]["celda"] == Vector3i(31, 1, 31), "en_curso.celda debe restaurarse como Vector3i")
+	assert(Economia.puestos[esq_mina]["entorno"]["centro"] is Vector2i and Economia.puestos[esq_mina]["entorno"]["centro"] == Vector2i(32, 32), "entorno.centro debe restaurarse como Vector2i")
+	assert(Colonos.colonos[id_c]["trabajo"]["puesto"] is Vector2i and Colonos.colonos[id_c]["trabajo"]["puesto"] == esq_mina, "trabajo.puesto del colono debe restaurarse como Vector2i")
+
+	# Verificar compatibilidad retroactiva con en_curso.celda y entorno.centro legacy como strings
+	Economia.importar_estado({
+		"puestos": {
+			"30,30": {
+				"tipo": "mina", "ancho": 5, "alto": 5, "nivel": 1,
+				"en_curso": {"piedra": {"tipo": "bloque", "celda": "(31, 1, 31)", "recurso": "piedra", "restante": 10.0}},
+				"entorno": {"centro": "(32, 32)", "altura": 2},
+			}
+		}
+	})
+	assert(Economia.puestos[esq_mina]["en_curso"]["piedra"]["celda"] == Vector3i(31, 1, 31), "Debe parsear en_curso.celda legacy como Vector3i")
+	assert(Economia.puestos[esq_mina]["entorno"]["centro"] == Vector2i(32, 32), "Debe parsear entorno.centro legacy como Vector2i")
+
+	# Verificar compatibilidad retroactiva con partidas legacy donde trabajo.puesto era String "(30, 30)"
+	Colonos.importar_estado({
+		"siguiente_id": 2,
+		"colonos": {
+			"1": {
+				"id": 1, "tipo": "obrero", "hogar": 1,
+				"celda": {"x": 32, "y": 1, "z": 32},
+				"posicion": {"x": 32.5, "y": 1.0, "z": 32.5},
+				"trabajo": {"puesto": "(30, 30)", "rol": "recolector"},
+				"ruta": [],
+			}
+		}
+	})
+	assert(Colonos.colonos[1]["trabajo"]["puesto"] is Vector2i and Colonos.colonos[1]["trabajo"]["puesto"] == Vector2i(30, 30), "Debe parsear trabajo.puesto legacy '(30, 30)' como Vector2i")
+	rend.reconstruir()
+
+	# Verificar que ColonosRenderer reconstruyó el cuerpo visible del colono cargado
+	assert(rend._cuerpos.has(id_c), "ColonosRenderer debe mostrar el colono tras cargar partida")
+
+	GestorPartida.eliminar_partida("prueba_puestos_colonos.json")
+	rend.queue_free()
+	Economia.reiniciar()
+	Colonos.reiniciar()
+	Recoleccion.puestos.clear()
+	print("OK: Restauración de Recoleccion.puestos y cuerpos en ColonosRenderer tras carga verificada.")
+
+
 func test_eliminar_partida() -> void:
 	var borrado_1 := GestorPartida.eliminar_partida("prueba_guardado.json")
 	assert(borrado_1, "eliminar_partida('prueba_guardado.json') debe retornar true.")
@@ -141,3 +248,40 @@ func test_eliminar_partida() -> void:
 	# Restaurar estado limpio de Ciudad
 	Ciudad.reiniciar()
 	print("OK: Eliminación de partidas y limpieza.")
+
+
+func test_persistencia_identidad_personajes_y_equipo() -> void:
+	Ciudad.reiniciar()
+	Colonos.reiniciar()
+	Ciudad.genero_avatar = "F"
+	Ciudad.tono_piel_avatar = 3
+	Ciudad.establecer_color_equipo(Color("#c93838"))
+	Ciudad.registrar_color_equipo("rival_1", Color("#2e8f57"))
+
+	var cid: int = Colonos.agregar_colono("tecnico", Vector3i(8, 1, 8), -1, {
+		"genero": "F",
+		"tono_piel": 2,
+		"equipo_id": "rival_1",
+	})
+	Colonos.colonos[cid]["orientacion_y"] = 1.25
+
+	assert(GestorPartida.guardar_partida("prueba_identidad_3d.json", "Identidad 3D"), "Debe guardar identidad 3D.")
+
+	Ciudad.reiniciar()
+	Colonos.reiniciar()
+	assert(GestorPartida.cargar_partida("prueba_identidad_3d.json"), "Debe cargar identidad 3D.")
+
+	assert(Ciudad.genero_avatar == "F", "genero_avatar debe restaurarse.")
+	assert(Ciudad.tono_piel_avatar == 3, "tono_piel_avatar debe restaurarse.")
+	assert(Ciudad.color_equipo.is_equal_approx(Color("#c93838")), "color_equipo debe restaurarse.")
+	assert(Ciudad.color_de_equipo("rival_1").is_equal_approx(Color("#2e8f57")), "colores_equipos rival debe restaurarse.")
+	assert(Colonos.colonos.has(cid))
+	assert(Colonos.colonos[cid]["genero"] == "F", "genero del colono debe persistir.")
+	assert(int(Colonos.colonos[cid]["tono_piel"]) == 2, "tono_piel del colono debe persistir.")
+	assert(Colonos.colonos[cid]["equipo_id"] == "rival_1", "equipo_id del colono debe persistir.")
+	assert(is_equal_approx(float(Colonos.colonos[cid]["orientacion_y"]), 1.25), "orientacion_y debe persistir.")
+
+	GestorPartida.eliminar_partida("prueba_identidad_3d.json")
+	Colonos.reiniciar()
+	Ciudad.reiniciar()
+	print("OK: Persistencia de identidad 3D y colores de equipo verificada.")

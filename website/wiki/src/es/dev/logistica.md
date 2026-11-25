@@ -36,6 +36,7 @@ En **Craft to Nation**, cada unidad de madera, mineral o fluido debe desplazarse
 - **Velocidad Base del Acarreador a Pie:** **2,5 celdas / segundo** (`5,0 celdas/h` de juego), con **+35 % de velocidad** sobre carreteras.
 - **Capacidad de Carga Base:** **150 unidades** por viaje (lote mínimo de **10 u**, respetando siempre la `Reserva central:` porcentual de `0% / 10% / 20% / 30% / 40% / 50%`).
 - **Coste A* Ponderado:** Coste de paso **3** en vía de tierra pisada frente a coste **8** en terreno natural.
+- **Tránsito por Carril Derecho según Sentido y Huella:** En vías de 2 bloques de ancho, `BuscadorRutas.gd` aplica la penalización de carril izquierdo (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`) asistido por `Vias.es_borde_derecho()`. Esto garantiza que vehículos y acarreadores circulen por su carril derecho exterior según su sentido de avance y huella física (`Vector2i` en `TRANSPORTE_CATALOGO_UNIDADES`), eliminando encuentros frontales y permitiendo esquivar por el carril izquierdo si el derecho se encuentra obstruido (`coste 3 + 4 = 7 < coste terreno 8`).
 
 ### Taller de Transporte y Unidades Móviles de Acarreo (`Ciudad.PARQUE_TRANSPORTE_TIPOS`)
 En el **Taller de Transporte** de la Zona Industrial se fabrican y asignan unidades logísticas que multiplican la capacidad y velocidad de acarreo:

@@ -39,6 +39,10 @@ func test_iconos_en_botones() -> void:
 			var btn := child as Button
 			assert(btn.icon != null, "El botón '%s' debe tener un ícono asignado." % btn.text)
 
+	assert(menu._btn_como_jugar != null, "Debe existir el botón '¿Cómo jugar?' en el menú principal.")
+	assert(menu._btn_como_jugar.icon != null, "El botón '¿Cómo jugar?' debe tener un ícono.")
+	assert(MenuInicioScript.URL_WIKI == "https://crafttonation.netlify.app/wiki/", "La URL de la wiki debe apuntar a la wiki oficial.")
+
 	menu.queue_free()
 	print("OK: Todos los botones del menú principal tienen íconos vectoriales.")
 

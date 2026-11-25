@@ -915,9 +915,12 @@ func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false, or
 	terreno_modificado.emit(celda)
 	if por_jugador:
 		colocado_por_jugador[celda] = true
+	var orient_dict: Variant = null
+	if orientacion is Vector3i:
+		orient_dict = {"x": orientacion.x, "y": orientacion.y, "z": orientacion.z}
 	modificaciones_terreno[celda] = {
 		"tipo": tipo,
-		"orientacion": {"x": orientacion.x, "y": orientacion.y, "z": orientacion.z} if orientacion is Vector3i else null,
+		"orientacion": orient_dict,
 		"por_jugador": por_jugador
 	}
 	if TIPOS_LIQUIDOS.has(tipo_anterior):
@@ -2662,7 +2665,14 @@ func exportar_estado() -> Dictionary:
 
 	var edif_vol_exp: Dictionary = {}
 	for id_e in edificio_volumen:
-		edif_vol_exp[str(id_e)] = edificio_volumen[id_e]
+		var vol: Variant = edificio_volumen[id_e]
+		if vol is Dictionary and vol.has("min") and vol.has("max"):
+			var mn: Vector3i = vol["min"]
+			var mx: Vector3i = vol["max"]
+			edif_vol_exp[str(id_e)] = {
+				"min": {"x": mn.x, "y": mn.y, "z": mn.z},
+				"max": {"x": mx.x, "y": mx.y, "z": mx.z},
+			}
 
 	var pareja_exp: Dictionary = {}
 	for c in pareja:
@@ -2785,7 +2795,18 @@ func importar_estado(d: Dictionary) -> void:
 	if d.has("edificio_volumen") and d["edificio_volumen"] is Dictionary:
 		edificio_volumen.clear()
 		for id_str in d["edificio_volumen"]:
-			edificio_volumen[int(id_str)] = int(d["edificio_volumen"][id_str])
+			var id_e := int(id_str)
+			var vol_raw: Variant = d["edificio_volumen"][id_str]
+			var vol_parsed: Dictionary = {}
+			if vol_raw is Dictionary and vol_raw.has("min") and vol_raw.has("max"):
+				var mn: Variant = _parsear_vector3i_json(vol_raw["min"])
+				var mx: Variant = _parsear_vector3i_json(vol_raw["max"])
+				if mn is Vector3i and mx is Vector3i:
+					vol_parsed = {"min": mn, "max": mx}
+			if vol_parsed.is_empty() and edificio_orden.has(id_e):
+				vol_parsed = _calcular_volumen(edificio_orden[id_e])
+			if not vol_parsed.is_empty():
+				edificio_volumen[id_e] = vol_parsed
 
 	if d.has("pareja") and d["pareja"] is Dictionary:
 		pareja.clear()
@@ -2801,3 +2822,15 @@ func importar_estado(d: Dictionary) -> void:
 			var pt: Dictionary = d["orientacion_ventana"][k]
 			if p.size() >= 3:
 				orientacion_ventana[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"]))
+
+
+static func _parsear_vector3i_json(valor: Variant) -> Variant:
+	if valor is Vector3i:
+		return valor
+	if valor is Dictionary and valor.has("x") and valor.has("y") and valor.has("z"):
+		return Vector3i(int(valor["x"]), int(valor["y"]), int(valor["z"]))
+	if valor is String:
+		var partes := (valor as String).strip_edges().trim_prefix("(").trim_suffix(")").split(",")
+		if partes.size() >= 3:
+			return Vector3i(int(partes[0].strip_edges()), int(partes[1].strip_edges()), int(partes[2].strip_edges()))
+	return null

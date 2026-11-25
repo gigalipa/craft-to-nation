@@ -12,7 +12,7 @@
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
+- [ajustes.gd](ajustes.gd.md) (1 shared connections)
 
 ## Source Files
 

@@ -1,23 +1,44 @@
 # Guión de Verificaciones en Vivo (Live QA Script) — Craft to Nation
 
-Este documento es el guión integral de pruebas manuales paso a paso para comprobar en vivo, directamente dentro del juego en ejecución (**F5** en Godot), que todas las mecánicas de avatar, fundación urbana, decretos cívicos, demografía, moral dinámica, alimentación estratificada, red vial, cadena educativa, evolución de eras (IDU), investigación en dos capas, reconversión doctrinal, logística de transporte, industria (incluida vidriería), fluidos, canalizaciones elevadas y red eléctrica operan de manera óptima y sin errores.
+Este documento es el guión integral de pruebas manuales paso a paso para comprobar en vivo, directamente dentro del juego en ejecución (**F5** en Godot), que todas las mecánicas de arranque cinemático, menús, localización (ES/EN), audio espacial, avatar en 1ª persona, fundación urbana, decretos cívicos, demografía, moral dinámica, alimentación estratificada, red vial con carril derecho, cadena educativa, evolución de eras (IDU), investigación en dos capas, reconversión doctrinal, logística de transporte, industria (incluida vidriería), fluidos, canalizaciones elevadas, red eléctrica, **cuartel militar, selección universal, comando híbrido (Fase 4)** y guardado/carga atómica operan de manera óptima y sin errores.
 
 El guión está diseñado siguiendo **estrictamente el orden cronológico y de prerrequisitos reales de jugabilidad**: ninguna prueba exige edificios, oficios, eras, tecnologías o estados del mundo que no hayan sido desbloqueados o construidos en los pasos previos.
 
 ---
 
-## 0. Preparativos, Estado Inicial y Controles Globales
+## 0. Arranque Cinemático, Menús, Configuración, Audio y Controles Globales
 
-### Iniciar el entorno y condiciones de partida
-1. Abrir el proyecto en Godot y pulsar **F5** (o ejecutar la escena principal `Main.tscn`).
-2. Comprobar que el avatar aparece en 1ª persona y que la barra superior del HUD es visible.
-3. **Inventario inicial de prueba (`Player.gd` / `Ciudad.gd`):** Al iniciar en modo prueba, el almacén cuenta con **1000 unidades de cada recurso** (incluyendo `Vidrio`) y **5000 unidades de comida** (repartidas inicialmente en el sub-almacén alimentario entre `2500 Pescado y mariscos` y `2500 Caza y frutos`), lo que permite ensayar la colocación de estructuras sin tener que talar o minar durante horas.
-4. **Estado inicial de la colonia (`Ciudad.gd`):**
-   - **Núcleo Urbano:** No declarado todavía (no existe Zona de Influencia ni llegan inmigrantes hasta declarar el primer edificio en el Bloque 2).
-   - **Era e Índice de Desarrollo Urbano (IDU):** Arranca en **Era 1 (`Asentamiento Pionero`)** con insignia romana **`I` (`IDU: 1.00`)** en el extremo derecho de la barra superior.
-   - **Nivel tecnológico:** `nivel_investigado = 1` (la industria petroquímica y termoeléctrica requiere investigar *Metalurgia Aplicada* en la Universidad en el Bloque 5).
-   - **Energía en red:** `0 kW` (hasta construir y abastecer una Central Termoeléctrica en el Bloque 7).
-   - **Moral ciudadana:** Arranca en `🙂 75%` (*Optimismo pionero*) con barra sombreada de progreso en el botón de la barra superior.
+### 0.1 Video Intro (`VideoIntro.tscn`), Menú de Inicio (`MenuInicio.tscn`), Perfiles y Configuración Persistente
+- [ ] **Acción (Arranque con `F5` y Video Intro):** Abrir el proyecto en Godot y pulsar **F5** (la escena inicial `run/main_scene` es `VideoIntro.tscn`).
+- [ ] **Resultado esperado:**
+  - Se reproduce la escena cinemática de logo animado (`VideoIntro.tscn`).
+  - Pulsar cualquier tecla o hacer clic salta limpiamente al portal principal **`MenuInicio.tscn`** (con fondo animado tipo slideshow en `SlideshowFondo.gd` y música temática en bucle).
+- [ ] **Acción (Configuración Persistente, Modo de Pantalla e Idioma en Caliente `ES` ↔ `EN`):** Desde el Menú de Inicio, abrir **Configuración (`Configuracion.gd`)**:
+  - Verificar los controles de **Volumen SFX**, **Volumen Música BGM**, **Sensibilidad de ratón**, **FOV de cámara** y **Modo de pantalla** (`Pantalla completa` vs `Ventana 1280×720`).
+  - Cambiar el **Idioma** de `Español (es)` a `English (en)` y de vuelta a `Español (es)`: comprobar que los textos de toda la interfaz conmutan **en caliente sin reiniciar** (`Strings.actualizar_idioma()`).
+  - Confirmar que las preferencias se persisten en `user://configuracion.json`.
+- [ ] **Acción (Nueva Partida y Selector de Perfiles de Recursos Iniciales):** Seleccionar **Nueva Partida**:
+  - Comprobar la disponibilidad de los 4 perfiles de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`). Seleccionar **`altos`** (o el perfil de pruebas con recursos holgados) e iniciar la partida.
+  - Verificar la transición por **`PantallaCarga.gd`** (con barra de progreso) y el panel inicial de **`Bienvenida.gd`**.
+  - Al cerrarlo, comprobar que el avatar aparece en 1ª persona con la barra superior del HUD visible y **música BGM ambiental** en reproducción (`Sonidos.gd`).
+- [ ] **Estado inicial de la colonia (`Ciudad.gd`):**
+  - **Núcleo Urbano:** No declarado todavía (no existe Zona de Influencia ni llegan inmigrantes hasta declarar el primer edificio en el Bloque 2).
+  - **Era e Índice de Desarrollo Urbano (IDU):** Arranca en **Era 1 (`Asentamiento Pionero`)** con insignia romana **`I` (`IDU: 1.00`)** en el extremo derecho de la barra superior.
+  - **Nivel tecnológico:** `nivel_investigado = 1` (la industria petroquímica y termoeléctrica requiere investigar *Metalurgia Aplicada* en la Universidad en el Bloque 5).
+  - **Energía en red:** `0 kW` (hasta construir y abastecer una Central Termoeléctrica en el Bloque 7).
+  - **Moral ciudadana:** Arranca en `🙂 75%` (*Optimismo pionero*) con barra sombreada de progreso en el botón de la barra superior.
+
+### 0.2 Menú de Pausa (`F11`), Conmutación de Idioma en Partida y Audio Espacial (`Sonidos.gd`)
+- [ ] **Acción (Menú de Pausa `F11`):** En partida activa, pulsar **`F11`**.
+- [ ] **Resultado esperado:**
+  - Se abre **`MenuPausa.gd`** con pausa absoluta de simulación (`get_tree().paused = true`) y liberación del cursor del ratón.
+  - Muestra las opciones: **Reanudar**, **Guardado rápido**, **Guardar partida**, **Cargar partida**, **Configuración** y **Salir al menú principal**.
+- [ ] **Acción (Idioma en Caliente dentro de Partida):** Desde Pausa $\to$ Configuración, cambiar el idioma `ES` $\to$ `EN` y volver a `ES`.
+- [ ] **Resultado esperado:**
+  - `BarraSuperior`, `Hotbar`, `VentanaAlmacen` y los nombres de recursos en `Ciudad.almacen` se actualizan de inmediato en vivo sin errores de iconos faltantes (gracias a los alias en inglés en `IconosHUD.gd`).
+- [ ] **Acción (Verificación de Audio Espacial y SFX):** Reanudar la partida (`F11` o botón Reanudar). Caminar, picar bloques, abrir el menú HUD y pulsar ranuras de hotbar.
+- [ ] **Resultado esperado:**
+  - Se escuchan los efectos SFX diferenciados por material/acción con ligera variación de tono ($\pm 5\%$ pitch modulation) desde los pools 2D/3D de `Sonidos.gd`, además del bucle ambiental BGM.
 
 ### Atajos de Teclado Clave
 
@@ -28,36 +49,42 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 #### Primera Persona (Avatar)
 | Tecla / Acción | Función |
 | :--- | :--- |
-| **C** | Alternar entre cámara en **1ª persona** y **Cámara Cenital** (con transición animada; oculta temporalmente `VentanaMoral` y `VentanaEnergia` al bajar a 1ª persona y las restaura al volver a cenital; **al subir a cenital desactiva automáticamente las herramientas activas de 1ª persona como el modo vías `V` o deconstrucción `G`**). |
+| **F11** | Abrir / cerrar el **Menú de Pausa** (`MenuPausa.gd`, pausa absoluta de simulación). |
+| **C** | Alternar entre cámara en **1ª persona** y **Cámara Cenital** (con transición animada; oculta temporalmente `VentanaMoral` y `VentanaEnergia` al bajar a 1ª persona y las restaura al volver a cenital; **mantiene persistente la selección de tropas** y **al subir a cenital desactiva automáticamente las herramientas activas de 1ª persona como el modo vías `V` o deconstrucción `G`**). |
+| **T / R / F** | Cambiar modo especializado de 1ª persona: **`T`** = **Construcción** (bloques y herramientas `B`/`G`/`V`), **`R`** = **Batalla** (`1` Espada / `2` Arco con retícula crosshair), **`F`** = **Comandante** (hotbar `1–6` de órdenes tácticas a tropas seleccionadas). |
 | **W, A, S, D** | Movimiento del avatar. |
 | **Espacio / Ctrl** | Saltar en tierra / Nadar hacia arriba (**Espacio**) o hacia abajo (**Ctrl**) en líquidos profundos ($\ge 2$ bloques). |
-| **Clic izquierdo** | Talar árboles, minar terreno/vetas (con barra de progreso e ícono de herramienta) o deconstruir/avanzar obra de vía si el modo **G** o **V** está activo. |
-| **Clic derecho** | Colocar el bloque seleccionado en la hotbar (`1`–`0`) o surtir una obra fantasma apuntada (con ícono `modo_construir.svg`). En modo vías (`V`) o deconstrucción (`G`), marca/desmarca demolición. |
-| **1 – 9, 0** | Seleccionar tipo de bloque en la hotbar (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`). |
+| **Clic izquierdo** | Modo **`T`**: talar, minar, deconstruir (`G`) o avanzar obra/demolición de vía (`V`). Modo **`R`**: atacar con espada/arco. Modo **`F`**: emitir orden táctica seleccionada sobre el punto apuntado. |
+| **Clic derecho** | Modo **`T`**: colocar bloque (`1`–`0`), surtir obra fantasma (`modo_construir.svg`), o marcar/desmarcar demolición en modos `V`/`G`. Modo **`F`**: acción secundaria / postura táctica de la orden seleccionada. |
+| **1 – 9, 0** | Modo **`T`**: seleccionar bloque en hotbar (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`). Modo **`R`**: seleccionar arma (`1` Espada, `2` Arco). Modo **`F`**: seleccionar orden táctica (`1` Atacar, `2` Defender, `3` Seguir, `4` Moverse, `5` Patrullar, `6` Mantener). |
+| **Shift + 1..9 / 0** | En modo **Comandante (`F`)**: filtrar subgrupo táctico activo de las tropas seleccionadas por rango (`Shift + 1..9`) o seleccionar todo el grupo (`Shift + 0`). |
 | **L** | **Encender / apagar lámpara omnidireccional** del avatar (`PanelLampara`). |
 | **E** | Pulsar: abrir/cerrar puertas o abrir el baúl de un puesto activo (`VentanaBaul`). Mantener sobre árbol: recolectar frutos (`herr_cesta.svg`). |
-| **G** | Alternar modo deconstrucción manual a pie (clic izq. desmonta paso a paso con ícono `modo_demoler.svg`; clic der. programa/cancela demolición de edificio con período de espera de 5 h). |
-| **V** | Alternar modo interacción con vías a pie: **clic izq.** construye/avanza sección 2×2 (o avanza demolición si la celda está marcada para demolición); **clic der.** marca o desmarca la sección 2×2 para demolición. |
-| **B / Shift + B** | Declarar estructura terminada (**B**) / Iniciar remodelación (**Shift + B**, con diálogo de advertencia si hay riesgo de desahucio) apuntando a su puerta exterior. |
+| **G** | *(Modo `T`)* Alternar modo deconstrucción manual a pie (clic izq. desmonta paso a paso con ícono `modo_demoler.svg`; clic der. programa/cancela demolición de edificio con período de espera de 5 h). |
+| **V** | *(Modo `T`)* Alternar modo interacción con vías a pie: **clic izq.** construye/avanza sección 2×2 (o avanza demolición si está marcada); **clic der.** marca o desmarca la sección 2×2 para demolición. |
+| **B / Shift + B** | *(Modo `T`)* Declarar estructura terminada (**B**) / Iniciar remodelación (**Shift + B**, con diálogo de advertencia si hay riesgo de desahucio) apuntando a su puerta exterior. |
+| **K** | *(Prueba en 1ª persona)* Forzar sucesión del avatar (`Ciudad.suceder_avatar()`). |
 | **Esc** | Cerrar ventana de baúl/almacén/población, salir del modo vías/deconstrucción o liberar el cursor. |
 
-#### Cámara Cenital (Gestión Urbana)
+#### Cámara Cenital (Gestión Urbana y Táctica)
 | Tecla / Acción | Función |
 | :--- | :--- |
+| **F11** | Abrir / cerrar el **Menú de Pausa** (`MenuPausa.gd`). |
 | **W, A, S, D** | Paneo horizontal de la cámara sobre el plano X/Z. |
 | **Q / E** | **Rotación orbital:** Gira la vista alrededor del foco a la izquierda (**Q**) o derecha (**E**). |
 | **Rueda del ratón (Scroll)** | **Zoom:** Acerca o aleja oblicuamente respecto al punto focal. |
 | **Ctrl + W / Ctrl + S** | **Inclinación:** Modifica el ángulo de inclinación vertical de la cámara. |
 | **Shift + W / Shift + S** | **Altura vertical:** Sube (**Shift+W**) o baja (**Shift+S**) directamente la cota del foco. |
-| **1** | Menú **Construir** (`1`: Residencial, `2`: Periférico, `3`: Industrial, `4`: Investigación, `5`: Vías, `6`: Ductos). |
+| **1** | Menú **Construir** (`1`: Residencial, `2`: Periférico, `3`: Industrial, `4`: Investigación, `5`: Vías, `6`: Ductos, **`7`: Militar [`1` Cuartel]**). |
 | **2** | Menú **Zonificar** (`1`: Zona Residencial, `2`: Zona Industrial, `3`: Borrar). |
 | **3** | Modo **Demoler** unificado: clic izq. sobre edificio programa su demolición con período de espera de 5 h (otro clic cancela); clic izq. sobre tramo de vía traza demolición guiada naranja con Dijkstra, y hacer clic sobre una vía ya marcada para demolición **la desmarca y cancela al instante** (`cancelar_demolicion_via`). |
 | **Z / X** | Retroceder submenú o página (**Z**) / Avanzar página (**X**) en menús numéricos con más de 9 ítems (ej. categoría Industrial). |
 | **Ctrl + Scroll** | Rotar previsualización de blueprint o plantilla de puesto en pasos de 90°. |
-| **Clic izquierdo** | Fijar esquina de zona/vía/ducto, emplazar estructura o inspeccionar edificio/puesto/ducto en modo Ver. |
+| **Clic izq. / Arrastre** | Fijar esquina de zona/vía/ducto, emplazar estructura, inspeccionar edificio/puesto/ducto, o **seleccionar unidad individual / arrastrar recuadro 2D de selección universal** (civiles y militares) en modo Ver. |
 | **Doble clic izq.** | Confirmar trazado de vía, demolición de vía o canalización elevada. |
-| **Clic derecho** | Cancelar tramo en curso / cancelar modo de colocación. |
-| **Esc** | Volver al modo neutro **Ver** o cerrar paneles laterales abiertos. |
+| **Clic derecho** | Cancelar tramo en curso / cancelar modo de colocación. Con tropas seleccionadas en modo Ver: **emitir orden táctica** (`Shift + Clic derecho` encadena waypoints). |
+| **K / H** | Con tropas seleccionadas en cenital: activar orden de **Atacar (`K`)** o **Mantener posición (`H`)**. |
+| **Esc** | Volver al modo neutro **Ver**, limpiar selección o cerrar paneles laterales abiertos. |
 
 ---
 
@@ -335,10 +362,11 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
     - Si la mina extrae más de 3 recursos simultáneos (ej. `Tierra`, `Piedra`, `Carbón`, `Hierro`, `Cobre`), mover la rueda del ratón sobre la lista de producción para hacer **scroll vertical** y ver el resto de minerales, comprobando que la ventana `PanelPuesto` mantiene siempre un tamaño constante.
   - Contratar personal también en el puesto de **Caza** y en el **Maderero**: comprobar que los recolectores extraen recursos reales y los acarreadores los llevan al almacén central (y que la comida entregada por Caza ingresa a la sub-categoría `Caza y frutos` en `VentanaAlmacen`).
 
-### 4.4 Preferencia de Vías en el Pathfinding (`BuscadorRutas`) y Prioridad de Tráfico
-- [ ] **Acción:** Trazar una **vía de tierra pisada (`1 -> 5 -> 1`)** que conecte el Núcleo Urbano con las inmediaciones de la Mina o Maderero periférico.
+### 4.4 Preferencia de Vías, Tránsito por Carril Derecho (`Vias.es_borde_derecho`) y Prioridad de Tráfico
+- [ ] **Acción:** Trazar una **vía de tierra pisada (`1 -> 5 -> 1`)** que conecte el Núcleo Urbano con las inmediaciones de la Mina o Maderero periférico, y observar el tráfico bidireccional de acarreadores y obreros.
 - [ ] **Resultado esperado:**
   - Los acarreadores y trabajadores **prefieren desplazarse por la vía de tierra pisada** (`coste_ruta = 3`, bono `+35%` de velocidad) en vez de cortar por terreno natural (`COSTE_TERRENO_NATURAL = 8`).
+  - **Circulación ordenada por carril derecho según huella (`BuscadorRutas.gd`):** Gracias a `Vias.es_borde_derecho()` y la penalización de carril izquierdo (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`), las unidades que circulan en sentidos opuestos sobre la vía de 2 canales utilizan **carriles paralelos independientes por su derecha** sin cruces frontales, recurriendo al carril izquierdo únicamente para esquivar obstáculos.
   - En un paso estrecho de 1 celda, el colono que transporta carga prioritaria mantiene su ruta y el colono descargado o de menor prioridad se aparta a una celda lateral.
 
 ### 4.5 Interacción en 1ª Persona con el Baúl de un Puesto (`VentanaBaul` — Tecla `E`)
@@ -588,10 +616,63 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 
 ---
 
-## Bloque 8: Verificación en Vivo de la Iconografía Integral y Miniaturas 3D (HUD / UI)
+## Bloque 8: Fase 4 — Cuartel Militar, Acuartelamiento, Selección Universal, Comando Híbrido (`T`/`R`/`F`) y Guardado/Carga Atómica
 
-### 8.1 Barra Superior e Iconografía Vectorial
-- [ ] **Acción:** Observar la barra superior en 1ª persona y en cenital.
+> **Condición previa cumplida:** La ciudad cuenta con **Zona Industrial (Zona B)** pintada dentro de la Zona de Influencia (Bloque 5.2), colonos obreros libres para formar cohortes militares, y estructuras/vías/ductos construidos listos para verificar la persistencia completa en disco.
+
+### 8.1 Cuartel Militar (`1 -> 7 -> 1`), Vivienda Militar Acuartelada y Visuales Procedurales de Tropas
+- [ ] **Acción (Emplazar Cuartel en Zona B):** En cenital (**`C`**), pulsar **`1` (Construir) -> `7` (Militar) -> `1` (Cuartel)** (`9×7×8`, 2 pisos, 4 camas).
+- [ ] **Resultado esperado:**
+  - La huella se valida únicamente dentro de la **Zona de Influencia sobre Zona Industrial (Zona B)** y muestra su miniatura 3D isométrica y costos de construcción.
+  - Emplazar el Cuartel y dejar que los colonos completen la obra.
+- [ ] **Acción (Cohorte Militar 4→4 y Vivienda Acuartelada):** Una vez terminado el Cuartel, abrir su `PanelPuesto` y contratar aprendices/reclutas (cohorte **4→4** sin pérdida) y revisar la ventana **Población**.
+- [ ] **Resultado esperado:**
+  - Las **4 camas del Cuartel** otorgan **vivienda militar acuartelada (`x_cama = 4`, hasta 16 soldados por cuartel)** segregada del censo civil (`camas_residenciales`): el reclutamiento militar **NO resta camas a los civiles ni genera colonos "Sin techo"**.
+  - **Visuales procedurales (`ColonosRenderer.gd`):** Observar de cerca a los soldados formados: portan **cascos y escudos renderizados proceduralmente** diferenciándolos de los civiles.
+
+### 8.2 Selección Universal en Cenital, Recuadro 2D, `PanelUnidad` y Órdenes Tácticas (`K`, `H`, `Shift`)
+- [ ] **Acción (Selección Individual y Recuadro 2D):** En cenital modo Ver (**`Esc`**):
+  - Hacer clic izquierdo sobre un **colono civil** (obrero/acarreador).
+  - Luego arrastrar un **recuadro de selección 2D** con clic izquierdo sobre un grupo de **soldados militares** (o selección mixta).
+- [ ] **Resultado esperado:**
+  - Aparecen **aros de selección** en la base de cada unidad seleccionada.
+  - Se abre **`PanelUnidad`** en la esquina inferior derecha:
+    - En **civiles**, muestra salud, oficio, trabajo actual y edificio asignado.
+    - En **militares**, muestra salud, resumen de escuadrón, selector de **Posturas Tácticas** (`Pasivo`, `Defensivo`, `Agresivo`) y botones de **Órdenes** (`Moverse`, `Atacar`, `Defender`, `Patrullar`, `Mantener`).
+- [ ] **Acción (Órdenes Tácticas, Waypoints y Persistencia de Selección):** Con tropas militares seleccionadas:
+  - Cambiar postura entre **`Pasivo`**, **`Defensivo`** y **`Agresivo`**.
+  - Hacer **clic derecho** sobre el terreno para ordenar `Moverse`; mantener **`Shift + Clic derecho`** en varios puntos consecutivos para encadenar una ruta: comprobar los **marcadores tácticos de waypoints** en el mundo.
+  - Probar los atajos rápidos **`K`** (orden de ataque guiado) y **`H`** (mantener posición).
+  - Pulsar **`C`** para bajar a 1ª persona y **`C`** para volver a cenital: comprobar que la **selección de tropas se mantiene persistente** entre cambios de cámara.
+
+### 8.3 Modos Especializados de 1ª Persona: Construcción (`T`), Batalla (`R`) y Comandante (`F`)
+- [ ] **Acción (Modo Batalla — Tecla `R`):** En 1ª persona (**`C`**), pulsar **`R`**.
+- [ ] **Resultado esperado:**
+  - La hotbar cambia al arsenal del avatar: **`1` Espada** (cuerpo a cuerpo, alcance `3.0 m`, daño `35`) y **`2` Arco** (a distancia, alcance `35.0 m`, daño `22`).
+  - Aparece la **retícula táctica (crosshair)** central. Alternar entre `1` y `2` y pulsar **Clic Izquierdo** para comprobar el ataque cuerpo a cuerpo y el disparo con arco.
+  - Verificar que las teclas de construcción (`B`, `G`, `V`) quedan inhabilitadas mientras se está en modo Batalla.
+- [ ] **Acción (Modo Comandante — Tecla `F` y Subgrupos `Shift + 1..9`):** Manteniendo tropas seleccionadas (desde el paso 8.2), pulsar **`F`**.
+- [ ] **Resultado esperado:**
+  - La hotbar cambia a las **6 órdenes directas de comandante**: `1` Atacar, `2` Defender, `3` Seguir, `4` Moverse, `5` Patrullar, `6` Mantener.
+  - Seleccionar una orden (`1`–`6`), apuntar al terreno con la mira y pulsar **Clic Izquierdo** (o **Clic Derecho** para acción/postura secundaria): las tropas responden desplazándose o ejecutando la orden sobre el punto mirado.
+  - Pulsar **`Shift + 1..9`** para filtrar un subgrupo activo por rango dentro de la selección y **`Shift + 0`** para volver a comandar a todo el grupo.
+- [ ] **Acción (Regreso a Modo Construcción — Tecla `T`):** Pulsar **`T`**.
+- [ ] **Resultado esperado:**
+  - Se restaura la hotbar estándar de bloques (`1–0`) y se rehabilitan las herramientas de construcción (`B`, `G`, `V`).
+
+### 8.4 Guardado y Carga Atómica de Partida (`GestorPartida.gd` vía `F11`)
+- [ ] **Acción (Guardar y Recargar):** Pulsar **`F11`** para abrir `MenuPausa.gd`:
+  - Pulsar **Guardado rápido** (`quicksave.json`) y también **Guardar partida** con un nombre personalizado (verificando que se registra en `user://saves/` con metadatos).
+  - Pulsar **Cargar partida** (o volver al Menú de Inicio y cargar la partida guardada) y seleccionar el archivo guardado.
+- [ ] **Resultado esperado:**
+  - Se muestra `PantallaCarga.gd` y se restaura íntegra y atómicamente la partida: terreno modificado (`VoxelWorld`), edificios y blueprints (`Ciudad`), recursos y puestos (`Economia`), vías (`Vias`), ductos (`Canalizaciones`), zonificación, posición del avatar (`Player`), y tropas/colonos con su **salud, posturas, órdenes tácticas y selección persistente** (`Colonos`).
+
+---
+
+## Bloque 9: Verificación en Vivo de la Iconografía Integral, Miniaturas 3D y Localización (HUD / UI)
+
+### 9.1 Barra Superior e Iconografía Vectorial
+- [ ] **Acción:** Observar la barra superior en 1ª persona y en cenital (comprobando también tras cambiar el idioma a `EN` y volver a `ES` desde `F11 -> Configuración`).
 - [ ] **Resultado esperado:**
   - El censo muestra el ícono de grupo demográfico (`censo.svg`).
   - La moral exhibe el ícono emocional correspondiente (`moral_alta.svg` 🙂, `moral_neutra.svg` 😐, `moral_baja.svg` 🙁, `moral_critica.svg` 😡) centrado sobre la barra sombreada de progreso.
@@ -599,29 +680,32 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
   - La comida muestra el ícono de saco de trigo (`comida.svg`) y la flecha de tendencia horaria (`tasa_arriba.svg`, `tasa_neutra.svg` o `tasa_abajo.svg`).
   - El botón de Energía muestra el rayo interactivo (`energia_dorado.svg` con superávit positivo `+X kW`/`MW`, `energia_gris.svg` en `0 kW` o `energia_rojo.svg` con déficit `-X kW`/`MW`).
   - El bloque derecho muestra el ícono `era.svg`, el título de la Era actual y la insignia de números romanos (`romano_1.svg` a `romano_4.svg`) con su panel hover interactivo de IDU y Doctrina.
+  - Ningún ícono desaparece al conmutar el idioma a inglés (`IconosHUD.gd` resuelve alias en inglés como `wood`, `food`, `census`).
 
-### 8.2 Botones de Construcción con Insignias en 3 Esquinas y Miniaturas 3D Vivas
-- [ ] **Acción:** Pasar a la cámara cenital (`C`) y presionar `1` (Construir) $\to$ revisar los submenús de categorías (`1` a `6`, incluyendo las 2 páginas de Industrial con `X`/`Z`).
+### 9.2 Botones de Construcción con Insignias en 3 Esquinas y Miniaturas 3D Vivas
+- [ ] **Acción:** Pasar a la cámara cenital (`C`) y presionar `1` (Construir) $\to$ revisar los submenús de categorías (`1` a `7`, incluyendo las 2 páginas de Industrial con `X`/`Z` y la nueva categoría **`7` Militar**).
 - [ ] **Resultado esperado:**
   - Los botones de edificios (104×76 px) muestran el sistema de insignias en 3 esquinas:
     1. **Esquina superior izquierda:** Columna vertical de íconos (14×14 px) con los recursos requeridos para construir la estructura.
-    2. **Centro superior:** Ícono de energía dorado (14×14 px) **únicamente** en edificios que requieren suministro eléctrico continuo para operar (comprobar que la **Universidad** no lo lleva).
-    3. **Esquina superior derecha:** Ícono representativo (18×18 px) del bien o función principal que produce el edificio (incluyendo `vidrio.svg` en la nueva **Vidriera**).
-  - Todos los edificios, incluyendo la **Vidriera** y el **Taller de transporte**, así como Vías (`5`) y Ductos (`6`), exhiben su miniatura 3D isométrica en vivo.
+    2. **Centro superior:** Ícono de energía dorado (14×14 px) **únicamente** en edificios que requieren suministro eléctrico continuo para operar (comprobar que la **Universidad** y el **Cuartel** no lo llevan).
+    3. **Esquina superior derecha:** Ícono representativo (18×18 px) del bien o función principal que produce el edificio (incluyendo `vidrio.svg` en la **Vidriera** y la insignia militar en el **Cuartel**).
+  - Todos los edificios, incluyendo la **Vidriera**, el **Taller de transporte** y el **Cuartel**, así como Vías (`5`) y Ductos (`6`), exhiben su miniatura 3D isométrica en vivo.
 
-### 8.3 Interfaz en Primera Persona y Herramienta Contextual
-- [ ] **Acción:** Pasar a 1ª persona (`C`). Encender la lámpara (`L`), sumergirse en agua, picar bloques con clic izquierdo, recolectar frutos con `E` y construir un blueprint con clic derecho.
+### 9.3 Interfaz en Primera Persona, Modos `T`/`R`/`F` y Herramienta Contextual
+- [ ] **Acción:** Pasar a 1ª persona (`C`). Alternar entre **`T`** (Construcción), **`R`** (Batalla) y **`F`** (Comandante). En modo `T`, encender la lámpara (`L`), sumergirse en agua, picar bloques con clic izquierdo, recolectar frutos con `E` y construir un blueprint con clic derecho.
 - [ ] **Resultado esperado:**
+  - La hotbar adapta dinámicamente sus ranuras e íconos al modo activo (`T` bloques, `R` Espada/Arco + crosshair, `F` 6 órdenes tácticas + panel de subgrupos).
   - El panel de la lámpara muestra el ícono de bombilla/antorcha y su barra de progreso porcentual multicolor.
   - Al picar piedra aparece `herr_pico.svg`; al palear tierra, `herr_pala.svg`; al talar árboles, `herr_hacha.svg`; al recolectar frutos con `E`, `herr_cesta.svg`; al construir un edificio en blueprint con clic derecho, **`modo_construir.svg`**; y al deconstruir con `G`, **`modo_demoler.svg`**.
 
-### 8.4 Ventanas Globales, Paneles de Edificio/Puesto y Diálogos Modales
-- [ ] **Acción:** Abrir Población, Almacén, Ocupaciones, Energía (clic en topbar) y Moral (clic en topbar).
+### 9.4 Ventanas Globales, Paneles de Edificio/Puesto/Unidad y Diálogos Modales
+- [ ] **Acción:** Abrir Población, Almacén, Ocupaciones, Energía (clic en topbar), Moral (clic en topbar) y `PanelUnidad` (seleccionando un colono/tropa en cenital).
 - [ ] **Resultado esperado:**
   - `VentanaMoral` y `VentanaEnergia` abren centradas, se arrastran con el ratón y solo se cierran con su botón `X`.
   - En `VentanaAlmacen`, las filas con hijos (`Comida`, `Crudo`, `Hierro`, `Madera`, `Piedra`, `Tierra`, `Tierras raras`) funcionan como desplegables interactivos `▶`/`▼` mostrando el sub-almacén de comida y los recursos refinados con íconos de 20×20 px.
   - En `PanelEdificio`, las residencias muestran los íconos `cama.svg` y `baul.svg`, los materiales faltantes muestran su ícono vectorial por fila, y la prioridad de obra cuenta con botones `btn_subir.svg` (`▲`) y `btn_bajar.svg` (`▼`).
   - En `PanelPuesto` y `VentanaBaul`, todos los controles de incremento/decremento muestran los íconos `btn_subir.svg` (`▲`) y `btn_bajar.svg` (`▼`) visibles incluso cuando están deshabilitados; la producción de los puestos se aloja en un `ScrollContainer` de 3 filas (`72 px`), y la Universidad exhibe sus barras de progreso e íconos de recursos y reloj de arena.
+  - En `PanelUnidad`, los encabezados, posturas tácticas y botones de órdenes militares se muestran legibles, sin desbordamientos y con cierre limpio (`×`).
 
 ---
 
@@ -629,6 +713,8 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 
 | Bloque | Característica comprobada (en orden lógico de juego) | Estado (OK / Fallo) | Notas del tester |
 | :--- | :--- | :---: | :--- |
+| **0.1** | Arranque en **`VideoIntro.tscn`** (salto con tecla/clic), **`MenuInicio.tscn`** (slideshow + BGM), **Configuración persistente** (volumen, FOV, pantalla completa/ventana 1280×720, idioma `ES`/`EN` en caliente) y **Perfiles de recursos iniciales** (`PantallaCarga` + `Bienvenida`) | | |
+| **0.2** | **Menú de Pausa (`F11`)** con pausa absoluta, conmutación de idioma `ES` ↔ `EN` en partida sin pérdida de íconos y **Audio Espacial/SFX (`Sonidos.gd`)** con pools 2D/3D y pitch modulation | | |
 | **1.1** | Movimiento 1ª persona, tala/minado, recolección de frutos (`E` con `herr_cesta.svg`), equivalencia `vidrio`/`tierra` (1:3) y **resaltado `CaraApuntada` prioritario (`render_priority = 3`) sobre ventanas de lado** | | |
 | **1.2** | Natación en agua ($\ge 2$ bloques), corrientes, oxígeno y drenado con bloques sólidos | | |
 | **1.3** | Lámpara en modo Térmico inicial (`L`: combustible 10h, carbón 6h, madera 5h) y oxígeno apilado | | |
@@ -648,7 +734,7 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 | **4.1** | Topbar con **hover de Nivel (IDU)**, `VentanaAlmacen` con desplegables `▶`/`▼` y **adaptación dinámica de altura con `reset_size()` al contraer** | | |
 | **4.2** | `VentanaMoral` centrada (solo clic en topbar y cierre con `X`, **se oculta al pasar a 1ª persona**), **tramos de inmigración recalibrados (5/7/10 colono/mes)**, variedad dietética (`X/6`), monocultivo (360h) y suelo agrario del 75% | | |
 | **4.3** | Puestos periféricos (`1-2-1..4`): botones `▲`/`▼` siempre visibles y **lista vertical de producción con scroll fijo (`72 px`, 3 filas visibles)** | | |
-| **4.4** | Preferencia de vías en pathfinding (`BuscadorRutas`: vía coste 3 vs campo 8) y prioridad de paso con carga | | |
+| **4.4** | Preferencia de vías (`BuscadorRutas`: coste 3 vs campo 8), **tránsito ordenado por carril derecho (`Vias.es_borde_derecho`, penalización carril izq. = 4)** y prioridad de paso con carga | | |
 | **4.5** | Interacción en 1ª persona con `VentanaBaul` (`E`): centrada, columnas alineadas y botones `▲`/`▼` para ingresar/retirar | | |
 | **5.1** | Escuela técnica (`1-4-1`): cohorte de 4 aprendices (24 h) gradúa **3 Técnicos** y ascenso/retroceso de nivel en Mina | | |
 | **5.2** | Zona Industrial (`2-2`), Fábrica de bloques (`1-3-4`, receta 1:3) y nueva **Vidriera (`1-3-5`, 1 tierra + 1 carbón $\to$ 3 vidrio)** | | |
@@ -669,4 +755,8 @@ El guión está diseñado siguiendo **estrictamente el orden cronológico y de p
 | **7.3** | Conmutación a `LÁMPARA ELÉCTRICA🟡` (72 h) y **cambio de color gradual de la barra de batería (`Verde -> Amarillo -> Naranja -> Rojo`)** | | |
 | **7.4** | Evolución a Era 3/4, vehículos pesados con **restricción vial estricta (`exige_via`)**, **arrastre lento sin insumo (`1.2 m/s`)** y **Reconversión Industrial sin demolición** | | |
 | **7.5** | Estrés demográfico final: alerta de recurso `<5%`, emigración sin techo (72 h) / desempleo (240 h), hambruna, éxodo ($\le$20%) y sucesión (`K`) | | |
-| **8.1–8.4** | Auditoría visual completa de iconos SVG en Topbar, insignias de 3 esquinas, miniaturas 3D, herramientas en 1ª persona y paneles | | |
+| **8.1** | **Cuartel Militar (`1-7-1`, `9×7×8` en Zona B)**: cohorte 4→4, **vivienda militar acuartelada (`16 soldados/cuartel` sin restar camas civiles)** y visuales procedurales (cascos y escudos) | | |
+| **8.2** | **Selección universal en cenital (recuadro 2D)**, aros de selección, **`PanelUnidad`**, posturas (`Pasivo`/`Defensivo`/`Agresivo`), órdenes (`Moverse`/`Atacar K`/`Defender`/`Patrullar`/`Mantener H`), waypoints con `Shift` y persistencia al cambiar cámara | | |
+| **8.3** | **Modos de 1ª persona**: Batalla (**`R`**, Espada/Arco + crosshair), Comandante (**`F`**, hotbar `1–6` y subgrupos `Shift + 1..9` / `0`) y Construcción (**`T`**) | | |
+| **8.4** | **Guardado y carga atómica (`GestorPartida.gd` vía `F11`)**: restauración íntegra de mundo, edificios, vías, ductos, tropas, salud, posturas y selección | | |
+| **9.1–9.4** | Auditoría visual completa de iconos SVG en Topbar, insignias de 3 esquinas (incl. Militar `7`), miniaturas 3D, modos `T`/`R`/`F`, `PanelUnidad` y localización `ES`/`EN` | | |

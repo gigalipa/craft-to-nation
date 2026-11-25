@@ -18,9 +18,15 @@ In *Craft to Nation*, you begin your journey as an isolated pioneer in a finite,
 The game lets you switch seamlessly between your physical avatar in First-Person and the Overhead Tactical Camera via a smooth `0.6s` animated camera flight:
 
 ### Global Shortcuts
-- <kbd>C</kbd>: **Toggle between First-Person Mode and Overhead Tactical Camera (*City Builder*)**.
+- <kbd>C</kbd>: **Toggle between First-Person Mode and Overhead Tactical Camera (*City Builder*)**, keeping troop selection synchronized.
 - <kbd>M</kbd>: Open / close the analytical **Citizen Morale Window** (`VentanaMoral`).
+- <kbd>F11</kbd>: Open / close the **Pause Menu** (`MenuPausa`), with atomic save/load, live ES/EN language switcher, SFX/BGM volumes, and fullscreen/windowed (`1280×720`) toggle.
 - <kbd>Esc</kbd>: Close active modal windows, exit active road/deconstruction mode (in 1st person), return to neutral **View** mode (in overhead camera), or release the mouse cursor.
+
+### Specialized First-Person Modes (`T` / `R` / `F`)
+- <kbd>T</kbd> **Construction Mode:** Enables the block hotbar (`1`–`0`), chopping, manual mining, placement, and deconstruction (<kbd>G</kbd>).
+- <kbd>R</kbd> **Battle Mode:** Activates the tactical crosshair reticle and personal avatar weapons (**sword** for melee and **bow** for ranged combat).
+- <kbd>F</kbd> **Commander Mode:** Displays the tactical order hotbar <kbd>1</kbd>–<kbd>6</kbd> (`Move`, `Attack`, `Defend`, `Patrol`, `Hold`, `Follow`) for selected troops and lets you assign or recall **tactical subgroups** with <kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>9</kbd>.
 
 ### First-Person Controls (Pioneer Mode)
 - <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>: Move avatar (with horizontal current push in rivers and at the base of waterfalls).
@@ -61,13 +67,15 @@ The game lets you switch seamlessly between your physical avatar in First-Person
     - `4` **Research (`Investigación`):** `1` Technical School, `2` Specialist School, `3` University.
     - `5` **Roads (`Vías`):** `1` Trace Road *(in overhead view, road tracing is accessed via `1 -> 5 -> 1`, not the `V` key)*.
     - `6` **Conduits (`Ductos`):** `1` Aqueduct, `2` Pipeline.
+    - `7` **Military (`Militar`):** `1` Barracks (`Cuartel`, `9×7×8`, 2 floors, 4 beds, Zone B — recruits 16 garrisoned soldiers without using civil beds).
   - <kbd>2</kbd> **Zone Menu (`Zonificar`):** `1` Residential Zone, `2` Industrial Zone, `3` Clear Zone.
   - <kbd>3</kbd> **Unified Demolish Mode (`Demoler`):** Left-click buildings to toggle red demolition marks, or trace guided orange road demolitions (double left-click) around 90° corners via Dijkstra.
   - <kbd>Z</kbd> / <kbd>X</kbd>: **Go back one submenu level** or previous page (<kbd>Z</kbd>) / Advance to the **next page** (<kbd>X</kbd>) in menus with more than 9 items.
-- **Overhead Mouse Actions:**
-  - <kbd>Left Click</kbd>: Set zone/road/conduit corner, place structure, or inspect a building/outpost/conduit in **View** mode (<kbd>Esc</kbd>).
+- **Overhead Mouse Actions & Tactical Command:**
+  - <kbd>Left Click</kbd>: Set zone/road/conduit corner, place structure, or inspect a building/outpost/unit in **View** mode (<kbd>Esc</kbd>).
+  - <kbd>Left-Click Drag</kbd>: **Universal 2D drag-box selection** (soldiers and colonists) opening `PanelUnidad` with health, stances (`Pasivo`, `Defensivo`, `Agresivo`), and tactical orders.
   - <kbd>Double Left Click</kbd>: Confirm road layout (`1 -> 5 -> 1`), guided road demolition (`3`), or elevated conduit path (`1 -> 6`).
-  - <kbd>Right Click</kbd>: Cleanly cancel the segment in progress or exit placement mode.
+  - <kbd>Right Click</kbd>: Cleanly cancel the segment in progress, or (with troops selected in **View** mode) issue direct tactical orders (`Move`, `Attack` via <kbd>K</kbd>, `Defend`, `Patrol`, `Hold` via <kbd>H</kbd>; hold <kbd>Shift</kbd> to queue waypoints).
 
 ---
 

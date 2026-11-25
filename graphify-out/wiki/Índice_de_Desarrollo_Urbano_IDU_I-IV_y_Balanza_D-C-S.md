@@ -25,18 +25,18 @@
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (17 shared connections)
+- [ajustes.gd](ajustes.gd.md) (19 shared connections)
 - [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (16 shared connections)
-- [ajustes.gd](ajustes.gd.md) (5 shared connections)
-- [Zonificacion.gd](Zonificacion.gd.md) (3 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (4 shared connections)
+- [HUD.gd](HUD.gd.md) (4 shared connections)
+- [Construccion.gd](Construccion.gd.md) (3 shared connections)
 - [GeneradorMundo.gd](GeneradorMundo.gd.md) (3 shared connections)
-- [Colonos.gd](Colonos.gd.md) (2 shared connections)
-- [Vias.gd](Vias.gd.md) (2 shared connections)
-- [Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)](Asset_Visual-_craft-to-nation-logo.png_Remotion_Public_Asset.md) (1 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (1 shared connections)
 - [tsconfig.json](tsconfig.json.md) (1 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
-- [config.yml](config.yml.md) (1 shared connections)
+- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
+- [Colonos.gd](Colonos.gd.md) (1 shared connections)
+- [Player.gd](Player.gd.md) (1 shared connections)
+- [Obras.gd](Obras.gd.md) (1 shared connections)
 
 ## Source Files
 

@@ -12,6 +12,7 @@ extends Node
 
 const Ajustes = preload("res://scripts/ajustes.gd")
 const BuscadorRutas = preload("res://scripts/BuscadorRutas.gd")
+const CatalogoPersonajes = preload("res://scripts/CatalogoPersonajes.gd")
 
 signal colono_creado(id: int)
 signal colono_retirado(id: int)
@@ -164,15 +165,24 @@ func _process(delta: float) -> void:
 
 
 ## Agrega un colono en "celda" (que debe ser transitable) y lo devuelve.
-func agregar_colono(tipo: String, celda: Vector3i, hogar: int = -1) -> int:
+## "identidad" puede fijar {"genero": "M"|"F", "tono_piel": 0..3, "equipo_id": String};
+## si se omite, se asignan aleatoriamente y persisten toda la vida del colono.
+func agregar_colono(tipo: String, celda: Vector3i, hogar: int = -1, identidad: Dictionary = {}) -> int:
 	var id := _siguiente_id
 	_siguiente_id += 1
 	var ruta: Array[Vector3i] = []
 	var es_militar: bool = (tipo == "militar")
 	var salud_base: float = Ajustes.SALUD_MILITAR if es_militar else Ajustes.SALUD_CIVIL
+	var genero: String = CatalogoPersonajes.normalizar_genero(str(identidad["genero"])) if identidad.has("genero") else ("M" if _rng.randi_range(0, 1) == 0 else "F")
+	var tono_piel: int = CatalogoPersonajes.normalizar_tono_piel(int(identidad["tono_piel"])) if identidad.has("tono_piel") else _rng.randi_range(0, maxi(0, Ajustes.TONOS_PIEL_COLONOS.size() - 1))
+	var equipo_id: String = str(identidad.get("equipo_id", "jugador"))
 	colonos[id] = {
 		"id": id, "tipo": tipo, "hogar": -1 if es_militar else hogar,
 		"celda": celda, "posicion": _centro_de(celda),
+		"orientacion_y": 0.0,
+		"genero": genero,
+		"tono_piel": tono_piel,
+		"equipo_id": equipo_id,
 		"ruta": ruta, "progreso": 0.0, "moviendo": false,
 		"espera": 0.0, "bloqueo": 0.0,
 		"evacuando": -1, "ruta_de_evacuacion": false,
@@ -587,6 +597,9 @@ func _completar_paso(c: Dictionary, delta: float) -> void:
 				ciudad.almacen[insumo].quitar(consumo)
 
 	var siguiente: Vector3i = c["ruta"][0]
+	var dir_paso: Vector3 = _centro_de(siguiente) - _centro_de(c["celda"])
+	if Vector2(dir_paso.x, dir_paso.z).length_squared() > 1e-6:
+		c["orientacion_y"] = atan2(-dir_paso.x, -dir_paso.z)
 	var t: float = minf(c["progreso"], 1.0)
 	c["posicion"] = _centro_de(c["celda"]).lerp(_centro_de(siguiente), t)
 	if c["progreso"] < 1.0:
@@ -2503,6 +2516,68 @@ func aplicar_dano_edificio(id_ed: int, dano: float, celda: Vector3i = INVALIDA) 
 	return false
 
 
+## Selecciona un colono sucesor elegible para el Avatar filtrando por género.
+## El tono de piel es decorativo y no restringe candidatos. Si no hay ningún
+## candidato del género solicitado dentro de tipo_preferido ("militar"), aplica
+## el seguro anti-bloqueo eligiendo un militar de respaldo para mantener la paridad
+## demográfica y asignando un relevo del género correcto desde el Núcleo.
+func elegir_candidato_sucesion(genero_avatar: String, tipo_preferido: String = "militar") -> Dictionary:
+	var g_req := CatalogoPersonajes.normalizar_genero(genero_avatar)
+	var mejor_id := -1
+	var mejor_salud := -1.0
+	for cid in colonos:
+		var c: Dictionary = colonos[cid]
+		if str(c.get("tipo", "")) != tipo_preferido:
+			continue
+		if CatalogoPersonajes.normalizar_genero(str(c.get("genero", "M"))) != g_req:
+			continue
+		var sal := float(c.get("salud", 0.0))
+		if mejor_id == -1 or sal > mejor_salud or (is_equal_approx(sal, mejor_salud) and int(cid) < mejor_id):
+			mejor_id = int(cid)
+			mejor_salud = sal
+
+	if mejor_id != -1:
+		return {
+			"encontrado": true,
+			"id": mejor_id,
+			"origen": "candidato_mismo_genero",
+			"genero": g_req,
+			"tono_piel": CatalogoPersonajes.normalizar_tono_piel(int(colonos[mejor_id].get("tono_piel", 1))),
+		}
+
+	# Seguro anti-bloqueo: retirar 1 militar de respaldo (si existe) para conservar
+	# paridad con Ciudad.demografia[tipo_preferido] -= 1 y elegir tono de piel.
+	var respaldo_id := -1
+	for cid in colonos:
+		if str(colonos[cid].get("tipo", "")) == tipo_preferido:
+			if respaldo_id == -1 or int(cid) < respaldo_id:
+				respaldo_id = int(cid)
+
+	var tono_relevo := -1
+	for cid in colonos:
+		if CatalogoPersonajes.normalizar_genero(str(colonos[cid].get("genero", "M"))) == g_req:
+			tono_relevo = CatalogoPersonajes.normalizar_tono_piel(int(colonos[cid].get("tono_piel", 1)))
+			break
+	if tono_relevo == -1:
+		tono_relevo = _rng.randi_range(0, maxi(0, Ajustes.TONOS_PIEL_COLONOS.size() - 1))
+
+	return {
+		"encontrado": false,
+		"id": respaldo_id,
+		"origen": "relevo_nucleo_antibloqueo",
+		"genero": g_req,
+		"tono_piel": tono_relevo,
+	}
+
+
+func consumir_sucesor_para_avatar(genero_avatar: String, tipo_preferido: String = "militar") -> Dictionary:
+	var res := elegir_candidato_sucesion(genero_avatar, tipo_preferido)
+	var cid := int(res.get("id", -1))
+	if cid != -1 and colonos.has(cid):
+		_retirar(cid)
+	return res
+
+
 # ==============================================================================
 # SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
 # ==============================================================================
@@ -2533,6 +2608,12 @@ func exportar_estado() -> Dictionary:
 			c_dict["posicion"] = {"x": c_dict["posicion"].x, "y": c_dict["posicion"].y, "z": c_dict["posicion"].z}
 		if c_dict.has("trabajo") and c_dict["trabajo"] is Vector2i:
 			c_dict["trabajo"] = {"x": c_dict["trabajo"].x, "y": c_dict["trabajo"].y}
+		elif c_dict.has("trabajo") and c_dict["trabajo"] is Dictionary:
+			var trab_e: Dictionary = c_dict["trabajo"]
+			for k_v2 in ["puesto", "esquina"]:
+				if trab_e.has(k_v2) and trab_e[k_v2] is Vector2i:
+					var v2: Vector2i = trab_e[k_v2]
+					trab_e[k_v2] = {"x": v2.x, "y": v2.y}
 		if c_dict.has("cuartel_origen") and c_dict["cuartel_origen"] is Vector2i:
 			c_dict["cuartel_origen"] = {"x": c_dict["cuartel_origen"].x, "y": c_dict["cuartel_origen"].y}
 		if c_dict.has("orden_militar") and c_dict["orden_militar"] is Dictionary:
@@ -2571,14 +2652,28 @@ func importar_estado(d: Dictionary) -> void:
 		for cid_str in d["colonos"]:
 			var cid := int(cid_str)
 			var c_dict: Dictionary = (d["colonos"][cid_str] as Dictionary).duplicate(true)
+			c_dict["id"] = cid
 			if c_dict.has("hogar") and c_dict["hogar"] is Dictionary and c_dict["hogar"].has("x"):
 				c_dict["hogar"] = Vector3i(int(c_dict["hogar"]["x"]), int(c_dict["hogar"]["y"]), int(c_dict["hogar"]["z"]))
+			elif c_dict.has("hogar"):
+				c_dict["hogar"] = int(c_dict["hogar"])
 			if c_dict.has("celda") and c_dict["celda"] is Dictionary and c_dict["celda"].has("x"):
 				c_dict["celda"] = Vector3i(int(c_dict["celda"]["x"]), int(c_dict["celda"]["y"]), int(c_dict["celda"]["z"]))
 			if c_dict.has("posicion") and c_dict["posicion"] is Dictionary and c_dict["posicion"].has("x"):
 				c_dict["posicion"] = Vector3(float(c_dict["posicion"]["x"]), float(c_dict["posicion"]["y"]), float(c_dict["posicion"]["z"]))
-			if c_dict.has("trabajo") and c_dict["trabajo"] is Dictionary and c_dict["trabajo"].has("x"):
-				c_dict["trabajo"] = Vector2i(int(c_dict["trabajo"]["x"]), int(c_dict["trabajo"]["y"]))
+			if c_dict.has("trabajo") and c_dict["trabajo"] is Dictionary:
+				var trab: Dictionary = c_dict["trabajo"]
+				if trab.has("x") and trab.has("y") and not trab.has("puesto") and not trab.has("esquina"):
+					c_dict["trabajo"] = Vector2i(int(trab["x"]), int(trab["y"]))
+				else:
+					for k_v2 in ["puesto", "esquina"]:
+						if trab.has(k_v2):
+							var v2_parsed: Variant = _parsear_vector2i_json(trab[k_v2])
+							if v2_parsed is Vector2i:
+								trab[k_v2] = v2_parsed
+			if c_dict.has("tarea") and c_dict["tarea"] is Dictionary and not (c_dict["tarea"] as Dictionary).is_empty():
+				c_dict["tarea"] = {}
+				c_dict["moviendo"] = false
 			if c_dict.has("cuartel_origen") and c_dict["cuartel_origen"] is Dictionary and c_dict["cuartel_origen"].has("x"):
 				c_dict["cuartel_origen"] = Vector2i(int(c_dict["cuartel_origen"]["x"]), int(c_dict["cuartel_origen"]["y"]))
 			elif not c_dict.has("cuartel_origen"):
@@ -2603,6 +2698,18 @@ func importar_estado(d: Dictionary) -> void:
 				c_dict["postura"] = "defensivo"
 			if not c_dict.has("rango"):
 				c_dict["rango"] = "soldado_raso" if c_dict.get("tipo", "") == "militar" else ""
+			if not c_dict.has("genero"):
+				c_dict["genero"] = "M" if (cid % 2 == 0) else "F"
+			else:
+				c_dict["genero"] = CatalogoPersonajes.normalizar_genero(str(c_dict["genero"]))
+			if not c_dict.has("tono_piel"):
+				c_dict["tono_piel"] = posmod(cid, maxi(1, Ajustes.TONOS_PIEL_COLONOS.size()))
+			else:
+				c_dict["tono_piel"] = CatalogoPersonajes.normalizar_tono_piel(int(c_dict["tono_piel"]))
+			if not c_dict.has("equipo_id"):
+				c_dict["equipo_id"] = "jugador"
+			if not c_dict.has("orientacion_y"):
+				c_dict["orientacion_y"] = 0.0
 			if c_dict.has("ruta") and c_dict["ruta"] is Array:
 				var r_arr: Array[Vector3i] = []
 				for pt in c_dict["ruta"]:
@@ -2614,10 +2721,50 @@ func importar_estado(d: Dictionary) -> void:
 				ocupadas[c_dict["celda"]] = cid
 
 	if d.has("comisiones_activas") and d["comisiones_activas"] is Dictionary:
-		comisiones_activas = d["comisiones_activas"].duplicate(true)
+		comisiones_activas.clear()
+		for id_proy in d["comisiones_activas"]:
+			var info_c: Dictionary = (d["comisiones_activas"][id_proy] as Dictionary).duplicate(true)
+			if info_c.has("destino"):
+				var dest_v: Variant = _parsear_vector3i_json(info_c["destino"])
+				if dest_v is Vector3i:
+					info_c["destino"] = dest_v
+			if info_c.has("requeridos"):
+				info_c["requeridos"] = int(info_c["requeridos"])
+			if info_c.has("edificio_id"):
+				info_c["edificio_id"] = int(info_c["edificio_id"])
+			if info_c.has("miembros") and info_c["miembros"] is Array:
+				var m_ids: Array[int] = []
+				for mid in info_c["miembros"]:
+					m_ids.append(int(mid))
+				info_c["miembros"] = m_ids
+			comisiones_activas[str(id_proy)] = info_c
 
 	if d.has("unidades_seleccionadas") and d["unidades_seleccionadas"] is Array:
 		for raw_id in d["unidades_seleccionadas"]:
 			if colonos.has(int(raw_id)):
 				unidades_seleccionadas.append(int(raw_id))
 	subgrupo_activo = str(d.get("subgrupo_activo", ""))
+
+
+static func _parsear_vector2i_json(valor: Variant) -> Variant:
+	if valor is Vector2i:
+		return valor
+	if valor is Dictionary and valor.has("x") and valor.has("y"):
+		return Vector2i(int(valor["x"]), int(valor["y"]))
+	if valor is String:
+		var partes := (valor as String).strip_edges().trim_prefix("(").trim_suffix(")").split(",")
+		if partes.size() >= 2:
+			return Vector2i(int(partes[0].strip_edges()), int(partes[1].strip_edges()))
+	return null
+
+
+static func _parsear_vector3i_json(valor: Variant) -> Variant:
+	if valor is Vector3i:
+		return valor
+	if valor is Dictionary and valor.has("x") and valor.has("y") and valor.has("z"):
+		return Vector3i(int(valor["x"]), int(valor["y"]), int(valor["z"]))
+	if valor is String:
+		var partes := (valor as String).strip_edges().trim_prefix("(").trim_suffix(")").split(",")
+		if partes.size() >= 3:
+			return Vector3i(int(partes[0].strip_edges()), int(partes[1].strip_edges()), int(partes[2].strip_edges()))
+	return null

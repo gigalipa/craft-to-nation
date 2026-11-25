@@ -136,12 +136,14 @@ static func estilizar_dialogo(dialogo: AcceptDialog) -> void:
 	var ok := dialogo.get_ok_button()
 	if ok != null:
 		estilizar_boton(ok)
+		ok.focus_mode = Control.FOCUS_ALL
 		ok.icon = IconosHUD.icono("check")
 		ok.expand_icon = true
 	if dialogo is ConfirmationDialog:
 		var cancel := (dialogo as ConfirmationDialog).get_cancel_button()
 		if cancel != null:
 			estilizar_boton(cancel)
+			cancel.focus_mode = Control.FOCUS_ALL
 			cancel.icon = IconosHUD.icono("cruz")
 			cancel.expand_icon = true
 

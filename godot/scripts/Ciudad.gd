@@ -218,6 +218,11 @@ var heridos_7d: int = 0
 var robos_7d: float = 0.0
 var cobertura_energia: float = 1.0
 var periodo_elecciones_restante := 0
+var genero_avatar: String = "M"
+var tono_piel_avatar: int = 1
+var color_equipo: Color = Ajustes.COLOR_EQUIPO_DEFECTO
+var colores_equipos: Dictionary = {"jugador": Ajustes.COLOR_EQUIPO_DEFECTO}
+var ultimo_resultado_sucesion: Dictionary = {}
 ## Edificios residenciales registrados: id de edificio (el que asigna
 ## VoxelWorld) -> Array[int] con las camas de CADA piso. Ver
 ## registrar_edificio_residencial().
@@ -1225,11 +1230,32 @@ func recalcular_limites() -> void:
 
 
 ## Aplica la sucesión del avatar tras su muerte (GDD Sección 9).
-func suceder_avatar() -> String:
+## Si se provee "colonos_ref" (autoload Colonos), filtra candidatos por
+## genero_avatar y aplica el seguro anti-bloqueo cuando hay 0 candidatos de ese género.
+func suceder_avatar(colonos_ref: Object = null) -> String:
 	if censo_total == 0:
+		ultimo_resultado_sucesion = {"estado": "game_over"}
 		return "game_over"
 	if demografia["militar"] <= 0:
+		ultimo_resultado_sucesion = {"estado": "sin_sucesor_elegible"}
 		return "sin_sucesor_elegible"
+
+	if colonos_ref != null and colonos_ref.has_method("consumir_sucesor_para_avatar"):
+		var eleccion: Dictionary = colonos_ref.consumir_sucesor_para_avatar(genero_avatar, "militar")
+		tono_piel_avatar = int(eleccion.get("tono_piel", tono_piel_avatar))
+		ultimo_resultado_sucesion = {
+			"estado": "sucesion_exitosa",
+			"origen": str(eleccion.get("origen", "candidato_mismo_genero")),
+			"genero": genero_avatar,
+			"tono_piel": tono_piel_avatar,
+		}
+	else:
+		ultimo_resultado_sucesion = {
+			"estado": "sucesion_exitosa",
+			"origen": "demografia_pura",
+			"genero": genero_avatar,
+			"tono_piel": tono_piel_avatar,
+		}
 
 	demografia["militar"] -= 1
 	periodo_elecciones_restante = 5  # ticks de penalización de liderazgo
@@ -1611,10 +1637,42 @@ func retirar_vehiculo_disponible(tipo: String, cantidad: int = 1) -> bool:
 
 
 # ==============================================================================
+# IDENTIDAD DEL AVATAR Y COLOR DE EQUIPO
+# ==============================================================================
+
+func establecer_color_equipo(color: Color) -> void:
+	color_equipo = color
+	colores_equipos["jugador"] = color
+
+
+func registrar_color_equipo(equipo_id: String, color: Color) -> void:
+	var eq_limpio := equipo_id.strip_edges()
+	if eq_limpio.is_empty():
+		return
+	colores_equipos[eq_limpio] = color
+	if eq_limpio == "jugador":
+		color_equipo = color
+
+
+func color_de_equipo(equipo_id: String = "jugador") -> Color:
+	var eq_limpio := equipo_id.strip_edges()
+	if eq_limpio.is_empty():
+		eq_limpio = "jugador"
+	if colores_equipos.has(eq_limpio):
+		return colores_equipos[eq_limpio] as Color
+	return color_equipo
+
+
+# ==============================================================================
 # SERIALIZACIÓN, GUARDADO Y RESTAURACIÓN DE ESTADO
 # ==============================================================================
 
 func reiniciar() -> void:
+	genero_avatar = "M"
+	tono_piel_avatar = 1
+	color_equipo = Ajustes.COLOR_EQUIPO_DEFECTO
+	colores_equipos = {"jugador": Ajustes.COLOR_EQUIPO_DEFECTO}
+	ultimo_resultado_sucesion.clear()
 	instalaciones = {"tipo_1": 0, "tipo_2": 0, "tipo_3": 0, "tipo_4": 0}
 	instalaciones_edificio.clear()
 	demografia.clear()
@@ -1705,7 +1763,15 @@ func exportar_estado() -> Dictionary:
 	for id_e in baules_por_edificio:
 		baules_edif_str[str(id_e)] = baules_por_edificio[id_e]
 
+	var col_equipos_hex: Dictionary = {}
+	for eq_id in colores_equipos:
+		col_equipos_hex[str(eq_id)] = "#" + (colores_equipos[eq_id] as Color).to_html(false)
+
 	return {
+		"genero_avatar": genero_avatar,
+		"tono_piel_avatar": tono_piel_avatar,
+		"color_equipo": "#" + color_equipo.to_html(false),
+		"colores_equipos": col_equipos_hex,
 		"demografia": demografia.duplicate(),
 		"almacen": alm_data,
 		"instalaciones": instalaciones.duplicate(),
@@ -1749,6 +1815,16 @@ func exportar_estado() -> Dictionary:
 
 func importar_estado(d: Dictionary) -> void:
 	reiniciar()
+	genero_avatar = "F" if str(d.get("genero_avatar", "M")).strip_edges().to_upper() == "F" else "M"
+	tono_piel_avatar = clampi(int(d.get("tono_piel_avatar", 1)), 0, maxi(0, Ajustes.TONOS_PIEL_COLONOS.size() - 1))
+	if d.has("color_equipo"):
+		color_equipo = Color.from_string(str(d["color_equipo"]), Ajustes.COLOR_EQUIPO_DEFECTO)
+	if d.has("colores_equipos") and d["colores_equipos"] is Dictionary:
+		colores_equipos.clear()
+		for eq_id in d["colores_equipos"]:
+			colores_equipos[str(eq_id)] = Color.from_string(str(d["colores_equipos"][eq_id]), Ajustes.COLOR_EQUIPO_DEFECTO)
+	if not colores_equipos.has("jugador"):
+		colores_equipos["jugador"] = color_equipo
 	if d.has("demografia") and d["demografia"] is Dictionary:
 		for k in d["demografia"]:
 			demografia[str(k)] = int(d["demografia"][k])

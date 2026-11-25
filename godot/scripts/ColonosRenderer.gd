@@ -8,6 +8,7 @@ extends Node3D
 ## MultiMesh si la población llega a miles.
 
 const Ajustes = preload("res://scripts/ajustes.gd")
+const PersonajeModularScript = preload("res://scripts/PersonajeModular.gd")
 
 const ALTURA_COLONO := 1.8
 const RADIO_COLONO := 0.3
@@ -15,6 +16,7 @@ const RADIO_COLONO := 0.3
 static var COLORES_TIPO: Dictionary = Ajustes.COLORES_COLONOS
 
 var _cuerpos: Dictionary = {}  # int (id de colono) -> AnimatableBody3D
+var _modulares: Dictionary = {}  # int (id de colono) -> PersonajeModular
 var _marcadores_ordenes: Node3D
 var _firma_marcadores_prev: String = ""
 var _mat_casco: StandardMaterial3D
@@ -40,7 +42,6 @@ func _ready() -> void:
 
 
 func _on_colono_creado(id: int) -> void:
-	var tipo: String = Colonos.colonos[id]["tipo"]
 	var cuerpo := AnimatableBody3D.new()
 	# Capa 2: el avatar ya no choca con los colonos (Player.collision_mask = 1): él los empuja
 	# (Colonos.actualizar_avatar()) y ellos no pueden moverlo; el raycast del jugador y el picking de CamaraCenital (máscara 1) los
@@ -48,16 +49,9 @@ func _on_colono_creado(id: int) -> void:
 	cuerpo.collision_layer = 2
 	cuerpo.collision_mask = 0
 
-	var malla := MeshInstance3D.new()
-	var capsula := CapsuleMesh.new()
-	capsula.radius = RADIO_COLONO
-	capsula.height = ALTURA_COLONO
-	var material := StandardMaterial3D.new()
-	material.albedo_color = COLORES_TIPO.get(tipo, Color.WHITE)
-	capsula.material = material
-	malla.mesh = capsula
-	malla.position = Vector3(0, ALTURA_COLONO / 2.0, 0)
-	cuerpo.add_child(malla)
+	var modular: Node3D = PersonajeModularScript.new()
+	modular.name = "PersonajeModular"
+	cuerpo.add_child(modular)
 
 	var forma := CollisionShape3D.new()
 	var capsula_fisica := CapsuleShape3D.new()
@@ -69,26 +63,69 @@ func _on_colono_creado(id: int) -> void:
 
 	add_child(cuerpo)
 	_cuerpos[id] = cuerpo
+	_modulares[id] = modular
 	cuerpo.set_meta("colono_id", id)
 	cuerpo.global_position = Colonos.colonos[id]["posicion"]
-	_asegurar_visuales_unidad(cuerpo, id)
+	_actualizar_visual_colono(cuerpo, id)
 
 
 func _on_colono_retirado(id: int) -> void:
+	_modulares.erase(id)
 	if _cuerpos.has(id):
 		_cuerpos[id].queue_free()
 		_cuerpos.erase(id)
 
 
+func reconstruir() -> void:
+	for id in _cuerpos.keys():
+		if is_instance_valid(_cuerpos[id]):
+			_cuerpos[id].queue_free()
+	_cuerpos.clear()
+	_modulares.clear()
+	for id in Colonos.colonos:
+		_on_colono_creado(id)
+
+
+func _sincronizar_cuerpos() -> void:
+	for id in _cuerpos.keys():
+		if not Colonos.colonos.has(id):
+			_on_colono_retirado(id)
+	for id in Colonos.colonos:
+		if not _cuerpos.has(id):
+			_on_colono_creado(id)
+
+
 func _physics_process(_delta: float) -> void:
+	if _cuerpos.size() != Colonos.colonos.size():
+		_sincronizar_cuerpos()
 	for id in _cuerpos:
 		if Colonos.colonos.has(id):
 			_cuerpos[id].global_position = Colonos.colonos[id]["posicion"]
-			# El tipo cambia al graduarse o al emplearse: el color sigue al tipo actual.
-			var material: StandardMaterial3D = _cuerpos[id].get_child(0).mesh.material
-			material.albedo_color = COLORES_TIPO.get(Colonos.colonos[id]["tipo"], Color.WHITE)
-			_asegurar_visuales_unidad(_cuerpos[id], id)
+			_actualizar_visual_colono(_cuerpos[id], id)
 	_actualizar_marcadores_ordenes()
+
+
+func _actualizar_visual_colono(cuerpo: AnimatableBody3D, id: int) -> void:
+	var c: Dictionary = Colonos.colonos.get(id, {})
+	var modular: Node3D = _modulares.get(id, null)
+	if modular != null:
+		var tipo_puesto := _resolver_tipo_puesto_colono(c)
+		var color_eq: Color = Ajustes.COLOR_EQUIPO_DEFECTO
+		if Ciudad != null and Ciudad.has_method("color_de_equipo"):
+			color_eq = Ciudad.color_de_equipo(str(c.get("equipo_id", "jugador")))
+		var era: int = int(Ciudad.era_actual) if Ciudad != null else 1
+		modular.actualizar_colono(c, tipo_puesto, color_eq, era)
+	_asegurar_visuales_unidad(cuerpo, id)
+
+
+func _resolver_tipo_puesto_colono(c: Dictionary) -> String:
+	var trab: Variant = c.get("trabajo", {})
+	if not (trab is Dictionary) or (trab as Dictionary).is_empty():
+		return ""
+	var esq: Variant = (trab as Dictionary).get("puesto", null)
+	if esq is Vector2i and Economia != null and Economia.puestos.has(esq):
+		return str(Economia.puestos[esq].get("tipo", ""))
+	return ""
 
 
 func _inicializar_materiales() -> void:
@@ -125,10 +162,13 @@ func _asegurar_visuales_unidad(cuerpo: AnimatableBody3D, id: int) -> void:
 		_inicializar_materiales()
 	var c: Dictionary = Colonos.colonos.get(id, {})
 	var es_militar: bool = (str(c.get("tipo", "")) == "militar")
+	var modular: Node3D = _modulares.get(id, null)
+	var usar_placeholder: bool = (modular == null or modular.modo_visual() == "placeholder")
+	var mostrar_equipo_procedural: bool = es_militar and usar_placeholder
 
 	var casco := cuerpo.get_node_or_null("CascoMilitar") as Node3D
 	var escudo := cuerpo.get_node_or_null("EscudoMilitar") as MeshInstance3D
-	if es_militar and casco == null:
+	if mostrar_equipo_procedural and casco == null:
 		casco = Node3D.new()
 		casco.name = "CascoMilitar"
 		var copa := MeshInstance3D.new()
@@ -149,7 +189,7 @@ func _asegurar_visuales_unidad(cuerpo: AnimatableBody3D, id: int) -> void:
 		casco.add_child(visera)
 		cuerpo.add_child(casco)
 
-	if es_militar and escudo == null:
+	if mostrar_equipo_procedural and escudo == null:
 		escudo = MeshInstance3D.new()
 		escudo.name = "EscudoMilitar"
 		var m_esc := BoxMesh.new()
@@ -160,9 +200,9 @@ func _asegurar_visuales_unidad(cuerpo: AnimatableBody3D, id: int) -> void:
 		cuerpo.add_child(escudo)
 
 	if casco != null:
-		casco.visible = es_militar
+		casco.visible = mostrar_equipo_procedural
 	if escudo != null:
-		escudo.visible = es_militar
+		escudo.visible = mostrar_equipo_procedural
 
 	var aro := cuerpo.get_node_or_null("AroSeleccion") as MeshInstance3D
 	if aro == null:

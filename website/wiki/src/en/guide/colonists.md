@@ -23,7 +23,7 @@ Every colonist consumes sustenance each simulation tick. In Godot 4.6, the simul
 | **Technician (`tecnico`)** | 3.0 | 0.0 | 0.0 | 3 / bed | Zone B industrial facilities (`1 → 3`), pumping/extraction stations, Level II outposts |
 | **Specialist (`especialista`)**| 2.0 | 0.0 | 1.0 | 2 / bed | Required to upgrade peripheral outposts to Level III and staff the University |
 | **Researcher (`investigador`)**| 1.0 | 0.0 | 2.0 | 1 / bed | University science (`1.0 researcher_hour/h`), tech tree unlocks |
-| **Military (`militar`)** | 4.0 | 2.0 | 0.0 | 3 / bed | Garrison patrol, combat defense, expeditionary sieges |
+| **Military (`militar`)** | 4.0 | 2.0 | 0.0 | 4 / bed *(Barracks)* | Garrison patrol, tactical defense, and hybrid command (housed in Barracks without consuming civil beds) |
 
 > [!NOTE]
 > Physical workers consume more calories (`5.0 food/h`) due to heavy manual labor, whereas intellectual researchers consume fewer calories (`1.0 food/h`) but require electrified quarters (`2.0 energy/h`). Use the **Population Window (<kbd>P</kbd>)** and **Occupations Window (<kbd>O</kbd>)** to assign or recall workers (`[-]` / `[+]`) across collapsible categories (`▼ Gathering`, `▼ Industry`, `▼ Research`, `▼ Energy`).
@@ -40,7 +40,7 @@ Estimate your colony's hourly and cyclic food and water requirements based on yo
 
 ---
 
-## 3. Dynamic Morale System (GDD v3.61)
+## 3. Dynamic Morale System (GDD v3.62)
 
 Colony productivity and migration are driven by the settlement's **Dynamic Morale** score (`0.0` to `100.0`, accessible from the top bar or by pressing <kbd>M</kbd> to open `VentanaMoral.gd`, where migration status is displayed directly on the line beneath labor productivity):
 
@@ -115,3 +115,13 @@ If the central food stock hits `0`:
 3. **Specialist School (`escuela_especialistas`, `5×5` stone):** Trains a cohort of **3 Technicians** (1 bed) for **48 in-game hours** and graduates **2 Specialists** (1 bed).
 4. **Course Cancellation with 100% Refund:** Inside any school's context panel (<kbd>E</kbd> in 1st person or Left Click in overhead view), an active training cohort can be cancelled prior to graduation with a **100% refund of resources and trainees**.
 5. **University & Two-Layer Research (`universidad`, `5×5` stone):** Employs up to **3 Researchers** (`1.0 researcher_hour/h` each) to develop theoretical science at the University (**Layer 1**) and dispatch an **Itinerant Researcher (`Investigador Itinerante`)** who physically walks to productive facilities or the Urban Core to complete practical applications *on site* (**Layer 2**).
+
+---
+
+## 6. Military Troops, Garrisoned Housing & Tactical Command (Phase 4)
+
+Starting in **GDD v3.62**, soldiers operate under dedicated military housing and hybrid tactical command:
+- **Garrisoned Military Housing (`x_cama = 4`):** Each 2-story **Barracks (`Cuartel`)** in Zone B (key `7`) contains 4 military beds housing up to **16 soldiers** without consuming civilian housing or triggering evictions. Training runs as a lossless atomic **`4 → 4`** cohort.
+- **Universal Selection & `PanelUnidad.gd`:** In overhead view (<kbd>C</kbd>), drag a 2D selection box to select soldiers or civilians. `PanelUnidad` displays unit health, occupation, and stances (**`Pasivo`**, **`Defensivo`**, **`Agresivo`**), while right-clicking issues tactical orders (**`Move`**, **`Attack`** via <kbd>K</kbd>, **`Defend`**, **`Patrol`**, **`Hold`** via <kbd>H</kbd>, and waypoints via <kbd>Shift</kbd>).
+- **First-Person Commander Mode (<kbd>F</kbd>):** Your unit selection persists across camera switches. In Commander Mode (<kbd>F</kbd>), dispatch orders from the `1–6` tactical hotbar and manage **tactical subgroups** with <kbd>Shift</kbd> + <kbd>1..9</kbd>, while `ColonosRenderer.gd` renders procedural helmets, shields, selection rings, and patrol waypoints.
+

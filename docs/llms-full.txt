@@ -34,11 +34,15 @@ Craft to Nation une la supervivencia en primera persona con la gestión macrosc�
 
 ---
 
-## 3. Pilares Técnicos y Arquitectura de Sistemas (GDD v3.62)
+## 3. Pilares Técnicos y Arquitectura de Sistemas (GDD v3.64)
 
-### Dualidad de Perspectiva (Micro ↔ Macro)
-- **Primera Persona:** Minado manual con barra de progreso, colocación de bloques orientables y paneles de ventana (1/20 de espesor en vidrio), natación, combate y deconstrucción directa a pie.
-- **Cámara Cenital Táctica:** Navegación orbital con zoom y paneo, trazador de carreteras con nivelación automática, inspección de edificios, asignación de cuadrillas de obra y zonificación.
+### Dualidad de Perspectiva (Micro ↔ Macro) y Comando Híbrido (Fase 4)
+- **Primera Persona (Modos T / R / F):**
+  - **Modo Construcción (`T`):** Minado manual con barra de progreso, colocación de bloques orientables, paneles de ventana (1/20 de espesor en vidrio), natación y deconstrucción directa a pie.
+  - **Modo Batalla (`R`):** Combate directo en primera persona con espada, arco y retícula táctica (*crosshair*).
+  - **Modo Comandante (`F`):** Barra táctica de órdenes `1–6` (`Moverse`, `Atacar`, `Defender`, `Patrullar`, `Mantener`, `Seguir`) y gestión de subgrupos tácticos (`Shift + 1..9`) manteniendo la selección sincronizada al alternar de cámara.
+- **Cámara Cenital Táctica (`C`):** Navegación orbital con zoom y paneo, trazador de carreteras con nivelación automática, inspección de edificios, asignación de cuadrillas de obra, zonificación, selección universal por recuadro 2D (civiles y soldados) y `PanelUnidad.gd` con posturas (`Pasivo`, `Defensivo`, `Agresivo`) y órdenes con clic derecho (`K` Atacar, `H` Mantener, `Shift` waypoints).
+- **Cuartel Militar y Acuartelamiento:** Edificio Cuartel de 2 pisos (`9×7×8`, Zona B, tecla `7`) con 4 camas que recluta atómicamente 16 soldados (`x_cama = 4`, cohorte militar 4→4 sin pérdida) en vivienda militar acuartelada independiente de las camas civiles, con visuales procedurales (cascos, escudos, aros de selección y marcadores de patrulla en `ColonosRenderer.gd`).
 
 ### Detección Volumétrica y Blueprints Orgánicos
 - Detección de habitaciones por *flood-fill* volumétrico (`BlueprintValidator.gd`). Comprueba hermeticidad, despeje de camas y puertas.
@@ -53,7 +57,7 @@ Craft to Nation une la supervivencia en primera persona con la gestión macrosc�
 
 ### Cadena Industrial, Logística y Energía
 - **9 Industrias:** Siderúrgica, tierras raras, aserradero, fábrica de bloques de piedra, vidriera (1 tierra + 1 carbón → 3 vidrio), carbonera, refinería petrolera (división 400/600), productor de combustible y central termoeléctrica.
-- **Taller de Transporte:** Flota municipal de 6 unidades móviles (acarreadores a pie, carretas de mano, carros a caballo, camiones diésel, trolebuses solares y drones de carga).
+- **Taller de Transporte y Tránsito por Carril Derecho:** Flota municipal de 6 unidades móviles (acarreadores a pie, carretas de mano, carros a caballo, camiones diésel, trolebuses solares y drones de carga) con circulación vial por carril derecho según huella física (`Vias.es_borde_derecho()`, `VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`), evitando choques frontales y habilitando esquivas.
 - **Canalizaciones Aéreas a Y+6:** Red modular de 4 piezas que transporta agua y crudo por encima del tráfico terrestre, evitando obstrucciones viales.
 - **Red Eléctrica:** Generación térmica y solar con balance en kW/MW y cálculo dinámico de factor de déficit.
 
@@ -65,11 +69,11 @@ Craft to Nation une la supervivencia en primera persona con la gestión macrosc�
   - **Solarpunk:** Energías limpias, eficiencia ecológica y armonía con el bioma.
 
 ### Portal de Inicio, Audio Espacial y Persistencia
-- Portal de inicio interactivo (`MenuInicio.tscn`) con fondo slideshow animado y selector de idioma en caliente (ES, EN, FR).
+- Escena cinemática de arranque (`VideoIntro.tscn`) y portal de inicio interactivo (`MenuInicio.tscn`) con fondo slideshow animado y localización dinámica en caliente (ES/EN en el juego; sitio web y wiki en ES/EN/FR).
 - Motor de audio espacial (`Sonidos.gd`) con 16 canales 2D y 16 3D, modulación de tono (±5%) y catálogo de 102 efectos OGG.
 - Sistema de guardado y carga atómica en JSON (`GestorPartida.gd`) con soporte de slot rápido (`quicksave`) y pantalla de carga (`PantallaCarga.gd`).
-- Configuración persistente (`Configuracion.gd`) en `user://configuracion.json`.
-- 35 escenas de prueba automatizadas ejecutables en modo *headless* garantizando 100% de estabilidad.
+- Configuración persistente (`Configuracion.gd`) en `user://configuracion.json` con perfiles de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`) y selector de modo de pantalla (pantalla completa vs ventana 1280×720).
+- 39 escenas de prueba automatizadas ejecutables en modo *headless* garantizando 100% de estabilidad (incluyendo `VideoIntroTest.tscn` y `PlayerCombateComandanteTest.tscn`).
 
 ---
 

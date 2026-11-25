@@ -1,6 +1,6 @@
 ---
 title: "Godot Technical Architecture & Simulation Engine"
-description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar autoloads, 3D GridMap, procedural terrain, fluid physics, and 37 automated test suites."
+description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar autoloads, 3D GridMap, procedural terrain, fluid physics, and 39 automated test suites."
 ---
 
 # Godot 4.7 Technical Architecture & Simulation Engine
@@ -43,7 +43,7 @@ description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar
 - **`GestorPartida.gd`:** Autoload singleton for atomic serialization and loading of complete game state (`Ciudad`, `Economia`, `Colonos`, `VoxelWorld`, `Vias`, `Canalizaciones`, `Player`, `Zonificacion`) in `user://saves/*.json` with quicksave support and metadata.
 - **`Sonidos.gd`:** Master audio manager autoload singleton. Maintains circular pools of 16 2D (`AudioStreamPlayer` for UI/avatar) and 16 3D (`AudioStreamPlayer3D` for spatial world audio with inverse distance attenuation up to 35m) players, random micro-pitch modulation (±5%), and cached lazy-loading of 102 OGG sound effects across 8 functional domains (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`).
 
-### Voxel World, Agents, Configuration & HUD Iconography (v3.57 – v3.62)
+### Voxel World, Agents, Configuration & HUD Iconography (v3.57 – v3.64)
 - **`Ajustes.gd` & `Strings.gd`:** Centralized balance parameters and reactive localization. `Ajustes.gd` houses all numerical constants, movement speeds, demographic ratios, and economic rates designed for hot-reloading and modular "New Game" presets. `Strings.gd` manages multi-language catalogs (`Ajustes.idioma`) with static reactive getters dynamically reflecting current `Ajustes.*` variables without scene reloads.
 - **`VoxelWorld.gd`, `GeneradorMundo.gd` & `TranslucidosRenderer.gd`:** Manages the **200×200** 3D `GridMap` (`y = 130` max height, 24 subsurface layers down to unmineable `bedrock`, 2 mountain peaks, 6 minerals, deep oil reservoirs, rivers with waterfalls, lakes, and seas), and `1/20`-thick (`0.05m`) transparent window panels (`vidrio`) in 3 geometric variants (`ventana` straight mid-depth facing the avatar, `ventana_esquina` L-corner rotated 90° on Y, and `ventana_techo` flush against the top face `Y ∈ [0.95, 1.0]` when placed while looking up or down).
 - **`BlueprintValidator.gd` & `PlantillasPuesto.gd`:** Flood-fill airtight room detection, doorway/bed clearance audits, and rotatable (`90°`) facility templates (including `vidriera` `5×6` adobe and `taller_transporte`).
@@ -51,14 +51,17 @@ description: "Engine implementation details in Godot: Ciudad, Sonidos and Avatar
 - **`Colonos.gd` & `BuscadorRutas.gd`:** NPC agent finite state machine (FSM) and weighted A* pathfinding (cost `3` on packed dirt roads vs. cost `8` on natural terrain) with lateral yield priorities and support for mobile transport vehicles (`exige_via = true` road constraints and `1.2 m/s` slow-crawl fallback).
 - **`IconosHUD.gd` & `MiniaturaRenderer.gd`:** Centralized catalog of **95+ crisp pixel-art SVG icons** (`godot/assets/icons/*.svg`, including `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg`, and `btn_bajar.svg`) and live 3D thumbnail renderer powering `BarraSuperior.gd` (with Era name + icon and right-side Roman IDU badge with top-right hover tooltip), `BarraModos.gd` (`104×76 px` build buttons), `VentanaMoral.gd`, `VentanaEnergia.gd` (with one-click camera jump to generators/consumers), `VentanaAlmacen.gd` (A–Z raw materials with hierarchical dropdowns and `[Expand All]`/`[Collapse All]` button), `VentanaBaul.gd`, `VentanaPoblacion.gd`, `VentanaOcupaciones.gd`, `PanelPuesto.gd`, `PanelEdificio.gd` (with automatic transition to the finished building panel), and `PanelCanalizacion.gd`.
 
+- **`PanelUnidad.gd`, `CamaraCenital.gd`, `Player.gd` & `ColonosRenderer.gd` (Phase 4 — Dual Camera & Troops):** Universal 2D drag-box unit selection in overhead view with persistent selection across camera switches (<kbd>C</kbd>), unit inspection and tactical orders (`PanelUnidad.gd`: health, stances `Pasivo`/`Defensivo`/`Agresivo`, orders `Moverse`, `Atacar` <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` <kbd>H</kbd>), specialized 1st-person modes in `Player.gd` (<kbd>T</kbd> Construction, <kbd>R</kbd> Battle with sword/bow/crosshair, <kbd>F</kbd> Commander with 1–6 order hotbar and <kbd>Shift</kbd> + <kbd>1..9</kbd> subgroups), and procedural troop visuals (helmets, shields, selection rings, and patrol waypoints) in `ColonosRenderer.gd`.
+- **`VideoIntro.tscn` & `Configuracion.gd`:** Cinematic startup splash with instant skip to `MenuInicio.tscn`, categorized starting resource profiles (`supervivencia`, `bajos`, `medios`, `altos`), live ES/EN localization, and persistent fullscreen/windowed (1280×720) mode toggle.
+
 ---
 
-## 3. CC0 3D Asset Packs & 37 Automated Test Scenes (`godot/scenes/*Test.tscn`)
+## 3. CC0 3D Asset Packs & 39 Automated Test Scenes (`godot/scenes/*Test.tscn`)
 
 The project integrates CC0 low-poly 3D asset packs:
 - **KayKit Block Bits & Medieval Hexagon Pack:** Voxel terrain blocks, props, and structural elements.
 - **Quaternius Modular Men:** Articulated colonist and worker character meshes.
 - **Poly Haven:** Environmental materials and textures.
 
-> [!IMPORTANT] 37 Automated Test Scenes (100% Green)
-> Every subsystem is verified by dedicated headless test scenes (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `FluidosTest.tscn`, `ConstructorViasTest.tscn`, `ObrasPrioridadTest.tscn`, `DemolicionEdificiosTest.tscn`, `PlayerNatacionTest.tscn`, `PuestosNivelesTest.tscn`, `SonidosTest.tscn`, `VideoIntroTest.tscn`, etc.), maintaining **36 complete test suites passing 100% in green**.
+> [!IMPORTANT] 39 Automated Test Scenes (100% Green)
+> Every subsystem is verified by dedicated headless test scenes (`CiudadTest.tscn`, `RecoleccionTest.tscn`, `CadenaMineralesTest.tscn`, `CanalizacionesTest.tscn`, `ViasTest.tscn`, `BuscadorRutasTest.tscn`, `ObrasTest.tscn`, `PlayerNatacionTest.tscn`, `SonidosTest.tscn`, `ConfiguracionTest.tscn`, `GestorPartidaTest.tscn`, `MenuInicioTest.tscn`, `MenuPausaTest.tscn`, `PantallaCargaTest.tscn`, `BienvenidaTest.tscn`, `VideoIntroTest.tscn`, `PlayerCombateComandanteTest.tscn`, etc.), maintaining **37 complete test suites passing 100% in green**.

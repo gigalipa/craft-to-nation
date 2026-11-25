@@ -1,34 +1,63 @@
 # subprocess
 
-> 10 nodes · cohesion 0.20
+> 62 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **dependencies** (8 connections) — `video_edition/remotion/package.json`
-- **@remotion/cli** (3 connections) — `video_edition/remotion/package.json`
-- **react-dom** (2 connections) — `video_edition/remotion/package.json`
-- **@remotion/captions** (2 connections) — `video_edition/remotion/package.json`
-- **react@19.2.3** (2 connections) — `video_edition/remotion/package.json`
-- **react-dom@19.2.3** (2 connections) — `video_edition/remotion/package.json`
-- **remotion@4.0.537** (2 connections) — `video_edition/remotion/package.json`
-- **@remotion/captions@^4.0.537** (2 connections) — `video_edition/remotion/package.json`
-- **@remotion/cli@4.0.537** (2 connections) — `video_edition/remotion/package.json`
-- **remotion.config.ts** (1 connections) — `video_edition/remotion/remotion.config.ts`
+- **subprocess** (23 connections)
+- **os** (18 connections)
+- **modal_hunyuan_rig.py** (13 connections) — `tools/3d_pipeline/modal_hunyuan_rig.py`
+- **build_characters_teaser.py** (13 connections) — `video_edition/tools/build_characters_teaser.py`
+- **build_character_animation_short.py** (10 connections) — `video_edition/tools/build_character_animation_short.py`
+- **time** (8 connections)
+- **split_turnaround.py** (8 connections) — `tools/3d_pipeline/split_turnaround.py`
+- **pil** (6 connections)
+- **generate_ui_icons.py** (6 connections) — `tools/generate_ui_icons.py`
+- **build_debugging_shorts.py** (6 connections) — `video_edition/tools/build_debugging_shorts.py`
+- **numpy** (5 connections)
+- **split_turnaround()** (5 connections) — `tools/3d_pipeline/split_turnaround.py`
+- **render_animation_short()** (5 connections) — `video_edition/tools/build_character_animation_short.py`
+- **write_subtitles()** (5 connections) — `video_edition/tools/build_character_animation_short.py`
+- **encode_with_fallback()** (5 connections) — `video_edition/tools/build_characters_teaser.py`
+- **render_horizontal_teaser()** (5 connections) — `video_edition/tools/build_characters_teaser.py`
+- **render_vertical_short()** (5 connections) — `video_edition/tools/build_characters_teaser.py`
+- **write_subtitles()** (5 connections) — `video_edition/tools/build_characters_teaser.py`
+- **build_short()** (5 connections) — `video_edition/tools/build_debugging_shorts.py`
+- **function** (4 connections)
+- **main()** (4 connections) — `tools/3d_pipeline/modal_hunyuan_rig.py`
+- **_find_panel_bounds()** (4 connections) — `tools/3d_pipeline/split_turnaround.py`
+- **generate_icons()** (4 connections) — `tools/generate_ui_icons.py`
+- **sync_checker.py** (4 connections) — `video_edition/tools/sync_checker.py`
+- **verify_offset_dir.py** (4 connections) — `video_edition/tools/verify_offset_dir.py`
+- *... and 37 more nodes in this community*
 
 ## Relationships
 
-- [Estado detallado e historial](Estado_detallado_e_historial.md) (4 shared connections)
-- [BarraModos.gd](BarraModos.gd.md) (3 shared connections)
-- [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (1 shared connections)
+- [json](json.md) (7 shared connections)
+- [sys](sys.md) (6 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (4 shared connections)
+- [blender_arkit_blendshapes.py](blender_arkit_blendshapes.py.md) (2 shared connections)
+- [BarraModos.gd / BarraModos.pagina_actual()](BarraModos.gd_-_BarraModos.pagina_actual.md) (2 shared connections)
 
 ## Source Files
 
-- `video_edition/remotion/package.json`
-- `video_edition/remotion/remotion.config.ts`
+- `tools/3d_pipeline/modal_hunyuan_rig.py`
+- `tools/3d_pipeline/split_turnaround.py`
+- `tools/generate_ui_icons.py`
+- `video_edition/tools/build_antigravity_master.py`
+- `video_edition/tools/build_character_animation_short.py`
+- `video_edition/tools/build_characters_teaser.py`
+- `video_edition/tools/build_debugging_devlog.py`
+- `video_edition/tools/build_debugging_shorts.py`
+- `video_edition/tools/find_cam_crop.py`
+- `video_edition/tools/generate_antigravity_popups.py`
+- `video_edition/tools/generate_debugging_popups.py`
+- `video_edition/tools/sync_checker.py`
+- `video_edition/tools/verify_offset_dir.py`
 
 ## Audit Trail
 
-- EXTRACTED: 17 (100%)
+- EXTRACTED: 138 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

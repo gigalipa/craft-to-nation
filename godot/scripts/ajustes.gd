@@ -113,6 +113,24 @@ static var COLORES_COLONOS: Dictionary = {
 	"militar": Color("#bf3833"),
 }
 
+static var TONOS_PIEL_COLONOS: Array[Color] = [
+	Color("#f4d6c1"),  # 0: pálido
+	Color("#e0b38f"),  # 1: claro
+	Color("#a8704a"),  # 2: moreno
+	Color("#5c3a24"),  # 3: oscuro
+]
+static var NOMBRES_TONOS_PIEL: Array[String] = ["palido", "claro", "moreno", "oscuro"]
+static var GENEROS_VALIDOS: Array[String] = ["M", "F"]
+static var COLORES_EQUIPO_PALETA: Dictionary = {
+	"azul_nacion": Color("#2d6cdf"),
+	"rojo_carmesi": Color("#c93838"),
+	"verde_bosque": Color("#2e8f57"),
+	"dorado_real": Color("#d4a437"),
+	"purpura_imperial": Color("#7d48b8"),
+	"turquesa_costa": Color("#2299a8"),
+}
+static var COLOR_EQUIPO_DEFECTO: Color = Color("#2d6cdf")
+
 static var COLORES_RECURSO_CARGA: Dictionary = {
 	"madera": Color("#73471f"),
 	"tablas": Color("#bf8c4d"),
@@ -1008,6 +1026,7 @@ static var MILITAR_ALCANCE_ATAQUE: float = 2.5
 static var MILITAR_DANO_ATAQUE: float = 25.0
 static var MILITAR_COOLDOWN_ATAQUE: float = 1.0
 static var COMANDANTE_ALCANCE_RAYCAST: float = 60.0
+static var PLAYER_COOLDOWN_DANO_CENITAL_S: float = 5.0
 static var ARMAS_AVATAR: Array = [
 	{"id": "espada", "nombre_key": "ARMA_ESPADA", "alcance": 3.0, "dano": 35.0, "cooldown": 0.5, "tipo": "melee"},
 	{"id": "arco", "nombre_key": "ARMA_ARCO", "alcance": 35.0, "dano": 22.0, "cooldown": 0.7, "tipo": "ranged"},

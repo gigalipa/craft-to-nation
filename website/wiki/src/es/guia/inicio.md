@@ -16,9 +16,15 @@ Bienvenido a **Craft to Nation**, un simulador híbrido donde la supervivencia v
 El juego permite alternar en cualquier momento entre tu avatar físico en primera persona y la cámara táctica cenital mediante un vuelo de cámara continuo de `0,6 s`:
 
 ### Controles Globales
-- <kbd>C</kbd>: **Alternar entre Primera Persona y Cámara Cenital (*City Builder*)**.
+- <kbd>C</kbd>: **Alternar entre Primera Persona y Cámara Cenital (*City Builder*)**, manteniendo sincronizada la selección de tropas.
 - <kbd>M</kbd>: Abrir / cerrar la ventana analítica de **Moral Ciudadana** (`VentanaMoral`).
+- <kbd>F11</kbd>: Abrir / cerrar el **Menú de Pausa** (`MenuPausa`), con acceso a guardado/carga atómica, cambio de idioma en caliente (ES/EN), volúmenes SFX/BGM y modo de pantalla (completa vs ventana `1280×720`).
 - <kbd>Esc</kbd>: Cerrar ventanas modales activas, salir del modo activo de vías/deconstrucción (en 1ra persona), volver al modo neutro **Ver** (en cámara cenital) o liberar el cursor del ratón.
+
+### Modos Especializados en Primera Persona (`T` / `R` / `F`)
+- <kbd>T</kbd> **Modo Construcción:** Habilita la barra rápida de bloques (`1`–`0`), tala, minado manual, colocación y deconstrucción (<kbd>G</kbd>).
+- <kbd>R</kbd> **Modo Batalla:** Activa la retícula táctica (*crosshair*) y el armamento personal del avatar (**espada** cuerpo a cuerpo y **arco** a distancia).
+- <kbd>F</kbd> **Modo Comandante:** Despliega la barra táctica de órdenes <kbd>1</kbd>–<kbd>6</kbd> (`Moverse`, `Atacar`, `Defender`, `Patrullar`, `Mantener`, `Seguir`) sobre las tropas seleccionadas y permite asignar o invocar **subgrupos tácticos** con <kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>9</kbd>.
 
 ### Controles en Primera Persona (Modo Pionero)
 - <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>: Desplazamiento físico del avatar (con empuje horizontal de corriente en ríos y bases de cascadas).
@@ -59,13 +65,15 @@ El juego permite alternar en cualquier momento entre tu avatar físico en primer
     - `4` **Investigación:** `1` Escuela técnica, `2` Escuela de especialistas, `3` Universidad.
     - `5` **Vías:** `1` Trazar vía *(en cámara cenital, el trazado de carreteras se activa desde este menú `1 -> 5 -> 1`)*.
     - `6` **Ductos:** `1` Acueducto, `2` Tubería.
+    - `7` **Militar:** `1` Cuartel (`9×7×8`, 2 pisos, 4 camas, Zona B — recluta 16 soldados acuartelados sin consumir camas civiles).
   - <kbd>2</kbd> **Menú Zonificar:** `1` Zona Residencial, `2` Zona Industrial, `3` Borrar zona.
   - <kbd>3</kbd> **Modo Demoler Unificado:** Marca edificios en rojo con un clic o traza demoliciones viales guiadas en naranja (doble clic) siguiendo las curvas de la carretera mediante Dijkstra.
   - <kbd>Z</kbd> / <kbd>X</kbd>: **Retroceder un nivel en el menú** o ir a la página anterior (<kbd>Z</kbd>) / Avanzar a la **siguiente página** (<kbd>X</kbd>) cuando una categoría supera los 9 elementos.
-- **Acciones del Ratón en Cámara Cenital:**
-  - <kbd>Clic Izquierdo</kbd>: Fijar esquina de zona, vía o ducto; colocar estructura; o inspeccionar edificio/puesto/canalización en modo **Ver** (<kbd>Esc</kbd>).
+- **Acciones del Ratón y Comando Táctico en Cámara Cenital:**
+  - <kbd>Clic Izquierdo</kbd>: Fijar esquina de zona, vía o ducto; colocar estructura; o inspeccionar edificio/puesto/unidad en modo **Ver** (<kbd>Esc</kbd>).
+  - <kbd>Arrastrar Clic Izquierdo</kbd>: **Selección universal 2D** por recuadro arrastrado (soldados y colonos) que abre `PanelUnidad` con salud, posturas (`Pasivo`, `Defensivo`, `Agresivo`) y órdenes.
   - <kbd>Doble Clic Izquierdo</kbd>: Confirmar el trazado de una carretera (`1 -> 5 -> 1`), una demolición vial guiada (`3`) o un tramo de canalización elevada (`1 -> 6`).
-  - <kbd>Clic Derecho</kbd>: Cancelar limpiamente el tramo en curso o salir del modo de colocación sin dejar bloques fantasma.
+  - <kbd>Clic Derecho</kbd>: Cancelar el tramo en curso, o (con tropas seleccionadas en modo **Ver**) despachar órdenes tácticas directas (`Moverse`, `Atacar` con <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` con <kbd>H</kbd>; mantén <kbd>Shift</kbd> para encadenar waypoints).
 
 ---
 

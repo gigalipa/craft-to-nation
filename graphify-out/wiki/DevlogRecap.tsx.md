@@ -1,10 +1,11 @@
 # DevlogRecap.tsx
 
-> 8 nodes · cohesion 0.25
+> 9 nodes · cohesion 0.22
 
 ## Key Concepts
 
 - **Plan de Implementación: Tránsito por el Carril Derecho en Vías (Regla del Borde Derecho según Huella)** (8 connections) — `docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md`
+- **2026-11-10-transito-carril-derecho-huella.md** (3 connections) — `docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md`
 - **Execution Lines & Dependency Matrix** (1 connections) — `docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md`
 - **Global Constraints** (1 connections) — `docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md`
 - **Review Focus** (1 connections) — `docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md`
@@ -15,6 +16,7 @@
 
 ## Relationships
 
+- [ajustes.gd](ajustes.gd.md) (1 shared connections)
 - [Colonos.gd](Colonos.gd.md) (1 shared connections)
 
 ## Source Files
@@ -23,7 +25,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **arte/sfx/ATTRIBUTIONS.md** (1 connections) — `arte/sfx/ATTRIBUTIONS.md`
-- **Craft to Nation - Atribución de Efectos de Sonido (Freesound)** (1 connections) — `arte/sfx/ATTRIBUTIONS.md`
+- **assets/sfx/ATTRIBUTIONS.md** (1 connections) — `godot/assets/sfx/ATTRIBUTIONS.md`
+- **Craft to Nation - Atribución de Efectos de Sonido (Freesound)** (1 connections) — `godot/assets/sfx/ATTRIBUTIONS.md`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `arte/sfx/ATTRIBUTIONS.md`
+- `godot/assets/sfx/ATTRIBUTIONS.md`
 
 ## Audit Trail
 

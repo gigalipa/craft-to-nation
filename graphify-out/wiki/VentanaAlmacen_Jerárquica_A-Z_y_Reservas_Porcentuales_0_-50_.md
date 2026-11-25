@@ -2,7 +2,7 @@
 
 > God node · 23 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [Ciudad.gd](Ciudad.gd.md)
+**Community:** [ajustes.gd](ajustes.gd.md)
 
 ## Connections by Relation
 
@@ -23,14 +23,14 @@
 - 2026-10-04-formacion-investigacion-energia.md (Formación avanzada, investigación y energía — Implementation) `INFERRED`
 - Live_Verifications.md (Live Verification Script (Live QA Script) — Craft to Nation) `INFERRED`
 - recursos.md: Recursos, Industrias y Energía `INFERRED`
-- [2026-09-25-hud-por-modos-design.md (HUD por modos — diseño)](2026-09-25-hud-por-modos-design.md_HUD_por_modos_—_diseño.md) `INFERRED`
+- 2026-09-25-hud-por-modos-design.md (HUD por modos — diseño) `INFERRED`
 - resources.md: Resource Economy, Industries & Power Grid `INFERRED`
 - 2026-10-26-balance-alimentos-demografia-spec.md (Especificación Técnica: Balance de Economía de Alimentos, Me) `INFERRED`
 
 ### implements
 - [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
 - [Economia.gd](Economia.gd.md) `EXTRACTED`
-- [PanelPuesto.gd](PanelPuesto.gd.md) `EXTRACTED`
+- PanelPuesto.gd `EXTRACTED`
 - [VentanaAlmacen.gd](VentanaAlmacen.gd.md) `EXTRACTED`
 
 ---

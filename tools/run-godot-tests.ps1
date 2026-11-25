@@ -36,6 +36,7 @@ $projectPath = if ($ProjectPath) { (Resolve-Path -LiteralPath $ProjectPath).Path
 $scenesPath = Join-Path $projectPath "scenes"
 $scenes = @(Get-ChildItem -LiteralPath $scenesPath -Filter "*Test.tscn" -File | Sort-Object Name)
 $expectedScenes = @(
+	"AvatarAnimadorTest.tscn",
 	"BienvenidaTest.tscn",
 	"BlueprintsTest.tscn",
 	"BuscadorRutasTest.tscn",
@@ -59,6 +60,7 @@ $expectedScenes = @(
 	"NiveladorTerrenoTest.tscn",
 	"ObrasTest.tscn",
 	"PantallaCargaTest.tscn",
+	"PersonajeModularTest.tscn",
 	"PlantillasPuestoTest.tscn",
 	"PlayerLamparaTest.tscn",
 	"PlayerNatacionTest.tscn",

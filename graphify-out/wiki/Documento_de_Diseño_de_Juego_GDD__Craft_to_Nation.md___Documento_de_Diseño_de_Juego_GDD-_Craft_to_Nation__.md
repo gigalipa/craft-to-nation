@@ -1,42 +1,40 @@
 # Documento de Diseño de Juego (GDD)_ Craft to Nation.md (**Documento de Diseño de Juego (GDD): Craft to Nation**)
 
-> 9 nodes · cohesion 0.22
+> God node · 26 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-## Key Concepts
+**Community:** [ajustes.gd](ajustes.gd.md)
 
-- **MiniaturaRenderer.gd** (21 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **2026-09-30-previsualizacion-construcciones-cenital-design.md (Diseño: previsualización isométrica de construcciones en el )** (6 connections) — `docs/superpowers/specs/2026-09-30-previsualizacion-construcciones-cenital-design.md`
-- **MiniaturaRenderer.cargar_biblioteca()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.malla_de_item()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.piezas_acueducto()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.piezas_tuberia()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.piezas_via()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.renderizar()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
-- **MiniaturaRenderer.renderizar_viewport()** (1 connections) — `godot/scripts/MiniaturaRenderer.gd`
+## Connections by Relation
 
-## Relationships
+### conceptually_related_to
+- [Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S](Índice_de_Desarrollo_Urbano_IDU_I-IV_y_Balanza_D-C-S.md) `INFERRED`
+- [Investigación Descentralizada en 2 Capas e Investigador Itinerante](Investigación_Descentralizada_en_2_Capas_e_Investigador_Itinerante.md) `INFERRED`
+- [Paneles de Ventana 1/20 (Recta, Esquina y Techo)](Paneles_de_Ventana_1-20_Recta,_Esquina_y_Techo.md) `INFERRED`
+- [Canalizaciones Elevadas (Y+4 / Y+6) y Físicas de Fluidos](Canalizaciones_Elevadas_Y+4_-_Y+6_y_Físicas_de_Fluidos.md) `INFERRED`
+- [Moral Dinámica \[0-100\], 6 Categorías de Comida y Migración Escalonada](Moral_Dinámica_[0-100],_6_Categorías_de_Comida_y_Migración_Escalonada.md) `INFERRED`
+- [Refinería Vidriera (1-3-5) y Recurso Vidrio](Refinería_Vidriera_1-3-5_y_Recurso_Vidrio.md) `INFERRED`
+- [VentanaAlmacen Jerárquica (A-Z) y Reservas Porcentuales (0%-50%)](VentanaAlmacen_Jerárquica_A-Z_y_Reservas_Porcentuales_0_-50_.md) `INFERRED`
+- Taller de Transporte y 6 Unidades Móviles de Acarreo `INFERRED`
 
-- [ajustes.gd](ajustes.gd.md) (3 shared connections)
-- [Blueprints.gd](Blueprints.gd.md) (3 shared connections)
-- [2026-09-24-edificios-recoleccion-plantillas.md (Edificios de recolección jugables reales (plantillas) Implem)](2026-09-24-edificios-recoleccion-plantillas.md_Edificios_de_recolección_jugables_reales_plantillas_Implem.md) (2 shared connections)
-- [argparse](argparse.md) (2 shared connections)
-- [PanelPuesto.gd](PanelPuesto.gd.md) (2 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
-- [HUD.gd](HUD.gd.md) (1 shared connections)
-- [VoxelWorld.gd](VoxelWorld.gd.md) (1 shared connections)
-- [2026-09-25-hud-por-modos-design.md (HUD por modos — diseño)](2026-09-25-hud-por-modos-design.md_HUD_por_modos_—_diseño.md) (1 shared connections)
-
-## Source Files
-
-- `docs/superpowers/specs/2026-09-30-previsualizacion-construcciones-cenital-design.md`
-- `godot/scripts/MiniaturaRenderer.gd`
-
-## Audit Trail
-
-- EXTRACTED: 26 (100%)
-- INFERRED: 0 (0%)
-- AMBIGUOUS: 0 (0%)
+### references
+- IconosHUD.gd `EXTRACTED`
+- [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
+- [HUD.gd](HUD.gd.md) `EXTRACTED`
+- [ajustes.gd](ajustes.gd.md) `EXTRACTED`
+- BarraSuperior.gd `EXTRACTED`
+- [BuscadorRutas.gd](BuscadorRutas.gd.md) `EXTRACTED`
+- [Obras.gd](Obras.gd.md) `EXTRACTED`
+- CiudadTest.gd `EXTRACTED`
+- Canalizaciones.gd `EXTRACTED`
+- [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
+- Energia.gd `EXTRACTED`
+- [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `EXTRACTED`
+- SKILL.md (Skill: Craft to Nation - Nodes and Network) `EXTRACTED`
+- [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) `EXTRACTED`
+- SKILL.md (Skill: Content QA (Control de Calidad)) `EXTRACTED`
+- PanelNotificaciones.gd `EXTRACTED`
+- roadmap.md: Hoja de Ruta y Estado del Desarrollo (GDD v3.59) `EXTRACTED`
+- roadmap.md: Development Roadmap & Milestone Progress (GDD v3.59) `EXTRACTED`
 
 ---
 

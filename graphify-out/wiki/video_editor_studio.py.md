@@ -1,34 +1,35 @@
 # video_editor_studio.py
 
-> 9 nodes · cohesion 0.33
+> 14 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **video_editor_studio.py** (10 connections) — `video_edition/tools/video_editor_studio.py`
-- **build_studio_edit()** (7 connections) — `video_edition/tools/video_editor_studio.py`
-- **get_auto_gain()** (5 connections) — `video_edition/tools/video_editor_studio.py`
-- **main()** (5 connections) — `video_edition/tools/video_editor_studio.py`
-- **escape_ffmpeg_text()** (3 connections) — `video_edition/tools/video_editor_studio.py`
-- **Path** (2 connections)
-- **Detecta el pico máximo y calcula la ganancia exacta para alcanzar -1.5 dB de…** (1 connections) — `video_edition/tools/video_editor_studio.py`
-- **Corta fragmentos, aplica transiciones xfade, títulos con efecto y mezcla de…** (1 connections) — `video_edition/tools/video_editor_studio.py`
-- **Escapa caracteres especiales para el filtro drawtext de FFmpeg.** (1 connections) — `video_edition/tools/video_editor_studio.py`
+- **compilerOptions** (12 connections) — `video_edition/remotion/tsconfig.json`
+- **tsconfig.json** (2 connections) — `video_edition/remotion/tsconfig.json`
+- **esModuleInterop** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **forceConsistentCasingInFileNames** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **jsx** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **lib** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **module** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **moduleResolution** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **noEmit** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **noUnusedLocals** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **skipLibCheck** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **strict** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **target** (1 connections) — `video_edition/remotion/tsconfig.json`
+- **exclude** (1 connections) — `video_edition/remotion/tsconfig.json`
 
 ## Relationships
 
-- [VentanaBaul.gd](VentanaBaul.gd.md) (3 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (3 shared connections)
-- [argparse](argparse.md) (2 shared connections)
-- [PanelLampara.gd](PanelLampara.gd.md) (2 shared connections)
-- [dependabot.yml](dependabot.yml.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `video_edition/tools/video_editor_studio.py`
+- `video_edition/remotion/tsconfig.json`
 
 ## Audit Trail
 
-- EXTRACTED: 23 (100%)
+- EXTRACTED: 13 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

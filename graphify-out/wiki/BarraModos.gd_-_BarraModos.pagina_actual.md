@@ -22,11 +22,11 @@
 
 ## Relationships
 
-- [VentanaBaul.gd](VentanaBaul.gd.md) (3 shared connections)
-- [argparse](argparse.md) (2 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (2 shared connections)
-- [PanelLampara.gd](PanelLampara.gd.md) (2 shared connections)
-- [dependabot.yml](dependabot.yml.md) (1 shared connections)
+- [json](json.md) (4 shared connections)
+- [subprocess](subprocess.md) (2 shared connections)
+- [sys](sys.md) (2 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (1 shared connections)
+- [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (1 shared connections)
 
 ## Source Files
 

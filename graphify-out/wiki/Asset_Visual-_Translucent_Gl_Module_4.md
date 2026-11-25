@@ -4,22 +4,21 @@
 
 ## Key Concepts
 
-- **Asset Visual: craft-to-nation-logo.png (Remotion Public Asset)** (2 connections) — `video_edition/remotion/public/craft-to-nation-logo.png`
-- **Asset Visual: craft-to-nation-logo.png** (1 connections) — `arte/logo/craft-to-nation-logo.png`
+- **arte/sfx/ATTRIBUTIONS.md** (1 connections) — `arte/sfx/ATTRIBUTIONS.md`
+- **Craft to Nation - Atribución de Efectos de Sonido (Freesound)** (1 connections) — `arte/sfx/ATTRIBUTIONS.md`
 
 ## Relationships
 
-- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `arte/logo/craft-to-nation-logo.png`
-- `video_edition/remotion/public/craft-to-nation-logo.png`
+- `arte/sfx/ATTRIBUTIONS.md`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (50%)
-- INFERRED: 1 (50%)
+- EXTRACTED: 1 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

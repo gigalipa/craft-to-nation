@@ -192,6 +192,13 @@ func _salir_al_menu_principal() -> void:
 ## cámara está activa, así que sin esto quedaban visibles y congelados
 ## encima de la vista en 1ª persona.
 func _alternar_camara_cenital() -> void:
+	if not cenital_activa and jugador != null and jugador.has_method("motivo_bloqueo_cenital"):
+		var motivo_bloqueo: String = jugador.motivo_bloqueo_cenital()
+		if motivo_bloqueo != "":
+			Sonidos.reproducir("sfx_ui_notificacion_alerta", -2.0)
+			if hud != null and hud.has_method("notificar"):
+				hud.notificar(motivo_bloqueo)
+			return
 	cenital_activa = not cenital_activa
 	var origen: Transform3D
 	var destino: Transform3D
@@ -199,6 +206,8 @@ func _alternar_camara_cenital() -> void:
 	var fov_destino: float
 	if cenital_activa:
 		jugador.salir_de_todas_las_herramientas()
+		if jugador.has_method("iniciar_animacion_cenital"):
+			jugador.iniciar_animacion_cenital()
 		Sonidos.reproducir("sfx_ui_camara_a_cenital")
 		origen = jugador.camara.global_transform
 		fov_origen = jugador.camara.fov
@@ -211,6 +220,8 @@ func _alternar_camara_cenital() -> void:
 		destino = camara_cenital.global_transform
 		fov_destino = camara_cenital.fov
 	else:
+		if jugador.has_method("salir_animacion_cenital"):
+			jugador.salir_animacion_cenital(DURACION_TRANSICION)
 		Sonidos.reproducir("sfx_ui_camara_a_avatar")
 		origen = camara_cenital.global_transform
 		fov_origen = camara_cenital.fov
@@ -255,4 +266,6 @@ func _terminar_transicion() -> void:
 	if cenital_activa:
 		zona_overlay.reconstruir()
 	mira_ui.visible = not cenital_activa
+	if not cenital_activa and jugador.has_method("finalizar_salida_cenital"):
+		jugador.finalizar_salida_cenital()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if cenital_activa else Input.MOUSE_MODE_CAPTURED

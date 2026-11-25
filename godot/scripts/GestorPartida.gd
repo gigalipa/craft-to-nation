@@ -157,6 +157,10 @@ func cargar_partida(nombre_archivo: String) -> bool:
 	if zona_overlay != null and zona_overlay.has_method("reconstruir"):
 		zona_overlay.reconstruir()
 
+	var colonos_renderer = get_tree().root.find_child("ColonosRenderer", true, false)
+	if colonos_renderer != null and colonos_renderer.has_method("reconstruir"):
+		colonos_renderer.reconstruir()
+
 	partida_cargada.emit(ruta.get_file())
 	return true
 

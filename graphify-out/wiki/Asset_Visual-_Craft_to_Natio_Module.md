@@ -13,7 +13,7 @@
 
 ## Relationships
 
-- [dependabot.yml](dependabot.yml.md) (1 shared connections)
+- [SKILL.md (Skill: Video Editor Técnico con Remotion (Craft to Nation))](SKILL.md_Skill-_Video_Editor_Técnico_con_Remotion_Craft_to_Nation.md) (1 shared connections)
 
 ## Source Files
 

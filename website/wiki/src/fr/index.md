@@ -6,7 +6,7 @@ description: "Documentation officielle, guide du joueur et architecture techniqu
 hero:
   name: "Craft to Nation"
   text: "Portail Officiel & Wiki"
-  tagline: "Du premier bloc à une nation vivante. Guide de colonisation, gestion urbaine et documentation technique (GDD v3.62)."
+  tagline: "Du premier bloc à une nation vivante. Guide de colonisation, gestion urbaine et documentation technique (GDD v3.64)."
   image:
     src: /assets/craft-to-nation-logo.png
     alt: Craft to Nation Logo
@@ -15,7 +15,7 @@ hero:
       text: Guide du Joueur
       link: /fr/guide/start
     - theme: alt
-      text: Développement & GDD v3.62
+      text: Développement & GDD v3.64
       link: /fr/dev/gdd
     - theme: alt
       text: Site Principal
@@ -36,7 +36,7 @@ features:
     link: /fr/guide/colonists
     linkText: Gestion des Colons
   - title: Architecture Moteur Godot 4.7
-    details: Conception technique, simulation déterministe à ticks horaires (2,0s = 1h), moteur audio spatial SFX, iconographie vectorielle HUD SVG et 37 scènes de tests automatisés.
+    details: Conception technique, simulation déterministe à ticks horaires (2,0s = 1h), moteur audio spatial SFX, iconographie vectorielle HUD SVG et 39 scènes de tests automatisés.
     link: /fr/dev/godot
     linkText: Architecture Godot
 ---
@@ -54,7 +54,7 @@ features:
 1. **Dualité de Perspective (Micro vs. Macro) :** Passez instantanément (touche `C` avec vol de caméra fluide de `0,6 s`) de l'action viscérale à la première personne (abattre des arbres, miner de la pierre, activer le mode route à pied `V`) à la vue tactique aérienne pour planifier votre urbanisme via le menu numérique hiérarchique (`1` Construire, `2` Zonage, `3` Démolir, `Z`/`X` navigation).
 2. **Modularité et Blueprints :** Créez librement vos maisons, entrepôts et usines. Dès que le moteur valide leur étanchéité et leurs accès (touche `B` sur la porte d'entrée, `Maj + B` pour remodeler), enregistrez-les sous forme de plans paramétriques (*blueprints*) constructibles automatiquement par vos équipes d'ouvriers.
 3. **Zonage Stratégique Tripartite :** Séparez nettement la **Zone A (Résidentielle & Recherche)**, la **Zone B (Industrielle & Militaire)** et les **Postes Périphériques d'Extraction** pour assurer l'efficacité logistique et la sécurité de vos citoyens.
-4. **Économie Organique & Moral Dynamique :** Chaque citoyen consomme des vivres selon sa profession (d'ouvrier carrier à chercheur universitaire) et participe à un modèle psychologique de moral (0 à 100) qui module directement la productivité (`0,5×` à `2,0×`) et les flux migratoires mensuels (`-5` à `+5` colons/mois).
+4. **Économie Organique & Moral Dynamique :** Chaque citoyen consomme des vivres selon sa profession (d'ouvrier carrier à chercheur universitaire) et participe à un modèle psychologique de moral (0 à 100) qui module directement la productivité (`0,5×` à `2,0×`) et les flux migratoires mensuels (`-5` à `+10` colons/mois).
 5. **Souveraineté Portable en Multijoueur :** Exportez votre Noyau Urbain (*Urban Core*) et vos plans de construction éprouvés vers des serveurs multijoueurs compétitifs générés procéduralement.
 
 ---
@@ -68,7 +68,7 @@ features:
   - [Gestion des Colons & Démographie](/fr/guide/colonists)
 
 - ⚙️ **Conception Technique & Développement :**
-  - [GDD v3.62 : Piliers & Philosophie](/fr/dev/gdd)
+  - [GDD v3.64 : Piliers & Philosophie](/fr/dev/gdd)
   - [Architecture Technique sous Godot 4.7](/fr/dev/godot)
   - [Logistique, Voirie & Conduits Surélevés](/fr/dev/logistics)
   - [Feuille de Route du Développement (Roadmap)](/fr/dev/roadmap)

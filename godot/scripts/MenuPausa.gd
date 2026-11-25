@@ -360,10 +360,11 @@ func _actualizar_lista_guardados() -> void:
 		hbox.add_child(vbox_info)
 
 		var lbl_nom := Label.new()
-		var nom_p: String = str(p.get("nombre_partida", "Sin nombre"))
+		var nom_p: String = str(p.get("nombre_partida", Strings.t("MENU_SIN_NOMBRE", "Sin nombre")))
 		var sem: Variant = p.get("semilla", null)
 		if sem != null:
-			lbl_nom.text = "%s  (%s)" % [nom_p, Strings.t("MENU_SEMILLA_TAG", "Semilla: %s") % str(sem)]
+			var sem_txt: String = str(int(sem)) if (sem is int or sem is float) else str(sem)
+			lbl_nom.text = "%s  (%s)" % [nom_p, Strings.t("MENU_SEMILLA_TAG", "Semilla: %s") % sem_txt]
 		else:
 			lbl_nom.text = nom_p
 		lbl_nom.add_theme_color_override("font_color", TemaHUD.DORADO)
@@ -373,24 +374,34 @@ func _actualizar_lista_guardados() -> void:
 		var lbl_detalles := Label.new()
 		var fecha: String = str(p.get("fecha_guardado", ""))
 		var pob: int = int(p.get("poblacion", 0))
-		lbl_detalles.text = "%s  |  Población: %d" % [fecha, pob]
+		lbl_detalles.text = "%s  |  %s: %d" % [fecha, Strings.t("BARRA_SUPERIOR_POBLACION", "Población"), pob]
 		lbl_detalles.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_ATENUADO)
 		lbl_detalles.add_theme_font_size_override("font_size", 11)
 		vbox_info.add_child(lbl_detalles)
 
 		var btn_cargar := Button.new()
-		btn_cargar.text = Strings.t("MENU_CARGAR", "Cargar")
+		btn_cargar.text = ""
+		btn_cargar.tooltip_text = Strings.t("MENU_CARGAR", "Cargar")
 		btn_cargar.icon = IconosHUD.icono("menu_cargar")
-		btn_cargar.add_theme_constant_override("icon_max_width", 18)
+		btn_cargar.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		btn_cargar.expand_icon = true
+		btn_cargar.custom_minimum_size = Vector2(40, 40)
+		btn_cargar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		btn_cargar.add_theme_constant_override("icon_max_width", 24)
 		TemaHUD.estilizar_boton_icono(btn_cargar)
 		var arch_name: String = str(p.get("nombre_archivo", ""))
 		btn_cargar.pressed.connect(func(): _cargar_partida_seleccionada(arch_name))
 		hbox.add_child(btn_cargar)
 
 		var btn_eliminar := Button.new()
-		btn_eliminar.text = Strings.t("MENU_ELIMINAR", "X")
+		btn_eliminar.text = ""
+		btn_eliminar.tooltip_text = Strings.t("MENU_ELIMINAR", "X")
 		btn_eliminar.icon = IconosHUD.icono("cruz")
-		btn_eliminar.add_theme_constant_override("icon_max_width", 16)
+		btn_eliminar.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		btn_eliminar.expand_icon = true
+		btn_eliminar.custom_minimum_size = Vector2(40, 40)
+		btn_eliminar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		btn_eliminar.add_theme_constant_override("icon_max_width", 24)
 		TemaHUD.estilizar_boton_icono(btn_eliminar)
 		btn_eliminar.pressed.connect(func():
 			GestorPartida.eliminar_partida(arch_name)

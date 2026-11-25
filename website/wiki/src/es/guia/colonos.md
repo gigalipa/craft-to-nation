@@ -31,7 +31,7 @@ La demografía de la colonia se organiza en una jerarquía de oficios. Los colon
 | **Técnico** | 3 | 0 | 0 | 3 | Operador de industrias de Zona B (`1 → 3`), estaciones de bombeo, centros de extracción y puestos de Nivel II. |
 | **Especialista** | 2 | 0 | 1 | 2 | Requisito para elevar puestos periféricos a Nivel III y dotar de Investigadores a la Universidad. |
 | **Investigador** | 1 | 0 | 2 | 1 | Generación de puntos de ciencia y patentes en la Universidad (`1,0 h_inv/h`). |
-| **Militar** | 4 | 2 | 0 | 3 | Defensa de guarnición, patrullaje de fronteras y asedio en Fase 4. |
+| **Militar** | 4 | 2 | 0 | 4 *(Cuartel)* | Defensa de guarnición, patrullaje y combate táctico (acuartelado en Cuartel sin usar camas civiles). |
 
 ### Cadenas de Promoción, Orden de Desbloqueo y Gestión (`Ciudad.gd` / `VentanaPoblacion.gd` / `VentanaOcupaciones.gd`)
 1. **Inmigrantes / Ciudadanos Libres:** Llegan atraídos por la moral de la ciudad y la disponibilidad de camas libres en la Zona A.
@@ -44,7 +44,7 @@ La demografía de la colonia se organiza en una jerarquía de oficios. Los colon
 
 ---
 
-## 3. Sistema de Moral Dinámica (GDD v3.61)
+## 3. Sistema de Moral Dinámica (GDD v3.62)
 
 El estado anímico colectivo de la colonia se cuantifica en una escala continua de **0 a 100 puntos** (consultable en la barra superior o presionando <kbd>M</kbd> para abrir `VentanaMoral.gd`, donde el estado de migración se muestra directamente en la línea inferior bajo la productividad laboral):
 - **Inicio de Partida:** La colonia inicia con una moral de **75,0** (bono pionero de optimismo).
@@ -88,7 +88,7 @@ Un mes de simulación equivale a `720 horas` de juego (`30 días × 24 h`). En `
 | **`35,0 – 50,0`** | **+3,0 / mes** | **Inmigración sostenida** (*solo ingresa si existen camas colonizables libres; no genera sin techo*) |
 | **`50,0 – 75,0`** | **+5,0 / mes** | **Inmigración masiva** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
 | **`75,0 – 90,0`** | **+7,0 / mes** | **Auge migratorio** (*llena camas libres y rebalsa como `sin_techo` si existe Núcleo Urbano*) |
-| **`90,0 – 100,0`** | **+10,0 / mes** | **Auge migratorio sobresaliente** (*máxima atracción cívica bajo moral excepcional*) |
+| **`90,0 – 100,0`** | **+10,0 / mes** | **Auge migratorio sobresaliente** (*máxima atracción cívica por moral excepcional*) |
 
 ---
 
@@ -113,4 +113,14 @@ Cuando la moral cae a `20,0` o menos, el acumulador migratorio se vuelve negativ
 ```text
 Investigador → Especialista → Técnico → Militar → Obrero → Desempleado → Ciudadano
 ```
+
+---
+
+## 6. Tropas Militares, Acuartelamiento y Comando Táctico (Fase 4)
+
+A partir de **GDD v3.62**, los soldados cuentan con gestión de vivienda y comando táctico propio:
+- **Acuartelamiento Segregado (`x_cama = 4`):** Cada **Cuartel** de 2 pisos en Zona B (tecla `7`) dispone de 4 camas militares que alojan hasta **16 soldados** sin consumir vivienda civil ni provocar desahucios. El reclutamiento opera en cohortes atómicas **`4 → 4`** sin pérdida.
+- **Selección Universal y `PanelUnidad.gd`:** En cámara cenital (<kbd>C</kbd>), arrastra un recuadro 2D para seleccionar tropas o civiles. `PanelUnidad` muestra salud, oficio y permite alternar posturas (**`Pasivo`**, **`Defensivo`**, **`Agresivo`**) y despachar órdenes con clic derecho (**`Moverse`**, **`Atacar`** con <kbd>K</kbd>, **`Defender`**, **`Patrullar`**, **`Mantener`** con <kbd>H</kbd>, y waypoints con <kbd>Shift</kbd>).
+- **Comando Híbrido en 1ª Persona (<kbd>F</kbd>):** La selección persiste al cambiar de cámara. En modo Comandante (<kbd>F</kbd>) puedes dar órdenes directas desde la hotbar `1–6` y organizar **subgrupos tácticos** con <kbd>Shift</kbd> + <kbd>1..9</kbd>, mientras `ColonosRenderer.gd` renderiza cascos, escudos, aros de selección y marcadores de patrulla.
+
 

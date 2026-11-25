@@ -38,10 +38,17 @@ Vias="*res://scripts/Vias.gd"
 Canalizaciones="*res://scripts/Canalizaciones.gd"
 Sonidos="*res://scripts/Sonidos.gd"
 
+[debug]
+
+file_logging/enable_file_logging=true
+file_logging/log_path="user://logs/craft_to_nation.log"
+
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1280
+window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

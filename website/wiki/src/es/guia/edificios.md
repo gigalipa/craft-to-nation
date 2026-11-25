@@ -70,3 +70,13 @@ Los colonos libres (hasta **4 constructores por obra**) se despachan siguiendo e
 3. **Demoliciones de edificios y vías** (Modo `3`)
 4. **Tendido de vías** (`1 -> 5 -> 1`)
 5. **Construcción de Prioridad Baja** (`Prioridad Baja ▲`)
+
+---
+
+## 6. Edificio Militar: Cuartel (`9×7×8`, Zona B, Tecla `7`)
+
+Desde la **Fase 4 (GDD v3.62)**, el menú de construcción incluye la categoría **<kbd>7</kbd> Militar (`cat_militar.svg`)** con el **Cuartel**:
+- **Arquitectura y Zonificación:** Plantilla de **2 pisos (`9×7×8`)** construida con piedra, madera, vidrio, puerta y **4 camas militares**, emplazable en **Zona B (Industrial / Estratégica)**.
+- **Vivienda Militar Acuartelada (`x_cama = 4`):** Cada cama del Cuartel aloja a **4 soldados**, otorgando capacidad para **16 militares acuartelados** en un censo separado que **nunca consume camas civiles ni provoca desahucios residenciales**.
+- **Reclutamiento en Cohorte `4 → 4`:** La formación militar transforma lotes atómicos de 4 obreros en 4 soldados sin merma en `Economia.gd`/`Recoleccion.gd`.
+

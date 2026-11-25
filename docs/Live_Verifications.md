@@ -1,22 +1,44 @@
 # Live Verification Script (Live QA Script) — Craft to Nation
 
-This document is the comprehensive step-by-step manual testing script to verify live, directly inside the running game (**F5** in Godot), that all mechanics—avatar controls, urban foundation, demographics, morale, road network, educational chain, industry, fluids, elevated conduits, and the electrical grid—operate smoothly and without errors.
+This document is the comprehensive step-by-step manual testing script to verify live, directly inside the running game (**F5** in Godot), that all mechanics—cinematic intro, start/pause menus, ES/EN localization, spatial audio, 1st-person avatar controls, urban foundation, civic decrees, demographics, dynamic morale, road network with right-lane traffic, educational chain, era evolution (IDU), 2-layer research, industry, fluids, elevated conduits, electrical grid, **military barracks, universal selection, hybrid command (Phase 4)**, and atomic save/load—operate smoothly and without errors.
 
 The script is designed following **strictly the chronological order and real gameplay prerequisites**: no test requires buildings, professions, technologies, or world states that have not been unlocked or built in previous steps.
 
 ---
 
-## 0. Preparation, Initial State, and Global Controls
+## 0. Cinematic Startup, Menus, Configuration, Audio, and Global Controls
 
-### Starting the Environment and Initial Conditions
-1. Open the project in Godot and press **F5** (or run the main scene `Main.tscn`).
-2. Verify that the avatar spawns in 1st person and that the HUD topbar is visible.
-3. **Initial Test Inventory (`Player.gd`):** When starting in test mode, the central warehouse is pre-stocked with **1,000 units of every resource** and **5,000 units of food**, allowing you to test structure placement without spending hours chopping trees or mining.
-4. **Initial Colony State (`Ciudad.gd`):**
-   - **Urban Core (`Núcleo Urbano`):** Not declared yet (no Zone of Influence exists and no immigrants arrive until the first building is declared in Block 2).
-   - **Tech Level:** `nivel_investigado = 1` (petrochemical and thermoelectric industries require researching *Applied Metallurgy* / *Metalurgia Aplicada* in Block 5).
-   - **Grid Power:** `0 E/h` (until a Thermal Power Plant is built and supplied in Block 7).
-   - **Citizen Morale:** Starts at `🙂 75%` (*Pioneer Optimism* / *Optimismo pionero*).
+### 0.1 Video Intro (`VideoIntro.tscn`), Start Menu (`MenuInicio.tscn`), Profiles, and Persistent Configuration
+- [ ] **Action (Launch with `F5` & Video Intro):** Open the project in Godot and press **F5** (`run/main_scene` is `VideoIntro.tscn`).
+- [ ] **Expected Result:**
+  - The animated logo cinematic plays (`VideoIntro.tscn`).
+  - Pressing any key or clicking cleanly skips to the main portal **`MenuInicio.tscn`** (animated slideshow background via `SlideshowFondo.gd` and looping menu music).
+- [ ] **Action (Persistent Config, Display Mode & Hot-Swap Language `ES` ↔ `EN`):** Open **Configuration (`Configuracion.gd`)** from the Start Menu:
+  - Verify controls for **SFX Volume**, **BGM Music Volume**, **Mouse Sensitivity**, **Camera FOV**, and **Display Mode** (`Fullscreen` vs `Windowed 1280×720`).
+  - Switch **Language** between `Spanish (es)` and `English (en)`: verify all UI labels update **live without restarting** (`Strings.actualizar_idioma()`).
+  - Confirm preferences persist in `user://configuracion.json`.
+- [ ] **Action (New Game & Starting Resource Profiles):** Click **New Game**:
+  - Verify the 4 selectable starting resource profiles (`supervivencia`, `bajos`, `medios`, `altos`). Select **`altos`** (or your preferred QA profile) and start the game.
+  - Verify the transition through **`PantallaCarga.gd`** (with progress bar) and the initial **`Bienvenida.gd`** panel.
+  - After closing it, verify the avatar spawns in 1st person with the HUD topbar visible and **ambient BGM music** playing (`Sonidos.gd`).
+- [ ] **Initial Colony State (`Ciudad.gd`):**
+  - **Urban Core (`Núcleo Urbano`):** Not declared yet (no Zone of Influence exists and no immigrants arrive until the first building is declared in Block 2).
+  - **Era & IDU:** Starts in **Era 1 (`Asentamiento Pionero`)** with Roman numeral badge **`I` (`IDU: 1.00`)** on the far right of the topbar.
+  - **Tech Level:** `nivel_investigado = 1` (petrochemical and thermoelectric industries require researching *Applied Metallurgy* in Block 5).
+  - **Grid Power:** `0 kW` (until a Thermal Power Plant is built and supplied in Block 7).
+  - **Citizen Morale:** Starts at `🙂 75%` (*Pioneer Optimism*).
+
+### 0.2 Pause Menu (`F11`), In-Game Language Switching, and Spatial Audio (`Sonidos.gd`)
+- [ ] **Action (Pause Menu `F11`):** In an active game, press **`F11`**.
+- [ ] **Expected Result:**
+  - **`MenuPausa.gd`** opens with absolute simulation pause (`get_tree().paused = true`) and releases the mouse cursor.
+  - Displays options: **Resume**, **Quick Save**, **Save Game**, **Load Game**, **Settings**, and **Return to Main Menu**.
+- [ ] **Action (Hot-Swap Language In-Game):** From Pause $\to$ Settings, toggle language `EN` $\to$ `ES` and back to `EN`.
+- [ ] **Expected Result:**
+  - `BarraSuperior`, `Hotbar`, `VentanaAlmacen`, and resource names in `Ciudad.almacen` update immediately without missing icons (thanks to English aliases in `IconosHUD.gd`).
+- [ ] **Action (Spatial Audio & SFX Check):** Resume the game (`F11` or Resume button). Walk, mine blocks, click HUD buttons, and switch hotbar slots.
+- [ ] **Expected Result:**
+  - Material/action-specific SFX play with subtle pitch modulation ($\pm 5\%$) from `Sonidos.gd` 2D/3D pools, alongside the ambient BGM loop.
 
 ### Key Keyboard Shortcuts
 
@@ -27,36 +49,42 @@ The script is designed following **strictly the chronological order and real gam
 #### First Person (Avatar)
 | Key / Action | Function |
 | :--- | :--- |
-| **C** | Toggle between **1st-Person Camera** and **Overhead Camera** (with animated transition; temporarily hides `VentanaMoral` and `VentanaEnergia` in 1st person and restores them in overhead; **switching to overhead automatically deactivates active 1st-person tools such as road mode `V` or deconstruct mode `G`**). |
+| **F11** | Open / close the **Pause Menu** (`MenuPausa.gd`, absolute simulation pause). |
+| **C** | Toggle between **1st-Person Camera** and **Overhead Camera** (with animated transition; temporarily hides `VentanaMoral` and `VentanaEnergia` in 1st person and restores them in overhead; **preserves active troop selection** and **switching to overhead automatically deactivates active 1st-person tools such as road mode `V` or deconstruct mode `G`**). |
+| **T / R / F** | Switch specialized 1st-person mode: **`T`** = **Build** (blocks & `B`/`G`/`V` tools), **`R`** = **Battle** (`1` Sword / `2` Bow with tactical crosshair), **`F`** = **Commander** (hotbar `1–6` tactical orders to selected troops). |
 | **W, A, S, D** | Avatar movement. |
 | **Space / Ctrl** | Jump on land / Swim up (**Space**) or down (**Ctrl**) in deep liquids ($\ge 2$ blocks). |
-| **Left Click** | Chop trees, mine terrain/veins (with progress bar and tool icon), or deconstruct / advance roadwork if mode **G** or **V** is active. |
-| **Right Click** | Place the block selected in the hotbar (`1`–`0`) or supply a targeted ghost construction site (with `modo_construir.svg`). In road mode (`V`) or deconstruct mode (`G`), marks/unmarks demolition. |
-| **1 – 9, 0** | Select block type in the hotbar (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`). |
+| **Left Click** | Mode **`T`**: chop, mine, deconstruct (`G`), or advance roadwork/demolition (`V`). Mode **`R`**: attack with sword/bow. Mode **`F`**: issue selected tactical order at targeted point. |
+| **Right Click** | Mode **`T`**: place block (`1`–`0`), supply ghost site (`modo_construir.svg`), or mark/unmark demolition in `V`/`G` modes. Mode **`F`**: secondary action / tactical stance for selected order. |
+| **1 – 9, 0** | Mode **`T`**: select block in hotbar (`tierra`, `adobe`, `bloque_madera`, `bloque_piedra`, `estructura_hierro`, `vidrio`, `puerta`, `cama`, `baul`, `bloque_acero`). Mode **`R`**: select weapon (`1` Sword, `2` Bow). Mode **`F`**: select tactical order (`1` Attack, `2` Defend, `3` Follow, `4` Move, `5` Patrol, `6` Hold). |
+| **Shift + 1..9 / 0** | In **Commander (`F`)** mode: filter active troop subgroup by rank (`Shift + 1..9`) or select the entire group (`Shift + 0`). |
 | **L** | **Toggle avatar omnidirectional lantern on / off** (`PanelLampara`). |
 | **E** | Press: open/close doors or open an active outpost's chest (`VentanaBaul`). Hold on tree: harvest fruit (`herr_cesta.svg`). |
-| **G** | Toggle manual on-foot deconstruction mode (left click dismantles step by step with `modo_demoler.svg`; right click schedules/cancels building demolition with a 5-hour wait period). |
-| **V** | Toggle on-foot road interaction mode: **left click** builds/advances 2×2 section (or advances demolition if marked for demolition); **right click** marks or unmarks the 2×2 section for demolition. |
-| **B / Shift + B** | Declare finished structure (**B**) / Start remodeling (**Shift + B**, with warning dialog if eviction risk exists) while aiming at its exterior door. |
+| **G** | *(Mode `T`)* Toggle manual on-foot deconstruction mode (left click dismantles step by step with `modo_demoler.svg`; right click schedules/cancels building demolition with a 5-hour wait period). |
+| **V** | *(Mode `T`)* Toggle on-foot road interaction mode: **left click** builds/advances 2×2 section (or advances demolition if marked); **right click** marks or unmarks the 2×2 section for demolition. |
+| **B / Shift + B** | *(Mode `T`)* Declare finished structure (**B**) / Start remodeling (**Shift + B**, with warning dialog if eviction risk exists) while aiming at its exterior door. |
+| **K** | *(1st-person test shortcut)* Force avatar succession (`Ciudad.suceder_avatar()`). |
 | **Esc** | Close active chest/warehouse/population modal window, exit road/deconstruction mode, or release the mouse cursor. |
 
-#### Overhead Camera (Urban Management)
+#### Overhead Camera (Urban & Tactical Management)
 | Key / Action | Function |
 | :--- | :--- |
+| **F11** | Open / close the **Pause Menu** (`MenuPausa.gd`). |
 | **W, A, S, D** | Horizontal camera panning across the X/Z plane. |
 | **Q / E** | **Orbital Rotation:** Rotate the view around the focal point to the left (**Q**) or right (**E**). |
 | **Mouse Wheel (Scroll)** | **Zoom:** Zoom in or out obliquely relative to the focal point. |
 | **Ctrl + W / Ctrl + S** | **Pitch / Tilt:** Adjust the vertical tilt angle of the camera. |
 | **Shift + W / Shift + S** | **Vertical Elevation:** Raise (**Shift+W**) or lower (**Shift+S**) the focal point elevation directly. |
-| **1** | **Build** Menu (`1`: Residential, `2`: Peripheral, `3`: Industrial, `4`: Research, `5`: Roads, `6`: Conduits). |
+| **1** | **Build** Menu (`1`: Residential, `2`: Peripheral, `3`: Industrial, `4`: Research, `5`: Roads, `6`: Conduits, **`7`: Military [`1` Barracks]**). |
 | **2** | **Zone** Menu (`1`: Residential Zone, `2`: Industrial Zone, `3`: Clear Zone). |
 | **3** | Unified **Demolish** Mode: left click on a building schedules demolition with a 5-hour wait period (another click cancels); left click on a road traces guided orange demolition with Dijkstra, and clicking on a road already marked for demolition **unmarks and cancels it immediately** (`cancelar_demolicion_via`). |
 | **Z / X** | Go back a submenu (**Z**) / Next page (**X**) in numeric menus with more than 9 items. |
 | **Ctrl + Scroll** | Rotate blueprint preview or outpost template in 90° steps. |
-| **Left Click** | Set zone/road/conduit corner, place structure, or inspect building/outpost/conduit in View mode. |
+| **Left Click / Drag** | Set zone/road/conduit corner, place structure, inspect building/outpost/conduit, or **select individual unit / drag 2D marquee box for universal selection** (civilians & military) in View mode. |
 | **Double Left Click** | Confirm road layout, road demolition, or elevated conduit path. |
-| **Right Click** | Cancel segment in progress / cancel placement mode. |
-| **Esc** | Return to neutral **View** mode or close open panels. |
+| **Right Click** | Cancel segment in progress / cancel placement mode. With troops selected in View mode: **issue tactical order** (`Shift + Right Click` queues waypoints). |
+| **K / H** | With troops selected in overhead view: activate **Attack (`K`)** or **Hold Position (`H`)** order. |
+| **Esc** | Return to neutral **View** mode, clear selection, or close open panels. |
 
 ---
 
@@ -302,10 +330,11 @@ The script is designed following **strictly the chronological order and real gam
     - Verify that once gatherers arrive inside the outpost (`presentes`), the outpost extracts physical ore/wood from the environment (the mine excavates its quarry in strips and the lumber camp chops actual trees).
     - Verify that **haulers** pick up cargo from the front exterior `servicio` cell (in front of the door) and carry it to the central warehouse without getting stuck inside the building.
 
-### 4.4 Road Preference in Pathfinding (`BuscadorRutas`) and Traffic Priority
-- [ ] **Action:** Trace a **packed-dirt road (`1 -> 5 -> 1`)** connecting the Urban Core to the vicinity of the peripheral Mine or Lumber Camp (routing around a patch of open terrain).
-- [ ] **Expected Result (A* Preference):**
+### 4.4 Road Preference, Right-Lane Traffic (`Vias.es_borde_derecho`), and Traffic Priority
+- [ ] **Action:** Trace a **packed-dirt road (`1 -> 5 -> 1`)** connecting the Urban Core to the vicinity of the peripheral Mine or Lumber Camp (routing around a patch of open terrain), and observe bidirectional traffic of haulers and workers.
+- [ ] **Expected Result (A* Preference & Right-Lane Rule):**
   - Observing haulers and workers traveling between the city and the outpost shows they **prefer walking along the packed-dirt road** (`coste_ruta = 3`) rather than cutting across natural terrain (`COSTE_TERRENO_NATURAL = 8`).
+  - **Right-Lane Traffic by Footprint (`BuscadorRutas.gd`):** Thanks to `Vias.es_borde_derecho()` and the left-lane penalty (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`), units moving in opposite directions on a 2-lane road travel along **independent parallel right-hand lanes** without head-on collisions, using the left lane only to overtake/avoid obstacles.
   - If the outpost door does not directly touch the road, the colonist travels along the road to the closest possible point and only steps onto natural terrain for the final few blocks.
 - [ ] **Right-of-Way Priority in Bottlenecks:** In a narrow 1-cell passage, when two colonists meet head-on, the colonist carrying higher-priority cargo (`food > fuel > crude oil > steel...`) maintains their route while the unloaded or lower-priority colonist steps aside to a lateral cell to yield right-of-way.
 
@@ -517,45 +546,94 @@ The script is designed following **strictly the chronological order and real gam
 
 ---
 
-## Block 8: Live Verification of Complete Iconography and 3D Thumbnails (HUD / UI)
+## Block 8: Phase 4 — Military Barracks, Garrisoned Housing, Universal Selection, Hybrid Command (`T`/`R`/`F`), and Atomic Save/Load
 
-### 8.1 Topbar and Vector SVG Iconography
-- [ ] **Action:** Inspect the topbar in 1st person and overhead mode.
+> **Prerequisite Condition Met:** The city already has an **Industrial Zone (Zone B)** painted inside the Zone of Influence (Block 5.2), free laborer colonists available to train military cohorts, and constructed buildings/roads/conduits ready to verify full disk persistence.
+
+### 8.1 Military Barracks (`1 -> 7 -> 1`), Garrisoned Housing, and Procedural Troop Visuals
+- [ ] **Action (Place Barracks in Zone B):** In overhead view (**`C`**), press **`1` (Build) -> `7` (Military) -> `1` (Barracks)** (`9×7×8`, 2 stories, 4 beds).
+- [ ] **Expected Result:**
+  - The footprint validates exclusively inside the **Zone of Influence over Industrial Zone (Zone B)** and displays its live isometric 3D thumbnail and resource costs.
+  - Place the Barracks and let colonists complete construction.
+- [ ] **Action (4→4 Military Cohort & Garrisoned Housing):** Once completed, open its `PanelPuesto`, recruit trainees (lossless **4→4** military cohort), and inspect the **Population** window.
+- [ ] **Expected Result:**
+  - The **4 beds inside the Barracks** provide **garrisoned military housing (`x_cama = 4`, up to 16 soldiers per barracks)** segregated from civilian housing (`camas_residenciales`): recruiting soldiers **does NOT subtract civilian beds or create homeless colonists**.
+  - **Procedural troop visuals (`ColonosRenderer.gd`):** Zoom in on trained soldiers: verify **procedurally rendered helmets and shields** distinguishing them from civilian colonists.
+
+### 8.2 Overhead Universal Selection, 2D Marquee Box, `PanelUnidad`, and Tactical Orders (`K`, `H`, `Shift`)
+- [ ] **Action (Single Selection & 2D Marquee Box):** In overhead View mode (**`Esc`**):
+  - Left-click an individual **civilian colonist** (laborer/hauler).
+  - Then drag a **2D selection marquee box** with left click over a squad of **military soldiers** (or mixed units).
+- [ ] **Expected Result:**
+  - **Selection rings** appear beneath each selected unit.
+  - **`PanelUnidad`** opens in the bottom-right corner:
+    - For **civilians**, displays health, profession, current job, and assigned building.
+    - For **military troops**, displays health, squad summary, **Tactical Stance** buttons (`Passive`, `Defensive`, `Aggressive`), and **Tactical Orders** (`Move`, `Attack`, `Defend`, `Patrol`, `Hold`).
+- [ ] **Action (Tactical Orders, Waypoints & Selection Persistence):** With military troops selected:
+  - Switch stances between **`Passive`**, **`Defensive`**, and **`Aggressive`**.
+  - **Right-click** terrain to issue a `Move` order; hold **`Shift + Right-click`** across multiple points to chain a route: verify **tactical waypoint markers** render in the world.
+  - Test overhead hotkeys **`K`** (guided Attack order) and **`H`** (Hold position).
+  - Press **`C`** to switch to 1st person and **`C`** to return to overhead: verify **troop selection persists** across camera switches.
+
+### 8.3 Specialized 1st-Person Modes: Build (`T`), Battle (`R`), and Commander (`F`)
+- [ ] **Action (Battle Mode — `R` Key):** In 1st person (**`C`**), press **`R`**.
+- [ ] **Expected Result:**
+  - The hotbar switches to avatar weapons: **`1` Sword** (melee, `3.0 m` reach, `35` dmg) and **`2` Bow** (ranged, `35.0 m` reach, `22` dmg).
+  - The **tactical crosshair** appears at screen center. Switch between `1` and `2` and **Left-click** to test melee swings and bow shots.
+  - Confirm that build hotkeys (`B`, `G`, `V`) are disabled while in Battle mode.
+- [ ] **Action (Commander Mode — `F` Key & Subgroups `Shift + 1..9`):** While keeping troops selected (from Step 8.2), press **`F`**.
+- [ ] **Expected Result:**
+  - The hotbar switches to the **6 direct commander orders**: `1` Attack, `2` Defend, `3` Follow, `4` Move, `5` Patrol, `6` Hold.
+  - Select an order (`1`–`6`), aim at the terrain, and **Left-click** (or **Right-click** for secondary action/stance): selected troops respond to the targeted location.
+  - Press **`Shift + 1..9`** to filter an active subgroup by rank within the selection, and **`Shift + 0`** to re-select the full squad.
+- [ ] **Action (Return to Build Mode — `T` Key):** Press **`T`**.
+- [ ] **Expected Result:**
+  - Restores the standard block hotbar (`1–0`) and re-enables build tools (`B`, `G`, `V`).
+
+### 8.4 Atomic Save and Load Persistence (`GestorPartida.gd` via `F11`)
+- [ ] **Action (Save & Reload):** Press **`F11`** to open `MenuPausa.gd`:
+  - Click **Quick Save** (`quicksave.json`) and also **Save Game** with a custom name (stored under `user://saves/` with metadata).
+  - Click **Load Game** (or return to Main Menu and load the saved slot) and select the saved file.
+- [ ] **Expected Result:**
+  - `PantallaCarga.gd` displays and atomically restores the entire game state: modified terrain (`VoxelWorld`), buildings & blueprints (`Ciudad`), resources & outposts (`Economia`), roads (`Vias`), conduits (`Canalizaciones`), zoning, avatar position (`Player`), and troops/colonists with their **health, stances, tactical orders, and persistent selection** (`Colonos`).
+
+---
+
+## Block 9: Live Verification of Complete Iconography, 3D Thumbnails, and Localization (HUD / UI)
+
+### 9.1 Topbar and Vector SVG Iconography
+- [ ] **Action:** Inspect the topbar in 1st person and overhead mode (including after switching language between `EN` and `ES` via `F11 -> Settings`).
 - [ ] **Expected Result:**
   - Demographics displays the demographic group icon (`censo.svg`).
   - Morale displays the active emotional face icon based on its current value (`moral_alta.svg` 🙂, `moral_neutra.svg` 😐, `moral_baja.svg` 🙁, `moral_critica.svg` 😡).
   - Warehouse button shows the chest icon (`almacen.svg`).
   - Food displays the wheat sack icon (`comida.svg`) and hourly trend arrow (`tasa_arriba.svg`, `tasa_neutra.svg`, or `tasa_abajo.svg`).
-  - Power button displays the tri-color dynamic lightning bolt (`energia_dorado.svg` in surplus, `energia_gris.svg` at neutral 0 demand, `energia_rojo.svg` in deficit) alongside live kW measurements (e.g. `12 kW / 8 kW`).
-  - Urban level displays the Roman numeral badge (`romano_1.svg`, `romano_2.svg`, etc.).
+  - Power button displays the tri-color dynamic lightning bolt (`energia_dorado.svg` in surplus, `energia_gris.svg` at neutral 0 demand, `energia_rojo.svg` in deficit) alongside live kW/MW measurements.
+  - Urban level displays the Roman numeral badge (`romano_1.svg` to `romano_4.svg`) with its IDU/Doctrine hover tooltip.
+  - No icon goes missing when toggling language (`IconosHUD.gd` resolves English aliases seamlessly).
 
-### 8.2 Build Mode Buttons with 3-Corner Badges & Live 3D Thumbnails
-- [ ] **Action:** Switch to overhead camera (`C`) and press `1` (Build) $\to$ check submenus `1` through `6`.
+### 9.2 Build Mode Buttons with 3-Corner Badges & Live 3D Thumbnails
+- [ ] **Action:** Switch to overhead camera (`C`) and press `1` (Build) $\to$ check submenus `1` through `7` (including the **Military `7`** category).
 - [ ] **Expected Result:**
-  - Building buttons are enlarged (104×76 px) and display the 3-corner badge overlay:
+  - Building buttons (104×76 px) display the 3-corner badge overlay:
     1. **Top-Left Corner:** Vertical stack of icons (14×14 px) for construction resource inputs.
-    2. **Top-Center:** Golden power bolt (14×14 px) if the structure requires electricity to function.
-    3. **Top-Right Corner:** Representative icon (18×18 px) of the primary product or civic function.
-  - Under Roads category (`5`), button displays live 3D thumbnail with gravel ballast and wooden ties.
-  - Under Conduits category (`6`), Aqueduct button shows stone flume on pillars, and Pipeline button shows metallic cylindrical pipe with elbow.
-  - In 1st-person hotbar, glass blocks and door blocks show wooden contrast framing for clear visibility against backgrounds.
+    2. **Top-Center:** Golden power bolt (14×14 px) only if the structure requires electricity to operate (University and Barracks do not display it).
+    3. **Top-Right Corner:** Representative icon (18×18 px) of the primary product or civic/military function.
+  - Roads (`5`), Conduits (`6`), and Military Barracks (`7 -> 1`) display live isometric 3D thumbnails.
 
-### 8.3 1st-Person HUD Indicators and Contextual Mining Tool
-- [ ] **Action:** Switch to 1st person (`C`). Turn on lantern (`L`), submerge underwater, and mine stone/dirt/trees holding left click.
+### 9.3 1st-Person HUD Indicators, `T`/`R`/`F` Modes, and Contextual Tool
+- [ ] **Action:** Switch to 1st person (`C`). Cycle through **`T`** (Build), **`R`** (Battle), and **`F`** (Commander). In `T` mode, turn on lantern (`L`), submerge underwater, and mine stone/dirt/trees holding left click.
 - [ ] **Expected Result:**
-  - Lantern panel displays the lamp icon alongside a green/gold styled `ProgressBar` with percentage battery.
+  - Hotbar adapts dynamically to the active mode (`T` blocks, `R` Sword/Bow + crosshair, `F` 6 tactical orders + subgroup panel).
+  - Lantern panel displays the lamp icon alongside a dynamic multi-color `ProgressBar` with percentage battery.
   - When swimming underwater, oxygen display shows cyan bubble row depleting over time.
-  - Mining stone displays the progress bar alongside the pickaxe icon (`herr_pico.svg`); shoveling dirt displays the shovel icon (`herr_pala.svg`); chopping trees displays the axe icon (`herr_hacha.svg`).
+  - Mining stone displays `herr_pico.svg`; shoveling dirt displays `herr_pala.svg`; chopping trees displays `herr_hacha.svg`; harvesting fruit displays `herr_cesta.svg`; supplying blueprints displays `modo_construir.svg`.
 
-### 8.4 Global Windows, Outpost Panels, and Modal Dialogs
-- [ ] **Action:** Open Population (`P`), Warehouse (`A`), Occupations, Energy (`E`), and Morale (`M`).
+### 9.4 Global Windows, Outpost/Unit Panels, and Modal Dialogs
+- [ ] **Action:** Open Population, Warehouse, Occupations, Energy (topbar click), Morale (topbar click), and `PanelUnidad` (selecting a colonist/troop in overhead view).
 - [ ] **Expected Result:**
   - All window headers display their thematic icon and `✕` close button.
-  - In `VentanaAlmacen`, each resource has its 20×20 px icon beside the name.
-  - In `VentanaPoblacion` and `VentanaOcupaciones`, each profession and category displays its representative icon.
-  - In `VentanaMoral`, central gauge displays 32×32 px emotional mood face, and factors show balance, food, cornucopia, and shield icons.
-  - In `VentanaBaul`, resources display icons and extraction buttons display `btn_menos`, `btn_mas`, and `extraer_todo`.
-  - In `PanelEdificio` and `PanelPuesto`, colonization shows lock/clock/door icons, pause/play shows button icons, priority displays Roman/arrow badges, schools and outposts show Roman numeral level badges (`romano_1..3.svg`), staffing `+`/`-` buttons display clean centered icons without overlapping text, and the production line renders the 16px vector SVG resource icon.
+  - `VentanaAlmacen`, `VentanaPoblacion`, `VentanaOcupaciones`, `VentanaMoral`, `VentanaEnergia`, `VentanaBaul`, `PanelEdificio`, `PanelPuesto`, and `PanelUnidad` render cleanly with aligned vector icons and no overlapping text.
   - Modal confirmation dialogs feature OK button with green `check.svg` and Cancel with red `cruz.svg`.
 
 ---
@@ -564,6 +642,8 @@ The script is designed following **strictly the chronological order and real gam
 
 | Block | Verified Feature (in logical gameplay order) | Status (OK / Fail) | Tester Notes |
 | :--- | :--- | :---: | :--- |
+| **0.1** | Startup **`VideoIntro.tscn`** (skip via key/click), **`MenuInicio.tscn`** (slideshow + BGM), **Persistent Config** (volume, FOV, fullscreen/windowed 1280×720, live `ES`/`EN` language) & **Resource Profiles** (`PantallaCarga` + `Bienvenida`) | | |
+| **0.2** | **Pause Menu (`F11`)** with absolute pause, live `ES` ↔ `EN` language switch in-game without missing icons, and **Spatial Audio/SFX (`Sonidos.gd`)** with 2D/3D pools & pitch modulation | | |
 | **1.1** | 1st-person movement, chopping/mining, fruit harvesting (`E`), 1:3 glass/dirt equivalence, and **`CaraApuntada` priority (`render_priority = 3`) on glass windows from side** | | |
 | **1.2** | Swimming in water ($\ge 2$ blocks), currents, oxygen bar, and draining with solid blocks | | |
 | **1.3** | Lantern in initial Thermal mode (`L`: fuel 10h, coal 6h, wood 5h) and stacked oxygen window | | |
@@ -583,26 +663,26 @@ The script is designed following **strictly the chronological order and real gam
 | **4.1** | Responsive topbar with **IDU hover**, alphabetical Warehouse with dropdowns (`▶`/`▼`), and **dynamic height adaptation with `reset_size()` upon collapsing** | | |
 | **4.2** | `VentanaMoral` centered (topbar click & `X` button only, **auto-hides in 1st person**), **recalibrated migration tiers (5/7/10 col/mo)**, diet variety (`X/6`), and 75% agricultural floor | | |
 | **4.3** | Peripheral outposts (`1-2-1..4`): `PanelPuesto` clean title, Roman badges, clean +/- buttons & production row with SVG icons | | |
-| **4.4** | Road preference in pathfinding (`BuscadorRutas`: road cost 3 vs terrain 8) and loaded right-of-way priority | | |
+| **4.4** | Road preference (`BuscadorRutas`: cost 3 vs terrain 8), **right-lane traffic (`Vias.es_borde_derecho`, left-lane penalty = 4)**, and loaded right-of-way priority | | |
 | **4.5** | 1st-person interaction with active outpost chest (`VentanaBaul` via `E`: centered `320x260`, scroll, and quick close) | | |
 | **5.1** | Technical School (`1-4-1` on Residential Zone): 4-apprentice cohort (24 h) graduates **3 Technicians** & mine levels | | |
-| **5.2** | Industrial Zone (`2-2`) & Block Factory (`1-3-4`): 5×6 footprint, chimney smoke, 1:3 recipe & civic stone priority | | |
-| **5.3** | Central reserve control (`0/50/100/250/500 u`) in refineries: protects central stock against over-refining | | |
+| **5.2** | Industrial Zone (`2-2`), Block Factory (`1-3-4`, 1:3 recipe) & Glassworks (`1-3-5`, 1 dirt + 1 coal $\to$ 3 glass) | | |
+| **5.3** | Central reserve control (`0% / 10% / 20% / 35% / 50%`) in refineries: protects central stock against over-refining | | |
 | **5.4** | Specialist School (`1-4-2`): requires Technical School and graduates **2 Specialists** after 48 h | | |
-| **5.5** | University (`1-4-3`): requires Specialist School, manual start, pause, 100%-refund cancel & **Applied Metallurgy** | | |
+| **5.5** | University (`1-4-3` no power required): manual start, pause, 100%-refund cancel, **Applied Metallurgy** & **Era 2 (`IDU >= 1.50`)** | | |
 | **6.1** | Pumping Station (`1-2-5`): $\ge 2$-block water depth check, pier, `puerto_agua_out`, and Technician operation | | |
 | **6.2** | Extraction Center (`1-2-6`): underground pool detection, dynamic iron drill column, and crude oil depletion | | |
-| **6.3** | Fluid Warehouse (`1-3-9`, 6 ports in dropdowns), Oil Refinery (`1-3-6`), and Fuel Producer (`1-3-7`) | | |
+| **6.3** | Fluid Warehouse (`1-3-X-0`, 6 ports in dropdowns), Oil Refinery (`1-3-7`), and Fuel Producer (`1-3-8`) | | |
 | **6.4** | Elevated conduits (`1-6-1`/`1-6-2`): readable labels, $Y+4$ height, road/colonist underpass & columns every 5 blocks | | |
 | **6.5** | Grade-separated conduit crossings: double lateral column at $Y=6$ with 1 clear air block ($Y=5$) between conduits | | |
 | **6.6** | Port connections, 400/600 Oil Refinery split, `PanelCanalizacion` inspection, and ghost-free demolition | | |
 | **6.7** | Open-end physical spill (`🔴 Derrame`), 1st-person 0.20 viscosity & solid-block draining of `crudo`, and column reconnection | | |
-| **7.1** | Thermal Power Plant (`1-3-8`): `Carbón`/`Combustible`/`Crudo` selector, central reserve, and coal hauling | | |
-| **7.2** | Topbar "Energía" button and `VentanaEnergia`: global balance, generators, consumers, and camera teleportation | | |
-| **7.3** | Lantern switching to `LÁMPARA ELÉCTRICA🟡` (72 h battery on grid, discharge outside influence & `+7.2 h/tick` recharge) | | |
+| **7.1** | Thermal Power Plant (`1-3-9`): `Carbón`/`Combustible`/`Crudo` selector, central reserve, and coal hauling | | |
+| **7.2** | Topbar "Energía" button and `VentanaEnergia`: global balance, generators, consumers, and camera teleportation without closing | | |
+| **7.3** | Lantern switching to `LÁMPARA ELÉCTRICA🟡` (72 h battery on grid, 4-color gradient discharge & `+7.2 h/tick` recharge) | | |
 | **7.4** | Final demographic stress: homeless (72 h) / unemployed (240 h) emigration, famine (-3.0/day), exodus (<=20%) & succession (`K`) | | |
-| **8.1** | Topbar: censo icon, 4 mood face icons, warehouse icon, food trend arrow, and tri-color power bolt with kW | | |
-| **8.2** | Build Menu (104×76 px): 3-corner badges (inputs, power, output) and 3D thumbnails (roads, aqueducts, pipes) | | |
-| **8.3** | 1st-person HUD: lantern ProgressBar, oxygen bubble row, contextual tool icon beside mining progress | | |
-| **8.4** | Global & interaction windows: icons in warehouse/chest, professions in population, `PanelPuesto` Roman badges & prod. SVG | | |
-| **8.5** | Modal dialogs and controls: confirmation `check`/`cruz`, building door status icons, golden keycaps | | |
+| **8.1** | **Military Barracks (`1-7-1`, `9×7×8` in Zone B)**: 4→4 cohort, **garrisoned military housing (`16 soldiers/barracks` without taking civilian beds)** & procedural visuals (helmets & shields) | | |
+| **8.2** | **Overhead universal selection (2D marquee)**, selection rings, **`PanelUnidad`**, stances (`Passive`/`Defensive`/`Aggressive`), orders (`Move`/`Attack K`/`Defend`/`Patrol`/`Hold H`), `Shift` waypoints & persistence | | |
+| **8.3** | **1st-person specialized modes**: Battle (**`R`**, Sword/Bow + crosshair), Commander (**`F`**, `1–6` order hotbar & `Shift + 1..9` / `0` subgroups), and Build (**`T`**) | | |
+| **8.4** | **Atomic Save & Load (`GestorPartida.gd` via `F11`)**: full restoration of world, buildings, roads, conduits, troops, health, stances, and selection | | |
+| **9.1–9.4** | Full visual audit of SVG icons in Topbar, 3-corner badges (incl. Military `7`), 3D thumbnails, `T`/`R`/`F` modes, `PanelUnidad`, and `ES`/`EN` localization | | |

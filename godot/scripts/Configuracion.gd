@@ -49,10 +49,22 @@ const AJUSTES_DEFINICIONES := {
 
 
 func _ready() -> void:
+	_registrar_inicio_sesion()
 	_inicializar_defaults_ajustes()
 	cargar()
 	aplicar()
 	call_deferred("aplicar_modo_pantalla")
+
+
+func _registrar_inicio_sesion() -> void:
+	var ver := Engine.get_version_info()
+	var ruta_log := ProjectSettings.globalize_path(str(ProjectSettings.get_setting("debug/file_logging/log_path", "user://logs/craft_to_nation.log")))
+	print("[Craft to Nation] Inicio %s | OS=%s | Godot=%s | Log=%s" % [
+		Time.get_datetime_string_from_system(false, true),
+		OS.get_name(),
+		str(ver.get("string", "?")),
+		ruta_log,
+	])
 
 
 func _inicializar_defaults_ajustes() -> void:
@@ -297,7 +309,8 @@ func aplicar_modo_pantalla() -> void:
 			win.mode = Window.MODE_WINDOWED
 			win.size = tam_win
 		if not embebido and usable.size != Vector2i.ZERO:
-			var pos := usable.position + (usable.size - tam_win) / 2
+			var delta_tam := usable.size - tam_win
+			var pos := usable.position + Vector2i(int(delta_tam.x * 0.5), int(delta_tam.y * 0.5))
 			DisplayServer.window_set_position(pos)
 			if win != null:
 				win.position = pos

@@ -184,4 +184,28 @@ func ejecutar_pruebas() -> void:
 	jugador_crudo.free()
 	mundo_crudo.free()
 
-	print("\n=== Las 11 pruebas de Player pasaron correctamente ===")
+	print("\n=== TEST 12: bloqueo de cámara cenital por profundidad de agua (> 1 bloque) ===")
+	var m_bloq := MundoFalso.new()
+	_agua_en_columna(m_bloq, 0, 0, 5, 5)
+	_agua_en_columna(m_bloq, 4, 4, 5, 7)
+	var j_bloq := Player.new()
+	j_bloq.mundo = m_bloq
+	# En seco: sin bloqueo
+	j_bloq.position = Vector3(10.0, 5.0, 10.0)
+	assert(not j_bloq.esta_nadando(), "en seco no está nadando")
+	assert(j_bloq.motivo_bloqueo_cenital() == "", "en seco permite cámara cenital")
+	# En charco de 1 bloque: sin bloqueo
+	j_bloq.position = Vector3(0.5, 5.5, 0.5)
+	assert(j_bloq._profundidad_columna_agua_en(j_bloq.position) == 1, "charco de 1 bloque tiene profundidad 1")
+	assert(not j_bloq.esta_nadando(), "charco de 1 bloque no activa natación")
+	assert(j_bloq.motivo_bloqueo_cenital() == "", "charco de 1 bloque permite cámara cenital")
+	# En agua de 3 bloques (superficie y=7, medio y=6, fondo y=5): bloquea en los 3 niveles
+	for pos_y in [7.2, 6.2, 5.2]:
+		j_bloq.position = Vector3(4.5, pos_y, 4.5)
+		assert(j_bloq._profundidad_columna_agua_en(j_bloq.position) == 3, "columna de 3 bloques detecta profundidad 3 en y=%s" % str(pos_y))
+		assert(j_bloq.esta_nadando(), "agua profunda > 1 bloque activa esta_nadando() en y=%s" % str(pos_y))
+		assert(j_bloq.motivo_bloqueo_cenital() != "", "agua profunda > 1 bloque bloquea cámara cenital en y=%s" % str(pos_y))
+	j_bloq.free()
+	m_bloq.free()
+
+	print("\n=== Las 12 pruebas de Player pasaron correctamente ===")

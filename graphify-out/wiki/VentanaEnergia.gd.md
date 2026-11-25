@@ -14,13 +14,11 @@
 
 ## Relationships
 
-- [Ciudad.gd](Ciudad.gd.md) (6 shared connections)
-- [Vias.gd](Vias.gd.md) (2 shared connections)
-- [ajustes.gd](ajustes.gd.md) (2 shared connections)
-- [HUD.gd](HUD.gd.md) (1 shared connections)
+- [ajustes.gd](ajustes.gd.md) (6 shared connections)
+- [HUD.gd](HUD.gd.md) (3 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [Economia.gd](Economia.gd.md) (2 shared connections)
 - [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (1 shared connections)
-- [PanelPuesto.gd](PanelPuesto.gd.md) (1 shared connections)
-- [TemaHUD.gd](TemaHUD.gd.md) (1 shared connections)
 
 ## Source Files
 

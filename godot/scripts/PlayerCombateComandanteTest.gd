@@ -223,10 +223,73 @@ func ejecutar_pruebas() -> void:
 	player._input(_tecla(KEY_6))
 	assert(hud._contexto.icono.texture == IconosHUD.icono("orden_mantener"), "pulsar 6 en comandante actualiza tarjeta a mantener")
 
+	print("=== TEST 7: Rueda del ratón cicla la hotbar en Construcción, Batalla y Comandante ===")
+	var rueda_abajo := InputEventMouseButton.new()
+	rueda_abajo.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	rueda_abajo.pressed = true
+	var rueda_arriba := InputEventMouseButton.new()
+	rueda_arriba.button_index = MOUSE_BUTTON_WHEEL_UP
+	rueda_arriba.pressed = true
+
+	# En Comandante: estaba en índice 5 (Mantener) -> rueda abajo envuelve a 0 (Atacar), rueda arriba vuelve a 5
+	player._input(rueda_abajo)
+	assert(player.orden_comandante_seleccionada == 0, "rueda abajo en último slot de comandante envuelve a 0")
+	assert(hud._contexto.icono.texture == IconosHUD.icono("orden_atacar"), "rueda actualiza tarjeta contextual en comandante")
+	player._input(rueda_arriba)
+	assert(player.orden_comandante_seleccionada == 5, "rueda arriba en slot 0 de comandante envuelve al último slot")
+
+	# En Batalla: ciclar entre Espada (0) y Arco (1)
+	player._input(_tecla(KEY_R))
+	player._input(_tecla(KEY_1))
+	player._input(rueda_abajo)
+	assert(player.arma_seleccionada == 1, "rueda abajo en batalla cambia de espada a arco")
+	assert(hud._contexto.icono.texture == IconosHUD.icono("arco"), "rueda actualiza tarjeta contextual en batalla")
+	player._input(rueda_abajo)
+	assert(player.arma_seleccionada == 0, "rueda abajo envuelve de arco a espada")
+
+	# En Construcción: ciclar entre bloques con wrap-around
+	player._input(_tecla(KEY_T))
+	player._input(_tecla(KEY_1))
+	player._input(rueda_arriba)
+	assert(player.tipo_seleccionado == player.tipos_disponibles.size() - 1, "rueda arriba desde slot 0 en construcción envuelve al último bloque")
+	player._input(rueda_abajo)
+	assert(player.tipo_seleccionado == 0, "rueda abajo desde último bloque en construcción envuelve a 0")
+
+	print("=== TEST 8: Bloqueo de transición a cámara cenital (caída, daño 5s y agua) ===")
+	player.velocity = Vector3(0.0, -2.5, 0.0)
+	assert(player.esta_cayendo(), "velocidad vertical negativa fuera del suelo detecta caída")
+	assert(player.motivo_bloqueo_cenital() != "", "caída bloquea paso a vista cenital")
+	player.velocity = Vector3.ZERO
+	assert(not player.esta_cayendo(), "velocidad cero no está cayendo")
+	assert(player.motivo_bloqueo_cenital() == "", "sin caída ni daño ni nado permite vista cenital")
+
+	player.recibir_dano(15.0)
+	assert(player.en_cooldown_dano_cenital(), "recibir daño activa cooldown de bloqueo cenital")
+	assert(player.motivo_bloqueo_cenital() != "", "daño reciente bloquea vista cenital")
+	player._physics_process(3.0)
+	assert(player.en_cooldown_dano_cenital(), "tras 3.0s sigue activo el cooldown de 5s")
+	assert(is_equal_approx(player._cooldown_dano_cenital_s, 2.0), "cooldown restante tras 3.0s debe ser 2.0s")
+	player.recibir_dano(5.0)
+	assert(is_equal_approx(player._cooldown_dano_cenital_s, Ajustes.PLAYER_COOLDOWN_DANO_CENITAL_S), "nuevo daño reinicia cooldown a 5.0s")
+	player._physics_process(5.1)
+	player.velocity = Vector3.ZERO
+	assert(not player.en_cooldown_dano_cenital(), "tras 5.1s expira cooldown de daño")
+	assert(player.motivo_bloqueo_cenital() == "", "expirado el cooldown permite vista cenital")
+
+	var MainScript = preload("res://scripts/Main.gd")
+	var main_stub = MainScript.new()
+	main_stub.cenital_activa = false
+	main_stub.jugador = player
+	main_stub.hud = hud
+	player.recibir_dano(10.0)
+	main_stub._alternar_camara_cenital()
+	assert(not main_stub.cenital_activa, "Main._alternar_camara_cenital debe bloquear paso a cenital mientras hay motivo")
+	main_stub.free()
+
 	for cid in [id_obj, id_m1, id_m2]:
 		var cel: Vector3i = Colonos.colonos[cid]["celda"]
 		Colonos.ocupadas.erase(cel)
 		Colonos.colonos.erase(cid)
 	raiz.queue_free()
 
-	print("\n=== Las 6 pruebas de PlayerCombateComandanteTest pasaron correctamente ===")
+	print("\n=== Las 8 pruebas de PlayerCombateComandanteTest pasaron correctamente ===")

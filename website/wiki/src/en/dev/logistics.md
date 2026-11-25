@@ -36,6 +36,7 @@ In **Craft to Nation**, every unit of timber, ore, or liquid physically traverse
 - **Base Ambulation Speed (On-Foot Hauler):** **2.5 cells / second** (`5.0 cells/h` in-game time), with a **+35% speed bonus** on packed-dirt roads.
 - **Base Payload Capacity:** **150 units** per trip (**10-unit** minimum batch, strictly respecting the `0% / 10% / 20% / 30% / 40% / 50%` percentage central reserve quota).
 - **Weighted A* Traversal Cost:** Packed-dirt roads have a step cost of **3** compared to **8** on natural terrain.
+- **Right-Lane Traffic by Heading & Footprint:** On 2-block-wide roads, `BuscadorRutas.gd` applies a left-lane penalty (`VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`) using `Vias.es_borde_derecho()`. Vehicles and haulers travel along their outer right lane according to travel direction and physical footprint (`Vector2i` in `TRANSPORTE_CATALOGO_UNIDADES`), preventing head-on collisions while allowing clean detours around blocked right lanes (`cost 3 + 4 = 7 < natural terrain cost 8`).
 
 ### Transport Workshop & Mobile Haulage Fleet (`Ciudad.PARQUE_TRANSPORTE_TIPOS`)
 Built on the Industrial Zone, the **Transport Workshop (`taller_transporte`)** manufactures and dispatches 6 mobile haulage unit types:

@@ -2,7 +2,7 @@
 
 > God node · 27 connections · `Documento de Diseño de Juego (GDD)_ Craft to Nation.md`
 
-**Community:** [ajustes.gd](ajustes.gd.md)
+**Community:** [Ciudad.gd](Ciudad.gd.md)
 
 ## Connections by Relation
 

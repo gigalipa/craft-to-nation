@@ -163,12 +163,13 @@ func _asegurar_visuales_unidad(cuerpo: AnimatableBody3D, id: int) -> void:
 	var c: Dictionary = Colonos.colonos.get(id, {})
 	var es_militar: bool = (str(c.get("tipo", "")) == "militar")
 	var modular: Node3D = _modulares.get(id, null)
-	var usar_placeholder: bool = (modular == null or modular.modo_visual() == "placeholder")
-	var mostrar_equipo_procedural: bool = es_militar and usar_placeholder
+	var equipo_instanciado: Dictionary = modular.equipamiento_instanciado() if modular != null else {}
+	var mostrar_casco_procedural: bool = es_militar and not equipo_instanciado.values().has("casco_militar")
+	var mostrar_escudo_procedural: bool = es_militar and not equipo_instanciado.values().has("escudo")
 
 	var casco := cuerpo.get_node_or_null("CascoMilitar") as Node3D
 	var escudo := cuerpo.get_node_or_null("EscudoMilitar") as MeshInstance3D
-	if mostrar_equipo_procedural and casco == null:
+	if mostrar_casco_procedural and casco == null:
 		casco = Node3D.new()
 		casco.name = "CascoMilitar"
 		var copa := MeshInstance3D.new()
@@ -189,7 +190,7 @@ func _asegurar_visuales_unidad(cuerpo: AnimatableBody3D, id: int) -> void:
 		casco.add_child(visera)
 		cuerpo.add_child(casco)
 
-	if mostrar_equipo_procedural and escudo == null:
+	if mostrar_escudo_procedural and escudo == null:
 		escudo = MeshInstance3D.new()
 		escudo.name = "EscudoMilitar"
 		var m_esc := BoxMesh.new()
@@ -200,9 +201,9 @@ func _asegurar_visuales_unidad(cuerpo: AnimatableBody3D, id: int) -> void:
 		cuerpo.add_child(escudo)
 
 	if casco != null:
-		casco.visible = mostrar_equipo_procedural
+		casco.visible = mostrar_casco_procedural
 	if escudo != null:
-		escudo.visible = mostrar_equipo_procedural
+		escudo.visible = mostrar_escudo_procedural
 
 	var aro := cuerpo.get_node_or_null("AroSeleccion") as MeshInstance3D
 	if aro == null:

@@ -4,7 +4,7 @@ extends Node
 ## - Identidad persistente en Colonos.gd y retrocompatibilidad de saves
 ## - Resolución Capa 1 y Capa 2 en CatalogoPersonajes.gd
 ## - Materiales dinámicos (4 tonos de piel + color de equipo) con caché
-## - PersonajeModular.gd + ColonosRenderer.gd en modo placeholder y transiciones de rol
+## - PersonajeModular.gd + ColonosRenderer.gd con assets reales y transiciones de rol
 ## - Regla de género en Elecciones / Sucesión del Avatar y seguro anti-bloqueo
 ## - Integración con AvatarAnimador / Player.tscn
 
@@ -30,7 +30,7 @@ func ejecutar_pruebas() -> void:
 	test_identidad_persistente_y_legacy()
 	test_catalogo_capa1_y_capa2()
 	test_materiales_piel_y_equipo_en_malla_sintetica()
-	test_colonos_renderer_modular_placeholder()
+	test_colonos_renderer_modular_assets_reales()
 	test_sucesion_genero_y_antibloqueo()
 	test_avatar_animador_identidad_y_manos()
 
@@ -157,7 +157,7 @@ func _crear_malla_sintetica(m_piel: Mesh, m_eq: Mesh) -> Node3D:
 	return raiz
 
 
-func test_colonos_renderer_modular_placeholder() -> void:
+func test_colonos_renderer_modular_assets_reales() -> void:
 	print("=== TEST 4: ColonosRenderer + PersonajeModular y cambio dinámico de oficio ===")
 	Ciudad.reiniciar()
 	Colonos.reiniciar()
@@ -175,24 +175,27 @@ func test_colonos_renderer_modular_placeholder() -> void:
 	var cuerpo: AnimatableBody3D = rend._cuerpos.get(cid, null)
 	var modular: Node3D = rend._modulares.get(cid, null)
 	assert(cuerpo != null and modular != null, "ColonosRenderer crea PersonajeModular")
-	assert(modular.modo_visual() == "placeholder", "sin glb en disco usa placeholder")
-	assert(modular.obtener_banda_equipo_material().albedo_color.is_equal_approx(Color("#d4a437")), "distintivo muestra color de equipo")
+	assert(modular.modo_visual() == "base", "desempleado usa cuerpo base real")
 	assert(modular.equipamiento_logico() == {}, "desempleado sin equipamiento")
+
+	# Asignar obrero carga el atuendo con chaleco.
+	Colonos.colonos[cid]["tipo"] = "obrero"
+	rend._physics_process(0.016)
+	assert(modular.modo_visual() == "atuendo", "obrero usa atuendo real")
 
 	# Asignar técnico minero
 	Colonos.colonos[cid]["tipo"] = "tecnico"
 	Colonos.colonos[cid]["trabajo"] = {"puesto": esq_mina, "rol": "recolector"}
 	rend._physics_process(0.016)
+	assert(modular.modo_visual() == "base", "tecnico sin atuendo propio usa cuerpo base")
 	assert(modular.equipamiento_logico() == {"Head": "casco_minero", "RightHand": "pico"}, "tecnico + mina combina capa 1 y capa 2")
-	assert(modular.obtener_capsula_material().albedo_color.is_equal_approx(Ajustes.COLORES_COLONOS["tecnico"]), "color de rango tecnico en placeholder")
 
 	# Cambiar a militar
 	Colonos.colonos[cid]["tipo"] = "militar"
 	Colonos.colonos[cid]["trabajo"] = {}
 	rend._physics_process(0.016)
+	assert(modular.modo_visual() == "base", "militar sin atuendo propio usa cuerpo base")
 	assert(modular.equipamiento_logico() == {"Head": "casco_militar", "RightHand": "espada", "LeftHand": "escudo"})
-	assert(cuerpo.get_node_or_null("CascoMilitar") != null and cuerpo.get_node_or_null("CascoMilitar").visible, "casco procedural activo en placeholder militar")
-	assert(cuerpo.get_node_or_null("EscudoMilitar") != null and cuerpo.get_node_or_null("EscudoMilitar").visible, "escudo procedural activo en placeholder militar")
 
 	rend.queue_free()
 

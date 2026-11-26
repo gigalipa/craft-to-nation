@@ -83,11 +83,28 @@ def _test_axis_independent_rig_scale(module) -> None:
     assert correction.to_quaternion().angle > math.radians(45.0)
 
 
+def _test_glb_retarget_stays_upright(module) -> None:
+    for action_name in (CARRY_ACTION, WORK_ACTION):
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        bpy.ops.import_scene.gltf(filepath=str(AVATAR_GLB))
+        destination = next(obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE")
+        source, _ = module._import_source(SOURCE_GLB, action_name)
+        result = module.retarget_mixamo(destination, source, "UprightTest", in_place=True)
+        mid = sum(result["frames"]) // 2
+        bpy.context.scene.frame_set(mid)
+        bpy.context.view_layer.update()
+        hips = destination.matrix_world @ destination.pose.bones["Hips"].head
+        head = destination.matrix_world @ destination.pose.bones["Head"].head
+        up = (head - hips).normalized()
+        assert up.z > 0.9, f"{action_name}: personaje tumbado, up={tuple(up)}"
+
+
 def main() -> None:
     module = _load_module()
     _test_parse(module)
     _test_real_glb_actions(module)
     _test_axis_independent_rig_scale(module)
+    _test_glb_retarget_stays_upright(module)
     print("BLENDER_RETARGET_MIXAMO_TEST_OK")
 
 

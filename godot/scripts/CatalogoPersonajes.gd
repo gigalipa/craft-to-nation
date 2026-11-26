@@ -114,12 +114,12 @@ static func resolver_animaciones(colono: Dictionary, tipo_puesto: String = "") -
 	var trabajo: Dictionary = colono.get("trabajo", {}) if colono.get("trabajo", {}) is Dictionary else {}
 	var es_acarreador := str(trabajo.get("rol", "")) == "acarreador"
 	var moviendo := _colono_en_movimiento(colono)
-	if es_acarreador and moviendo and _colono_tiene_carga(colono):
-		return ["Hauler_Carry"]
+	if es_acarreador:
+		if moviendo or _colono_tiene_carga(colono):
+			return ["Hauler_Carry"]
+		return ["Hauler_Box_Idle"]
 	if moviendo:
 		return ["Walking"]
-	if es_acarreador and not _colono_tiene_carga(colono):
-		return ["Hauler_Box_Idle"]
 
 	match tipo_puesto.strip_edges().to_lower():
 		"mina":

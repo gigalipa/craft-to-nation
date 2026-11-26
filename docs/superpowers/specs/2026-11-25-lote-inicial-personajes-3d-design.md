@@ -97,7 +97,7 @@ También se conservan en `scratch/3d_jobs/<asset>/` los turnarounds, vistas reco
 | `Idle` | biblioteca existente del avatar | desempleado o trabajador sin una acción específica | loop |
 | `Walking` | biblioteca existente del avatar | desplazamiento común sin carga | loop, in-place |
 | `Hauler_Box_Idle` | `arte/animations/work/Box Idle.fbx` | acarreador quieto esperando recursos, canasta en las manos | loop |
-| `Hauler_Carry` | acción interna `A person carries a heavy backpack... (in place)` de `carrying and working on a table.glb` | acarreador desplazándose con recursos, canasta en la espalda | loop, in-place |
+| `Hauler_Carry` | acción interna `A person carries a heavy backpack... (in place)` de `carrying and working on a table.glb` | acarreador en movimiento o con carga, canasta en la espalda | loop, in-place |
 | `Fishing_Cast` | `arte/animations/work/Fishing Cast.fbx` | recolector en `pesca_frutos_mar` | loop tras validar que el empalme no salta |
 | `Mining_Dig` | `arte/animations/work/Digging.fbx` | recolector en `mina` | no-loop; el selector decide el siguiente clip |
 | `Heavy_Swing` | `arte/animations/Heavy Weapon Swing.fbx` | mina, maderero y construcción | no-loop; se vuelve a elegir al terminar |
@@ -109,16 +109,15 @@ Los cuatro FBX fueron verificados como Mixamo de 65 huesos a 30 fps. El GLB fue 
 
 La selección recibe `colono` y `tipo_puesto`, y respeta esta prioridad:
 
-1. Acarreador en movimiento con `carga` no vacía: `Hauler_Carry`.
+1. Cualquier colono con rol `acarreador` usa exclusivamente animaciones de acarreo, sin importar el edificio: si está en movimiento o tiene `carga` no vacía usa `Hauler_Carry`; si está quieto y vacío usa `Hauler_Box_Idle`.
 2. Cualquier otro colono en movimiento: `Walking`.
-3. Acarreador quieto con `carga` vacía: `Hauler_Box_Idle`.
-4. Mina: elegir aleatoriamente `Mining_Dig` o `Heavy_Swing` cada vez que termina el clip. La elección es independiente, por lo que puede repetirse el mismo clip varias veces seguidas.
-5. Pesca: `Fishing_Cast`.
-6. Maderero: `Heavy_Swing`.
-7. Caza/recolección: `Work_Table`.
-8. Edificios industriales —`aserradero`, `siderurgica`, `refineria_tierras_raras`, `fabrica_bloques`, `vidriera`, `carbonera`, `refineria_petrolera`, `productor_combustible`, `central_termoelectrica`, `estacion_bombeo` y `taller_transporte`—: `Work_Table`.
-9. Tarea de construcción: `Heavy_Swing` con martillo.
-10. Cualquier caso no cubierto o clip ausente: `Idle`.
+3. Mina: elegir aleatoriamente `Mining_Dig` o `Heavy_Swing` cada vez que termina el clip. La elección es independiente, por lo que puede repetirse el mismo clip varias veces seguidas.
+4. Pesca: `Fishing_Cast`.
+5. Maderero: `Heavy_Swing`.
+6. Caza/recolección: `Work_Table`.
+7. Edificios industriales —`aserradero`, `siderurgica`, `refineria_tierras_raras`, `fabrica_bloques`, `vidriera`, `carbonera`, `refineria_petrolera`, `productor_combustible`, `central_termoelectrica`, `estacion_bombeo` y `taller_transporte`—: `Work_Table`.
+8. Tarea de construcción: `Heavy_Swing` con martillo.
+9. Cualquier caso no cubierto o clip ausente: `Idle`.
 
 `Mining_Dig` y `Heavy_Swing` no se marcan como loops lineales. `PersonajeModular` escucha el fin del clip: en mina vuelve a sortear entre ambos; en maderero o construcción repite `Heavy_Swing`. El generador aleatorio se inicializa una vez por personaje para evitar una alternancia accidental y permitir pruebas reproducibles.
 

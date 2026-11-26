@@ -229,6 +229,7 @@ El proyecto ya cuenta con paquetes Mixamo descargados en **`arte/animations/`** 
 - **Colonos (`PersonajeModular.gd` + `animaciones/humanoide_base.glb`):**
   - *Loop:* `Idle`, `Walking`, `Hauler_Box_Idle`, `Hauler_Carry`, `Fishing_Cast`, `Work_Table`.
   - *No-loop:* `Mining_Dig`, `Heavy_Swing`; `PersonajeModular` elige de nuevo al finalizar, por lo que minería puede repetir el mismo clip consecutivamente.
+  - *Prioridad de acarreo:* un `acarreador` nunca hereda la animación del edificio donde trabaja; usa `Hauler_Carry` si se mueve o lleva carga y `Hauler_Box_Idle` si está quieto y vacío.
 - **Avatar (`AvatarAnimador.gd`):**
   - *Loop:* `Idle`, `Walking`, `Walking_Backward`, `Strafe_Left`, `Strafe_Right`, `Running`, `Strafe_Left_Run`, `Strafe_Right_Run`, `Falling_Idle`, `Treading_Water`, `Swimming`, `Mining_Swing`, `Cenital_Kneel_Idle`, `Sword_Idle`, `Sword_Run`, `Sword_Strafe`, `Sword_Block_Idle`, `Bow_Idle`, `Bow_Aim_Hold`, `Bow_Aim_Walk_Forward`, `Bow_Aim_Walk_Back`, `Bow_Aim_Walk_Left`, `Bow_Aim_Walk_Right`.
   - *Puntuales:* `Jump_Start`, `Jump_Land`, `Cenital_Kneel_Down`, `Cenital_Stand_Up`, `Sword_Equip`, `Sword_Sheath`, `Sword_Slash`, `Sword_Slash_2`, `Bow_Equip`, `Bow_Disarm`, `Bow_Release`, `Command_Charge`, `Command_Point`, `Command_Rally`, `Hit_React`, `Death`.

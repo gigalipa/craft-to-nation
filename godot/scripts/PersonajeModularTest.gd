@@ -122,6 +122,9 @@ func test_animaciones_por_oficio_y_canasta_dinamica() -> void:
 	var base := {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "recolector"}, "moviendo": false, "carga": {}}
 	var casos := [
 		{"nombre": "acarreador cargado en movimiento", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": true, "carga": {"madera": 1}}, "puesto": "almacen", "esperado": ["Hauler_Carry"]},
+		{"nombre": "acarreador cargado y quieto en mina", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": false, "carga": {"hierro": 1}}, "puesto": "mina", "esperado": ["Hauler_Carry"]},
+		{"nombre": "acarreador vacío en movimiento en mina", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": true, "carga": {}}, "puesto": "mina", "esperado": ["Hauler_Carry"]},
+		{"nombre": "acarreador quieto y vacío en mina", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": false, "carga": {}}, "puesto": "mina", "esperado": ["Hauler_Box_Idle"]},
 		{"nombre": "caminante común", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "recolector"}, "moviendo": true, "carga": {}}, "puesto": "mina", "esperado": ["Walking"]},
 		{"nombre": "acarreador quieto y vacío", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": false, "carga": {}}, "puesto": "almacen", "esperado": ["Hauler_Box_Idle"]},
 		{"nombre": "mina", "colono": base, "puesto": "mina", "esperado": ["Mining_Dig", "Heavy_Swing"]},

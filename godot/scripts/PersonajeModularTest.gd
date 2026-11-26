@@ -43,6 +43,7 @@ func ejecutar_pruebas() -> void:
 	test_equipamiento_real_instanciable()
 	test_materiales_piel_y_equipo_en_malla_sintetica()
 	test_biblioteca_animaciones_trabajo()
+	test_controlador_animaciones_contextuales()
 	test_colonos_renderer_modular_assets_reales()
 	test_sucesion_genero_y_antibloqueo()
 	test_avatar_animador_identidad_y_manos()
@@ -234,6 +235,52 @@ func test_biblioteca_animaciones_trabajo() -> void:
 		nombres.append(str(nombre))
 	nombres.sort()
 	assert(nombres == CLIPS_TRABAJO, "clips esperados=%s recibidos=%s" % [CLIPS_TRABAJO, nombres])
+
+
+func test_controlador_animaciones_contextuales() -> void:
+	print("=== TEST 5: Reproducción contextual y encadenamiento ===")
+	var modular := PersonajeModularScript.new()
+	add_child(modular)
+	var pool_mina: Array[String] = ["Mining_Dig", "Heavy_Swing"]
+	assert(modular.elegir_animacion(pool_mina, 0) == "Mining_Dig")
+	assert(modular.elegir_animacion(pool_mina, 0) == "Mining_Dig", "un mismo índice puede repetir el clip")
+	assert(modular.elegir_animacion(pool_mina, 1) == "Heavy_Swing")
+
+	var colono := {"id": 701, "tipo": "obrero", "genero": "M", "tono_piel": 1, "tarea": {}, "trabajo": {}, "moviendo": false, "carga": {}}
+	modular.actualizar_colono(colono, "", Color.WHITE)
+	assert(modular.animacion_actual() == "Idle")
+	var ap := CatalogoPersonajes.buscar_nodo_por_clase(modular, "AnimationPlayer") as AnimationPlayer
+	assert(ap != null, "el modelo real expone AnimationPlayer")
+	for nombre in ["Idle", "Walking", "Hauler_Box_Idle", "Hauler_Carry", "Fishing_Cast", "Work_Table"]:
+		assert(ap.get_animation(nombre).loop_mode == Animation.LOOP_LINEAR, "%s debe ser loop" % nombre)
+	for nombre in ["Mining_Dig", "Heavy_Swing"]:
+		assert(ap.get_animation(nombre).loop_mode == Animation.LOOP_NONE, "%s debe terminar para encadenarse" % nombre)
+
+	colono["trabajo"] = {"rol": "recolector"}
+	modular.actualizar_colono(colono, "mina", Color.WHITE)
+	var primer_clip: String = modular.animacion_actual()
+	assert(primer_clip in pool_mina)
+	modular._al_terminar_animacion(StringName(primer_clip))
+	assert(modular.animacion_actual() in pool_mina, "al terminar mina vuelve a sortear el pool")
+
+	modular.actualizar_colono(colono, "maderero", Color.WHITE)
+	assert(modular.animacion_actual() == "Heavy_Swing")
+	modular._al_terminar_animacion(&"Heavy_Swing")
+	assert(modular.animacion_actual() == "Heavy_Swing", "maderero repite el clip no-loop")
+
+	colono["trabajo"] = {}
+	colono["tarea"] = {"tipo": "construir"}
+	modular.actualizar_colono(colono, "", Color.WHITE)
+	assert(modular.animacion_actual() == "Heavy_Swing", "construcción usa golpe pesado")
+
+	var lib := ap.get_animation_library("")
+	lib.remove_animation(&"Mining_Dig")
+	lib.remove_animation(&"Heavy_Swing")
+	colono["tarea"] = {}
+	colono["trabajo"] = {"rol": "recolector"}
+	modular.actualizar_colono(colono, "mina", Color.WHITE)
+	assert(modular.animacion_actual() == "Idle", "un pool ausente cae en Idle")
+	modular.queue_free()
 
 
 func test_colonos_renderer_modular_assets_reales() -> void:

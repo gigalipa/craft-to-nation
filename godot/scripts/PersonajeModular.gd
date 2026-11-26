@@ -29,6 +29,9 @@ var _capsula_mat: StandardMaterial3D = null
 var _banda_equipo: MeshInstance3D = null
 var _banda_equipo_mat: StandardMaterial3D = null
 var _anim_actual: String = ""
+var _pool_animaciones: Array[String] = []
+var _rng_animaciones := RandomNumberGenerator.new()
+var _rng_animaciones_sembrado := false
 
 
 func modo_visual() -> String:
@@ -41,6 +44,16 @@ func equipamiento_logico() -> Dictionary:
 
 func equipamiento_instanciado() -> Dictionary:
 	return _equipamiento_instanciado.duplicate()
+
+
+func animacion_actual() -> String:
+	return _anim_actual
+
+
+func elegir_animacion(pool: Array[String], indice: int) -> String:
+	if pool.is_empty():
+		return ""
+	return pool[posmod(indice, pool.size())]
 
 
 func obtener_anclaje(slot: String) -> BoneAttachment3D:
@@ -56,6 +69,9 @@ func obtener_banda_equipo_material() -> StandardMaterial3D:
 
 
 func actualizar_colono(colono: Dictionary, tipo_puesto: String, color_equipo: Color, era: int = 1) -> void:
+	if not _rng_animaciones_sembrado:
+		_rng_animaciones.seed = int(colono.get("id", 0))
+		_rng_animaciones_sembrado = true
 	var rango := str(colono.get("tipo", "desempleado")).strip_edges().to_lower()
 	if rango.is_empty():
 		rango = "desempleado"
@@ -82,7 +98,7 @@ func actualizar_colono(colono: Dictionary, tipo_puesto: String, color_equipo: Co
 
 	if _modo_visual != "placeholder":
 		rotation.y = float(colono.get("orientacion_y", 0.0))
-		_actualizar_animacion(colono)
+		_actualizar_animacion(colono, tipo_puesto)
 
 
 func _reconstruir_capa1(rango: String, genero: String, color_equipo: Color) -> void:
@@ -193,9 +209,12 @@ func _configurar_animaciones_base() -> void:
 				if not actual_lib.has_animation(anim_name):
 					actual_lib.add_animation(anim_name, lib.get_animation(anim_name))
 	if _anim_player != null:
-		for loop_nombre in ["Idle", "Walking", "Mining_Swing"]:
-			if _anim_player.has_animation(loop_nombre):
-				_anim_player.get_animation(loop_nombre).loop_mode = Animation.LOOP_LINEAR
+		var clips_loop := ["Idle", "Walking", "Hauler_Box_Idle", "Hauler_Carry", "Fishing_Cast", "Work_Table"]
+		for nombre in ["Idle", "Walking", "Hauler_Box_Idle", "Hauler_Carry", "Fishing_Cast", "Mining_Dig", "Heavy_Swing", "Work_Table"]:
+			if _anim_player.has_animation(nombre):
+				_anim_player.get_animation(nombre).loop_mode = Animation.LOOP_LINEAR if nombre in clips_loop else Animation.LOOP_NONE
+		if not _anim_player.animation_finished.is_connected(_al_terminar_animacion):
+			_anim_player.animation_finished.connect(_al_terminar_animacion)
 
 
 func _construir_placeholder(rango: String, color_equipo: Color) -> void:
@@ -267,23 +286,37 @@ func _actualizar_capa2(nuevo_eq: Dictionary, tono_piel: int, color_equipo: Color
 		_equipamiento_instanciado[slot] = pieza_id
 
 
-func _actualizar_animacion(colono: Dictionary) -> void:
+func _actualizar_animacion(colono: Dictionary, tipo_puesto: String) -> void:
 	if _anim_player == null:
 		return
-	var anim_deseada := "Idle"
-	if bool(colono.get("moviendo", false)):
-		anim_deseada = "Walking"
-	elif colono.get("tarea", {}) is Dictionary and not (colono["tarea"] as Dictionary).is_empty():
-		anim_deseada = "Mining_Swing"
-	if not _anim_player.has_animation(anim_deseada):
-		if _anim_player.has_animation("Idle"):
-			anim_deseada = "Idle"
-		else:
-			return
-	if _anim_actual == anim_deseada and _anim_player.is_playing():
+	_reproducir_pool(CatalogoPersonajes.resolver_animaciones(colono, tipo_puesto))
+
+
+func _reproducir_pool(pool: Array[String], forzar: bool = false) -> void:
+	if _anim_player == null:
 		return
-	_anim_actual = anim_deseada
-	_anim_player.play(anim_deseada, 0.15)
+	var disponibles: Array[String] = []
+	for nombre in pool:
+		if _anim_player.has_animation(nombre):
+			disponibles.append(nombre)
+	if disponibles.is_empty() and _anim_player.has_animation("Idle"):
+		disponibles = ["Idle"]
+	if disponibles.is_empty():
+		_anim_actual = ""
+		_pool_animaciones.clear()
+		return
+	if not forzar and disponibles == _pool_animaciones and _anim_actual in disponibles and _anim_player.is_playing():
+		return
+	_pool_animaciones = disponibles
+	var indice := _rng_animaciones.randi_range(0, disponibles.size() - 1)
+	_anim_actual = elegir_animacion(disponibles, indice)
+	_anim_player.play(_anim_actual, 0.15)
+
+
+func _al_terminar_animacion(nombre: StringName) -> void:
+	if str(nombre) != _anim_actual or _pool_animaciones.is_empty():
+		return
+	_reproducir_pool(_pool_animaciones, true)
 
 
 func _serializar_equipamiento(eq: Dictionary) -> String:
@@ -300,6 +333,7 @@ func _limpiar_capa1() -> void:
 	_skeleton = null
 	_anim_player = null
 	_anim_actual = ""
+	_pool_animaciones.clear()
 	if _raiz_visual != null:
 		_raiz_visual.queue_free()
 		_raiz_visual = null

@@ -39,6 +39,7 @@ func _ready() -> void:
 func ejecutar_pruebas() -> void:
 	test_identidad_persistente_y_legacy()
 	test_catalogo_capa1_y_capa2()
+	test_equipamiento_real_instanciable()
 	test_materiales_piel_y_equipo_en_malla_sintetica()
 	test_biblioteca_animaciones_trabajo()
 	test_colonos_renderer_modular_assets_reales()
@@ -112,6 +113,24 @@ func test_catalogo_capa1_y_capa2() -> void:
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "investigador", "tarea": {"tipo": "investigador_itinerante"}, "trabajo": {}}) == {"LeftHand": "maletin_ciencia"})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "militar", "tarea": {}, "trabajo": {}}) == {"Head": "casco_militar", "RightHand": "espada", "LeftHand": "escudo"})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "militar", "subtipo_militar": "arquero", "tarea": {}, "trabajo": {}}) == {"Head": "casco_militar", "LeftHand": "arco"})
+
+
+func test_equipamiento_real_instanciable() -> void:
+	print("=== TEST 3: Props reales y slots de equipamiento ===")
+	var piezas := {
+		"martillo": "RightHand",
+		"pico": "RightHand",
+		"hacha": "RightHand",
+		"canasta_acarreo": "Chest",
+	}
+	for pieza_id in piezas:
+		var ruta := CatalogoPersonajes.resolver_ruta_equipamiento(pieza_id)
+		assert(not ruta.is_empty(), "%s resuelve una ruta real para %s" % [pieza_id, piezas[pieza_id]])
+		var escena := CatalogoPersonajes.cargar_escena_cacheada(ruta)
+		assert(escena != null, "%s carga como PackedScene" % pieza_id)
+		var instancia := escena.instantiate()
+		assert(instancia is Node3D, "%s se instancia como Node3D" % pieza_id)
+		instancia.free()
 
 
 func test_materiales_piel_y_equipo_en_malla_sintetica() -> void:

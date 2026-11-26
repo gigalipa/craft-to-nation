@@ -14,6 +14,16 @@ const PersonajeModularScript = preload("res://scripts/PersonajeModular.gd")
 const ColonosRendererScript = preload("res://scripts/ColonosRenderer.gd")
 const HUDScript = preload("res://scripts/HUD.gd")
 const PlayerScene = preload("res://scenes/Player.tscn")
+const CLIPS_TRABAJO := [
+	"Fishing_Cast",
+	"Hauler_Box_Idle",
+	"Hauler_Carry",
+	"Heavy_Swing",
+	"Idle",
+	"Mining_Dig",
+	"Walking",
+	"Work_Table",
+]
 
 
 func _ready() -> void:
@@ -30,6 +40,7 @@ func ejecutar_pruebas() -> void:
 	test_identidad_persistente_y_legacy()
 	test_catalogo_capa1_y_capa2()
 	test_materiales_piel_y_equipo_en_malla_sintetica()
+	test_biblioteca_animaciones_trabajo()
 	test_colonos_renderer_modular_assets_reales()
 	test_sucesion_genero_y_antibloqueo()
 	test_avatar_animador_identidad_y_manos()
@@ -155,6 +166,18 @@ func _crear_malla_sintetica(m_piel: Mesh, m_eq: Mesh) -> Node3D:
 	mi_eq.mesh = m_eq
 	raiz.add_child(mi_eq)
 	return raiz
+
+
+func test_biblioteca_animaciones_trabajo() -> void:
+	print("=== TEST 4: Biblioteca compartida de animaciones de trabajo ===")
+	CatalogoPersonajes.limpiar_caches()
+	var biblioteca: AnimationLibrary = CatalogoPersonajes.obtener_biblioteca_animaciones()
+	assert(biblioteca != null, "humanoide_base.glb carga una AnimationLibrary")
+	var nombres: Array[String] = []
+	for nombre in biblioteca.get_animation_list():
+		nombres.append(str(nombre))
+	nombres.sort()
+	assert(nombres == CLIPS_TRABAJO, "clips esperados=%s recibidos=%s" % [CLIPS_TRABAJO, nombres])
 
 
 func test_colonos_renderer_modular_assets_reales() -> void:

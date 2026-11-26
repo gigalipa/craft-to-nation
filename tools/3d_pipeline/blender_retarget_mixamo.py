@@ -74,6 +74,54 @@ def _world_bone_dir(arm: bpy.types.Object, head_local: Vector, tail_local: Vecto
     return v.normalized() if v.length > 1e-6 else Vector((0.0, 0.0, 1.0))
 
 
+def _calculate_hip_scale(dst_arm: bpy.types.Object, src_arm: bpy.types.Object) -> float:
+    """Escala traslación de cadera sin asumir cuál eje representa la altura."""
+    src_hips_name = _find_mixamo_bone(src_arm, "Hips")
+    src_foot_name = _find_mixamo_bone(src_arm, "LeftFoot")
+    if src_hips_name and src_foot_name and "Hips" in dst_arm.data.bones and "LeftFoot" in dst_arm.data.bones:
+        src_hips = src_arm.matrix_world @ src_arm.data.bones[src_hips_name].head_local
+        src_foot = src_arm.matrix_world @ src_arm.data.bones[src_foot_name].head_local
+        dst_hips = dst_arm.matrix_world @ dst_arm.data.bones["Hips"].head_local
+        dst_foot = dst_arm.matrix_world @ dst_arm.data.bones["LeftFoot"].head_local
+        source_leg = (src_hips - src_foot).length
+        if source_leg > 1e-4:
+            return (dst_hips - dst_foot).length / source_leg
+
+    src_hips = src_arm.matrix_world @ src_arm.data.bones[src_hips_name].head_local
+    dst_hips = dst_arm.matrix_world @ dst_arm.data.bones["Hips"].head_local
+    return abs(dst_hips.z) / max(abs(src_hips.z), 1e-4)
+
+
+def _calculate_root_correction(src_arm: bpy.types.Object, frame: int) -> Matrix:
+    """Retira offsets grandes y constantes de coordenadas embebidos en Hips."""
+    hips_name = _find_mixamo_bone(src_arm, "Hips")
+    if not hips_name:
+        return Matrix.Identity(3)
+    bpy.context.scene.frame_set(frame)
+    bpy.context.view_layer.update()
+    rest_rotation = _world_bone_rot(src_arm, src_arm.data.bones[hips_name].matrix_local)
+    pose_rotation = _world_bone_rot(src_arm, src_arm.pose.bones[hips_name].matrix)
+    root_delta = pose_rotation @ rest_rotation.inverted()
+    if root_delta.to_quaternion().angle > math.radians(45.0):
+        return root_delta.inverted()
+    return Matrix.Identity(3)
+
+
+def _normalize_source_up(armature: bpy.types.Object) -> None:
+    """Alinea el eje vertical del rig fuente con +Z sin alterar su pose local."""
+    hips_name = _find_mixamo_bone(armature, "Hips")
+    head_name = _find_mixamo_bone(armature, "Head")
+    if not hips_name or not head_name:
+        return
+    hips = armature.matrix_world @ armature.data.bones[hips_name].head_local
+    head = armature.matrix_world @ armature.data.bones[head_name].head_local
+    up = (head - hips).normalized()
+    target_up = Vector((0.0, 0.0, 1.0))
+    if up.dot(target_up) < 0.999:
+        correction = up.rotation_difference(target_up).to_matrix().to_4x4()
+        armature.matrix_world = correction @ armature.matrix_world
+
+
 def _real_meshes(exclude: set[bpy.types.Object]) -> list[bpy.types.Object]:
     return [
         o
@@ -165,7 +213,8 @@ def retarget_mixamo(
     dst_hips_name = pairs[0][1]
     src_hips_rest_w = src_arm.matrix_world @ src_arm.data.bones[src_hips_name].head_local
     dst_hips_rest_w = dst_arm.matrix_world @ dst_arm.data.bones[dst_hips_name].head_local
-    hip_scale = dst_hips_rest_w.z / max(src_hips_rest_w.z, 1e-4)
+    hip_scale = _calculate_hip_scale(dst_arm, src_arm)
+    root_correction = _calculate_root_correction(src_arm, s_start)
 
     # Preparar Action destino y preservar existentes en NLA
     if not dst_arm.animation_data:
@@ -231,6 +280,7 @@ def retarget_mixamo(
 
             src_pose_w = _world_bone_rot(src_arm, src_pb.matrix)
             delta_rot_w = src_pose_w @ src_rest_rot[mx_name].inverted()
+            delta_rot_w = root_correction @ delta_rot_w
             target_w = delta_rot_w @ rest_align_rot[gd_name] @ dst_rest_rot[gd_name]
             computed_world_rot[gd_name] = target_w
 
@@ -404,6 +454,7 @@ def _import_source(
     if not armatures:
         raise RuntimeError(f"No se encontro Armature en {path}")
     armature = armatures[0]
+    _normalize_source_up(armature)
     imported_actions = list(set(bpy.data.actions) - before_actions)
     available = sorted(action.name for action in imported_actions)
 

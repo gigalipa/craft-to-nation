@@ -20,6 +20,8 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 
 El proyecto Godot cuenta actualmente con **39 escenas** `*Test.tscn` ejecutables en suite automatizada: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, personajes modulares 3D, rutas, vías, minerales, translúcidos, puertas, canalizaciones, animador y lámpara del jugador, HUD, energía, sonidos (SFX), configuración, gestor de partidas, menú de pausa, menú de inicio, pantalla de carga, video intro, bienvenida y combate/comandante en primera persona.
 
+El lote inicial de población 3D ya reemplaza las cápsulas por cuerpos base masculino/femenino y atuendos de obrero con chaleco. Incluye martillo, pico, hacha y canasta de acarreo, además de ocho clips compartidos seleccionados por movimiento y oficio; la canasta cambia entre manos y espalda, y minería sortea de forma independiente excavación o golpe pesado al terminar cada acción.
+
 ## Ideas incorporadas al roadmap
 
 - **Mundo procedural finito:** implementado como primer subproyecto de PoC 6.

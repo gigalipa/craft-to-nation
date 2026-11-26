@@ -114,6 +114,14 @@ Hecho: Integración del primer modelo humanoide 3D jugable y arquitectura *drop-
 4. **Bloqueo de Cámara Cenital en Situaciones de Riesgo (`Player.motivo_bloqueo_cenital()`, `Main.gd`, `strings.gd`):** Bloquea el cambio a vista cenital durante daño reciente (`PLAYER_COOLDOWN_DANO_CENITAL_S = 5.0 s`), natación profunda (`>= 2` bloques) o caída, con notificaciones localizadas ES/EN (`BLOQUEO_CENITAL_*`) verificadas en `PlayerCombateComandanteTest.gd` (8 pruebas) y `PlayerNatacionTest.gd` (12 pruebas).
 5. **Pipeline 3D (`tools/3d_pipeline/`, `.agents/skills/craft-character-3d/SKILL.md`, `arte/animations/`):** Scripts para Hunyuan3D-2mv + UniRig en Modal y post-procesado Blender (preparación Godot, retargeting Mixamo, blendshapes ARKit). Suite ampliada a **39 escenas** al 100% en verde.
 
+### 1j. Lote inicial de población 3D por oficio — ✅ hecho (2026-11-25 a 2026-11-26)
+
+Hecho: Integración y validación del primer lote visual completo para colonos:
+1. **Cuerpos y atuendos:** `cuerpo_m.glb` y `cuerpo_f.glb` con camisa beige para desempleados; `obrero_m.glb` y `obrero_f.glb` con chaleco verde oscuro para empleados manuales. Los cuatro comparten rig humanoide, T-Pose, materiales de piel/equipo y biblioteca de animaciones.
+2. **Equipamiento rígido:** martillo, pico, hacha y canasta de acarreo como GLB independientes. La canasta reutiliza una sola geometría con offsets por slot: `RightHand` al esperar sin carga y `Chest` al desplazarse o transportar recursos.
+3. **Animación contextual:** biblioteca compartida con `Idle`, `Walking`, `Hauler_Box_Idle`, `Hauler_Carry`, `Fishing_Cast`, `Mining_Dig`, `Heavy_Swing` y `Work_Table`; selección por estado/oficio para acarreo, pesca, mina, maderero, caza/recolección, industrias y construcción. Minería vuelve a sortear sus dos clips al finalizar y permite repeticiones consecutivas; los clips ausentes caen de forma segura en `Idle`.
+4. **Verificación:** QA visual nativo de Godot conservado en `scratch/3d_jobs/integration/`, pruebas focales de personajes/avatar/colonos y suite completa de **39 escenas** al 100% en verde. El equipo militar procedural permanece como fallback por pieza mientras no existan sus GLB definitivos.
+
 ### 2. Ventana de interacción del baúl — ✅ hecho (2026-09-28, cierre con E 2026-10-05)
 
 Apuntar a un baúl y pulsar `E` (pulsar, no mantener) abre `VentanaBaul`, que muestra el almacén local del puesto (una fila por recurso presente en el baúl o en el stock central) con botones -/+ (1 de cada vez, 10 con Shift) y "Extraer todo". Pulsar `E` nuevamente o `Escape` cierra la ventana.

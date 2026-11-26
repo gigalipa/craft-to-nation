@@ -26,7 +26,7 @@ godot/assets/personajes/
 │   ├── cuerpo_m.glb               # Cuerpo base masculino (fallback Capa 1 + esqueleto Modo B)
 │   └── cuerpo_f.glb               # Cuerpo base femenino (fallback Capa 1 + esqueleto Modo B)
 ├── animaciones/
-│   └── humanoide_base.glb         # Biblioteca compartida de clips para colonos (Idle, Walking, Mining_Swing)
+│   └── humanoide_base.glb         # 8 clips canónicos compartidos para colonos
 ├── atuendos/                      # Capa 1: <rango>_<m|f>.glb (14 variantes)
 │   ├── ciudadano_m.glb / ciudadano_f.glb
 │   ├── desempleado_m.glb / desempleado_f.glb
@@ -49,7 +49,7 @@ godot/assets/personajes/
 | **Cuerpo Base** (`M`/`F`) | `base/cuerpo_m.glb`, `base/cuerpo_f.glb` | `SkeletonProfileHumanoid` (`Head`, `Chest`/`UpperChest`/`Spine`, `RightHand`, `LeftHand`) | `3,000 – 6,000` tris (`--target-faces 15000` Modal + `--force-decimate 5500` Blender), `512` o `1024`, `1.80 m` | `lipsync` (18 shapes) + clips básicos opcionales |
 | **Atuendos Capa 1** (`<rango>_<m\|f>`) | `atuendos/<rango>_<m\|f>.glb` | Modo A: riggeado autónomo con `SkeletonProfileHumanoid` (`Head`, `Chest`/`UpperChest`/`Spine`, `RightHand`, `LeftHand`) | `3,000 – 6,000` tris (`--target-faces 15000` Modal + `--force-decimate 5500` Blender), `512` o `1024`, `1.80 m` | `lipsync` (18 shapes); hereda `humanoide_base.glb` |
 | **Equipamiento Capa 2** (`<pieza>`) | `equipamiento/<pieza>.glb` | **SIN RIG (`--skip-rig`)** — malla rígida estática con pivote en `(0,0,0)` según slot | `300 – 1,500` tris (`--target-faces 1500` Modal + `--target-tris 1000` Blender), `256` o `512` | Ninguno |
-| **Biblioteca Animaciones** | `animaciones/humanoide_base.glb` | `SkeletonProfileHumanoid` con `AnimationPlayer` | Malla mínima / base | Clips obligatorios: `Idle`, `Walking`, `Mining_Swing` |
+| **Biblioteca Animaciones** | `animaciones/humanoide_base.glb` | `SkeletonProfileHumanoid` con `AnimationPlayer` | Malla mínima / base | `Idle`, `Walking`, `Hauler_Box_Idle`, `Hauler_Carry`, `Fishing_Cast`, `Mining_Dig`, `Heavy_Swing`, `Work_Table` |
 
 ### Catálogo Oficial de Equipamiento Rígido Capa 2 (`equipamiento/<pieza>.glb`)
 | Archivo | Slot (`BoneAttachment3D`) | Tamaño (`--size`) | Oficio / Puesto (`CatalogoPersonajes.gd`) |
@@ -190,7 +190,7 @@ Envía a `image-generator` (aspecto `16:9` o `3:1`) la plantilla exacta según s
    - Revisa `preview.png` con `read_file` antes de entregar.
 
 ### 3C. Biblioteca Compartida de Animaciones (`animaciones/humanoide_base.glb`)
-Cuando falte o se quiera actualizar `godot/assets/personajes/animaciones/humanoide_base.glb`, parte de un rig `SkeletonProfileHumanoid` (`cuerpo_m.glb` o `avatar.glb`), transfiere como mínimo `Idle`, `Walking` y `Mining_Swing` desde `arte/animations/` con `blender_retarget_mixamo.py` y verifica con `--inspect`.
+Cuando falte o se quiera actualizar `godot/assets/personajes/animaciones/humanoide_base.glb`, parte de un rig `SkeletonProfileHumanoid` (`cuerpo_m.glb` o `avatar.glb`) y conserva exactamente los ocho nombres canónicos: `Idle`, `Walking`, `Hauler_Box_Idle`, `Hauler_Carry`, `Fishing_Cast`, `Mining_Dig`, `Heavy_Swing` y `Work_Table`. Usa `blender_retarget_mixamo.py`; para un GLB multiacción selecciona la acción fuente exacta con `Nombre=ruta.glb::AccionFuente`. Verifica nombres, verticalidad del rig y poses representativas en los cuatro cuerpos antes de reemplazar la biblioteca.
 
 ---
 
@@ -226,7 +226,9 @@ Banderas útiles: `--scale-xyz`, `--rotate-z`, `--recenter-feet`, `--tint "#hex"
 El proyecto ya cuenta con paquetes Mixamo descargados en **`arte/animations/`** (`Male_Locomotion_Pack`, `Female_Locomotion_Pack`, `Action_Adventure_Pack`, `Pro_Sword_and_Shield_Pack`, `Pro_Longbow_Pack`, `command`, más clips individuales como `Walking.fbx`, `Swimming.fbx`, `Heavy Weapon Swing.fbx`, `Kneeling Down.fbx`, `Dying.fbx`). Para nuevos clips en [mixamo.com](https://www.mixamo.com/): `FBX Binary`, `Without Skin`, `30 FPS`, `In Place` para locomoción, guardados en `arte/animations/` o `tools/3d_pipeline/mixamo_library/`.
 
 ### Nombres Exactos Esperados por Godot 4
-- **Colonos (`PersonajeModular.gd` + `animaciones/humanoide_base.glb`):** `Idle`, `Walking`, `Mining_Swing` (loop automático).
+- **Colonos (`PersonajeModular.gd` + `animaciones/humanoide_base.glb`):**
+  - *Loop:* `Idle`, `Walking`, `Hauler_Box_Idle`, `Hauler_Carry`, `Fishing_Cast`, `Work_Table`.
+  - *No-loop:* `Mining_Dig`, `Heavy_Swing`; `PersonajeModular` elige de nuevo al finalizar, por lo que minería puede repetir el mismo clip consecutivamente.
 - **Avatar (`AvatarAnimador.gd`):**
   - *Loop:* `Idle`, `Walking`, `Walking_Backward`, `Strafe_Left`, `Strafe_Right`, `Running`, `Strafe_Left_Run`, `Strafe_Right_Run`, `Falling_Idle`, `Treading_Water`, `Swimming`, `Mining_Swing`, `Cenital_Kneel_Idle`, `Sword_Idle`, `Sword_Run`, `Sword_Strafe`, `Sword_Block_Idle`, `Bow_Idle`, `Bow_Aim_Hold`, `Bow_Aim_Walk_Forward`, `Bow_Aim_Walk_Back`, `Bow_Aim_Walk_Left`, `Bow_Aim_Walk_Right`.
   - *Puntuales:* `Jump_Start`, `Jump_Land`, `Cenital_Kneel_Down`, `Cenital_Stand_Up`, `Sword_Equip`, `Sword_Sheath`, `Sword_Slash`, `Sword_Slash_2`, `Bow_Equip`, `Bow_Disarm`, `Bow_Release`, `Command_Charge`, `Command_Point`, `Command_Rally`, `Hit_React`, `Death`.

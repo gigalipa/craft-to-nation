@@ -100,6 +100,58 @@ static func resolver_ruta_equipamiento(pieza_id: String, existe_fn: Callable = C
 	return ruta if _existe_recurso(ruta, existe_fn) else ""
 
 
+static func _colono_en_movimiento(colono: Dictionary) -> bool:
+	return bool(colono.get("moviendo", false))
+
+
+static func _colono_tiene_carga(colono: Dictionary) -> bool:
+	var carga: Variant = colono.get("carga", {})
+	return carga is Dictionary and not (carga as Dictionary).is_empty()
+
+
+## Devuelve el pool canónico correspondiente al estado y oficio actuales.
+static func resolver_animaciones(colono: Dictionary, tipo_puesto: String = "") -> Array[String]:
+	var trabajo: Dictionary = colono.get("trabajo", {}) if colono.get("trabajo", {}) is Dictionary else {}
+	var es_acarreador := str(trabajo.get("rol", "")) == "acarreador"
+	var moviendo := _colono_en_movimiento(colono)
+	if es_acarreador and moviendo and _colono_tiene_carga(colono):
+		return ["Hauler_Carry"]
+	if moviendo:
+		return ["Walking"]
+	if es_acarreador and not _colono_tiene_carga(colono):
+		return ["Hauler_Box_Idle"]
+
+	match tipo_puesto.strip_edges().to_lower():
+		"mina":
+			return ["Mining_Dig", "Heavy_Swing"]
+		"pesca_frutos_mar":
+			return ["Fishing_Cast"]
+		"maderero":
+			return ["Heavy_Swing"]
+		"caza_recoleccion", "aserradero", "siderurgica", "refineria_tierras_raras", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "estacion_bombeo", "taller_transporte":
+			return ["Work_Table"]
+
+	var tarea: Dictionary = colono.get("tarea", {}) if colono.get("tarea", {}) is Dictionary else {}
+	if str(tarea.get("tipo", "")) == "construir":
+		return ["Heavy_Swing"]
+	return ["Idle"]
+
+
+## Offset local de una pieza rígida respecto al hueso de su slot lógico.
+static func ajuste_equipamiento(pieza_id: String, slot: String) -> Transform3D:
+	if pieza_id != "canasta_acarreo":
+		return Transform3D.IDENTITY
+	match slot:
+		"RightHand":
+			# Asa adelantada y cesta bajo las manos durante la espera.
+			return Transform3D(Basis.from_euler(Vector3(0.0, 0.0, deg_to_rad(90.0))), Vector3(-0.20, 0.02, -0.08))
+		"Chest":
+			# Cara plana contra la espalda durante desplazamiento o carga.
+			return Transform3D(Basis.from_euler(Vector3(0.0, PI, 0.0)), Vector3(0.0, 0.08, -0.22))
+		_:
+			return Transform3D.IDENTITY
+
+
 ## Resuelve la Capa 2 (slot -> pieza rígida) a partir del oficio, rol, tarea y tipo de puesto.
 static func resolver_equipamiento(colono: Dictionary, tipo_puesto: String = "", _era: int = 1) -> Dictionary:
 	var tipo := str(colono.get("tipo", "desempleado")).strip_edges().to_lower()
@@ -117,7 +169,8 @@ static func resolver_equipamiento(colono: Dictionary, tipo_puesto: String = "", 
 	var trabajo: Dictionary = colono.get("trabajo", {}) if colono.get("trabajo", {}) is Dictionary else {}
 	if not trabajo.is_empty():
 		if str(trabajo.get("rol", "")) == "acarreador":
-			return {"Chest": "canasta_acarreo"}
+			var slot_canasta := "Chest" if _colono_en_movimiento(colono) or _colono_tiene_carga(colono) else "RightHand"
+			return {slot_canasta: "canasta_acarreo"}
 		match tipo_puesto.strip_edges().to_lower():
 			"mina":
 				return {"Head": "casco_minero", "RightHand": "pico"}

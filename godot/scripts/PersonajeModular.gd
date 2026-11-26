@@ -262,6 +262,8 @@ func _actualizar_capa2(nuevo_eq: Dictionary, tono_piel: int, color_equipo: Color
 		var pieza := escena.instantiate()
 		CatalogoPersonajes.aplicar_materiales_identidad(pieza, tono_piel, color_equipo)
 		anclaje.add_child(pieza)
+		if pieza is Node3D:
+			(pieza as Node3D).transform = CatalogoPersonajes.ajuste_equipamiento(pieza_id, str(slot))
 		_equipamiento_instanciado[slot] = pieza_id
 
 

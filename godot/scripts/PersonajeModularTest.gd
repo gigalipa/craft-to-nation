@@ -39,6 +39,7 @@ func _ready() -> void:
 func ejecutar_pruebas() -> void:
 	test_identidad_persistente_y_legacy()
 	test_catalogo_capa1_y_capa2()
+	test_animaciones_por_oficio_y_canasta_dinamica()
 	test_equipamiento_real_instanciable()
 	test_materiales_piel_y_equipo_en_malla_sintetica()
 	test_biblioteca_animaciones_trabajo()
@@ -104,7 +105,7 @@ func test_catalogo_capa1_y_capa2() -> void:
 
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "desempleado", "tarea": {}, "trabajo": {}}) == {})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "obrero", "tarea": {"id": 1, "tipo": "construir"}, "trabajo": {}}) == {"RightHand": "martillo"})
-	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}}) == {"Chest": "canasta_acarreo"})
+	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": false, "carga": {}}) == {"RightHand": "canasta_acarreo"})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "tecnico", "tarea": {}, "trabajo": {"rol": "recolector"}}, "mina") == {"Head": "casco_minero", "RightHand": "pico"})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "recolector"}}, "maderero") == {"RightHand": "hacha"})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "recolector"}}, "caza_recoleccion") == {"LeftHand": "arco_caza"})
@@ -113,6 +114,42 @@ func test_catalogo_capa1_y_capa2() -> void:
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "investigador", "tarea": {"tipo": "investigador_itinerante"}, "trabajo": {}}) == {"LeftHand": "maletin_ciencia"})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "militar", "tarea": {}, "trabajo": {}}) == {"Head": "casco_militar", "RightHand": "espada", "LeftHand": "escudo"})
 	assert(CatalogoPersonajes.resolver_equipamiento({"tipo": "militar", "subtipo_militar": "arquero", "tarea": {}, "trabajo": {}}) == {"Head": "casco_militar", "LeftHand": "arco"})
+
+
+func test_animaciones_por_oficio_y_canasta_dinamica() -> void:
+	print("=== TEST 3: Animaciones por oficio y canasta dinámica ===")
+	var base := {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "recolector"}, "moviendo": false, "carga": {}}
+	var casos := [
+		{"nombre": "acarreador cargado en movimiento", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": true, "carga": {"madera": 1}}, "puesto": "almacen", "esperado": ["Hauler_Carry"]},
+		{"nombre": "caminante común", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "recolector"}, "moviendo": true, "carga": {}}, "puesto": "mina", "esperado": ["Walking"]},
+		{"nombre": "acarreador quieto y vacío", "colono": {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": false, "carga": {}}, "puesto": "almacen", "esperado": ["Hauler_Box_Idle"]},
+		{"nombre": "mina", "colono": base, "puesto": "mina", "esperado": ["Mining_Dig", "Heavy_Swing"]},
+		{"nombre": "pesca", "colono": base, "puesto": "pesca_frutos_mar", "esperado": ["Fishing_Cast"]},
+		{"nombre": "maderero", "colono": base, "puesto": "maderero", "esperado": ["Heavy_Swing"]},
+		{"nombre": "caza y recolección", "colono": base, "puesto": "caza_recoleccion", "esperado": ["Work_Table"]},
+		{"nombre": "construcción", "colono": {"tipo": "obrero", "tarea": {"tipo": "construir"}, "trabajo": {}, "moviendo": false, "carga": {}}, "puesto": "", "esperado": ["Heavy_Swing"]},
+		{"nombre": "fallback", "colono": {"tipo": "desempleado", "tarea": {}, "trabajo": {}, "moviendo": false, "carga": {}}, "puesto": "", "esperado": ["Idle"]},
+	]
+	var industriales := ["aserradero", "siderurgica", "refineria_tierras_raras", "fabrica_bloques", "vidriera", "carbonera", "refineria_petrolera", "productor_combustible", "central_termoelectrica", "estacion_bombeo", "taller_transporte"]
+	for puesto in industriales:
+		casos.append({"nombre": "industrial " + puesto, "colono": base, "puesto": puesto, "esperado": ["Work_Table"]})
+	for caso in casos:
+		var recibido: Array[String] = CatalogoPersonajes.resolver_animaciones(caso["colono"], caso["puesto"])
+		assert(recibido == caso["esperado"], "%s: esperado=%s recibido=%s" % [caso["nombre"], caso["esperado"], recibido])
+
+	var acarreador_quieto := {"tipo": "obrero", "tarea": {}, "trabajo": {"rol": "acarreador"}, "moviendo": false, "carga": {}}
+	var acarreador_moviendose := acarreador_quieto.duplicate(true)
+	acarreador_moviendose["moviendo"] = true
+	var acarreador_cargado := acarreador_quieto.duplicate(true)
+	acarreador_cargado["carga"] = {"piedra": 1}
+	assert(CatalogoPersonajes.resolver_equipamiento(acarreador_quieto) == {"RightHand": "canasta_acarreo"})
+	assert(CatalogoPersonajes.resolver_equipamiento(acarreador_moviendose) == {"Chest": "canasta_acarreo"})
+	assert(CatalogoPersonajes.resolver_equipamiento(acarreador_cargado) == {"Chest": "canasta_acarreo"})
+	var ajuste_manos := CatalogoPersonajes.ajuste_equipamiento("canasta_acarreo", "RightHand")
+	var ajuste_espalda := CatalogoPersonajes.ajuste_equipamiento("canasta_acarreo", "Chest")
+	assert(not ajuste_manos.is_equal_approx(Transform3D.IDENTITY), "la canasta en manos requiere offset")
+	assert(not ajuste_espalda.is_equal_approx(Transform3D.IDENTITY), "la canasta en espalda requiere offset")
+	assert(not ajuste_manos.is_equal_approx(ajuste_espalda), "los dos usos comparten GLB pero no ajuste")
 
 
 func test_equipamiento_real_instanciable() -> void:

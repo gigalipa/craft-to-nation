@@ -1,8 +1,8 @@
 """Retargeting headless en Blender de animaciones Mixamo (.fbx) hacia personajes
 riggeados (.glb con SkeletonProfileHumanoid) de Craft to Nation.
 
-Compensa automaticamente la diferencia T-Pose (Mixamo) -> A-Pose (UniRig/Godot)
-usando alineacion de direcciones en espacio mundo, escala el desplazamiento de Hips
+Compensa diferencias de pose de reposo entre Mixamo y UniRig/Godot usando
+alineacion de direcciones en espacio mundo, escala el desplazamiento de Hips
 proporcionalmente a la altura de cadera del personaje y conserva animaciones previas
 en NLA tracks para exportacion limpia a Godot 4 (.glb).
 
@@ -58,6 +58,8 @@ def _find_mixamo_bone(arm: bpy.types.Object, suffix: str) -> str | None:
     target_low = suffix.lower()
     for b in arm.data.bones:
         clean = b.name.split(":", 1)[-1].lower()
+        if clean.startswith("mixamorig"):
+            clean = clean[len("mixamorig") :].lstrip(":_|.- ")
         if clean == target_low:
             return b.name
     return None
@@ -323,7 +325,7 @@ def _render_frame_grid(
 
 def _parse_args() -> argparse.Namespace:
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
-    p = argparse.ArgumentParser(description="Retarget de animaciones Mixamo FBX a personaje GLB.")
+    p = argparse.ArgumentParser(description="Retarget de animaciones Mixamo FBX/GLB a personaje GLB.")
     p.add_argument("--character", "-c", required=True, type=Path, help="Ruta al .glb del personaje.")
     p.add_argument("--animation", "-a", type=Path, help="Ruta a un unico .fbx de Mixamo.")
     p.add_argument("--name", "-n", type=str, help="Nombre de la animacion (para --animation).")
@@ -331,7 +333,7 @@ def _parse_args() -> argparse.Namespace:
         "--add",
         action="append",
         default=[],
-        help="Par Nombre=ruta.fbx para retarget en lote (repetible).",
+        help="Nombre=ruta[::AccionFuente][|inicio:fin|velocidad] para retarget en lote (repetible).",
     )
     p.add_argument("--output", "-o", type=Path, help="Ruta de salida .glb (default: sobrescribe --character).")
     p.add_argument("--keep-root-motion", action="store_true", help="Conserva traslacion XY de Hips (por defecto es In-Place).")
@@ -345,23 +347,106 @@ def _parse_args() -> argparse.Namespace:
     return p.parse_args(argv)
 
 
+def _parse_add_spec(spec: str) -> dict:
+    """Convierte la gramática estable de --add en un trabajo de retarget."""
+    if "=" not in spec:
+        raise ValueError(
+            "--add debe tener formato "
+            f"Nombre=ruta[::AccionFuente][|inicio:fin|velocidad], recibido: {spec}"
+        )
+    name, rest = spec.split("=", 1)
+    parts = [part.strip() for part in rest.split("|")]
+    source = parts[0]
+    source_action = None
+    if "::" in source:
+        source, source_action = source.rsplit("::", 1)
+        source_action = source_action.strip() or None
+
+    trim_start, trim_end, speed = None, None, 1.0
+    if len(parts) >= 2 and ":" in parts[1]:
+        start, end = parts[1].split(":", 1)
+        trim_start = int(start) if start.strip() else None
+        trim_end = int(end) if end.strip() else None
+    if len(parts) >= 3 and parts[2]:
+        speed = float(parts[2])
+
+    name = name.strip()
+    source = source.strip()
+    if not name or not source:
+        raise ValueError(f"Nombre y ruta son obligatorios en --add: {spec}")
+    return {
+        "name": name,
+        "path": Path(source),
+        "source_action": source_action,
+        "trim_start": trim_start,
+        "trim_end": trim_end,
+        "speed": speed,
+    }
+
+
+def _import_source(
+    path: Path,
+    source_action: str | None = None,
+) -> tuple[bpy.types.Object, bpy.types.Action]:
+    """Importa FBX/GLB y deja la acción solicitada activa en su armature."""
+    before_objects = set(bpy.context.scene.objects)
+    before_actions = set(bpy.data.actions)
+    suffix = path.suffix.lower()
+    if suffix == ".fbx":
+        bpy.ops.import_scene.fbx(filepath=str(path))
+    elif suffix in {".glb", ".gltf"}:
+        bpy.ops.import_scene.gltf(filepath=str(path))
+    else:
+        raise RuntimeError(f"Formato de animación no soportado '{suffix}' en {path}")
+
+    imported_objects = set(bpy.context.scene.objects) - before_objects
+    armatures = [obj for obj in imported_objects if obj.type == "ARMATURE"]
+    if not armatures:
+        raise RuntimeError(f"No se encontro Armature en {path}")
+    armature = armatures[0]
+    imported_actions = list(set(bpy.data.actions) - before_actions)
+    available = sorted(action.name for action in imported_actions)
+
+    action = None
+    if source_action:
+        action = next((item for item in imported_actions if item.name == source_action), None)
+        if action is None:
+            choices = ", ".join(available) if available else "(ninguna)"
+            raise RuntimeError(
+                f"No existe la acción '{source_action}' en {path}. "
+                f"Acciones disponibles: {choices}"
+            )
+    elif armature.animation_data is not None:
+        action = armature.animation_data.action
+    if action is None and len(imported_actions) == 1:
+        action = imported_actions[0]
+    if action is None:
+        choices = ", ".join(available) if available else "(ninguna)"
+        raise RuntimeError(
+            f"No se pudo determinar la acción fuente en {path}. "
+            f"Acciones disponibles: {choices}"
+        )
+
+    if armature.animation_data is None:
+        armature.animation_data_create()
+    armature.animation_data.action = action
+    return armature, action
+
+
 def _import_and_retarget_one(
     dst_arm: bpy.types.Object,
-    fbx_path: Path,
+    source_path: Path,
     anim_name: str,
     in_place: bool,
+    source_action: str | None = None,
     trim_start: int | None = None,
     trim_end: int | None = None,
     speed: float = 1.0,
 ) -> dict:
     before_objs = set(bpy.context.scene.objects)
     before_acts = set(bpy.data.actions)
-    bpy.ops.import_scene.fbx(filepath=str(fbx_path))
-    fbx_objs = set(bpy.context.scene.objects) - before_objs
-    src_arms = [o for o in fbx_objs if o.type == "ARMATURE"]
-    if not src_arms:
-        raise RuntimeError(f"No se encontro Armature en {fbx_path}")
-    src_arm = src_arms[0]
+    src_arm, _ = _import_source(source_path, source_action)
+    source_objs = set(bpy.context.scene.objects) - before_objs
 
     summary = retarget_mixamo(
         dst_arm=dst_arm,
@@ -374,7 +459,7 @@ def _import_and_retarget_one(
     )
 
     # Eliminar objetos y acciones temporales de Mixamo
-    for obj in list(fbx_objs):
+    for obj in list(source_objs):
         bpy.data.objects.remove(obj, do_unlink=True)
     for act in list(set(bpy.data.actions) - before_acts):
         if act.name != anim_name:
@@ -384,24 +469,18 @@ def _import_and_retarget_one(
 
 def main() -> None:
     args = _parse_args()
-    # (name, path, trim_start, trim_end, speed)
-    jobs: list[tuple[str, Path, int | None, int | None, float]] = []
+    jobs: list[dict] = []
     if args.animation:
-        jobs.append((args.name or args.animation.stem, args.animation, None, None, 1.0))
+        jobs.append({
+            "name": args.name or args.animation.stem,
+            "path": args.animation,
+            "source_action": None,
+            "trim_start": None,
+            "trim_end": None,
+            "speed": 1.0,
+        })
     for spec in args.add:
-        if "=" not in spec:
-            raise SystemExit(f"--add debe tener formato Nombre=ruta.fbx[|start:end|speed], recibido: {spec}")
-        nm, rest = spec.split("=", 1)
-        parts = [p.strip() for p in rest.split("|")]
-        pth = Path(parts[0])
-        t_start, t_end, spd = None, None, 1.0
-        if len(parts) >= 2 and ":" in parts[1]:
-            a, b = parts[1].split(":", 1)
-            t_start = int(a) if a.strip() else None
-            t_end = int(b) if b.strip() else None
-        if len(parts) >= 3 and parts[2]:
-            spd = float(parts[2])
-        jobs.append((nm.strip(), pth, t_start, t_end, spd))
+        jobs.append(_parse_add_spec(spec))
     if not jobs:
         raise SystemExit("Debes especificar --animation o al menos un --add Nombre=ruta.fbx.")
 
@@ -413,15 +492,16 @@ def main() -> None:
     dst_arm = dst_arms[0]
 
     results: list[dict] = []
-    for anim_name, fbx_path, t_start, t_end, spd in jobs:
+    for job in jobs:
         res = _import_and_retarget_one(
             dst_arm=dst_arm,
-            fbx_path=fbx_path,
-            anim_name=anim_name,
+            source_path=job["path"],
+            anim_name=job["name"],
             in_place=not args.keep_root_motion,
-            trim_start=t_start,
-            trim_end=t_end,
-            speed=spd,
+            source_action=job["source_action"],
+            trim_start=job["trim_start"],
+            trim_end=job["trim_end"],
+            speed=job["speed"],
         )
         results.append(res)
 

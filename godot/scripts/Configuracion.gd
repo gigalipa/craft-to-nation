@@ -13,6 +13,7 @@ const TAMANO_VENTANA_DEFAULT := Vector2i(1280, 720)
 
 var volumen_sfx: float = 1.0: set = establecer_volumen_sfx
 var volumen_musica: float = 0.8: set = establecer_volumen_musica
+var volumen_voz: float = 1.0: set = establecer_volumen_voz
 var sensibilidad_mouse: float = 0.003: set = establecer_sensibilidad_mouse
 var fov_camara: float = 70.0: set = establecer_fov_camara
 var idioma: String = "es": set = establecer_idioma
@@ -99,6 +100,8 @@ func cargar_configuracion() -> void:
 		volumen_sfx = clampf(float(datos["volumen_sfx"]), 0.0, 1.0)
 	if datos.has("volumen_musica"):
 		volumen_musica = clampf(float(datos["volumen_musica"]), 0.0, 1.0)
+	if datos.has("volumen_voz"):
+		volumen_voz = clampf(float(datos["volumen_voz"]), 0.0, 1.0)
 	if datos.has("sensibilidad_mouse"):
 		sensibilidad_mouse = clampf(float(datos["sensibilidad_mouse"]), 0.0005, 0.02)
 	if datos.has("fov_camara"):
@@ -123,6 +126,7 @@ func guardar() -> bool:
 	var datos := {
 		"volumen_sfx": volumen_sfx,
 		"volumen_musica": volumen_musica,
+		"volumen_voz": volumen_voz,
 		"sensibilidad_mouse": sensibilidad_mouse,
 		"fov_camara": fov_camara,
 		"idioma": idioma,
@@ -153,6 +157,8 @@ func aplicar() -> void:
 			sonidos.actualizar_volumen_sfx(volumen_sfx)
 		if sonidos.has_method("actualizar_volumen_musica"):
 			sonidos.actualizar_volumen_musica(volumen_musica)
+		if sonidos.has_method("actualizar_volumen_voz"):
+			sonidos.actualizar_volumen_voz(volumen_voz)
 
 	# Actualiza FOV si hay un Player en el árbol
 	var player = get_tree().root.find_child("Player", true, false)
@@ -221,6 +227,7 @@ func establecer_valor_ajuste(clave: String, valor: Variant) -> void:
 func restablecer_valores_defecto() -> void:
 	volumen_sfx = 1.0
 	volumen_musica = 0.8
+	volumen_voz = 1.0
 	sensibilidad_mouse = 0.003
 	fov_camara = 70.0
 	idioma = "es"
@@ -250,6 +257,15 @@ func establecer_volumen_musica(valor: float) -> void:
 		if sonidos.has_method("actualizar_volumen_musica"):
 			sonidos.actualizar_volumen_musica(volumen_musica)
 	configuracion_cambiada.emit("volumen_musica", volumen_musica)
+
+
+func establecer_volumen_voz(valor: float) -> void:
+	volumen_voz = clampf(valor, 0.0, 1.0)
+	if get_node_or_null("/root/Sonidos") != null:
+		var sonidos = get_node("/root/Sonidos")
+		if sonidos.has_method("actualizar_volumen_voz"):
+			sonidos.actualizar_volumen_voz(volumen_voz)
+	configuracion_cambiada.emit("volumen_voz", volumen_voz)
 
 
 func establecer_sensibilidad_mouse(valor: float) -> void:

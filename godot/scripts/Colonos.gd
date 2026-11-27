@@ -424,11 +424,22 @@ func avanzar(delta: float) -> void:
 
 func _avanzar_colono(c: Dictionary, delta: float) -> void:
 	if c["moviendo"]:
-		_completar_paso(c, delta)
+		var mult_vel: float = Ajustes.SUCESION_VELOCIDAD_MULTIPLICADOR if bool(c.get("en_sucesion", false)) else 1.0
+		_completar_paso(c, delta * mult_vel)
 		return
 	if c["evacuando"] != -1:
 		c["busqueda"] = {}  # la búsqueda en curso partió de una celda que dejará de ser la suya
 		_avanzar_evacuacion(c, delta)
+		return
+	if bool(c.get("en_sucesion", false)):
+		if not c.get("busqueda", {}).is_empty():
+			_avanzar_busqueda(c)
+		elif not c["ruta"].is_empty():
+			var sig: Vector3i = c["ruta"][0]
+			if not ocupadas.has(sig) or ocupadas[sig] == c["id"]:
+				c["moviendo"] = true
+				c["progreso"] = 0.0
+				ocupadas[sig] = c["id"]
 		return
 	if c["tipo"] == "militar" and _procesar_combate_y_seguimiento_militar(c, delta):
 		return
@@ -2576,6 +2587,66 @@ func consumir_sucesor_para_avatar(genero_avatar: String, tipo_preferido: String 
 	if cid != -1 and colonos.has(cid):
 		_retirar(cid)
 	return res
+
+
+## Busca un colono vivo del equipo del jugador que comparta exactamente el mismo
+## género del Avatar (sin fallback a otro género: si no hay ninguno, es Game Over).
+func elegir_colono_sucesion_ciudad(genero_avatar: String) -> int:
+	var g_req := CatalogoPersonajes.normalizar_genero(genero_avatar)
+	var prioridad := ["militar", "desempleado", "obrero", "ciudadano", "tecnico", "especialista", "investigador"]
+	for rol_pref in prioridad:
+		var mejor_id := -1
+		var mejor_libre := false
+		var mejor_salud := -1.0
+		for cid in colonos:
+			var c: Dictionary = colonos[cid]
+			if str(c.get("equipo_id", "jugador")) != "jugador":
+				continue
+			if str(c.get("tipo", "")) != rol_pref:
+				continue
+			if CatalogoPersonajes.normalizar_genero(str(c.get("genero", "M"))) != g_req:
+				continue
+			var libre: bool = (c.get("trabajo", {}) as Dictionary).is_empty()
+			var sal := float(c.get("salud", 0.0))
+			var es_mejor := false
+			if mejor_id == -1:
+				es_mejor = true
+			elif libre != mejor_libre:
+				es_mejor = libre
+			elif not is_equal_approx(sal, mejor_salud):
+				es_mejor = sal > mejor_salud
+			else:
+				es_mejor = int(cid) < mejor_id
+			if es_mejor:
+				mejor_id = int(cid)
+				mejor_libre = libre
+				mejor_salud = sal
+		if mejor_id != -1:
+			return mejor_id
+	return -1
+
+
+## Libera al colono elegido de sus tareas actuales y lo encamina al interior del Núcleo Urbano.
+func iniciar_marcha_sucesion(id_colono: int, celdas_destino: Array[Vector3i]) -> bool:
+	if not colonos.has(id_colono) or celdas_destino.is_empty():
+		return false
+	var c: Dictionary = colonos[id_colono]
+	if not (c.get("trabajo", {}) as Dictionary).is_empty() and economia != null:
+		economia.liberar(id_colono)
+	c["trabajo"] = {}
+	c["tarea"] = {}
+	c["carga"] = {}
+	c["fase"] = ""
+	c["espera"] = 0.0
+	c["bloqueo"] = 0.0
+	c["busqueda"] = {}
+	c["moviendo"] = false
+	c["en_sucesion"] = true
+	var ruta: Array[Vector3i] = []
+	if _buscador != null:
+		ruta = _buscador.buscar_ruta_a_alguna(c["celda"], celdas_destino)
+	c["ruta"] = ruta
+	return not ruta.is_empty()
 
 
 # ==============================================================================

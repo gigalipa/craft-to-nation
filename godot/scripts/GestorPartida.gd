@@ -76,6 +76,13 @@ func guardar_partida(nombre_archivo: String, nombre_legible: String = "") -> boo
 	if player != null and player.has_method("exportar_estado"):
 		data_avatar = player.exportar_estado()
 
+	var data_atmosfera: Dictionary = {}
+	var atmosfera = get_tree().root.find_child("AtmosferaCiclo", true, false)
+	if atmosfera != null and atmosfera.has_method("exportar_estado"):
+		data_atmosfera = atmosfera.exportar_estado()
+
+	var data_campana: Dictionary = Campana.exportar_estado() if Campana != null else {}
+
 	var paquete := {
 		"version": 1,
 		"metadatos": metadatos,
@@ -88,6 +95,8 @@ func guardar_partida(nombre_archivo: String, nombre_legible: String = "") -> boo
 		"canalizaciones": data_canalizaciones,
 		"mundo": data_mundo,
 		"avatar": data_avatar,
+		"atmosfera": data_atmosfera,
+		"campana": data_campana,
 	}
 
 	var arch := FileAccess.open(ruta, FileAccess.WRITE)
@@ -95,7 +104,11 @@ func guardar_partida(nombre_archivo: String, nombre_legible: String = "") -> boo
 		push_error("No se pudo abrir el archivo para guardar: " + ruta)
 		return false
 
-	arch.store_string(JSON.stringify(paquete, "\t"))
+	arch.store_string(JSON.stringify(paquete))
+	arch.flush()
+	arch.close()
+	if not _cache_valida:
+		precargar_metadatos_partidas()
 	_actualizar_cache_con_metadatos(metadatos)
 	partida_guardada.emit(archivo_limpio)
 	return true
@@ -157,9 +170,27 @@ func cargar_partida(nombre_archivo: String) -> bool:
 	if zona_overlay != null and zona_overlay.has_method("reconstruir"):
 		zona_overlay.reconstruir()
 
+	var vias_renderer = get_tree().root.find_child("ViasRenderer", true, false)
+	if vias_renderer != null and vias_renderer.has_method("reconstruir_todo"):
+		vias_renderer.reconstruir_todo()
+
 	var colonos_renderer = get_tree().root.find_child("ColonosRenderer", true, false)
 	if colonos_renderer != null and colonos_renderer.has_method("reconstruir"):
 		colonos_renderer.reconstruir()
+
+	var atmosfera = get_tree().root.find_child("AtmosferaCiclo", true, false)
+	if atmosfera != null and atmosfera.has_method("importar_estado") and data.has("atmosfera") and data["atmosfera"] is Dictionary:
+		atmosfera.importar_estado(data["atmosfera"])
+
+	var alumbrado = get_tree().root.find_child("AlumbradoUrbano", true, false)
+	if alumbrado != null and alumbrado.has_method("reconstruir_luminarias"):
+		alumbrado.reconstruir_luminarias()
+
+	if Campana != null:
+		if data.has("campana") and data["campana"] is Dictionary:
+			Campana.importar_estado(data["campana"])
+		else:
+			Campana.desactivar()
 
 	partida_cargada.emit(ruta.get_file())
 	return true
@@ -253,8 +284,8 @@ func _remover_de_cache(nombre_archivo: String) -> void:
 			break
 
 
-func listar_partidas() -> Array[Dictionary]:
-	if not _cache_valida:
+func listar_partidas(forzar_recarga: bool = false) -> Array[Dictionary]:
+	if forzar_recarga or not _cache_valida:
 		precargar_metadatos_partidas()
 	return _cache_partidas.duplicate()
 
@@ -282,3 +313,7 @@ func reiniciar_partida() -> void:
 		Vias.reiniciar()
 	if Canalizaciones != null and Canalizaciones.has_method("reiniciar"):
 		Canalizaciones.reiniciar()
+	if Blueprints != null and Blueprints.has_method("limpiar"):
+		Blueprints.limpiar()
+	if Campana != null and Campana.fase != Campana.Fase.PROLOGO:
+		Campana.desactivar()

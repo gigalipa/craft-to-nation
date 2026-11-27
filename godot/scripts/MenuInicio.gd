@@ -40,6 +40,7 @@ var _btn_volver_cargar: Button
 # Componentes del modal Nueva Partida
 var _lbl_nueva_partida_titulo: Label
 var _lbl_nueva_partida_desc: Label
+var _btn_campana: Button
 var _btn_mundo_aleatorio: Button
 var _btn_agregar_semilla: Button
 var _contenedor_input_semilla: VBoxContainer
@@ -104,6 +105,12 @@ func _construir_ui() -> void:
 	_construir_panel_configuracion()
 
 	_mostrar_subpanel(_panel_principal)
+	if Campana != null and Campana.abrir_nueva_partida_en_menu:
+		Campana.abrir_nueva_partida_en_menu = false
+		_mostrar_subpanel(_panel_nueva_partida)
+	if Campana != null and Campana.abrir_nueva_partida_en_menu:
+		Campana.abrir_nueva_partida_en_menu = false
+		_mostrar_subpanel(_panel_nueva_partida)
 
 	# 6. Versión en el pie
 	var lbl_version := Label.new()
@@ -230,6 +237,16 @@ func _construir_panel_nueva_partida() -> void:
 	_lbl_nueva_partida_desc.add_theme_font_size_override("font_size", 12)
 	_panel_nueva_partida.add_child(_lbl_nueva_partida_desc)
 
+	_btn_campana = Button.new()
+	_btn_campana.text = Strings.t("MENU_INICIAR_CAMPANA", "Campaña / Tutorial")
+	var ic_camp := IconosHUD.icono("libro")
+	_btn_campana.icon = ic_camp if ic_camp != null else IconosHUD.icono("menu_nueva_partida")
+	_btn_campana.add_theme_constant_override("icon_max_width", 22)
+	_btn_campana.custom_minimum_size = Vector2(0, 42)
+	TemaHUD.estilizar_boton(_btn_campana)
+	_btn_campana.pressed.connect(_iniciar_modo_campana)
+	_panel_nueva_partida.add_child(_btn_campana)
+
 	_btn_mundo_aleatorio = Button.new()
 	_btn_mundo_aleatorio.text = Strings.t("MENU_GENERAR_ALEATORIO", "Generar mundo aleatorio")
 	_btn_mundo_aleatorio.icon = IconosHUD.icono("menu_nueva_partida")
@@ -286,6 +303,15 @@ func _construir_panel_nueva_partida() -> void:
 	TemaHUD.estilizar_boton(_btn_volver_nueva)
 	_btn_volver_nueva.pressed.connect(func(): _mostrar_subpanel(_panel_principal))
 	_panel_nueva_partida.add_child(_btn_volver_nueva)
+
+
+func _iniciar_modo_campana() -> void:
+	Sonidos.reproducir("sfx_ui_boton_clic")
+	if Campana != null:
+		Campana.iniciar_nueva_campana()
+	GestorPartida.reiniciar_partida()
+	GestorPartida.partida_pendiente_a_cargar = ""
+	get_tree().change_scene_to_file("res://scenes/SecuenciaVideoCampana.tscn")
 
 
 func _iniciar_mundo_aleatorio() -> void:
@@ -377,6 +403,8 @@ func _actualizar_textos_idioma() -> void:
 		_lbl_nueva_partida_titulo.text = Strings.t("MENU_NUEVA_PARTIDA_TITULO", "Nueva Partida")
 	if _lbl_nueva_partida_desc != null:
 		_lbl_nueva_partida_desc.text = Strings.t("MENU_NUEVA_PARTIDA_DESC", "Elige cómo deseas generar tu mundo:")
+	if _btn_campana != null:
+		_btn_campana.text = Strings.t("MENU_INICIAR_CAMPANA", "Campaña / Tutorial")
 	if _btn_mundo_aleatorio != null:
 		_btn_mundo_aleatorio.text = Strings.t("MENU_GENERAR_ALEATORIO", "Generar mundo aleatorio")
 	if _btn_agregar_semilla != null:

@@ -16,13 +16,13 @@
 
 ## Relationships
 
-- [HUD.gd](HUD.gd.md) (3 shared connections)
+- [ajustes.gd](ajustes.gd.md) (3 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (2 shared connections)
 - [Economia.gd](Economia.gd.md) (2 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
-- [ajustes.gd](ajustes.gd.md) (1 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
 - [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (1 shared connections)
+- [PanelPuesto.gd](PanelPuesto.gd.md) (1 shared connections)
 - [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (1 shared connections)
+- [VentanaPoblacion.gd](VentanaPoblacion.gd.md) (1 shared connections)
 
 ## Source Files
 

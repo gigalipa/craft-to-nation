@@ -3,7 +3,16 @@ extends Node
 ## Suite de pruebas unitarias para GestorPartida.gd y la serialización del estado de juego.
 
 func _ready() -> void:
+	var ruta_qs := GestorPartida.obtener_ruta_partida(GestorPartida.ARCHIVO_QUICKSAVE)
+	var backup_qs := ""
+	if FileAccess.file_exists(ruta_qs):
+		backup_qs = FileAccess.get_file_as_string(ruta_qs)
 	ejecutar_pruebas()
+	if not backup_qs.is_empty():
+		var f_rest := FileAccess.open(ruta_qs, FileAccess.WRITE)
+		if f_rest != null:
+			f_rest.store_string(backup_qs)
+			f_rest.close()
 	print("Todas las pruebas pasaron correctamente.")
 	get_tree().quit(0)
 
@@ -61,6 +70,12 @@ func test_guardado_rapido() -> void:
 	assert(ok, "guardado_rapido() debe retornar true.")
 	var ruta_qs := GestorPartida.obtener_ruta_partida(GestorPartida.ARCHIVO_QUICKSAVE)
 	assert(FileAccess.file_exists(ruta_qs), "El archivo de quicksave debe existir.")
+	var encontrado := false
+	for p in GestorPartida.listar_partidas(true):
+		if p.get("nombre_archivo", "") == GestorPartida.ARCHIVO_QUICKSAVE:
+			encontrado = true
+			break
+	assert(encontrado, "quicksave.json debe aparecer en listar_partidas().")
 	print("OK: Guardado rápido (quicksave).")
 
 

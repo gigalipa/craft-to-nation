@@ -1,13 +1,13 @@
 ---
-title: "Development Roadmap & Milestone Progress (GDD v3.64)"
+title: "Development Roadmap & Milestone Progress (GDD v3.65)"
 description: "Current development status and technical roadmap: Phases 0 through 7, active Phase 3 industrial milestones, and upcoming dual camera tactical warfare."
 ---
 
-# Development Roadmap & Milestone Progress (GDD v3.64)
+# Development Roadmap & Milestone Progress (GDD v3.65)
 
 ![Tactical aerial view of city defense and expansion](/assets/comparison-aerial.webp)
 
-This roadmap tracks the past, current, and upcoming development milestones for **Craft to Nation** across the 7 official phases defined in **Section 11 of GDD v3.64** and the live QA verification protocol (`docs/Live_Verifications.md`), backed by **39 automated test scenes running 100% in green**.
+This roadmap tracks the past, current, and upcoming development milestones for **Craft to Nation** across the 7 official phases defined in **Section 11 of GDD v3.65** and the live QA verification protocol (`docs/Live_Verifications.md`), backed by **42 automated test scenes running 100% in green**.
 
 ---
 
@@ -17,7 +17,7 @@ This roadmap tracks the past, current, and upcoming development milestones for *
   Phase 0: Pure Simulation Logic (PoC 1 & 2)         [████████████████████] 100% (Completed)
   Phase 1: 1st-Person Voxel & Volume Audit (PoC 3)   [████████████████████] 100% (Verified)
   Phase 2: City, Demography, Zoning & NPCs (PoC 4/8) [████████████████████] 100% (Completed)
-  Phase 3: 200×200 World, Industry, Fluids, HUD & SFX v3.64 [████████████████████] 100% (Completed)
+  Phase 3: 200×200 World, Industry, Fluids, HUD & SFX v3.65 [████████████████████] 100% (Completed)
   Phase 4: Dual Camera, Barracks & Hybrid RTS (PoC 7) [████████████████████] 100% (Completed)
   Phase 5: Advanced Logistics & Bridges (PoC 8–10)   [██░░░░░░░░░░░░░░░░░░]  Next Milestone
   Phase 6: Warfare, Sieges, AI & Avatar Succession   [██░░░░░░░░░░░░░░░░░░]  Planned
@@ -26,7 +26,7 @@ This roadmap tracks the past, current, and upcoming development milestones for *
 
 ---
 
-## 2. Completed Milestones (Phases 0 to 3 — GDD v3.64)
+## 2. Completed Milestones (Phases 0 to 3 — GDD v3.65)
 
 ### Phase 0 & Phase 1: Voxel Substrate, First-Person Avatar & Volumetric Validation
 - [x] Finite procedural **200×200 voxel world** (`GeneradorMundo.gd`) with max height `y = 130`, **24 subsurface layers** down to unmineable `bedrock`, 2 mountain peaks, rivers with water currents and waterfalls, lakes, and seas.
@@ -59,7 +59,7 @@ This roadmap tracks the past, current, and upcoming development milestones for *
 ---
 
 
-### Phase 4: Dual Combat Camera, Military Barracks, Universal RTS Selection & Hybrid Command (v3.64)
+### Phase 4: Dual Combat Camera, Military Barracks, Universal RTS Selection & Hybrid Command (v3.65)
 - [x] **Military Barracks Building (`9×7×8`, Zone B, key `7`) & 4→4 Cohort:** 2-story building with stone, wood, glass, door, and 4 beds that atomically recruits 16 soldiers (4 per bed) in `Economia.gd`/`Recoleccion.gd` without displacing civilian housing.
 - [x] **Barracked Military Housing (`x_cama = 4`):** Segregated military housing calculation in `Ciudad.gd` and `ajustes.gd` preventing civilian evictions.
 - [x] **Universal Overhead Camera Selection (`CamaraCenital.gd`):** 2D drag-selection box supporting individual and group selection of soldiers and civilians, with persistent selection across camera switches (<kbd>C</kbd>).
@@ -68,8 +68,9 @@ This roadmap tracks the past, current, and upcoming development milestones for *
 - [x] **Procedural Troop Visuals (`ColonosRenderer.gd`):** Procedural helmets, shields, base selection rings, and tactical waypoints.
 - [x] **Persistent Window/Fullscreen Mode (`Configuracion.gd`):** Fullscreen vs windowed (1280×720) toggle saved in `user://configuracion.json`.
 - [x] **Automated Test Suite Expanded to 37 Scenes:** New test suite `PlayerCombateComandanteTest.tscn` bringing total coverage to 37 scenes running 100% green.
-- [x] **Contextual Adaptive Music Director (16-Track OST), Save/Load Hardening & "How to Play" Wiki Button (2026-11-20 to 2026-11-22 — v3.64):** Reactive music director in `Sonidos.gd` across 16 OST tracks (`menu`, `exploration`, `building`, `industry`, `battle`) with dual-player crossfade (`3.0s` ambient / `0.8s` battle), hysteresis (`4.0s` / `15.0s`), shuffle bag, and unified `Menu & Loading Theme` across main menu and loading screen (`PantallaCarga.gd`); robust `Vector2i`/`Vector3i` serialization/parsing and automatic `ColonosRenderer.reconstruir()` on load across `GestorPartida.gd`/`Colonos.gd`/`Economia.gd`/`VoxelWorld.gd`; "How to Play" button opening the official Wiki from `MenuInicio.gd`, file logging (`user://logs/craft_to_nation.log`), and `1920×1080` base viewport with `1280×720` window override.
-- [x] **Rigged 3D Avatar, Modular 3D Character System & Top-Down Risk Lock (2026-11-23 to 2026-11-25 — v3.64):** Replaced player capsule with rigged `avatar.glb` (`SkeletonProfileHumanoid`, hand `BoneAttachment3D`s, and 1st-person head-hiding `SkeletonModifier3D`) driven by 47 animations in `AvatarAnimador.gd`; plug-and-play drop-in architecture (`CatalogoPersonajes.gd` + `PersonajeModular.gd` in `ColonosRenderer.gd`) with 2 layers (outfit + rigid gear), 4 skin tones (`mat_piel`), team colors (`mat_color_equipo`), and gender-filtered succession with anti-softlock fallback in `Ciudad.suceder_avatar()`; top-down camera lock during recent damage (`5.0s`), deep swimming (`>= 2` blocks), or falling (`Player.motivo_bloqueo_cenital()`); 3D pipeline in `tools/3d_pipeline/`; and test suite expanded to 39 green scenes (`AvatarAnimadorTest.tscn` & `PersonajeModularTest.tscn`).
+- [x] **Contextual Adaptive Music Director (16-Track OST), Save/Load Hardening & "How to Play" Wiki Button (2026-11-20 to 2026-11-22 — v3.65):** Reactive music director in `Sonidos.gd` across 16 OST tracks (`menu`, `exploration`, `building`, `industry`, `battle`) with dual-player crossfade (`3.0s` ambient / `0.8s` battle), hysteresis (`4.0s` / `15.0s`), shuffle bag, and unified `Menu & Loading Theme` across main menu and loading screen (`PantallaCarga.gd`); robust `Vector2i`/`Vector3i` serialization/parsing and automatic `ColonosRenderer.reconstruir()` on load across `GestorPartida.gd`/`Colonos.gd`/`Economia.gd`/`VoxelWorld.gd`; "How to Play" button opening the official Wiki from `MenuInicio.gd`, file logging (`user://logs/craft_to_nation.log`), and `1920×1080` base viewport with `1280×720` window override.
+- [x] **Rigged 3D Avatar, Modular 3D Character System & Top-Down Risk Lock (2026-11-23 to 2026-11-25 — v3.65):** Replaced player capsule with rigged `avatar.glb` (`SkeletonProfileHumanoid`, hand `BoneAttachment3D`s, and 1st-person head-hiding `SkeletonModifier3D`) driven by 47 animations in `AvatarAnimador.gd`; plug-and-play drop-in architecture (`CatalogoPersonajes.gd` + `PersonajeModular.gd` in `ColonosRenderer.gd`) with 2 layers (outfit + rigid gear), 4 skin tones (`mat_piel`), team colors (`mat_color_equipo`), and gender-filtered succession with anti-softlock fallback in `Ciudad.suceder_avatar()`; top-down camera lock during recent damage (`5.0s`), deep swimming (`>= 2` blocks), or falling (`Player.motivo_bloqueo_cenital()`); 3D pipeline in `tools/3d_pipeline/`; and test suite expanded to 39 green scenes (`AvatarAnimadorTest.tscn` & `PersonajeModularTest.tscn`).
+- [x] **Narrative Tutorial Campaign, Day/Night + Weather + Street Lighting & World PBR Textures (2026-11-26 to 2026-11-27 — v3.65):** New `Campana.gd` autoload ("The Multiversal Fracture", 4 Acts / 18 steps on `SEMILLA_CAMPANA`, `campana_prologo.ogv` prologue, `PanelCampanaHUD.gd`, synthesized voice lines in `godot/assets/voz/` with `volumen_voz`, and epilogue transition to Free Mode); procedural sky (`AtmosferaCiclo.gd` with `360h / 360h` monthly cycle, 4 weather states, GPU particles, and `intensidad_nieve` global shader) plus automatic urban lighting (`AlumbradoUrbano.gd` with 3 `MultiMeshInstance3D` fixtures, clusters, halos, and `OmniLight3D` pool); CC0 PBR world textures (`docs/texturas.md`, `BlockLibrary.res`, and per-material visual variants); initial 3D colonist batch (`cuerpo_m/f.glb`, `obrero_m/f.glb`, 8 shared clips); and test suite expanded to **42 green scenes** (`AtmosferaAlumbradoTest.tscn`, `CampanaTest.tscn`, `TexturasMundoTest.tscn`).
 
 ---
 

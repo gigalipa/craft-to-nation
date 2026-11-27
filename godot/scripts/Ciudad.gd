@@ -274,7 +274,10 @@ func _init() -> void:
 
 
 func _inicializar_almacen_por_defecto() -> void:
-	var stock_ini: Dictionary = Ajustes.cantidades_recursos_iniciales()
+	var es_campana_nueva: bool = Campana != null and Campana.fase == Campana.Fase.PROLOGO
+	var stock_ini: Dictionary = Ajustes.cantidades_recursos_iniciales(Ajustes.CAMPANA_PERFIL_RECURSOS if es_campana_nueva else "")
+	if es_campana_nueva:
+		stock_ini["comida"] = Ajustes.CAMPANA_COMIDA_INICIAL
 	var cant_comida: float = float(stock_ini.get("comida", COMIDA_INICIAL))
 	var lista_claves := [
 		"madera", "comida", "hierro", "tierra", "piedra", "cobre", "carbon",
@@ -1002,6 +1005,10 @@ func registrar_edificio_residencial(id: int, camas_por_piso: Array, baules: int 
 			horas_apertura_colonizacion[id] = 24
 	recalcular_limites()
 	_alojar_sin_techo()
+	var campana_node: Node = get_node_or_null("/root/Campana") if is_inside_tree() else null
+	if campana_node != null and campana_node.has_method("esta_activa") and campana_node.esta_activa():
+		if edificios_residenciales.size() == 1 and censo_total + sin_techo == 0:
+			_migrantes_acumulados = maxf(_migrantes_acumulados, 2.0)
 
 
 ## Retira las camas de un edificio residencial que empieza a deconstruirse
@@ -1262,6 +1269,31 @@ func suceder_avatar(colonos_ref: Object = null) -> String:
 	return "sucesion_exitosa"
 
 
+## Completa la sucesión desde un colono específico que ya ingresó al Núcleo Urbano.
+func completar_sucesion_desde_colono(id_colono: int, colonos_ref: Object) -> Dictionary:
+	if colonos_ref == null or not colonos_ref.colonos.has(id_colono):
+		return {"exito": false}
+	var c: Dictionary = colonos_ref.colonos[id_colono]
+	var rol: String = str(c.get("tipo", "desempleado"))
+	var tono: int = int(c.get("tono_piel", tono_piel_avatar))
+	tono_piel_avatar = tono
+	if demografia.get(rol, 0) > 0:
+		demografia[rol] -= 1
+	elif sin_techo > 0:
+		sin_techo -= 1
+	sincronizar_desempleados()
+	periodo_elecciones_restante = 5
+	ultimo_resultado_sucesion = {
+		"estado": "sucesion_exitosa",
+		"origen": "colono_nucleo",
+		"genero": genero_avatar,
+		"tono_piel": tono_piel_avatar,
+	}
+	if colonos_ref.has_method("_retirar"):
+		colonos_ref._retirar(id_colono)
+	return {"exito": true, "tono_piel": tono_piel_avatar, "genero": genero_avatar}
+
+
 ## Devuelve la clave de almacen (una de las 9 del almacén) con la tasa neta más
 ## negativa (promedio de las últimas horas) — el recurso en mayor déficit ahora mismo. Si
 ## ninguno está en déficit, igual devuelve el de tasa más baja (puede ser 0
@@ -1290,6 +1322,11 @@ func recurso_critico() -> String:
 func _migrar(hambruna: bool) -> int:
 	if not migracion_activa:
 		return 0
+	var campana_node: Node = get_node_or_null("/root/Campana") if is_inside_tree() else null
+	if campana_node != null and campana_node.has_method("esta_activa") and campana_node.esta_activa():
+		if edificios_residenciales.is_empty():
+			_migrantes_acumulados = 0.0
+			return 0
 
 	var tasa_mensual: float = calcular_tasa_migracion_mensual(moral)
 	var tasa_horaria: float = tasa_mensual / HORAS_POR_MES

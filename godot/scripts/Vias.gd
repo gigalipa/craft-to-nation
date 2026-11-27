@@ -397,5 +397,7 @@ func importar_estado(d: Dictionary) -> void:
 				var c := Vector3i(int(parts[0]), int(parts[1]), int(parts[2]))
 				var nd: Dictionary = d["notches"][k]
 				notches[c] = Vector2i(int(nd.get("x", 0)), int(nd.get("y", 0)))
+	if not celdas.is_empty():
+		vias_cambiadas.emit(celdas.keys())
 
 

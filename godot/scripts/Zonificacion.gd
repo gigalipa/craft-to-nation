@@ -244,6 +244,20 @@ func huella_del_nucleo() -> Array:
 	return _huella_nucleo.duplicate()
 
 
+## Asigna una zona pintable a toda la huella de un edificio construido a mano
+## dentro del área de influencia al declararlo con [B].
+func asignar_zona_huella(huella: Array, tipo_zona: String) -> void:
+	if not ZONAS_PINTABLES.has(tipo_zona):
+		return
+	var cambio := false
+	for celda in huella:
+		if zonas.get(celda, "") != tipo_zona:
+			zonas[celda] = tipo_zona
+			cambio = true
+	if cambio:
+		zonas_cambiadas.emit()
+
+
 ## Pinta el rectángulo entre las dos esquinas (inclusive), recortado a la
 ## zona de influencia. Devuelve cuántas celdas se pintaron realmente, para
 ## que quien llama (CamaraCenital.gd) pueda avisar si el rectángulo cayó

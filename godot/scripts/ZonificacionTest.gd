@@ -165,4 +165,8 @@ func ejecutar_pruebas() -> void:
 	huella_n.clear()
 	assert(con_nucleo.huella_del_nucleo().size() == 2, "modificar la copia no altera el núcleo")
 
+	con_nucleo.asignar_zona_huella([Vector2i(5, 5), Vector2i(6, 5)], "residencial_investigacion")
+	assert(con_nucleo.consultar_zona(Vector2i(5, 5)) == "residencial_investigacion")
+	assert(con_nucleo.consultar_zona(Vector2i(6, 5)) == "residencial_investigacion")
+
 	print("\n=== Las 14 pruebas de Zonificacion pasaron correctamente ===")

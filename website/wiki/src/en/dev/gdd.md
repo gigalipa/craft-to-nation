@@ -1,9 +1,9 @@
 ---
-title: "Game Design Document (GDD v3.64)"
-description: "Technical Game Design Document (GDD v3.64) for Craft to Nation: hybrid voxel survival, organic city planning, hourly simulation tick, centralized settings, Glassworks, IDU I-IV, and finite world economics."
+title: "Game Design Document (GDD v3.65)"
+description: "Technical Game Design Document (GDD v3.65) for Craft to Nation: hybrid voxel survival, organic city planning, hourly simulation tick, centralized settings, Glassworks, IDU I-IV, and finite world economics."
 ---
 
-# Game Design Document (GDD v3.64)
+# Game Design Document (GDD v3.65)
 
 **Slogan:** *From first block to living nation.*  
 **Campaign Motto:** *Survive. Craft. Automate. Lead.*  
@@ -62,7 +62,7 @@ description: "Technical Game Design Document (GDD v3.64) for Craft to Nation: hy
 
 ---
 
-## 3. Key Innovations Consolidated in GDD v3.57 – v3.64
+## 3. Key Innovations Consolidated in GDD v3.57 – v3.65
 
 - **Vector HUD Iconography (`IconosHUD.gd`) & Live 3D Thumbnails (`MiniaturaRenderer.gd`):** Centralized catalog of **95+ crisp pixel-art SVG icons** (`shape-rendering="crispEdges"`, including `vidrio.svg`, `romano_1.svg`–`romano_4.svg`, `btn_subir.svg`, and `btn_bajar.svg`), enlarged `104×76 px` build buttons with 3-corner overlays (input stack top-left, electric bolt top-center, output badge top-right), and real-time 3D thumbnails.
 - **Electrical Grid in kW / MW (`BarraSuperior.gd`, `VentanaEnergia.gd`):** Interactive tri-color lightning bolt indicator (gold = surplus, gray = zero demand, red = deficit) with a per-building power breakdown window.
@@ -74,5 +74,5 @@ description: "Technical Game Design Document (GDD v3.64) for Craft to Nation: hy
 - **Spatial Audio Engine, 102 SFX Catalog & Windows Standalone Export (v3.60):** Centralized `Sonidos.gd` autoload managing circular pools of 16 2D (`AudioStreamPlayer`) and 16 3D (`AudioStreamPlayer3D`) players with inverse-distance spatial falloff (up to 35m) and pitch modulation (±5%). Full catalog of 102 OGG sounds across 8 domains, reactive wiring across the engine, Windows standalone export presets (`tools/export_windows.ps1`), and dedicated unit test suite `SonidosTest.tscn`.
 - **Main Menu, Atomic Save/Load System, In-Game Pause (F11), Persistent Configuration & Loading Screen (v3.61):** Main startup scene `MenuInicio.tscn` with animated slideshow backdrop (`SlideshowFondo.gd`), looping menu BGM (`The_Architect_s_Decree (menu).mp3`), and interactive subpanels (New Game, Load Game, Settings, Quit). Autoload singleton `GestorPartida.gd` managing atomic JSON serialization and deserialization of all simulation subsystems (`Ciudad`, `Economia`, `Colonos`, modified voxel terrain in `VoxelWorld`, `Vias`, `Canalizaciones`, `Player`, `Zonificacion`) in `user://saves/` with quicksave slot (`quicksave.json`) and save listing with metadata. In-game pause menu `MenuPausa.gd` triggered via <kbd>F11</kbd> with absolute tree pause (`paused = true`) and runtime settings adjustments. Autoload singleton `Configuracion.gd` storing client settings in `user://configuracion.json` (independent SFX and BGM volumes, mouse sensitivity, camera FOV, language, display mode, and starting resource profiles) and loading screen `PantallaCarga.gd`.
 - **Dynamic ES/EN Localization, Right-Lane Road Traffic & Cinematic Intro (v3.61):** Bilingual English catalog `_DATOS_EN` in `strings.gd` with hot-switching (`Strings.actualizar_idioma()`), cinematic startup splash `VideoIntro.tscn` into `MenuInicio.tscn`, categorized starting resource profiles (`supervivencia`, `bajos`, `medios`, `altos`), and footprint-aware right-lane traffic routing (`Vias.es_borde_derecho()`, `VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`).
-- **Phase 4: Dual Combat Camera, Military Barracks, Universal RTS Selection & Hybrid Command (v3.64):** 2-story **Military Barracks** (`9×7×8`, 4 beds, Zone B, key `7`) with garrisoned military housing (`x_cama = 4`, 16 soldiers without consuming civilian beds) and lossless 4→4 military cohort; universal 2D drag-box selection in overhead view with persistent selection across camera toggles; `PanelUnidad.gd` with stances (`Pasivo`, `Defensivo`, `Agresivo`) and tactical orders (`Moverse`, `Atacar` via <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` via <kbd>H</kbd>); specialized 1st-person modes in `Player.gd` (<kbd>T</kbd> Construction, <kbd>R</kbd> Battle with sword/bow/crosshair, <kbd>F</kbd> Commander with 1–6 order hotbar and <kbd>Shift</kbd> + <kbd>1..9</kbd> subgroups); procedural troop visuals (helmets, shields, selection rings, and patrol waypoints in `ColonosRenderer.gd`); and persistent fullscreen/windowed (1280×720) mode toggle.
+- **Phase 4: Dual Combat Camera, Military Barracks, Universal RTS Selection & Hybrid Command (v3.65):** 2-story **Military Barracks** (`9×7×8`, 4 beds, Zone B, key `7`) with garrisoned military housing (`x_cama = 4`, 16 soldiers without consuming civilian beds) and lossless 4→4 military cohort; universal 2D drag-box selection in overhead view with persistent selection across camera toggles; `PanelUnidad.gd` with stances (`Pasivo`, `Defensivo`, `Agresivo`) and tactical orders (`Moverse`, `Atacar` via <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` via <kbd>H</kbd>); specialized 1st-person modes in `Player.gd` (<kbd>T</kbd> Construction, <kbd>R</kbd> Battle with sword/bow/crosshair, <kbd>F</kbd> Commander with 1–6 order hotbar and <kbd>Shift</kbd> + <kbd>1..9</kbd> subgroups); procedural troop visuals (helmets, shields, selection rings, and patrol waypoints in `ColonosRenderer.gd`); and persistent fullscreen/windowed (1280×720) mode toggle.
 - **Automated Verification Suite:** **37 independent test scenes** running **100% in green**.

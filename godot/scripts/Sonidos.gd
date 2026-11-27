@@ -83,8 +83,13 @@ var volumen_sfx_db: float = 0.0
 
 var musica_habilitada: bool = true
 var volumen_musica_db: float = 0.0
+var voz_habilitada: bool = true
+var volumen_voz_db: float = 0.0
 var _player_musica: AudioStreamPlayer = null
 var _player_musica_secundario: AudioStreamPlayer = null
+var _player_voz: AudioStreamPlayer = null
+var _ducking_voz_activo: bool = false
+var _tween_voz_duck: Tween = null
 var _tween_musica: Tween = null
 var _en_musica_juego: bool = false
 var _contexto_musica_actual: String = ""
@@ -154,6 +159,13 @@ func _inicializar_pools() -> void:
 	_player_musica_secundario.process_mode = Node.PROCESS_MODE_ALWAYS
 	_player_musica_secundario.finished.connect(_on_player_musica_terminado.bind(_player_musica_secundario))
 	add_child(_player_musica_secundario)
+
+	_player_voz = AudioStreamPlayer.new()
+	_player_voz.name = "AudioPlayerVoz"
+	_player_voz.bus = "Master"
+	_player_voz.process_mode = Node.PROCESS_MODE_ALWAYS
+	_player_voz.finished.connect(_on_voz_terminada)
+	add_child(_player_voz)
 
 
 static func extraer_contexto_musical(nombre_archivo: String) -> String:
@@ -272,6 +284,18 @@ func actualizar_volumen_musica(lineal: float) -> void:
 			var pista := obtener_siguiente_pista_contexto(_contexto_musica_actual)
 			if pista != "":
 				_transicionar_a_pista(pista, 0.0)
+
+
+func actualizar_volumen_voz(lineal: float) -> void:
+	voz_habilitada = lineal > 0.001
+	if voz_habilitada:
+		volumen_voz_db = linear_to_db(clampf(lineal, 0.0001, 1.0))
+	else:
+		volumen_voz_db = -80.0
+	if _player_voz != null:
+		_player_voz.volume_db = volumen_voz_db
+		if not voz_habilitada and _player_voz.playing:
+			detener_voz()
 
 
 func cargar_stream_musica(ruta: String, en_bucle: bool = false) -> AudioStream:
@@ -575,7 +599,69 @@ func detener_todo() -> void:
 	for p in _pool_3d:
 		if p.playing:
 			p.stop()
+	detener_voz()
 	detener_musica()
+
+
+func obtener_stream_voz(id_linea: String) -> AudioStream:
+	if id_linea.is_empty():
+		return null
+	var lang: String = Ajustes.idioma.to_lower()
+	if lang != "en":
+		lang = "es"
+	var bases: Array[String] = [
+		"%s%s/%s" % [Ajustes.CAMPANA_RUTA_VOZ_BASE, lang, id_linea],
+		"%ses/%s" % [Ajustes.CAMPANA_RUTA_VOZ_BASE, id_linea],
+		"%s%s" % [Ajustes.CAMPANA_RUTA_VOZ_BASE, id_linea],
+	]
+	for base in bases:
+		for ext in ["ogg", "mp3", "wav"]:
+			var ruta := "%s.%s" % [base, ext]
+			if ResourceLoader.exists(ruta):
+				var s := load(ruta) as AudioStream
+				if s != null:
+					return s
+			elif FileAccess.file_exists(ruta):
+				if ext == "ogg":
+					return AudioStreamOggVorbis.load_from_file(ruta)
+				elif ext == "mp3":
+					return AudioStreamMP3.load_from_file(ruta)
+	return null
+
+
+func reproducir_voz(id_linea: String) -> AudioStreamPlayer:
+	if not voz_habilitada or _player_voz == null:
+		return null
+	detener_voz()
+	var stream := obtener_stream_voz(id_linea)
+	if stream == null:
+		return null
+	_player_voz.stream = stream
+	_player_voz.volume_db = volumen_voz_db
+	_aplicar_ducking_voz(true)
+	_player_voz.play()
+	return _player_voz
+
+
+func detener_voz() -> void:
+	if _player_voz != null and _player_voz.playing:
+		_player_voz.stop()
+	_aplicar_ducking_voz(false)
+
+
+func _on_voz_terminada() -> void:
+	_aplicar_ducking_voz(false)
+
+
+func _aplicar_ducking_voz(activo: bool) -> void:
+	_ducking_voz_activo = activo
+	if _tween_voz_duck != null and _tween_voz_duck.is_valid():
+		_tween_voz_duck.kill()
+	if _player_musica == null or not musica_habilitada:
+		return
+	var objetivo: float = volumen_musica_db + (Ajustes.SONIDOS_DUCKING_VOZ_DB if activo else 0.0)
+	_tween_voz_duck = create_tween()
+	_tween_voz_duck.tween_property(_player_musica, "volume_db", objetivo, 0.25)
 
 
 func cantidad_cargados() -> int:

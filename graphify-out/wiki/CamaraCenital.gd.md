@@ -1,74 +1,78 @@
 # CamaraCenital.gd
 
-> 36 nodes · cohesion 0.09
+> 50 nodes · cohesion 0.07
 
 ## Key Concepts
 
 - **CamaraCenital.gd** (119 connections) — `godot/scripts/CamaraCenital.gd`
-- **BlueprintValidatorTest.gd** (52 connections) — `godot/scripts/BlueprintValidatorTest.gd`
-- **TranslucidosRenderer.gd** (27 connections) — `godot/scripts/TranslucidosRenderer.gd`
-- **TranslucidosRendererTest.gd** (15 connections) — `godot/scripts/TranslucidosRendererTest.gd`
-- **2026-09-22-vias-tierra-pisada.md (Vías de Tierra Pisada Implementation Plan)** (13 connections) — `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
-- **2026-09-22-vias-tierra-pisada-design.md (Vías de tierra pisada (sub-proyecto 6, primer tramo))** (11 connections) — `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
-- **FantasmasDestacados.gd** (10 connections) — `godot/scripts/FantasmasDestacados.gd`
-- **ViasRenderer.gd** (9 connections) — `godot/scripts/ViasRenderer.gd`
-- **2026-09-20-drenado-y-follaje-progresivos.md (Drenado de Agua y Eliminación de Follaje Progresivos Impleme)** (7 connections) — `docs/superpowers/plans/2026-09-20-drenado-y-follaje-progresivos.md`
-- **2026-09-13-culling-caras-translucidas.md (Culling de Caras Translúcidas (agua/ventana) Implementation )** (6 connections) — `docs/superpowers/plans/2026-09-13-culling-caras-translucidas.md`
-- **2026-09-20-destacar-puertas-ventanas-fantasma.md (Destacar Puertas y Ventanas en el Fantasma Implementation Pl)** (6 connections) — `docs/superpowers/plans/2026-09-20-destacar-puertas-ventanas-fantasma.md`
-- **2026-09-13-culling-caras-translucidas-design.md (Diseño: Culling de caras internas entre bloques translúcidos)** (5 connections) — `docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md`
-- **2026-09-11-despeje-ventanas-puertas.md (Despeje de Proximidad para Ventanas y Puertas Implementation)** (4 connections) — `docs/superpowers/plans/2026-09-11-despeje-ventanas-puertas.md`
-- **2026-09-11-despeje-ventanas-puertas-design.md (Despeje de Proximidad para Ventanas y Puertas — Diseño)** (4 connections) — `docs/superpowers/specs/2026-09-11-despeje-ventanas-puertas-design.md`
-- **2026-09-20-destacar-puertas-ventanas-fantasma-design.md (Destacar Puertas y Ventanas en el Fantasma — Diseño)** (4 connections) — `docs/superpowers/specs/2026-09-20-destacar-puertas-ventanas-fantasma-design.md`
-- **2026-09-20-drenado-y-follaje-progresivos-design.md (Drenado de Agua y Eliminación de Follaje Progresivos — Diseñ)** (3 connections) — `docs/superpowers/specs/2026-09-20-drenado-y-follaje-progresivos-design.md`
-- **BlueprintValidatorTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/BlueprintValidatorTest.gd`
-- **BlueprintValidatorTest._ready()** (1 connections) — `godot/scripts/BlueprintValidatorTest.gd`
+- **HUD.gd** (95 connections) — `godot/scripts/HUD.gd`
+- **PuestosPrevisualizacionTest.gd** (21 connections) — `godot/scripts/PuestosPrevisualizacionTest.gd`
+- **ExtraccionTest.gd** (18 connections) — `godot/scripts/ExtraccionTest.gd`
+- **2026-09-29-costo-colocacion-bloques.md (Costo de colocación y bloques estructurales reales — Plan de)** (16 connections) — `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`
+- **CamaraCenitalModosTest.gd** (16 connections) — `godot/scripts/CamaraCenitalModosTest.gd`
+- **2026-10-07-obras-vias-y-prioridades.md (Obras por Colonos: Tendido de Vías y Prioridades Configurabl)** (14 connections) — `docs/superpowers/plans/2026-10-07-obras-vias-y-prioridades.md`
+- **2026-09-30-previsualizacion-construcciones-cenital.md (Previsualización isométrica de construcciones (HUD cenital) )** (13 connections) — `docs/superpowers/plans/2026-09-30-previsualizacion-construcciones-cenital.md`
+- **PlantillasPuestoTest.gd** (13 connections) — `godot/scripts/PlantillasPuestoTest.gd`
+- **2026-09-24-extraccion-fisica-agotamiento.md (Extracción física y agotamiento (PoC 5, sub-proyecto 2B) Imp)** (12 connections) — `docs/superpowers/plans/2026-09-24-extraccion-fisica-agotamiento.md`
+- **2026-10-02-obras-por-colonos.md (Construcción y demolición por colonos — Plan de implementaci)** (12 connections) — `docs/superpowers/plans/2026-10-02-obras-por-colonos.md`
+- **2026-10-08-puestos-extractores-y-refinerias.md (Puestos Extractores y Modificación de Refinerías (Etapa 9.2))** (12 connections) — `docs/superpowers/plans/2026-10-08-puestos-extractores-y-refinerias.md`
+- **Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md (**Documento Técnico de Desarrollo: PoC 5 - Fase 2B - Extracc)** (12 connections) — `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`
+- **NivelacionOverlay.gd** (11 connections) — `godot/scripts/NivelacionOverlay.gd`
+- **2026-09-25-hud-por-modos-design.md (HUD por modos — diseño)** (10 connections) — `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`
+- **ViaPreviewOverlay.gd** (10 connections) — `godot/scripts/ViaPreviewOverlay.gd`
+- **2026-10-08-puestos-extractores-y-refinerias-design.md (Diseño: Puestos Extractores y Modificación de Edificios de R)** (9 connections) — `docs/superpowers/specs/2026-10-08-puestos-extractores-y-refinerias-design.md`
+- **ProgresoAccion.gd** (8 connections) — `godot/scripts/ProgresoAccion.gd`
+- **2026-09-29-economia-construccion-puestos.md (Economía de construcción para puestos periféricos — Plan de )** (6 connections) — `docs/superpowers/plans/2026-09-29-economia-construccion-puestos.md`
+- **2026-09-29-economia-construccion-puestos-design.md (Diseño: economía de construcción para puestos periféricos)** (6 connections) — `docs/superpowers/specs/2026-09-29-economia-construccion-puestos-design.md`
+- **2026-09-20-nivelacion-frente-y-overlays-design.md (Nivelación del Frente y Overlays de Previsualización — Diseñ)** (4 connections) — `docs/superpowers/specs/2026-09-20-nivelacion-frente-y-overlays-design.md`
 - **CamaraCenital.centrar_en_edificio()** (1 connections) — `godot/scripts/CamaraCenital.gd`
 - **CamaraCenital.posicionar_sobre()** (1 connections) — `godot/scripts/CamaraCenital.gd`
 - **CamaraCenital._process()** (1 connections) — `godot/scripts/CamaraCenital.gd`
 - **CamaraCenital._ready()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **CamaraCenital.salir_de_todos_los_modos()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **CamaraCenital._unhandled_input()** (1 connections) — `godot/scripts/CamaraCenital.gd`
-- **FantasmasDestacados.marcar_sucio()** (1 connections) — `godot/scripts/FantasmasDestacados.gd`
-- *... and 11 more nodes in this community*
+- *... and 25 more nodes in this community*
 
 ## Relationships
 
-- [GeneradorMundo.gd](GeneradorMundo.gd.md) (32 shared connections)
-- [ajustes.gd](ajustes.gd.md) (27 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (21 shared connections)
-- [Construccion.gd](Construccion.gd.md) (19 shared connections)
-- [PanelContextual.gd](PanelContextual.gd.md) (14 shared connections)
-- [Colonos.gd](Colonos.gd.md) (13 shared connections)
-- [Obras.gd](Obras.gd.md) (11 shared connections)
-- [HUD.gd](HUD.gd.md) (11 shared connections)
-- [Player.gd](Player.gd.md) (10 shared connections)
-- [Economia.gd](Economia.gd.md) (9 shared connections)
-- [NiveladorTerreno.gd](NiveladorTerreno.gd.md) (8 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (8 shared connections)
+- [Economia.gd](Economia.gd.md) (50 shared connections)
+- [ajustes.gd](ajustes.gd.md) (40 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (39 shared connections)
+- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (27 shared connections)
+- [NiveladorTerreno.gd](NiveladorTerreno.gd.md) (17 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (17 shared connections)
+- [PanelPuesto.gd](PanelPuesto.gd.md) (16 shared connections)
+- [Player.gd](Player.gd.md) (16 shared connections)
+- [Colonos.gd](Colonos.gd.md) (15 shared connections)
+- [GeneradorMundo.gd](GeneradorMundo.gd.md) (13 shared connections)
+- [Obras.gd](Obras.gd.md) (13 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (10 shared connections)
 
 ## Source Files
 
-- `docs/superpowers/plans/2026-09-11-despeje-ventanas-puertas.md`
-- `docs/superpowers/plans/2026-09-13-culling-caras-translucidas.md`
-- `docs/superpowers/plans/2026-09-20-destacar-puertas-ventanas-fantasma.md`
-- `docs/superpowers/plans/2026-09-20-drenado-y-follaje-progresivos.md`
-- `docs/superpowers/plans/2026-09-22-vias-tierra-pisada.md`
-- `docs/superpowers/specs/2026-09-11-despeje-ventanas-puertas-design.md`
-- `docs/superpowers/specs/2026-09-13-culling-caras-translucidas-design.md`
-- `docs/superpowers/specs/2026-09-20-destacar-puertas-ventanas-fantasma-design.md`
-- `docs/superpowers/specs/2026-09-20-drenado-y-follaje-progresivos-design.md`
-- `docs/superpowers/specs/2026-09-22-vias-tierra-pisada-design.md`
-- `godot/scripts/BlueprintValidatorTest.gd`
+- `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`
+- `docs/superpowers/plans/2026-09-24-extraccion-fisica-agotamiento.md`
+- `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`
+- `docs/superpowers/plans/2026-09-29-economia-construccion-puestos.md`
+- `docs/superpowers/plans/2026-09-30-previsualizacion-construcciones-cenital.md`
+- `docs/superpowers/plans/2026-10-02-obras-por-colonos.md`
+- `docs/superpowers/plans/2026-10-07-obras-vias-y-prioridades.md`
+- `docs/superpowers/plans/2026-10-08-puestos-extractores-y-refinerias.md`
+- `docs/superpowers/specs/2026-09-20-nivelacion-frente-y-overlays-design.md`
+- `docs/superpowers/specs/2026-09-25-hud-por-modos-design.md`
+- `docs/superpowers/specs/2026-09-29-economia-construccion-puestos-design.md`
+- `docs/superpowers/specs/2026-10-08-puestos-extractores-y-refinerias-design.md`
 - `godot/scripts/CamaraCenital.gd`
-- `godot/scripts/FantasmasDestacados.gd`
-- `godot/scripts/TranslucidosRenderer.gd`
-- `godot/scripts/TranslucidosRendererTest.gd`
-- `godot/scripts/ViasRenderer.gd`
+- `godot/scripts/CamaraCenitalModosTest.gd`
+- `godot/scripts/ExtraccionTest.gd`
+- `godot/scripts/HUD.gd`
+- `godot/scripts/NivelacionOverlay.gd`
+- `godot/scripts/PlantillasPuestoTest.gd`
+- `godot/scripts/ProgresoAccion.gd`
+- `godot/scripts/PuestosPrevisualizacionTest.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 254 (98%)
-- INFERRED: 6 (2%)
+- EXTRACTED: 375 (97%)
+- INFERRED: 10 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

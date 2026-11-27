@@ -19,14 +19,14 @@
 ### references
 - IconosHUD.gd `EXTRACTED`
 - [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
-- [HUD.gd](HUD.gd.md) `EXTRACTED`
+- HUD.gd `EXTRACTED`
 - [ajustes.gd](ajustes.gd.md) `EXTRACTED`
 - BarraSuperior.gd `EXTRACTED`
 - [BuscadorRutas.gd](BuscadorRutas.gd.md) `EXTRACTED`
 - [Obras.gd](Obras.gd.md) `EXTRACTED`
 - CiudadTest.gd `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
+- FinalizacionObras.gd `EXTRACTED`
 - Energia.gd `EXTRACTED`
 - [README.md (Craft to Nation)](README.md_Craft_to_Nation.md) `EXTRACTED`
 - SKILL.md (Skill: Craft to Nation - Nodes and Network) `EXTRACTED`

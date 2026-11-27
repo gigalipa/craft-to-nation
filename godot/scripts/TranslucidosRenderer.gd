@@ -15,6 +15,9 @@ const Ajustes = preload("res://scripts/ajustes.gd")
 const VoxelWorld = preload("res://scripts/VoxelWorld.gd")
 const MATERIAL_AGUA := preload("res://assets/mat_agua.tres")
 const MATERIAL_VENTANA := preload("res://assets/mat_ventana.tres")
+const TEX_VENTANA_TIERRA := preload("res://assets/texturas/bloques/tex_ventana_tierra.png")
+const TEX_CRUDO := preload("res://assets/texturas/bloques/tex_crudo.png")
+const TEX_COMBUSTIBLE := preload("res://assets/texturas/bloques/tex_combustible.png")
 
 static var CHUNK_SIZE: int = Ajustes.TRANSLUCIDOS_CHUNK_SIZE
 
@@ -48,6 +51,7 @@ const _EJES_POR_DIRECCION := {
 var voxel_world: Node
 
 var _material_por_tipo: Dictionary = {}  # String -> Material
+var _material_ventana_tierra: StandardMaterial3D
 var _mesh_por_chunk: Dictionary = {}  # String -> Dictionary (Vector3i -> MeshInstance3D)
 var _chunks_sucios: Dictionary = {}  # Vector3i -> true, ver _on_bloque_translucido_cambiado()
 
@@ -121,7 +125,9 @@ static func _esquinas_cara(centro: Vector3, direccion: Vector3i) -> Array[Vector
 
 static func _crear_material_crudo() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Ajustes.COLOR_TRANSLUCIDO_CRUDO
+	mat.albedo_color = Color(1.0, 1.0, 1.0, 0.96)
+	mat.albedo_texture = TEX_CRUDO
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	mat.roughness = 0.1
 	mat.metallic = 0.1
 	mat.metallic_specular = 0.8
@@ -133,13 +139,26 @@ static func _crear_material_crudo() -> StandardMaterial3D:
 
 static func _crear_material_combustible() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Ajustes.COLOR_TRANSLUCIDO_COMBUSTIBLE
+	mat.albedo_color = Color(1.0, 1.0, 1.0, 0.85)
+	mat.albedo_texture = TEX_COMBUSTIBLE
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	mat.roughness = 0.15
 	mat.metallic = 0.0
 	mat.metallic_specular = 0.6
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat.render_priority = 2
+	return mat
+
+
+static func _crear_material_ventana_tierra() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color.WHITE
+	mat.albedo_texture = TEX_VENTANA_TIERRA
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	mat.roughness = 0.75
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return mat
 
 
@@ -152,6 +171,7 @@ func _indexar_materiales() -> void:
 	_material_por_tipo["vidrio"] = MATERIAL_VENTANA
 	_material_por_tipo["crudo"] = _crear_material_crudo()
 	_material_por_tipo["combustible"] = _crear_material_combustible()
+	_material_ventana_tierra = _crear_material_ventana_tierra()
 	assert(_material_por_tipo.size() == VoxelWorld.TIPOS_TRANSLUCIDOS.size(), "cada tipo en VoxelWorld.TIPOS_TRANSLUCIDOS necesita un material aquí")
 
 
@@ -531,6 +551,55 @@ func _agregar_ventana(st: SurfaceTool, celda: Vector3i) -> void:
 ## ese tipo, borra su MeshInstance3D si existía; si tiene al menos una,
 ## crea (la primera vez) o reutiliza su MeshInstance3D.
 func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
+	if tipo == "vidrio":
+		var st_vidrio := SurfaceTool.new()
+		st_vidrio.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var st_tierra := SurfaceTool.new()
+		st_tierra.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var hay_vidrio := false
+		var hay_tierra := false
+		var origen_v: Vector3i = chunk * CHUNK_SIZE
+		for dx in range(CHUNK_SIZE):
+			for dy in range(CHUNK_SIZE):
+				for dz in range(CHUNK_SIZE):
+					var celda: Vector3i = origen_v + Vector3i(dx, dy, dz)
+					if voxel_world.obtener_tipo(celda) != "vidrio":
+						continue
+					var es_tierra: bool = voxel_world.has_method("obtener_tipo_visual") and voxel_world.obtener_tipo_visual(celda) == "vidrio_tierra"
+					if es_tierra:
+						_agregar_ventana(st_tierra, celda)
+						hay_tierra = true
+					else:
+						_agregar_ventana(st_vidrio, celda)
+						hay_vidrio = true
+		if not hay_vidrio and not hay_tierra:
+			if _mesh_por_chunk.has(tipo) and _mesh_por_chunk[tipo].has(chunk):
+				_mesh_por_chunk[tipo][chunk].queue_free()
+				_mesh_por_chunk[tipo].erase(chunk)
+			return
+		var malla_v := ArrayMesh.new()
+		var mats_v: Array[Material] = []
+		if hay_vidrio:
+			st_vidrio.commit(malla_v)
+			mats_v.append(_material_por_tipo["vidrio"])
+		if hay_tierra:
+			st_tierra.commit(malla_v)
+			mats_v.append(_material_ventana_tierra)
+		var inst_v: MeshInstance3D
+		if _mesh_por_chunk.has(tipo) and _mesh_por_chunk[tipo].has(chunk):
+			inst_v = _mesh_por_chunk[tipo][chunk]
+		else:
+			inst_v = MeshInstance3D.new()
+			add_child(inst_v)
+			if not _mesh_por_chunk.has(tipo):
+				_mesh_por_chunk[tipo] = {}
+			_mesh_por_chunk[tipo][chunk] = inst_v
+		inst_v.mesh = malla_v
+		inst_v.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for idx_s in range(mats_v.size()):
+			inst_v.set_surface_override_material(idx_s, mats_v[idx_s])
+		return
+
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var origen: Vector3i = chunk * CHUNK_SIZE
@@ -540,10 +609,6 @@ func _reconstruir_chunk(chunk: Vector3i, tipo: String) -> void:
 			for dz in range(CHUNK_SIZE):
 				var celda: Vector3i = origen + Vector3i(dx, dy, dz)
 				if voxel_world.obtener_tipo(celda) != tipo:
-					continue
-				if tipo == "vidrio":
-					_agregar_ventana(st, celda)
-					hay_caras = true
 					continue
 				var h_propia: float = voxel_world.altura_agua_en(celda) if tipo == "agua" else 1.0
 				for direccion: Vector3i in VoxelWorld.VECINOS_3D:

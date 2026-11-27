@@ -23,6 +23,8 @@ var _panel_cargar: VBoxContainer
 var _panel_configuracion: PanelConfiguracionAjustes
 
 var _input_nombre_guardar: LineEdit
+var _vbox_lista_guardar: VBoxContainer
+var _archivo_sobrescribir: String = ""
 var _lbl_notificacion: Label
 var _vbox_lista_guardados: VBoxContainer
 
@@ -130,7 +132,7 @@ func _construir_panel_principal() -> void:
 	_btn_guardar.icon = IconosHUD.icono("menu_guardar")
 	_btn_guardar.add_theme_constant_override("icon_max_width", 22)
 	TemaHUD.estilizar_boton(_btn_guardar)
-	_btn_guardar.pressed.connect(func(): _mostrar_subpanel(_panel_guardar))
+	_btn_guardar.pressed.connect(_abrir_panel_guardar)
 	_panel_principal.add_child(_btn_guardar)
 
 	_btn_cargar = Button.new()
@@ -175,7 +177,18 @@ func _construir_panel_guardar() -> void:
 
 	_input_nombre_guardar = LineEdit.new()
 	_input_nombre_guardar.placeholder_text = Strings.t("MENU_NOMBRE_GUARDADO_PLACEHOLDER", "Nombre del guardado...")
+	_input_nombre_guardar.text_changed.connect(func(_t: String): _archivo_sobrescribir = "")
 	_panel_guardar.add_child(_input_nombre_guardar)
+
+	var scroll_guardar := ScrollContainer.new()
+	scroll_guardar.custom_minimum_size = Vector2(460, 180)
+	scroll_guardar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel_guardar.add_child(scroll_guardar)
+
+	_vbox_lista_guardar = VBoxContainer.new()
+	_vbox_lista_guardar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_vbox_lista_guardar.add_theme_constant_override("separation", 6)
+	scroll_guardar.add_child(_vbox_lista_guardar)
 
 	var hbox_btns := HBoxContainer.new()
 	hbox_btns.add_theme_constant_override("separation", 10)
@@ -298,6 +311,14 @@ func esta_abierto() -> bool:
 	return visible
 
 
+func _input(event: InputEvent) -> void:
+	if esta_abierto() and event is InputEventKey:
+		var tecla := event as InputEventKey
+		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_F12:
+			_on_quicksave_pressed()
+			get_viewport().set_input_as_handled()
+
+
 func _on_reanudar_pressed() -> void:
 	Sonidos.reproducir("sfx_ui_boton_clic")
 	reanudar_solicitado.emit()
@@ -312,17 +333,55 @@ func _on_quicksave_pressed() -> void:
 		_mostrar_notificacion(Strings.t("MENU_QUICKSAVE_ERROR", "Error al realizar guardado rápido."))
 
 
+func _abrir_panel_guardar() -> void:
+	_archivo_sobrescribir = ""
+	_mostrar_subpanel(_panel_guardar)
+	_actualizar_lista_guardar()
+
+
+func _actualizar_lista_guardar() -> void:
+	if _vbox_lista_guardar == null:
+		return
+	for child in _vbox_lista_guardar.get_children():
+		child.queue_free()
+
+	var lista := GestorPartida.listar_partidas(true)
+	if lista.is_empty():
+		var lbl_vacio := Label.new()
+		lbl_vacio.text = Strings.t("MENU_SIN_PARTIDAS", "No se encontraron partidas guardadas.")
+		lbl_vacio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_vacio.add_theme_color_override("font_color", Ajustes.COLOR_HUD_TEXTO_DESHABILITADO)
+		_vbox_lista_guardar.add_child(lbl_vacio)
+		return
+
+	for p in lista:
+		var nom_p: String = str(p.get("nombre_partida", Strings.t("MENU_SIN_NOMBRE", "Sin nombre")))
+		var fecha: String = str(p.get("fecha_guardado", ""))
+		var pob: int = int(p.get("poblacion", 0))
+		var arch_name: String = str(p.get("nombre_archivo", ""))
+		var btn_slot := Button.new()
+		btn_slot.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn_slot.text = "%s  —  %s | %s: %d" % [nom_p, fecha, Strings.t("BARRA_SUPERIOR_POBLACION", "Población"), pob]
+		TemaHUD.estilizar_boton(btn_slot)
+		btn_slot.pressed.connect(func():
+			_input_nombre_guardar.text = nom_p
+			_archivo_sobrescribir = arch_name
+		)
+		_vbox_lista_guardar.add_child(btn_slot)
+
+
 func _confirmar_guardar_partida() -> void:
 	var nombre: String = _input_nombre_guardar.text.strip_edges()
 	if nombre.is_empty():
 		nombre = "Partida " + Time.get_datetime_string_from_system(false, true).replace(":", "-")
 
-	var archivo := nombre.to_lower().replace(" ", "_") + ".json"
+	var archivo := _archivo_sobrescribir if not _archivo_sobrescribir.is_empty() else (nombre.to_lower().replace(" ", "_") + ".json")
 	var ok := GestorPartida.guardar_partida(archivo, nombre)
 	if ok:
 		Sonidos.reproducir("sfx_ui_guardar")
 		_mostrar_notificacion(Strings.t("MENU_PARTIDA_GUARDADA_EXITO", "¡Partida guardada con éxito!"))
 		_input_nombre_guardar.text = ""
+		_archivo_sobrescribir = ""
 		_mostrar_subpanel(_panel_principal)
 	else:
 		_mostrar_notificacion(Strings.t("MENU_PARTIDA_ERROR_GUARDAR", "Error al guardar la partida."))
@@ -337,7 +396,7 @@ func _actualizar_lista_guardados() -> void:
 	for child in _vbox_lista_guardados.get_children():
 		child.queue_free()
 
-	var lista := GestorPartida.listar_partidas()
+	var lista := GestorPartida.listar_partidas(true)
 	if lista.is_empty():
 		var lbl_vacio := Label.new()
 		lbl_vacio.text = Strings.t("MENU_SIN_PARTIDAS", "No se encontraron partidas guardadas.")

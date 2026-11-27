@@ -1,8 +1,11 @@
 [gd_resource type="StandardMaterial3D" load_steps=2 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/tex_ventana.png" id="1_ventana"]
+[ext_resource type="Texture2D" path="res://assets/texturas/bloques/tex_ventana_vidrio.png" id="1_ventana"]
 
 [resource]
 transparency = 1
 cull_mode = 2
+albedo_color = Color(1, 1, 1, 1)
 albedo_texture = ExtResource("1_ventana")
+roughness = 0.1
+texture_filter = 3

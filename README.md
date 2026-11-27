@@ -6,7 +6,7 @@
 
 **Sitio web:** [crafttonation.netlify.app](https://crafttonation.netlify.app)
 
-El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.64](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
+El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida sus sistemas principales de forma incremental sobre un único proyecto de Godot, siguiendo el [GDD v3.65](Documento%20de%20Diseño%20de%20Juego%20%28GDD%29_%20Craft%20to%20Nation.md).
 
 ## Estado actual
 
@@ -18,7 +18,7 @@ El proyecto está en etapa de pruebas de concepto. El desarrollo actual valida s
 - **Fases 5–7 — planeadas:** logística y puentes, combate e IA, y multijugador LAN.
 - **Visión a largo plazo:** eras tecnológicas posteriores al nivel urbano actual y un servidor MMO por planetas, todavía sin PoC ni fase asignada.
 
-El proyecto Godot cuenta actualmente con **39 escenas** `*Test.tscn` ejecutables en suite automatizada: validación de blueprints y construcción, ciudad, zonificación, mundo, árboles, nivelación, recolección, plantillas y miniaturas de puestos, economía, extracción, colonos, personajes modulares 3D, rutas, vías, minerales, translúcidos, puertas, canalizaciones, animador y lámpara del jugador, HUD, energía, sonidos (SFX), configuración, gestor de partidas, menú de pausa, menú de inicio, pantalla de carga, video intro, bienvenida y combate/comandante en primera persona.
+El proyecto Godot cuenta actualmente con **42 escenas** `*Test.tscn` ejecutables en suite automatizada: atmósfera/clima y alumbrado urbano, animador del avatar, bienvenida, validación de blueprints y construcción, buscador de rutas, cadena de minerales, cámara cenital, campaña narrativa, canalizaciones, ciudad, colonos, configuración, economía, extracción, fantasmas permeables, generador de árboles, generador de mundo, gestor de partidas, HUD, menú de inicio, menú de pausa, miniatura renderer, nivelador de terreno, obras, pantalla de carga, personajes modulares 3D, plantillas y previsualización de puestos, lámpara/natación/oxígeno/combate del jugador, puertas, recolección, sonidos (SFX), texturas del mundo, translúcidos, vías, video intro y zonificación.
 
 El lote inicial de población 3D ya reemplaza las cápsulas por cuerpos base masculino/femenino y atuendos de obrero con chaleco. Incluye martillo, pico, hacha y canasta de acarreo, además de ocho clips compartidos seleccionados por movimiento y oficio; la canasta cambia entre manos y espalda, y minería sortea de forma independiente excavación o golpe pesado al terminar cada acción.
 
@@ -61,12 +61,14 @@ docs/      Especificaciones, planes e ideas del backlog
 
 Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 
+- `godot/scenes/AtmosferaAlumbradoTest.tscn`
 - `godot/scenes/AvatarAnimadorTest.tscn`
 - `godot/scenes/BienvenidaTest.tscn`
 - `godot/scenes/BlueprintsTest.tscn`
 - `godot/scenes/BuscadorRutasTest.tscn`
 - `godot/scenes/CadenaMineralesTest.tscn`
 - `godot/scenes/CamaraCenitalModosTest.tscn`
+- `godot/scenes/CampanaTest.tscn`
 - `godot/scenes/CanalizacionesTest.tscn`
 - `godot/scenes/CiudadTest.tscn`
 - `godot/scenes/ColonosTest.tscn`
@@ -96,12 +98,13 @@ Para correr las pruebas de Godot, abre cada escena y usa **F6**:
 - `godot/scenes/RecoleccionTest.tscn`
 - `godot/scenes/SonidosTest.tscn`
 - `godot/scenes/Test.tscn`
+- `godot/scenes/TexturasMundoTest.tscn`
 - `godot/scenes/TranslucidosRendererTest.tscn`
 - `godot/scenes/ViasTest.tscn`
 - `godot/scenes/VideoIntroTest.tscn`
 - `godot/scenes/ZonificacionTest.tscn`
 
-En Windows también puedes ejecutar las 39 escenas en modo headless. El script falla si Godot devuelve un código distinto de cero, registra `ERROR:`/`SCRIPT ERROR` o una escena no llega a su mensaje final:
+En Windows también puedes ejecutar las 42 escenas en modo headless. El script falla si Godot devuelve un código distinto de cero, registra `ERROR:`/`SCRIPT ERROR` o una escena no llega a su mensaje final:
 
 ```powershell
 .\tools\run-godot-tests.ps1 -GodotPath "C:\ruta\a\godot.exe"

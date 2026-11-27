@@ -16,8 +16,8 @@
 
 ## Relationships
 
-- [HUD.gd](HUD.gd.md) (4 shared connections)
-- [ajustes.gd](ajustes.gd.md) (1 shared connections)
+- [ajustes.gd](ajustes.gd.md) (4 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
 - [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (1 shared connections)
 - [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
 - [Economia.gd](Economia.gd.md) (1 shared connections)

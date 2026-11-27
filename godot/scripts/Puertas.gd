@@ -54,15 +54,32 @@ var _mat_bisagra := StandardMaterial3D.new()
 func _init() -> void:
 	_forma.size = LAMINA
 	_malla.size = LAMINA
-	_material.albedo_color = COLOR_LAMINA
+	_material.albedo_color = Color.WHITE
+	_material.albedo_texture = preload("res://assets/texturas/bloques/tex_puerta_madera.png")
+	_material.normal_enabled = true
+	_material.normal_texture = preload("res://assets/texturas/bloques/tex_puerta_madera_normal.png")
+	_material.roughness_texture = preload("res://assets/texturas/bloques/tex_puerta_madera_roughness.png")
+	_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_malla.material = _material
 
 	_malla_picaporte.size = PICAPORTE_TAMANO
-	_mat_picaporte.albedo_color = COLOR_PICAPORTE
+	_mat_picaporte.albedo_color = Color.WHITE
+	_mat_picaporte.albedo_texture = preload("res://assets/texturas/bloques/tex_metal_herraje.png")
+	_mat_picaporte.normal_enabled = true
+	_mat_picaporte.normal_texture = preload("res://assets/texturas/bloques/tex_metal_herraje_normal.png")
+	_mat_picaporte.roughness_texture = preload("res://assets/texturas/bloques/tex_metal_herraje_roughness.png")
+	_mat_picaporte.metallic = 0.7
+	_mat_picaporte.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_malla_picaporte.material = _mat_picaporte
 
 	_malla_bisagra.size = BISAGRA_TAMANO
-	_mat_bisagra.albedo_color = COLOR_BISAGRA
+	_mat_bisagra.albedo_color = Color.WHITE
+	_mat_bisagra.albedo_texture = preload("res://assets/texturas/bloques/tex_metal_herraje.png")
+	_mat_bisagra.normal_enabled = true
+	_mat_bisagra.normal_texture = preload("res://assets/texturas/bloques/tex_metal_herraje_normal.png")
+	_mat_bisagra.roughness_texture = preload("res://assets/texturas/bloques/tex_metal_herraje_roughness.png")
+	_mat_bisagra.metallic = 0.7
+	_mat_bisagra.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_malla_bisagra.material = _mat_bisagra
 
 

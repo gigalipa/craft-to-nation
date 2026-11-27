@@ -341,6 +341,26 @@ func aplicar_identidad_visual(tono_piel: int, color_equipo: Color) -> Dictionary
 	return CatalogoPersonajes.aplicar_materiales_identidad(_modelo, tono_piel, color_equipo)
 
 
+func establecer_resplandor_sucesion(activo: bool, intensidad: float = 2.6, tono_piel: int = 1, color_equipo: Color = Ajustes.COLOR_EQUIPO_DEFECTO) -> void:
+	if _modelo == null:
+		return
+	var mat: StandardMaterial3D = null
+	if activo:
+		mat = StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Ajustes.COLOR_SUCESION_RESPLANDOR * intensidad
+	_aplicar_override_recursivo(_modelo, mat)
+	if not activo:
+		aplicar_identidad_visual(tono_piel, color_equipo)
+
+
+func _aplicar_override_recursivo(nodo: Node, mat: Material) -> void:
+	if nodo is MeshInstance3D:
+		(nodo as MeshInstance3D).material_override = mat
+	for hijo in nodo.get_children():
+		_aplicar_override_recursivo(hijo, mat)
+
+
 func equipar_en_mano(lado: String, pieza_id: String, tono_piel: int = 1, color_equipo: Color = Ajustes.COLOR_EQUIPO_DEFECTO) -> bool:
 	var es_der := (lado.strip_edges().to_lower() == "derecha")
 	var anclaje: BoneAttachment3D = _anclaje_mano_der if es_der else _anclaje_mano_izq

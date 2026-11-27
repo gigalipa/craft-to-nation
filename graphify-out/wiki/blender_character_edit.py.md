@@ -5,7 +5,7 @@
 ## Key Concepts
 
 - **blender_character_edit.py** (17 connections) — `tools/3d_pipeline/blender_character_edit.py`
-- **math** (13 connections)
+- **math** (16 connections)
 - **main()** (10 connections) — `tools/3d_pipeline/blender_character_edit.py`
 - **_render_preview()** (6 connections) — `tools/3d_pipeline/blender_character_edit.py`
 - **_world_bbox()** (6 connections) — `tools/3d_pipeline/blender_character_edit.py`
@@ -23,14 +23,14 @@
 
 ## Relationships
 
-- [blender_arkit_blendshapes.py](blender_arkit_blendshapes.py.md) (4 shared connections)
-- [json](json.md) (4 shared connections)
-- [blender_retarget_mixamo.py](blender_retarget_mixamo.py.md) (3 shared connections)
+- [blender_retarget_mixamo.py](blender_retarget_mixamo.py.md) (4 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (4 shared connections)
+- [blender_arkit_blendshapes.py](blender_arkit_blendshapes.py.md) (3 shared connections)
+- [blender_retarget_mixamo_test.py](blender_retarget_mixamo_test.py.md) (3 shared connections)
 - [blender_godot_prepare.py](blender_godot_prepare.py.md) (2 shared connections)
 - [blender_prop_prepare.py](blender_prop_prepare.py.md) (2 shared connections)
+- [argparse](argparse.md) (2 shared connections)
 - [blender_mixamo_retarget.py](blender_mixamo_retarget.py.md) (1 shared connections)
-- [sys](sys.md) (1 shared connections)
-- [VentanaBaul.gd](VentanaBaul.gd.md) (1 shared connections)
 
 ## Source Files
 
@@ -38,7 +38,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 49 (100%)
+- EXTRACTED: 52 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

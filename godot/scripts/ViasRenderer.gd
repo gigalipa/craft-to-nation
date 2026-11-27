@@ -59,6 +59,7 @@ func _agregar_triangulo_notch(st: SurfaceTool, celda: Vector3i, esquina_omitida:
 		if esquina == esquina_omitida:
 			continue
 		st.set_normal(normal)
+		st.set_uv(Vector2(esquina.x, esquina.y))
 		st.add_vertex(Vector3(celda.x + esquina.x, y, celda.z + esquina.y))
 
 
@@ -112,6 +113,12 @@ func _reconstruir_chunk(chunk: Vector3i) -> void:
 
 ## Reconstrucción completa — llamada una vez desde VoxelWorld._ready().
 func reconstruir_todo() -> void:
+	for ch_key in _mesh_por_chunk:
+		var nodo_m: Node = _mesh_por_chunk[ch_key]
+		if is_instance_valid(nodo_m):
+			nodo_m.queue_free()
+	_mesh_por_chunk.clear()
+	_chunks_sucios.clear()
 	var chunks: Dictionary = {}
 	for celda: Vector3i in Vias.celdas:
 		chunks[_chunk_de(celda)] = true

@@ -722,6 +722,19 @@ func probar_barra_superior() -> void:
 	assert(barra.era.text == "Asentamiento Pionero", "salió '%s'" % barra.era.text)
 	assert(barra.nivel.text.begins_with("IDU:"), "salió '%s'" % barra.nivel.text)
 	assert(barra._icono_nivel != null and barra._icono_nivel.texture != null)
+	assert(barra.menu_pausa != null and barra.menu_pausa.text == "Menú (F11)", "debe existir boton Menú (F11): '%s'" % barra.menu_pausa.text)
+	assert(barra.menu_pausa.global_position.x >= barra._icono_nivel.global_position.x, "Menú (F11) debe ir a la derecha del indicador de nivel")
+	var menu_pedidos := []
+	barra.menu_pedido.connect(func() -> void: menu_pedidos.append(true))
+	var antes_datos: int = pedidos_moral.size()
+	barra.menu_pausa.pressed.emit()
+	assert(menu_pedidos.size() == 1, "clic en Menú (F11) debe emitir menu_pedido")
+	assert(pedidos_moral.size() == antes_datos, "Menú (F11) no debe emitir dato_pedido")
+	Strings.actualizar_idioma("en")
+	barra.actualizar()
+	assert(barra.menu_pausa.text == "Menu (F11)", "Menú (F11) debe traducirse a inglés: '%s'" % barra.menu_pausa.text)
+	Strings.actualizar_idioma("es")
+	barra.actualizar()
 
 	for clave in respaldo:
 		Ciudad.almacen[clave].tasa_neta_promedio = respaldo[clave]

@@ -88,6 +88,9 @@ const CaraApuntadaScript = preload("res://scripts/CaraApuntada.gd")
 @onready var camara: Camera3D = $Camara
 @onready var raycast: RayCast3D = $Camara/RayCast3D
 
+signal muerte_jugador_solicitada(motivo: String)
+var sucesion_en_curso: bool = false
+
 var tipos_disponibles := ["tierra", "adobe", "bloque_madera", "bloque_piedra", "estructura_hierro", "vidrio", "puerta", "cama", "baul", "bloque_acero"]
 var tipo_seleccionado := 0
 
@@ -282,6 +285,11 @@ func _input(event: InputEvent) -> void:
 				hud.cerrar_ventana_baul()
 				Sonidos.reproducir("sfx_baul_cerrar")
 				return
+			if hud != null and hud.ventana_almacen_abierta():
+				hud.cerrar_ventana_almacen_1p()
+				if DisplayServer.get_name() != "headless":
+					Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+				return
 			# Esc desactiva primero la herramienta activa (modo deconstrucción o modo vías);
 			# sin ninguna activa, libera el mouse como siempre.
 			if modo_deconstruccion:
@@ -290,6 +298,15 @@ func _input(event: InputEvent) -> void:
 				_alternar_modo_vias()
 			else:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_Z:
+			if hud != null and hud.has_method("alternar_ventana_almacen_1p"):
+				var abierta_alm: bool = hud.alternar_ventana_almacen_1p()
+				if DisplayServer.get_name() != "headless":
+					Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if abierta_alm else Input.MOUSE_MODE_CAPTURED
+				if Campana != null and Campana.has_method("registrar_consulta_almacen"):
+					Campana.registrar_consulta_almacen()
+			get_viewport().set_input_as_handled()
+			return
 		if tecla.pressed and not tecla.echo and tecla.keycode == KEY_T:
 			establecer_modo_primera_persona("construccion")
 			return
@@ -342,7 +359,15 @@ func _input(event: InputEvent) -> void:
 		camara.rotation.x = clamp(camara.rotation.x, -PI / 2.2, PI / 2.2)
 
 	if event is InputEventMouseButton:
+		if hud != null and (hud.ventana_baul_abierta() or hud.ventana_almacen_abierta()):
+			return
 		var boton := event as InputEventMouseButton
+		if DisplayServer.get_name() != "headless" and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+			var vp := get_viewport()
+			if vp != null and vp.gui_get_hovered_control() != null:
+				return
+			if boton.pressed and (boton.button_index == MOUSE_BUTTON_LEFT or boton.button_index == MOUSE_BUTTON_RIGHT):
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		if boton.pressed and (boton.button_index == MOUSE_BUTTON_WHEEL_UP or boton.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 			_ciclar_hotbar(-1 if boton.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
 			return
@@ -397,7 +422,7 @@ func _procesar_accion_repetida(delta: float) -> void:
 	if not Input.is_key_pressed(KEY_E):
 		_e_consumida = false
 		_aviso_sin_frutos_dado = false
-	if not camara.current or (hud != null and hud.ventana_baul_abierta()):
+	if not camara.current or (hud != null and (hud.ventana_baul_abierta() or hud.ventana_almacen_abierta())):
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		return
@@ -469,6 +494,8 @@ func _guardar_en_inventario(rendido: Dictionary) -> void:
 	if rendido.is_empty():
 		return
 	Economia.entregar(rendido)
+	if Campana != null and Campana.esta_activa() and Campana.has_method("registrar_recursos_recolectados"):
+		Campana.registrar_recursos_recolectados(rendido)
 	print("Recolectado: ", rendido)
 
 
@@ -605,6 +632,8 @@ func _procesar_frutos(delta: float) -> void:
 	if _progreso_accion.avanzar("frutos:%d" % id, Recoleccion.TIEMPO_RECOLECCION_FRUTOS, delta):
 		var comida: float = mundo.recolectar_frutos(celda, Ciudad.horas_juego)
 		_guardar_en_inventario({"comida": comida})
+		if Campana != null and Campana.esta_activa() and comida > 0.0:
+			Campana.registrar_recoleccion_manual()
 		_progreso_accion.soltar()
 		hud.ocultar_progreso()
 		Sonidos.reproducir("sfx_cosecha_frutos", -2.0)
@@ -1061,6 +1090,8 @@ static func _calcular_oxigeno(actual: float, sumergido: bool, delta: float) -> f
 
 
 func _procesar_oxigeno(delta: float) -> void:
+	if sucesion_en_curso:
+		return
 	var sumergido := _cabeza_sumergida()
 	oxigeno_actual = _calcular_oxigeno(oxigeno_actual, sumergido, delta)
 	if sumergido or oxigeno_actual < OXIGENO_MAXIMO:
@@ -1714,6 +1745,8 @@ func _colocar() -> void:
 	# flujos gratis (ConstructorVias, surtir_construccion) y por eso no sirve
 	# para decidir el reembolso (hallado en revisión de código, 2026-09-29).
 	mundo.celdas_pagadas[celda_destino] = _ultimo_cobro_colocacion.duplicate()
+	if mundo.has_method("aplicar_variante_visual_por_pago"):
+		mundo.aplicar_variante_visual_por_pago(celda_destino, tipo, _ultimo_cobro_colocacion)
 	if tipo == "puerta" or tipo == "cama":
 		mundo.celdas_pagadas[segunda_celda] = _ultimo_cobro_colocacion.duplicate()
 
@@ -1867,6 +1900,13 @@ static func _verificar_acceso_pathfinding(p_mundo: Node, celdas: Dictionary) -> 
 	return ""
 
 
+func apunta_a_puerta_en_construccion() -> bool:
+	if modo_primera_persona != "construccion" or raycast == null or not raycast.is_colliding() or mundo == null:
+		return false
+	var t_celda: String = mundo.obtener_tipo(_celda_impactada())
+	return t_celda == "puerta_inferior" or t_celda == "puerta_superior"
+
+
 ## Declara como edificio la estructura conectada al bloque apuntado. Solo se
 ## activa apuntando a una puerta (la entrada principal), no a cualquier pared,
 ## para que "declarar" sea una acción intencional del jugador sobre un punto
@@ -1913,11 +1953,30 @@ func _declarar_edificio() -> void:
 
 	var limites_vivienda: Dictionary = Ciudad.NIVELES_VIVIENDA[Ciudad.nivel]
 	var resultado: Dictionary
+	var zona_autoasignar: String = ""
 	if not Zonificacion.nucleo_declarado:
 		resultado = BlueprintValidator.validar_blueprint(blueprint, "", {}, {}, limites_vivienda)
 	else:
-		var zona_destino: String = Zonificacion.consultar_zona(celda_puerta_xz)
-		resultado = BlueprintValidator.validar_blueprint(blueprint, zona_destino, {}, {}, limites_vivienda)
+		var fuera_influencia := false
+		for p_xz: Vector2i in huella:
+			if not Zonificacion.dentro_de_influencia(p_xz):
+				fuera_influencia = true
+				break
+		if fuera_influencia:
+			_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_FORMATO % Strings.t("PLAYER_ERR_DECLARAR_FUERA_INFLUENCIA"))
+			return
+		var zona_req: String = str(blueprint.get("zona_permitida", "residencial_investigacion"))
+		var zona_conflicto: String = ""
+		for p_xz: Vector2i in huella:
+			var z_celda: String = Zonificacion.consultar_zona(p_xz)
+			if z_celda != "periferia" and z_celda != zona_req:
+				zona_conflicto = z_celda
+				break
+		if zona_conflicto != "":
+			resultado = BlueprintValidator.validar_blueprint(blueprint, zona_conflicto, {}, {}, limites_vivienda)
+		else:
+			zona_autoasignar = zona_req
+			resultado = BlueprintValidator.validar_blueprint(blueprint, zona_req, {}, {}, limites_vivienda)
 
 	print("Declarar edificio -> Válido: ", resultado["valido"], " | Errores: ", resultado["errores"])
 	if not resultado["valido"]:
@@ -1935,6 +1994,8 @@ func _declarar_edificio() -> void:
 		_notificar_rechazo(Strings.PLAYER_NOTIF_DECLARAR_FORMATO % motivo_pathfinding)
 		return
 
+	if zona_autoasignar != "":
+		Zonificacion.asignar_zona_huella(huella, zona_autoasignar)
 	Blueprints.guardar(blueprint)
 	# Delega en _completar_construccion() (mismo camino que un edificio
 	# terminado vía blueprint) para que un edificio declarado a mano quede
@@ -1996,6 +2057,19 @@ func _morir_jugador() -> void:
 ## (hoy solo ahogamiento, ver _procesar_oxigeno()) — sin sistema de
 ## salud/combate todavía, toda muerte pasa por la misma sucesión de Ciudad.
 func _ejecutar_sucesion(motivo: String) -> void:
+	if sucesion_en_curso:
+		return
+	if muerte_jugador_solicitada.get_connections().size() > 0:
+		sucesion_en_curso = true
+		movimiento_habilitado = false
+		velocity = Vector3.ZERO
+		salir_de_todas_las_herramientas()
+		Sonidos.reproducir("sfx_ui_avatar_muerte")
+		if _animador != null:
+			_animador.establecer_vista_primera_persona(false)
+			_animador.notificar_muerte()
+		muerte_jugador_solicitada.emit(motivo)
+		return
 	Sonidos.reproducir("sfx_ui_avatar_muerte")
 	var resultado: String = Ciudad.suceder_avatar(Colonos)
 	print("Muerte del jugador (", motivo, ") -> Sucesión: ", resultado)

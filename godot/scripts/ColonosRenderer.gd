@@ -17,6 +17,7 @@ static var COLORES_TIPO: Dictionary = Ajustes.COLORES_COLONOS
 
 var _cuerpos: Dictionary = {}  # int (id de colono) -> AnimatableBody3D
 var _modulares: Dictionary = {}  # int (id de colono) -> PersonajeModular
+var _resplandor_ids: Dictionary = {}  # int -> StandardMaterial3D
 var _marcadores_ordenes: Node3D
 var _firma_marcadores_prev: String = ""
 var _mat_casco: StandardMaterial3D
@@ -70,10 +71,33 @@ func _on_colono_creado(id: int) -> void:
 
 
 func _on_colono_retirado(id: int) -> void:
+	_resplandor_ids.erase(id)
 	_modulares.erase(id)
 	if _cuerpos.has(id):
 		_cuerpos[id].queue_free()
 		_cuerpos.erase(id)
+
+
+func establecer_resplandor_sucesion(id: int, activo: bool, intensidad: float = 2.6) -> void:
+	if activo:
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Ajustes.COLOR_SUCESION_RESPLANDOR * intensidad
+		_resplandor_ids[id] = mat
+	else:
+		_resplandor_ids.erase(id)
+	var mod: Node3D = _modulares.get(id, null)
+	if mod != null:
+		_aplicar_override_recursivo(mod, _resplandor_ids.get(id, null))
+	if _cuerpos.has(id):
+		_asegurar_visuales_unidad(_cuerpos[id], id)
+
+
+func _aplicar_override_recursivo(nodo: Node, mat: Material) -> void:
+	if nodo is MeshInstance3D:
+		(nodo as MeshInstance3D).material_override = mat
+	for hijo in nodo.get_children():
+		_aplicar_override_recursivo(hijo, mat)
 
 
 func reconstruir() -> void:
@@ -164,8 +188,8 @@ func _asegurar_visuales_unidad(cuerpo: AnimatableBody3D, id: int) -> void:
 	var es_militar: bool = (str(c.get("tipo", "")) == "militar")
 	var modular: Node3D = _modulares.get(id, null)
 	var equipo_instanciado: Dictionary = modular.equipamiento_instanciado() if modular != null else {}
-	var mostrar_casco_procedural: bool = es_militar and not equipo_instanciado.values().has("casco_militar")
-	var mostrar_escudo_procedural: bool = es_militar and not equipo_instanciado.values().has("escudo")
+	var mostrar_casco_procedural: bool = es_militar and not equipo_instanciado.values().has("casco_militar") and not _resplandor_ids.has(id)
+	var mostrar_escudo_procedural: bool = es_militar and not equipo_instanciado.values().has("escudo") and not _resplandor_ids.has(id)
 
 	var casco := cuerpo.get_node_or_null("CascoMilitar") as Node3D
 	var escudo := cuerpo.get_node_or_null("EscudoMilitar") as MeshInstance3D

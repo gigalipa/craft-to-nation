@@ -32,7 +32,7 @@
 ### implements
 - [Obras.gd](Obras.gd.md) `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`
-- [FinalizacionObras.gd](FinalizacionObras.gd.md) `EXTRACTED`
+- FinalizacionObras.gd `EXTRACTED`
 
 ---
 

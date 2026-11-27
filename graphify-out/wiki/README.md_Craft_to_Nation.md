@@ -18,7 +18,7 @@
 
 ### references
 - IconosHUD.gd `EXTRACTED`
-- [HUD.gd](HUD.gd.md) `EXTRACTED`
+- HUD.gd `EXTRACTED`
 - [ajustes.gd](ajustes.gd.md) `EXTRACTED`
 - strings.gd `EXTRACTED`
 - Canalizaciones.gd `EXTRACTED`

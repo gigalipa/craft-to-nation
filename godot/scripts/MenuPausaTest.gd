@@ -106,11 +106,22 @@ func test_controles_configuracion_en_pausa() -> void:
 
 
 func test_guardado_rapido_desde_menu() -> void:
+	var ruta_qs := GestorPartida.obtener_ruta_partida(GestorPartida.ARCHIVO_QUICKSAVE)
+	var backup_qs := ""
+	if FileAccess.file_exists(ruta_qs):
+		backup_qs = FileAccess.get_file_as_string(ruta_qs)
 	var menu := MenuPausaScript.new()
 	add_child(menu)
 	menu._on_quicksave_pressed()
-	var ruta_qs := GestorPartida.obtener_ruta_partida(GestorPartida.ARCHIVO_QUICKSAVE)
 	assert(FileAccess.file_exists(ruta_qs), "El botón de guardado rápido debe persistir quicksave.json.")
-	GestorPartida.eliminar_partida(GestorPartida.ARCHIVO_QUICKSAVE)
+	menu._abrir_panel_guardar()
+	assert(menu._vbox_lista_guardar.get_child_count() >= 1, "El panel Guardar Partida debe listar las partidas existentes para sobrescribir.")
+	if not backup_qs.is_empty():
+		var f_rest := FileAccess.open(ruta_qs, FileAccess.WRITE)
+		if f_rest != null:
+			f_rest.store_string(backup_qs)
+			f_rest.close()
+	else:
+		GestorPartida.eliminar_partida(GestorPartida.ARCHIVO_QUICKSAVE)
 	menu.queue_free()
-	print("OK: Botón de Guardado Rápido en menú de pausa.")
+	print("OK: Botón de Guardado Rápido y lista de sobrescritura en menú de pausa.")

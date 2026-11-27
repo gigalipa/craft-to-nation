@@ -40,6 +40,10 @@ var _lbl_musica: Label
 var _slider_musica: HSlider
 var _lbl_musica_val: Label
 
+var _lbl_voz: Label
+var _slider_voz: HSlider
+var _lbl_voz_val: Label
+
 var _lbl_sens: Label
 var _slider_sensibilidad: HSlider
 var _lbl_sensibilidad_val: Label
@@ -236,6 +240,25 @@ func _construir_tab_audio_controles() -> void:
 	_slider_musica.value_changed.connect(func(v): _lbl_musica_val.text = "%d%%" % roundi(v))
 	vbox.add_child(_slider_musica)
 
+	# Voz (Locuciones)
+	var hbox_voz := HBoxContainer.new()
+	_lbl_voz = Label.new()
+	_lbl_voz.text = Strings.t("CONFIG_LBL_VOZ", "Volumen Voz (Locuciones):")
+	_lbl_voz.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lbl_voz.add_theme_color_override("font_color", TemaHUD.TEXTO)
+	_lbl_voz_val = Label.new()
+	_lbl_voz_val.add_theme_color_override("font_color", TemaHUD.DORADO)
+	hbox_voz.add_child(_lbl_voz)
+	hbox_voz.add_child(_lbl_voz_val)
+	vbox.add_child(hbox_voz)
+
+	_slider_voz = HSlider.new()
+	_slider_voz.min_value = 0.0
+	_slider_voz.max_value = 100.0
+	_slider_voz.step = 1.0
+	_slider_voz.value_changed.connect(func(v): _lbl_voz_val.text = "%d%%" % roundi(v))
+	vbox.add_child(_slider_voz)
+
 	# Sensibilidad Ratón
 	var hbox_sens := HBoxContainer.new()
 	_lbl_sens = Label.new()
@@ -363,6 +386,9 @@ func _actualizar_textos_idioma() -> void:
 	if _lbl_musica != null:
 		_lbl_musica.text = Strings.t("CONFIG_LBL_BGM", "Volumen Música (BGM):")
 
+	if _lbl_voz != null:
+		_lbl_voz.text = Strings.t("CONFIG_LBL_VOZ", "Volumen Voz (Locuciones):")
+
 	if _lbl_sens != null:
 		_lbl_sens.text = Strings.t("CONFIG_LBL_MOUSE", "Sensibilidad Ratón:")
 
@@ -427,6 +453,10 @@ func sincronizar_desde_configuracion() -> void:
 		_slider_musica.value = Configuracion.volumen_musica * 100.0
 		_lbl_musica_val.text = "%d%%" % roundi(_slider_musica.value)
 
+	if _slider_voz != null:
+		_slider_voz.value = Configuracion.volumen_voz * 100.0
+		_lbl_voz_val.text = "%d%%" % roundi(_slider_voz.value)
+
 	if _slider_sensibilidad != null:
 		_slider_sensibilidad.value = Configuracion.sensibilidad_mouse * 1000.0
 		_lbl_sensibilidad_val.text = "%.1f" % _slider_sensibilidad.value
@@ -453,6 +483,7 @@ func _on_guardar_pressed() -> void:
 	# Guardar audio y controles
 	Configuracion.volumen_sfx = _slider_sfx.value / 100.0
 	Configuracion.volumen_musica = _slider_musica.value / 100.0
+	Configuracion.volumen_voz = _slider_voz.value / 100.0
 	Configuracion.sensibilidad_mouse = _slider_sensibilidad.value / 1000.0
 	Configuracion.fov_camara = _slider_fov.value
 
@@ -492,6 +523,7 @@ func _on_reset_pressed() -> void:
 	if solo_audio_y_camara:
 		Configuracion.volumen_sfx = 1.0
 		Configuracion.volumen_musica = 0.8
+		Configuracion.volumen_voz = 1.0
 		Configuracion.sensibilidad_mouse = 0.003
 		Configuracion.fov_camara = 70.0
 		Configuracion.idioma = "es"

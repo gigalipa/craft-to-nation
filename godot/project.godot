@@ -37,6 +37,7 @@ Colonos="*res://scripts/Colonos.gd"
 Vias="*res://scripts/Vias.gd"
 Canalizaciones="*res://scripts/Canalizaciones.gd"
 Sonidos="*res://scripts/Sonidos.gd"
+Campana="*res://scripts/Campana.gd"
 
 [debug]
 
@@ -55,3 +56,10 @@ window/stretch/aspect="expand"
 [physics]
 
 3d/physics_engine="GodotPhysics3D"
+
+[shader_globals]
+
+intensidad_nieve={
+"type": "float",
+"value": 0.0
+}

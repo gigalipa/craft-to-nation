@@ -12,9 +12,9 @@
     "semantic_hash": "e24a0109ad49d93c83d24f248e600583"
   },
   "tools/run-godot-tests.ps1": {
-    "mtime": 1795622774.7936063,
-    "seen": 1795640327.75379,
-    "ast_hash": "03d5324e6b614bf4029f6abd5399e746",
+    "mtime": 1795777053.366374,
+    "seen": 1795817298.0941164,
+    "ast_hash": "adafecf23276a58d7b769062d74527fe",
     "semantic_hash": ""
   },
   "tools/run-single-test.ps1": {
@@ -252,9 +252,9 @@
     "semantic_hash": "0e783ab665ad24669f0c35ebca0a45c6"
   },
   "Documento de Dise\u00f1o de Juego (GDD)_ Craft to Nation.md": {
-    "mtime": 1795640245.762729,
-    "seen": 1795640327.7547948,
-    "ast_hash": "6a6a1feaeca74d51909432660a6811cd",
+    "mtime": 1795817248.140546,
+    "seen": 1795817298.0941164,
+    "ast_hash": "288490aa86e86df07a965f4a9a7edf36",
     "semantic_hash": ""
   },
   "LICENSE-CONTENT.md": {
@@ -324,9 +324,9 @@
     "semantic_hash": "acdcbe4b78768a9aa5df06f3be52b082"
   },
   "README.md": {
-    "mtime": 1795640283.2171564,
-    "seen": 1795640327.7547948,
-    "ast_hash": "55b7dce6f4c5cd630211734fe10578ff",
+    "mtime": 1795817271.3794482,
+    "seen": 1795817298.0947351,
+    "ast_hash": "cb892057d0b9001c06c35fb6661db210",
     "semantic_hash": ""
   },
   "docs/Fichas_Consumo_Produccion.md": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "docs/Pendientes y pr\u00f3ximos pasos.md": {
-    "mtime": 1795640288.0953982,
-    "seen": 1795640327.7547948,
-    "ast_hash": "3f1fd5f030034822f33d160e0830e2e6",
+    "mtime": 1795817275.42988,
+    "seen": 1795817298.0947351,
+    "ast_hash": "8c0880005b5ccca9cad6776382e75160",
     "semantic_hash": ""
   },
   "docs/Propuesta_Ajustes_Subsuelo_Ductos_y_NPCs.md": {
@@ -378,9 +378,9 @@
     "semantic_hash": ""
   },
   "docs/ideas-backlog.md": {
-    "mtime": 1795640249.6919985,
-    "seen": 1795640327.7547948,
-    "ast_hash": "a3d2dc456347f42049cd65f4cce7f676",
+    "mtime": 1795817251.255723,
+    "seen": 1795817298.0947351,
+    "ast_hash": "ac194ba7c86abb9f45d639882c087d61",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-09-05-citycraft-presentation-site.md": {
@@ -1044,21 +1044,21 @@
     "semantic_hash": "ad42c557a417d1cf0c3def94b319a57a"
   },
   "website/index.html": {
-    "mtime": 1795303954.8789215,
-    "seen": 1795348994.557361,
-    "ast_hash": "55f394f99e71a28ba818f7000be07892",
+    "mtime": 1795642114.5843697,
+    "seen": 1795817298.0947351,
+    "ast_hash": "d78bc06ad8ab721ab76c38702bf8082e",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/gdd.md": {
-    "mtime": 1795640303.7262237,
-    "seen": 1795640327.7547948,
-    "ast_hash": "68379b442beb7ecbdc876e7b683196dd",
+    "mtime": 1795817277.180432,
+    "seen": 1795817298.0947351,
+    "ast_hash": "0836b190024d3c0ed9e3f1005a98cd26",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/godot.md": {
-    "mtime": 1795640303.9460745,
-    "seen": 1795640327.7547948,
-    "ast_hash": "7d834808c2691c8540ee6a7776250d57",
+    "mtime": 1795817277.3395722,
+    "seen": 1795817298.0947351,
+    "ast_hash": "a772b45fa5c05a0199e511309ccc326c",
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/logistics.md": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "website/wiki/src/en/dev/roadmap.md": {
-    "mtime": 1795640304.1503396,
-    "seen": 1795640327.7547948,
-    "ast_hash": "9ef9b54c7a60cffc85a9f909637757c2",
+    "mtime": 1795817277.489774,
+    "seen": 1795817298.0947351,
+    "ast_hash": "5bccfb375ab5dbb207fd3221e83eae46",
     "semantic_hash": ""
   },
   "website/wiki/src/en/guide/buildings.md": {
@@ -1098,21 +1098,21 @@
     "semantic_hash": ""
   },
   "website/wiki/src/en/index.md": {
-    "mtime": 1795640303.6473336,
-    "seen": 1795640327.7547948,
-    "ast_hash": "00e63ffd4987d41dd3d594a0fe881ba0",
+    "mtime": 1795817277.12181,
+    "seen": 1795817298.0947351,
+    "ast_hash": "f47e02830122929466e48aa61a4be40a",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/gdd.md": {
-    "mtime": 1795640303.6863687,
-    "seen": 1795640327.7547948,
-    "ast_hash": "9baf70a0286fe7fef57a295da902ec5e",
+    "mtime": 1795817277.1483204,
+    "seen": 1795817298.0947351,
+    "ast_hash": "d481a35c449b56749e3a9f90aaec2afa",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/godot.md": {
-    "mtime": 1795640303.6999435,
-    "seen": 1795640327.7547948,
-    "ast_hash": "83f1d9be650fcff0e794851d3f6387a4",
+    "mtime": 1795817277.1578374,
+    "seen": 1795817298.0947351,
+    "ast_hash": "e3288df5db82c024abf41a8f7f958484",
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/logistica.md": {
@@ -1122,9 +1122,9 @@
     "semantic_hash": ""
   },
   "website/wiki/src/es/dev/roadmap.md": {
-    "mtime": 1795640304.129223,
-    "seen": 1795640327.7547948,
-    "ast_hash": "6a4f16971133a184064d103317f1a7d6",
+    "mtime": 1795817277.4797583,
+    "seen": 1795817298.0947351,
+    "ast_hash": "cc3bcd344100e7b27d71696a6bd76cff",
     "semantic_hash": ""
   },
   "website/wiki/src/es/guia/colonos.md": {
@@ -1152,21 +1152,21 @@
     "semantic_hash": "ec4a92e345a0dcc11d9de43a48d420a3"
   },
   "website/wiki/src/es/index.md": {
-    "mtime": 1795640303.6732998,
-    "seen": 1795640327.7547948,
-    "ast_hash": "54b63f162e17de23a8cfd570acf5efc3",
+    "mtime": 1795817277.13832,
+    "seen": 1795817298.0947351,
+    "ast_hash": "11cb55878340b8810df394e310d87c0b",
     "semantic_hash": ""
   },
   "website/wiki/src/fr/index.md": {
-    "mtime": 1795640303.6610756,
-    "seen": 1795640327.7547948,
-    "ast_hash": "a9af55a3ad68666d5a6d62c4ba271bb7",
+    "mtime": 1795817277.131318,
+    "seen": 1795817298.0947351,
+    "ast_hash": "4dfe96cf21f39adb8da0a10d48d845e4",
     "semantic_hash": ""
   },
   "website/wiki/src/index.md": {
-    "mtime": 1795640303.634196,
-    "seen": 1795640327.7547948,
-    "ast_hash": "3ea58c60c79176adf1dadcbe1beba22c",
+    "mtime": 1795817277.112811,
+    "seen": 1795817298.0947351,
+    "ast_hash": "76ae599e50867d896ee0f442de5f8b74",
     "semantic_hash": ""
   },
   "arte/IMUQwcomLawGk.png": {
@@ -5328,9 +5328,9 @@
     "semantic_hash": ""
   },
   "docs/llms-full.txt": {
-    "mtime": 1795640304.0746083,
-    "seen": 1795640327.7547948,
-    "ast_hash": "8383ae82d637f0b03ae92278fada7d2d",
+    "mtime": 1795817277.4414325,
+    "seen": 1795817298.0947351,
+    "ast_hash": "aa4d1b6c7963eacb129fc7663c3bf1f0",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-10-transito-carril-derecho-huella.md": {
@@ -5640,9 +5640,9 @@
     "semantic_hash": ""
   },
   "tools/3d_pipeline/blender_retarget_mixamo.py": {
-    "mtime": 1795623757.0818129,
-    "seen": 1795640327.75379,
-    "ast_hash": "df2b70e4dedd04d74486ff45d170166e",
+    "mtime": 1795700760.361525,
+    "seen": 1795817298.0941164,
+    "ast_hash": "1a9917f9a29dc6718fb839ef4f8661b7",
     "semantic_hash": ""
   },
   "tools/3d_pipeline/modal_hunyuan_rig.py": {
@@ -5676,9 +5676,9 @@
     "semantic_hash": ""
   },
   ".agents/skills/craft-character-3d/SKILL.md": {
-    "mtime": 1795623814.6771467,
-    "seen": 1795640327.7547948,
-    "ast_hash": "564fa2ec96466b0e899b7b5c21bb37a5",
+    "mtime": 1795710807.4334922,
+    "seen": 1795817298.0941164,
+    "ast_hash": "3f8a92a865e6085eb673506a970b97d3",
     "semantic_hash": ""
   },
   "docs/historia_narrativa_campana.md": {
@@ -5729,136 +5729,856 @@
     "ast_hash": "d54d3c387c71659221d6306d8c1fc1dd",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Bow_Aim_Hold.png": {
-    "mtime": 1795613079.6684127,
-    "seen": 1795640327.7557995,
-    "ast_hash": "f633a2d2991a21656b2edbd10b3bb65e",
+  "tools/3d_pipeline/blender_identity_materials.py": {
+    "mtime": 1795729328.096837,
+    "seen": 1795817298.0941164,
+    "ast_hash": "debaf8d0eff6db484c8d95abb653a399",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Cenital_Kneel_Idle.png": {
-    "mtime": 1795606286.9137776,
-    "seen": 1795640327.7557995,
-    "ast_hash": "e5e9968e9f4d3ad480fc01ffb348713f",
+  "tools/3d_pipeline/blender_identity_materials_test.py": {
+    "mtime": 1795699692.6361444,
+    "seen": 1795817298.0941164,
+    "ast_hash": "356969a193ef2a846658d8acb0fc393a",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Cenital_Kneel_Idle_fixed.png": {
-    "mtime": 1795606363.4744532,
-    "seen": 1795640327.7557995,
-    "ast_hash": "a310777edbb393189186112a00d58275",
+  "tools/3d_pipeline/blender_retarget_mixamo_test.py": {
+    "mtime": 1795703250.1238768,
+    "seen": 1795817298.0941164,
+    "ast_hash": "7b4744ab04ba7ab954f1a7469e8a7d8e",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Cenital_Kneel_Idle_fixed2.png": {
-    "mtime": 1795606423.0064456,
-    "seen": 1795640327.7557995,
-    "ast_hash": "ffc20254238299cd6f524dbfece8ec36",
+  "video_edition/tools/build_estado_3d_package.py": {
+    "mtime": 1795739300.268675,
+    "seen": 1795817298.0941164,
+    "ast_hash": "e6d7d87a6fcb22da2998675d1472cda9",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Command_Point.png": {
-    "mtime": 1795613079.780995,
-    "seen": 1795640327.7557995,
-    "ast_hash": "32e4708aafdbc7370cbdb012ea502fdd",
+  "arte/locuciones/Escenas_Locuciones.md": {
+    "mtime": 1795789183.38648,
+    "seen": 1795817298.0947351,
+    "ast_hash": "cc9ef1496d3be20313c9110bc410945f",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Death.png": {
-    "mtime": 1795606287.0033956,
-    "seen": 1795640327.7557995,
-    "ast_hash": "3196bc61185cf3527de0ca9a2da030d0",
+  "arte/locuciones/locuciones_tutorial.md": {
+    "mtime": 1795791353.859123,
+    "seen": 1795817298.0947351,
+    "ast_hash": "7752de97e839fc2e2a7d096509a4841b",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Death_fixed.png": {
-    "mtime": 1795606363.3846304,
-    "seen": 1795640327.7557995,
-    "ast_hash": "5e867d14880e2673bbdf9622d012e622",
+  "docs/superpowers/plans/2026-11-26-lote-inicial-personajes-3d.md": {
+    "mtime": 1795693286.9644508,
+    "seen": 1795817298.0947351,
+    "ast_hash": "b26274063d4aa446e9a3f200609c7b63",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Death_fixed2.png": {
-    "mtime": 1795606422.9177175,
-    "seen": 1795640327.7557995,
-    "ast_hash": "46b1f842a56ef5c4eefd7f4a79df7161",
+  "docs/superpowers/specs/2026-11-25-lote-inicial-personajes-3d-design.md": {
+    "mtime": 1795710807.4314911,
+    "seen": 1795817298.0947351,
+    "ast_hash": "f2bb3fa609d40b6ffc35c3b4d8318e80",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Idle.png": {
-    "mtime": 1795606286.6310737,
-    "seen": 1795640327.7557995,
-    "ast_hash": "ae1aebc92aa6ff055ea4bcd0dfe99dc4",
+  "docs/texturas.md": {
+    "mtime": 1795714129.2768302,
+    "seen": 1795817298.0947351,
+    "ast_hash": "6cdaaed6c4879d3f45958569c94ebb49",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Jump_Start.png": {
-    "mtime": 1795606286.8228457,
-    "seen": 1795640327.7557995,
-    "ast_hash": "136c6ca42b8fa09cad20c21b3de1efe7",
+  "godot/assets/personajes/materiales_cc0/README.md": {
+    "mtime": 1795716188.4466164,
+    "seen": 1795817298.0947351,
+    "ast_hash": "447b0085818b1cca9c555c89ba5b768e",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Mining_Swing.png": {
-    "mtime": 1795613079.4614298,
-    "seen": 1795640327.7557995,
-    "ast_hash": "9489ef451ff8dffa9634fb4c1a578c1f",
+  "godot/assets/texturas/bloques/CREDITS_CC0.md": {
+    "mtime": 1795716187.6242933,
+    "seen": 1795817298.0947351,
+    "ast_hash": "8de7b55b27c577f76216a826fd1b3ab0",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Running.png": {
-    "mtime": 1795606286.7284873,
-    "seen": 1795640327.7557995,
-    "ast_hash": "e30982da96d04486df6004a657eca413",
+  "video_edition/workspaces/calendario_semana_7.md": {
+    "mtime": 1795739301.6056921,
+    "seen": 1795817298.0947351,
+    "ast_hash": "4e88646d6a8ccd2d1fe1d3903cc9c428",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Swimming.png": {
-    "mtime": 1795613079.3444352,
-    "seen": 1795640327.7557995,
-    "ast_hash": "d5b7fd4af759e330e87f95ba1c234fd3",
+  "godot/assets/personajes/atuendos/obrero_f_Image_0.png": {
+    "mtime": 1795699822.6762257,
+    "seen": 1795817298.095829,
+    "ast_hash": "66fb40be982504f458fd9ab468150a28",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/anim_samples/sample_Sword_Slash.png": {
-    "mtime": 1795613079.5649767,
-    "seen": 1795640327.7557995,
-    "ast_hash": "623806ac8f36d9711b802323e9a9e9a4",
+  "godot/assets/personajes/atuendos/obrero_m_Image_0.png": {
+    "mtime": 1795699823.3747141,
+    "seen": 1795817298.095829,
+    "ast_hash": "b47e7b107aa27eb2e9ec2a6dbb0c9db8",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/preview_hiface.png": {
-    "mtime": 1795492678.301951,
-    "seen": 1795640327.7557995,
-    "ast_hash": "6cfb684f727487a5a352c69090234c22",
+  "godot/assets/personajes/base/cuerpo_f_Image_0.png": {
+    "mtime": 1795699824.0625973,
+    "seen": 1795817298.095829,
+    "ast_hash": "9cf2222dc62057cf9ea899894eff466a",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/preview_v2.png": {
-    "mtime": 1795488827.9945424,
-    "seen": 1795640327.7557995,
-    "ast_hash": "df98e6f9db27b77d33c7c7aeaef9f9c9",
+  "godot/assets/personajes/base/cuerpo_m_Image_0.png": {
+    "mtime": 1795699824.7703817,
+    "seen": 1795817298.095829,
+    "ast_hash": "0426ac2e22d4f61c1b12258d5896107b",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/turnaround.jpg": {
-    "mtime": 1795486953.7921057,
-    "seen": 1795640327.7557995,
-    "ast_hash": "24a65f914bb53a2e3a3e70d85ac16439",
+  "godot/assets/personajes/equipamiento/canasta_acarreo_Image_0.png": {
+    "mtime": 1795702077.9663877,
+    "seen": 1795817298.095829,
+    "ast_hash": "d9e8b7c2cfc78a75e612348cd41f96d4",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/views/back.png": {
-    "mtime": 1795487066.717853,
-    "seen": 1795640327.7557995,
-    "ast_hash": "26ed9c39ac11c9d783e8d27536162476",
+  "godot/assets/personajes/equipamiento/hacha_Image_0.png": {
+    "mtime": 1795702078.1055527,
+    "seen": 1795817298.095829,
+    "ast_hash": "be7d88074f76f9009f4328429b7a91ee",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/views/front.png": {
-    "mtime": 1795487066.4840906,
-    "seen": 1795640327.7557995,
-    "ast_hash": "eeaf3c9868823e2f85a951f17dffbff9",
+  "godot/assets/personajes/equipamiento/martillo_Image_0.png": {
+    "mtime": 1795702078.2389314,
+    "seen": 1795817298.095829,
+    "ast_hash": "c9066bbafe8ae7dd187641815aa52fa8",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/views/side.png": {
-    "mtime": 1795487066.563899,
-    "seen": 1795640327.7557995,
-    "ast_hash": "7fa8237da21a74121dca95ba1bd461e5",
+  "godot/assets/personajes/equipamiento/pico_Image_0.png": {
+    "mtime": 1795702078.375048,
+    "seen": 1795817298.095829,
+    "ast_hash": "6326607f47466badd960861dd48234b4",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/walk_preview_f08.png": {
-    "mtime": 1795545155.432048,
-    "seen": 1795640327.7557995,
-    "ast_hash": "fce8a4d24152516517e5e8da3d090dd3",
+  "godot/assets/personajes/materiales_cc0/tex_cuero.png": {
+    "mtime": 1795716269.4354253,
+    "seen": 1795817298.095829,
+    "ast_hash": "1272d19001fbeb35fd24e10b8a21c669",
     "semantic_hash": ""
   },
-  "scratch/3d_jobs/avatar/walk_preview_f16.png": {
-    "mtime": 1795545155.5012984,
-    "seen": 1795640327.7557995,
-    "ast_hash": "f9a63f80c7818778075f07adca3b5030",
+  "godot/assets/personajes/materiales_cc0/tex_cuero_normal.png": {
+    "mtime": 1795716269.4813395,
+    "seen": 1795817298.095829,
+    "ast_hash": "3493d73177b5381d6f83deec1431e6ac",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/materiales_cc0/tex_cuero_roughness.png": {
+    "mtime": 1795716269.4924889,
+    "seen": 1795817298.095829,
+    "ast_hash": "d000acff060a0024325b4e57bcb9633b",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/materiales_cc0/tex_metal.png": {
+    "mtime": 1795716269.686223,
+    "seen": 1795817298.095829,
+    "ast_hash": "9465b00179a543274621220985a28eba",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/materiales_cc0/tex_metal_normal.png": {
+    "mtime": 1795716270.5002158,
+    "seen": 1795817298.095829,
+    "ast_hash": "b4eeb611e155c2ae6e87c251a9ccaaa3",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/materiales_cc0/tex_metal_roughness.png": {
+    "mtime": 1795716270.5052173,
+    "seen": 1795817298.095829,
+    "ast_hash": "4d4b657554a7eeafb9179e26c560e686",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/materiales_cc0/tex_tela_neutra.png": {
+    "mtime": 1795716269.2118704,
+    "seen": 1795817298.095829,
+    "ast_hash": "6a995b45e201d86c678318b0114f5373",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/materiales_cc0/tex_tela_neutra_normal.png": {
+    "mtime": 1795716269.2748322,
+    "seen": 1795817298.095829,
+    "ast_hash": "41eff5cbed27f7e9078dbfecfec3cc8c",
+    "semantic_hash": ""
+  },
+  "godot/assets/personajes/materiales_cc0/tex_tela_neutra_roughness.png": {
+    "mtime": 1795716269.2788382,
+    "seen": 1795817298.095829,
+    "ast_hash": "d8dd5499f4ef5870010c3e6d63ba05ab",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_adobe.png": {
+    "mtime": 1795716253.3313546,
+    "seen": 1795817298.096374,
+    "ast_hash": "ad6a8c8096b96fce24e64ae832d46984",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_adobe_normal.png": {
+    "mtime": 1795716253.3633566,
+    "seen": 1795817298.096374,
+    "ast_hash": "61b0294de5bb4176f2c743f13c562d1d",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_adobe_roughness.png": {
+    "mtime": 1795716253.3673568,
+    "seen": 1795817298.096374,
+    "ast_hash": "d8dd5499f4ef5870010c3e6d63ba05ab",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_agua.png": {
+    "mtime": 1795716263.7656217,
+    "seen": 1795817298.096374,
+    "ast_hash": "f81c667042e1af0d6780714486fcd7df",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_agua_normal.png": {
+    "mtime": 1795716264.6317887,
+    "seen": 1795817298.096374,
+    "ast_hash": "1da76ad6bd9de08a2cc9b3b546c3e7d1",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_baul_frente.png": {
+    "mtime": 1795716262.2175033,
+    "seen": 1795817298.096374,
+    "ast_hash": "5beb0b1135914aa6696c664cca16686b",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_baul_lado.png": {
+    "mtime": 1795716262.332291,
+    "seen": 1795817298.096374,
+    "ast_hash": "46ab76ed331551c6d19d377a6b1af28e",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_baul_top.png": {
+    "mtime": 1795716262.4545777,
+    "seen": 1795817298.096374,
+    "ast_hash": "a887a683d944ce70bf463cc5ff61660b",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bedrock.png": {
+    "mtime": 1795716257.2259812,
+    "seen": 1795817298.096374,
+    "ast_hash": "3eb66e6ec333c15991f0a0f11b53ee65",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bedrock_normal.png": {
+    "mtime": 1795716257.2658446,
+    "seen": 1795817298.096374,
+    "ast_hash": "05bd72ab54f9c9506f6776cca91ef292",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bedrock_roughness.png": {
+    "mtime": 1795716257.2694938,
+    "seen": 1795817298.096374,
+    "ast_hash": "d8dd5499f4ef5870010c3e6d63ba05ab",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_acero.png": {
+    "mtime": 1795716255.2431898,
+    "seen": 1795817298.096374,
+    "ast_hash": "9465b00179a543274621220985a28eba",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_acero_normal.png": {
+    "mtime": 1795716256.0546167,
+    "seen": 1795817298.096374,
+    "ast_hash": "b4eeb611e155c2ae6e87c251a9ccaaa3",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_acero_roughness.png": {
+    "mtime": 1795716256.0586221,
+    "seen": 1795817298.096374,
+    "ast_hash": "4d4b657554a7eeafb9179e26c560e686",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_madera_cruda.png": {
+    "mtime": 1795716251.823848,
+    "seen": 1795817298.096374,
+    "ast_hash": "d265b6f7deaab8e0fcbeba898f997bff",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_madera_cruda_normal.png": {
+    "mtime": 1795716251.9799845,
+    "seen": 1795817298.096374,
+    "ast_hash": "4b47a860c003d7d7c6b597bea6dac335",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_madera_cruda_roughness.png": {
+    "mtime": 1795716251.9839904,
+    "seen": 1795817298.096374,
+    "ast_hash": "ca7954e68d983a7ca7cbc8e17e99ba25",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_madera_tablas.png": {
+    "mtime": 1795716249.9959276,
+    "seen": 1795817298.096374,
+    "ast_hash": "1e811bca9f7f8a7e3bb554ef8e75f24d",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_madera_tablas_normal.png": {
+    "mtime": 1795716251.3607795,
+    "seen": 1795817298.096374,
+    "ast_hash": "b93b905585588f145faf2a18fcc99e5f",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_madera_tablas_roughness.png": {
+    "mtime": 1795716251.3647776,
+    "seen": 1795817298.096374,
+    "ast_hash": "d8dd5499f4ef5870010c3e6d63ba05ab",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_piedra_rustica.png": {
+    "mtime": 1795716252.586366,
+    "seen": 1795817298.096374,
+    "ast_hash": "e78f2a7d25d568a2321f7695b0be883d",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_piedra_rustica_normal.png": {
+    "mtime": 1795716252.6215014,
+    "seen": 1795817298.096374,
+    "ast_hash": "6d2dcaeb0509021d1c144c55e7d604be",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_piedra_rustica_roughness.png": {
+    "mtime": 1795716252.6254966,
+    "seen": 1795817298.096374,
+    "ast_hash": "d8dd5499f4ef5870010c3e6d63ba05ab",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_piedra_tallada.png": {
+    "mtime": 1795716252.2264905,
+    "seen": 1795817298.096374,
+    "ast_hash": "8db7b23b37bdc44fc42343a44e143fe3",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_piedra_tallada_normal.png": {
+    "mtime": 1795716252.2687373,
+    "seen": 1795817298.096374,
+    "ast_hash": "627461b4347825cf4ab8300970697b16",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_bloque_piedra_tallada_roughness.png": {
+    "mtime": 1795716252.2893019,
+    "seen": 1795817298.096374,
+    "ast_hash": "6d4211baa05c78cfc22529b3c75f8efa",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_cama_cabecera.png": {
+    "mtime": 1795716261.9792113,
+    "seen": 1795817298.096374,
+    "ast_hash": "b4033e655c556c459a3c406701207480",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_cama_pies.png": {
+    "mtime": 1795716262.1082833,
+    "seen": 1795817298.096374,
+    "ast_hash": "fbad366ae1a0888bf62b2fa591e49e4a",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_combustible.png": {
+    "mtime": 1795716266.9788015,
+    "seen": 1795817298.096374,
+    "ast_hash": "8a12d8b70ec0e83fc5d945a917ebac22",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_crudo.png": {
+    "mtime": 1795716266.1327405,
+    "seen": 1795817298.096374,
+    "ast_hash": "03632b8d2498fb57f80efceccf58fc82",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ducto_acueducto.png": {
+    "mtime": 1795716267.203526,
+    "seen": 1795817298.096374,
+    "ast_hash": "88dca8ad9399d4a0a771f88e5fef4345",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ducto_acueducto_normal.png": {
+    "mtime": 1795716267.2380302,
+    "seen": 1795817298.096374,
+    "ast_hash": "627461b4347825cf4ab8300970697b16",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ducto_acueducto_roughness.png": {
+    "mtime": 1795716267.2560294,
+    "seen": 1795817298.096374,
+    "ast_hash": "6d4211baa05c78cfc22529b3c75f8efa",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ducto_tuberia.png": {
+    "mtime": 1795716267.9079478,
+    "seen": 1795817298.096374,
+    "ast_hash": "c3e4c462073d1f70d8bc500585680fd1",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ducto_tuberia_normal.png": {
+    "mtime": 1795716268.0980668,
+    "seen": 1795817298.096374,
+    "ast_hash": "e9f76ed46aa13981406ce6ac063bd5a2",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ducto_tuberia_roughness.png": {
+    "mtime": 1795716268.3559182,
+    "seen": 1795817298.096374,
+    "ast_hash": "7bf8a0edda848599fbca333fddf35805",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_estructura_hierro.png": {
+    "mtime": 1795716253.9565108,
+    "seen": 1795817298.096374,
+    "ast_hash": "8bc49fc12875d07b936debc9ef10cde0",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_estructura_hierro_normal.png": {
+    "mtime": 1795716254.8916461,
+    "seen": 1795817298.096374,
+    "ast_hash": "b4eeb611e155c2ae6e87c251a9ccaaa3",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_estructura_hierro_roughness.png": {
+    "mtime": 1795716254.8962426,
+    "seen": 1795817298.096374,
+    "ast_hash": "4d4b657554a7eeafb9179e26c560e686",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_follaje.png": {
+    "mtime": 1795716259.1210344,
+    "seen": 1795817298.096374,
+    "ast_hash": "7e6104814c1e5eafc8bc05fb74c19e9f",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_follaje_normal.png": {
+    "mtime": 1795716259.274782,
+    "seen": 1795817298.096374,
+    "ast_hash": "abf3a8346c54f5a07e9c071b8899c93b",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_hierba_side.png": {
+    "mtime": 1795716256.5320082,
+    "seen": 1795817298.096374,
+    "ast_hash": "fd7119d0eef7d7875a7ad435dcd7ada0",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_hierba_side_normal.png": {
+    "mtime": 1795716256.564464,
+    "seen": 1795817298.096374,
+    "ast_hash": "08fb5bf0eb49ccef588c817801f74b28",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_hierba_top.png": {
+    "mtime": 1795716256.1916885,
+    "seen": 1795817298.096374,
+    "ast_hash": "ba40cf84db058892e46d3691916ac78b",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_hierba_top_normal.png": {
+    "mtime": 1795716256.2241735,
+    "seen": 1795817298.096374,
+    "ast_hash": "b7418104659245f3539c2dd5b43d0a78",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_hierba_top_roughness.png": {
+    "mtime": 1795716256.2358506,
+    "seen": 1795817298.096374,
+    "ast_hash": "ea15a4ddcc3b05eda32925c910093049",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_carbon.png": {
+    "mtime": 1795716257.5585093,
+    "seen": 1795817298.096374,
+    "ast_hash": "a9cc4ce868e1b34d6a0b8968f65efd08",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_carbon_normal.png": {
+    "mtime": 1795716257.6249306,
+    "seen": 1795817298.096374,
+    "ast_hash": "56ecf07d308653df515906b420900fa4",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_carbon_roughness.png": {
+    "mtime": 1795716257.6379309,
+    "seen": 1795817298.096374,
+    "ast_hash": "fe41be9105f33cc99fc828d34554ebb3",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_cobre.png": {
+    "mtime": 1795716257.7322705,
+    "seen": 1795817298.096374,
+    "ast_hash": "2b8e170e63d88bc1d4b2596e2a5b7139",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_cobre_normal.png": {
+    "mtime": 1795716257.7982934,
+    "seen": 1795817298.096374,
+    "ast_hash": "56ecf07d308653df515906b420900fa4",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_cobre_roughness.png": {
+    "mtime": 1795716257.8129566,
+    "seen": 1795817298.096374,
+    "ast_hash": "a239c8c5fd5eec3d360243b1349786e8",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_hierro.png": {
+    "mtime": 1795716257.4170768,
+    "seen": 1795817298.096374,
+    "ast_hash": "846ffef9d88bfafc0b7ef4b9c3cc3acf",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_hierro_normal.png": {
+    "mtime": 1795716257.486588,
+    "seen": 1795817298.096374,
+    "ast_hash": "56ecf07d308653df515906b420900fa4",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_hierro_roughness.png": {
+    "mtime": 1795716257.5050383,
+    "seen": 1795817298.096374,
+    "ast_hash": "08b2cc01c2b1ffa17592feabc2a041c4",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_tierras_raras.png": {
+    "mtime": 1795716258.1402032,
+    "seen": 1795817298.096374,
+    "ast_hash": "7c54c119216d01b213007803b9c8c4fa",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_tierras_raras_normal.png": {
+    "mtime": 1795716258.1832967,
+    "seen": 1795817298.096374,
+    "ast_hash": "05bd72ab54f9c9506f6776cca91ef292",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mena_tierras_raras_roughness.png": {
+    "mtime": 1795716258.197265,
+    "seen": 1795817298.096374,
+    "ast_hash": "8f06996f1795501925d1fefd28d41735",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mesa_estudio_lado.png": {
+    "mtime": 1795716262.673508,
+    "seen": 1795817298.096374,
+    "ast_hash": "95c8d2a48e12f6f8e1f8b257c8bf4c42",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_mesa_estudio_top.png": {
+    "mtime": 1795716262.586315,
+    "seen": 1795817298.096374,
+    "ast_hash": "f7761c1f7e9b2cdb683dee4eef3609b1",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_metal_herraje.png": {
+    "mtime": 1795716260.9713328,
+    "seen": 1795817298.096374,
+    "ast_hash": "e4ed39d56afd02afd9fedbacef2557d7",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_metal_herraje_normal.png": {
+    "mtime": 1795716261.7879333,
+    "seen": 1795817298.096374,
+    "ast_hash": "b4eeb611e155c2ae6e87c251a9ccaaa3",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_metal_herraje_roughness.png": {
+    "mtime": 1795716261.793285,
+    "seen": 1795817298.096374,
+    "ast_hash": "4d4b657554a7eeafb9179e26c560e686",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_piedra.png": {
+    "mtime": 1795716256.7303581,
+    "seen": 1795817298.096374,
+    "ast_hash": "44394d4699c077ec3d7f4749c49fb827",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_piedra_normal.png": {
+    "mtime": 1795716256.792289,
+    "seen": 1795817298.096374,
+    "ast_hash": "56ecf07d308653df515906b420900fa4",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_piedra_roughness.png": {
+    "mtime": 1795716256.8083436,
+    "seen": 1795817298.096374,
+    "ast_hash": "08b2cc01c2b1ffa17592feabc2a041c4",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerta_madera.png": {
+    "mtime": 1795716259.8728068,
+    "seen": 1795817298.096374,
+    "ast_hash": "5ce2aaa9b6cf5c0200132a2b4acb4868",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerta_madera_normal.png": {
+    "mtime": 1795716260.606796,
+    "seen": 1795817298.096374,
+    "ast_hash": "3fd47643913a6a85f4e63a615088cd35",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerta_madera_roughness.png": {
+    "mtime": 1795716260.610115,
+    "seen": 1795817298.096374,
+    "ast_hash": "d8dd5499f4ef5870010c3e6d63ba05ab",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerto_agua_in.png": {
+    "mtime": 1795716268.4365907,
+    "seen": 1795817298.096374,
+    "ast_hash": "ea4aba9be764554810d6f76edb5b3e05",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerto_agua_out.png": {
+    "mtime": 1795716268.5187783,
+    "seen": 1795817298.096374,
+    "ast_hash": "615d5876480282a561c1eeb223a7675b",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerto_combustible_in.png": {
+    "mtime": 1795716268.7671695,
+    "seen": 1795817298.096374,
+    "ast_hash": "ca491d31147efe2fb03b16b9570040d8",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerto_combustible_out.png": {
+    "mtime": 1795716268.8503766,
+    "seen": 1795817298.096374,
+    "ast_hash": "79b04cd896cb73ebd3013bc2848f8420",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerto_crudo_in.png": {
+    "mtime": 1795716268.6008918,
+    "seen": 1795817298.096374,
+    "ast_hash": "58dde906c5f020d557945613e85c4151",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_puerto_crudo_out.png": {
+    "mtime": 1795716268.682523,
+    "seen": 1795817298.096374,
+    "ast_hash": "0a8221d7b06e56551f24fddc77fde3c4",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tierra.png": {
+    "mtime": 1795716256.4070425,
+    "seen": 1795817298.096374,
+    "ast_hash": "f7430c3abd582766296ec32e1055e986",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tierra_normal.png": {
+    "mtime": 1795716256.440041,
+    "seen": 1795817298.096374,
+    "ast_hash": "8b0a27291efb6d2466094daaade5ab7f",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tierra_pisada.png": {
+    "mtime": 1795716259.5249646,
+    "seen": 1795817298.096374,
+    "ast_hash": "2f5e688c49a3d2b618c350e3069fc437",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tierra_pisada_normal.png": {
+    "mtime": 1795716259.5586047,
+    "seen": 1795817298.096374,
+    "ast_hash": "6aac50319e69a2ec1046b4c0a8adfcd5",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tierra_pisada_roughness.png": {
+    "mtime": 1795716259.5626006,
+    "seen": 1795817298.096374,
+    "ast_hash": "d8dd5499f4ef5870010c3e6d63ba05ab",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tierra_roughness.png": {
+    "mtime": 1795716256.4506352,
+    "seen": 1795817298.096374,
+    "ast_hash": "4786174777705f5e2ae9f80af0e082f7",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tronco_anillos.png": {
+    "mtime": 1795716258.5607178,
+    "seen": 1795817298.096374,
+    "ast_hash": "7eeb186d6d70d053fe07fd01c1144f6c",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tronco_anillos_normal.png": {
+    "mtime": 1795716258.8308208,
+    "seen": 1795817298.096374,
+    "ast_hash": "760315d112af556aee861b66939d98d6",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tronco_corteza.png": {
+    "mtime": 1795716258.3485003,
+    "seen": 1795817298.096374,
+    "ast_hash": "50002c9324503adfc4ab6d0071fa3156",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tronco_corteza_normal.png": {
+    "mtime": 1795716258.3825004,
+    "seen": 1795817298.096374,
+    "ast_hash": "d4c83368966046bb4ecc5676c9429d06",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_tronco_corteza_roughness.png": {
+    "mtime": 1795716258.3979807,
+    "seen": 1795817298.096374,
+    "ast_hash": "59a874906345035505ea86830b35f639",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ventana_tierra.png": {
+    "mtime": 1795716253.0456498,
+    "seen": 1795817298.096374,
+    "ast_hash": "697c50f292f403983a8e186149976958",
+    "semantic_hash": ""
+  },
+  "godot/assets/texturas/bloques/tex_ventana_vidrio.png": {
+    "mtime": 1795716252.641084,
+    "seen": 1795817298.096374,
+    "ast_hash": "9da2a45455ddea652070c41fd25ae80e",
+    "semantic_hash": ""
+  },
+  "arte/locuciones/Escena 1.mp3": {
+    "mtime": 1795788694.3518462,
+    "seen": 1795817298.096918,
+    "ast_hash": "622b9e4ffe038b74ec95d368952eda37",
+    "semantic_hash": ""
+  },
+  "arte/locuciones/Escena 2.mp3": {
+    "mtime": 1795788737.1168501,
+    "seen": 1795817298.096918,
+    "ast_hash": "5ffadc7417d271dc2c0f7f22fabd2db7",
+    "semantic_hash": ""
+  },
+  "arte/locuciones/Escena 3.mp3": {
+    "mtime": 1795788796.1568723,
+    "seen": 1795817298.096918,
+    "ast_hash": "fcbbebb519691e94e6393ab73cfc24b0",
+    "semantic_hash": ""
+  },
+  "arte/locuciones/Escena 4.mp3": {
+    "mtime": 1795788875.6434855,
+    "seen": 1795817298.096918,
+    "ast_hash": "1e08bb820b500c236098cfac85260520",
+    "semantic_hash": ""
+  },
+  "arte/locuciones/Escena 5.mp3": {
+    "mtime": 1795788914.446519,
+    "seen": 1795817298.096918,
+    "ast_hash": "733be94487dd481cbf2191afe369f9d1",
+    "semantic_hash": ""
+  },
+  "arte/locuciones/Escena 6.mp3": {
+    "mtime": 1795788947.1863527,
+    "seen": 1795817298.096918,
+    "ast_hash": "d548710fa678160331b8d34d2adbf395",
+    "semantic_hash": ""
+  },
+  "arte/ost/Prologue_ Awakening World.mp3": {
+    "mtime": 1795784117.682248,
+    "seen": 1795817298.096918,
+    "ast_hash": "ffd85d8669eed3eebc62e75e002947e8",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A1_01.mp3": {
+    "mtime": 1795795312.869808,
+    "seen": 1795817298.098036,
+    "ast_hash": "061517e685796aa71e8e84ab290f4a89",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A1_02.mp3": {
+    "mtime": 1795795313.5554242,
+    "seen": 1795817298.098036,
+    "ast_hash": "0aa48243d72a441a14672a8de2db0dd6",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A1_03.mp3": {
+    "mtime": 1795795314.1264436,
+    "seen": 1795817298.098036,
+    "ast_hash": "9027b50a4788db33ffd998523ab7be70",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A1_04.mp3": {
+    "mtime": 1795795314.7354872,
+    "seen": 1795817298.098036,
+    "ast_hash": "4882dddfaeb9a08374916eab305b2bdc",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A2_01.mp3": {
+    "mtime": 1795795315.2955232,
+    "seen": 1795817298.098036,
+    "ast_hash": "dfaa0f7b6a7e05b8e7ca839b65307da8",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A2_02.mp3": {
+    "mtime": 1795795315.921875,
+    "seen": 1795817298.098036,
+    "ast_hash": "aff55d6e0280d98f8ffb48745e5768b1",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A2_03.mp3": {
+    "mtime": 1795795316.509993,
+    "seen": 1795817298.098036,
+    "ast_hash": "90373cbb41d680008ba873a60cf1e435",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A2_04.mp3": {
+    "mtime": 1795795317.084858,
+    "seen": 1795817298.098036,
+    "ast_hash": "430d9e8b0fc175e7236eb58445d36b13",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A3_01.mp3": {
+    "mtime": 1795795317.6671584,
+    "seen": 1795817298.098036,
+    "ast_hash": "b0cfd3b1d102b05ed9d929f8d0681d3b",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A3_02.mp3": {
+    "mtime": 1795795318.2365434,
+    "seen": 1795817298.098036,
+    "ast_hash": "f39156073e0e3b34134461a1f38f2a1b",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A3_03.mp3": {
+    "mtime": 1795795318.8118978,
+    "seen": 1795817298.098036,
+    "ast_hash": "0f859a48721f55a12ddb57600d61d9be",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A3_04.mp3": {
+    "mtime": 1795795319.4798229,
+    "seen": 1795817298.098036,
+    "ast_hash": "c8df49b4d188d92dc2c8a97632276726",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A3_05.mp3": {
+    "mtime": 1795795320.1513007,
+    "seen": 1795817298.098036,
+    "ast_hash": "392b820cfee68866737613f8865be114",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A4_01.mp3": {
+    "mtime": 1795795320.710057,
+    "seen": 1795817298.098036,
+    "ast_hash": "c1abb8a74116a839a486a340b00eee98",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A4_02.mp3": {
+    "mtime": 1795795321.3348787,
+    "seen": 1795817298.098036,
+    "ast_hash": "1a35d0f577594dae24b2c6e5c41a90af",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A4_03.mp3": {
+    "mtime": 1795795321.950698,
+    "seen": 1795817298.098036,
+    "ast_hash": "2c292b8cd3228216a36ba8fd21f8b6f7",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A4_04.mp3": {
+    "mtime": 1795795322.4906707,
+    "seen": 1795817298.098036,
+    "ast_hash": "a0d81a105f75ef4b37119b2e276641e9",
+    "semantic_hash": ""
+  },
+  "godot/assets/voz/es/A4_05.mp3": {
+    "mtime": 1795795323.044546,
+    "seen": 1795817298.098036,
+    "ast_hash": "8819d91161ca161ff91eede5b2c51798",
     "semantic_hash": ""
   },
   "video_edition/remotion/package-lock.json": {

@@ -25,17 +25,15 @@
 
 ## Relationships
 
-- [ajustes.gd](ajustes.gd.md) (19 shared connections)
+- [ajustes.gd](ajustes.gd.md) (21 shared connections)
 - [HUD Vector Iconography & UI](HUD_Vector_Iconography_&_UI.md) (16 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (4 shared connections)
-- [HUD.gd](HUD.gd.md) (4 shared connections)
-- [Construccion.gd](Construccion.gd.md) (3 shared connections)
-- [GeneradorMundo.gd](GeneradorMundo.gd.md) (3 shared connections)
-- [PanelContextual.gd](PanelContextual.gd.md) (1 shared connections)
-- [tsconfig.json](tsconfig.json.md) (1 shared connections)
-- [BlueprintValidator.gd](BlueprintValidator.gd.md) (1 shared connections)
-- [Colonos.gd](Colonos.gd.md) (1 shared connections)
-- [Player.gd](Player.gd.md) (1 shared connections)
+- [Colonos.gd](Colonos.gd.md) (4 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (3 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (3 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [Player.gd](Player.gd.md) (2 shared connections)
+- [GeneradorMundo.gd](GeneradorMundo.gd.md) (2 shared connections)
+- [Economia.gd](Economia.gd.md) (1 shared connections)
 - [Obras.gd](Obras.gd.md) (1 shared connections)
 
 ## Source Files

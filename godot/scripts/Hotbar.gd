@@ -165,21 +165,30 @@ func _piezas_de_icono(tipo: String) -> Array:
 		var lamina := BoxMesh.new()
 		lamina.size = PuertasScript.LAMINA
 		var material_lamina := StandardMaterial3D.new()
-		material_lamina.albedo_color = PuertasScript.COLOR_LAMINA
+		material_lamina.albedo_color = Color.WHITE
+		material_lamina.albedo_texture = preload("res://assets/texturas/bloques/tex_puerta_madera.png")
+		material_lamina.normal_enabled = true
+		material_lamina.normal_texture = preload("res://assets/texturas/bloques/tex_puerta_madera_normal.png")
+		material_lamina.roughness_texture = preload("res://assets/texturas/bloques/tex_puerta_madera_roughness.png")
+		material_lamina.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		piezas.append([lamina, Vector3.ZERO, material_lamina])
-		# Picaporte dorado
+		var mat_herraje := StandardMaterial3D.new()
+		mat_herraje.albedo_color = Color.WHITE
+		mat_herraje.albedo_texture = preload("res://assets/texturas/bloques/tex_metal_herraje.png")
+		mat_herraje.normal_enabled = true
+		mat_herraje.normal_texture = preload("res://assets/texturas/bloques/tex_metal_herraje_normal.png")
+		mat_herraje.roughness_texture = preload("res://assets/texturas/bloques/tex_metal_herraje_roughness.png")
+		mat_herraje.metallic = 0.7
+		mat_herraje.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		# Picaporte
 		var picaporte := BoxMesh.new()
 		picaporte.size = Vector3(0.08, 0.12, 0.16)
-		var mat_pica := StandardMaterial3D.new()
-		mat_pica.albedo_color = Color(0.85, 0.7, 0.2)
-		piezas.append([picaporte, Vector3(0.3, 0.0, 0.0), mat_pica])
-		# Bisagras oscuras
+		piezas.append([picaporte, Vector3(0.3, 0.0, 0.0), mat_herraje])
+		# Bisagras
 		var bisagra := BoxMesh.new()
 		bisagra.size = Vector3(0.04, 0.15, 0.14)
-		var mat_bis := StandardMaterial3D.new()
-		mat_bis.albedo_color = Color(0.15, 0.15, 0.15)
-		piezas.append([bisagra, Vector3(-0.38, 0.5, 0.0), mat_bis])
-		piezas.append([bisagra, Vector3(-0.38, -0.5, 0.0), mat_bis])
+		piezas.append([bisagra, Vector3(-0.38, 0.5, 0.0), mat_herraje])
+		piezas.append([bisagra, Vector3(-0.38, -0.5, 0.0), mat_herraje])
 		return piezas
 	if ITEM_ICONO_COMPUESTO.has(tipo):
 		var piezas: Array = []

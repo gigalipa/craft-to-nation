@@ -30,7 +30,7 @@
 ### implements
 - [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
 - [Economia.gd](Economia.gd.md) `EXTRACTED`
-- PanelPuesto.gd `EXTRACTED`
+- [PanelPuesto.gd](PanelPuesto.gd.md) `EXTRACTED`
 - [VentanaAlmacen.gd](VentanaAlmacen.gd.md) `EXTRACTED`
 
 ---

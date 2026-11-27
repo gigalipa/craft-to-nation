@@ -33,7 +33,7 @@
 - [Ciudad.gd](Ciudad.gd.md) `EXTRACTED`
 - [Economia.gd](Economia.gd.md) `EXTRACTED`
 - [Colonos.gd](Colonos.gd.md) `EXTRACTED`
-- PanelPuesto.gd `EXTRACTED`
+- [PanelPuesto.gd](PanelPuesto.gd.md) `EXTRACTED`
 - PanelEdificio.gd `EXTRACTED`
 
 ---

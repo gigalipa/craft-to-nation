@@ -151,8 +151,12 @@ static func ejecutar_paso(mundo: Object, paso: Dictionary) -> Vector3i:
 	elif paso["tipo"] == "cuna":
 		_nivelar_columna(mundo, col, paso["y"])
 		var celda_cuna: Vector3i = paso["celda"]
-		mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(paso["cuna_tipo"]), _orientacion(paso["direccion_alta"], paso["cuna_tipo"]))
-		mundo.colocado_por_jugador[celda_cuna] = true
+		var ori_cuna: int = _orientacion(paso["direccion_alta"], paso["cuna_tipo"])
+		if mundo.has_method("colocar_bloque_orientado"):
+			mundo.colocar_bloque_orientado(celda_cuna, paso["cuna_tipo"], ori_cuna, true)
+		else:
+			mundo.set_cell_item(celda_cuna, mundo.id_de_tipo(paso["cuna_tipo"]), ori_cuna)
+			mundo.colocado_por_jugador[celda_cuna] = true
 		Vias.agregar([celda_cuna], TIPO_VIA)
 		return celda_cuna
 	return Vector3i.ZERO

@@ -252,6 +252,14 @@ var modificaciones_terreno: Dictionary = {}
 ## recursos de la nada. Solo lo que de verdad se cobró se reembolsa.
 var celdas_pagadas: Dictionary = {}
 
+## Variante visual de celda ("bloque_madera_cruda", "bloque_piedra_rustica", "vidrio_tierra")
+## cuando el bloque se pagó con el recurso bruto en vez del procesado.
+const TIPO_LOGICO_DE_VARIANTE := {
+	"bloque_madera_cruda": "bloque_madera",
+	"bloque_piedra_rustica": "bloque_piedra",
+}
+var variante_visual_celda: Dictionary = {}  # Vector3i -> String
+
 ## Vínculo bidireccional entre las dos celdas de un objeto multi-celda
 ## (puerta: 2 celdas verticales; cama: 2 celdas horizontales). Minar
 ## cualquiera de las dos celdas borra ambas — ver minar_bloque().
@@ -311,6 +319,9 @@ signal obra_a_fantasma(id: int)
 
 ## Emitida cuando cambia un bloque que puede alterar la superficie o altura del terreno.
 signal terreno_modificado(celda: Vector3i)
+
+## Emitida cuando se registra, completa o elimina un edificio declarado.
+signal edificios_cambiados
 
 ## Permisos de salida: id de obra -> {entidad -> true}. "entidad" es el id de un
 ## colono (int) o "avatar". Con permiso, la entidad ignora la colisión con los
@@ -401,6 +412,7 @@ func registrar_edificio(celdas: Array) -> int:
 		celda_sobre_techo[reservada] = id
 		reservadas.append(reservada)
 	edificio_sobre_techo[id] = reservadas
+	edificios_cambiados.emit()
 	return id
 
 
@@ -704,7 +716,13 @@ func _indexar_biblioteca() -> void:
 			var malla := BoxMesh.new()
 			malla.size = Vector3.ONE
 			var mat := StandardMaterial3D.new()
-			mat.albedo_color = COLORES_PUERTO.get(tipo_puerto, Color.GRAY)
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			var path_p: String = "res://assets/texturas/bloques/tex_%s.png" % tipo_puerto
+			if ResourceLoader.exists(path_p):
+				mat.albedo_color = Color.WHITE
+				mat.albedo_texture = load(path_p)
+			else:
+				mat.albedo_color = COLORES_PUERTO.get(tipo_puerto, Color.GRAY)
 			malla.material = mat
 			mesh_library.set_item_mesh(id_p, malla)
 			var forma := BoxShape3D.new()
@@ -715,12 +733,12 @@ func _indexar_biblioteca() -> void:
 
 	# Bloques de canalización ("acueducto", "tuberia") y sus variantes lineal/quiebre
 	var canalizaciones_meta := {
-		"acueducto": Ajustes.COLOR_DUCTO_ACUEDUCTO,
-		"acueducto_lineal": Ajustes.COLOR_DUCTO_ACUEDUCTO,
-		"acueducto_quiebre": Ajustes.COLOR_DUCTO_ACUEDUCTO,
-		"tuberia": Ajustes.COLOR_DUCTO_TUBERIA,
-		"tuberia_lineal": Ajustes.COLOR_DUCTO_TUBERIA,
-		"tuberia_quiebre": Ajustes.COLOR_DUCTO_TUBERIA,
+		"acueducto": {"color": Ajustes.COLOR_DUCTO_ACUEDUCTO, "tex": "tex_ducto_acueducto", "metallic": 0.0},
+		"acueducto_lineal": {"color": Ajustes.COLOR_DUCTO_ACUEDUCTO, "tex": "tex_ducto_acueducto", "metallic": 0.0},
+		"acueducto_quiebre": {"color": Ajustes.COLOR_DUCTO_ACUEDUCTO, "tex": "tex_ducto_acueducto", "metallic": 0.0},
+		"tuberia": {"color": Ajustes.COLOR_DUCTO_TUBERIA, "tex": "tex_ducto_tuberia", "metallic": 0.55},
+		"tuberia_lineal": {"color": Ajustes.COLOR_DUCTO_TUBERIA, "tex": "tex_ducto_tuberia", "metallic": 0.55},
+		"tuberia_quiebre": {"color": Ajustes.COLOR_DUCTO_TUBERIA, "tex": "tex_ducto_tuberia", "metallic": 0.55},
 	}
 	for tipo_c in canalizaciones_meta:
 		if not _id_por_tipo.has(tipo_c):
@@ -729,8 +747,21 @@ func _indexar_biblioteca() -> void:
 			mesh_library.set_item_name(id_c, tipo_c)
 			var malla := BoxMesh.new()
 			malla.size = Vector3.ONE
+			var cfg_c: Dictionary = canalizaciones_meta[tipo_c]
 			var mat := StandardMaterial3D.new()
-			mat.albedo_color = canalizaciones_meta[tipo_c]
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			mat.metallic = float(cfg_c.get("metallic", 0.0))
+			var base_c: String = "res://assets/texturas/bloques/" + str(cfg_c["tex"])
+			if ResourceLoader.exists(base_c + ".png"):
+				mat.albedo_color = Color.WHITE
+				mat.albedo_texture = load(base_c + ".png")
+				if ResourceLoader.exists(base_c + "_normal.png"):
+					mat.normal_enabled = true
+					mat.normal_texture = load(base_c + "_normal.png")
+				if ResourceLoader.exists(base_c + "_roughness.png"):
+					mat.roughness_texture = load(base_c + "_roughness.png")
+			else:
+				mat.albedo_color = cfg_c["color"]
 			malla.material = mat
 			mesh_library.set_item_mesh(id_c, malla)
 			var forma := BoxShape3D.new()
@@ -899,6 +930,21 @@ func altura_natural_en(x: int, z: int) -> int:
 	return real
 
 
+func colocar_bloque_orientado(celda: Vector3i, tipo: String, orientacion_item: int, por_jugador: bool = false) -> bool:
+	if not _id_por_tipo.has(tipo):
+		return false
+	set_cell_item(celda, _id_por_tipo[tipo], orientacion_item)
+	if por_jugador:
+		colocado_por_jugador[celda] = true
+	modificaciones_terreno[celda] = {
+		"tipo": tipo,
+		"orientacion_item": orientacion_item,
+		"por_jugador": por_jugador,
+	}
+	terreno_modificado.emit(celda)
+	return true
+
+
 func colocar_bloque(celda: Vector3i, tipo: String, por_jugador: bool = false, orientacion: Variant = null) -> bool:
 	var actual: int = get_cell_item(celda)
 	var tipo_anterior: String = _tipo_por_id.get(actual, "")
@@ -994,6 +1040,7 @@ func _retirar_bloque(celda: Vector3i) -> void:
 	_reembolsar_si_corresponde(celda, tipo_anterior)
 	set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	orientacion_ventana.erase(celda)
+	variante_visual_celda.erase(celda)
 	colocado_por_jugador.erase(celda)
 	if TIPOS_PUERTA.has(tipo_anterior):
 		puerta_cambiada.emit(celda)
@@ -1121,7 +1168,30 @@ func recolectar_frutos(celda: Vector3i, hora: int) -> float:
 
 
 func obtener_tipo(celda: Vector3i) -> String:
+	var raw: String = _tipo_por_id.get(get_cell_item(celda), "")
+	return TIPO_LOGICO_DE_VARIANTE.get(raw, raw)
+
+
+func obtener_tipo_visual(celda: Vector3i) -> String:
+	if variante_visual_celda.has(celda):
+		return variante_visual_celda[celda]
 	return _tipo_por_id.get(get_cell_item(celda), "")
+
+
+func aplicar_variante_visual_por_pago(celda: Vector3i, tipo_logico: String, detalle_pago: Dictionary) -> void:
+	if tipo_logico == "bloque_madera" and float(detalle_pago.get("madera", 0.0)) > float(detalle_pago.get("tablas", 0.0)):
+		if _id_por_tipo.has("bloque_madera_cruda"):
+			set_cell_item(celda, _id_por_tipo["bloque_madera_cruda"])
+		variante_visual_celda[celda] = "bloque_madera_cruda"
+	elif tipo_logico == "bloque_piedra" and float(detalle_pago.get("piedra", 0.0)) > float(detalle_pago.get("bloques_piedra", 0.0)):
+		if _id_por_tipo.has("bloque_piedra_rustica"):
+			set_cell_item(celda, _id_por_tipo["bloque_piedra_rustica"])
+		variante_visual_celda[celda] = "bloque_piedra_rustica"
+	elif tipo_logico == "vidrio" and float(detalle_pago.get("tierra", 0.0)) > 0.0 and float(detalle_pago.get("vidrio", 0.0)) <= 0.0:
+		variante_visual_celda[celda] = "vidrio_tierra"
+		bloque_translucido_cambiado.emit(celda)
+	else:
+		variante_visual_celda.erase(celda)
 
 
 ## Datos de cascada de la columna (x,z), o {} si no es cascada — ver
@@ -1539,12 +1609,36 @@ func colocar_puerta(base: Vector3i) -> bool:
 ## "direccion" (un vector cardinal, ver Player._direccion_cardinal) indica
 ## hacia dónde queda el pie de la cama. Falla si falta espacio en cualquiera
 ## de las dos celdas.
+func _indice_orientacion_cama(dir_pies: Vector3i) -> int:
+	var b := Basis.IDENTITY
+	if dir_pies.x < 0:
+		b = Basis(Vector3.UP, PI)
+	elif dir_pies.z > 0:
+		b = Basis(Vector3.UP, -PI * 0.5)
+	elif dir_pies.z < 0:
+		b = Basis(Vector3.UP, PI * 0.5)
+	return get_orthogonal_index_from_basis(b)
+
+
+func _orientar_par_cama(cabecera: Vector3i, pies: Vector3i) -> void:
+	var idx: int = _indice_orientacion_cama(pies - cabecera)
+	if _id_por_tipo.has("cama_cabecera"):
+		set_cell_item(cabecera, _id_por_tipo["cama_cabecera"], idx)
+	if _id_por_tipo.has("cama_pies"):
+		set_cell_item(pies, _id_por_tipo["cama_pies"], idx)
+	if modificaciones_terreno.has(cabecera) and modificaciones_terreno[cabecera] is Dictionary:
+		modificaciones_terreno[cabecera]["orientacion_item"] = idx
+	if modificaciones_terreno.has(pies) and modificaciones_terreno[pies] is Dictionary:
+		modificaciones_terreno[pies]["orientacion_item"] = idx
+
+
 func colocar_cama(base: Vector3i, direccion: Vector3i) -> bool:
 	var pies := base + direccion
 	if not (_celda_libre(base) and _celda_libre(pies)):
 		return false
 	colocar_bloque(base, "cama_cabecera", true)
 	colocar_bloque(pies, "cama_pies", true)
+	_orientar_par_cama(base, pies)
 	pareja[base] = pies
 	pareja[pies] = base
 	return true
@@ -1963,6 +2057,7 @@ func eliminar_edificio(id: int) -> Vector2i:
 	edificio_volumen.erase(id)
 	permisos_salida.erase(id)
 	fantasmas_cambiados.emit()
+	edificios_cambiados.emit()
 	return esquina
 
 
@@ -2012,6 +2107,7 @@ func desdeclarar_edificio(id: int) -> Vector2i:
 	edificio_volumen.erase(id)
 	permisos_salida.erase(id)
 	fantasmas_cambiados.emit()
+	edificios_cambiados.emit()
 	return esquina
 
 
@@ -2157,6 +2253,8 @@ func _reemplazar_celda(celda: Vector3i, tipo: String, orientacion: Variant = nul
 	elif actual != "agua":
 		set_cell_item(celda, GridMap.INVALID_CELL_ITEM)
 	colocar_bloque(celda, tipo, true, orientacion)
+	if celdas_pagadas.has(celda) and celdas_pagadas[celda] is Dictionary:
+		aplicar_variante_visual_por_pago(celda, tipo, celdas_pagadas[celda])
 
 
 ## Registra el follaje de "id" (huella y fachada, ver
@@ -2536,6 +2634,7 @@ func reemparejar_construccion(celdas: Array) -> void:
 				if obtener_tipo(vecino) == "cama_pies":
 					pareja[celda] = vecino
 					pareja[vecino] = celda
+					_orientar_par_cama(celda, vecino)
 					break
 
 
@@ -2619,7 +2718,23 @@ func retirar_tuberia_extraccion(columna: Vector2i, y_sup: int, y_fondo: int, obj
 func exportar_estado() -> Dictionary:
 	var modif_exp: Dictionary = {}
 	for c in modificaciones_terreno:
-		modif_exp["%d,%d,%d" % [c.x, c.y, c.z]] = modificaciones_terreno[c]
+		var info_exp: Dictionary = (modificaciones_terreno[c] as Dictionary).duplicate(true)
+		var t_exp: String = str(info_exp.get("tipo", ""))
+		if t_exp != "aire" and t_exp != "" and not info_exp.has("orientacion_item") and get_cell_item(c) != GridMap.INVALID_CELL_ITEM:
+			info_exp["orientacion_item"] = get_cell_item_orientation(c)
+		modif_exp["%d,%d,%d" % [c.x, c.y, c.z]] = info_exp
+
+	if Vias != null:
+		for c_via: Vector3i in Vias.celdas:
+			var key_via := "%d,%d,%d" % [c_via.x, c_via.y, c_via.z]
+			if not modif_exp.has(key_via):
+				var t_via: String = obtener_tipo(c_via)
+				if t_via.begins_with("cuna_") or t_via == "diag_lat":
+					modif_exp[key_via] = {
+						"tipo": t_via,
+						"orientacion_item": get_cell_item_orientation(c_via),
+						"por_jugador": true,
+					}
 
 	var c_edif_exp: Dictionary = {}
 	for c in celda_a_edificio:
@@ -2684,6 +2799,10 @@ func exportar_estado() -> Dictionary:
 		var o: Vector3i = orientacion_ventana[c]
 		ori_vent_exp["%d,%d,%d" % [c.x, c.y, c.z]] = {"x": o.x, "y": o.y, "z": o.z}
 
+	var var_vis_exp: Dictionary = {}
+	for c in variante_visual_celda:
+		var_vis_exp["%d,%d,%d" % [c.x, c.y, c.z]] = variante_visual_celda[c]
+
 	return {
 		"modificaciones_terreno": modif_exp,
 		"siguiente_id_edificio": _siguiente_id_edificio,
@@ -2697,6 +2816,7 @@ func exportar_estado() -> Dictionary:
 		"edificio_volumen": edif_vol_exp,
 		"pareja": pareja_exp,
 		"orientacion_ventana": ori_vent_exp,
+		"variante_visual_celda": var_vis_exp,
 	}
 
 
@@ -2723,7 +2843,8 @@ func importar_estado(d: Dictionary) -> void:
 				terreno_modificado.emit(celda)
 			else:
 				if _id_por_tipo.has(tipo):
-					set_cell_item(celda, _id_por_tipo[tipo])
+					var ori_item: int = int(info.get("orientacion_item", 0))
+					set_cell_item(celda, _id_por_tipo[tipo], ori_item)
 					if por_jugador:
 						colocado_por_jugador[celda] = true
 					if ori != null:
@@ -2822,6 +2943,20 @@ func importar_estado(d: Dictionary) -> void:
 			var pt: Dictionary = d["orientacion_ventana"][k]
 			if p.size() >= 3:
 				orientacion_ventana[Vector3i(int(p[0]), int(p[1]), int(p[2]))] = Vector3i(int(pt["x"]), int(pt["y"]), int(pt["z"]))
+
+	variante_visual_celda.clear()
+	if d.has("variante_visual_celda") and d["variante_visual_celda"] is Dictionary:
+		for k in d["variante_visual_celda"]:
+			var p := (k as String).split(",")
+			if p.size() >= 3:
+				var c := Vector3i(int(p[0]), int(p[1]), int(p[2]))
+				var var_vis: String = str(d["variante_visual_celda"][k])
+				variante_visual_celda[c] = var_vis
+				if var_vis == "vidrio_tierra":
+					bloque_translucido_cambiado.emit(c)
+				elif _id_por_tipo.has(var_vis):
+					set_cell_item(c, _id_por_tipo[var_vis])
+	edificios_cambiados.emit()
 
 
 static func _parsear_vector3i_json(valor: Variant) -> Variant:

@@ -1,17 +1,13 @@
 # BlueprintValidator.gd
 
-> 21 nodes · cohesion 0.11
+> 20 nodes · cohesion 0.11
 
 ## Key Concepts
 
 - **BlueprintValidator.gd** (41 connections) — `godot/scripts/BlueprintValidator.gd`
-- **ExtraccionTest.gd** (18 connections) — `godot/scripts/ExtraccionTest.gd`
-- **2026-09-29-costo-colocacion-bloques.md (Costo de colocación y bloques estructurales reales — Plan de)** (16 connections) — `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`
-- **2026-09-24-extraccion-fisica-agotamiento.md (Extracción física y agotamiento (PoC 5, sub-proyecto 2B) Imp)** (12 connections) — `docs/superpowers/plans/2026-09-24-extraccion-fisica-agotamiento.md`
-- **Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md (**Documento Técnico de Desarrollo: PoC 5 - Fase 2B - Extracc)** (12 connections) — `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`
-- **ProgresoAccion.gd** (8 connections) — `godot/scripts/ProgresoAccion.gd`
-- **2026-09-13-piso-tierra-recurso.md (Piso como Tierra Expuesta (Identidad de Recurso) Implementat)** (5 connections) — `docs/superpowers/plans/2026-09-13-piso-tierra-recurso.md`
-- **2026-09-28-volumen-interno-edificios.md (Declaración de edificios por volumen interno — plan de imple)** (5 connections) — `docs/superpowers/plans/2026-09-28-volumen-interno-edificios.md`
+- **Puertas.gd** (21 connections) — `godot/scripts/Puertas.gd`
+- **2026-09-20-poblacion-vivienda.md (Población y Vivienda (Plan 1 de 3) Implementation Plan)** (9 connections) — `docs/superpowers/plans/2026-09-20-poblacion-vivienda.md`
+- **Documento Técnico de Desarrollo_ PoC 3 - Prototipo Visual Mínimo en Godot.md (**Documento Técnico de Desarrollo: PoC 3 - Prototipo Visual )** (6 connections) — `PoC_3/Documento Técnico de Desarrollo_ PoC 3 - Prototipo Visual Mínimo en Godot.md`
 - **BlueprintValidator.contar_baules()** (1 connections) — `godot/scripts/BlueprintValidator.gd`
 - **BlueprintValidator.contar_camas()** (1 connections) — `godot/scripts/BlueprintValidator.gd`
 - **BlueprintValidator.validar_aberturas()** (1 connections) — `godot/scripts/BlueprintValidator.gd`
@@ -20,42 +16,41 @@
 - **BlueprintValidator.validar_limites_vivienda()** (1 connections) — `godot/scripts/BlueprintValidator.gd`
 - **BlueprintValidator.validar_techo_y_suelo()** (1 connections) — `godot/scripts/BlueprintValidator.gd`
 - **BlueprintValidator.validar_vestibulos_puerta()** (1 connections) — `godot/scripts/BlueprintValidator.gd`
-- **ExtraccionTest.ejecutar_pruebas()** (1 connections) — `godot/scripts/ExtraccionTest.gd`
-- **ExtraccionTest._ready()** (1 connections) — `godot/scripts/ExtraccionTest.gd`
-- **ProgresoAccion.avanzar()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
-- **ProgresoAccion.fraccion()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
-- **ProgresoAccion.soltar()** (1 connections) — `godot/scripts/ProgresoAccion.gd`
+- **Puertas.actualizar()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.alternar()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.celda_de_colisionador()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.cuerpo_de()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.esta_abierta()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.existe()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas._process()** (1 connections) — `godot/scripts/Puertas.gd`
+- **Puertas.tick()** (1 connections) — `godot/scripts/Puertas.gd`
 
 ## Relationships
 
-- [GeneradorMundo.gd](GeneradorMundo.gd.md) (11 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (9 shared connections)
-- [Wiki & GDD Documentation](Wiki_&_GDD_Documentation.md) (8 shared connections)
-- [CamaraCenital.gd](CamaraCenital.gd.md) (8 shared connections)
-- [Economia.gd](Economia.gd.md) (8 shared connections)
-- [HUD.gd](HUD.gd.md) (8 shared connections)
-- [Player.gd](Player.gd.md) (6 shared connections)
-- [PanelContextual.gd](PanelContextual.gd.md) (6 shared connections)
-- [Construccion.gd](Construccion.gd.md) (5 shared connections)
-- [ajustes.gd](ajustes.gd.md) (5 shared connections)
-- [Colonos.gd](Colonos.gd.md) (2 shared connections)
-- [NiveladorTerreno.gd](NiveladorTerreno.gd.md) (2 shared connections)
+- [VoxelWorld.gd](VoxelWorld.gd.md) (13 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (9 shared connections)
+- [Player.gd](Player.gd.md) (5 shared connections)
+- [NiveladorTerreno.gd](NiveladorTerreno.gd.md) (5 shared connections)
+- [PanelContextual.gd](PanelContextual.gd.md) (5 shared connections)
+- [Economia.gd](Economia.gd.md) (4 shared connections)
+- [Colonos.gd](Colonos.gd.md) (3 shared connections)
+- [ajustes.gd](ajustes.gd.md) (3 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [PanelPuesto.gd](PanelPuesto.gd.md) (2 shared connections)
+- [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
+- [CuerposObra.gd](CuerposObra.gd.md) (1 shared connections)
 
 ## Source Files
 
-- `PoC_5/Documento Técnico de Desarrollo_ PoC 5 - Fase 2B - Extracción Física y Agotamiento.md`
-- `docs/superpowers/plans/2026-09-13-piso-tierra-recurso.md`
-- `docs/superpowers/plans/2026-09-24-extraccion-fisica-agotamiento.md`
-- `docs/superpowers/plans/2026-09-28-volumen-interno-edificios.md`
-- `docs/superpowers/plans/2026-09-29-costo-colocacion-bloques.md`
+- `PoC_3/Documento Técnico de Desarrollo_ PoC 3 - Prototipo Visual Mínimo en Godot.md`
+- `docs/superpowers/plans/2026-09-20-poblacion-vivienda.md`
 - `godot/scripts/BlueprintValidator.gd`
-- `godot/scripts/ExtraccionTest.gd`
-- `godot/scripts/ProgresoAccion.gd`
+- `godot/scripts/Puertas.gd`
 
 ## Audit Trail
 
-- EXTRACTED: 103 (96%)
-- INFERRED: 4 (4%)
+- EXTRACTED: 72 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

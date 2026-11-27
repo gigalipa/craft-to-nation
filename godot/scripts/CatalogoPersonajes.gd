@@ -115,8 +115,10 @@ static func resolver_animaciones(colono: Dictionary, tipo_puesto: String = "") -
 	var es_acarreador := str(trabajo.get("rol", "")) == "acarreador"
 	var moviendo := _colono_en_movimiento(colono)
 	if es_acarreador:
-		if moviendo or _colono_tiene_carga(colono):
+		if _colono_tiene_carga(colono):
 			return ["Hauler_Carry"]
+		if moviendo:
+			return ["Walking"]
 		return ["Hauler_Box_Idle"]
 	if moviendo:
 		return ["Walking"]

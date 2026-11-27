@@ -1,11 +1,11 @@
 ---
-title: "Pilares de Diseño y GDD (v3.64)"
-description: "Documento de Diseño de Juego (GDD v3.64) de Craft to Nation: visión de supervivencia híbrida, city building orgánico, evolución de eras por IDU, investigación en 2 capas, logística de transporte, refinería Vidriera y paneles de ventana."
+title: "Pilares de Diseño y GDD (v3.65)"
+description: "Documento de Diseño de Juego (GDD v3.65) de Craft to Nation: visión de supervivencia híbrida, city building orgánico, evolución de eras por IDU, investigación en 2 capas, logística de transporte, refinería Vidriera y paneles de ventana."
 ---
 
-# Pilares de Diseño y GDD (v3.64)
+# Pilares de Diseño y GDD (v3.65)
 
-El **Documento de Diseño de Juego (GDD)** de **Craft to Nation** establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el marco evolutivo de eras tecnológicas, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.64**.
+El **Documento de Diseño de Juego (GDD)** de **Craft to Nation** establece las directrices conceptuales, sistémicas y matemáticas que rigen el proyecto. Esta página resume los pilares centrales, el marco evolutivo de eras tecnológicas, el ciclo de juego (*game loop*) y las especificaciones vigentes de la versión **v3.65**.
 
 ---
 
@@ -56,7 +56,7 @@ La civilización progresa desde la supervivencia primitiva hasta un horizonte te
 
 ---
 
-## 3. Novedades Consolidadas en GDD v3.57 – v3.64
+## 3. Novedades Consolidadas en GDD v3.57 – v3.65
 
 - **Iconografía Vectorial HUD (`IconosHUD.gd`) y Miniaturas 3D (`MiniaturaRenderer.gd`):** Catálogo centralizado de **más de 90 iconos SVG pixel-art** (`shape-rendering="crispEdges"`), botones de construcción ampliados a `104×76 px` con insignias en 3 esquinas (insumos a la izquierda, rayo eléctrico al centro, producto a la derecha) y miniaturas 3D renderizadas en vivo.
 - **Red Eléctrica en kW / MW (`BarraSuperior.gd`, `VentanaEnergia.gd`):** Indicador interactivo de rayo tricolor (dorado = superávit, gris = sin demanda, rojo = déficit) con desglose detallado de generación y consumo por instalación.
@@ -71,5 +71,5 @@ La civilización progresa desde la supervivencia primitiva hasta un horizonte te
 - **Motor de Audio Espacial y Efectos Sonoros (SFX) y Exportación Windows (v3.60):** Singleton Autoload `Sonidos.gd` con pools circulares de 16 reproductores 2D (`AudioStreamPlayer`) y 16 reproductores 3D (`AudioStreamPlayer3D`) espaciales para el mundo vóxel (atenuación inversa de distancia hasta 35m, pitch modulation aleatorio de ±5%). Catálogo de 102 efectos OGG categorizados en 8 familias temáticas (`locomocion`, `herramientas`, `mobiliario`, `colonos`, `industrias`, `fluidos`, `urbanismo`, `ui`), cableado reactivo en todo el motor e infraestructura de compilación standalone para Windows (`tools/export_windows.ps1` e icono `godot/icon.png`).
 - **Menú de Inicio, Guardado Atómico de Partidas, Pausa F11, Configuración Persistente y Pantalla de Carga (v3.61):** Escena principal `MenuInicio.tscn` como portal de inicio con fondo animado (`SlideshowFondo.gd`), música BGM de menú en bucle (`The_Architect_s_Decree (menu).mp3`) y subpaneles interactivos (Nueva Partida, Cargar Partida, Configuración y Salir). Singleton autoload `GestorPartida.gd` con serialización/carga atómica en JSON (`user://saves/`) del estado completo del mundo vóxel y singletons, slot de guardado rápido (`quicksave.json`) y listado de partidas con metadatos. Menú contextual de pausa en juego `MenuPausa.gd` accesible con <kbd>F11</kbd> con pausa absoluta (`paused = true`) y ajustes en caliente. Singleton `Configuracion.gd` con persistencia en `user://configuracion.json` (volúmenes SFX/BGM, sensibilidad, FOV, idioma, modo pantalla y perfiles de recursos iniciales) y pantalla de carga `PantallaCarga.gd`.
 - **Localización Dinámica ES/EN, Tránsito por Carril Derecho y Video Intro Cinemático (v3.61):** Catálogo bilingüe `_DATOS_EN` en `strings.gd` con cambio de idioma en caliente (`Strings.actualizar_idioma()`), escena cinemática de arranque `VideoIntro.tscn` hacia `MenuInicio.tscn`, perfiles configurables de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`) y circulación vial por carril derecho según huella física (`Vias.es_borde_derecho()`, `VIAS_PENALIZACION_CARRIL_IZQUIERDO = 4`).
-- **Fase 4: Cámara Dual de Combate, Cuartel Militar, Selección Universal y Comando Híbrido (v3.64):** Edificio militar **Cuartel** (`9×7×8`, 2 pisos, 4 camas, Zona B, tecla `7`) con vivienda militar acuartelada (`x_cama = 4`, 16 soldados sin consumir vivienda civil) y cohorte 4→4 sin pérdida; selección táctica universal por recuadro 2D en cámara cenital con memoria entre cámaras; `PanelUnidad.gd` con posturas (`Pasivo`, `Defensivo`, `Agresivo`) y órdenes (`Moverse`, `Atacar` con <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` con <kbd>H</kbd>); modos especializados de 1ª persona en `Player.gd` (<kbd>T</kbd> Construcción, <kbd>R</kbd> Batalla con espada/arco/retícula, <kbd>F</kbd> Comandante con hotbar 1–6 y subgrupos <kbd>Shift</kbd> + <kbd>1..9</kbd>); visuales procedurales de tropas (cascos, escudos, aros y waypoints en `ColonosRenderer.gd`); y selector persistente de modo pantalla (completa vs ventana 1280×720).
-- **Cobertura de Verificación Continua:** **39 escenas de prueba automatizadas** pasando al **100 % en verde**.
+- **Fase 4: Cámara Dual de Combate, Cuartel Militar, Selección Universal y Comando Híbrido (v3.65):** Edificio militar **Cuartel** (`9×7×8`, 2 pisos, 4 camas, Zona B, tecla `7`) con vivienda militar acuartelada (`x_cama = 4`, 16 soldados sin consumir vivienda civil) y cohorte 4→4 sin pérdida; selección táctica universal por recuadro 2D en cámara cenital con memoria entre cámaras; `PanelUnidad.gd` con posturas (`Pasivo`, `Defensivo`, `Agresivo`) y órdenes (`Moverse`, `Atacar` con <kbd>K</kbd>, `Defender`, `Patrullar`, `Mantener` con <kbd>H</kbd>); modos especializados de 1ª persona en `Player.gd` (<kbd>T</kbd> Construcción, <kbd>R</kbd> Batalla con espada/arco/retícula, <kbd>F</kbd> Comandante con hotbar 1–6 y subgrupos <kbd>Shift</kbd> + <kbd>1..9</kbd>); visuales procedurales de tropas (cascos, escudos, aros y waypoints en `ColonosRenderer.gd`); y selector persistente de modo pantalla (completa vs ventana 1280×720).
+- **Cobertura de Verificación Continua:** **42 escenas de prueba automatizadas** pasando al **100 % en verde**.

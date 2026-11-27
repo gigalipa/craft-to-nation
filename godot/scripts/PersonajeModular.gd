@@ -11,6 +11,41 @@ const CatalogoPersonajes = preload("res://scripts/CatalogoPersonajes.gd")
 const ALTURA_PLACEHOLDER := 1.8
 const RADIO_PLACEHOLDER := 0.3
 
+
+class _PosturaCorreasAcarreadorModifier extends SkeletonModifier3D:
+	var activo: bool = false
+	var huesos: Dictionary = {}
+
+	func configurar(skel: Skeleton3D) -> void:
+		huesos.clear()
+		if skel == null:
+			return
+		for nombre in ["LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand"]:
+			var idx := skel.find_bone(nombre)
+			if idx != -1:
+				huesos[nombre] = idx
+
+	func _process_modification_with_delta(_delta: float) -> void:
+		if not activo:
+			return
+		var skel := get_skeleton()
+		if skel == null:
+			return
+		var ajustes_euler := {
+			"LeftUpperArm": Vector3(deg_to_rad(32.0), deg_to_rad(18.0), deg_to_rad(-16.0)),
+			"LeftLowerArm": Vector3(deg_to_rad(88.0), deg_to_rad(-15.0), deg_to_rad(-22.0)),
+			"LeftHand": Vector3(deg_to_rad(10.0), deg_to_rad(-28.0), deg_to_rad(-15.0)),
+			"RightUpperArm": Vector3(deg_to_rad(32.0), deg_to_rad(-18.0), deg_to_rad(16.0)),
+			"RightLowerArm": Vector3(deg_to_rad(88.0), deg_to_rad(15.0), deg_to_rad(22.0)),
+			"RightHand": Vector3(deg_to_rad(10.0), deg_to_rad(28.0), deg_to_rad(15.0)),
+		}
+		for nombre in ajustes_euler:
+			if not huesos.has(nombre):
+				continue
+			var idx: int = huesos[nombre]
+			var q_rest: Quaternion = skel.get_bone_rest(idx).basis.get_rotation_quaternion()
+			skel.set_bone_pose_rotation(idx, q_rest * Quaternion.from_euler(ajustes_euler[nombre]))
+
 var existe_recurso_fn: Callable = Callable()
 
 var _modo_visual: String = "placeholder"
@@ -20,6 +55,7 @@ var _firma_capa2: String = ""
 
 var _raiz_visual: Node3D = null
 var _skeleton: Skeleton3D = null
+var _modificador_correas: _PosturaCorreasAcarreadorModifier = null
 var _anim_player: AnimationPlayer = null
 var _anclajes: Dictionary = {}  # slot -> BoneAttachment3D
 var _equipamiento_logico: Dictionary = {}  # slot -> pieza_id
@@ -115,6 +151,7 @@ func _reconstruir_capa1(rango: String, genero: String, color_equipo: Color) -> v
 			add_child(_raiz_visual)
 			_skeleton = CatalogoPersonajes.buscar_nodo_por_clase(_raiz_visual, "Skeleton3D") as Skeleton3D
 			_anim_player = CatalogoPersonajes.buscar_nodo_por_clase(_raiz_visual, "AnimationPlayer") as AnimationPlayer
+			_configurar_modificador_correas()
 			_configurar_anclajes()
 			_configurar_animaciones_base()
 			return
@@ -172,6 +209,16 @@ func _reparentar_mallas_a_skeleton(origen: Node, skel_destino: Skeleton3D) -> vo
 			mi.get_parent().remove_child(mi)
 		skel_destino.add_child(mi)
 		mi.skeleton = NodePath("..")
+
+
+func _configurar_modificador_correas() -> void:
+	_modificador_correas = null
+	if _skeleton == null:
+		return
+	_modificador_correas = _PosturaCorreasAcarreadorModifier.new()
+	_modificador_correas.name = "PosturaCorreasAcarreadorModifier"
+	_modificador_correas.configurar(_skeleton)
+	_skeleton.add_child(_modificador_correas)
 
 
 func _configurar_anclajes() -> void:
@@ -310,6 +357,8 @@ func _reproducir_pool(pool: Array[String], forzar: bool = false) -> void:
 	_pool_animaciones = disponibles
 	var indice := _rng_animaciones.randi_range(0, disponibles.size() - 1)
 	_anim_actual = elegir_animacion(disponibles, indice)
+	if _modificador_correas != null:
+		_modificador_correas.activo = (_anim_actual == "Hauler_Carry")
 	_anim_player.play(_anim_actual, 0.15)
 
 
@@ -330,6 +379,7 @@ func _serializar_equipamiento(eq: Dictionary) -> String:
 
 func _limpiar_capa1() -> void:
 	_anclajes.clear()
+	_modificador_correas = null
 	_skeleton = null
 	_anim_player = null
 	_anim_actual = ""

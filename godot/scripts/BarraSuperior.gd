@@ -10,6 +10,7 @@ extends PanelContainer
 
 ## "poblacion", "almacen" o "energia"; solo lo escucha CamaraCenital (HUD.dato_pedido).
 signal dato_pedido(cual: String)
+signal menu_pedido
 
 const Ajustes = preload("res://scripts/ajustes.gd")
 const Strings = preload("res://scripts/strings.gd")
@@ -27,6 +28,7 @@ var critico := TemaHUD.etiqueta()
 var energia := Button.new()
 var era := TemaHUD.etiqueta(ERA_ACTUAL)
 var nivel := TemaHUD.etiqueta()
+var menu_pausa := Button.new()
 
 var _barra_moral := ProgressBar.new()
 
@@ -258,6 +260,8 @@ func _ready() -> void:
 	grupo_cen.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	almacen_total.text = Strings.VENTANA_ALMACEN_TITULO
+	menu_pausa.text = Strings.t("BARRA_SUPERIOR_MENU", "Menú (F11)")
+	menu_pausa.tooltip_text = Strings.t("BARRA_SUPERIOR_MENU_TOOLTIP", "Abrir menú de pausa (F11)")
 	TemaHUD.estilizar_boton(almacen_total)
 	almacen_total.custom_minimum_size = Vector2(106, 28)
 	almacen_total.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -345,6 +349,17 @@ func _ready() -> void:
 	_lbl_idu = nivel
 	grupo_der.add_child(nivel)
 
+	grupo_der.add_child(_separador())
+
+	TemaHUD.estilizar_boton(menu_pausa)
+	menu_pausa.text = Strings.t("BARRA_SUPERIOR_MENU", "Menú (F11)")
+	menu_pausa.tooltip_text = Strings.t("BARRA_SUPERIOR_MENU_TOOLTIP", "Abrir menú de pausa (F11)")
+	menu_pausa.custom_minimum_size = Vector2(106, 28)
+	menu_pausa.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	menu_pausa.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	menu_pausa.pressed.connect(func() -> void: menu_pedido.emit())
+	grupo_der.add_child(menu_pausa)
+
 	fila.add_child(grupo_der)
 
 	_construir_panel_hover_idu()
@@ -407,6 +422,8 @@ func actualizar() -> void:
 		_icono_comida_tasa.texture = IconosHUD.icono(IconosHUD.icono_tasa(tasa_comida))
 
 	almacen_total.text = Strings.VENTANA_ALMACEN_TITULO
+	menu_pausa.text = Strings.t("BARRA_SUPERIOR_MENU", "Menú (F11)")
+	menu_pausa.tooltip_text = Strings.t("BARRA_SUPERIOR_MENU_TOOLTIP", "Abrir menú de pausa (F11)")
 
 	var res_e: Dictionary = Economia.balance_energia if Economia != null else {}
 	var capacidad_e: float = res_e.get("capacidad", 0.0)
@@ -560,7 +577,10 @@ func _actualizar_panel_hover_idu() -> void:
 	_panel_hover_idu.reset_size()
 	var vp_ancho: float = get_viewport_rect().size.x
 	var panel_ancho: float = maxf(_panel_hover_idu.size.x, _panel_hover_idu.get_combined_minimum_size().x)
-	_panel_hover_idu.global_position = Vector2(vp_ancho - panel_ancho, global_position.y + size.y)
+	var x_objetivo: float = vp_ancho - panel_ancho
+	if _icono_nivel != null:
+		x_objetivo = clampf(_icono_nivel.global_position.x + _icono_nivel.size.x - panel_ancho, 8.0, maxf(8.0, vp_ancho - panel_ancho - 8.0))
+	_panel_hover_idu.global_position = Vector2(x_objetivo, global_position.y + size.y)
 
 
 func _make_custom_tooltip(for_text: String) -> Object:

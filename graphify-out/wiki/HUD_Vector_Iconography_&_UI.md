@@ -34,16 +34,17 @@
 ## Relationships
 
 - [Índice de Desarrollo Urbano (IDU I-IV) y Balanza D/C/S](Índice_de_Desarrollo_Urbano_IDU_I-IV_y_Balanza_D-C-S.md) (16 shared connections)
-- [ajustes.gd](ajustes.gd.md) (8 shared connections)
-- [HUD.gd](HUD.gd.md) (8 shared connections)
-- [Economia.gd](Economia.gd.md) (2 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
+- [ajustes.gd](ajustes.gd.md) (15 shared connections)
+- [PanelPuesto.gd](PanelPuesto.gd.md) (2 shared connections)
+- [Economia.gd](Economia.gd.md) (1 shared connections)
+- [CamaraCenital.gd](CamaraCenital.gd.md) (1 shared connections)
 - [BarraModos.gd](BarraModos.gd.md) (1 shared connections)
 - [PanelLampara.gd](PanelLampara.gd.md) (1 shared connections)
 - [Player.gd](Player.gd.md) (1 shared connections)
-- [VentanaAlmacen.gd](VentanaAlmacen.gd.md) (1 shared connections)
 - [VentanaEnergia.gd](VentanaEnergia.gd.md) (1 shared connections)
+- [Ciudad.gd](Ciudad.gd.md) (1 shared connections)
 - [VentanaOcupaciones.gd](VentanaOcupaciones.gd.md) (1 shared connections)
+- [VentanaPoblacion.gd](VentanaPoblacion.gd.md) (1 shared connections)
 
 ## Source Files
 

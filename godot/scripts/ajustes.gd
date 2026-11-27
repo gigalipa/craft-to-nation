@@ -1042,3 +1042,99 @@ static var MUSICA_PERMANENCIA_MINIMA_PISTA_S: float = 15.0
 static var MUSICA_COOLDOWN_BATALLA_S: float = 15.0
 static var MUSICA_RADIO_DETECCION_INDUSTRIA: float = 12.0
 static var MUSICA_INTERVALO_EVALUACION_S: float = 1.0
+
+# ==============================================================================
+# ATMOSFERA, CICLO DIA/NOCHE (15d/15d) Y CLIMA
+# ==============================================================================
+static var CICLO_HORAS_MES: float = 720.0
+static var CICLO_HORAS_DIA: float = 360.0
+static var CICLO_HORAS_NOCHE: float = 360.0
+static var CICLO_HORAS_TRANSICION_SOLAR: float = 36.0
+
+static var COLOR_CIELO_DIA_TOP: Color = Color("#1e5ea8")
+static var COLOR_CIELO_DIA_HORIZONTE: Color = Color("#9fd3f5")
+static var COLOR_CIELO_ATARDECER_TOP: Color = Color("#2f2d68")
+static var COLOR_CIELO_ATARDECER_HORIZONTE: Color = Color("#f07c45")
+static var COLOR_CIELO_NOCHE_TOP: Color = Color("#050914")
+static var COLOR_CIELO_NOCHE_HORIZONTE: Color = Color("#121d33")
+static var COLOR_CIELO_SUELO: Color = Color("#1a2026")
+static var COLOR_SOL: Color = Color("#fff4cc")
+static var COLOR_LUNA: Color = Color("#cad8f2")
+
+static var LUZ_SOLAR_ENERGIA_MAX: float = 1.15
+static var LUZ_LUNAR_ENERGIA: float = 0.22
+static var GLOW_INTENSIDAD_ATMOSFERA: float = 0.45
+
+static var CLIMA_DURACION_MIN_HORAS: int = 24
+static var CLIMA_DURACION_MAX_HORAS: int = 96
+static var CLIMA_VELOCIDAD_TRANSICION: float = 0.35
+
+# ==============================================================================
+# ALUMBRADO URBANO AUTOMATICO
+# ==============================================================================
+static var ALUMBRADO_INTERVALO_VIAS: int = 7
+static var ALUMBRADO_POOL_LUCES: int = 20
+static var ALUMBRADO_POOL_CLUSTERS: int = 16
+static var ALUMBRADO_TAMANO_CLUSTER: int = 16
+static var ALUMBRADO_CLUSTER_RANGO_CENITAL: float = 34.0
+static var ALUMBRADO_CLUSTER_ENERGIA_CENITAL: float = 1.65
+static var ALUMBRADO_CLUSTER_RANGO_1P: float = 28.0
+static var ALUMBRADO_CLUSTER_ENERGIA_1P: float = 1.15
+static var ALUMBRADO_RADIO_ESPECIFICO_1P: float = 26.0
+static var ALUMBRADO_HALO_RADIO_BASE: float = 24.0
+static var ALUMBRADO_HALO_OPACIDAD_MAX: float = 0.28
+static var ALUMBRADO_RATIO_CONSUMO_AVATAR: float = 100.0
+static var ALUMBRADO_MULTIPLICADOR_CONSUMO_NIEVE: float = 2.0
+static var ALUMBRADO_INTERVALO_ACTUALIZACION_POOL_S: float = 0.15
+
+# ==============================================================================
+# CAMPANA Y TUTORIAL («La Fractura Multiversal»)
+# ==============================================================================
+static var SEMILLA_CAMPANA: int = 424242
+static var CAMPANA_RUTA_VIDEO_PROLOGO: String = "res://assets/video/campana_prologo.ogv"
+static var CAMPANA_RUTA_VIDEO_EPILOGO: String = "res://assets/video/campana_epilogo.ogv"
+static var CAMPANA_RUTA_VOZ_BASE: String = "res://assets/voz/"
+static var CAMPANA_INTERVALO_EVALUACION_S: float = 0.12
+static var CAMPANA_TIEMPO_MINIMO_PASO_S: float = 0.35
+static var CAMPANA_DURACION_BURBUJA_VOZ_S: float = 11.0
+static var CAMPANA_RETRASO_EPILOGO_S: float = 4.0
+const CAMPANA_COMIDA_INICIAL: float = 2500.0
+const CAMPANA_PERFIL_RECURSOS: String = "supervivencia"
+static var SONIDOS_DUCKING_VOZ_DB: float = -8.0
+
+# ==============================================================================
+# SUCESIÓN DEL AVATAR Y GAME OVER
+# ==============================================================================
+static var SUCESION_VELOCIDAD_MULTIPLICADOR: float = 1.65
+static var SUCESION_TIMEOUT_CAMINATA_NUCLEO_S: float = 12.0
+static var SUCESION_DURACION_TRANSFORMACION_S: float = 2.8
+static var SUCESION_LUZ_ENERGIA_MIN: float = 3.5
+static var SUCESION_LUZ_ENERGIA_MAX: float = 14.0
+static var SUCESION_LUZ_RANGO: float = 18.0
+static var COLOR_SUCESION_RESPLANDOR: Color = Color(0.92, 0.97, 1.0, 1.0)
+static var ALUMBRADO_DATOS_FUENTE: Dictionary = {
+	"electrica": {
+		"color": COLOR_LUZ_LAMPARA_ELECTRICA,
+		"rango": 16.0,
+		"energia": 1.35,
+		"horas_por_unidad": 0.0,
+	},
+	"combustible": {
+		"color": COLOR_LUZ_LAMPARA_COMBUSTIBLE,
+		"rango": 13.0,
+		"energia": 1.05,
+		"horas_por_unidad": 10.0,
+	},
+	"carbon": {
+		"color": COLOR_LUZ_LAMPARA_CARBON,
+		"rango": 10.0,
+		"energia": 0.80,
+		"horas_por_unidad": 6.0,
+	},
+	"madera": {
+		"color": COLOR_LUZ_LAMPARA_MADERA,
+		"rango": 7.5,
+		"energia": 0.55,
+		"horas_por_unidad": 5.0,
+	},
+}

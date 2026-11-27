@@ -16,14 +16,15 @@
 ## Relationships
 
 - [ajustes.gd](ajustes.gd.md) (10 shared connections)
-- [json](json.md) (3 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (4 shared connections)
 - [BarraModos.gd](BarraModos.gd.md) (3 shared connections)
-- [Ciudad.gd](Ciudad.gd.md) (2 shared connections)
-- [VentanaBaul.gd](VentanaBaul.gd.md) (2 shared connections)
-- [sys](sys.md) (2 shared connections)
+- [PanelPuesto.gd](PanelPuesto.gd.md) (2 shared connections)
 - [pnpm-workspace.yaml](pnpm-workspace.yaml.md) (1 shared connections)
 - [2. Shorts Virales (Formato Vertical 9:16 - 1080x1920)](2._Shorts_Virales_Formato_Vertical_9-16_-_1080x1920.md) (1 shared connections)
+- [subprocess](subprocess.md) (1 shared connections)
+- [argparse](argparse.md) (1 shared connections)
 - [BarraModos.gd / BarraModos.pagina_actual()](BarraModos.gd_-_BarraModos.pagina_actual.md) (1 shared connections)
+- [video_editor_studio.py](video_editor_studio.py.md) (1 shared connections)
 - [VentanaAlmacen.gd](VentanaAlmacen.gd.md) (1 shared connections)
 - [Asset Visual: Craft_to_Natio Module](Asset_Visual-_Craft_to_Natio_Module.md) (1 shared connections)
 

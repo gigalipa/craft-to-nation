@@ -17,6 +17,8 @@ const BarraSuperiorScript = preload("res://scripts/BarraSuperior.gd")
 
 const POSICION_INICIAL := Vector2(16, 340)
 
+signal cerrada
+
 const HIJOS_DE_RECURSO := {
 	"comida": ["_sub_almacen_comida_"],
 	"crudo": ["combustible"],
@@ -100,6 +102,7 @@ func restaurar() -> void:
 func cerrar() -> void:
 	abierta = false
 	visible = false
+	cerrada.emit()
 
 
 func estan_todos_expandidos() -> bool:

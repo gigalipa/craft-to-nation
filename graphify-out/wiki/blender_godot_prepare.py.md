@@ -31,11 +31,11 @@
 
 ## Relationships
 
-- [json](json.md) (4 shared connections)
-- [VentanaBaul.gd](VentanaBaul.gd.md) (3 shared connections)
+- [VentanaBaul.gd](VentanaBaul.gd.md) (6 shared connections)
+- [argparse](argparse.md) (2 shared connections)
 - [blender_character_edit.py](blender_character_edit.py.md) (2 shared connections)
-- [blender_arkit_blendshapes.py](blender_arkit_blendshapes.py.md) (2 shared connections)
-- [sys](sys.md) (1 shared connections)
+- [blender_retarget_mixamo_test.py](blender_retarget_mixamo_test.py.md) (1 shared connections)
+- [blender_arkit_blendshapes.py](blender_arkit_blendshapes.py.md) (1 shared connections)
 
 ## Source Files
 

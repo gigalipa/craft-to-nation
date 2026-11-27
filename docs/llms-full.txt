@@ -34,7 +34,7 @@ Craft to Nation une la supervivencia en primera persona con la gestión macrosc�
 
 ---
 
-## 3. Pilares Técnicos y Arquitectura de Sistemas (GDD v3.64)
+## 3. Pilares Técnicos y Arquitectura de Sistemas (GDD v3.65)
 
 ### Dualidad de Perspectiva (Micro ↔ Macro) y Comando Híbrido (Fase 4)
 - **Primera Persona (Modos T / R / F):**
@@ -68,12 +68,13 @@ Craft to Nation une la supervivencia en primera persona con la gestión macrosc�
   - **Cyberpunk:** Tierras raras, automatización cibernética y alta densidad urbana.
   - **Solarpunk:** Energías limpias, eficiencia ecológica y armonía con el bioma.
 
-### Portal de Inicio, Audio Espacial y Persistencia
-- Escena cinemática de arranque (`VideoIntro.tscn`) y portal de inicio interactivo (`MenuInicio.tscn`) con fondo slideshow animado y localización dinámica en caliente (ES/EN en el juego; sitio web y wiki en ES/EN/FR).
-- Motor de audio espacial (`Sonidos.gd`) con 16 canales 2D y 16 3D, modulación de tono (±5%) y catálogo de 102 efectos OGG.
-- Sistema de guardado y carga atómica en JSON (`GestorPartida.gd`) con soporte de slot rápido (`quicksave`) y pantalla de carga (`PantallaCarga.gd`).
-- Configuración persistente (`Configuracion.gd`) en `user://configuracion.json` con perfiles de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`) y selector de modo de pantalla (pantalla completa vs ventana 1280×720).
-- 39 escenas de prueba automatizadas ejecutables en modo *headless* garantizando 100% de estabilidad (incluyendo `VideoIntroTest.tscn` y `PlayerCombateComandanteTest.tscn`).
+### Portal de Inicio, Audio Espacial, OST Adaptativo, Personajes 3D y Persistencia
+- Escena cinemática de arranque (`VideoIntro.tscn`) y portal de inicio interactivo (`MenuInicio.tscn`) con fondo slideshow animado, botón «¿Cómo jugar?» a la Wiki oficial y localización dinámica en caliente (ES/EN en el juego; sitio web y wiki en ES/EN/FR).
+- Motor de audio espacial (`Sonidos.gd`) con 16 canales 2D y 16 3D, modulación de tono (±5%), catálogo de 102 efectos OGG y **director de música adaptativa contextual sobre 16 pistas OST** (`menu`, `exploration`, `building`, `industry`, `battle`) con crossfade, histéresis y shuffle bag.
+- **Avatar 3D Riggeado y Personajes Modulares 3D:** Avatar humanoide `avatar.glb` con 47 animaciones (`AvatarAnimador.gd`) y ocultación de cabeza en 1ª persona; arquitectura *drop-in* en 2 capas para colonos (`CatalogoPersonajes.gd` + `PersonajeModular.gd`) con 4 tonos de piel, colores de equipo, sucesión filtrada por género (`Ciudad.suceder_avatar()`) y bloqueo de cámara cenital ante riesgo (`Player.motivo_bloqueo_cenital()`).
+- Sistema de guardado y carga atómica en JSON (`GestorPartida.gd`) con reconstrucción visual (`ColonosRenderer.reconstruir()`), soporte de slot rápido (`quicksave`) y pantalla de carga (`PantallaCarga.gd`).
+- Configuración persistente (`Configuracion.gd`) en `user://configuracion.json` con perfiles de recursos iniciales (`supervivencia`, `bajos`, `medios`, `altos`), logging de sesión y selector de modo de pantalla (pantalla completa vs ventana 1280×720).
+- 42 escenas de prueba automatizadas ejecutables en modo *headless* garantizando 100% de estabilidad (incluyendo `AvatarAnimadorTest.tscn`, `PersonajeModularTest.tscn`, `VideoIntroTest.tscn` y `PlayerCombateComandanteTest.tscn`).
 
 ---
 

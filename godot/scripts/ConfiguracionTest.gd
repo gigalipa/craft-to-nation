@@ -20,6 +20,7 @@ func ejecutar_pruebas() -> void:
 	test_catalogo_transporte_huellas_y_vias()
 	test_selector_recursos_iniciales()
 	test_selector_modo_pantalla()
+	test_volumen_voz_configuracion()
 
 
 func test_catalogo_transporte_huellas_y_vias() -> void:
@@ -288,3 +289,30 @@ func test_selector_modo_pantalla() -> void:
 	Configuracion.establecer_modo_pantalla(modo_prev)
 	Configuracion.guardar()
 	print("OK: Selector y persistencia de Modo de Pantalla (Pantalla completa / Ventana) verificado.")
+
+
+func test_volumen_voz_configuracion() -> void:
+	var vol_prev: float = Configuracion.volumen_voz
+	Configuracion.establecer_volumen_voz(0.4)
+	assert(is_equal_approx(Configuracion.volumen_voz, 0.4), "volumen_voz debe actualizarse a 0.4")
+	assert(Sonidos.voz_habilitada, "voz_habilitada debe ser true con volumen 0.4")
+	assert(absf(Sonidos.volumen_voz_db - linear_to_db(0.4)) < 0.1, "Sonidos.volumen_voz_db debe sincronizarse")
+
+	assert(Configuracion.guardar(), "Debe guardar volumen_voz en configuracion.json")
+	Configuracion.volumen_voz = 1.0
+	Configuracion.cargar_configuracion()
+	assert(is_equal_approx(Configuracion.volumen_voz, 0.4), "Al recargar debe conservar volumen_voz=0.4")
+
+	var panel := PanelConfiguracionAjustes.new()
+	add_child(panel)
+	assert(panel._slider_voz != null, "PanelConfiguracionAjustes debe incluir _slider_voz")
+	assert(absf(panel._slider_voz.value - 40.0) < 0.5, "_slider_voz debe sincronizar a 40%")
+	panel._slider_voz.value = 0.0
+	panel._on_guardar_pressed()
+	assert(is_equal_approx(Configuracion.volumen_voz, 0.0), "Guardar debe aplicar volumen_voz=0.0")
+	assert(not Sonidos.voz_habilitada, "Con volumen_voz=0.0 voz_habilitada debe ser false")
+	panel.queue_free()
+
+	Configuracion.establecer_volumen_voz(vol_prev)
+	Configuracion.guardar()
+	print("OK: Control y persistencia de Volumen Voz verificado.")

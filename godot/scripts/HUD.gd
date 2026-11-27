@@ -24,6 +24,8 @@ signal zona_pedida(tipo: String)
 signal dato_pedido(cual: String)
 ## Clic en una fila de Ocupaciones: CamaraCenital centra la cámara y abre el panel del puesto.
 signal edificio_pedido(esquina: Vector2i)
+signal almacen_abierto_1p
+signal menu_pausa_pedido
 
 const COLOR_POSITIVO := Color.WHITE
 static var COLOR_NEGATIVO: Color = Ajustes.COLOR_HUD_INVALIDO
@@ -41,6 +43,7 @@ const VentanaMoralScript = preload("res://scripts/VentanaMoral.gd")
 const VentanaBaulScript = preload("res://scripts/VentanaBaul.gd")
 const PanelNotificacionesScript = preload("res://scripts/PanelNotificaciones.gd")
 const PanelLamparaScript = preload("res://scripts/PanelLampara.gd")
+const PanelCampanaHUDScript = preload("res://scripts/PanelCampanaHUD.gd")
 const TemaHUD = preload("res://scripts/TemaHUD.gd")
 
 ## Nombres de todos los recursos del almacén (los usa PanelPuesto).
@@ -79,6 +82,7 @@ var _contenedor_indicadores: VBoxContainer
 var _panel_lampara: PanelContainer
 var _panel_oxigeno: PanelContainer
 var _oxigeno_texto: Label
+var _panel_campana: Node
 
 
 ## Los widgets se crean en _init(), no en _ready(): en Main.tscn Player y
@@ -93,6 +97,7 @@ func _init() -> void:
 		elif cual == "moral":
 			abrir_ventana_dato("moral")
 	)
+	_barra_superior.menu_pedido.connect(func() -> void: menu_pausa_pedido.emit())
 	add_child(_barra_superior)
 	_ventana_poblacion = VentanaPoblacionScript.new()
 	_ventana_poblacion.ocupaciones_pedidas.connect(func() -> void: abrir_ventana_dato("ocupaciones"))
@@ -106,6 +111,11 @@ func _init() -> void:
 	_ventana_moral = VentanaMoralScript.new()
 	add_child(_ventana_moral)
 	_ventana_almacen = VentanaAlmacenScript.new()
+	_ventana_almacen.cerrada.connect(func() -> void:
+		if _hotbar != null and _hotbar.visible and not ventana_baul_abierta():
+			if DisplayServer.get_name() != "headless":
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	)
 	add_child(_ventana_almacen)
 	_ventana_baul = VentanaBaulScript.new()
 	add_child(_ventana_baul)
@@ -203,6 +213,11 @@ func _init() -> void:
 	_panel_oxigeno.add_child(fila_oxi)
 	_panel_oxigeno.visible = false
 	_contenedor_indicadores.add_child(_panel_oxigeno)
+
+	_panel_campana = PanelCampanaHUDScript.new()
+	add_child(_panel_campana)
+	_contenedor_indicadores.add_child(_panel_campana.tarjeta_objetivos)
+	add_child(_panel_campana.burbuja_voz)
 
 	_notificaciones = PanelNotificacionesScript.new()
 	add_child(_notificaciones)
@@ -743,6 +758,29 @@ func cerrar_ventana_baul() -> void:
 
 func ventana_baul_abierta() -> bool:
 	return _ventana_baul != null and _ventana_baul.visible
+
+
+func ventana_almacen_abierta() -> bool:
+	return _ventana_almacen != null and _ventana_almacen.visible
+
+
+func cerrar_ventana_almacen_1p() -> void:
+	if _ventana_almacen != null:
+		_ventana_almacen.visible = false
+		_ventana_almacen.abierta = false
+		Sonidos.reproducir("sfx_ui_ventana_cerrar")
+
+
+func alternar_ventana_almacen_1p() -> bool:
+	if _ventana_almacen == null:
+		return false
+	if _ventana_almacen.visible:
+		cerrar_ventana_almacen_1p()
+		return false
+	_ventana_almacen.abrir()
+	Sonidos.reproducir("sfx_ui_ventana_abrir")
+	almacen_abierto_1p.emit()
+	return true
 
 
 ## Muestra la barra de progreso bajo la mira con su ícono contextual.

@@ -59,15 +59,62 @@ def _polygon_center(obj: bpy.types.Object, polygon: bpy.types.MeshPolygon) -> Ve
     return obj.matrix_world @ polygon.center
 
 
-def _is_skin(center: Vector, rgb: tuple[float, float, float]) -> bool:
+def _body_landmarks(obj: bpy.types.Object) -> dict[str, float]:
+    """Obtiene cotas anatomicas desde los huesos reales para no invadir hombros ni mangas."""
+    armature = obj.find_armature()
+    if armature is None:
+        return {"neck_z": 1.46, "head_z": 1.50, "arm_z": 1.38, "arm_start_x": 0.30}
+    bones = armature.data.bones
+    neck = bones.get("Neck")
+    head = bones.get("Head")
+    l_arm = bones.get("LeftUpperArm")
+    neck_z = (armature.matrix_world @ neck.head_local).z if neck else 1.46
+    head_z = (armature.matrix_world @ head.head_local).z if head else (neck_z + 0.045)
+    if l_arm:
+        arm_head = armature.matrix_world @ l_arm.head_local
+        arm_z = arm_head.z
+        arm_start_x = abs(arm_head.x) + 0.13
+    else:
+        arm_z = 1.38
+        arm_start_x = 0.30
+    return {
+        "neck_z": neck_z,
+        "head_z": head_z,
+        "arm_z": arm_z,
+        "arm_start_x": arm_start_x,
+    }
+
+
+def _is_skin(center: Vector, rgb: tuple[float, float, float], landmarks: dict[str, float]) -> bool:
     red, green, blue = rgb
     brightness = max(rgb)
-    redness = red - green
-    warm = red > green > blue * 0.82 and red - blue > 0.045
-    skin_color = brightness > 0.22 and redness > 0.055 and warm
-    on_head_or_neck = center.z > 1.40 and abs(center.x) < 0.24
-    on_exposed_arm = center.z > 1.12 and abs(center.x) > 0.43
-    return skin_color and (on_head_or_neck or on_exposed_arm)
+    rg = red - green
+    gb = green - blue
+
+    # En la cara frontal (por encima de Head), los triangulos junto a cejas/ojos mezclan pixeles
+    # oscuros y bajan R-G; relajamos ligeramente el umbral ahi (pero nunca sobre el cabello oscuro).
+    on_head_front = center.z >= (landmarks["head_z"] - 0.015) and abs(center.x) <= 0.16 and center.y <= 0.03
+    if on_head_front:
+        return brightness > 0.24 and rg > 0.035 and red > green >= blue * 0.80
+
+    # Para cuello, escote frontal y antebrazos, exigimos matiz rosado/durazno (R-G > G-B)
+    # para rechazar por completo camisas beige/ocre/cafe (donde G-B >= R-G).
+    pink_skin_hue = rg > 0.08 and rg > max(gb, 0.0) * 1.15 and red > green > blue * 0.85
+    if not (brightness > 0.28 and pink_skin_hue):
+        return False
+
+    on_head = center.z >= (landmarks["head_z"] - 0.015) and abs(center.x) <= 0.16
+    on_neck = center.z >= (landmarks["neck_z"] + 0.005) and abs(center.x) <= 0.105
+    on_vneck = (
+        (landmarks["neck_z"] - 0.11) <= center.z <= (landmarks["neck_z"] + 0.02)
+        and abs(center.x) <= 0.065
+        and center.y < -0.04
+    )
+    on_exposed_arm = (
+        abs(center.x) >= landmarks["arm_start_x"]
+        and abs(center.z - landmarks["arm_z"]) <= 0.18
+    )
+    return on_head or on_neck or on_vneck or on_exposed_arm
 
 
 def _team_band_axis(obj: bpy.types.Object) -> tuple[Vector, Vector, float]:
@@ -89,7 +136,7 @@ def _is_team_band(center: Vector, band_axis: tuple[Vector, Vector, float]) -> bo
     along = (center - head).dot(axis) / length_squared
     closest = head + axis * along
     radius = length_squared**0.5 * 0.55
-    return 0.55 <= along <= 0.78 and (center - closest).length <= radius
+    return 0.36 <= along <= 0.56 and (center - closest).length <= radius
 
 
 def _ensure_material_slot(obj: bpy.types.Object, name: str, source: bpy.types.Material) -> int:
@@ -121,6 +168,7 @@ def apply_identity_materials(obj: bpy.types.Object) -> dict[str, int]:
     team_index = _ensure_material_slot(obj, "mat_color_equipo", source)
     uv_data = mesh.uv_layers.active.data
     band_axis = _team_band_axis(obj)
+    landmarks = _body_landmarks(obj)
     counts = {"base_faces": 0, "skin_faces": 0, "team_faces": 0}
 
     for polygon in mesh.polygons:
@@ -129,7 +177,7 @@ def apply_identity_materials(obj: bpy.types.Object) -> dict[str, int]:
         if _is_team_band(center, band_axis):
             polygon.material_index = team_index
             counts["team_faces"] += 1
-        elif _is_skin(center, rgb):
+        elif _is_skin(center, rgb, landmarks):
             polygon.material_index = skin_index
             counts["skin_faces"] += 1
         else:

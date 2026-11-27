@@ -17,6 +17,8 @@
 [ext_resource type="Script" uid="uid://dn7ocwsx7x4wl" path="res://scripts/ViaObraOverlay.gd" id="15"]
 [ext_resource type="Script" uid="uid://cpqf5peagw1kp" path="res://scripts/ViaDemolicionOverlay.gd" id="16"]
 [ext_resource type="Script" path="res://scripts/MenuPausa.gd" id="17_pausa"]
+[ext_resource type="Script" path="res://scripts/AtmosferaCiclo.gd" id="18_atm"]
+[ext_resource type="Script" path="res://scripts/AlumbradoUrbano.gd" id="19_alu"]
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_obra"]
 
@@ -69,6 +71,12 @@ script = ExtResource("16")
 [node name="Luz" type="DirectionalLight3D" parent="." unique_id=1480571523]
 transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 5, 0)
 shadow_enabled = true
+
+[node name="AtmosferaCiclo" type="Node3D" parent="."]
+script = ExtResource("18_atm")
+
+[node name="AlumbradoUrbano" type="Node3D" parent="."]
+script = ExtResource("19_alu")
 
 [node name="MiraUI" type="CanvasLayer" parent="." unique_id=1463271242]
 
